@@ -111,12 +111,10 @@ public class SexCom extends PornEmbedParser {
             return;
         }
         decryptedLinks = new ArrayList<DownloadLink>();
-        final String continuelink = br.getRegex("\"(/video/embed[^<>\"]*?)\"").getMatch(0);
-        if (continuelink == null) {
-            logger.warning("Decrypter broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+        final String embedLink = br.getRegex("\"(/video/embed[^<>\"]*?)\"").getMatch(0);
+        if (embedLink != null) {
+            br.getPage(embedLink);
         }
-        br.getPage(continuelink);
         final String externID = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
         if (externID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
