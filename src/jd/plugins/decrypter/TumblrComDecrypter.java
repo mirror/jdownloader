@@ -260,7 +260,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         if (photoset != null || br.containsHTML("<article class=\"post-photoset\" id=\"" + puid + "\">|<div id=\"photoset_" + puid + "\" class=\"html_photoset\">")) {
             // ok we don't need to process the iframe src link as best images which we are interested in are within google
             // getGoogleCarousel!
-            processPhotoSet(decryptedLinks, puid);
+            processPhotoSet(decryptedLinks, puid, fpName);
             return decryptedLinks;
         }
         // FINAL FAILOVER FOR UNSUPPORTED CONTENT, this way we wont have to keep making updates to this plugin! only time we would need to
@@ -300,15 +300,15 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void processPhotoSet(final ArrayList<DownloadLink> decryptedLinks, final String puid) throws Exception {
+    private void processPhotoSet(final ArrayList<DownloadLink> decryptedLinks, final String puid, final String fpname) throws Exception {
         final String gc = getGoogleCarousel(br);
         if (gc != null) {
             FilePackage fp = null;
             final String JSON = new Regex(gc, "<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
             final Map<String, Object> json = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaMap(JSON);
             final String articleBody = (String) json.get("articleBody");
-            final String fpName = articleBody.replaceAll("[\r\n]+", "").trim();
-            if (articleBody != null) {
+            final String fpName = articleBody != null ? articleBody.replaceAll("[\r\n]+", "").trim() : fpname;
+            if (fpName != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(fpName);
             }
@@ -318,7 +318,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 results = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image/@list");
             } catch (Throwable t) {
                 // single entry ?
-                final String[] a = new String[] { (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image") };
+                final String[] a = new String[] { (String) json.get("image") };
                 results = new ArrayList<Object>(Arrays.asList(a));
             }
             if (results != null) {
