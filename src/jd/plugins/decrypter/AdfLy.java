@@ -16,6 +16,8 @@
 
 package jd.plugins.decrypter;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -84,7 +86,7 @@ public class AdfLy extends PluginForDecrypt {
          * Allows decrypter or hoster plugins to call this method
          **/
         public ArrayList<String> decryptThis(String parameter) throws Exception {
-            ArrayList<String> decryptedLinks = new ArrayList<String>();
+            final ArrayList<String> decryptedLinks = new ArrayList<String>();
             // imported protocol choice
             protocol = new Regex(parameter, "(https?://)").getMatch(0);
             // poll plugin setting for default protocol, if not set ask the user.
@@ -96,17 +98,24 @@ public class AdfLy extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.setReadTimeout(3 * 60 * 1000);
 
-            if (parameter.matches(hosts + "/\\d+/(http|ftp)?.+")) {
+            if (parameter.matches(hosts + "/\\d+/.+")) {
                 String linkInsideLink = new Regex(parameter, hosts + "/\\d+/(.+)").getMatch(0);
                 if (!linkInsideLink.matches("^(?-i)(?:https?|ftp)://.+$")) {
                     // we assume they are http
                     linkInsideLink = "http://" + linkInsideLink;
                 }
                 if (!linkInsideLink.matches(hosts + "/.+")) {
-                    decryptedLinks.add(linkInsideLink);
-                    return decryptedLinks;
-                } else {
-                    parameter = linkInsideLink.replace("www.", "");
+                    // lets try dns method to verify if the link is actually valid
+                    // re: https://board.jdownloader.org/showthread.php?p=363462#post363462
+                    InetAddress[] inetAddress = null;
+                    try {
+                        inetAddress = InetAddress.getAllByName(Browser.getHost(linkInsideLink, true));
+                    } catch (final UnknownHostException u) {
+                    }
+                    if (inetAddress != null && inetAddress.length > 0) {
+                        decryptedLinks.add(linkInsideLink);
+                        return decryptedLinks;
+                    }
                 }
             }
 
