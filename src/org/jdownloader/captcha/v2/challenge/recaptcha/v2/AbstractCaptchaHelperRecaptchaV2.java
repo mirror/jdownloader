@@ -17,19 +17,17 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected String       secureToken;
 
     public String getSecureToken() {
+        return getSecureToken(br != null ? br.toString() : null);
+    }
+
+    public String getSecureToken(final String source) {
         if (secureToken != null) {
             return secureToken;
         }
         // from fallback url
-        secureToken = br.getRegex("\\&stoken=([^\"]+)").getMatch(0);
-
-        if (secureToken != null) {
-            return secureToken;
-        }
-        secureToken = br.getRegex("data\\-stoken\\s*=\\s*\"([^\"]+)").getMatch(0);
-
-        if (secureToken != null) {
-            return secureToken;
+        secureToken = new Regex(source, "&stoken=([^\"]+)").getMatch(0);
+        if (secureToken == null) {
+            secureToken = new Regex(source, "data-stoken\\s*=\\s*\"([^\"]+)").getMatch(0);
         }
 
         return secureToken;
@@ -76,7 +74,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     private String siteDomain;
 
-    public AbstractCaptchaHelperRecaptchaV2(T plugin, Browser br, String siteKey) {
+    public AbstractCaptchaHelperRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken) {
         this.plugin = plugin;
         this.br = br;
         this.siteUrl = br.getURL();
@@ -86,7 +84,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             logger = LogController.getInstance().getLogger(getClass().getSimpleName());
         }
         this.siteKey = siteKey;
-
+        this.secureToken = secureToken;
     }
 
     protected void runDdosPrevention() throws InterruptedException {
@@ -106,8 +104,8 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
      * @since JD2
      * @return
      */
-    public String getRecaptchaV2ApiKey() {
-        return getRecaptchaV2ApiKey(br != null ? br.toString() : null);
+    public String getSiteKey() {
+        return getSiteKey(br != null ? br.toString() : null);
     }
 
     /**
@@ -117,8 +115,10 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
      * @since JD2
      * @return
      */
-    public String getRecaptchaV2ApiKey(final String source) {
-        String apiKey = null;
+    public String getSiteKey(final String source) {
+        if (siteKey != null) {
+            return siteKey;
+        }
         if (source == null) {
             return null;
         }
@@ -127,20 +127,39 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         if (divs != null) {
             for (final String div : divs) {
                 if (new Regex(div, "class=('|\")g-recaptcha\\1").matches()) {
-                    apiKey = new Regex(div, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
-                    if (apiKey != null) {
-                        break;
+                    siteKey = new Regex(div, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
+                    if (siteKey != null) {
+                        return siteKey;
                     }
                 }
             }
         }
-        if (apiKey == null) {
-            final String jssource = new Regex(source, "recaptcha\\.render\\(.*?, \\{(.*?)\\}\\);").getMatch(0);
-            if (jssource != null) {
-                apiKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\2").getMatch(2);
+        // can also be within <script> (for example cloudflare)
+        final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
+        if (scripts != null) {
+            for (final String script : scripts) {
+                siteKey = new Regex(script, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
+                if (siteKey != null) {
+                    return siteKey;
+                }
             }
         }
-        return apiKey;
+        // within iframe
+        final String[] iframes = new Regex(source, "<\\s*iframe\\s+(?:.*?<\\s*/\\s*iframe\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
+        if (iframes != null) {
+            for (final String iframe : iframes) {
+                siteKey = new Regex(iframe, "google\\.com/recaptcha/api/fallback\\?k=([\\w-]+)").getMatch(0);
+                if (siteKey != null) {
+                    return siteKey;
+                }
+            }
+        }
+        // json values in script or json
+        final String jssource = new Regex(source, "recaptcha\\.render\\(.*?, \\{(.*?)\\}\\);").getMatch(0);
+        if (jssource != null) {
+            siteKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\2").getMatch(2);
+        }
+        return siteKey;
     }
 
 }

@@ -35,10 +35,13 @@ import jd.plugins.PluginForHost;
 
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
 
+    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey, final String secureToken) {
+        super(plugin, br, siteKey, secureToken);
+    }
+
     /* Most likely used for login captchas. */
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey) {
-        super(plugin, br, siteKey);
-
+        this(plugin, br, siteKey, null);
     }
 
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br) {
@@ -53,14 +56,16 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         final PluginForHost plugin = this.plugin;
         final DownloadLink link = getPlugin().getDownloadLink();
 
-        String apiKey = siteKey;
-        if (apiKey == null) {
-            apiKey = getRecaptchaV2ApiKey();
-            if (apiKey == null) {
+        if (siteKey == null) {
+            getSiteKey();
+            if (siteKey == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RecaptchaV2 API Key can not be found");
             }
         }
-        String secToken = getSecureToken();
+        if (secureToken == null) {
+            secureToken = getSecureToken();
+            // non fatal if secureToken is null.
+        }
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
@@ -69,7 +74,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                 link.addPluginProgress(progress);
             }
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, getSecureToken(), plugin, br, getSiteDomain(), getSiteUrl());
+            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, plugin, br, getSiteDomain(), getSiteUrl());
             c.setTimeout(plugin.getCaptchaTimeout());
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 // coalado: discuss why. FilePackage.isDefaultFilePackage(link.getFilePackage()) is triggered for captchas during online
