@@ -400,7 +400,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
 
                 if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
-                    if (overwritePackagizerRules ||  StringUtils.isEmpty(existing.getDestinationFolder())) {
+                    if (overwritePackagizerRules || StringUtils.isEmpty(existing.getDestinationFolder())) {
                         existing.setDestinationFolder(query.getDestinationFolder());
                         existing.setIgnoreVarious(true);
                         existing.setUniqueId(null);
@@ -480,7 +480,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public void moveToDownloadlist(final long[] linkIds, final long[] packageIds) throws BadParameterException {
         SelectionInfo<CrawledPackage, CrawledLink> selectionInfo = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
-        LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, true, null, null), selectionInfo);
+        LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled(), null, null), selectionInfo);
     }
 
     @Override
