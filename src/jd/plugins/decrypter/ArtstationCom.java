@@ -64,14 +64,6 @@ public class ArtstationCom extends PluginForDecrypt {
             int entries_total = (int) DummyScriptEnginePlugin.toLong(json.get("projects_count"), 0);
             int offset = 0;
             int page = 1;
-            String packageName = "";
-            if (!inValidate(full_name)) {
-                packageName = full_name;
-            }
-            if (!inValidate(projectTitle)) {
-                packageName = packageName + " " + projectTitle;
-            }
-            fp.setName(packageName);
             do {
                 this.br.getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
                 final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -112,6 +104,17 @@ public class ArtstationCom extends PluginForDecrypt {
                 }
                 page++;
             } while (decryptedLinks.size() < entries_total);
+
+            String packageName = "";
+            if (!inValidate(full_name)) {
+                packageName = full_name;
+            }
+            if (decryptedLinks.size() > 1) {
+                if (!inValidate(projectTitle)) {
+                    packageName = packageName + " " + projectTitle;
+                }
+            }
+            fp.setName(packageName);
         } else {
             final String project_id = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             if (inValidate(project_id)) {
@@ -123,16 +126,6 @@ public class ArtstationCom extends PluginForDecrypt {
             final ArrayList<Object> resource_data_list = (ArrayList<Object>) json.get("assets");
             final String full_name = (String) DummyScriptEnginePlugin.walkJson(json, "user/full_name");
             final String projectTitle = (String) json.get("title");
-            String packageName = "";
-            if (!inValidate(full_name)) {
-                packageName = full_name;
-            } else {
-                packageName = project_id;
-            }
-            if (!inValidate(projectTitle)) {
-                packageName = packageName + "-" + projectTitle;
-            }
-            fp.setName(packageName);
             for (final Object jsono : resource_data_list) {
                 final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) jsono;
                 final String url = (String) imageJson.get("image_url");
@@ -182,6 +175,18 @@ public class ArtstationCom extends PluginForDecrypt {
                 fp.add(dl);
                 decryptedLinks.add(dl);
             }
+            String packageName = "";
+            if (!inValidate(full_name)) {
+                packageName = full_name;
+            } else {
+                packageName = project_id;
+            }
+            if (decryptedLinks.size() > 1) {
+                if (!inValidate(projectTitle)) {
+                    packageName = packageName + "-" + projectTitle;
+                }
+            }
+            fp.setName(packageName);
         }
         return decryptedLinks;
     }
