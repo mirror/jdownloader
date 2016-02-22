@@ -12,7 +12,6 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 
 public class JNAWindowsWindowManager extends WindowsWindowManager {
     public JNAWindowsWindowManager() {
-
         // load library
         User32 inst = User32.INSTANCE;
     }
@@ -26,15 +25,11 @@ public class JNAWindowsWindowManager extends WindowsWindowManager {
                     User32.INSTANCE.CloseWindow(new HWND(Native.getComponentPointer(w)));
                     return;
                 case NORMAL:
-
                     User32.INSTANCE.ShowWindow(new HWND(Native.getComponentPointer(w)), User32.SHOW_WINDOW_SW_RESTORE);
-
                     return;
-
                 }
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
-
             }
         }
         super.setExtendedState(w, state);
