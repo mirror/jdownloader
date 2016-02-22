@@ -25,7 +25,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
 
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -48,6 +47,9 @@ public abstract class ClosableView extends View {
         int count = menubar.getComponentCount();
         initMenuPanel(menubar);
         closeButton = new ExtButton() {
+            private AbstractIcon on;
+            private AbstractIcon off;
+
             {
                 setRolloverEffectEnabled(true);
                 addActionListener(new ActionListener() {
@@ -58,6 +60,10 @@ public abstract class ClosableView extends View {
                         onRollOut();
                     }
                 });
+                on = new AbstractIcon(IconKey.ICON_CLOSE, 10);
+                off = new AbstractIcon(IconKey.ICON_CLOSE, 10);
+                off.setAlpha(0.3f);
+                onRollOut();
             }
 
             /**
@@ -67,14 +73,14 @@ public abstract class ClosableView extends View {
 
             protected void onRollOut() {
                 setContentAreaFilled(false);
-                setIcon(new AbstractIcon(IconKey.ICON_CLOSE, 8));
+                setIcon(on);
             }
 
             /**
              *
              */
             protected void onRollOver() {
-                setIcon(NewTheme.I().getIcon(IconKey.ICON_CLOSE_ON, 8));
+                setIcon(off);
             }
 
         };
