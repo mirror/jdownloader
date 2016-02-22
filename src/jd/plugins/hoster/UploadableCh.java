@@ -21,11 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +42,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigfile.to" }, urls = { "https?://(?:www\\.)?(uploadable\\.ch|bigfile\\.to)/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
 
@@ -63,7 +63,8 @@ public class UploadableCh extends PluginForHost {
 
     private static final long   FREE_SIZELIMIT          = 2 * 1073741824l;
     private static final String PREMIUM_UNLIMITEDCHUNKS = "PREMIUM_UNLIMITEDCHUNKS";
-    private static final String recaptchaid             = "6LdlJuwSAAAAAPJbPIoUhyqOJd7-yrah5Nhim5S3";
+    /* Last updated: 2016-02-22 */
+    private static final String recaptchaid             = "6LfZ0RETAAAAAOjhYT7V9ukeCT3wWccw98uc50vu";
     private static final String baseDomain              = "https://www.bigfile.to";
 
     @SuppressWarnings("deprecation")
@@ -184,6 +185,11 @@ public class UploadableCh extends PluginForHost {
         final String directlinkproperty = "directlink";
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            String reCaptchaPublicKey = this.br.getRegex("var reCAPTCHA_publickey=\\'([^<>\"\\']+)\\';").getMatch(0);
+            if (reCaptchaPublicKey == null) {
+                /* Fallback to our statically stored recaptchaid */
+                reCaptchaPublicKey = recaptchaid;
+            }
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             final String postLink = br.getURL();
             {
@@ -205,7 +211,7 @@ public class UploadableCh extends PluginForHost {
             }
             boolean captchaFailed = true;
             final Recaptcha rc = new Recaptcha(br, this);
-            rc.setId(recaptchaid);
+            rc.setId(reCaptchaPublicKey);
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
