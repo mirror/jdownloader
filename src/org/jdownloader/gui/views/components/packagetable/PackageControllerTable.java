@@ -174,6 +174,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     return;
                 }
                 selectionVersion.incrementAndGet();
+                final AbstractNode node = getModel().getObjectbyRow(getSelectionModel().getLeadSelectionIndex());
+                final WeakReference<AbstractNode> lContextMenuTrigger = contextMenuTrigger;
+                if (lContextMenuTrigger == null || lContextMenuTrigger.get() != node) {
+                    contextMenuTrigger = new WeakReference<AbstractNode>(node);
+                }
             }
         });
 
@@ -244,14 +249,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     protected AbstractNode getContextMenuTrigger() {
         final WeakReference<AbstractNode> lContextMenuTrigger = contextMenuTrigger;
         if (lContextMenuTrigger != null) {
-            // refresh contextMenuTrigger on every rightclick!
-            contextMenuTrigger = null;
             return lContextMenuTrigger.get();
-        } else {
-            // use leadSelectionIndex as ContextMenuTrigger. for example when selection has changed via keyboard
-            final int leadSelectionIndex = getSelectionModel().getLeadSelectionIndex();
-            return this.getModel().getObjectbyRow(leadSelectionIndex);
         }
+        return null;
     }
 
     /** access within EDT only **/
