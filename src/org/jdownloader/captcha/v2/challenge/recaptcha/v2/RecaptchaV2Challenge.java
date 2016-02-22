@@ -4,10 +4,14 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -22,21 +26,18 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
-    public static final String RECAPTCHAV2 = "recaptchav2";
+    public static final String             RECAPTCHAV2 = "recaptchav2";
 
-    private String                siteKey;
-    private BasicCaptchaChallenge basicChallenge;
+    private final String                   siteKey;
+    private volatile BasicCaptchaChallenge basicChallenge;
 
-    private String siteDomain;
+    private final String                   siteDomain;
 
-    private String siteUrl;
+    private final String                   siteUrl;
 
-    private String secureToken;
+    private final String                   secureToken;
 
     public String getSiteKey() {
         return siteKey;
@@ -66,6 +67,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     @Override
     public void cleanup() {
         super.cleanup();
+        final BasicCaptchaChallenge basicChallenge = this.basicChallenge;
         if (basicChallenge != null) {
             basicChallenge.cleanup();
         }
@@ -81,7 +83,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
         }
-
     }
 
     public String getSecureToken() {
@@ -101,11 +102,9 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         String pDo = request.getParameterbyKey("do");
         if ("solve".equals(pDo)) {
             String responsetoken = request.getParameterbyKey("response");
-
             browserReference.onResponse(responsetoken);
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
             response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
             return true;
         }
@@ -123,7 +122,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 html = html.replace("%%%optionals%%%", "data-stoken=\"" + stoken + "\"");
             } else {
                 html = html.replace("%%%optionals%%%", "");
-
             }
             return html;
         } catch (IOException e) {
@@ -157,6 +155,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     @Override
     public void onHandled() {
         super.onHandled();
+        final BasicCaptchaChallenge basicChallenge = this.basicChallenge;
         if (basicChallenge != null) {
             basicChallenge.onHandled();
         }
@@ -167,8 +166,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             return basicChallenge;
         }
         try {
-
-            if (CFG_GENERAL.CFG.isJxBrowserEnabled()) {
+            if (!Application.isHeadless() && CFG_GENERAL.CFG.isJxBrowserEnabled()) {
                 // Load via reflection until evaluation tests are done
                 Class.forName("com.teamdev.jxbrowser.chromium.Browser");
                 Class<?> cl = Class.forName("org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallengeViaJxBrowser");
@@ -178,10 +176,8 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             }
         } catch (Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
-
         }
-        basicChallenge = new Recaptcha2FallbackChallenge(this);
-        //
+        basicChallenge = new Recaptcha2FallbackChallenge(this); //
         return basicChallenge;
     }
 

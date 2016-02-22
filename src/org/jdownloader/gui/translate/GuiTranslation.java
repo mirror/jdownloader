@@ -5124,6 +5124,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Rename %s1 link(s)" })
     String RenameDialog_RenameDialog(int size);
 
+    @Default(lngs = { "en" }, values = { "Rename %s1 package(s)" })
+    String RenameDialog_RenameDialog_Packages(int size);
+
     @Default(lngs = { "en" }, values = { "Search for" })
     String RenameDialog_layoutDialogContent_search();
 
@@ -6046,31 +6049,24 @@ public interface GuiTranslation extends TranslateInterface {
     String help_enable_table_properties_title();
 
     @Default(lngs = { "en" }, values = { "You enabled the link properties panel, but no link or package is selected.\r\nThis panel becomes visible if you select a link or a package." })
-
     String help_enable_table_properties_msg();
 
     @Default(lngs = { "en" }, values = { "%s1 usenet options" })
-
     String UsenetConfigPanel_description(String host);
 
     @Default(lngs = { "en" }, values = { "SSL Enabled" })
-
     String UsenetConfigPanel_ssl();
 
     @Default(lngs = { "en" }, values = { "Port" })
-
     String UsenetConfigPanel_port();
 
     @Default(lngs = { "en" }, values = { "Server" })
-
     String UsenetConfigPanel_Server();
 
     @Default(lngs = { "en" }, values = { "Loading Menu & Toolbar..." })
-
     String MenuBar_loading();
 
     @Default(lngs = { "en" }, values = { "MyJDownloader Download list right click menu Manager" })
-
     String MenuManagerMYJDDownloadTableContext_getName();
 
     @Default(lngs = { "en" }, values = { "Remote Menu Manager" })

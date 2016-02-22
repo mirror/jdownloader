@@ -53,7 +53,7 @@ public class RenameAction extends CustomizableTableContextAppAction implements A
     @Override
     public void actionPerformed(ActionEvent e) {
         final SelectionInfo selection = getSelection();
-        if (isSimpleMode() || (getSelection().getRawSelection().size() == 1 && (!(e.getSource() instanceof JMenuItem) || getSelection().isPackageContext()))) {
+        if (isSimpleMode() || (selection.getRawSelection().size() == 1 && (!(e.getSource() instanceof JMenuItem) || selection.isPackageContext()))) {
             // do not edit in table if the user clicked on the menu item, but do it if the user uses a shortcut (source is the table in this
             // case)
             try {
@@ -67,7 +67,7 @@ public class RenameAction extends CustomizableTableContextAppAction implements A
                     return;
                 }
                 final ExtColumn col = table.getModel().getColumnByClass(FileColumn.class);
-                col.startEditing(getSelection().getRawContext());
+                col.startEditing(selection.getRawContext());
             } catch (Exception ee) {
                 // many casts here.... let's catch everything - just to be sure
             }
