@@ -38,6 +38,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -198,6 +199,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         boolean is_best = false;
                         DownloadLink bestQuality = null;
                         DownloadLink bestSubtitle = null;
+                        FilePackage fp = null;
+                        if (titlethis != null) {
+                            fp = FilePackage.getInstance();
+                            fp.setName(fpName);
+                        }
 
                         for (final Object sourceo : sources_video) {
                             subtitle = null;
@@ -350,6 +356,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                     link.setAvailable(true);
                                 }
                             }
+                            if (fp != null) {
+                                link._setFilePackage(fp);
+                            }
                             link.setLinkID(decrypted_id + "_" + fmt);
 
                             if (bestQuality == null || link.getDownloadSize() > bestQuality.getDownloadSize()) {
@@ -371,6 +380,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                         subtitle_downloadlink.setFinalFileName(final_filename_subtitle);
                                         subtitle_downloadlink.setContentUrl(data);
                                         subtitle_downloadlink.setLinkID(decrypted_id + "_" + fmt + "_subtitle");
+                                        if (fp != null) {
+                                            subtitle_downloadlink._setFilePackage(fp);
+                                        }
                                         part.add(subtitle_downloadlink);
                                         if (is_best) {
                                             bestSubtitle = subtitle_downloadlink;
@@ -391,12 +403,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         part.clear();
                     }
                 }
-
-                // if (newRet.size() > 1) {
-                // final FilePackage fp = FilePackage.getInstance();
-                // fp.setName(fpName);
-                // fp.addLinks(newRet);
-                // }
             }
         } catch (final Throwable e) {
             e.printStackTrace();

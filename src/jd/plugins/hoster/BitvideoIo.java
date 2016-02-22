@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvideo.io", "bitporno.sx" }, urls = { "https?://(?:www\\.)?bitvideo\\.io/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvideo.io", "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitvideo\\.io/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" }, flags = { 0, 0, 0 })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
