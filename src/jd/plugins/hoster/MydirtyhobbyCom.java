@@ -178,7 +178,7 @@ public class MydirtyhobbyCom extends PluginForHost {
                             // login wont contain downloadlink
                             this.setDownloadLink(new DownloadLink(this, "Account Login!", this.getHost(), this.getHost(), true));
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br).getToken();
                         postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                     }
                     br.postPage("/n/login", postdata);
@@ -229,7 +229,6 @@ public class MydirtyhobbyCom extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
