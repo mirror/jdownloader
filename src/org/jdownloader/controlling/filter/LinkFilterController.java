@@ -326,10 +326,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     if (!lgr.checkHoster(link)) {
                         continue;
                     }
-                } catch (NoDownloadLinkException e) {
-                    continue;
-                }
-                try {
                     if (!lgr.checkPluginStatus(link)) {
                         continue;
                     }
@@ -345,6 +341,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     }
                 }
                 if (!lgr.checkSource(link)) {
+                    continue;
+                }
+                if (!lgr.checkFileType(link)) {
                     continue;
                 }
                 matchingFilter = lgr.getRule();
@@ -381,10 +380,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     if (!lgr.checkHoster(link)) {
                         continue;
                     }
-                } catch (NoDownloadLinkException e) {
-                    throw new WTFException();
-                }
-                try {
                     if (!lgr.checkPluginStatus(link)) {
                         continue;
                     }

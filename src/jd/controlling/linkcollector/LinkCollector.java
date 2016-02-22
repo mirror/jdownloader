@@ -1943,7 +1943,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 } catch (final Throwable ignore) {
                 }
-                throw e;
+                if (e instanceof IOException) {
+                    throw (IOException) e;
+                }
+                throw new IOException(e);
             } finally {
                 try {
                     if (zis != null) {
