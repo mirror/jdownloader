@@ -1,5 +1,6 @@
 package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -13,14 +14,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.IO;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaAutoSolver;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.statistics.StatsManager;
-
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,6 +26,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.ThrowingRunnable;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.IO;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaAutoSolver;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.statistics.StatsManager;
 
 public class KeyCaptcha {
     public static enum KeyCaptchaType {
@@ -874,6 +875,21 @@ public class KeyCaptcha {
             key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
         }
 
+        if (marray == null || marray.size() == 0) {
+            marray = new ArrayList<Integer>();
+            String[] points = out.split("\\.");
+            if (points.length % 2 == 0) {
+                for (int i = 0; i < points.length; i += 2) {
+                    int x = Integer.valueOf(points[i]);
+                    int y = Integer.valueOf(points[i + 1]);
+                    Point position = new Point(x, y);
+                    Point randomPoint = new Point();
+                    randomPoint.setLocation(position.x * Math.random(), position.y * Math.random());
+                    marray(marray, randomPoint);
+                    marray(marray, position);
+                }
+            }
+        }
         String cOut = "";
         for (Integer i : marray) {
             if (cOut.length() > 1) {
@@ -891,6 +907,25 @@ public class KeyCaptcha {
             return null;
         }
         return out;
+    }
+
+    private void marray(ArrayList<Integer> mouseArray, Point loc) {
+        if (loc != null) {
+            if (mouseArray.size() == 0) {
+                mouseArray.add(loc.x + 465);
+                mouseArray.add(loc.y + 264);
+            }
+            if (mouseArray.get(mouseArray.size() - 2) != loc.x + 465 || mouseArray.get(mouseArray.size() - 1) != loc.y + 264) {
+                mouseArray.add(loc.x + 465);
+                mouseArray.add(loc.y + 264);
+            }
+            if (mouseArray.size() > 40) {
+                ArrayList<Integer> tmpMouseArray = new ArrayList<Integer>();
+                tmpMouseArray.addAll(mouseArray.subList(2, 40));
+                mouseArray.clear();
+                mouseArray.addAll(tmpMouseArray);
+            }
+        }
     }
 
     public void sendOnMousePressFeedback() {
