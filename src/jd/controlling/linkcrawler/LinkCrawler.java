@@ -1941,7 +1941,9 @@ public class LinkCrawler {
             if (!FilePackage.isDefaultFilePackage(fp)) {
                 fp.remove(link.getDownloadLink());
                 if (link.getDesiredPackageInfo() != null && Boolean.TRUE.equals(link.getDesiredPackageInfo().isAllowInheritance())) {
-                    return link.getDesiredPackageInfo();
+                    if (!fp.hasProperty(PACKAGE_ALLOW_INHERITANCE) || fp.getBooleanProperty(PACKAGE_ALLOW_INHERITANCE, false) == false) {
+                        return link.getDesiredPackageInfo();
+                    }
                 }
                 PackageInfo fpi = null;
                 if (fp.getDownloadDirectory() != null && !fp.getDownloadDirectory().equals(defaultDownloadFolder)) {
