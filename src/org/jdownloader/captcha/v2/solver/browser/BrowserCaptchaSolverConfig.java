@@ -62,10 +62,10 @@ public interface BrowserCaptchaSolverConfig extends ChallengeSolverConfig {
 
     void setGoogleComCookieValueHSID(String s);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-
-    boolean isRecaptcha2Enabled();
-
-    void setRecaptcha2Enabled(boolean b);
+    // @AboutConfig
+    // @DefaultBooleanValue(false)
+    //
+    // boolean isRecaptcha2Enabled();
+    //
+    // void setRecaptcha2Enabled(boolean b);
 }

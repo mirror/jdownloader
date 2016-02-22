@@ -30,6 +30,11 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
     }
 
     @Override
+    public String customizeLinkPropertiesPanelLayout() {
+        return "ins 0 0 0 0";
+    }
+
+    @Override
     public boolean isSpeedmeterAntiAliasingEnabled() {
         return true;
     }

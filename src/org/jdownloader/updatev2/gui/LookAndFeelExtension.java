@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
@@ -340,5 +341,9 @@ public abstract class LookAndFeelExtension implements LAFSettings {
     public abstract void customizeToolbar(JToolBar toolbar);
 
     public abstract void customizeMainTabbedPane(JTabbedPane tabbedPane);
+
+    public abstract String customizeLinkPropertiesPanelLayout();
+
+    public abstract void customizeLinkPropertiesPanel(JPanel downloadPropertiesBasePanel);
 
 }

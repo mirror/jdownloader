@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
@@ -51,8 +52,9 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     }
 
     @Override
-    public JComponent customizeLayoutWrapTitledPanels(JComponent pane) {
-        return pane;
+    public JComponent customizeLayoutWrapTitledPanels(JComponent c) {
+
+        return c;
     }
 
     @Override
@@ -412,6 +414,15 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
 
     @Override
     public void customizeMainTabbedPane(JTabbedPane tabbedPane) {
+    }
+
+    @Override
+    public String customizeLinkPropertiesPanelLayout() {
+        return "ins 3 0 0 0";
+    }
+
+    @Override
+    public void customizeLinkPropertiesPanel(JPanel downloadPropertiesBasePanel) {
     }
 
 }

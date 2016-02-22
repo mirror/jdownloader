@@ -23,7 +23,7 @@ public class DownloadPropertiesBasePanel extends MigPanel {
     private final DownloadLinkPropertiesPanel linkPanel;
 
     public DownloadPropertiesBasePanel(DownloadsTable table2) {
-        super("ins 0", "[grow,fill]", "[grow,fill]");
+        super(LAFOptions.getInstance().getExtension().customizeLinkPropertiesPanelLayout(), "[grow,fill]", "[grow,fill]");
         LAFOptions.getInstance().applyPanelBackground(this);
         pkgPanel = new FilePackagePropertiesPanel();
         linkPanel = new DownloadLinkPropertiesPanel();
@@ -31,6 +31,7 @@ public class DownloadPropertiesBasePanel extends MigPanel {
         add(linkPanel, "hidemode 3");
         pkgPanel.setVisible(false);
         linkPanel.setVisible(false);
+        LAFOptions.getInstance().getExtension().customizeLinkPropertiesPanel(this);
     }
 
     @Override

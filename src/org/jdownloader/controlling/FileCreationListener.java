@@ -7,4 +7,6 @@ public interface FileCreationListener extends EventListener {
 
     void onNewFile(Object caller, File[] fileList);
 
+    void onNewFolder(Object caller, File folder);
+
 }

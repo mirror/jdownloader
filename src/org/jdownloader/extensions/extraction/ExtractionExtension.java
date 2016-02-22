@@ -995,4 +995,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return ret;
     }
 
+    @Override
+    public void onNewFolder(Object caller, File folder) {
+    }
+
 }
