@@ -5943,8 +5943,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader 1 import?" })
     String jd1_import_title();
 
-    @Default(lngs = { "en" }, values = { "Import %s1 packages and %s2 links from JDownloader 1 to" })
+    @Default(lngs = { "en" }, values = { "JDownloader 2 import?" })
+    String jd2_import_title();
+
+    @Default(lngs = { "en" }, values = { "Import %s1 package(s) and %s2 link(s) from JDownloader 1 to" })
     String jd1_import_message(int numberOfPackages, int numberOfLinks);
+
+    @Default(lngs = { "en" }, values = { "Import %s1 package(s) and %s2 link(s) from JDownloader 2 to %s3" })
+    String jd2_import_message(int numberOfPackages, int numberOfLinks, String destination);
 
     @Default(lngs = { "en" }, values = { "EndCaptcha.com" })
     String EndCaptchaSolver_gettypeName_();
