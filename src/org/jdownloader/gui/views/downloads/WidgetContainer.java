@@ -4,6 +4,9 @@ import javax.swing.JComponent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.BasicJDTable;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
@@ -12,16 +15,12 @@ import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.properties.PropertiesScrollPaneInterface;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.BasicJDTable;
-
 public abstract class WidgetContainer extends MigPanel {
-    private DelayedRunnable            propertiesDelayer;
-    private BasicJDTable<AbstractNode> table;
+    private final DelayedRunnable            propertiesDelayer;
+    private final BasicJDTable<AbstractNode> table;
 
     public WidgetContainer(BasicJDTable<AbstractNode> t, final BooleanKeyHandler propertiesToggleHandler) {
         setOpaque(false);
-
         this.table = t;
         propertiesDelayer = new DelayedRunnable(100l, 1000l) {
 
@@ -40,16 +39,12 @@ public abstract class WidgetContainer extends MigPanel {
                             setPropertiesPanelVisible(true);
                         } else {
                             if (createPropertiesPanel().getParent() == null) {
-
                                 return;
                             }
-
                             setPropertiesPanelVisible(false);
-
                         }
                         relayout();
                     }
-
                 };
             }
 
