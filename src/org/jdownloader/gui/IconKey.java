@@ -105,7 +105,7 @@ public class IconKey {
     public static final String ICON_MEDIAPLAYER                 = "mediaplayer";
     public static final String ICON_MINIMIZE                    = "minimize";
     public static final String ICON_UPDATE                      = "update";
-    public static final String ICON_CLOSE_ON                    = "close.on";
+
     public static final String ICON_CHANGELOG                   = "changelog";
     public static final String ICON_MONEY                       = "money";
     public static final String ICON_NETWORK_ERROR               = "network-error";

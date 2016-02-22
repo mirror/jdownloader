@@ -110,8 +110,8 @@ public abstract class AbstractPanelHeader extends MigPanel {
 
         });
 
-        add(options, "height 17!,width 24!");
-        add(bt, "width 17!,height 17!");
+        add(options, "height 17!,width 12!");
+        add(bt, "width 17!,height 12!");
         setText(title);
         setIcon(imageIcon);
 
