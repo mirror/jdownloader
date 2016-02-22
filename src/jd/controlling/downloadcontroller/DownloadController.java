@@ -762,7 +762,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                 } catch (final Throwable ignore) {
                 }
-                throw e;
+                if (e instanceof IOException) {
+                    throw (IOException) e;
+                }
+                throw new IOException(e);
             } finally {
                 try {
                     if (zis != null) {
