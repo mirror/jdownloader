@@ -4312,4 +4312,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.lit_error_occured(), e.getMessage(), e, _GUI.T.lit_close(), null));
         }
     }
+
+    @Override
+    public void onNewFolder(Object caller, File folder) {
+    }
 }

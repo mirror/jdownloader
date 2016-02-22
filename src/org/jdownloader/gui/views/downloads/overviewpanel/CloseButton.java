@@ -1,13 +1,14 @@
 package org.jdownloader.gui.views.downloads.overviewpanel;
 
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.images.IconIO;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
 
 public class CloseButton extends ExtButton {
+
+    private AbstractIcon on;
+    private AbstractIcon off;
 
     public CloseButton(AppAction appAction) {
         super(appAction);
@@ -15,10 +16,12 @@ public class CloseButton extends ExtButton {
         onRollOut();
         setBorderPainted(false);
         setContentAreaFilled(false);
+        on = new AbstractIcon(IconKey.ICON_CLOSE, 10);
+        off = new AbstractIcon(IconKey.ICON_CLOSE_ON, 10);
     }
 
     public void setBounds(int x, int y, int width, int height) {
-        super.setBounds(x + 4, y, width, height);
+        super.setBounds(x, y, width, height);
     }
 
     protected void onReleased() {
@@ -29,7 +32,7 @@ public class CloseButton extends ExtButton {
     private static final long serialVersionUID = 1L;
 
     protected void onRollOut() {
-        setIcon(new AbstractIcon(IconKey.ICON_CLOSE, 10));
+        setIcon(on);
 
     }
 
@@ -37,7 +40,7 @@ public class CloseButton extends ExtButton {
      *
      */
     protected void onRollOver() {
-        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("close", 10), 0.5f));
+        setIcon(off);
 
     }
 }

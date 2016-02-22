@@ -23,7 +23,7 @@ public class LinkgrabberProperties extends MigPanel {
     private final CrawledLinkPropertiesPanel    linkPanel;
 
     public LinkgrabberProperties(LinkGrabberTable table) {
-        super("ins 0", "[grow,fill]", "[grow,fill]");
+        super(LAFOptions.getInstance().getExtension().customizeLinkPropertiesPanelLayout(), "[grow,fill]", "[grow,fill]");
         LAFOptions.getInstance().applyPanelBackground(this);
         pkgPanel = new CrawledPackagePropertiesPanel();
         linkPanel = new CrawledLinkPropertiesPanel();
@@ -31,6 +31,7 @@ public class LinkgrabberProperties extends MigPanel {
         add(linkPanel, "hidemode 3");
         pkgPanel.setVisible(false);
         linkPanel.setVisible(false);
+        LAFOptions.getInstance().getExtension().customizeLinkPropertiesPanel(this);
     }
 
     @Override

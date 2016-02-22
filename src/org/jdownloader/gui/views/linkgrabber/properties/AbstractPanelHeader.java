@@ -26,38 +26,14 @@ public abstract class AbstractPanelHeader extends MigPanel {
     private JLabel    icon;
     private String    labelString;
 
-    // private void updateLabelString() {
-    // if (labelString != null) {
-    // ;
-    // lbl.setText("");
-    // try {
-    // int max = getSize().width - getInsets().left - getInsets().right;
-    // System.out.println(getPreferredSize());
-    // for (Component c : getComponents()) {
-    // if (c != lbl) {
-    // max -= c.getPreferredSize().width + 4;
-    // }
-    // }
-    // Dimension size = lbl.getSize();
-    // String cropped = org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(lbl, lbl.getFontMetrics(getFont()),
-    // labelString, max);
-    // System.out.println(max + " cropped " + size + " - " + cropped);
-    //
-    // lbl.setText(cropped);
-    // } catch (Throwable e) {
-    // // http://www.oracle.com/technetwork/java/faq-sun-packages-142232.html
-    // e.printStackTrace();
-    // lbl.setText(labelString);
-    // }
-    // }
-    // }
-
     protected void setIcon(Icon icon) {
         this.icon.setIcon(icon);
     }
 
     protected void setText(String str) {
+
         labelString = str;
+        lbl.repaint();
 
     }
 

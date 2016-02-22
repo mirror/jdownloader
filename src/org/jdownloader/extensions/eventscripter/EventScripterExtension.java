@@ -785,4 +785,8 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
     }
 
+    @Override
+    public void onNewFolder(Object caller, File folder) {
+    }
+
 }

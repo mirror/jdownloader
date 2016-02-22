@@ -1,12 +1,9 @@
 package org.jdownloader.gui.views.downloads;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Point;
 
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -21,7 +18,7 @@ import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverViewHeader;
 import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 import org.jdownloader.gui.views.downloads.properties.DownloadPropertiesBasePanel;
 import org.jdownloader.gui.views.downloads.properties.DownloadPropertiesHeader;
-import org.jdownloader.gui.views.downloads.properties.PropertiesScrollPane;
+import org.jdownloader.gui.views.downloads.properties.DownloadsPropertiesScrollPane;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -36,7 +33,7 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
      */
     private static final long        serialVersionUID       = 1L;
     private DownloadsTable           table;
-    private PropertiesScrollPane     propertiesPanelScrollPane;
+    private DownloadsPropertiesScrollPane     propertiesPanelScrollPane;
     private boolean                  propertiesPanelVisible = false;
     private OverviewHeaderScrollPane overviewScrollPane;
     private DownloadOverview         overView;
@@ -82,6 +79,34 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
     }
 
     @Override
+    public Component[] getComponents() {
+        return super.getComponents();
+    }
+
+    @Override
+    public int getComponentCount() {
+        return super.getComponentCount();
+    }
+
+    @Override
+    public void removeAll() {
+        System.out.println("RemoveALL");
+        super.removeAll();
+    }
+
+    @Override
+    public Component add(Component comp) {
+        System.out.println("Add");
+        return super.add(comp);
+    }
+
+    @Override
+    public void add(Component comp, Object constraints) {
+        System.out.println("Add");
+        super.add(comp, constraints);
+    }
+
+    @Override
     public void relayout() {
         if (propertiesPanelScrollPane != null) {
             propertiesPanelScrollPane.save();
@@ -97,11 +122,11 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
             if (showProperties) {
                 setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[]"));
 
-                createPropertiesPanel().update(selectedObject);
-
                 add(wrap(createPropertiesPanel()), "");
 
                 add(wrap(getOverView()), "");
+
+                createPropertiesPanel().update(selectedObject);
 
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddTable(tableScrollPane,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddProperties(propertiesPanel,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
@@ -117,15 +142,17 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         } else {
             if (showProperties) {
                 setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[]"));
-                createPropertiesPanel().update(selectedObject);
 
                 add(wrap(createPropertiesPanel()), "");
+                // do this after adding the panels, else a repaint might get lost
+                createPropertiesPanel().update(selectedObject);
 
             } else {
                 setVisible(false);
 
             }
         }
+
         revalidate();
 
         // Container p = getParent();
@@ -203,57 +230,22 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
     // private DownloadPropertiesBasePanel propertiesContentPanel;
 
     public DownloadsPabelWidgetContainer(final DownloadsTable table, CustomizeableActionBar bottomBar) {
+        super(table, CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE);
         this.table = table;
         this.bottomBar = bottomBar;
-
-        final DelayedRunnable propertiesDelayer = new DelayedRunnable(100l, 1000l) {
-
-            @Override
-            public void delayedrun() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        if (table.getSelectedRowCount() > 0) {
-                            setPropertiesPanelVisible(true);
-                        } else {
-                            setPropertiesPanelVisible(false);
-
-                        }
-                        relayout();
-                    }
-                };
-            }
-
-            @Override
-            public String getID() {
-                return "updateDelayer";
-            }
-
-        };
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
-                    return;
-                }
-                propertiesDelayer.run();
-            }
-        });
 
         CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this);
         CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(this);
 
     }
 
-    private PropertiesScrollPane createPropertiesPanel() {
+    protected DownloadsPropertiesScrollPane createPropertiesPanel() {
         if (propertiesPanelScrollPane != null) {
             return propertiesPanelScrollPane;
         }
 
         DownloadPropertiesBasePanel propertiesContentPanel = new DownloadPropertiesBasePanel(table);
-        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(propertiesContentPanel, table);
+        DownloadsPropertiesScrollPane propertiesScrollPane = new DownloadsPropertiesScrollPane(propertiesContentPanel, table);
 
         LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
         propertiesScrollPane.setColumnHeaderView(new DownloadPropertiesHeader(propertiesContentPanel) {

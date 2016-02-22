@@ -4,12 +4,6 @@ import java.awt.Dialog.ModalityType;
 import java.io.File;
 import java.util.List;
 
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
-import jd.plugins.Account;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
@@ -21,6 +15,12 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
+import jd.plugins.Account;
 
 public class AccountLoader implements FileCreationListener {
 
@@ -55,5 +55,9 @@ public class AccountLoader implements FileCreationListener {
                 }
             }
         }
+    }
+
+    @Override
+    public void onNewFolder(Object caller, File folder) {
     }
 }

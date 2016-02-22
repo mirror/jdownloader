@@ -5,16 +5,6 @@ import java.awt.Insets;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorCrawler;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.IconKey;
@@ -23,7 +13,11 @@ import org.jdownloader.gui.views.linkgrabber.properties.AbstractPanelHeader;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class DownloadPropertiesHeader extends AbstractPanelHeader implements LinkCollectorListener {
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
+public class DownloadPropertiesHeader extends AbstractPanelHeader {
 
     protected AbstractNode              current;
     private DownloadPropertiesBasePanel card;
@@ -34,7 +28,7 @@ public class DownloadPropertiesHeader extends AbstractPanelHeader implements Lin
         // setBackground(Color.RED);
         // setOpaque(true);
 
-        LinkCollector.getInstance().getEventsender().addListener(this, true);
+        // LinkCollector.getInstance().getEventsender().addListener(this, true);
 
     }
 
@@ -63,58 +57,58 @@ public class DownloadPropertiesHeader extends AbstractPanelHeader implements Lin
         };
 
     }
-
-    @Override
-    public void onLinkCollectorAbort(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-        if (event.getParameter() == current) {
-            update(current);
-        }
-
-    }
-
-    @Override
-    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-    }
-
-    @Override
-    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-    }
-
-    @Override
-    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
-    }
-
-    @Override
-    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
-    }
-
-    @Override
-    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
-    }
+    //
+    // @Override
+    // public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    // if (event.getParameter() == current) {
+    // update(current);
+    // }
+    //
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    // }
+    //
+    // @Override
+    // public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    // }
+    //
+    // @Override
+    // public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    // }
+    //
+    // @Override
+    // public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    // }
+    //
+    // @Override
+    // public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+    // }
 
     @Override
     protected void onSettings(ExtButton options) {
@@ -131,7 +125,7 @@ public class DownloadPropertiesHeader extends AbstractPanelHeader implements Lin
         pu.show(options, -insets.left, -pu.getPreferredSize().height + insets.bottom);
     }
 
-    @Override
-    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
-    }
+    // @Override
+    // public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+    // }
 }

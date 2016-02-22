@@ -4,12 +4,7 @@ import java.awt.Container;
 import java.awt.Point;
 
 import javax.swing.SwingUtilities;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
-import net.miginfocom.swing.MigLayout;
-
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -26,10 +21,12 @@ import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverViewHeader;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberProperties;
 import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberPropertiesHeader;
-import org.jdownloader.gui.views.linkgrabber.properties.PropertiesScrollPane;
+import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberPropertiesScrollPane;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import net.miginfocom.swing.MigLayout;
 
 public class LinkgrabberWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
 
@@ -46,12 +43,11 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
     }
 
-    private LinkGrabberTable         table;
     private boolean                  propertiesPanelVisible;
     private LinkgrabberOverview      overview;
     private OverviewHeaderScrollPane overviewScrollPane;
     private CustomizeableActionBar   rightBar;
-    private PropertiesScrollPane     propertiesPanelScrollPane;
+    private LinkgrabberPropertiesScrollPane     propertiesPanelScrollPane;
     private CustomizeableActionBar   leftBar;
 
     public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
@@ -71,49 +67,17 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
     }
 
+    @Override
+    public LinkGrabberTable getTable() {
+        return (LinkGrabberTable) super.getTable();
+    }
+
     public LinkgrabberWidgetContainer(final LinkGrabberTable table, CustomizeableActionBar leftBar, CustomizeableActionBar rightBar) {
-        this.table = table;
+        super(table, CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE);
+
         this.rightBar = rightBar;
         this.leftBar = leftBar;
-        final DelayedRunnable propertiesDelayer = new DelayedRunnable(100l, 1000l) {
 
-            @Override
-            public void delayedrun() {
-                System.out.println("-->" + System.currentTimeMillis());
-                // new Exception().printStackTrace();
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        if (table.getSelectedRowCount() > 0) {
-                            setPropertiesPanelVisible(true);
-                        } else {
-                            setPropertiesPanelVisible(false);
-
-                        }
-
-                        relayout();
-                    }
-                };
-            }
-
-            @Override
-            public String getID() {
-                return "updateDelayer";
-            }
-
-        };
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
-                    return;
-                }
-                System.out.println(System.currentTimeMillis());
-                propertiesDelayer.run();
-            }
-        });
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(this);
     }
@@ -131,10 +95,11 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
             // add(Box.createHorizontalGlue());
             if (showProperties) {
                 setLayout(new MigLayout("ins " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + " 0 0 0, wrap 1", "[grow,fill]", "[]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[]"));
-                createPropertiesPanel().update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
                 add(wrap(createPropertiesPanel()), "");
 
                 add(wrap(getOverView()), "");
+                // update after adding the panels. else a repaint might get lost
+                createPropertiesPanel().update(getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()));
 
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddTable(tableScrollPane,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddProperties(propertiesPanel,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
@@ -150,10 +115,11 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
         } else {
             if (showProperties) {
                 setLayout(new MigLayout("ins 2 0 0 0, wrap 1", "[grow,fill]", "[]"));
-                createPropertiesPanel().update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
 
                 add(wrap(createPropertiesPanel()), "");
+                createPropertiesPanel().update(getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()));
 
+                // update after adding the panels. else a repaint might get lost
             } else {
                 setVisible(false);
 
@@ -180,12 +146,12 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
         }
     }
 
-    private PropertiesScrollPane createPropertiesPanel() {
+    protected LinkgrabberPropertiesScrollPane createPropertiesPanel() {
         if (propertiesPanelScrollPane != null) {
             return propertiesPanelScrollPane;
         }
-        final LinkgrabberProperties loverView = new LinkgrabberProperties(table);
-        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table) {
+        final LinkgrabberProperties loverView = new LinkgrabberProperties(getTable());
+        LinkgrabberPropertiesScrollPane propertiesScrollPane = new LinkgrabberPropertiesScrollPane(loverView, getTable()) {
             @Override
             public void setVisible(boolean aFlag) {
                 if (!aFlag) {
@@ -219,7 +185,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
             return overviewScrollPane;
         }
 
-        overview = new LinkgrabberOverview(table);
+        overview = new LinkgrabberOverview(getTable());
         OverviewHeaderScrollPane ret = new OverviewHeaderScrollPane(overview);
         final OverviewHeaderScrollPane finalRet = ret;
         LAFOptions.getInstance().applyPanelBackground(ret);

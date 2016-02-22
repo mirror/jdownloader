@@ -11,16 +11,6 @@ import javax.swing.Box;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkProperty;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageProperty;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -42,6 +32,16 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import net.miginfocom.swing.MigLayout;
+
 public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean>, ExtractionListener {
 
     /**
@@ -55,9 +55,11 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private CustomizeableActionBar    bottomBar;
 
     private WidgetContainer           panelContainer;
+    public static DownloadsPanel      INSTANCE;
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
+        INSTANCE = this;
         tableModel = DownloadsTableModel.getInstance();
         table = new DownloadsTable(tableModel);
         tableScrollPane = new JScrollPane(table);
