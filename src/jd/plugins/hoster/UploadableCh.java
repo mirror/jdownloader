@@ -21,6 +21,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,37 +47,40 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadable.ch" }, urls = { "https?://(?:www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigfile.to" }, urls = { "https?://(?:www\\.)?(uploadable\\.ch|bigfile\\.to)/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
 
     public UploadableCh(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.uploadable.ch/extend.php");
+        this.enablePremium(baseDomain + "/extend.php");
         this.setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.uploadable.ch/terms.php";
+        return baseDomain + "/terms.php";
     }
 
     private static final long   FREE_SIZELIMIT          = 2 * 1073741824l;
     private static final String PREMIUM_UNLIMITEDCHUNKS = "PREMIUM_UNLIMITEDCHUNKS";
     private static final String recaptchaid             = "6LdlJuwSAAAAAPJbPIoUhyqOJd7-yrah5Nhim5S3";
+    private static final String baseDomain              = "https://www.bigfile.to";
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Forced https */
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https?://(?:www\\.)?uploadable\\.ch/", baseDomain + "/"));
     }
 
-    private String getProtocol() {
-        return "https://";
+    @Override
+    public String rewriteHost(final String host) {
+        final String currentHost = getHost();
+        if ("bigfile.to".equals(currentHost)) {
+            if (host == null || "uploadable.ch".equals(host)) {
+                return "bigfile.to";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -103,10 +111,10 @@ public class UploadableCh extends PluginForHost {
                     sb.append(dl.getDownloadURL());
                     sb.append("%0A");
                 }
-                br.postPage(getProtocol() + "www.uploadable.ch/check.php", sb.toString());
+                br.postPage(baseDomain + "/check.php", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String fid = new Regex(dllink.getDownloadURL(), "/file/([A-Za-z0-9]+)$").getMatch(0);
-                    final String linkinfo = br.getRegex("href=\"\">(http://(www\\.)?uploadable\\.ch/file/" + fid + "</a></div>.*?)</li>").getMatch(0);
+                    final String linkinfo = br.getRegex("href=\"\">(https?://(www\\.)?(?:uploadable\\.ch|bigfile\\.to)/file/" + fid + "</a></div>.*?)</li>").getMatch(0);
                     if (linkinfo == null) {
                         logger.warning("Mass-Linkchecker broken");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -131,7 +139,7 @@ public class UploadableCh extends PluginForHost {
     }
 
     private Browser prepBr(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36");
         return br;
     }
 
@@ -173,7 +181,7 @@ public class UploadableCh extends PluginForHost {
             showFreeDialog(getHost());
         }
         br.setFollowRedirects(false);
-        final String directlinkproperty = "uploadabledirectlink";
+        final String directlinkproperty = "directlink";
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -226,7 +234,7 @@ public class UploadableCh extends PluginForHost {
 
             final String reconnect_mins = br.getRegex(">Please wait for (\\d+) minutes  to download the next file").getMatch(0);
             if (reconnect_mins != null) {
-                logger.info("uploadable.ch: Reconnect limit detected");
+                logger.info("Reconnect limit detected");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnect_mins) * 60 * 1001l);
             }
 
@@ -244,7 +252,7 @@ public class UploadableCh extends PluginForHost {
             /* Error-links: http://www.uploadable.ch/l-error.php?error_code=ERRORCODE */
             /* Your download link has expired */
             if (br.containsHTML("error_code=1702")) {
-                downloadLink.setProperty("uploadabledirectlink", null);
+                downloadLink.setProperty("directlink", null);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Your download link has expired'", 1 * 60 * 1000l);
             } else if (br.containsHTML("error_code=1703")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 406", 5 * 60 * 1000l);
@@ -300,8 +308,7 @@ public class UploadableCh extends PluginForHost {
         return dllink;
     }
 
-    private static final String MAINPAGE = "http://uploadable.ch";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings({ "deprecation" })
     private AccountInfo login(final Account account, final boolean force, final AccountInfo ac) throws Exception {
@@ -310,16 +317,16 @@ public class UploadableCh extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBr(this.br);
+                prepBr(br);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 boolean loggedin = false;
                 if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     // lets do a check - this will also avoid unnerving login captchas!
-                    this.br.getPage("https://www.uploadable.ch/indexboard.php");
-                    if (!isNotLoggedIn(this.br, account)) {
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    br.getPage(baseDomain + "/indexboard.php");
+                    if (!isNotLoggedIn(br, account)) {
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         loggedin = true;
                     } else {
                         loggedin = false;
@@ -327,10 +334,10 @@ public class UploadableCh extends PluginForHost {
                 }
                 if (!loggedin) {
                     /* Forced https! */
-                    this.br.getPage("https://www.uploadable.ch/login.php");
-                    Form loginform = this.br.getFormbyProperty("id", "loginForm");
+                    br.getPage(baseDomain + "/login.php");
+                    Form loginform = br.getFormbyProperty("id", "loginForm");
                     if (loginform == null) {
-                        loginform = this.br.getForm(0);
+                        loginform = br.getForm(0);
                     }
                     if (loginform == null) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -349,7 +356,7 @@ public class UploadableCh extends PluginForHost {
                     loginform.remove("autoLogin");
                     loginform.put("autoLogin", "on");
                     if (loginform.hasInputFieldByName("recaptcha_response_field")) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "uploadable.ch", "https://uploadable.ch", true);
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), baseDomain, true);
                         final Recaptcha rc = new Recaptcha(br, this);
                         rc.setId(recaptchaid);
                         rc.load();
@@ -389,7 +396,7 @@ public class UploadableCh extends PluginForHost {
                 ai.setUnlimitedTraffic();
                 account.setValid(true);
 
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
                 if (ac == null) {
                     account.setAccountInfo(ai);
                 }
@@ -417,7 +424,7 @@ public class UploadableCh extends PluginForHost {
 
     private boolean isNotLoggedIn(final Browser br, final Account account) throws IOException, PluginException {
         doesPasswordNeedChanging(br, account);
-        return br.getCookie(MAINPAGE, "autologin") == null || StringUtils.containsIgnoreCase(br.getCookie(MAINPAGE, "autologin"), "deleted") || !br.containsHTML("class=\"icon logout\"");
+        return br.getCookie(getHost(), "autologin") == null || StringUtils.containsIgnoreCase(br.getCookie(getHost(), "autologin"), "deleted") || !br.containsHTML("class=\"icon logout\"");
     }
 
     @SuppressWarnings("deprecation")
@@ -437,20 +444,14 @@ public class UploadableCh extends PluginForHost {
         requestFileInformation(link);
         login(account, false, null);
         if (account.getType() == AccountType.FREE) {
-            this.br.getPage(link.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             doFree(link, account);
         } else {
             br.setFollowRedirects(false);
-            final String directlinkproperty = "uploadabledirectlink_premium";
+            final String directlinkproperty = "directlink_premium";
             String dllink = checkDirectLink(link, directlinkproperty);
             if (dllink == null) {
-                /* This way we don't have to care about the users' "instant download" setting */
-                String postlink = link.getDownloadURL();
-                if (!postlink.contains("http://www.")) {
-                    /* TODO: Check if this is still needed! */
-                    postlink = postlink.replace("http://", getProtocol() + "www.");
-                }
-                br.postPage(postlink, "download=premium");
+                br.postPage(link.getDownloadURL(), "download=premium");
                 /*
                  * Full message: You have exceeded your download limit. Please verify your email address to continue downloading.
                  */
