@@ -74,6 +74,10 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
             }
             String finallink = null;
             for (final String singleLink : links) {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return decryptedLinks;
+                }
                 br.getPage("http://320k.in/index.php?surf=redirect&url=" + singleLink);
                 finallink = decryptSingle(param);
                 if (finallink == null) {
@@ -101,10 +105,6 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
         String finallink = null;
         String captcha = br.getRegex("\"(cap\\.php\\?c=[a-z0-9]+)\"").getMatch(0);
         for (int i = 0; i <= 3; i++) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return null;
-            }
             String code = getCaptchaCode(captcha, param);
             /* Website only accepts uppercase! */
             code = code.toUpperCase();
