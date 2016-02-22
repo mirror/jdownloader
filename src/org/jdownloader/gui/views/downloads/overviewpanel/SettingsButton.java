@@ -1,21 +1,27 @@
 package org.jdownloader.gui.views.downloads.overviewpanel;
 
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.images.IconIO;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 
 public class SettingsButton extends ExtButton {
+
+    private AbstractIcon on;
+    private AbstractIcon off;
 
     public SettingsButton(AppAction appAction) {
         super(appAction);
         setRolloverEffectEnabled(true);
+
+        on = new AbstractIcon(IconKey.ICON_WRENCH, 10);
+        off = new AbstractIcon(IconKey.ICON_WRENCH, 10);
+        off.setAlpha(0.3f);
         onRollOut();
     }
 
     public void setBounds(int x, int y, int width, int height) {
-        super.setBounds(x + 10, y, width, height);
+        super.setBounds(x, y, width, height);
     }
 
     /**
@@ -29,7 +35,7 @@ public class SettingsButton extends ExtButton {
 
     protected void onRollOut() {
         setContentAreaFilled(false);
-        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 10), 0.6f));
+        setIcon(on);
 
     }
 
@@ -37,7 +43,7 @@ public class SettingsButton extends ExtButton {
      *
      */
     protected void onRollOver() {
-        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 10), 0.3f));
+        setIcon(off);
 
     }
 }
