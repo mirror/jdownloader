@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface.Context;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.UIInterface.Context;
 
 public abstract class AbstractMyJDSelectionAction extends CustomizableAppAction {
 

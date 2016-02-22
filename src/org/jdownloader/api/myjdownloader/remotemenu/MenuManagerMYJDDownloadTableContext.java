@@ -3,6 +3,9 @@ package org.jdownloader.api.myjdownloader.remotemenu;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.remoteapi.exceptions.FileNotFound404Exception;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -16,10 +19,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.context.submenu.SettingsMenuContainer;
 import org.jdownloader.myjdownloader.client.bindings.MenuStructure.Type;
-import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface.Context;
-
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.UIInterface.Context;
 
 public class MenuManagerMYJDDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
 
@@ -95,7 +95,7 @@ public class MenuManagerMYJDDownloadTableContext extends ContextMenuManager<File
         final HashMap<String, AbstractMyJDSelectionAction> map = new HashMap<String, AbstractMyJDSelectionAction>();
         new MenuBuilder() {
             protected MyJDMenuItem addContainer(MyJDMenuItem root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                MyJDMenuItem submenu = new MyJDMenuItem(Type.C, null, inst.getName(), inst.getIconKey());
+                MyJDMenuItem submenu = new MyJDMenuItem(Type.CONTAINER, null, inst.getName(), inst.getIconKey());
                 root.add(submenu);
                 return submenu;
             };
@@ -105,9 +105,9 @@ public class MenuManagerMYJDDownloadTableContext extends ContextMenuManager<File
                 if (action != null && action instanceof AbstractMyJDSelectionAction) {
                     if (action != null) {
                         if (action instanceof AbstractMyJDSelectionActionLink) {
-                            root.add(new MyJDMenuItem(Type.L, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
+                            root.add(new MyJDMenuItem(Type.LINK, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
                         } else if (action instanceof AbstractMyJDSelectionAction) {
-                            root.add(new MyJDMenuItem(Type.A, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
+                            root.add(new MyJDMenuItem(Type.ACTION, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
                         }
                     }
                     if (!(action instanceof AbstractMyJDSelectionActionLink)) {
@@ -130,7 +130,7 @@ public class MenuManagerMYJDDownloadTableContext extends ContextMenuManager<File
         MenuContainerRoot internalRoot = getMenuData();
         new MenuBuilder() {
             protected MyJDMenuItem addContainer(MyJDMenuItem root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                MyJDMenuItem submenu = new MyJDMenuItem(Type.C, null, inst.getName(), inst.getIconKey());
+                MyJDMenuItem submenu = new MyJDMenuItem(Type.CONTAINER, null, inst.getName(), inst.getIconKey());
                 root.add(submenu);
                 return submenu;
             };
@@ -140,9 +140,9 @@ public class MenuManagerMYJDDownloadTableContext extends ContextMenuManager<File
                 if (action != null && action instanceof AbstractMyJDSelectionAction) {
                     if (action != null) {
                         if (action instanceof AbstractMyJDSelectionActionLink) {
-                            root.add(new MyJDMenuItem(Type.L, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
+                            root.add(new MyJDMenuItem(Type.LINK, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
                         } else if (action instanceof AbstractMyJDSelectionAction) {
-                            root.add(new MyJDMenuItem(Type.A, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
+                            root.add(new MyJDMenuItem(Type.ACTION, ((AbstractMyJDSelectionAction) action).getID(), inst.getName(), inst.getIconKey()));
                         }
                     }
 

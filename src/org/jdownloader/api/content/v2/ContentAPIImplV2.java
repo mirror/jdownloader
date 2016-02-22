@@ -8,6 +8,8 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
 
+import jd.plugins.FavitIcon;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
@@ -15,10 +17,8 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.APIFileNotFoundException;
 import org.appwork.remoteapi.exceptions.BadRequestException;
-import org.appwork.remoteapi.exceptions.FileNotFound404Exception;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.components.ExtMergedIcon;
@@ -29,40 +29,23 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.api.myjdownloader.remotemenu.MenuManagerMYJDDownloadTableContext;
-import org.jdownloader.api.utils.PackageControllerUtils;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface;
-import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface.Context;
 import org.jdownloader.myjdownloader.client.json.IconDescriptor;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.DownloadLink;
-import jd.plugins.FavitIcon;
-import jd.plugins.FilePackage;
 
 public class ContentAPIImplV2 implements ContentAPIV2 {
 
-    private final String                                        usedByWebInterface = IconKey.ICON_FOLDER_OPEN + IconKey.ICON_DOWNLOADPASSWORD + IconKey.ICON_ADDCONTAINER;
-    private final SimpleMapper                                  mapper;
-    private final HashMap<String, IconDescriptor>               descriptorMap;
-    private PackageControllerUtils<FilePackage, DownloadLink>   downloadList;
-    private PackageControllerUtils<CrawledPackage, CrawledLink> linkgrabber;
+    private final String                          usedByWebInterface = IconKey.ICON_FOLDER_OPEN + IconKey.ICON_DOWNLOADPASSWORD + IconKey.ICON_ADDCONTAINER;
+
+    private final HashMap<String, IconDescriptor> descriptorMap;
 
     public ContentAPIImplV2() {
         RemoteAPIController.validateInterfaces(ContentAPIV2.class, ContentInterface.class);
-        mapper = new SimpleMapper();
         descriptorMap = new HashMap<String, IconDescriptor>();
-        downloadList = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
-        linkgrabber = new PackageControllerUtils<CrawledPackage, CrawledLink>(LinkCollector.getInstance());
     }
 
     public void getFavIcon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws InternalApiException, APIFileNotFoundException {
@@ -247,28 +230,5 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             return new FavitIcon(createIcon(desc.getRsc().get(1), size), DomainInfo.getInstance(desc.getRsc().get(0).getKey()));
         }
         throw new InternalApiException(new Exception("Cannot paint " + JSonStorage.serializeToJson(desc)));
-    }
-
-    @Override
-    public MyJDMenuItem getMenu(RemoteAPIRequest request, Context context) throws InternalApiException, FileNotFound404Exception {
-        switch (context) {
-        case DLC:
-            return MenuManagerMYJDDownloadTableContext.getInstance().getMenuStructure();
-        default:
-            throw new FileNotFound404Exception();
-        }
-
-    }
-
-    @Override
-    public Object invokeAction(RemoteAPIRequest request, Context context, String id, long[] linkIds, long[] packageIds) throws InternalApiException, FileNotFound404Exception {
-        switch (context) {
-        case DLC:
-            SelectionInfo<FilePackage, DownloadLink> selection = downloadList.getSelectionInfo(linkIds, packageIds);
-            return MenuManagerMYJDDownloadTableContext.getInstance().invoke(id, selection, context);
-
-        }
-        return null;
-
     }
 }

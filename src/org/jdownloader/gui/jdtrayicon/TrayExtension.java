@@ -43,6 +43,12 @@ import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
+import jd.plugins.AddonPanel;
+
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -75,13 +81,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainFrameClosingHandler;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-import jd.plugins.AddonPanel;
-
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation>implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
     @Override
     public boolean isHeadlessRunnable() {
         return false;
@@ -163,21 +163,21 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         return true;
     }
 
-    private TrayIconPopup trayIconPopup;
+    private TrayIconPopup                       trayIconPopup;
 
-    private TrayIcon trayIcon;
+    private TrayIcon                            trayIcon;
 
-    private JFrame guiFrame;
+    private JFrame                              guiFrame;
 
-    private TrayIconTooltip trayIconTooltip;
+    private TrayIconTooltip                     trayIconTooltip;
 
-    private TrayMouseAdapter ma;
+    private TrayMouseAdapter                    ma;
 
     private ExtensionConfigPanel<TrayExtension> configPanel;
 
-    private long lastCloseRequest;
+    private long                                lastCloseRequest;
 
-    private boolean asking;
+    private boolean                             asking;
 
     public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
         return configPanel;
@@ -384,11 +384,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             *
+                             * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             *
+                             * 
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             *
+                             * 
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -731,7 +731,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         break main;
                     case TO_TASKBAR:
                         WindowManager.getInstance().setExtendedState(JDGui.getInstance().getMainFrame(), WindowExtendedState.ICONIFIED);
-
                         return;
                     case TO_TRAY:
                         if (SystemTray.isSupported()) {
@@ -757,7 +756,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
         // no special mac handling. the typical mac handling would be close to tray
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest(asked.get()));
-
     }
 
     @Override
