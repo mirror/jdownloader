@@ -16,19 +16,18 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -40,13 +39,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class Grab8Com extends PluginForHost {
+public class Grab8Com extends antiDDoSForHost {
 
     private static final String                            NICE_HOST                      = "grab8.com";
     private static final String                            NICE_HOSTproperty              = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -54,7 +50,7 @@ public class Grab8Com extends PluginForHost {
     private static final String                            NORESUME                       = NICE_HOSTproperty + "NORESUME";
     private static final String                            CLEAR_DOWNLOAD_HISTORY         = "CLEAR_DOWNLOAD_HISTORY";
     private final boolean                                  default_clear_download_history = false;
-    private static final String                            default_premium_page           = "http://p3.grab8.com/2/index.php";
+    private static final String                            default_premium_page           = "http://p5.grab8.com/2/index.php";
 
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME         = true;
@@ -79,14 +75,19 @@ public class Grab8Com extends PluginForHost {
         return "http://grab8.com/";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
-        br.setCookiesExclusive(true);
-        // define custom browser headers and language settings.
-        // br.getHeaders().put("User-Agent", "JDownloader");
-        br.setConnectTimeout(180 * 1000);
-        br.setReadTimeout(180 * 1000);
-        return br;
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setConnectTimeout(180 * 1000);
+            prepBr.setReadTimeout(180 * 1000);
+        }
+        return prepBr;
     }
 
     @Override
@@ -140,24 +141,24 @@ public class Grab8Com extends PluginForHost {
         }
 
         String transferID = link.getStringProperty("transferID", null);
-        this.br = newBrowser();
+        br = new Browser();
         setConstants(account, link);
-        this.login(false);
+        login(false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             br.setFollowRedirects(true);
-            br.getPage("http://grab8.com/member/index.php");
-            currTransloadPage = br.getRegex("<b>Your Premium Page is at: </b><a href=(?:\\'|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)(?:\\'|\")").getMatch(0);
+            getPage("http://grab8.com/member/index.php");
+            currTransloadPage = br.getRegex("<b>Your Premium Page is at: </b><a href=('|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)\\1").getMatch(1);
             if (currTransloadPage == null) {
                 logger.warning("Transloadpage is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Save this for later usage! */
             link.setProperty("premiumPage", currTransloadPage);
-            br.getPage(currTransloadPage);
+            getPage(currTransloadPage);
             dllink = br.getBaseURL();
             br.setFollowRedirects(true);
-            this.postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
             final Form transloadform = br.getFormbyKey("saveto");
             if (transloadform != null) {
                 logger.info("Found transloadform --> Submitting it");
@@ -281,7 +282,7 @@ public class Grab8Com extends PluginForHost {
         try {
             /* We can skip this first step and directly confirm that we want to delete that file. */
             // br.postPage(premiumPage, "act=delete&files%5B%5D=" + transferID);
-            br.postPage(currTransloadPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
+            postPage(currTransloadPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
             success = true;
         } catch (final Throwable e) {
         }
@@ -321,10 +322,11 @@ public class Grab8Com extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        this.br = newBrowser();
+        br = new Browser();
         final AccountInfo ai = new AccountInfo();
         login(true);
-        br.getPage("/member/index.php");
+        br.setFollowRedirects(true);
+        getPage("/index.php");
         final String expire = br.getRegex(">Your account will expire on[^\r\n]+(\\d{2}-\\d{2}-\\d{4})</span>").getMatch(0);
         if (expire != null) {
             account.setType(AccountType.PREMIUM);
@@ -377,9 +379,11 @@ public class Grab8Com extends PluginForHost {
     /**
      * IMPORTANT: If a users' account gets banned, their servers will return the exact same message as if the user entered invalid login
      * data - there is no way to differ between these two states!
+     *
+     * @throws Exception
      */
     @SuppressWarnings("unchecked")
-    private void login(final boolean force) throws IOException, PluginException {
+    private void login(final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -400,8 +404,16 @@ public class Grab8Com extends PluginForHost {
                         return;
                     }
                 }
-                this.getAPISafe("http://grab8.com/member/");
-                postAPISafe("/member/login.php", "action=login&user=" + Encoding.urlEncode(currAcc.getUser()) + "&pass=" + Encoding.urlEncode(currAcc.getPass()));
+                // some login routines have captcha
+                getAPISafe(default_premium_page);
+                // find the form
+                final Form login = br.getFormByInputFieldKeyValue("user", "Username");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.put("user", Encoding.urlEncode(currAcc.getUser()));
+                login.put("pass", Encoding.urlEncode(currAcc.getPass()));
+                submitFormAPISafe(login);
                 final String pass_cookie = br.getCookie(NICE_HOST, "pass");
                 if (pass_cookie == null || pass_cookie.equals("NULL")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -410,15 +422,9 @@ public class Grab8Com extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(NICE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 currAcc.setProperty("name", Encoding.urlEncode(currAcc.getUser()));
                 currAcc.setProperty("pass", Encoding.urlEncode(currAcc.getPass()));
-                currAcc.setProperty("cookies", cookies);
+                currAcc.setProperty("cookies", fetchCookies(NICE_HOST));
             } catch (final PluginException e) {
                 currAcc.setProperty("cookies", Property.NULL);
                 throw e;
@@ -442,22 +448,22 @@ public class Grab8Com extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
-        br.getPage(accesslink);
+    private void getAPISafe(final String accesslink) throws Exception {
+        getPage(accesslink);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(br);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        br.postPage(accesslink, postdata);
+    private void postAPISafe(final String accesslink, final String postdata) throws Exception {
+        postPage(accesslink, postdata);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(br);
     }
 
     private void submitFormAPISafe(final Form form) throws Exception {
-        br.submitForm(form);
+        submitForm(form);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(br);
     }
 
     /**
@@ -532,7 +538,6 @@ public class Grab8Com extends PluginForHost {
      */
     private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
