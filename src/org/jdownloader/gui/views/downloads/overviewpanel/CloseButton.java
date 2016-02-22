@@ -9,8 +9,8 @@ import org.jdownloader.images.AbstractIcon;
 
 public class CloseButton extends ExtButton {
 
-    private Icon         on;
-    private AbstractIcon off;
+    private final Icon         on;
+    private final AbstractIcon off;
 
     public CloseButton(AppAction appAction) {
         super(appAction);
@@ -18,7 +18,6 @@ public class CloseButton extends ExtButton {
         onRollOut();
         setBorderPainted(false);
         setContentAreaFilled(false);
-
         on = new AbstractIcon(IconKey.ICON_CLOSE, 10);
         off = new AbstractIcon(IconKey.ICON_CLOSE, 10);
         off.setAlpha(0.3f);
@@ -31,21 +30,15 @@ public class CloseButton extends ExtButton {
 
     protected void onReleased() {
         onRollOut();
-
     }
 
     private static final long serialVersionUID = 1L;
 
     protected void onRollOut() {
         setIcon(on);
-
     }
 
-    /**
-     *
-     */
     protected void onRollOver() {
         setIcon(off);
-
     }
 }

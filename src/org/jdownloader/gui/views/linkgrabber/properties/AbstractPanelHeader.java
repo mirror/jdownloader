@@ -20,21 +20,19 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class AbstractPanelHeader extends MigPanel {
-    private JButton   bt;
-    private ExtButton options;
-    private JLabel    lbl;
-    private JLabel    icon;
-    private String    labelString;
+    private final JButton   bt;
+    private final ExtButton options;
+    private final JLabel    lbl;
+    private final JLabel    icon;
+    private String          labelString;
 
     protected void setIcon(Icon icon) {
         this.icon.setIcon(icon);
     }
 
     protected void setText(String str) {
-
         labelString = str;
         lbl.repaint();
-
     }
 
     private JTableHeader tableHeader;
@@ -60,10 +58,8 @@ public abstract class AbstractPanelHeader extends MigPanel {
 
             @Override
             public String getText() {
-
                 if (labelString != null && paint) {
-                    String pref = org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this, getFontMetrics(getFont()), labelString, getWidth());
-
+                    final String pref = org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this, getFontMetrics(getFont()), labelString, getWidth());
                     return pref;
                 }
                 return "";
@@ -80,14 +76,10 @@ public abstract class AbstractPanelHeader extends MigPanel {
 
             }
         });
-
         add(icon = new JLabel(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16)), "gapleft 1");
         add(lbl, "height 17!, wmax 100% - 61px");
-
         options = new SettingsButton(new AppAction() {
             {
-                //
-
                 setTooltipText(_GUI.T.AbstractPanelHeader_AbstractPanelHeader_settings_tt());
             }
 
@@ -96,25 +88,19 @@ public abstract class AbstractPanelHeader extends MigPanel {
                 onSettings(options);
             }
         });
-
         SwingUtils.setOpaque(lbl, false);
-
         setOpaque(false);
-
         bt = new CloseButton(new AppAction() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 onCloseAction();
             }
-
         });
-
         add(options, "height 17!,width 12!");
         add(bt, "width 17!,height 12!");
         setText(title);
         setIcon(imageIcon);
-
     }
 
     abstract protected void onSettings(ExtButton options);
