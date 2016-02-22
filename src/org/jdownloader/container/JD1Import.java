@@ -13,17 +13,6 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.HexInputStream;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-
 import jd.config.DatabaseConnector;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -36,6 +25,17 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.HexInputStream;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 public class JD1Import extends PluginsC {
 
     public JD1Import() {
@@ -44,7 +44,7 @@ public class JD1Import extends PluginsC {
 
     @SuppressWarnings("unchecked")
     public ContainerStatus callDecryption(File jdcFile) {
-        ContainerStatus cs = new ContainerStatus(jdcFile);
+        final ContainerStatus cs = new ContainerStatus(jdcFile);
         cls = new ArrayList<CrawledLink>();
         FileInputStream fis = null;
         try {
@@ -81,6 +81,10 @@ public class JD1Import extends PluginsC {
                     try {
                         int links = 0;
                         for (final FilePackage p : packages) {
+                            p.getUniqueID().refresh();
+                            for (final DownloadLink downloadLink : p.getChildren()) {
+                                downloadLink.getUniqueID().refresh();
+                            }
                             links += p.size();
                         }
                         final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd1_import_title(), _GUI.T.jd1_import_message(packages.size(), links), new AbstractIcon(IconKey.ICON_QUESTION, 16), _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_title(), _GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()) {
@@ -91,8 +95,7 @@ public class JD1Import extends PluginsC {
                         };
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                         final LinkedList<FilePackage> fps = new LinkedList<FilePackage>(packages);
-                        DownloadController.getInstance().preProcessFilePackages(fps, true);
-                        DownloadController.getInstance().addAll(fps);
+                        DownloadController.getInstance().importList(fps);
                         cs.setStatus(ContainerStatus.STATUS_FINISHED);
                         return cs;
                     } catch (DialogNoAnswerException e) {

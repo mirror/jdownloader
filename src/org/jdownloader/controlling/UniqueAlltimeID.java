@@ -7,6 +7,10 @@ public class UniqueAlltimeID {
     private long                    id;
 
     public UniqueAlltimeID() {
+        this.id = createUniqueAlltimeID();
+    }
+
+    private static long createUniqueAlltimeID() {
         long id = -1;
         while (true) {
             final long lastID = ID.get();
@@ -19,11 +23,9 @@ public class UniqueAlltimeID {
                 id = id + 1;
             }
             if (ID.compareAndSet(lastID, id)) {
-                this.id = id;
-                break;
+                return id;
             }
         }
-
     }
 
     public UniqueAlltimeID(long id2) {
@@ -69,7 +71,14 @@ public class UniqueAlltimeID {
         this.id = ID;
     }
 
+    /**
+     * WARNING: by manually refreshing the ID you can break unique state of this Instance!
+     */
+    public void refresh() {
+        this.setID(createUniqueAlltimeID());
+    }
+
     public static String create() {
-        return Long.toString(ID.incrementAndGet());
+        return Long.toString(createUniqueAlltimeID());
     }
 }

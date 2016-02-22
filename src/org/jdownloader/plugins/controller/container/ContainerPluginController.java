@@ -8,7 +8,6 @@ import jd.plugins.PluginsC;
 
 import org.appwork.utils.Regex;
 
-
 public class ContainerPluginController {
 
     private static final ContainerPluginController INSTANCE = new ContainerPluginController();
@@ -37,6 +36,11 @@ public class ContainerPluginController {
         }
         try {
             plugins.add(new org.jdownloader.container.AMZ());
+        } catch (final Throwable e) {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+        }
+        try {
+            plugins.add(new org.jdownloader.container.JD2Import());
         } catch (final Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }

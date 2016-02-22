@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1494,7 +1495,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             protected Void run() throws RuntimeException {
-                ArrayList<File> availableCollectorLists = findAvailableCollectorLists();
+                final ArrayList<File> availableCollectorLists = findAvailableCollectorLists();
                 if (JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) {
                     LinkedList<CrawledPackage> lpackages = null;
                     final HashMap<CrawledPackage, CrawledPackageStorable> restoreMap = new HashMap<CrawledPackage, CrawledPackageStorable>();
@@ -1525,78 +1526,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                     /* add loaded Packages to this controller */
                     try {
-                        preProcessCrawledPackages(lpackages);
-                        try {
-                            writeLock();
-                            for (final CrawledPackage filePackage : lpackages) {
-                                for (final CrawledLink link : filePackage.getChildren()) {
-                                    if (link.getDownloadLink() != null) {
-                                        /* set CrawledLink as changeListener to its DownloadLink */
-                                        link.getDownloadLink().setNodeChangeListener(link);
-                                    }
-                                }
-                                filePackage.setControlledBy(LinkCollector.this);
-                                CrawledPackageStorable storable = restoreMap.get(filePackage);
-                                switch (filePackage.getType()) {
-                                case NORMAL:
-                                    if (storable.getPackageID() != null) {
-                                        final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(storable.getPackageID());
-                                        if (packageID != null) {
-                                            packageMap.put(packageID, filePackage);
-                                        }
-                                    }
-                                    break;
-                                case VARIOUS:
-                                    if (variousPackage == null) {
-                                        variousPackage = filePackage;
-                                    }
-                                    for (final CrawledLinkStorable link : storable.getLinks()) {
-                                        final String id = link.getID();
-                                        if (id != null) {
-                                            final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
-                                            if (packageID != null) {
-                                                final List<CrawledLink> list = getIdentifiedMap(packageID, variousMap);
-                                                list.add(link._getCrawledLink());
-                                            }
-                                        }
-                                    }
-                                    break;
-                                case OFFLINE:
-                                    if (offlinePackage == null) {
-                                        offlinePackage = filePackage;
-                                    }
-                                    for (final CrawledLinkStorable link : storable.getLinks()) {
-                                        final String id = link.getID();
-                                        if (id != null) {
-                                            final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
-                                            if (packageID != null) {
-                                                final List<CrawledLink> list = getIdentifiedMap(packageID, offlineMap);
-                                                list.add(link._getCrawledLink());
-                                            }
-                                        }
-                                    }
-                                    break;
-                                case POFFLINE:
-                                    if (permanentofflinePackage == null) {
-                                        permanentofflinePackage = filePackage;
-                                    }
-                                    break;
-                                }
-                            }
-                            updateUniqueAlltimeIDMaps(lpackages);
-                            for (final CrawledPackage filePackage : lpackages) {
-                                for (final CrawledLink link : filePackage.getChildren()) {
-                                    putCrawledLinkByLinkID(link.getLinkID(), link);
-                                }
-                            }
-                            packages.addAll(0, lpackages);
-                        } finally {
-                            writeUnlock();
-                        }
-                        final long version = backendChanged.incrementAndGet();
-                        childrenChanged.set(version);
-                        structureChanged.set(version);
-                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
+                        importList(lpackages, restoreMap);
                     } catch (final Throwable e) {
                         if (loadedList != null) {
                             final File renameTo = new File(loadedList.getAbsolutePath() + ".backup");
@@ -1619,6 +1549,90 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 } else {
                     CRAWLERLIST_LOADED.setReached();
+                }
+                return null;
+            }
+        });
+    }
+
+    public void importList(final LinkedList<CrawledPackage> lpackages, final Map<CrawledPackage, CrawledPackageStorable> restoreMap) {
+        QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                if (lpackages != null && restoreMap != null) {
+                    preProcessCrawledPackages(lpackages);
+                    try {
+                        writeLock();
+                        for (final CrawledPackage filePackage : lpackages) {
+                            for (final CrawledLink link : filePackage.getChildren()) {
+                                if (link.getDownloadLink() != null) {
+                                    /* set CrawledLink as changeListener to its DownloadLink */
+                                    link.getDownloadLink().setNodeChangeListener(link);
+                                }
+                            }
+                            filePackage.setControlledBy(LinkCollector.this);
+                            final CrawledPackageStorable storable = restoreMap.get(filePackage);
+                            switch (filePackage.getType()) {
+                            case NORMAL:
+                                if (storable.getPackageID() != null) {
+                                    final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(storable.getPackageID());
+                                    if (packageID != null) {
+                                        packageMap.put(packageID, filePackage);
+                                    }
+                                }
+                                break;
+                            case VARIOUS:
+                                if (variousPackage == null) {
+                                    variousPackage = filePackage;
+                                }
+                                for (final CrawledLinkStorable link : storable.getLinks()) {
+                                    final String id = link.getID();
+                                    if (id != null) {
+                                        final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
+                                        if (packageID != null) {
+                                            final List<CrawledLink> list = getIdentifiedMap(packageID, variousMap);
+                                            list.add(link._getCrawledLink());
+                                        }
+                                    }
+                                }
+                                break;
+                            case OFFLINE:
+                                if (offlinePackage == null) {
+                                    offlinePackage = filePackage;
+                                }
+                                for (final CrawledLinkStorable link : storable.getLinks()) {
+                                    final String id = link.getID();
+                                    if (id != null) {
+                                        final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
+                                        if (packageID != null) {
+                                            final List<CrawledLink> list = getIdentifiedMap(packageID, offlineMap);
+                                            list.add(link._getCrawledLink());
+                                        }
+                                    }
+                                }
+                                break;
+                            case POFFLINE:
+                                if (permanentofflinePackage == null) {
+                                    permanentofflinePackage = filePackage;
+                                }
+                                break;
+                            }
+                        }
+                        updateUniqueAlltimeIDMaps(lpackages);
+                        for (final CrawledPackage filePackage : lpackages) {
+                            for (final CrawledLink link : filePackage.getChildren()) {
+                                putCrawledLinkByLinkID(link.getLinkID(), link);
+                            }
+                        }
+                        packages.addAll(0, lpackages);
+                    } finally {
+                        writeUnlock();
+                    }
+                    final long version = backendChanged.incrementAndGet();
+                    childrenChanged.set(version);
+                    structureChanged.set(version);
+                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
                 }
                 return null;
             }
@@ -1741,6 +1755,28 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private LinkedList<CrawledPackage> load(File file, HashMap<CrawledPackage, CrawledPackageStorable> restoreMap) {
+        try {
+            return loadFile(file, restoreMap);
+        } catch (Throwable e) {
+            final File renameTo = new File(file.getAbsolutePath() + ".backup");
+            boolean backup = false;
+            try {
+                if (file.exists()) {
+                    if (file.renameTo(renameTo) == false) {
+                        IO.copyFile(file, renameTo);
+                    }
+                    backup = true;
+                }
+            } catch (final Throwable e2) {
+                logger.log(e2);
+            }
+            logger.severe("Could backup " + file + " to " + renameTo + " ->" + backup);
+            logger.log(e);
+        }
+        return null;
+    }
+
+    public LinkedList<CrawledPackage> loadFile(File file, Map<CrawledPackage, CrawledPackageStorable> restoreMap) throws IOException {
         LinkedList<CrawledPackage> ret = null;
         if (file != null && file.exists()) {
             FileInputStream fis = null;
@@ -1905,22 +1941,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         fis.close();
                         fis = null;
                     }
-                } catch (final Throwable e2) {
+                } catch (final Throwable ignore) {
                 }
-                final File renameTo = new File(file.getAbsolutePath() + ".backup");
-                boolean backup = false;
-                try {
-                    if (file.exists()) {
-                        if (file.renameTo(renameTo) == false) {
-                            IO.copyFile(file, renameTo);
-                        }
-                        backup = true;
-                    }
-                } catch (final Throwable e2) {
-                    logger.log(e2);
-                }
-                logger.severe("Could backup " + file + " to " + renameTo + " ->" + backup);
-                logger.log(e);
+                throw e;
             } finally {
                 try {
                     if (zis != null) {
@@ -1928,7 +1951,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     } else if (fis != null) {
                         fis.close();
                     }
-                } catch (final Throwable e2) {
+                } catch (final Throwable ignore) {
                 }
             }
         }
