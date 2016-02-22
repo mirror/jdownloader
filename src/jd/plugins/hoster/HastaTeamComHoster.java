@@ -63,12 +63,14 @@ public class HastaTeamComHoster extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account!");
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -76,7 +78,9 @@ public class HastaTeamComHoster extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -88,12 +92,16 @@ public class HastaTeamComHoster extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
-                br.getPage("http://www.hastateam.com/forum/ucp.php?mode=login");
+                br.setFollowRedirects(true);
+                br.getPage("http://hastateam.com/forum/ucp.php?mode=login");
                 final String sid = br.getCookie(MAINPAGE, "phpbb3_2wzg9_sid");
-                if (sid == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.postPage("http://www.hastateam.com/forum/ucp.php?mode=login&sid=", "redirect=index.php&login=Login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&autologin=on&sid=" + sid);
-                if (br.getCookie(MAINPAGE, "phpbb3_2wzg9_k") == null || br.getCookie(MAINPAGE, "phpbb3_2wzg9_k").equals("")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (sid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.postPage("/forum/ucp.php?mode=login&sid=", "redirect=index.php&login=Login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&autologin=on&sid=" + sid);
+                if (br.getCookie(MAINPAGE, "phpbb3_2wzg9_k") == null || br.getCookie(MAINPAGE, "phpbb3_2wzg9_k").equals("")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);

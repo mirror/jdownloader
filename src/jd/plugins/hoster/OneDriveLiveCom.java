@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -69,14 +68,10 @@ public class OneDriveLiveCom extends PluginForHost {
         if (isCompleteFolder(link)) {
             /* Case is not yet present */
         } else {
-            try {
-                jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional_data);
-            } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
-                    link.getLinkStatus().setStatusText("Server error 500");
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                throw e;
+            jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional_data);
+            if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
+                link.getLinkStatus().setStatusText("Server error 500");
+                return AvailableStatus.UNCHECKABLE;
             }
             if (br.containsHTML("\"code\":154")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -108,16 +103,11 @@ public class OneDriveLiveCom extends PluginForHost {
             // resume = false;
             // maxchunks = 1;
             /* Only registered users can download all files of folders as .zip file */
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
 
         }
+        /* This header is especially important for smaller files! See DirectHTTP Host Plugin. */
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
