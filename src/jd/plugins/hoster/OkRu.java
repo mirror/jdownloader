@@ -45,13 +45,14 @@ public class OkRu extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+    private static final String  default_Extension   = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private static final boolean free_resume         = true;
+    private static final int     free_maxchunks      = 0;
+    private static final int     free_maxdownloads   = -1;
 
-    private String               dllink            = null;
+    private String               dllink              = null;
+    private boolean              download_impossible = false;
 
     public static void prepBR(final Browser br) {
         /* Use mobile website to get http urls. */
@@ -64,6 +65,7 @@ public class OkRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
+        download_impossible = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         final String mainlink = downloadLink.getStringProperty("mainlink", null);
@@ -79,11 +81,19 @@ public class OkRu extends PluginForHost {
         if (filename == null) {
             filename = new Regex(mainlink, "(\\d+)$").getMatch(0);
         }
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.trim();
+        filename = encodeUnicode(filename);
+        if (br.containsHTML("class=\"fierr\"")) {
+            downloadLink.setName(filename + ".flv");
+            download_impossible = true;
+            return AvailableStatus.TRUE;
+        }
         dllink = br.getRegex("embedVPlayer\\(this,\\&#39;(http[^<>\"]*?)\\&#39;,\\&#39;").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("data\\-embedclass=\"yt_layer\" data\\-objid=\"\\d+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -92,9 +102,6 @@ public class OkRu extends PluginForHost {
             /* Always prefer highest quality available */
             dllink = dllink.replace(url_quality, "st.mq=5");
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -120,13 +127,13 @@ public class OkRu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     public static boolean isOffline(final Browser br) throws IOException {
@@ -153,7 +160,7 @@ public class OkRu extends PluginForHost {
             // mobile page .... get standard browser
             br2.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
             br2.getPage("http://ok.ru/video/" + vid);
-            if (br2.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<")) {
+            if (br2.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<|>Group, where this video was posted, has not been found")) {
                 return true;
             }
         }
@@ -168,6 +175,9 @@ public class OkRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (download_impossible) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible", 3 * 60 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

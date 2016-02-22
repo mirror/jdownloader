@@ -36,7 +36,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 // Altes Decrypterplugin bis Revision 14394
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/.+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "fromDecrypter://(?:www\\.)?myvideo\\.(?:de|at)/.+" }, flags = { 32 })
 public class MyVideo extends PluginForHost {
 
     private String               CLIPURL         = null;

@@ -351,6 +351,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
+        br.setAllowedResponseCodes(500);
     }
 
     /* TODO: Once it breaks down next time: Simply make a hashMap that contains the needed post data... */
@@ -367,17 +368,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         } else {
             data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(id) + additional;
             boolean failed = false;
-            try {
-                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=unauth&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
-            } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
-                    failed = true;
-                } else {
-                    throw e;
-                }
-            }
+            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=unauth&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
             /* Maybe the folder is empty but we can move one up and get its contents... */
-            if (failed || getLinktext(br) == null) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 500 || getLinktext(br) == null) {
                 br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
                 final String parentID = getJson("parentId", br.toString());
                 if (parentID != null) {

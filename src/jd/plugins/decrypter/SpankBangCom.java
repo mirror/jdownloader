@@ -72,7 +72,12 @@ public class SpankBangCom extends antiDDoSForDecrypt {
             String title = br.getRegex("<title>([^<>\"]*?) \\- SpankBang</title>").getMatch(0);
             final String fid = new Regex(parameter, "spankbang\\.com/([a-z0-9]+)/video/").getMatch(0);
             final String streamkey = br.getRegex("var stream_key  = \\'([^<>\"]*?)\\'").getMatch(0);
-            final String[] qualities = br.getRegex("class=\"q_(\\d+p)\"").getColumn(0);
+            String[] qualities = br.getRegex("class=\"q_(\\d+p)\"").getColumn(0);
+            if (qualities == null || qualities.length == 0) {
+                /* Maybe we only have 1 quality. */
+                qualities = new String[1];
+                qualities[0] = "480p";
+            }
             if (qualities == null || qualities.length == 0 || streamkey == null || title == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

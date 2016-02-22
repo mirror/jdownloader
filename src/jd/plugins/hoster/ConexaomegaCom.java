@@ -63,7 +63,7 @@ public class ConexaomegaCom extends PluginForHost {
         return 20;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     private boolean login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -109,6 +109,7 @@ public class ConexaomegaCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
@@ -127,15 +128,15 @@ public class ConexaomegaCom extends PluginForHost {
         // check if account is valid
         br.getPage("http://www.conexaomega.com/gerador");
         final String expireDays = br.getRegex(">Seu plano expira em (\\d+) dias\\.</strong>").getMatch(0);
-        if (expireDays == null) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+        if (expireDays != null) {
+            ac.setStatus("Premium Account");
+            ac.setUnlimitedTraffic();
+            ac.setValidUntil(System.currentTimeMillis() + Long.parseLong(expireDays) * 24 * 60 * 60 * 1000);
+        } else {
+            /* Accept free accounts but it's impossible to download with them! */
+            ac.setStatus("Free Account");
+            ac.setTrafficLeft(0);
         }
-
-        ac.setUnlimitedTraffic();
 
         // now let's get a list of all supported hosts:
         br.getPage("http://www.conexaomega.com/");
@@ -147,7 +148,6 @@ public class ConexaomegaCom extends PluginForHost {
             }
         }
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Account valid");
         return ac;
     }
 
