@@ -1,7 +1,10 @@
 package org.jdownloader.images;
 
+import java.awt.AlphaComposite;
 import java.awt.Component;
+import java.awt.Composite;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import javax.swing.Icon;
 
@@ -24,6 +27,15 @@ public class AbstractIcon implements Icon, IDIcon {
     private int       width  = -1;
     private int       height = 1;
     private boolean   autoDisabledIconEnabled;
+    private Composite composite;
+
+    public Composite getComposite() {
+        return composite;
+    }
+
+    public void setComposite(Composite composite) {
+        this.composite = composite;
+    }
 
     public AbstractIcon(String key, int size) {
         this.key = key;
@@ -61,10 +73,21 @@ public class AbstractIcon implements Icon, IDIcon {
             width = icon.getIconWidth();
             height = icon.getIconHeight();
         }
-        if (c != null && !c.isEnabled() && isAutoDisabledIconEnabled()) {
-            org.jdownloader.images.NewTheme.I().getDisabledIcon(icon).paintIcon(c, g, x, y);
-        } else {
-            icon.paintIcon(c, g, x, y);
+        Composite old = null;
+        if (composite != null) {
+            old = ((Graphics2D) g).getComposite();
+            ((Graphics2D) g).setComposite(composite);
+        }
+        try {
+            if (c != null && !c.isEnabled() && isAutoDisabledIconEnabled()) {
+                org.jdownloader.images.NewTheme.I().getDisabledIcon(icon).paintIcon(c, g, x, y);
+            } else {
+                icon.paintIcon(c, g, x, y);
+            }
+        } finally {
+            if (composite != null) {
+                ((Graphics2D) g).setComposite(old);
+            }
         }
     }
 
@@ -91,6 +114,10 @@ public class AbstractIcon implements Icon, IDIcon {
 
     public boolean isAutoDisabledIconEnabled() {
         return autoDisabledIconEnabled;
+    }
+
+    public void setAlpha(float f) {
+        setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, f));
     }
 
 }
