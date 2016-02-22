@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -73,7 +72,7 @@ public class MydirtyhobbyCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         premiumonly = false;
         serverissues = false;
@@ -100,6 +99,7 @@ public class MydirtyhobbyCom extends PluginForHost {
             premiumonly = true;
             return AvailableStatus.TRUE;
         }
+        this.login(aa, false);
         dllink = this.br.getRegex("data\\-(?:flv|mp4)=\"(https?://[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) {
             dllink = this.br.getRegex("\"(https?://[^<>\"\\']+\\.flv[^<>\"\\']+)\"").getMatch(0);
@@ -234,7 +234,6 @@ public class MydirtyhobbyCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getDownloadURL());
         if (premiumonly) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (dllink == null) {

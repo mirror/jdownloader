@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
@@ -27,13 +25,13 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -442,48 +440,20 @@ public class SendspaceCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        SESSIONTOKEN = account.getStringProperty("sessiontoken", null);
-                        SESSIONKEY = account.getStringProperty("sessionkey", null);
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    SESSIONTOKEN = account.getStringProperty("sessiontoken", null);
+                    SESSIONKEY = account.getStringProperty("sessionkey", null);
+                    return;
                 }
                 createSessToken();
                 apiLogin(account.getUser(), account.getPass());
-                if ("Lite".equals(get("membership_type"))) {
-                    logger.info("This is a free account, JDownloader doesn't support sendspace.com free accounts!");
-                    final String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
                 account.setProperty("sessiontoken", SESSIONTOKEN);
                 account.setProperty("sessionkey", SESSIONKEY);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 account.setProperty("sessiontoken", Property.NULL);
                 account.setProperty("sessionkey", Property.NULL);
                 throw e;
@@ -491,8 +461,9 @@ public class SendspaceCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
@@ -501,28 +472,37 @@ public class SendspaceCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String left = get("bandwidth_left");
-        if (left != null) {
-            ai.setTrafficLeft(Long.parseLong(left));
+        if ("Lite".equals(get("membership_type"))) {
+            /* Users can't really do anything with free accounts. */
+            account.setConcurrentUsePossible(false);
+            ai.setTrafficLeft(0);
         } else {
-            apiFailure("bandwidth_left");
-            account.setValid(false);
-            return ai;
-        }
-        final String expires = get("membership_ends");
-        if (expires != null) {
-            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expires));
-        } else {
-            apiFailure("membership_ends");
-            account.setValid(false);
-            return ai;
+            account.setType(AccountType.PREMIUM);
+            account.setConcurrentUsePossible(true);
+            final String expires = get("membership_ends");
+            if (expires != null) {
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expires));
+            } else {
+                apiFailure("membership_ends");
+                account.setValid(false);
+                return ai;
+            }
+            final String left = get("bandwidth_left");
+            if (left != null) {
+                ai.setTrafficLeft(Long.parseLong(left));
+            } else {
+                apiFailure("bandwidth_left");
+                account.setValid(false);
+                return ai;
+            }
         }
         String spaceUsed = get("diskspace_used");
         if (spaceUsed != null) {
             if (spaceUsed.equals("")) {
-                spaceUsed = "0";
+                ai.setUsedSpace(0);
+            } else {
+                ai.setUsedSpace(Long.parseLong(spaceUsed));
             }
-            ai.setUsedSpace(Long.parseLong(spaceUsed));
         }
         ai.setStatus("Account type: " + get("membership_type"));
         account.setValid(true);
@@ -588,12 +568,16 @@ public class SendspaceCom extends PluginForHost {
             switch (error) {
             case 5:
                 logger.warning("API_ERROR_BAD_API_VERSION");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 6:
                 logger.warning("API_ERROR_SESSION_BAD");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 7:
                 logger.warning("Session not authenticated");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 8:
                 logger.warning("API_ERROR_AUTHENTICATION_FAILURE");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 9:
                 logger.info("API_ERROR_FILE_NOT_FOUND");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+\\&uploadid=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+\\&uploadid=\\d+)" }, flags = { 0 })
 public class ThreehundredTwenteekIn extends PluginForDecrypt {
 
     public ThreehundredTwenteekIn(PluginWrapper wrapper) {
@@ -50,23 +50,23 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
                 return null;
             }
             if (finallink.contains("320k.in/") && !finallink.contains("320k.in/referer")) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
+                final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             if (br.containsHTML(">Dieser Upload ist nicht mehr")) {
-                logger.info("Link offline: " + parameter);
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
+                final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             final String fpName = br.getRegex("<title>320k\\.in \\|([^<>\"]*?)</title>").getMatch(0);
+            FilePackage fp = null;
+            if (fpName != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+            }
             final String[] links = br.getRegex("\\&(?:amp;)?url=([A-Za-z0-9 %=]+)(\"|\\&)").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -83,42 +83,43 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
                 if (finallink.contains("320k.in/") && !finallink.contains("320k.in/referer")) {
                     continue;
                 }
+                final DownloadLink dl = createDownloadlink(finallink);
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
                 decryptedLinks.add(createDownloadlink(finallink));
+                distribute(dl);
             }
 
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-            }
         }
 
         return decryptedLinks;
     }
 
+    @SuppressWarnings("deprecation")
     private String decryptSingle(final CryptedLink param) throws Exception {
         String finallink = null;
         String captcha = br.getRegex("\"(cap\\.php\\?c=[a-z0-9]+)\"").getMatch(0);
         for (int i = 0; i <= 3; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user");
-                    return null;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return null;
             }
-            final String code = getCaptchaCode(captcha, param);
+            String code = getCaptchaCode(captcha, param);
+            /* Website only accepts uppercase! */
+            code = code.toUpperCase();
             final String crypt = new Regex(captcha, "c=([a-z0-9]+)$").getMatch(0);
             br.postPage(br.getURL(), "code=" + Encoding.urlEncode(code) + "&crypt=" + crypt + "&send=Download%21");
             finallink = br.getRedirectLocation();
             if (finallink != null) {
                 break;
             }
+            invalidateLastChallengeResponse();
         }
         if (finallink == null && br.containsHTML("cap\\.php")) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
+        validateLastChallengeResponse();
         return finallink;
     }
 

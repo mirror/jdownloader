@@ -103,6 +103,15 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Captcha for %s1 to continue!" })
     String gui_captchaWindow_askForInput(String hoster);
 
+    @Default(lngs = { "de" }, values = { "Aktiviere shared IP workaround?\r\nSofern du deine share-online Accounts mit einem VPN benutzt oder mit Freunden teilst kann dieser von share-online temporär gesperrt werden.\r\nEr wird dann normalerweise auch in JDownloader temporär deaktiviert.\r\nDiese Einstellung bewirkt, dass der Account aktiv bleibt und die Downloads nach einiger Zeit erneut versucht werden." })
+    String gui_plugin_settings_share_online_shared_ip_workaround();
+
+    @Default(lngs = { "de" }, values = { "Aktiviere traffic workaround?\r\nShare-Online.biz hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man gedrosselt weiter herunterladen.\r\nNormalerweise deaktiviert JDownloader Accounts ohne Traffic - wenn aktiviert werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet." })
+    String gui_plugin_settings_share_online_traffic_workaround();
+
+    @Default(lngs = { "de" }, values = { "Bevorzuge sichere Kommunikation per HTTPS?\r\nVerringert die Downloadgeschwindigkeit und ist nur für Premium Nutzer verfügbar!" })
+    String gui_plugin_settings_share_online_traffic_premium_prefer_https();
+
     @Default(lngs = { "en" }, values = { "Host/IP/Address" })
     String gui_column_host2();
 
