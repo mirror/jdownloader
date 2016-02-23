@@ -24,38 +24,39 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
-
 public class AccountInfo extends Property {
 
-    private static final long serialVersionUID = 1825140346023286206L;
+    private static final long serialVersionUID       = 1825140346023286206L;
 
-    private long account_validUntil = -1;
+    private long              account_validUntil     = -1;
 
-    private long account_trafficLeft = -1;
-    private long account_trafficMax  = -1;
+    private long              account_trafficLeft    = -1;
+    private long              account_trafficMax     = -1;
 
-    private long account_filesNum       = -1;
-    private long account_premiumPoints  = -1;
-    private long account_accountBalance = -1;
-    private long account_usedSpace      = -1;
+    private long              account_filesNum       = -1;
+    private long              account_premiumPoints  = -1;
+    private long              account_accountBalance = -1;
+    private long              account_usedSpace      = -1;
 
-    private String  account_status;
-    private long    account_createTime = 0;
+    private String            account_status;
+    private long              account_createTime     = 0;
     /**
      * indicator that host, account has special traffic handling, do not temp disable if traffic =0
      */
-    private boolean specialTraffic     = false;
+    private boolean           specialTraffic         = false;
 
     public long getCreateTime() {
         return account_createTime;
@@ -290,7 +291,9 @@ public class AccountInfo extends Property {
      */
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport) {
-        setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder());
+        final LogSource logSource = new LogSource("");
+        logSource.close();
+        setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder(logSource));
     }
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {
