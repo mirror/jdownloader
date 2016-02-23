@@ -66,7 +66,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
-            final DownloadLink dl = this.createDownloadlink(parameter);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("ico/adult_medium\\.png\"")) {
