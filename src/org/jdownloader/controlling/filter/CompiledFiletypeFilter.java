@@ -5,11 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.plugins.LinkInfo;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.plugins.LinkInfo;
 
 public class CompiledFiletypeFilter {
     private final Pattern[]                   list;
@@ -221,7 +221,7 @@ public class CompiledFiletypeFilter {
 
         public Pattern compiledAllPattern() {
             if (allPattern == null) {
-                allPattern = compileAllPattern(AudioExtensions.values());
+                allPattern = compileAllPattern(VideoExtensions.values());
             }
             return allPattern;
         }
@@ -299,7 +299,7 @@ public class CompiledFiletypeFilter {
 
         public Pattern compiledAllPattern() {
             if (allPattern == null) {
-                allPattern = compileAllPattern(AudioExtensions.values());
+                allPattern = compileAllPattern(ArchiveExtensions.values());
             }
             return allPattern;
         }
@@ -352,7 +352,7 @@ public class CompiledFiletypeFilter {
 
         public Pattern compiledAllPattern() {
             if (allPattern == null) {
-                allPattern = compileAllPattern(AudioExtensions.values());
+                allPattern = compileAllPattern(ImageExtensions.values());
             }
             return allPattern;
         }
