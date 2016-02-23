@@ -26,6 +26,8 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -45,8 +47,6 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
@@ -81,7 +81,7 @@ public class VideoMegaTv extends antiDDoSForHost {
     private String               fuid              = null;
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
     @SuppressWarnings("deprecation")
@@ -103,7 +103,7 @@ public class VideoMegaTv extends antiDDoSForHost {
             }
         } else {
             br.getHeaders().put("Referer", "http://videomega.tv/");
-            final String page = "http://videomega.tv/?ref=" + fuid + "&width=800&height=400";
+            final String page = "http://videomega.tv/?ref=" + fuid;
             getPage(page);
             String redirect = br.getRedirectLocation();
             if (redirect != null) {
@@ -137,16 +137,20 @@ public class VideoMegaTv extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        String dllink = null;
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
+        String dllink = null;
         // cdn
         Browser js = br.cloneBrowser();
         js.getHeaders().put("Accept", "*/*");
         getPage(js, "/cdn.js");
         final String javascript = br.getRegex("<script[^\r\n]+ref=\"" + fuid + ".*?</script>").getMatch(-1);
-        final String width = new Regex(javascript, "width=\"(\\d+)%?\"").getMatch(0);
-        final String height = new Regex(javascript, "height=\"(\\d+)%?\"").getMatch(0);
-        getPage("/view.php?ref=" + fuid + "&width=" + (width == null ? "800" : width) + "&height=" + (height == null ? "400" : height));
+        final String width = new Regex(javascript, "width=\"(\\d+%?)?\"").getMatch(0);
+        final String height = new Regex(javascript, "height=\"(\\d+%?)?\"").getMatch(0);
+        getPage("/view.php?ref=" + fuid + "&width=" + (width == null ? "100" + Encoding.urlEncode("%") : Encoding.urlEncode(width)) + "&height=" + (height == null ? "400" : Encoding.urlEncode(height)));
         if (br.containsHTML(">Sorry an error has occurred converting this video\\.<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue converting video.", 30 * 60 * 1000l);
         }
@@ -238,6 +242,8 @@ public class VideoMegaTv extends antiDDoSForHost {
                 adbr.getHeaders().put("Accept", "*/*");
                 getPage(adbr, adlinks[0]);
             }
+            // doesn't seem to be needed, but we will do it anyway!
+            updView();
         }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
@@ -282,6 +288,31 @@ public class VideoMegaTv extends antiDDoSForHost {
                     // not set as offline! have to throw exception!!
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void updView() throws Exception {
+        String updView = br.getRegex("videomega\\.tv/upd_views\\.php\"\\s*,\\s*\\{(.*?)\\}\\);").getMatch(0);
+        if (updView != null) {
+            try {
+                final String[][] results = new Regex(updView, "(\\w+)\\s*:\\s*\"(.*?)\"").getMatches();
+                if (results != null) {
+                    String t = "";
+                    for (final String[] result : results) {
+                        if (t.length() > 0) {
+                            t = t.concat("&");
+                        }
+                        t += result[0] + "=" + Encoding.urlEncode(result[1]);
+                    }
+                    final Browser br2 = br.cloneBrowser();
+                    br2.getHeaders().put("Accept", "*/*");
+                    postPage(br2, "/upd_views.php", t);
+
+                }
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
             }
         }
     }
