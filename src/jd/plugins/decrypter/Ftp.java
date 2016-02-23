@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -216,6 +217,10 @@ public class Ftp extends PluginForDecrypt {
                 fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, Boolean.TRUE);
                 fp.addLinks(ret);
             }
+        } catch (UnknownHostException e) {
+            logger.log(e);
+            ret.add(createOfflinelink(cLink.getCryptedUrl()));
+            return ret;
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
             throw e;
