@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -55,16 +53,13 @@ public class Video2brainCom extends PluginForHost {
     /* Connection stuff */
     // private final boolean FREE_RESUME = false;
     // private final int FREE_MAXCHUNKS = 0;
-    private final int            FREE_MAXDOWNLOADS    = 20;
-    private final boolean        RESUME_RTMP          = false;
-    private final boolean        RESUME_HTTP          = true;
-    private final int            MAXCHUNKS_HTTP       = 0;
-    private final int            ACCOUNT_MAXDOWNLOADS = 20;
+    private final int     FREE_MAXDOWNLOADS    = 20;
+    private final boolean RESUME_RTMP          = false;
+    private final boolean RESUME_HTTP          = true;
+    private final int     MAXCHUNKS_HTTP       = 0;
+    private final int     ACCOUNT_MAXDOWNLOADS = 20;
 
-    private boolean              premiumonly          = false;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem              = new AtomicInteger(1);
+    private boolean       premiumonly          = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -273,33 +268,22 @@ public class Video2brainCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
-            /* TODO: Add premium support */
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account Typ wird bisher noch nicht unterstützt!\r\nBitte melde dich bei unserem Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nPlease contact our support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
+            /* TODO: Add expire date support if possible */
+            // final String expire = br.getRegex("").getMatch(0);
             // if (expire == null) {
             // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-            // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+            // "\r\nDein Account Typ wird bisher noch nicht unterstützt!\r\nBitte melde dich bei unserem Support!",
             // PluginException.VALUE_ID_PREMIUM_DISABLE);
             // } else {
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-            // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nPlease contact our support!",
             // PluginException.VALUE_ID_PREMIUM_DISABLE);
             // }
-            // } else {
-            // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             // }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
         }
-        maxPrem.set(ACCOUNT_MAXDOWNLOADS);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         account.setValid(true);
         return ai;
@@ -315,8 +299,7 @@ public class Video2brainCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_MAXDOWNLOADS;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
