@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdfmediathek.de", "phoenix.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "neo-magazin-royale.de", "heute.de", "zdfneo.de", "zdfkultur.de", "zdfinfo.de", "zdfsport.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+", "https?://(?:www\\.)?zdfneo\\.de/.+", "https?://(?:www\\.)?zdfkultur\\.de/.+", "https?://(?:www\\.)?zdfinfo\\.de/.+", "https?://(?:www\\.)?zdfsport\\.de/.+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES        = "Q_SUBTITLES";
@@ -56,13 +56,17 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
     private static final String TYPE_PHOENIX_RSS   = "http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml";
-    private static final String TYPE_ZDF           = "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?";
+    private static final String TYPE_ZDF           = "https://(?:www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?";
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /** Example of a podcast-URL: http://www.zdf.de/ZDFmediathek/podcast/1074856?view=podcast */
+    /**
+     * TODO: Maybe add support for tivi.de but, similar to phoenix.de, we'd have to use another url to access their XML containing the final
+     * video urls - just stupid!
+     */
     @SuppressWarnings({ "deprecation" })
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -80,7 +84,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(PARAMETER);
-        // Check...if offline, add to llinkgrabber so user can see it
         if (br.containsHTML("Der Beitrag konnte nicht gefunden werden") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
             decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
             return decryptedLinks;
@@ -167,12 +170,25 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                  * When browsing the ZDFMediathek, the url will get longer and longer and can contain multiple video-IDs. However, the
                  * current one is the last one --> Make sure we get that!
                  */
-                final String[] ids = new Regex(PARAMETER, "beitrag/video/(\\d+)").getColumn(0);
+                String[] ids = new Regex(PARAMETER, "beitrag/video/(\\d+)").getColumn(0);
                 if (ids != null && ids.length > 0) {
                     id = ids[ids.length - 1];
                 }
                 if (id == null) {
-                    return null;
+                    /* Let's look for embedded zdfmediathek videoids in the html. */
+                    br.getPage(this.PARAMETER);
+                    /* neo-magazin-royale.de, heute.de */
+                    final String[] regexes = { "data\\-assetid=\"(\\d+)\"", "\"videoId\"[\t\n\r ]*?:[\t\n\r ]*?\"(\\d+)\"" };
+                    for (final String regex : regexes) {
+                        ids = this.br.getRegex(regex).getColumn(0);
+                        if (ids != null && ids.length > 0) {
+                            for (final String videoid : ids) {
+                                final String video_mainlink = "http://www.zdf.de/ZDFmediathek/beitrag/video/" + videoid + "/#JDownloader";
+                                decryptedLinks.add(this.createDownloadlink(video_mainlink));
+                            }
+                        }
+                    }
+                    return decryptedLinks;
                 }
                 decrypterurl = "decrypted://www.zdf.de/ZDFmediathek/beitrag/video/" + id + "&quality=%s";
                 br.getPage("/ZDFmediathek/xmlservice/web/beitragsDetails?id=" + id + "&ak=web");
