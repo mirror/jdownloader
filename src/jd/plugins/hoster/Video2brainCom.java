@@ -58,15 +58,16 @@ public class Video2brainCom extends PluginForHost {
     /* Connection stuff */
     // private final boolean FREE_RESUME = false;
     // private final int FREE_MAXCHUNKS = 0;
-    private final int            FREE_MAXDOWNLOADS      = 20;
-    private final boolean        ACCOUNT_PREMIUM_RESUME = false;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private final int            ACCOUNT_MAXDOWNLOADS   = 20;
+    private final int            FREE_MAXDOWNLOADS    = 20;
+    private final boolean        RESUME_RTMP          = false;
+    private final boolean        RESUME_HTTP          = true;
+    private final int            MAXCHUNKS_HTTP       = 0;
+    private final int            ACCOUNT_MAXDOWNLOADS = 20;
 
-    private boolean              premiumonly            = false;
+    private boolean              premiumonly          = false;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                = new AtomicInteger(1);
+    private static AtomicInteger maxPrem              = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -82,8 +83,6 @@ public class Video2brainCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches("https?://(?:www\\.)?video2brain\\.com/[^/]+/[^/]+/[^/]+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* html5_http_url is nearly always given but never working ... */
-        // final String html5_http_url = this.br.getRegex("<video src=\\'(http[^<>\"\\']+)\\'").getMatch(0);
         boolean set_final_filename = true;
         final String url_language = getUrlLanguage(link);
         final String productid = this.br.getRegex("Video\\.product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
@@ -132,39 +131,73 @@ public class Video2brainCom extends PluginForHost {
             /* This can even happen to paid users! */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        /* E.g. https://www.video2brain.com/en/video-info-8581.xml */
-        String config_url = this.br.getRegex("configuration:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
-        final String url_language = getUrlLanguage(downloadLink);
-        if (config_url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Browser br2 = newBrowser(new Browser());
+        /* User-Agent is not necessarily needed! */
+        br2.getHeaders().put("User-Agent", "iPad");
+        String html5_http_url = this.br.getRegex("<video src=\\'(http[^<>\"\\']+)\\'").getMatch(0);
+        final String access_exp = this.br.getRegex("Video\\.access_exp[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+        final String access_hash = this.br.getRegex("Video\\.access_hash[\t\n\r ]*?=[\t\n\r ]*?\"([a-f0-9]+)\";").getMatch(0);
+        if (html5_http_url != null && access_exp != null && access_hash != null) {
+            /* Let's try to build our http url first - we can still fallback to rtmp if this fails! */
+            /* They usually only use these urls for Apple devices. */
+            try {
+                final String postData = "expire=1&path=" + Encoding.urlEncode(html5_http_url) + "&access_exp=" + access_exp + "&access_hash=" + access_hash;
+                br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.postPage("https://www.video2brain.com/de/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData);
+                final String final_http_url_token = br2.getRegex("\"([^<>\"\\'\\\\]+)").getMatch(0);
+                if (final_http_url_token == null) {
+                    html5_http_url = null;
+                } else {
+                    html5_http_url += "?" + final_http_url_token;
+                }
+            } catch (final Throwable e) {
+                html5_http_url = null;
+            }
         }
-        if (config_url.startsWith("trailer")) {
-            /* Fix trailer xml url */
-            config_url = "/" + url_language + "/" + Encoding.unescape(config_url);
+
+        if (html5_http_url != null) {
+            /* Prefer http - quality-wise rtmp and http are the same! */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, html5_http_url, RESUME_HTTP, MAXCHUNKS_HTTP);
+            if (dl.getConnection().getContentType().contains("html")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
+            }
+            dl.startDownload();
+        } else {
+            /* E.g. https://www.video2brain.com/en/video-info-8581.xml */
+            String config_url = this.br.getRegex("configuration:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
+            final String url_language = getUrlLanguage(downloadLink);
+            if (config_url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (config_url.startsWith("trailer")) {
+                /* Fix trailer xml url */
+                config_url = "/" + url_language + "/" + Encoding.unescape(config_url);
+            }
+            this.br.getPage(config_url);
+            final String rtmpurl = this.br.getRegex("<src>(rtmp[^\n]+)").getMatch(0);
+            if (rtmpurl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // final String playpath = new Regex(rtmpurl, "((?:flv|mp4):.+)").getMatch(0);
+            try {
+                dl = new RTMPDownload(this, downloadLink, rtmpurl);
+            } catch (final NoClassDefFoundError e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            }
+            /* Setup rtmp connection */
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setUrl(rtmpurl);
+            // if (playpath != null) {
+            // rtmp.setPlayPath(playpath);
+            // }
+            // rtmp.setApp("");
+            rtmp.setFlashVer("WIN 20,0,0,306");
+            // rtmp.setSwfUrl("https://www.video2brain.com/en/swf/Video2brainPlayer.swf?v=59");
+            rtmp.setResume(RESUME_RTMP);
+            ((RTMPDownload) dl).startDownload();
         }
-        this.br.getPage(config_url);
-        final String rtmpurl = this.br.getRegex("<src>(rtmp[^\n]+)").getMatch(0);
-        if (rtmpurl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // final String playpath = new Regex(rtmpurl, "((?:flv|mp4):.+)").getMatch(0);
-        try {
-            dl = new RTMPDownload(this, downloadLink, rtmpurl);
-        } catch (final NoClassDefFoundError e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
-        }
-        /* Setup rtmp connection */
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPageUrl(downloadLink.getDownloadURL());
-        rtmp.setUrl(rtmpurl);
-        // if (playpath != null) {
-        // rtmp.setPlayPath(playpath);
-        // }
-        // rtmp.setApp("");
-        rtmp.setFlashVer("WIN 20,0,0,306");
-        // rtmp.setSwfUrl("https://www.video2brain.com/en/swf/Video2brainPlayer.swf?v=59");
-        rtmp.setResume(ACCOUNT_PREMIUM_RESUME);
-        ((RTMPDownload) dl).startDownload();
     }
 
     @SuppressWarnings("deprecation")
