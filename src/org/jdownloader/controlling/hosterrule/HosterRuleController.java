@@ -217,24 +217,26 @@ public class HosterRuleController implements AccountControllerListener {
                                 rules.add(null);
                             }
                             for (AccountReference acr : ag.getChildren()) {
-                                if (acr.isEnabled()) {
-                                    final CachedAccount cachedAccount;
-                                    if (FreeAccountReference.isFreeAccount(acr)) {
-                                        cachedAccount = new CachedAccount(finalHost, null, session.getPlugin(finalHost));
-                                    } else {
-                                        final Account acc = acr.getAccount();
-                                        if (acc != null) {
-                                            cachedAccount = new CachedAccount(finalHost, acc, session.getPlugin(acc.getHoster()));
+                                if (acr.isAvailable()) {
+                                    if (acr.isEnabled()) {
+                                        final CachedAccount cachedAccount;
+                                        if (FreeAccountReference.isFreeAccount(acr)) {
+                                            cachedAccount = new CachedAccount(finalHost, null, session.getPlugin(finalHost));
                                         } else {
-                                            cachedAccount = null;
+                                            final Account acc = acr.getAccount();
+                                            if (acc != null) {
+                                                cachedAccount = new CachedAccount(finalHost, acc, session.getPlugin(acc.getHoster()));
+                                            } else {
+                                                cachedAccount = null;
+                                            }
                                         }
+                                        if (cachedAccount != null) {
+                                            newCache.add(cachedAccount);
+                                            rules.add(ag.getRule());
+                                        }
+                                    } else if (FreeAccountReference.isFreeAccount(acr)) {
+                                        logger.info("Free Download disabled by Account Rule: " + host);
                                     }
-                                    if (cachedAccount != null) {
-                                        newCache.add(cachedAccount);
-                                        rules.add(ag.getRule());
-                                    }
-                                } else if (FreeAccountReference.isFreeAccount(acr)) {
-                                    logger.info("Free Download disabled by Account Rule: " + host);
                                 }
                             }
                         }
@@ -269,7 +271,7 @@ public class HosterRuleController implements AccountControllerListener {
                     freeAccountGroup = ag;
                     continue;
                 }
-                if (ar.getAccount() == null) {
+                if (ar.getAccount() == null || !ar.isAvailable()) {
                     logger.info("Removed " + ar + " from " + ag);
                     toRemoveFromChildren.add(ar);
                 } else {
