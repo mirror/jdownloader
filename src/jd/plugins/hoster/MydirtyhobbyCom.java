@@ -82,6 +82,10 @@ public class MydirtyhobbyCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String username = this.br.getRegex("<dt>Hinzugefügt von</dt>[\t\n\r ]*?<dd class=\"right\">[\t\n\r ]*?<a href=\"/profil/[^\"]+\" title=\"([^<>\"]+)\"").getMatch(0);
+        if (username == null) {
+            username = "amateur";
+        }
         String filename = br.getRegex("<h\\d+ class=\"page\\-title pull\\-left\">([^<>\"]+)</h\\d+>").getMatch(0);
         if (filename == null) {
             /* Fallback to url-filename */
@@ -92,7 +96,7 @@ public class MydirtyhobbyCom extends PluginForHost {
         }
         final Account aa = AccountController.getInstance().getValidAccount(this);
         filename = Encoding.htmlDecode(filename.trim());
-        filename = "amateur - " + filename;
+        filename = username + " - " + filename;
         if (br.containsHTML(html_buy) || aa == null) {
             /* User has an account but he did not buy this video or user does not even have an account --> No way to download it */
             link.setName(filename + default_extension);

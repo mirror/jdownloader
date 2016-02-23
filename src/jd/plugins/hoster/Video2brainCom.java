@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -34,8 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|en/videos\\-\\d+\\.htm|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+)" }, flags = { 2 })
 public class Video2brainCom extends PluginForHost {
@@ -233,6 +230,14 @@ public class Video2brainCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                String continue_url = this.br.getRegex("\"url\":\"(https[^<>\"\\']+)\"").getMatch(0);
+                if (continue_url != null) {
+                    continue_url = continue_url.replace("\\", "");
+                } else {
+                    /* TODO: Maybe make sure this also works for users of other countries! */
+                    continue_url = "/de/login";
+                }
+                this.br.getPage(continue_url);
                 account.saveCookies(this.br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -272,13 +277,24 @@ public class Video2brainCom extends PluginForHost {
             final String expire = br.getRegex("").getMatch(0);
             if (expire == null) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account Typ wird bisher noch nicht unterstützt!\r\nBitte melde dich bei unserem Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nPlease contact our support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             }
+            // if (expire == null) {
+            // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+            // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // } else {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+            // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // }
+            // } else {
+            // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+            // }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
         }
