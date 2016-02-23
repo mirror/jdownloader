@@ -126,10 +126,8 @@ public class ChallengeResponseController {
             addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CheapCaptchaSolver.getInstance());
 
-            // Service is too buggy to release
-            if (!Application.isJared(null)) {
-                addSolver(CaptchaSolutionsSolver.getInstance());
-            }
+            addSolver(CaptchaSolutionsSolver.getInstance());
+
             addSolver(EndCaptchaSolver.getInstance());
             addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());

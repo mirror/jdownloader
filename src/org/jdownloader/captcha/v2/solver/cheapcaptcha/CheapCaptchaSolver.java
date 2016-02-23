@@ -82,7 +82,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
         job.showBubble(this);
         checkInterruption();
         try {
-
+            job.getChallenge().sendStatsSolving(this);
             Browser br = new Browser();
             br.setReadTimeout(5 * 60000);
             // Put your CAPTCHA image file, file object, input stream,
@@ -157,6 +157,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             }
 
         } catch (Exception e) {
+            job.getChallenge().sendStatsError(this, e);
             job.getLogger().log(e);
         }
 

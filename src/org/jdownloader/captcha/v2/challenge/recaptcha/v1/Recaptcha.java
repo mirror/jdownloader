@@ -3,7 +3,8 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v1;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
+
+import org.appwork.utils.StringUtils;
 
 import jd.captcha.utils.RecaptchaTypeTester;
 import jd.captcha.utils.RecaptchaTypeTester.RecaptchaType;
@@ -15,10 +16,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
 
 public class Recaptcha {
     private static final int MAX_TRIES    = 5;
@@ -220,9 +217,9 @@ public class Recaptcha {
     }
 
     private void track(String string) {
-        HashMap<String, String> info = new HashMap<String, String>();
-        info.put("host", sourceHost);
-        StatsManager.I().track(100, "rc_track", string, info, CollectionName.RECAPTCHA);
+        // HashMap<String, String> info = new HashMap<String, String>();
+        // info.put("host", sourceHost);
+        // StatsManager.I().track(100, "rc_track", string, info, CollectionName.RECAPTCHA);
     }
 
     public void parse() throws IOException, PluginException {

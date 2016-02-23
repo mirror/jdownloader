@@ -2,13 +2,17 @@ package org.jdownloader.captcha.v2;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.SkipRequest;
@@ -21,6 +25,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 public abstract class Challenge<T> {
+    private static final int      REDUCER      = 1;
     private final UniqueAlltimeID id           = new UniqueAlltimeID();
     private final Class<T>        resultType;
     private final long            created;
@@ -288,5 +293,46 @@ public abstract class Challenge<T> {
      */
     public void onHandled() {
 
+    }
+
+    public void sendStatsError(ChallengeSolver solver, Throwable e) {
+        if (e == null || e instanceof InterruptedException) {
+            return;
+        }
+        if (solver == null || !(solver instanceof CESChallengeSolver)) {
+            return;
+        }
+        HashMap<String, String> info = createStatsInfoMap(solver);
+        info.put("errorclass", e.getClass().getSimpleName());
+        info.put("errormessage", e.getMessage());
+        StatsManager.I().track(REDUCER, "captcha", "error", info, CollectionName.CAPTCHA);
+    }
+
+    public void sendStatsSolving(ChallengeSolver solver) {
+        if (solver == null || !(solver instanceof CESChallengeSolver)) {
+            return;
+        }
+        HashMap<String, String> info = createStatsInfoMap(solver);
+
+        StatsManager.I().track(REDUCER, "captcha", "solving", info, CollectionName.CAPTCHA);
+    }
+
+    public void sendStatsValidation(ChallengeSolver solver, String status) {
+        if (solver == null || !(solver instanceof CESChallengeSolver)) {
+            return;
+        }
+        HashMap<String, String> info = createStatsInfoMap(solver);
+
+        info.put("status", status);
+        StatsManager.I().track(REDUCER, "captcha", "validation", info, CollectionName.CAPTCHA);
+    }
+
+    private HashMap<String, String> createStatsInfoMap(ChallengeSolver solver) {
+        HashMap<String, String> info;
+        info = new HashMap<String, String>();
+
+        info.put("service", solver.getService().getID());
+        info.put("solver", solver.getClass().getSimpleName());
+        return info;
     }
 }
