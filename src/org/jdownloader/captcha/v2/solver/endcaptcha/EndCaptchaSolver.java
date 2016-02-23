@@ -5,11 +5,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -29,6 +24,11 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_END_CAPTCHA;
 import org.seamless.util.io.IO;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 
 public class EndCaptchaSolver extends CESChallengeSolver<String> {
 
@@ -74,6 +74,7 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
     protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
         job.showBubble(this);
         checkInterruption();
+        job.getChallenge().sendStatsSolving(this);
         URLConnectionAdapter conn = null;
         try {
             final Browser br = new Browser();
@@ -129,6 +130,7 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
                 }
             }
         } catch (Exception e) {
+            job.getChallenge().sendStatsError(this, e);
             job.getLogger().log(e);
         } finally {
             try {

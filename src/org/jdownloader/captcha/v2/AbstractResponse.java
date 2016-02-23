@@ -6,7 +6,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public class AbstractResponse<T> {
     private final UniqueAlltimeID id         = new UniqueAlltimeID();
     private int                   priority;
-    private ValidationResult      validation = null;                  ;
+    private ValidationResult      validation = null;;
 
     public ValidationResult getValidation() {
         return validation;
@@ -21,12 +21,24 @@ public class AbstractResponse<T> {
                 this.validation = validation;
                 final Object solver = getSolver();
                 if (solver != null && solver instanceof ChallengeSolver) {
+                    Challenge<T> c = getChallenge();
                     switch (validation) {
                     case INVALID:
+
+                        if (c != null) {
+                            c.sendStatsValidation(((ChallengeSolver) solver), "false");
+                        }
                         return ((ChallengeSolver<?>) solver).setInvalid(this);
                     case UNUSED:
+
+                        if (c != null) {
+                            c.sendStatsValidation(((ChallengeSolver) solver), "unused");
+                        }
                         return ((ChallengeSolver<?>) solver).setUnused(this);
                     case VALID:
+                        if (c != null) {
+                            c.sendStatsValidation(((ChallengeSolver) solver), "true");
+                        }
                         return ((ChallengeSolver<?>) solver).setValid(this);
                     }
                 }

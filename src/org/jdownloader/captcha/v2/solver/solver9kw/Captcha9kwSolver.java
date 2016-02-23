@@ -13,10 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
@@ -36,6 +32,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.seamless.util.io.IO;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
 
 public class Captcha9kwSolver extends CESChallengeSolver<String> {
 
@@ -384,6 +384,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
             counter.incrementAndGet();
             job.showBubble(this, getBubbleTimeout(challenge));
             checkInterruption();
+            job.getChallenge().sendStatsSolving(this);
             final byte[] data;
             if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
                 data = challenge.getAnnotatedImageBytes();
@@ -468,6 +469,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
             }
 
         } catch (IOException e) {
+            job.getChallenge().sendStatsError(this, e);
             setdebug_short("Interrupted: " + e);
             counterInterrupted.incrementAndGet();
             job.getLogger().log(e);

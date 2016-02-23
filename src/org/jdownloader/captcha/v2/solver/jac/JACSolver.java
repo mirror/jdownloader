@@ -110,6 +110,7 @@ public class JACSolver extends ChallengeSolver<String> {
                 if (!config.isEnabled() || !JACMethod.hasMethod(captchaChallenge.getTypeID())) {
                     return;
                 }
+                job.getChallenge().sendStatsSolving(this);
                 checkInterruption();
                 final JAntiCaptcha jac = new JAntiCaptcha(captchaChallenge.getTypeID());
                 checkInterruption();
@@ -172,6 +173,7 @@ public class JACSolver extends ChallengeSolver<String> {
 
             }
         } catch (IOException e) {
+            job.getChallenge().sendStatsError(this, e);
             throw new SolverException(e);
         }
     }

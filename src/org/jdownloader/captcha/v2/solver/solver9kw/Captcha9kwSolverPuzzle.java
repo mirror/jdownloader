@@ -252,7 +252,7 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> {
             org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counter.incrementAndGet();
             job.showBubble(this);
             checkInterruption();
-
+            job.getChallenge().sendStatsSolving(this);
             KeyCaptchaImages images = challenge.getHelper().getPuzzleData().getImages();
             LinkedList<BufferedImage> piecesAll = new LinkedList<BufferedImage>(images.pieces);
 
@@ -357,6 +357,7 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> {
             }
 
         } catch (IOException e) {
+            job.getChallenge().sendStatsError(this, e);
             setdebug(job, "Interrupted: " + e);
             org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterInterrupted.incrementAndGet();
             job.getLogger().log(e);

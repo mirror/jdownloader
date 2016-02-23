@@ -95,9 +95,10 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
         final Client client = getClient();
         try {
             Captcha captcha = null;
-
+            challenge.sendStatsSolving(this);
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
+
             job.setStatus(SolverStatus.UPLOADING);
             if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
                 captcha = client.upload(challenge.getAnnotatedImageBytes());
@@ -134,6 +135,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
         } catch (Exception e) {
             job.setStatus(e.getMessage(), new AbstractIcon(IconKey.ICON_ERROR, 20));
             job.getLogger().log(e);
+            challenge.sendStatsError(this, e);
         } finally {
             client.close();
         }

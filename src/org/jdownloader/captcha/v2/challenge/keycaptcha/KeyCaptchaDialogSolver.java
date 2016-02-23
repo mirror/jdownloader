@@ -2,10 +2,6 @@ package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
 import java.io.IOException;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.captcha.v2.AbstractDialogHandler;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -21,6 +17,10 @@ import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
+
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.gui.swing.jdgui.JDGui;
 
 public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
     private static final KeyCaptchaDialogSolver INSTANCE = new KeyCaptchaDialogSolver();
@@ -138,7 +138,7 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
                     handler.setSuggest(resp.getValue());
                 }
                 checkInterruption();
-
+                job.getChallenge().sendStatsSolving(this);
                 handler.run();
                 String token = null;
                 if (job.getChallenge() instanceof KeyCaptchaPuzzleChallenge) {
@@ -162,10 +162,12 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
                 }
 
             } catch (IOException e) {
+                job.getChallenge().sendStatsError(this, e);
                 throw new WTFException(e);
             } catch (SkipException e) {
                 throw e;
             } catch (Exception e) {
+                job.getChallenge().sendStatsError(this, e);
                 throw new WTFException(e);
             } finally {
                 job.getLogger().info("Dialog closed. Response far: " + job.getResponse());

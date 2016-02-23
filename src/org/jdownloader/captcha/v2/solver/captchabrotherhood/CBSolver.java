@@ -8,10 +8,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -29,6 +25,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
 import org.seamless.util.io.IO;
+
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
 
 public class CBSolver extends CESChallengeSolver<String> {
 
@@ -68,7 +68,7 @@ public class CBSolver extends CESChallengeSolver<String> {
                 data = IO.readBytes(challenge.getImageFile());
             }
             job.setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
-
+            job.getChallenge().sendStatsSolving(this);
             final Browser br = new Browser();
 
             br.setDebug(true);
@@ -108,6 +108,7 @@ public class CBSolver extends CESChallengeSolver<String> {
             throw e;
 
         } catch (IOException e) {
+            job.getChallenge().sendStatsError(this, e);
             job.getLogger().log(e);
             counterInterrupted.incrementAndGet();
         } finally {

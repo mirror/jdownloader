@@ -7,12 +7,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -32,6 +26,12 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+import jd.nutils.encoding.Encoding;
 
 public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implements GenericConfigEventListener<String> {
 
@@ -70,7 +70,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
     public boolean canHandle(Challenge<?> c) {
         if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
 
-            return true;
+            return false;
         }
 
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
@@ -80,6 +80,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
 
         job.showBubble(this);
         checkInterruption();
+        job.getChallenge().sendStatsSolving(this);
         try {
 
             Browser br = new Browser();
@@ -124,6 +125,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
             return;
 
         } catch (Exception e) {
+            job.getChallenge().sendStatsError(this, e);
             job.getLogger().log(e);
         }
 

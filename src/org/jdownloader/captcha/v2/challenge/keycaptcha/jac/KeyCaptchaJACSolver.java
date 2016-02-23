@@ -32,8 +32,10 @@ public class KeyCaptchaJACSolver extends ChallengeSolver<String> {
 
     @Override
     public void solve(SolverJob<String> solverJob) throws InterruptedException, SolverException, SkipException {
+        final KeyCaptchaPuzzleChallenge challenge = ((KeyCaptchaPuzzleChallenge) solverJob.getChallenge());
+
         try {
-            final KeyCaptchaPuzzleChallenge challenge = ((KeyCaptchaPuzzleChallenge) solverJob.getChallenge());
+
             final KeyCaptchaAutoSolver kcSolver = new KeyCaptchaAutoSolver();
             final String out = kcSolver.solve(challenge.getHelper().getPuzzleData().getImages());
 
@@ -46,6 +48,7 @@ public class KeyCaptchaJACSolver extends ChallengeSolver<String> {
                 }
                 throw new SkipException(SkipRequest.REFRESH);
             }
+            challenge.sendStatsSolving(this);
             final String token = challenge.getHelper().sendPuzzleResult(marray, out);
             if (token != null) {
                 solverJob.addAnswer(new KeyCaptchaResponse(challenge, this, token, 100));
@@ -58,7 +61,7 @@ public class KeyCaptchaJACSolver extends ChallengeSolver<String> {
             }
         } catch (Throwable e) {
             solverJob.getLogger().log(e);
-
+            challenge.sendStatsError(this, e);
         }
     }
 }
