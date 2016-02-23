@@ -302,6 +302,7 @@ public abstract class Challenge<T> {
         if (solver == null || !(solver instanceof CESChallengeSolver)) {
             return;
         }
+        //
         HashMap<String, String> info = createStatsInfoMap(solver);
         info.put("errorclass", e.getClass().getSimpleName());
         info.put("errormessage", e.getMessage());
