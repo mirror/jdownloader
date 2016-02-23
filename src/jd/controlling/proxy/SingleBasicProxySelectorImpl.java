@@ -1,6 +1,6 @@
 package jd.controlling.proxy;
 
-import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -73,9 +73,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public List<HTTPProxy> getProxiesByURI(URI uri) {
-        for (final SelectProxyByURIHook hook : selectProxyByURIHooks) {
-            hook.onProxyChoosen(uri, list);
+    public List<HTTPProxy> getProxiesByURL(URL url) {
+        for (final SelectProxyByURLHook hook : selectProxyByURLHooks) {
+            hook.onProxyChoosen(url, list);
         }
         return list;
     }
@@ -271,12 +271,12 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public boolean isProxyBannedFor(HTTPProxy orgReference, URI uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // can orgRef be null? I doubt that. TODO:ensure
         if (!getProxy().equals(orgReference)) {
             return false;
         }
-        return super.isProxyBannedFor(orgReference, uri, pluginFromThread, ignoreConnectBans);
+        return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     public void setTempAuth(String user, String pass) {

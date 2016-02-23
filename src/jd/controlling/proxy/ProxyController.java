@@ -9,8 +9,9 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -106,7 +107,15 @@ import com.btr.proxy.util.Logger.LogLevel;
 
 public class ProxyController implements ProxySelectorInterface {
 
-    private static final ProxyController INSTANCE = new ProxyController();
+    public static final URLStreamHandler SOCKETURLSTREAMHANDLER = new URLStreamHandler() {
+
+        @Override
+        protected URLConnection openConnection(URL u) throws IOException {
+            throw new IOException("not implemented");
+        }
+    };
+
+    private static final ProxyController INSTANCE               = new ProxyController();
 
     public static final ProxyController getInstance() {
         return ProxyController.INSTANCE;
@@ -122,24 +131,24 @@ public class ProxyController implements ProxySelectorInterface {
 
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
 
-                                                                                                @Override
-                                                                                                public void killQueue() {
-                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                    /*
-                                                                                                     * this queue can't be killed
-                                                                                                     */
-                                                                                                }
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
 
-                                                                                            };
+    };
 
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
 
-                                                                                                @Override
-                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
-                                                                                                    return true;
-                                                                                                }
-                                                                                            };
+        @Override
+        public boolean suppressEvent(ConfigEvent eventType) {
+            return true;
+        }
+    };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -196,16 +205,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -912,8 +921,7 @@ public class ProxyController implements ProxySelectorInterface {
     private boolean askForProxyAuth(final SelectedProxy selectedProxy, final int flags, final boolean typeEditable, final URL url, final String msg, final String title) throws IOException {
         final AbstractProxySelectorImpl selector = selectedProxy.selector;
         final Plugin plugin = getPluginFromThread();
-        final URI uri = newURI(url);
-        if (selector.isProxyBannedFor(selectedProxy, uri, plugin, false) == false) {
+        if (selector.isProxyBannedFor(selectedProxy, url, plugin, false) == false) {
             HTTPProxy proxy = null;
             boolean rememberCheckBox = false;
             try {
@@ -983,7 +991,7 @@ public class ProxyController implements ProxySelectorInterface {
                 if (plugin != null) {
                     selector.addSessionBan(new PluginRelatedConnectionBan(plugin, selector, selectedProxy));
                 } else {
-                    selector.addSessionBan(new AuthExceptionGenericBan(selector, selectedProxy, uri));
+                    selector.addSessionBan(new AuthExceptionGenericBan(selector, selectedProxy, url));
                 }
             }
         }
@@ -1116,16 +1124,15 @@ public class ProxyController implements ProxySelectorInterface {
     private List<HTTPProxy> getProxiesForUpdater(final URL url, final boolean ignoreConnectionBans, final boolean ignoreAllBans) {
         final LinkedHashSet<HTTPProxy> ret = new LinkedHashSet<HTTPProxy>();
         try {
-            final URI uri = newURI(url);
-            final String host = Browser.getHostFromURI(uri);
+            final String host = Browser.getHost(url);
             final Plugin plugin = getPluginFromThread();
             for (final AbstractProxySelectorImpl selector : _getList()) {
                 try {
                     if (selector.isEnabled() && selector.isAllowedByFilter(host, null)) {
-                        final List<HTTPProxy> lst = selector.getProxiesByURI(uri);
+                        final List<HTTPProxy> lst = selector.getProxiesByURL(url);
                         if (lst != null) {
                             for (HTTPProxy p : lst) {
-                                if (ignoreAllBans || !selector.isProxyBannedFor(p, uri, plugin, ignoreConnectionBans)) {
+                                if (ignoreAllBans || !selector.isProxyBannedFor(p, url, plugin, ignoreConnectionBans)) {
                                     ret.add(p);
                                 }
                             }
@@ -1149,18 +1156,18 @@ public class ProxyController implements ProxySelectorInterface {
      * @return
      */
     @Override
-    public List<HTTPProxy> getProxiesByURI(final URI uri) {
-        List<HTTPProxy> ret = getProxiesByURI(uri, false, false);
+    public List<HTTPProxy> getProxiesByURL(final URL url) {
+        List<HTTPProxy> ret = getProxiesByURL(url, false, false);
         if (ret == null || ret.size() == 0) {
-            ret = getProxiesByURI(uri, true, false);
+            ret = getProxiesByURL(url, true, false);
         }
         if (ret == null || ret.size() == 0) {
-            ret = getProxiesByURI(uri, true, true);
+            ret = getProxiesByURL(url, true, true);
         }
         return ret;
     }
 
-    public List<HTTPProxy> getProxiesByURI(final URI uri, final boolean ignoreConnectionBans, final boolean ignoreAllBans) {
+    public List<HTTPProxy> getProxiesByURL(final URL url, final boolean ignoreConnectionBans, final boolean ignoreAllBans) {
         final Plugin plugin = getPluginFromThread();
         final boolean proxyRotationEnabled;
         final Thread thread = Thread.currentThread();
@@ -1182,7 +1189,7 @@ public class ProxyController implements ProxySelectorInterface {
         }
         final LinkedHashSet<HTTPProxy> ret = new LinkedHashSet<HTTPProxy>();
         try {
-            final String host = Browser.getHostFromURI(uri);
+            final String host = Browser.getHost(url);
             final String plgHost;
             if (plugin == null || plugin.isHandlingMultipleHosts()) {
                 plgHost = host;
@@ -1192,10 +1199,10 @@ public class ProxyController implements ProxySelectorInterface {
             for (final AbstractProxySelectorImpl selector : _getList()) {
                 try {
                     if (selector.isEnabled() && selector.isAllowedByFilter(plgHost, acc)) {
-                        final List<HTTPProxy> lst = selector.getProxiesByURI(uri);
+                        final List<HTTPProxy> lst = selector.getProxiesByURL(url);
                         if (lst != null) {
                             for (HTTPProxy p : lst) {
-                                if (ignoreAllBans || !selector.isProxyBannedFor(p, uri, plugin, ignoreConnectionBans)) {
+                                if (ignoreAllBans || !selector.isProxyBannedFor(p, url, plugin, ignoreConnectionBans)) {
                                     ret.add(p);
                                 } else if (!proxyRotationEnabled) {
                                     return new ArrayList<HTTPProxy>(ret);
@@ -1265,46 +1272,20 @@ public class ProxyController implements ProxySelectorInterface {
         });
     }
 
-    private URI newURI(final String uriString) throws IOException {
+    public boolean reportHTTPProxyException(final HTTPProxy proxy, final URL url, final IOException e) {
         try {
-            return new URI(uriString);
-        } catch (final Throwable ignore) {
-            try {
-                final URL url = new URL(uriString);
-                final int port = url.getPort();
-                if (port == -1) {
-                    return new URI(url.getProtocol() + "://" + url.getHost());
-                } else {
-                    return new URI(url.getProtocol() + "://" + url.getHost() + ":" + url.getPort());
-                }
-            } catch (URISyntaxException e) {
-                throw new IOException(e);
-            }
-        }
-    }
-
-    private URI newURI(final URL url) throws IOException {
-        try {
-            return url.toURI();
-        } catch (final Throwable ignore) {
-            return newURI(url.toString());
-        }
-    }
-
-    public boolean reportHTTPProxyException(final HTTPProxy proxy, final URI uri, final IOException e) {
-        try {
-            if (proxy != null && e != null && uri != null && e instanceof HTTPProxyException) {
+            if (proxy != null && e != null && url != null && e instanceof HTTPProxyException) {
                 final SelectedProxy selectedProxy = getSelectedProxy(proxy);
                 if (selectedProxy != null && selectedProxy.getSelector() != null) {
                     final AbstractProxySelectorImpl selector = selectedProxy.getSelector();
                     if (e instanceof ProxyEndpointConnectException) {
-                        selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, uri));
+                        selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, url));
                         return true;
                     } else if (e instanceof ProxyConnectException) {
-                        selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, uri));
+                        selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, url));
                         return true;
                     } else if (e instanceof ProxyAuthException) {
-                        selector.addSessionBan(new AuthExceptionGenericBan(selector, selectedProxy, uri));
+                        selector.addSessionBan(new AuthExceptionGenericBan(selector, selectedProxy, url));
                         return true;
                     }
                 }
@@ -1329,11 +1310,10 @@ public class ProxyController implements ProxySelectorInterface {
                     if (plg != null) {
                         selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
                     } else {
-                        final URI uri = request.getURI();
                         if (e instanceof ProxyEndpointConnectException) {
-                            selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, uri));
+                            selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, request.getURL()));
                         } else {
-                            selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, uri));
+                            selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, request.getURL()));
                         }
                     }
                 }

@@ -44,6 +44,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.rmi.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +68,85 @@ import org.seamless.util.io.IO;
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public class SimpleFTP {
+
+    public static enum ENCODING {
+        ASCII7BIT {
+
+            @Override
+            public String fromBytes(byte[] bytes) throws IOException {
+                final StringBuilder sb = new StringBuilder();
+                for (int index = 0; index < bytes.length; index++) {
+                    final int c = bytes[index] & 0xff;
+                    if (c <= 127) {
+                        sb.append((char) c);
+                    } else {
+                        final String hexEncoded = Integer.toString(c, 16);
+                        if (hexEncoded.length() == 1) {
+                            sb.append("%0");
+                        } else {
+                            sb.append("%");
+                        }
+                        sb.append(hexEncoded);
+                    }
+                }
+                return sb.toString();
+            }
+
+            @Override
+            public byte[] toBytes(String string) throws IOException {
+                final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                for (int index = 0; index < string.length(); index++) {
+                    final char c = string.charAt(index);
+                    if (c == '%') {
+                        final int hexDecoded = Integer.parseInt(string.substring(index + 1, index + 3), 16);
+                        bos.write(hexDecoded);
+                        index += 2;
+                    } else {
+                        bos.write(c);
+                    }
+                }
+                return bos.toByteArray();
+            }
+
+        },
+        UTF8 {
+
+            @Override
+            public String fromBytes(byte[] bytes) throws IOException {
+                return URLEncoder.encode(new String(bytes, "UTF-8"), "UTF-8");
+            }
+
+            @Override
+            public byte[] toBytes(String string) throws IOException {
+                return URLDecoder.decode(string, "UTF-8").getBytes("UTF-8");
+            }
+
+        };
+
+        public abstract String fromBytes(final byte[] bytes) throws IOException;
+
+        public abstract byte[] toBytes(final String string) throws IOException;
+
+    }
+
+    public static enum FEATURE {
+        PASV,
+        SIZE,
+        CLNT,
+        UTF8;
+
+        public static FEATURE get(final String input) {
+            if (input != null && input.startsWith(" ")) {
+                for (FEATURE feature : values()) {
+                    if (input.startsWith(" " + feature.name())) {
+                        return feature;
+                    }
+                }
+            }
+            return null;
+        }
+    }
+
     private static final int TIMEOUT            = 20 * 1000;
     private boolean          binarymode         = false;
     private Socket           socket             = null;
@@ -74,6 +155,8 @@ public class SimpleFTP {
     private LogInterface     logger             = LogController.CL();
     private String           latestResponseLine = null;
     private String           user               = null;
+
+    private final byte[]     CRLF               = "\r\n".getBytes();
 
     public String getUser() {
         return user;
@@ -149,11 +232,7 @@ public class SimpleFTP {
      * @since JD2
      */
     public boolean isBinary() {
-        if (this.binarymode) {
-            return true;
-        } else {
-            return false;
-        }
+        return binarymode;
     }
 
     /**
@@ -186,6 +265,7 @@ public class SimpleFTP {
         if (socket != null) {
             throw new IOException("SimpleFTP is already connected. Disconnect first.");
         }
+        this.isUTF8Enabled = false;
         this.user = user;
         this.pass = pass;
         socket = new Socket(host, port);
@@ -214,6 +294,15 @@ public class SimpleFTP {
         // Now logged in.
     }
 
+    private ENCODING getPathEncoding() {
+        if (isUTF8Enabled) {
+            return ENCODING.UTF8;
+        } else {
+            return ENCODING.ASCII7BIT;
+        }
+
+    }
+
     /**
      * Changes the working directory (like cd). Returns true if successful.RELATIVE!!!
      */
@@ -222,9 +311,10 @@ public class SimpleFTP {
         if (dir.equals(this.dir)) {
             return true;
         }
-        sendLine("CWD " + dir);
+        final ENCODING encoding = ENCODING.ASCII7BIT;
+        sendLine(encoding, "CWD " + dir);
         try {
-            readLines(new int[] { 250 }, "SimpleFTP was unable to change directory");
+            readLines(encoding, new int[] { 250 }, "SimpleFTP was unable to change directory");
             if (!dir.endsWith("/") && !dir.endsWith("\\")) {
                 dir += "/";
             }
@@ -252,7 +342,7 @@ public class SimpleFTP {
             /* avoid stackoverflow for io-exception during sendLine */
             socket = null;
             if (lsocket != null) {
-                sendLine(lsocket, "QUIT");
+                sendLine(ENCODING.ASCII7BIT, lsocket, "QUIT");
             }
         } finally {
             try {
@@ -281,7 +371,7 @@ public class SimpleFTP {
         return dir;
     }
 
-    public String readLine() throws IOException {
+    public String readLine(ENCODING encoding) throws IOException {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final int length = readLine(socket.getInputStream(), bos);
         if (length == -1) {
@@ -289,28 +379,13 @@ public class SimpleFTP {
         } else if (length == 0) {
             return null;
         }
-        final String line = fromRawBytes(bos.toByteArray());
+        final String line = encoding.fromBytes(bos.toByteArray());
         logger.info(host + " < " + line);
         return line;
     }
 
-    public static String fromRawBytes(byte[] bytes) {
-        final StringBuilder sb = new StringBuilder();
-        for (int index = 0; index < bytes.length; index++) {
-            final int c = bytes[index] & 0xff;
-            if (c <= 127) {
-                sb.append((char) c);
-            } else {
-                final String hexEncoded = Integer.toString(c, 16);
-                if (hexEncoded.length() == 1) {
-                    sb.append("%0");
-                } else {
-                    sb.append("%");
-                }
-                sb.append(hexEncoded);
-            }
-        }
-        return sb.toString();
+    public String readLine() throws IOException {
+        return readLine(ENCODING.ASCII7BIT);
     }
 
     protected int readLine(InputStream is, final OutputStream buffer) throws IOException {
@@ -360,15 +435,61 @@ public class SimpleFTP {
         return latestResponseLine;
     }
 
-    /* read response and check if it matches expectcode */
+    // RFC 2389
+    public List<FEATURE> listFeatures() throws IOException {
+        sendLine("FEAT");
+        final List<FEATURE> ret = new ArrayList<FEATURE>();
+        final String response = readLines(new int[] { 211, 500, 502 }, "FEAT FAILED");
+        if (StringUtils.startsWithCaseInsensitive(response, "211")) {
+            final String[] featureLines = response.split("\r\n");
+            for (final String featureLine : featureLines) {
+                final FEATURE feature = FEATURE.get(featureLine);
+                if (feature != null) {
+                    ret.add(feature);
+                }
+            }
+        }
+        return ret;
+    }
+
+    public boolean sendClientID(final String id) throws IOException {
+        sendLine("CLNT " + id);
+        final String response = readLines(new int[] { 200, 500, 502 }, "CNLT failed");
+        return StringUtils.startsWithCaseInsensitive(response, "200");
+    }
+
+    private boolean isUTF8Enabled = false;
+
+    public boolean isUTF8() {
+        return isUTF8Enabled;
+    }
+
+    // https://tools.ietf.org/html/draft-ietf-ftpext-utf-8-option-00
+    public boolean setUTF8(final boolean on) throws IOException {
+        if (on) {
+            sendLine("OPTS UTF8 ON");
+        } else {
+            sendLine("OPTS UTF8 OFF");
+        }
+        final String response = readLines(new int[] { 200, 500, 501, 502 }, "UTF8 not supported");
+        final boolean ret = StringUtils.startsWithCaseInsensitive(response, "200");
+        isUTF8Enabled = ret && on;
+        return ret;
+    }
+
     public String readLines(int expectcodes[], String errormsg) throws IOException {
+        return readLines(ENCODING.ASCII7BIT, expectcodes, errormsg);
+    }
+
+    /* read response and check if it matches expectcode */
+    public String readLines(ENCODING encoding, int expectcodes[], String errormsg) throws IOException {
         StringBuilder sb = new StringBuilder();
         String response = null;
         boolean multilineResponse = false;
         boolean error = true;
         int endCodeMultiLine = 0;
         while (true) {
-            response = readLine();
+            response = readLine(encoding);
             latestResponseLine = response;
             if (response == null) {
                 if (sb.length() == 0) {
@@ -405,46 +526,8 @@ public class SimpleFTP {
         }
     }
 
-    // Untested
-    // public boolean remove(String string) throws IOException {
-    // sendLine("DELE " + string);
-    // try {
-    // readLines(new int[] { 250 }, "could not remove file");
-    // return true;
-    // } catch (IOException e) {
-    // LogController.CL().log(e);
-    // if (e.getMessage().contains("could not remove file")) {
-    // return false;
-    // }
-    // throw e;
-    // }
-    // }
-
-    // Untested
-    // public boolean rename(String from, String to) throws IOException {
-    // sendLine("RNFR " + from);
-    // try {
-    // readLines(new int[] { 350 }, "RNFR failed");
-    // } catch (IOException e) {
-    // LogSource.exception(logger, e);
-    // if (e.getMessage().contains("RNFR")) {
-    // return false;
-    // }
-    // }
-    // sendLine("RNTO " + to);
-    // try {
-    // readLines(new int[] { 250 }, "RNTO failed");
-    // } catch (IOException e) {
-    // LogSource.exception(logger, e);
-    // if (e.getMessage().contains("RNTO")) {
-    // return false;
-    // }
-    // }
-    // return true;
-    // }
-
     public long getSize(final String filePath) throws IOException {
-        sendLine("SIZE " + filePath);
+        sendLine(getPathEncoding(), "SIZE " + filePath);
         String size = null;
         try {
             size = readLines(new int[] { 200, 213 }, "SIZE failed");
@@ -458,35 +541,24 @@ public class SimpleFTP {
         return Long.parseLong(split[1].trim());
     }
 
-    public static byte[] toRawBytes(final String string) {
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        for (int index = 0; index < string.length(); index++) {
-            final char c = string.charAt(index);
-            if (c == '%') {
-                final int hexDecoded = Integer.parseInt(string.substring(index + 1, index + 3), 16);
-                bos.write(hexDecoded);
-                index += 2;
-            } else {
-                bos.write(c);
-            }
-        }
-        return bos.toByteArray();
-    }
-
     /**
      * Sends a raw command to the FTP server.
      */
-    public void sendLine(String line) throws IOException {
-        sendLine(this.socket, line);
+    public void sendLine(ENCODING encoding, String line) throws IOException {
+        sendLine(encoding, this.socket, line);
     }
 
-    private void sendLine(Socket socket, String line) throws IOException {
+    public void sendLine(String line) throws IOException {
+        sendLine(ENCODING.ASCII7BIT, this.socket, line);
+    }
+
+    private void sendLine(ENCODING encoding, Socket socket, String line) throws IOException {
         if (socket != null) {
             try {
                 logger.info(host + " > " + line);
                 final OutputStream os = socket.getOutputStream();
-                os.write(toRawBytes(line));
-                os.write(new byte[] { 0x0d, 0x0a });
+                os.write(encoding.toBytes(line));
+                os.write(CRLF);
                 os.flush();
             } catch (IOException e) {
                 LogSource.exception(logger, e);
@@ -497,71 +569,6 @@ public class SimpleFTP {
             }
         }
     }
-
-    // Untested
-    // /**
-    // * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
-    // * avoid NAT or firewall problems at the client end.
-    // */
-    // public boolean stor(File file) throws IOException {
-    // if (file.isDirectory()) {
-    // throw new IOException("SimpleFTP cannot upload a directory.");
-    // }
-    // String filename = file.getName();
-    // return stor(new FileInputStream(file), filename);
-    // }
-
-    // Untested
-    // /**
-    // * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
-    // * avoid NAT or firewall problems at the client end.
-    // */
-    // public boolean stor(InputStream input, String filename) throws IOException {
-    // Socket dataSocket = null;
-    // BufferedOutputStream output = null;
-    // try {
-    // InetSocketAddress pasv = pasv();
-    // sendLine("STOR " + filename);
-    // String response = null;
-    // try {
-    // dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
-    // response = readLine();
-    // if (!response.startsWith("150 ") && !response.startsWith("125 ")) {
-    // throw new IOException("SimpleFTP was not allowed to send the file: " + response);
-    // }
-    // output = new BufferedOutputStream(dataSocket.getOutputStream());
-    // byte[] buffer = new byte[4096];
-    // int bytesRead = 0;
-    // while ((bytesRead = input.read(buffer)) != -1) {
-    // output.write(buffer, 0, bytesRead);
-    // }
-    // input.close();
-    // } finally {
-    // try {
-    // output.flush();
-    // } catch (final Throwable e) {
-    // }
-    // try {
-    // output.close();
-    // } catch (final Throwable e) {
-    // }
-    // this.shutDownSocket(dataSocket);
-    // }
-    // response = readLine();
-    // return response.startsWith("226 ");
-    // } catch (ConnectException e) {
-    // LogSource.exception(logger, e);
-    // cancelTransfer();
-    // return stor(input, filename);
-    // } catch (SocketException e) {
-    // LogSource.exception(logger, e);
-    // cancelTransfer();
-    // return stor(input, filename);
-    // } finally {
-    // input.close();
-    // }
-    //
-    // }
 
     public void cancelTransfer() {
         try {
@@ -593,69 +600,6 @@ public class SimpleFTP {
         }
         throw new IOException("SimpleFTP received bad data link information: " + response);
     }
-
-    // Untested
-    // /**
-    // * creates directories
-    // *
-    // * @param cw
-    // * @return
-    // * @throws IOException
-    // */
-    // public boolean mkdir(String cw2) throws IOException {
-    // String tmp = this.dir;
-    // String cw = cw2;
-    // try {
-    // cw = cw.replace("\\", "/");
-    //
-    // String[] cwdirs = cw.split("[\\\\|/]{1}");
-    // String[] dirdirs = dir.split("[\\\\|/]{1}");
-    // int i;
-    // int length = 0;
-    // String root = "";
-    // for (i = 0; i < Math.min(cwdirs.length, dirdirs.length); i++) {
-    // if (cwdirs[i].equals(dirdirs[i])) {
-    // length += cwdirs[i].length() + 1;
-    // root += cwdirs[i] + "/";
-    // }
-    // }
-    // // cw=cw;
-    // cw = cw.substring(length);
-    // String[] dirs = cw.split("[\\\\|/]{1}");
-    // if (root.length() > 0) {
-    // cwd(root);
-    // }
-    // for (String d : dirs) {
-    // if (d == null || d.trim().length() == 0) {
-    // cwd("/");
-    // continue;
-    // }
-    //
-    // sendLine("MKD " + d);
-    // String response = readLine();
-    // if (!response.startsWith("257 ") && !response.startsWith("550 ")) {
-    //
-    // return false;
-    //
-    // }
-    //
-    // cwd(d);
-    // }
-    // return true;
-    // } finally {
-    //
-    // this.cwd(tmp);
-    // }
-    //
-    // }
-
-    // Untested
-    // public boolean cwdAdd(String cw) throws IOException {
-    // if (cw.startsWith("/") || cw.startsWith("\\")) {
-    // cw = cw.substring(1);
-    // }
-    // return cwd(dir + cw);
-    // }
 
     public String getDir() {
         return dir;
@@ -879,7 +823,8 @@ public class SimpleFTP {
         try {
             dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
             readLines(new int[] { 125, 150 }, null);
-            sb.append(fromRawBytes(IO.readBytes(dataSocket.getInputStream())));
+            final ENCODING encoding = getPathEncoding();
+            sb.append(encoding.fromBytes(IO.readBytes(dataSocket.getInputStream())));
         } catch (IOException e) {
             if (e.getMessage().contains("550")) {
                 return null;
@@ -905,10 +850,11 @@ public class SimpleFTP {
         if (!this.cwd(workingDir)) {
             return null;
         }
-        final byte[] nameBytes = toRawBytes(name);
+        final ENCODING encoding = getPathEncoding();
+        final byte[] nameBytes = encoding.toBytes(name);
         for (final SimpleFTPListEntry entry : listEntries()) {
             // we compare bytes because of hex encoding
-            if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes)) {
+            if (Arrays.equals(encoding.toBytes(entry.getName()), nameBytes)) {
                 return entry;
             }
         }
@@ -957,6 +903,10 @@ public class SimpleFTP {
             }
             throw e;
         }
+    }
+
+    public static byte[] toRawBytes(String nameString) throws IOException {
+        return ENCODING.ASCII7BIT.toBytes(nameString);
     }
 
 }

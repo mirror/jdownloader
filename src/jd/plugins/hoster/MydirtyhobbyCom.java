@@ -132,11 +132,6 @@ public class MydirtyhobbyCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -243,8 +238,10 @@ public class MydirtyhobbyCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
+                dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
+                dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             logger.warning("The final dllink seems not to be a file!");

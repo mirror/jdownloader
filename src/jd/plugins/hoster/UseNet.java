@@ -3,7 +3,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -169,9 +169,10 @@ public class UseNet extends PluginForHost {
             config.setPort(server.getPort());
             config.setSSLEnabled(server.isSSL());
         }
-        final URI uri = new URI("socket://" + server.getHost() + ":" + server.getPort());
-        final List<HTTPProxy> proxies = selectProxies(uri);
-        final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger()) {
+        final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
+        final List<HTTPProxy> proxies = selectProxies(url);
+        final HTTPProxy proxy = proxies.get(0);
+        final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
             @Override
             protected Socket createSocket() {
                 return SocketConnectionFactory.createSocket(getProxy());
@@ -250,7 +251,7 @@ public class UseNet extends PluginForHost {
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } catch (HTTPProxyException e) {
-            ProxyController.getInstance().reportHTTPProxyException(proxies.get(0), uri, e);
+            ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
             throw e;
         } finally {
             quitClient();
@@ -333,7 +334,7 @@ public class UseNet extends PluginForHost {
         }
     }
 
-    protected List<HTTPProxy> selectProxies(URI uri) throws IOException {
+    protected List<HTTPProxy> selectProxies(URL url) throws IOException {
         final ProxySelectorInterface selector = getProxySelector();
         if (selector == null) {
             final ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
@@ -342,12 +343,12 @@ public class UseNet extends PluginForHost {
         }
         final List<HTTPProxy> list;
         try {
-            list = selector.getProxiesByURI(uri);
+            list = selector.getProxiesByURL(url);
         } catch (Throwable e) {
             throw new NoGateWayException(selector, e);
         }
         if (list == null || list.size() == 0) {
-            throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + uri);
+            throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + url);
         }
         return list;
     }

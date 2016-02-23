@@ -1,7 +1,7 @@
 package jd.controlling.proxy;
 
 import java.io.IOException;
-import java.net.URI;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -95,7 +95,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     private boolean                                               resumeIsAllowed                 = true;
 
     protected final CopyOnWriteArraySet<SingleDownloadController> activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
-    protected final CopyOnWriteArrayList<SelectProxyByURIHook>    selectProxyByURIHooks           = new CopyOnWriteArrayList<SelectProxyByURIHook>();
+    protected final CopyOnWriteArrayList<SelectProxyByURLHook>    selectProxyByURLHooks           = new CopyOnWriteArrayList<SelectProxyByURLHook>();
     private boolean                                               reconnectSupported;
 
     public boolean isReconnectSupported() {
@@ -153,11 +153,11 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         }
     }
 
-    public boolean isProxyBannedFor(final HTTPProxy orgReference, final URI uri, final Plugin pluginFromThread, final boolean ignoreConnectBans) {
+    public boolean isProxyBannedFor(final HTTPProxy orgReference, final URL url, final Plugin pluginFromThread, final boolean ignoreConnectBans) {
         for (final ConnectionBan ban : banList) {
             if (ban.isExpired()) {
                 banList.remove(ban);
-            } else if (ban.isProxyBannedByUrlOrPlugin(orgReference, uri, pluginFromThread, ignoreConnectBans)) {
+            } else if (ban.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans)) {
                 return true;
             }
         }
@@ -175,15 +175,15 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         return false;
     }
 
-    public void addSelectProxyByUrlHook(SelectProxyByURIHook selectProxyByUrlHook) {
+    public void addSelectProxyByUrlHook(SelectProxyByURLHook selectProxyByUrlHook) {
         if (selectProxyByUrlHook != null) {
-            selectProxyByURIHooks.addIfAbsent(selectProxyByUrlHook);
+            selectProxyByURLHooks.addIfAbsent(selectProxyByUrlHook);
         }
     }
 
-    public void removeSelectProxyByUrlHook(SelectProxyByURIHook hook) {
-        if (hook != null) {
-            selectProxyByURIHooks.remove(hook);
+    public void removeSelectProxyByUrlHook(SelectProxyByURLHook selectProxyByUrlHook) {
+        if (selectProxyByUrlHook != null) {
+            selectProxyByURLHooks.remove(selectProxyByUrlHook);
         }
     }
 }

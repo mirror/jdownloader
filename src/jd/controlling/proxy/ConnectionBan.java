@@ -1,6 +1,6 @@
 package jd.controlling.proxy;
 
-import java.net.URI;
+import java.net.URL;
 
 import jd.plugins.Plugin;
 
@@ -10,7 +10,7 @@ public interface ConnectionBan {
 
     boolean isSelectorBannedByPlugin(Plugin plugin, boolean ignoreConnectBans);
 
-    boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URI url, Plugin pluginFromThread, boolean ignoreConnectBans);
+    boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans);
 
     boolean isExpired();
 

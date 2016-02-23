@@ -19,91 +19,6 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.storage.config.annotations.RequiresRestart;
-import org.appwork.storage.config.annotations.RequiresRestart;
-import org.appwork.swing.action.BasicAction;
-import org.appwork.swing.action.BasicAction;
-import org.appwork.swing.components.JScrollMenu;
-import org.appwork.swing.components.JScrollMenu;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Files;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
-import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
-import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.segment.SegmentDownloader;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.translate._JDT;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
@@ -153,20 +68,64 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.JScrollMenu;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
+import org.jdownloader.controlling.DownloadLinkView;
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.translate._JDT;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
 
-    private static final String DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
+    private static final String    DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
 
-    private static final String DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
+    private static final String    DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
 
-    private static final String DASH_AUDIO_LOADED = "DASH_AUDIO_LOADED";
+    private static final String    DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
 
-    private static final String DASH_VIDEO_LOADED = "DASH_VIDEO_LOADED";
+    private static final String    DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
 
-    private final String DASH_AUDIO_CHUNKS = "DASH_AUDIO_CHUNKS";
+    private final String           DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
 
-    private final String DASH_VIDEO_CHUNKS = "DASH_VIDEO_CHUNKS";
+    private final String           DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
 
     private YoutubeConfig          cfg;
     private YoutubeHelper          cachedHelper;
@@ -353,7 +312,8 @@ public class YoutubeDashV2 extends PluginForHost {
                 public String getLabel() {
                     return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
                 }
-            },;
+            },
+            ;
 
         }
 
@@ -659,7 +619,7 @@ public class YoutubeDashV2 extends PluginForHost {
         return "Youtube:" + link.getStringProperty(YoutubeHelper.YT_VARIANT) + link.getName() + "_" + link.getView().getBytesTotal();
     }
 
-    private boolean isDownloading = false;
+    private boolean                             isDownloading = false;
 
     private Map<YoutubeITAG, YoutubeStreamData> info;
 
@@ -1088,10 +1048,10 @@ public class YoutubeDashV2 extends PluginForHost {
             info = helper.loadVideo(vid);
             if (info == null) {
 
-                if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.")
-                        || StringUtils.equalsIgnoreCase(vid.error, /*
-                                                                    * 15.12.2014
-                                                                    */"This video is not available.")) {
+                if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error, /*
+                 * 15.12
+                 * .2014
+                 */"This video is not available.")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1484,7 +1444,7 @@ public class YoutubeDashV2 extends PluginForHost {
             return dl.startDownload();
 
         }
-        List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURI(request.getURI());
+        List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
         request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
 
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());

@@ -66,23 +66,31 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public List<HTTPProxy> getProxiesByURI(URI uri) {
-        final List<HTTPProxy> ret = getProxyByUrlInternal(uri);
-        for (final SelectProxyByURIHook hook : selectProxyByURIHooks) {
-            hook.onProxyChoosen(uri, ret);
+    public List<HTTPProxy> getProxiesByURL(URL url) {
+        final List<HTTPProxy> ret = getProxyByUrlInternal(url);
+        for (final SelectProxyByURLHook hook : selectProxyByURLHooks) {
+            hook.onProxyChoosen(url, ret);
         }
         return ret;
     }
 
-    public List<HTTPProxy> getProxyByUrlInternal(URI uri) {
+    public List<HTTPProxy> getProxyByUrlInternal(URL url) {
         PacProxySelector lSelector = getPacProxySelector();
         if (lSelector == null) {
             return null;
         }
         final ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-        if (uri != null) {
+        if (url != null) {
             try {
-                List<Proxy> result = lSelector.select(uri);
+                final StringBuilder sb = new StringBuilder();
+                sb.append(url.getProtocol());
+                sb.append("://");
+                sb.append(url.getHost());
+                if (url.getPort() != -1) {
+                    sb.append(":");
+                    sb.append(url.getPort());
+                }
+                List<Proxy> result = lSelector.select(new URI(sb.toString()));
                 if (result != null) {
                     for (Proxy p : result) {
                         String ID = p.toString();
@@ -341,14 +349,14 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public boolean isProxyBannedFor(HTTPProxy orgReference, URI uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // can orgRef be null? I doubt that. TODO:ensure
         synchronized (this) {
             if (!cacheMap.containsValue(orgReference)) {
                 return false;
             }
         }
-        return super.isProxyBannedFor(orgReference, uri, pluginFromThread, ignoreConnectBans);
+        return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     @Override

@@ -87,7 +87,7 @@ public class EnvJSBrowser implements ContextCallback {
     public void setCookie(String url, String cookie) {
 
         final String date = br.getRequest().getHttpConnection().getHeaderField("Date");
-        final String host = Browser.getHost(br.getRequest().getURI());
+        final String host = Browser.getHost(br.getRequest().getURL());
 
         Cookies cookies = Cookies.parseCookies(cookie, host, date);
         br.getCookies(host).add(cookies);

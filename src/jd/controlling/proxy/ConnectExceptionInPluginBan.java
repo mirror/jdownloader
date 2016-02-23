@@ -1,6 +1,6 @@
 package jd.controlling.proxy;
 
-import java.net.URI;
+import java.net.URL;
 
 import jd.plugins.Plugin;
 
@@ -21,8 +21,8 @@ public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
     }
 
     @Override
-    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URI uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
-        return !ignoreConnectBans && super.isProxyBannedByUrlOrPlugin(orgReference, uri, pluginFromThread, ignoreConnectBans);
+    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
+        return !ignoreConnectBans && super.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     @Override
