@@ -51,37 +51,59 @@ public class AccountReference {
     }
 
     public Date getExpireDate() {
-        AccountInfo ai = account.getAccountInfo();
+        final AccountInfo ai = account.getAccountInfo();
         if (ai == null) {
             return null;
         } else {
-            if (ai.getValidUntil() <= 0) return null;
-            return new Date(ai.getValidUntil());
+            if (ai.getValidUntil() <= 0) {
+                return null;
+            } else {
+                return new Date(ai.getValidUntil());
+            }
         }
-
     }
 
     public boolean isValid() {
-        Account acc = getAccount();
-        if (acc != null) return acc.isValid();
-        return true;
+        final Account acc = getAccount();
+        if (acc != null) {
+            return acc.isValid();
+        } else {
+            return true;
+        }
+    }
+
+    public boolean isAvailable() {
+        final Account acc = getAccount();
+        if (acc != null) {
+            return acc.getAccountController() != null;
+        } else {
+            return true;
+        }
     }
 
     public boolean isTempDisabled() {
-        Account acc = getAccount();
-        if (acc != null) return acc.isTempDisabled();
-        return false;
+        final Account acc = getAccount();
+        if (acc != null) {
+            return acc.isTempDisabled();
+        } else {
+            return false;
+        }
     }
 
     public long getTmpDisabledTimeout() {
-        Account acc = getAccount();
-        if (acc != null) return acc.getTmpDisabledTimeout();
-        return -1;
+        final Account acc = getAccount();
+        if (acc != null) {
+            return acc.getTmpDisabledTimeout();
+        } else {
+            return -1;
+        }
     }
 
     public AccountInfo getAccountInfo() {
         Account acc = getAccount();
-        if (acc != null) return acc.getAccountInfo();
+        if (acc != null) {
+            return acc.getAccountInfo();
+        }
         return null;
     }
 
