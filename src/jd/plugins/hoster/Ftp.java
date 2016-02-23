@@ -18,13 +18,21 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.proxy.ProxyController;
 import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.SocketConnectionFactory;
 import jd.nutils.SimpleFTP;
 import jd.nutils.SimpleFTP.SimpleFTPListEntry;
 import jd.parser.Regex;
@@ -38,6 +46,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.SimpleFTPDownloadInterface;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.DomainInfo;
 
 // DEV NOTES:
@@ -90,17 +100,30 @@ public class Ftp extends PluginForHost {
         }
     }
 
+    protected SimpleFTP createSimpleFTP(URL url) throws IOException {
+        final List<HTTPProxy> proxies = selectProxies(url);
+        final HTTPProxy proxy = proxies.get(0);
+        return new SimpleFTP(proxy, logger) {
+            @Override
+            protected Socket createSocket() {
+                return SocketConnectionFactory.createSocket(getProxy());
+            }
+        };
+    }
+
     public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws Exception {
-        final SimpleFTP ftp = new SimpleFTP();
+        final URL url = new URL(ftpurl);
+        final SimpleFTP ftp = createSimpleFTP(url);
         try {
-            ftp.setLogger(logger);
-            URL url = new URL(ftpurl);
             /* cut off all ?xyz at the end */
             final String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             connect(ftp, downloadLink, url);
             checkFile(ftp, downloadLink, filePath);
             dl = new SimpleFTPDownloadInterface(ftp, downloadLink, filePath);
             dl.startDownload();
+        } catch (HTTPProxyException e) {
+            ProxyController.getInstance().reportHTTPProxyException(ftp.getProxy(), url, e);
+            throw e;
         } catch (IOException e) {
             if (throwException && e.getMessage() != null && e.getMessage().contains("530")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Login incorrect");
@@ -113,6 +136,29 @@ public class Ftp extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    protected ProxySelectorInterface getProxySelector() {
+        return BrowserSettingsThread.getThreadProxySelector();
+    }
+
+    protected List<HTTPProxy> selectProxies(URL url) throws IOException {
+        final ProxySelectorInterface selector = getProxySelector();
+        if (selector == null) {
+            final ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+            ret.add(HTTPProxy.NONE);
+            return ret;
+        }
+        final List<HTTPProxy> list;
+        try {
+            list = selector.getProxiesByURL(url);
+        } catch (Throwable e) {
+            throw new NoGateWayException(selector, e);
+        }
+        if (list == null || list.size() == 0) {
+            throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + url);
+        }
+        return list;
     }
 
     private void checkFile(SimpleFTP ftp, DownloadLink downloadLink, String filePath) throws Exception {
@@ -211,14 +257,16 @@ public class Ftp extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        final SimpleFTP ftp = new SimpleFTP();
+        final URL url = new URL(downloadLink.getDownloadURL());
+        final SimpleFTP ftp = createSimpleFTP(url);
         try {
-            ftp.setLogger(logger);
-            final URL url = new URL(downloadLink.getDownloadURL());
             /* cut off all ?xyz at the end */
             final String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             connect(ftp, downloadLink, url);
             checkFile(ftp, downloadLink, filePath);
+        } catch (HTTPProxyException e) {
+            ProxyController.getInstance().reportHTTPProxyException(ftp.getProxy(), url, e);
+            throw e;
         } catch (ConnectException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (UnknownHostException e) {
