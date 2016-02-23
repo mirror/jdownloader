@@ -150,16 +150,16 @@ public abstract class SimpleFTP {
         }
     }
 
-    private static final int TIMEOUT            = 20 * 1000;
-    private boolean          binarymode         = false;
-    private Socket           socket             = null;
-    private String           dir                = "/";
-    private String           host;
-    private LogInterface     logger             = LogController.CL();
-    private String           latestResponseLine = null;
-    private String           user               = null;
+    private static final int   TIMEOUT            = 20 * 1000;
+    private boolean            binarymode         = false;
+    private Socket             socket             = null;
+    private String             dir                = "/";
+    private String             host;
+    private final LogInterface logger;
+    private String             latestResponseLine = null;
+    private String             user               = null;
 
-    private final byte[]     CRLF               = "\r\n".getBytes();
+    private final byte[]       CRLF               = "\r\n".getBytes();
 
     public String getUser() {
         return user;
@@ -886,7 +886,7 @@ public abstract class SimpleFTP {
      * @throws IOException
      */
     public void connect(URL url) throws IOException {
-        String host = url.getHost();
+        final String host = url.getHost();
         int port = url.getPort();
         if (port <= 0) {
             port = 21;
@@ -894,10 +894,14 @@ public abstract class SimpleFTP {
         boolean autoTry = false;
         try {
             if (url.getUserInfo() != null) {
-                String[] auth = url.getUserInfo().split(":");
-                connect(host, port, auth[0], auth[1]);
+                final String[] auth = url.getUserInfo().split(":");
+                if (auth.length == 1) {
+                    connect(host, port, auth[0], "");
+                } else {
+                    connect(host, port, auth[0], auth[1]);
+                }
             } else {
-                Login ret = AuthenticationController.getInstance().getBestLogin("ftp://" + url.getHost());
+                final Login ret = AuthenticationController.getInstance().getBestLogin("ftp://" + url.getHost());
                 if (ret != null) {
                     autoTry = true;
                     connect(host, port, ret.getUsername(), ret.getPassword());
