@@ -78,6 +78,10 @@ public class MydirtyhobbyCom extends PluginForHost {
         serverissues = false;
         this.br = prepBR(new Browser());
         this.setBrowserExclusive();
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            this.login(aa, false);
+        }
         br.getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -94,7 +98,6 @@ public class MydirtyhobbyCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Account aa = AccountController.getInstance().getValidAccount(this);
         filename = Encoding.htmlDecode(filename.trim());
         filename = username + " - " + filename;
         if (br.containsHTML(html_buy) || aa == null) {
@@ -103,12 +106,21 @@ public class MydirtyhobbyCom extends PluginForHost {
             premiumonly = true;
             return AvailableStatus.TRUE;
         }
-        this.login(aa, false);
         dllink = this.br.getRegex("data\\-(?:flv|mp4)=\"(https?://[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) {
             dllink = this.br.getRegex("\"(https?://[^<>\"\\']+\\.flv[^<>\"\\']+)\"").getMatch(0);
         }
         if (dllink != null) {
+            /* Fix final downloadlink */
+            dllink = dllink.replace("%252525", "%25");
+            /* Set final filename */
+            if (dllink.contains(".flv")) {
+                filename += ".flv";
+            } else {
+                filename += ".mp4";
+            }
+            link.setFinalFileName(filename);
+            /* Get- and set filesize */
             URLConnectionAdapter con = null;
             try {
                 try {
@@ -154,7 +166,7 @@ public class MydirtyhobbyCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                /* Re-use cookies whenever possible and avoid login captcha! */
+                /* Re-use cookies whenever possible - avoid login captcha! */
                 if (cookies != null) {
                     this.br.setCookies(MAINPAGE, cookies);
                     this.br.getPage(MAINPAGE);
