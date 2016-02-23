@@ -12,6 +12,22 @@ import java.util.Locale;
 
 import javax.swing.Icon;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+import net.sf.image4j.codec.ico.ICOEncoder;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -42,22 +58,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-import net.sf.image4j.codec.ico.ICOEncoder;
 
 public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
@@ -277,34 +277,47 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     // For My JD API
     @Override
-    public void add(RemoteAPIRequest request, RemoteAPIResponse response, String param1, String param2, String param3) throws InternalApiException {
+    public void add(RemoteAPIRequest request, RemoteAPIResponse response, String passwordParam, String sourceParam, String urlParam) throws InternalApiException {
         try {
             askPermission(request);
             String source = null;
+            boolean keyValueParams = request.getParameterbyKey("urls") != null;
             try {
-                source = request.getParameterbyKey("source");
+                if (keyValueParams) {
+                    source = request.getParameterbyKey("source");
+                } else if (request.getParameters() != null && request.getParameters().length >= 3) {
+                    source = request.getParameters()[2];
+                }
             } catch (IOException e) {
             }
             if (source == null) {
-                source = param1;
+                source = sourceParam;
             }
             String urls = null;
             try {
-                urls = request.getParameterbyKey("urls");
+                if (keyValueParams) {
+                    urls = request.getParameterbyKey("urls");
+                } else if (request.getParameters() != null && request.getParameters().length >= 4) {
+                    urls = request.getParameters()[3];
+                }
             } catch (IOException e) {
             }
             if (urls == null) {
-                urls = param2;
+                urls = urlParam;
             }
             String passwords = null;
             try {
-                passwords = request.getParameterbyKey("passwords");
+                if (keyValueParams) {
+                    passwords = request.getParameterbyKey("passwords");
+                } else if (request.getParameters() != null && request.getParameters().length >= 2) {
+                    passwords = request.getParameters()[1];
+                }
             } catch (IOException e) {
             }
             if (passwords == null) {
-                passwords = param3;
+                passwords = passwordParam;
             }
-            final String finalPasswords = request.getParameterbyKey("passwords");
+            final String finalPasswords = passwords;
             final String finalComment = request.getParameterbyKey("comment");
             LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls);
             final String finalDestination = request.getParameterbyKey("dir");
@@ -359,6 +372,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             }
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {
+            writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
     }
 
