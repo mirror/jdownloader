@@ -3,7 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 import java.awt.Color;
 import java.awt.Point;
 import java.io.IOException;
-import java.net.URI;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -153,8 +153,8 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
                             }
 
                             @Override
-                            public List<HTTPProxy> getProxiesByURI(URI uri) {
-                                return impl.getProxiesByURI(uri);
+                            public List<HTTPProxy> getProxiesByURL(URL uri) {
+                                return impl.getProxiesByURL(uri);
                             }
                         });
                         try {

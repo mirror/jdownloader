@@ -18,13 +18,13 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
 import jd.nutils.Formatter;
 
 import org.appwork.storage.config.JsonConfig;
@@ -240,7 +240,7 @@ public abstract class PluginsC {
             if (sourceURL != null) {
                 // workaround for authorities in file uris
                 final String currentURI = sourceURL.replaceFirst("file:///?", "file:///");
-                final File file = new File(Browser.constructURI(currentURI));
+                final File file = new File(new URI(currentURI));
                 if (file != null && file.exists()) {
                     final CrawledLink origin = source.getOriginLink();
                     if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {

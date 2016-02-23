@@ -1,6 +1,6 @@
 package jd.controlling.proxy;
 
-import java.net.URI;
+import java.net.URL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -17,10 +17,10 @@ public abstract class AbstractBan implements ConnectionBan {
         return selector;
     }
 
-    protected int getPort(URI uri) {
+    protected int getPort(URL uri) {
         final int ret = uri.getPort();
         if (ret == -1) {
-            final String scheme = uri.getScheme();
+            final String scheme = uri.getProtocol();
             if (StringUtils.equalsIgnoreCase(scheme, "http")) {
                 return 80;
             } else if (StringUtils.equalsIgnoreCase(scheme, "https")) {
@@ -29,7 +29,7 @@ public abstract class AbstractBan implements ConnectionBan {
                 return 21;
             }
         }
-        return ret;
+        return uri.getDefaultPort();
     }
 
     public boolean stringEquals(String a, String b) {

@@ -5,6 +5,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,7 +28,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.auth.Login;
 
-@DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
 
     private static final HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
@@ -124,6 +126,10 @@ public class Ftp extends PluginForDecrypt {
             } else {
                 auth = "";
             }
+
+            // ftp.sendClientID("JDownloader");
+            // ftp.setUTF8(true);
+
             if (ftp.cwd(filePath)) {
                 SimpleFTPListEntry[] entries = ftp.listEntries();
                 if (entries != null) {
@@ -205,7 +211,7 @@ public class Ftp extends PluginForDecrypt {
     // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
     public static String BestEncodingGuessingURLDecode(String urlCoded) throws IOException {
         final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
-        for (final String encoding : new String[] { "cp1251", "UTF-8", "ISO-8859-5", "KOI8-R" }) {
+        for (final String encoding : new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }) {
             try {
                 results.put(encoding, URLDecoder.decode(urlCoded, encoding));
             } catch (final Throwable ignore) {
@@ -234,6 +240,17 @@ public class Ftp extends PluginForDecrypt {
         for (final String bestMatchEncoding : bestMatchRound1) {
             bestMatches.add(results.get(bestMatchEncoding));
         }
+        Collections.sort(bestMatches, new Comparator<String>() {
+            private final int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            @Override
+            public final int compare(String o1, String o2) {
+                return compare(o1.length(), o2.length());
+            }
+
+        });
         return bestMatches.get(0);
     }
 

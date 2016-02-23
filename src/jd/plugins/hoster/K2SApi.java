@@ -21,9 +21,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,6 +43,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -499,7 +499,7 @@ public abstract class K2SApi extends PluginForHost {
              * @throws MalformedURLException
              */
             public Request createPostRawRequest(final String url, final String post) throws IOException {
-                final PostRequest request = new PostRequest(this.getURI(url));
+                final PostRequest request = new PostRequest(this.getURL(url));
                 request.setPostDataString(post);
 
                 String requestContentType = null;
@@ -1561,7 +1561,7 @@ public abstract class K2SApi extends PluginForHost {
                     final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                     String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                     StringBuilder sb = new StringBuilder();
-                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURI(), true) + "\";\r\n");
+                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr._getURL(), true) + "\";\r\n");
                     sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                     sb.append(line2);
 

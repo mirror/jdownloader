@@ -19,14 +19,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -45,6 +37,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -416,7 +416,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @author raztoki
      */
     protected URLConnectionAdapter openAntiDDoSRequestConnection(final Browser ibr, Request request) throws Exception {
-        final String host = Browser.getHost(request.getURI());
+        final String host = Browser.getHost(request.getURL());
         prepBrowser(ibr, host);
         ibr.openRequestConnection(request);
         antiDDoS(ibr, request);
@@ -567,7 +567,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
             String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
             StringBuilder sb = new StringBuilder();
-            sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURI(), true) + "\";\r\n");
+            sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr._getURL(), true) + "\";\r\n");
             sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
             sb.append(line2);
 

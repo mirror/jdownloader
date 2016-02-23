@@ -43,7 +43,7 @@ import org.jdownloader.DomainInfo;
 // DEV NOTES:
 // - ftp filenames can contain & characters!
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftpviajd://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftpviajd://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
     public Ftp(PluginWrapper wrapper) {

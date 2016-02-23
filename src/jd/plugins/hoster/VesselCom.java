@@ -76,19 +76,19 @@ public class VesselCom extends antiDDoSForHost {
      * not really missing anything by not downloading them.
      */
     public static LinkedHashMap<String, String[]> formats                      = new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate,
-             * videoResolution, audioCodec, audioBitrate
-             */
-            put("mp4-216-250K", new String[] { "AVC", "250", "384x216", "AAC LC-SBR", "32" });
-            put("mp4-360-500K", new String[] { "AVC", "500", "640x360", "AAC LC", "128" });
-            put("mp4-480-1000K", new String[] { "AVC", "1000", "768x432", "AAC LC", "128" });
-            put("mp4-720-2400K", new String[] { "AVC", "2400", "1280x720", "AAC LC", "160" });
-            put("mp4-1080-4800K", new String[] { "AVC", "4800", "1920x1080", "AAC LC", "160" });
+                                                                                   {
+                                                                                       /*
+                                                                                        * Format-name:videoCodec, videoBitrate,
+                                                                                        * videoResolution, audioCodec, audioBitrate
+                                                                                        */
+                                                                                       put("mp4-216-250K", new String[] { "AVC", "250", "384x216", "AAC LC-SBR", "32" });
+                                                                                       put("mp4-360-500K", new String[] { "AVC", "500", "640x360", "AAC LC", "128" });
+                                                                                       put("mp4-480-1000K", new String[] { "AVC", "1000", "768x432", "AAC LC", "128" });
+                                                                                       put("mp4-720-2400K", new String[] { "AVC", "2400", "1280x720", "AAC LC", "160" });
+                                                                                       put("mp4-1080-4800K", new String[] { "AVC", "4800", "1920x1080", "AAC LC", "160" });
 
-        }
-    };
+                                                                                   }
+                                                                               };
 
     private String                                DLLINK                       = null;
 
@@ -380,7 +380,7 @@ public class VesselCom extends antiDDoSForHost {
              * @throws MalformedURLException
              */
             public Request createPostRawRequest(final String url, final String post) throws IOException {
-                final PostRequest request = new PostRequest(this.getURI(url));
+                final PostRequest request = new PostRequest(this.getURL(url));
                 request.setPostDataString(post);
 
                 String requestContentType = null;

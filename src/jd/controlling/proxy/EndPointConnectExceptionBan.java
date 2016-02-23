@@ -1,7 +1,7 @@
 package jd.controlling.proxy;
 
 import java.lang.ref.WeakReference;
-import java.net.URI;
+import java.net.URL;
 
 import jd.http.Browser;
 import jd.plugins.Plugin;
@@ -13,16 +13,16 @@ import org.jdownloader.translate._JDT;
 public class EndPointConnectExceptionBan extends AbstractBan {
 
     private final WeakReference<HTTPProxy> proxy;
-    private final URI                      uri;
+    private final URL                      url;
 
-    protected URI getURI() {
-        return uri;
+    protected URL getURL() {
+        return url;
     }
 
-    public EndPointConnectExceptionBan(AbstractProxySelectorImpl selector, HTTPProxy proxy, URI uri) {
+    public EndPointConnectExceptionBan(AbstractProxySelectorImpl selector, HTTPProxy proxy, URL url) {
         super(selector);
         this.proxy = new WeakReference<HTTPProxy>(proxy);
-        this.uri = uri;
+        this.url = url;
     }
 
     protected HTTPProxy getProxy() {
@@ -30,20 +30,20 @@ public class EndPointConnectExceptionBan extends AbstractBan {
     }
 
     protected String getHost() {
-        return Browser.getHostFromURI(getURI());
+        return Browser.getHost(getURL());
     }
 
     @Override
     public String toString() {
-        return _JDT.T.ConnectExceptionInPluginBan(getScheme() + "://" + getHost().concat(":").concat(Integer.toString(getPort())));
+        return _JDT.T.ConnectExceptionInPluginBan(getProtocol() + "://" + getHost().concat(":").concat(Integer.toString(getPort())));
     }
 
     protected int getPort() {
-        return getPort(getURI());
+        return getPort(getURL());
     }
 
-    protected String getScheme() {
-        return getURI().getScheme();
+    protected String getProtocol() {
+        return getURL().getProtocol();
     }
 
     @Override
@@ -53,9 +53,9 @@ public class EndPointConnectExceptionBan extends AbstractBan {
     }
 
     @Override
-    public boolean isProxyBannedByUrlOrPlugin(final HTTPProxy proxy, final URI uri, final Plugin pluginFromThread, boolean ignoreConnectBans) {
+    public boolean isProxyBannedByUrlOrPlugin(final HTTPProxy proxy, final URL url, final Plugin pluginFromThread, boolean ignoreConnectBans) {
         if (!ignoreConnectBans && proxyEquals(getProxy(), proxy)) {
-            final boolean ret = getPort() == getPort(uri) && StringUtils.containsIgnoreCase(getHost(), Browser.getHostFromURI(uri)) && StringUtils.equals(getScheme(), uri.getScheme());
+            final boolean ret = getPort() == getPort(url) && StringUtils.containsIgnoreCase(getHost(), Browser.getHost(url)) && StringUtils.equals(getProtocol(), url.getProtocol());
             return ret;
         }
         return false;
@@ -70,7 +70,7 @@ public class EndPointConnectExceptionBan extends AbstractBan {
     public boolean canSwallow(ConnectionBan ban) {
         if (ban instanceof EndPointConnectExceptionBan) {
             final EndPointConnectExceptionBan other = (EndPointConnectExceptionBan) ban;
-            if (proxyEquals(getProxy(), other.getProxy()) && getPort() == other.getPort() && StringUtils.equals(getHost(), other.getHost()) && StringUtils.equals(getScheme(), other.getScheme())) {
+            if (proxyEquals(getProxy(), other.getProxy()) && getPort() == other.getPort() && StringUtils.equals(getHost(), other.getHost()) && StringUtils.equals(getProtocol(), other.getProtocol())) {
                 return true;
             }
         }

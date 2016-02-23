@@ -17,7 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -160,7 +160,7 @@ public class FastixRu extends antiDDoSForHost {
             // Important Parameter [ip] can not take the address format IPv6, as well as masks (approx. 192.168. *. *)
 
             // IP might not even be needed in the scheme of things?? - raztoki
-            final HTTPProxy proxyThatWillBeUsed = br.getProxy().getProxiesByURI(new URI(DOMAIN)).get(0);
+            final HTTPProxy proxyThatWillBeUsed = br.getProxy().getProxiesByURL(new URL(DOMAIN)).get(0);
             final String externalIP = new BalancedWebIPCheck(new StaticProxySelector(proxyThatWillBeUsed)).getExternalIP().getIP();
             /* External IP of the user is needed for this request, also enforce SSL */
             getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=getdirectlink&link=" + JSonUtils.escape(link.getDownloadURL()) + "&ip=" + JSonUtils.escape(externalIP) + "&ssl=true");
