@@ -41,6 +41,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -56,6 +57,8 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.Login;
 import org.jdownloader.logging.LogController;
@@ -67,7 +70,7 @@ import org.seamless.util.io.IO;
  *
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
-public class SimpleFTP {
+public abstract class SimpleFTP {
 
     public static enum ENCODING {
         ASCII7BIT {
@@ -172,17 +175,21 @@ public class SimpleFTP {
         return logger;
     }
 
-    public void setLogger(LogInterface logger) {
-        if (logger == null) {
-            logger = LogController.CL();
-        }
-        this.logger = logger;
+    private final HTTPProxy proxy;
+
+    public HTTPProxy getProxy() {
+        return proxy;
     }
 
-    /**
-     * Create an instance of SimpleFTP.
-     */
-    public SimpleFTP() {
+    protected abstract Socket createSocket();
+
+    public SimpleFTP(HTTPProxy proxy, LogInterface logger) {
+        this.proxy = proxy;
+        if (logger != null) {
+            this.logger = logger;
+        } else {
+            this.logger = LoggerFactory.getDefaultLogger();
+        }
     }
 
     /**
@@ -258,6 +265,17 @@ public class SimpleFTP {
         }
     }
 
+    public Socket createSocket(SocketAddress address) throws IOException {
+        final Socket socket = createSocket();
+        try {
+            socket.connect(address);
+        } catch (IOException e) {
+            socket.close();
+            throw e;
+        }
+        return socket;
+    }
+
     /**
      * Connects to an FTP server and logs in with the supplied username and password.
      */
@@ -268,7 +286,7 @@ public class SimpleFTP {
         this.isUTF8Enabled = false;
         this.user = user;
         this.pass = pass;
-        socket = new Socket(host, port);
+        socket = createSocket(new InetSocketAddress(host, port));
         this.host = host;
         socket.setSoTimeout(TIMEOUT);
         String response = readLines(new int[] { 220 }, "SimpleFTP received an unknown response when connecting to the FTP server: ");

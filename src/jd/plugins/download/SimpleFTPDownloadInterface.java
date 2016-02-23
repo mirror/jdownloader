@@ -158,9 +158,8 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         Socket dataSocket = null;
         MeteredThrottledInputStream input = null;
         try {
-            dataSocket = new Socket();
+            dataSocket = simpleFTP.createSocket(new InetSocketAddress(pasv.getHostName(), pasv.getPort()));
             dataSocket.setSoTimeout(30 * 1000);
-            dataSocket.connect(new InetSocketAddress(pasv.getHostName(), pasv.getPort()), 30 * 1000);
             simpleFTP.sendLine("RETR " + filename);
             simpleFTP.readLines(new int[] { 150, 125 }, null);
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter(10));

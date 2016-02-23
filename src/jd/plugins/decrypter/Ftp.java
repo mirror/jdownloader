@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -15,7 +16,12 @@ import java.util.Map.Entry;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.proxy.ProxyController;
 import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.SocketConnectionFactory;
 import jd.nutils.SimpleFTP;
 import jd.nutils.SimpleFTP.SimpleFTPListEntry;
 import jd.plugins.CryptedLink;
@@ -26,6 +32,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.auth.Login;
 
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
@@ -63,10 +71,16 @@ public class Ftp extends PluginForDecrypt {
                 return super.add(link);
             }
         };
-        final SimpleFTP ftp = new SimpleFTP();
-        ftp.setLogger(logger);
+        final URL url = new URL(cLink.getCryptedUrl());
+        final List<HTTPProxy> proxies = selectProxies(url);
+        final HTTPProxy proxy = proxies.get(0);
+        final SimpleFTP ftp = new SimpleFTP(proxy, logger) {
+            @Override
+            protected Socket createSocket() {
+                return SocketConnectionFactory.createSocket(getProxy());
+            }
+        };
         try {
-            final URL url = new URL(cLink.getCryptedUrl());
             try {
                 ftp.connect(url);
             } catch (IOException e) {
@@ -202,10 +216,36 @@ public class Ftp extends PluginForDecrypt {
                 fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, Boolean.TRUE);
                 fp.addLinks(ret);
             }
+        } catch (HTTPProxyException e) {
+            ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
+            throw e;
         } finally {
             ftp.disconnect();
         }
         return ret;
+    }
+
+    protected ProxySelectorInterface getProxySelector() {
+        return BrowserSettingsThread.getThreadProxySelector();
+    }
+
+    protected List<HTTPProxy> selectProxies(URL url) throws IOException {
+        final ProxySelectorInterface selector = getProxySelector();
+        if (selector == null) {
+            final ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+            ret.add(HTTPProxy.NONE);
+            return ret;
+        }
+        final List<HTTPProxy> list;
+        try {
+            list = selector.getProxiesByURL(url);
+        } catch (Throwable e) {
+            throw new NoGateWayException(selector, e);
+        }
+        if (list == null || list.size() == 0) {
+            throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + url);
+        }
+        return list;
     }
 
     // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
