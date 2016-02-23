@@ -1,5 +1,7 @@
 package jd.plugins.hoster;
 
+import org.appwork.exceptions.WTFException;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.plugins.Account;
@@ -11,10 +13,13 @@ import jd.plugins.PluginForHost;
 //import jd.plugins.components.GoogleHelper;
 import jd.plugins.components.GoogleHelper;
 
-import org.appwork.exceptions.WTFException;
-
 @HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "google.com (Recaptcha)" }, urls = { "google://.+" }, flags = { 2 })
 public class GooglePremium extends PluginForHost {
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
 
     @Override
     public String getAGBLink() {

@@ -26,6 +26,7 @@ import javax.swing.SwingUtilities;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -136,7 +137,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 4);
 
         parameter = param.toString().replace("#!/", "");
-        fastLinkcheckPictures = getPluginConfig().getBooleanProperty(jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES, jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT);
+        // fastLinkcheckPictures = getPluginConfig().getBooleanProperty(jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES,
+        // jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT);
         if (parameter.matches(TYPE_SINGLE_VIDEO_MANY_TYPES) || parameter.matches(TYPE_SINGLE_VIDEO_EMBED) || parameter.matches(TYPE_SINGLE_VIDEO_VIDEOS) || parameter.contains("/video.php?v=")) {
             String id;
             if (parameter.matches(TYPE_SINGLE_VIDEO_VIDEOS)) {
@@ -798,7 +800,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(videolink);
             dl.setContentUrl(videoid);
             dl.setLinkID(videoid);
-            dl.setName(videoid + ".mp4");
+            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            dl.setName(videoid);
             dl.setAvailable(true);
             fp.add(dl);
             decryptedLinks.add(dl);
@@ -908,7 +911,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
                 dl.setContentUrl(single_link);
                 // Set temp name, correct name will be set in hosterplugin later
-                dl.setName(current_id + ".jpg");
+                dl.setName(current_id);
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 fp.add(dl);
                 distribute(dl);
                 decryptedLinks.add(dl);
@@ -1195,7 +1199,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             dl.setAvailable(true);
         }
         // Set temp name, correct name will be set in hosterplugin later
-        dl.setName(picID + ".jpg");
+        dl.setName(picID);
+        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
         return dl;
     }
 
