@@ -62,8 +62,8 @@ public class AvhtNet extends PluginForHost {
     }
 
     @Override
-    public String siteSupportedPath() {
-        return mainpage;
+    public String[] siteSupportedNames() {
+        return new String[] { "www." + getHost() };
     }
 
     /* Basic constants */
