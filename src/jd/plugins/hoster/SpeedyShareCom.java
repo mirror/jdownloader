@@ -152,7 +152,7 @@ public class SpeedyShareCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        if (br.containsHTML("The one\\-hour limit has been reached\\. Wait")) {
+        if (br.containsHTML("The one-hour limit has been reached\\. Wait")) {
             String wait[] = br.getRegex("id=minwait1>(\\d+):(\\d+)</span> minutes").getRow(0);
             long waittime = 1000l * 60 * Long.parseLong(wait[0]) + 1000 * Long.parseLong(wait[1]);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
@@ -168,14 +168,7 @@ public class SpeedyShareCom extends PluginForHost {
         }
         String finallink = null;
         if (br.containsHTML(PREMIUMONLY)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PREMIUMONLYTEXT, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (!br.containsHTML(CAPTCHATEXT)) {
             finallink = br.getRegex("class=downloadfilename href=\\'(.*?)\\'").getMatch(0);

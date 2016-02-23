@@ -56,6 +56,7 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_SINGLE_PHOTO     = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final String TYPE_DOWNLOAD         = "https?://(www\\.)?facebook\\.com/download/\\d+";
+    private final String        regexFileExtension    = "\\.[a-z0-9]{3}";
     private static final String REV_2                 = jd.plugins.decrypter.FaceBookComGallery.REV_2;
     private static final String REV_3                 = jd.plugins.decrypter.FaceBookComGallery.REV_3;
 
@@ -166,7 +167,7 @@ public class FaceBookComVideos extends PluginForHost {
             }
         } else {
             br.getPage(link.getDownloadURL());
-            if (!br.containsHTML("class=\"uiStreamPrivacy inlineBlock fbStreamPrivacy fbPrivacyAudienceIndicator\"") && !loggedIN) {
+            if (!br.containsHTML("class=\"uiStreamPrivacy inlineBlock fbStreamPrivacy fbPrivacyAudienceIndicator") && !loggedIN) {
                 accountNeeded = true;
                 /*
                  * Actually we cannot know whether the video is online or not but even when we're logged in we can get the message similar
@@ -232,9 +233,9 @@ public class FaceBookComVideos extends PluginForHost {
                         if (filter == null) {
                             logger.warning("Filter could not be found.");
                         } else {
-                            dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_o\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                            dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_o" + regexFileExtension + "[^\"]*)\"").getMatch(0);
                             if (dllink == null) {
-                                dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_n\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                                dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_n" + regexFileExtension + "[^\"]*)\"").getMatch(0);
                             }
                         }
                     } catch (final Throwable e) {
@@ -254,9 +255,9 @@ public class FaceBookComVideos extends PluginForHost {
                         if (filter == null) {
                             logger.warning("Filter could not be found.");
                         } else {
-                            dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_o\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                            dllink = new Regex(filter, "\"url\":\"(http[^\"]+_o" + regexFileExtension + "[^\"]*)\"").getMatch(0);
                             if (dllink == null) {
-                                dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_n\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                                dllink = new Regex(filter, "\"url\":\"(http[^\"]+_n" + regexFileExtension + "[^\"]*)\"").getMatch(0);
                             }
                         }
                     } catch (final Throwable e) {
@@ -289,7 +290,7 @@ public class FaceBookComVideos extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     if (this.getPluginConfig().getBooleanProperty(USE_ALBUM_NAME_IN_FILENAME, false)) {
-                        filename = filename + "_" + lid + ".jpg";
+                        filename = filename + "_" + lid + getFileNameExtensionFromString(dllink);
                     } else {
                         filename = Encoding.htmlDecode(getFileNameFromHeader(con)).trim();
                     }
@@ -675,7 +676,11 @@ public class FaceBookComVideos extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Videos: Prefer HD quality")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.facebookcomvideos.fastlinkcheckpictures", "Photos: Enable fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(FASTLINKCHECK_PICTURES_DEFAULT));
+        // fast add all the time! Due to volume of decrypting and distributed results, it becomes multithreaded and hundreds of not
+        // thousands of results can return...
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_PICTURES,
+        // JDL.L("plugins.hoster.facebookcomvideos.fastlinkcheckpictures", "Photos: Enable fast linkcheck (filesize won't be shown in
+        // linkgrabber)?")).setDefaultValue(FASTLINKCHECK_PICTURES_DEFAULT));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_ALBUM_NAME_IN_FILENAME, JDL.L("plugins.hoster.facebookcomvideos.usealbumnameinfilename", "Photos: Use album name in filename [note that filenames change once the download starts]?")).setDefaultValue(true));
     }
 
