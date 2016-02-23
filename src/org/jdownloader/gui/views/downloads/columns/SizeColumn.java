@@ -21,6 +21,7 @@ import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 public class SizeColumn extends ExtColumn<AbstractNode> {
 
@@ -28,13 +29,14 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
      *
      */
 
-    protected RenderLabel    sizeRenderer;
-    private StringBuffer     sb;
-    private DecimalFormat    formatter;
-    private RenderLabel      countRenderer;
-    private RendererMigPanel renderer;
-    private boolean          fileCountVisible;
-    private final String     zeroString;
+    protected RenderLabel          sizeRenderer;
+    private final StringBuffer     sb;
+    private final DecimalFormat    formatter;
+    private final RenderLabel      countRenderer;
+    private final RendererMigPanel renderer;
+    private boolean                fileCountVisible;
+    private final String           zeroString;
+    private final SIZEUNIT         maxSizeUnit;
 
     public JPopupMenu createHeaderPopup() {
 
@@ -55,6 +57,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         this.zeroString = _GUI.T.SizeColumn_getSizeString_zero();
         this.countRenderer.setHorizontalAlignment(SwingConstants.LEFT);
         fileCountVisible = JsonConfig.create(GraphicalUserInterfaceSettings.class).isFileCountInSizeColumnVisible();
+        maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
         this.renderer = new RendererMigPanel("ins 0,debug", "[]0[grow,fill]", "[grow,fill]");
         if (fileCountVisible) {
             renderer.add(countRenderer);
@@ -154,25 +157,32 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
     }
 
     private String getSizeString(final long fileSize) {
-        if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
-            return this.formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB";
+        switch (maxSizeUnit) {
+        case TiB:
+            if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
+                return this.formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)).concat(" TiB");
+            }
+        case GiB:
+            if (fileSize >= 1024 * 1024 * 1024l) {
+                return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)).concat(" GiB");
+            }
+        case MiB:
+            if (fileSize >= 1024 * 1024l) {
+                return this.formatter.format(fileSize / (1024 * 1024.0)).concat(" MiB");
+            }
+        case KiB:
+            if (fileSize >= 1024l) {
+                return this.formatter.format(fileSize / 1024.0).concat(" KiB");
+            }
+        default:
+            if (fileSize == 0) {
+                return "0 B";
+            }
+            if (fileSize < 0) {
+                return zeroString;
+            }
+            return fileSize + " B";
         }
-        if (fileSize >= 1024 * 1024 * 1024l) {
-            return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB";
-        }
-        if (fileSize >= 1024 * 1024l) {
-            return this.formatter.format(fileSize / (1024 * 1024.0)) + " MiB";
-        }
-        if (fileSize >= 1024l) {
-            return this.formatter.format(fileSize / 1024.0) + " KiB";
-        }
-        if (fileSize == 0) {
-            return "0 B";
-        }
-        if (fileSize < 0) {
-            return zeroString;
-        }
-        return fileSize + " B";
     }
 
     @Override

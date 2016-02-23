@@ -7,15 +7,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
+    private final SIZEUNIT    maxSizeUnit;
 
     public JPopupMenu createHeaderPopup() {
 
@@ -25,6 +29,7 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
 
     public RemainingColumn() {
         super(_GUI.T.RemainingColumn_RemainingColumn());
+        maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
     }
 
     @Override
@@ -61,7 +66,36 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
         } else {
             return -1l;
         }
+    }
 
+    @Override
+    protected String getSizeString(final long fileSize) {
+        switch (maxSizeUnit) {
+        case TiB:
+            if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
+                return this.formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)).concat(" TiB");
+            }
+        case GiB:
+            if (fileSize >= 1024 * 1024 * 1024l) {
+                return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)).concat(" GiB");
+            }
+        case MiB:
+            if (fileSize >= 1024 * 1024l) {
+                return this.formatter.format(fileSize / (1024 * 1024.0)).concat(" MiB");
+            }
+        case KiB:
+            if (fileSize >= 1024l) {
+                return this.formatter.format(fileSize / 1024.0).concat(" KiB");
+            }
+        default:
+            if (fileSize == 0) {
+                return "0 B";
+            }
+            if (fileSize < 0) {
+                return zeroString;
+            }
+            return fileSize + " B";
+        }
     }
 
     @Override
