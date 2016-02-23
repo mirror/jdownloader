@@ -1661,7 +1661,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             public Object edtRun() {
                 ExtendedState estate = ExtendedState.get(getMainFrame());
                 /* set visible state */
-                if (!minimize || estate == ExtendedState.ICONIFIED) {
+                if (!minimize) {
 
                     if (estate == null) {
                         logger.info("Bad ExtendedState \r\n" + getMainFrame().getExtendedState());
@@ -1722,15 +1722,19 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         trayIconChecker = null;
                     }
                 } else {
-                    getMainFrame().addWindowListener(new WindowAdapter() {
-                        public void windowIconified(WindowEvent e) {
-                            getMainFrame().removeWindowListener(this);
-                            System.out.println("HIDE");
-                            WindowManager.getInstance().hide(getMainFrame());
-                        };
-                    });
-                    WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.ICONIFIED);
+                    if (estate == ExtendedState.ICONIFIED) {
 
+                        WindowManager.getInstance().hide(getMainFrame());
+                    } else {
+                        getMainFrame().addWindowListener(new WindowAdapter() {
+                            public void windowIconified(WindowEvent e) {
+                                getMainFrame().removeWindowListener(this);
+                                System.out.println("HIDE");
+                                WindowManager.getInstance().hide(getMainFrame());
+                            };
+                        });
+                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.ICONIFIED);
+                    }
                     trayIconChecker = new Thread() {
                         @Override
                         public void run() {
