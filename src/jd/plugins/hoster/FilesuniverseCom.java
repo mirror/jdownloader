@@ -549,6 +549,16 @@ public class FilesuniverseCom extends antiDDoSForHost {
         }
     }
 
+    protected void getPage(final String url) throws Exception {
+        super.getPage(url);
+        correctBR();
+    }
+
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
+        correctBR();
+    }
+
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {

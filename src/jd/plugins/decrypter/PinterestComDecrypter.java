@@ -75,11 +75,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        /* Don't proceed with invalid/unsupported links. */
-        if (!br.containsHTML("class=\"boardName\"")) {
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
-        }
         String numberof_pins = br.getRegex("class=\"value\">(\\d+(?:\\.\\d+)?)</span> <span class=\"label\">Pins</span>").getMatch(0);
         if (numberof_pins == null) {
             numberof_pins = br.getRegex("class=\'value\'>(\\d+(?:\\.\\d+)?)</span> <span class=\'label\'>Pins</span>").getMatch(0);
@@ -88,7 +83,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             numberof_pins = br.getRegex("name=\"pinterestapp:pins\" content=\"(\\d+)\"").getMatch(0);
         }
         fpName = br.getRegex("class=\"boardName\">([^<>]*?)<").getMatch(0);
-        if (numberof_pins == null || fpName == null) {
+        if (fpName == null) {
+            fpName = linkpart.replace("/", "_");
+        }
+        if (numberof_pins == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -102,12 +100,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
         String json_source = br.getRegex("P\\.main\\.start\\((\\{.*?\\})\\);[\t\n\r]+").getMatch(0);
         if (json_source == null) {
-            // current free user regex.
             json_source = br.getRegex("P\\.startArgs\\s*=\\s*(\\{.*?\\});[\t\n\r]+").getMatch(0);
-            if (json_source == null && force_api_usage) {
-                // error handling, this has to be always not null!
-                return null;
-            }
+        }
+        if (json_source == null) {
+            json_source = br.getRegex("id=\\'jsInit1\\'>(\\{.*?\\})</script>").getMatch(0);
+        }
+        if (json_source == null && force_api_usage) {
+            // error handling, this has to be always not null!
+            return null;
         }
 
         if (loggedIN || force_api_usage) {
