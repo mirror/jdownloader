@@ -100,7 +100,7 @@ public class AccountReference {
     }
 
     public AccountInfo getAccountInfo() {
-        Account acc = getAccount();
+        final Account acc = getAccount();
         if (acc != null) {
             return acc.getAccountInfo();
         }
