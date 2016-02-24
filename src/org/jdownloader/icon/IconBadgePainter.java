@@ -24,6 +24,7 @@ import javax.swing.ImageIcon;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.IconPainter;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -46,7 +47,7 @@ public class IconBadgePainter {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
                 final Area a = new Area(shape);
 
                 // g2.draw(a);
@@ -65,6 +66,7 @@ public class IconBadgePainter {
             }
 
             private Dimension dimension;
+
             {
                 dimension = new Dimension(75, 75);
             }
@@ -81,7 +83,7 @@ public class IconBadgePainter {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
                 final Area a = new Area(shape);
 
                 g2.setColor(Color.WHITE);
@@ -95,6 +97,7 @@ public class IconBadgePainter {
             }
 
             private Dimension dimension;
+
             {
                 dimension = new Dimension(75, 75);
             }
@@ -109,7 +112,7 @@ public class IconBadgePainter {
 
     public static void main(String[] args) {
         Application.setApplication(".jd_home");
-
+        
         new EDTRunner() {
 
             @Override

@@ -14,6 +14,7 @@ public class SolverOrderTable extends BasicJDTable<SolverService> {
         super(new SolverOrderTableModel());
         setShowHorizontalLineBelowLastEntry(false);
         setShowHorizontalLines(true);
+        setFocusable(false);
 
     }
 
