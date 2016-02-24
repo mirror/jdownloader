@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,9 +35,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" }, flags = { 0 })
 public class EmuParadiseMe extends PluginForHost {
@@ -65,6 +63,7 @@ public class EmuParadiseMe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setName(Encoding.htmlDecode(new Regex(link.getDownloadURL(), "emuparadise\\.me/[^<>/]+/([^<>/]+)/").getMatch(0)) + ".zip");
         this.setBrowserExclusive();
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
         br.setFollowRedirects(true);
         synchronized (LOCK) {
             /* Re-uses saved cookies to avoid captchas */
@@ -117,14 +116,13 @@ public class EmuParadiseMe extends PluginForHost {
             dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/[^<>\"/]*?)\"").getMatch(0);
         } else {
             synchronized (LOCK) {
-                br.getPage(br.getURL() + "-download");
-
                 dllink = checkDirectLink(downloadLink, "directlink");
+                dllink = null;
                 if (dllink == null) {
+                    br.getPage(br.getURL() + "-download");
                     /* As long as the static cookie set captcha workaround works fine, */
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
-                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = null;
                         try {
@@ -176,13 +174,24 @@ public class EmuParadiseMe extends PluginForHost {
 
         }
         /* Without this the directlink won't be accepted! */
-        br.getHeaders().put("Referer", "http://www.emuparadise.me/");
+        br.getHeaders().put("Referer", this.br.getURL());
+        br.setFollowRedirects(false);
+        this.br.getPage(dllink);
+        dllink = this.br.getRedirectLocation();
+        /* Fix small space-encoding issue */
+        dllink = dllink.replace(" ", "%20");
+        br.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
+        br.getHeaders().put("Referer", null);
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
+            final long responsecode = dl.getConnection().getResponseCode();
+            if (responsecode == 400) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 400", 2 * 60 * 1000l);
+            } else if (responsecode == 503) {
                 /* Too many connections --> Happy hour is definitly not active --> Only allow 1 simultaneous download. */
                 maxFree.set(1);
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many concurrent connections - wait before starting new downloads", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 - Too many concurrent connections - wait before starting new downloads", 1 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
