@@ -17,10 +17,13 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,25 +38,33 @@ public class EroshareCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
-        final String[] links = br.getRegex("(i\\.eroshare\\.com/[^<>\"]*?)\"").getColumn(0);
+        final String fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
+        final String postbody = br.getRegex("(<div class=\"item-list\">.*?)<div class=\"text-center inline-block\"").getMatch(0);
+        if (postbody == null) {
+            return null;
+        }
+        final String[] links = new Regex(postbody, "(//(?:i|v)\\.eroshare\\.com/[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links) {
+        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+        for (final String singleLink : links) {
             if (singleLink.contains("_thumb")) {
                 continue;
             }
-            singleLink = "directhttp://https://" + singleLink;
-            final DownloadLink dl = createDownloadlink(singleLink);
+            final String link = Request.getLocation(singleLink, br.getRequest());
+            if (!dupe.add(link)) {
+                continue;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + link);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
