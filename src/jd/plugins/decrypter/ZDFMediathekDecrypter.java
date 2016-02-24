@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "neo-magazin-royale.de", "heute.de", "zdfneo.de", "zdfkultur.de", "zdfinfo.de", "zdfsport.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+", "https?://(?:www\\.)?zdfneo\\.de/.+", "https?://(?:www\\.)?zdfkultur\\.de/.+", "https?://(?:www\\.)?zdfinfo\\.de/.+", "https?://(?:www\\.)?zdfsport\\.de/.+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "neo-magazin-royale.de", "heute.de", "zdfneo.de", "zdfkultur.de", "zdfinfo.de", "zdfsport.de", "tivi.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+", "https?://(?:www\\.)?zdfneo\\.de/.+", "https?://(?:www\\.)?zdfkultur\\.de/.+", "https?://(?:www\\.)?zdfinfo\\.de/.+", "https?://(?:www\\.)?zdfsport\\.de/.+", "https?://(?:www\\.)?tivi\\.de/(mediathek/[a-z0-9\\-]+\\-\\d+/[a-z0-9\\-]+\\-\\d+/?|tiviVideos/beitrag/title/\\d+/\\d+\\?view=.+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES        = "Q_SUBTITLES";
@@ -54,9 +54,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     private String              PARAMETER_ORIGINAL = null;
     boolean                     fastlinkcheck      = false;
 
-    private static final String TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
-    private static final String TYPE_PHOENIX_RSS   = "http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml";
-    private static final String TYPE_ZDF           = "https://(?:www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?";
+    private final String        TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
+    private final String        TYPE_PHOENIX_RSS   = "http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml";
+    private final String        TYPE_TIVI          = "https?://(?:www\\.)?tivi\\.de/(?:mediathek/[a-z0-9\\-]+\\-(\\d+)/[a-z0-9\\-]+\\-(\\d+)/?|tiviVideos/beitrag/title/(\\d+)/(\\d+)\\?view=.+)";
+    private final String        TYPE_TIVI_1        = "https?://(?:www\\.)?tivi\\.de/mediathek/[a-z0-9\\-]+\\-\\d+/[a-z0-9\\-]+\\-\\d+/?";
+    private final String        TYPE_TIVI_2        = "https?://(?:www\\.)?tivi\\.de/tiviVideos/beitrag/title/\\d+/\\d+\\?view=.+";
+    private final String        TYPE_ZDF           = "https://(?:www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?";
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -95,7 +98,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             getDownloadLinks(cfg);
         }
 
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        if (decryptedLinks == null) {
             logger.warning("Decrypter out of date for link: " + PARAMETER);
             return null;
         }
@@ -165,6 +168,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
                 decrypterurl = "decrypted://phoenix.de/content/" + id + "&quality=%s";
                 br.getPage("/php/zdfplayer-v1.3/data/beitragsDetails.php?ak=web&id=" + id);
+            } else if (this.PARAMETER_ORIGINAL.matches(TYPE_TIVI)) {
+                final String param_1;
+                final String param_2;
+                if (this.PARAMETER_ORIGINAL.matches(TYPE_TIVI_1)) {
+                    param_1 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(0);
+                    param_2 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(1);
+                } else {
+                    param_1 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(2);
+                    param_2 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(3);
+                }
+                decrypterurl = "decrypted://tivi.de/content/" + param_1 + param_2 + "&quality=%s";
+                br.getPage("/tiviVideos/beitrag/" + param_1 + "/" + param_2 + "?view=flashXml");
             } else {
                 /*
                  * When browsing the ZDFMediathek, the url will get longer and longer and can contain multiple video-IDs. However, the
@@ -192,9 +207,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
                 decrypterurl = "decrypted://www.zdf.de/ZDFmediathek/beitrag/video/" + id + "&quality=%s";
                 br.getPage("/ZDFmediathek/xmlservice/web/beitragsDetails?id=" + id + "&ak=web");
+                /* Make sure link is decrypter-compatible */
+                PARAMETER = "http://www.zdf.de/ZDFmediathek/beitrag/video/" + id;
             }
-            /* Make sure link is decrypter-compatible */
-            PARAMETER = "http://www.zdf.de/ZDFmediathek/beitrag/video/" + id;
             if (br.containsHTML("<debuginfo>Kein Beitrag mit ID") || br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
                 decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
                 return decryptedLinks;
@@ -203,6 +218,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             date = getXML("airtime");
             title = getTitle(br);
             show = this.getXML("originChannelTitle");
+            if (show == null) {
+                /* E.g. for tivi.de */
+                show = this.getXML("ns2:broadcast-name");
+            }
             String extension = ".mp4";
             subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
             if (subtitleInfo != null) {
@@ -220,16 +239,16 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             date_formatted = formatDateZDF(date);
 
             final Browser br2 = br.cloneBrowser();
-            final String[][] downloads = br2.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches();
+            final String[][] downloads = br2.getRegex("<[^>]*?formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</[^>]*?formitaet>").getMatches();
             for (String streams[] : downloads) {
 
                 if (!(streams[0].contains("mp4_http") || streams[0].contains("mp4_rtmp_zdfmeta"))) {
                     continue;
                 }
 
-                for (String stream[] : new Regex(streams[1], "<quality>([^<]+)</quality>.*?<url>([^<]+)<.*?<filesize>(\\d+)<").getMatches()) {
+                for (String stream[] : new Regex(streams[1], "<[^>]*?quality>([^<]+)</[^>]*?quality>.*?<[^>]*?url>([^<]+)<.*?<[^>]*?filesize>(\\d+)<").getMatches()) {
 
-                    if (streams[0].contains("mp4_http") && !new Regex(streams[1], ("<facet>(progressive|restriction_useragent|podcast)</")).matches()) {
+                    if (streams[0].contains("mp4_http") && !new Regex(streams[1], ("<[^>]*?facet>(progressive|restriction_useragent|podcast|hbbtv)</[^>]*?facet>")).matches()) {
                         continue;
                     }
                     if (streams[0].contains("mp4_rtmp_zdfmeta")) {
@@ -413,8 +432,17 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return getXML(this.br.toString(), parameter);
     }
 
-    private String formatDateZDF(final String input) {
-        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+    private String formatDateZDF(String input) {
+        final long date;
+        if (input.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+\\d{2}:\\d{2}")) {
+            /* tivi.de */
+            input = input.substring(0, input.lastIndexOf(":")) + "00";
+            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
+        } else {
+            /* zdf.de/zdfmediathek */
+            date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+        }
+
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);

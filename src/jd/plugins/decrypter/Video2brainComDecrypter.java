@@ -19,14 +19,19 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/videotraining/[a-z0-9\\-]+|en/courses/[a-z0-9\\-]+|fr/formation/[a-z0-9\\-]+|es/cursos/[a-z0-9\\-]+)" }, flags = { 0 })
 public class Video2brainComDecrypter extends PluginForDecrypt {
@@ -39,6 +44,13 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final PluginForHost hosterplugin = JDUtilities.getPluginForHost("video2brain.com");
+        final SubConfiguration cfg = hosterplugin.getPluginConfig();
+        final boolean add_position = cfg.getBooleanProperty(jd.plugins.hoster.Video2brainCom.ADD_ORDERID, jd.plugins.hoster.Video2brainCom.defaultADD_ORDERID);
+        final Account aa = AccountController.getInstance().getValidAccount(hosterplugin);
+        if (aa != null) {
+            jd.plugins.hoster.Video2brainCom.login(this.br, aa);
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches("https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/[^/]+/[a-z0-9\\-]+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -52,15 +64,16 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
         final String fpName_for_filenames = encodeUnicode(fpName);
         final String url_language = new Regex(parameter, "video2brain\\.com/([^/]+)").getMatch(0);
         final String productid = jd.plugins.hoster.Video2brainCom.getProductID(this.br);
-        final String videoid = jd.plugins.hoster.Video2brainCom.getActiveVideoID(this.br);
+        final String videoid_first_video = jd.plugins.hoster.Video2brainCom.getActiveVideoID(this.br);
+        long counter = 1;
 
-        if (this.br.containsHTML("Video\\.updateDocumentaryProductChapters") && productid != null && videoid != null) {
+        if (this.br.containsHTML("Video\\.updateDocumentaryProductChapters") && productid != null && videoid_first_video != null) {
             /*
              * Find all chapters (= single videos - same URL structure as normal courses but for some reason they are called 'Chapters'
              * here)
              */
             jd.plugins.hoster.Video2brainCom.prepareAjaxRequest(this.br);
-            final String postData = "product_id=" + productid + "&active_video_id=" + videoid;
+            final String postData = "product_id=" + productid + "&active_video_id=" + videoid_first_video;
             /* Works fine via GET request too */
             this.br.postPage("/" + url_language + "/custom/modules/video/video_ajax.cfc?method=updateDocumentaryProductChaptersJSON", postData);
             final String[] videoIDs = this.br.getRegex("id=(?:\\\\)?\"video_cell_(\\d+)(?:\\\\)?\"").getColumn(0);
@@ -71,6 +84,7 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                 dl.setName(fpName_for_filenames + "_" + productid + "_" + videoID + ".mp4");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
+                counter++;
             }
         } else {
             String[] htmls = br.getRegex("<div class=\"length\"(.*?)class=\"additional\\-wrapper\"").getColumn(0);
@@ -88,6 +102,10 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                 String videoid_singlevideo = new Regex(html, "playVideoId\\((\\d+)").getMatch(0);
                 if (videoid_singlevideo == null) {
                     videoid_singlevideo = new Regex(html, "ID=\\'video_(\\d+)\\'").getMatch(0);
+                }
+                if (videoid_singlevideo == null && counter == 1) {
+                    /* Special case: Last chance to get videoid for first video (only needed for nicer filenames) */
+                    videoid_singlevideo = videoid_first_video;
                 }
                 if (url == null) {
                     /* Skip invalid content! */
@@ -112,15 +130,19 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                 }
 
                 title = Encoding.htmlDecode(title.trim());
-                String filename = "video2brain_" + url_language;
+                String filename = "video2brain";
+                if (add_position) {
+                    filename += "_" + jd.plugins.hoster.Video2brainCom.getFormattedVideoPositionNumber(counter);
+                }
+                if (productid != null && videoid_singlevideo != null) {
+                    filename += "_" + productid + "_" + videoid_singlevideo;
+                }
+                filename += "_" + url_language;
                 /* Lets try to make the filenames as similar-looking as the final filenames as we can. */
                 if (html.contains("class=\"icon icon-icon-lock\"")) {
                     filename += "_paid_content";
                 } else {
                     filename += "_tutorial";
-                }
-                if (productid != null && videoid_singlevideo != null) {
-                    filename += "_" + productid + "_" + videoid_singlevideo;
                 }
                 filename += "_" + title + ".mp4";
                 filename = encodeUnicode(filename);
@@ -128,7 +150,9 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                 final DownloadLink dl = this.createDownloadlink(url);
                 dl.setName(filename);
                 dl.setAvailable(true);
+                dl.setProperty("order_id", counter);
                 decryptedLinks.add(dl);
+                counter++;
             }
         }
 

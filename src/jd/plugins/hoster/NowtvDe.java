@@ -237,6 +237,12 @@ public class NowtvDe extends PluginForHost {
         this.currDownloadLink = dl;
     }
 
+    /**
+     * ~2015-05-01 Available HLS streams are Adobe DRM protected <br />
+     * ~2015-07-01: HLS streams were turned off <br />
+     * ~2016-01-01: RTMP(E) streams were turned off / all of them are DRM protected now<br />
+     * ~2016-02-24: Summary: There is absolutely NO WAY to download from this website <br />
+     */
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -302,7 +308,7 @@ public class NowtvDe extends PluginForHost {
     }
 
     /* Last revision with old handling: BEFORE 30393 */
-    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void download(final DownloadLink downloadLink) throws Exception {
         final String[] duration_str = ((String) entries.get("duration")).split(":");
         long duration = Long.parseLong(duration_str[0]) * 60 * 60;
@@ -362,7 +368,7 @@ public class NowtvDe extends PluginForHost {
                 if (!isFree) {
                     /*
                      * We found no downloadurls plus the video is not viewable for free --> Paid content. TODO: Maybe check if it is
-                     * downloadable once a user bought it.
+                     * downloadable once a user bought it --> Probably not as chances are high that it will be DRM protected!
                      */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
                 }
@@ -391,7 +397,7 @@ public class NowtvDe extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = this.br.openHeadConnection(url_hls);
-                if (con.getResponseCode() == 200) {
+                if (con.isOK()) {
                     hls_version_available = true;
                 }
             } catch (final Throwable e) {
@@ -467,7 +473,8 @@ public class NowtvDe extends PluginForHost {
             downloadLink.setFinalFileName(downloadLink.getName());
             /* TODO */
             if (true) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [HDS]");
+                // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [HDS]");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
             }
             if (url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
