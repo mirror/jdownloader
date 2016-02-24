@@ -227,10 +227,13 @@ public class CosmoBoxOrg extends PluginForHost {
             logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-        scanInfo(fileInfo);
-        if (fileInfo[0] == null && SUPPORTS_AVAILABLECHECK_ABUSE) {
+        
+        // abbreviated over x chars long
+        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
+
         if (fileInfo[0] == null && IMAGEHOSTER) {
             /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
             fileInfo[0] = this.fuid;
@@ -331,7 +334,7 @@ public class CosmoBoxOrg extends PluginForHost {
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
         getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
-        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     /**
