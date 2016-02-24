@@ -26,11 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,6 +48,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
@@ -132,7 +132,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                            = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.1.8<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.1.9<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -177,6 +177,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
+        boolean checkedViaFilenameAbuse = false;
         Browser altbr = null;
         this.br.setFollowRedirects(true);
         correctDownloadLink(link);
@@ -199,8 +200,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
-        }
-        if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+        } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -232,15 +232,16 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
+
         scanInfo(fileInfo);
 
-        // abbreviated over x chars long
+        /* Filename abbreviated over x chars long */
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            checkedViaFilenameAbuse = true;
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-        }
-
-        if (fileInfo[0] == null && SUPPORTS_AVAILABLECHECK_ABUSE) {
+        } else if (fileInfo[0] == null && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
         if (fileInfo[0] == null && IMAGEHOSTER) {
@@ -261,8 +262,11 @@ public class XFileSharingProBasic extends PluginForHost {
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] == null && SUPPORTS_AVAILABLECHECK_ALT) {
-            /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
-            logger.info("Filesize not available, trying altAvailablecheck");
+            /*
+             * Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already know that the
+             * file must be online!
+             */
+            logger.info("Filesize not available, trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
         }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
