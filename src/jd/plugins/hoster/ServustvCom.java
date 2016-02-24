@@ -36,7 +36,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servustv\\.com/(?:de|at)/Medien/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servustv\\.com/(?:de|at)/Medien/[A-Za-z0-9\\-_/]+" }, flags = { 0 })
 public class ServustvCom extends PluginForHost {
 
     public ServustvCom(PluginWrapper wrapper) {
