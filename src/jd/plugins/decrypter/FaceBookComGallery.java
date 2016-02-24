@@ -648,8 +648,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (collection_token != null) {
             activecollection = new Regex(collection_token, ":(\\d+)$").getMatch(0);
         }
-        // String dummy = null;
-        if (user == null || profileID == null || ajaxpipe_token == null || profileID == null) {
+        // this only seem relivant to pictures?
+        if (!parameter.matches(TYPE_SET_LINK_VIDEO) && (user == null || profileID == null || ajaxpipe_token == null || profileID == null)) {
             /* Errorhandling for offline cases is just hard to do - we can never be 100% sure why it fails! */
             logger.info("Decrypter broken or url offline: " + parameter);
             return;
@@ -694,6 +694,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 // time and got all, 2nd time will then be 0 more links
                 // -> Stop
                 if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
+                    break;
+                } else if (currentLastFbid == null && parameter.matches(TYPE_SET_LINK_VIDEO)) {
+                    // not everything is a defect/broken
                     break;
                 } else if (currentLastFbid == null) {
                     logger.warning("Decrypter maybe broken for link: " + parameter);
