@@ -153,15 +153,15 @@ import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
-    private static final String TITLE_PATTERN_UPDATE = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_TITLE = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_TITLE             = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED_AVERAGE = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED_AVERAGE     = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
 
     private static final String TITLE_PATTERN_RUNNING_DOWNLOADS = "\\|([^\\|]*)\\#RUNNING_DOWNLOADS([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED             = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
 
     static {
         if (Application.isHeadless()) {
@@ -218,29 +218,31 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private MainFrameClosingHandler closingHandler;
 
-    private DownloadsView downloadView;
+    private DownloadsView           downloadView;
 
-    private Thread initThread = null;
+    private Thread                  initThread          = null;
 
-    private LinkGrabberView        linkgrabberView;
-    private LogSource              logger;
-    protected JDownloaderMainFrame mainFrame;
+    private LinkGrabberView         linkgrabberView;
+    private LogSource               logger;
+    protected JDownloaderMainFrame  mainFrame;
 
-    private MainTabbedPane mainTabbedPane;
-    private JDMenuBar      menuBar;
-    private StatusBarImpl  statusBar;
+    private MainTabbedPane          mainTabbedPane;
+    private JDMenuBar               menuBar;
+    private StatusBarImpl           statusBar;
 
-    private MainToolBar toolBar;
+    private MainToolBar             toolBar;
 
-    private final TrayExtension tray;
+    private final TrayExtension     tray;
 
-    private Thread trayIconChecker;
+    private Thread                  trayIconChecker;
 
-    private JPanel waitingPane;
+    private JPanel                  waitingPane;
 
-    private volatile Timer speedInTitleUpdater;
+    private volatile Timer          speedInTitleUpdater;
 
-    private boolean busy;
+    private boolean                 busy;
+
+    protected FrameStatus           stateForNextVisible = null;
 
     private JDGui() {
         logger = LogController.getInstance().getLogger("Gui");
@@ -1001,11 +1003,12 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      * @param logger
      * @param mainFrame
      */
-    public static void internalInitLocationAndDimension(final JDownloaderMainFrame mainFrame, final LogInterface logger, FrameStatus stat, final boolean setVisible, final boolean setExtendedState) {
+    public void internalInitLocationAndDimension(final JDownloaderMainFrame mainFrame, final LogInterface logger, FrameStatus stat, final boolean setVisible, final boolean setExtendedState) {
 
         if (stat == null) {
             stat = new FrameStatus();
         }
+
         final FrameStatus status = stat;
         Dimension dim = null;
         if (status.getWidth() > 50 && status.getHeight() > 50) {
@@ -1073,7 +1076,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
         final Dimension finalDim = dim;
         final WindowExtendedState extendedState = WindowExtendedState.get(state);
-
+        stateForNextVisible = stat;
         new EDTRunner() {
 
             @Override
@@ -1090,17 +1093,16 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 // mainFrame.setSize(finalDim);
                 mainFrame.setPreferredSize(finalDim);
                 mainFrame.pack();
-                if (setExtendedState) {
-                    if (extendedState != null) {
-                        WindowManager.getInstance().setExtendedState(mainFrame, extendedState);
-
-                    }
-                }
-
                 if (setVisible) {
+                    if (setExtendedState) {
+                        if (extendedState != null) {
+                            WindowManager.getInstance().setExtendedState(mainFrame, extendedState);
+
+                        }
+                    }
+                    stateForNextVisible = null;
                     WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                 }
-
                 if (CrossSystem.isMac() && !mainFrame.isUndecorated()) {
                     mainFrame.addComponentListener(new ComponentAdapter() {
 
@@ -1644,6 +1646,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         }
                     }.start();
                 }
+
             }
         });
     }
@@ -1655,7 +1658,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      * @param minimize
      */
     public void setWindowToTray(final boolean minimize) {
-        System.out.println("setWindowToTray");
+
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
@@ -1668,6 +1671,11 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         estate = ExtendedState.NORMAL;
                     }
                     FrameStatus frameState = getMainFrame().getLatestFrameStatus();
+                    if (stateForNextVisible != null) {
+                        // start minimized
+                        frameState = stateForNextVisible;
+                        stateForNextVisible = null;
+                    }
                     logger.info("Reset frame to \r\n" + JSonStorage.serializeToJson(frameState));
                     if (frameState != null) {
                         if (frameState.getExtendedState() == null) {
@@ -1703,9 +1711,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                     }
 
-                    if (!getMainFrame().isVisible()) {
-                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
-                    }
+                    WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
 
                     switch (estate) {
                     case MAXIMIZED_BOTH:
@@ -1774,6 +1780,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 return null;
             }
         }.start();
+
     }
 
     /**

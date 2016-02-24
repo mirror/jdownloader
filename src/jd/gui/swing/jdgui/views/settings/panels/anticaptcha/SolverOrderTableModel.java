@@ -335,14 +335,14 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
                 rendererBtn.setText(_GUI.T.lit_edit());
 
-                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
+                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 2));
             }
 
             @Override
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
                 editorBtn.setText(_GUI.T.lit_edit());
-                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
+                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 2));
 
             }
 
@@ -442,7 +442,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
                 rendererBtn.setText(_GUI.T.lit_edit());
-                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
+                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 2));
 
             }
 
@@ -462,7 +462,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
                 editorBtn.setText(_GUI.T.lit_edit());
-                editorBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
+                editorBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 2));
             }
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
