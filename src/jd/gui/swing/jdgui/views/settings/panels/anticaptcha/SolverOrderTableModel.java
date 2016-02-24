@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.anticaptcha;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -224,12 +225,12 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
         // }
         // });
         this.addColumn(new ExtComponentColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_timeout()) {
-            private JButton editorBtn;
-            private JButton rendererBtn;
-            private SolverService editing;
-            protected MigPanel editor;
+            private JButton            editorBtn;
+            private JButton            rendererBtn;
+            private SolverService      editing;
+            protected MigPanel         editor;
             protected RendererMigPanel renderer;
-            private RenderLabel label;
+            private RenderLabel        label;
 
             {
                 editorBtn = new JButton("");
@@ -247,7 +248,8 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
                 });
                 label = new RenderLabel();
                 rendererBtn = new JButton("");
-                this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
+
+                this.editor = new MigPanel("ins 1", "[grow,fill]", "[grow]") {
 
                     @Override
                     public void requestFocus() {
@@ -255,7 +257,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
                 };
                 editor.add(editorBtn);
-                this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
+                this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[grow]");
                 renderer.add(rendererBtn);
                 setClickcount(1);
             }
@@ -332,14 +334,15 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
                 rendererBtn.setText(_GUI.T.lit_edit());
-                // }
+
+                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
             }
 
             @Override
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
-                // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
                 editorBtn.setText(_GUI.T.lit_edit());
+                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
 
             }
 
@@ -353,12 +356,12 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
         });
         this.addColumn(new ExtComponentColumn<SolverService>(_GUI.T.lit_settings()) {
-            private JButton editorBtn;
-            private JButton rendererBtn;
-            private SolverService editing;
-            protected MigPanel editor;
+            private JButton            editorBtn;
+            private JButton            rendererBtn;
+            private SolverService      editing;
+            protected MigPanel         editor;
             protected RendererMigPanel renderer;
-            private RenderLabel label;
+            private RenderLabel        label;
 
             {
                 editorBtn = new JButton("");
@@ -376,7 +379,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
                 });
                 label = new RenderLabel();
                 rendererBtn = new JButton("");
-                this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
+                this.editor = new MigPanel("ins 0", "[grow,fill]", "[grow]") {
 
                     @Override
                     public void requestFocus() {
@@ -384,7 +387,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
                 };
                 editor.add(editorBtn);
-                this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
+                this.renderer = new RendererMigPanel("ins 0", "[grow,fill]", "[grow]");
                 renderer.add(rendererBtn);
                 setClickcount(1);
             }
@@ -439,18 +442,27 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
                 rendererBtn.setText(_GUI.T.lit_edit());
-                // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
+
             }
 
             protected String generateID() {
                 return "CaptchaOrderTable.editButton2";
             }
 
+            public Dimension getCellSizeEstimation(SolverService element, int row) {
+
+                Component c = getTableCellRendererComponent(getModel().getTable(), element, false, false, row, 1);
+                rendererBtn.setMaximumSize(null);
+                return c.getPreferredSize();
+
+            }
+
             @Override
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
                 editorBtn.setText(_GUI.T.lit_edit());
-                // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+                editorBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 1));
             }
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
