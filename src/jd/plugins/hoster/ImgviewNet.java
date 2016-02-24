@@ -241,6 +241,8 @@ public class ImgviewNet extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
 
+        scanInfo(fileInfo);
+
         // abbreviated over x chars long
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
