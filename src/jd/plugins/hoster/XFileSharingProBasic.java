@@ -267,7 +267,7 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info("Filesize not available, trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
         }
-        if (inValidate(fileInfo[1]) && !fileInfo[1].equals("")) {
+        if (!inValidate(fileInfo[1])) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return AvailableStatus.TRUE;
