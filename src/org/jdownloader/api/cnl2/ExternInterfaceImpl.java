@@ -47,11 +47,11 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.PublicSuffixList;
-import org.appwork.utils.net.httpserver.requests.HttpRequestInterface;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
+import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
@@ -64,7 +64,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     private final static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
     public void crossdomainxml(RemoteAPIResponse response) throws InternalApiException {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\"?>\r\n");
         sb.append("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
         sb.append("<cross-domain-policy>\r\n");
@@ -103,15 +103,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     }
 
     public void jdcheckjs(RemoteAPIResponse response) throws InternalApiException {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("jdownloader=true;\r\n");
         sb.append("var version='" + JDUtilities.getRevision() + "';\r\n");
         writeString(response, null, sb.toString(), false);
     }
 
     public void jdcheckjson(RemoteAPIResponse response) throws InternalApiException {
-        MyJDownloaderSettings set = CFG_MYJD.CFG;
-        JSonObject obj = new JSonObject();
+        final MyJDownloaderSettings set = CFG_MYJD.CFG;
+        final JSonObject obj = new JSonObject();
         obj.put("version", new JSonValue(JDUtilities.getRevision()));
         obj.put("deviceId", new JSonValue(set.getUniqueDeviceIDV2()));
         obj.put("name", new JSonValue(set.getDeviceName()));
@@ -120,12 +120,12 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request);
-            String crypted = request.getParameterbyKey("crypted");
-            String jk = request.getParameterbyKey("jk");
-            String k = request.getParameterbyKey("k");
-            String urls = decrypt(crypted, jk, k);
-            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
+            askPermission(request, null);
+            final String crypted = request.getParameterbyKey("crypted");
+            final String jk = request.getParameterbyKey("jk");
+            final String k = request.getParameterbyKey("k");
+            final String dummyCNL = createDummyCNL(crypted, jk, k);
+            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL, request);
             /*
              * we need the \r\n else the website will not handle response correctly
              */
@@ -137,10 +137,11 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     }
 
     // For My JD API
-    public void addcrypted2Remote(String crypted, String jk, String source) {
+    public void addcrypted2Remote(RemoteAPIResponse response, RemoteAPIRequest request, String crypted, String jk, String source) {
         try {
-            String urls = decrypt(crypted, jk, null);
-            LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, null), urls);
+            askPermission(request, source);
+            final String dummyCNL = createDummyCNL(crypted, jk, null);
+            final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL);
             job.setCustomSourceUrl(source);
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {
@@ -251,7 +252,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 
-    public String decrypt(String crypted, final String jk, String k) throws UnsupportedEncodingException {
+    private String createDummyCNL(String crypted, final String jk, String k) throws UnsupportedEncodingException {
         final HashMap<String, String> infos = new HashMap<String, String>();
         infos.put("crypted", crypted);
         if (jk != null) {
@@ -266,8 +267,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void add(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request);
-            String urls = request.getParameterbyKey("urls");
+            askPermission(request, null);
+            final String urls = request.getParameterbyKey("urls");
             clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
@@ -279,7 +280,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     @Override
     public void add(RemoteAPIRequest request, RemoteAPIResponse response, String passwordParam, String sourceParam, String urlParam) throws InternalApiException {
         try {
-            askPermission(request);
             String source = null;
             boolean keyValueParams = request.getParameterbyKey("urls") != null;
             try {
@@ -293,6 +293,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             if (source == null) {
                 source = sourceParam;
             }
+            askPermission(request, source);
             String urls = null;
             try {
                 if (keyValueParams) {
@@ -378,7 +379,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request);
+            askPermission(request, null);
             final String dlcContent = request.getParameterbyKey("crypted");
             if (dlcContent == null) {
                 throw new IllegalArgumentException("no DLC Content available");
@@ -394,7 +395,11 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
-    private synchronized void askPermission(HttpRequestInterface request) throws IOException, DialogNoAnswerException {
+    private synchronized void askPermission(final RemoteAPIRequest request, final String fallbackSource) throws IOException, DialogNoAnswerException {
+        if (false && request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
+            // valid
+            return;
+        }
         HTTPHeader jdrandomNumber = request.getRequestHeaders().get("jd.randomnumber");
         if (jdrandomNumber != null && jdrandomNumber.getValue() != null && jdrandomNumber.getValue().equalsIgnoreCase(System.getProperty("jd.randomNumber"))) {
             /*
@@ -426,6 +431,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         if (url == null) {
             /* no referer available, maybe a source variable is? */
             url = request.getParameterbyKey("source");
+        }
+        if (url == null) {
+            url = fallbackSource;
         }
         if (url != null) {
             url = Browser.getHost(url);
@@ -481,7 +489,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void flashgot(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request);
+            askPermission(request, null);
             StringBuilder sb = new StringBuilder();
             sb.append(jdpath + "\r\n");
             sb.append("java -Xmx512m -jar " + jdpath + "\r\n");
