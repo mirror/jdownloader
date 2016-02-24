@@ -18,6 +18,8 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -28,12 +30,10 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-
 public class AccountManagerSettings extends AbstractConfigPanel {
 
-    private static final long serialVersionUID = -7963763730328793139L;
-    private AccountManager    acm              = null;
+    private static final long    serialVersionUID = -7963763730328793139L;
+    private final AccountManager acm;
 
     public String getTitle() {
         return _JDT.T.gui_settings_premium_title();
@@ -47,18 +47,18 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
         addPair(_GUI.T.AccountManagerSettings_AccountManagerSettings_disable_global(), null, new Checkbox(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS));
         add(acm = new AccountManager(this));
-        acm.setEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
         CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                acm.setEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+                acm.setEnabled(Boolean.TRUE.equals(newValue));
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         }, false);
+        acm.setEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
 
     }
 
