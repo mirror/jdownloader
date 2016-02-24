@@ -42,4 +42,6 @@ public interface User32 extends com.sun.jna.platform.win32.User32 {
      * @return
      */
     boolean ShowWindow(HWND hWnd, int state);
+
+    void AnimateWindow(HWND hwnd, long time, long animation);
 }

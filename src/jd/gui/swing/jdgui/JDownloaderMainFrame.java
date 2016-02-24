@@ -30,7 +30,7 @@ import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class JDownloaderMainFrame extends ExtJFrame {
-    private FrameStatus latestNormalState;
+    private FrameStatus     latestNormalState;
 
     private LogSource       logger;
     private DelayedRunnable delayedStateSaver;
@@ -273,6 +273,10 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
     public FrameStatus getLatestFrameStatus() {
         return latestFrameStatus;
+    }
+
+    public void setLatestFrameStatus(FrameStatus latestFrameStatus) {
+        this.latestFrameStatus = latestFrameStatus;
     }
 
     public void toFront() {
