@@ -177,7 +177,6 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
-        boolean checkedViaFilenameAbuse = false;
         Browser altbr = null;
         this.br.setFollowRedirects(true);
         correctDownloadLink(link);
@@ -193,7 +192,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (fileInfo[0] != null) {
+                if (!inValidate(fileInfo[0])) {
                     link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
                     return AvailableStatus.TRUE;
                 }
@@ -213,18 +212,18 @@ public class XFileSharingProBasic extends PluginForHost {
                 fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
             }
             /* 2nd offline check */
-            if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+            if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && inValidate(fileInfo[0])) {
                 /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (fileInfo[0] != null || fileInfo[1] != null) {
+            } else if (!inValidate(fileInfo[0]) || !inValidate(fileInfo[1])) {
                 /* We know the link is online, set all information we got */
                 link.setAvailable(true);
-                if (fileInfo[0] != null) {
+                if (!inValidate(fileInfo[0])) {
                     link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
                 } else {
                     link.setName(fuid);
                 }
-                if (fileInfo[1] != null) {
+                if (!inValidate(fileInfo[1])) {
                     link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
                 }
                 return AvailableStatus.TRUE;
@@ -237,18 +236,17 @@ public class XFileSharingProBasic extends PluginForHost {
 
         /* Filename abbreviated over x chars long */
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
-            checkedViaFilenameAbuse = true;
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-        } else if (fileInfo[0] == null && SUPPORTS_AVAILABLECHECK_ABUSE) {
+        } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
-        if (fileInfo[0] == null && IMAGEHOSTER) {
+        if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
             fileInfo[0] = this.fuid;
         }
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
+        if (inValidate(fileInfo[0]) || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -256,12 +254,12 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (fileInfo[2] != null && !fileInfo[2].equals("")) {
+        if (!inValidate(fileInfo[2])) {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
-        if (fileInfo[1] == null && SUPPORTS_AVAILABLECHECK_ALT) {
+        if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
              * Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already know that the
              * file must be online!
@@ -269,7 +267,7 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info("Filesize not available, trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
         }
-        if (fileInfo[1] != null && !fileInfo[1].equals("")) {
+        if (inValidate(fileInfo[1]) && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return AvailableStatus.TRUE;
@@ -280,21 +278,21 @@ public class XFileSharingProBasic extends PluginForHost {
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
 
         /* standard traits from base page */
-        if (fileInfo[0] == null) {
+        if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
-            if (fileInfo[0] == null) {
+            if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (fileInfo[0] == null) {
+                if (inValidate(fileInfo[0])) {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
-                    if (fileInfo[0] == null) {
+                    if (inValidate(fileInfo[0])) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // next two are details from sharing box
-                        if (fileInfo[0] == null) {
+                        if (inValidate(fileInfo[0])) {
                             fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
-                            if (fileInfo[0] == null) {
+                            if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
-                                if (fileInfo[0] == null) {
+                                if (inValidate(fileInfo[0])) {
                                     /* Link of the box without filesize */
                                     fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
                                 }
@@ -304,25 +302,25 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[0] == null) {
+        if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
-            if (fileInfo[1] == null) {
+            if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-                if (fileInfo[1] == null) {
+                if (inValidate(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                     // next two are details from sharing box
-                    if (fileInfo[1] == null) {
+                    if (inValidate(fileInfo[1])) {
                         fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
-                        if (fileInfo[1] == null) {
+                        if (inValidate(fileInfo[1])) {
                             fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
                             // generic failover#1
-                            if (fileInfo[1] == null) {
+                            if (inValidate(fileInfo[1])) {
                                 fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                             }
                             // generic failover#2
-                            if (fileInfo[1] == null) {
+                            if (inValidate(fileInfo[1])) {
                                 fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
                             }
                         }
@@ -331,7 +329,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
         }
         /* MD5 is only available in very rare cases! */
-        if (fileInfo[2] == null) {
+        if (inValidate(fileInfo[2])) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
