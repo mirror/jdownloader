@@ -162,7 +162,7 @@ public class RDMdthk extends PluginForDecrypt {
             broadcastID = new Regex(parameter, "/topvideos/(\\d+)").getMatch(0);
         } else {
             // ardmediathek.de
-            broadcastID = new Regex(br.getURL(), "\\?documentId=(\\d+)").getMatch(0);
+            broadcastID = new Regex(br.getURL(), "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
             // mediathek.daserste.de
             if (broadcastID == null) {
                 broadcastID = new Regex(br.getURL(), realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);

@@ -238,9 +238,9 @@ public class NowtvDe extends PluginForHost {
     }
 
     /**
-     * ~2015-05-01 Available HLS streams are Adobe DRM protected <br />
+     * ~2015-05-01 Available HLS AND HDS streams are DRM protected <br />
      * ~2015-07-01: HLS streams were turned off <br />
-     * ~2016-01-01: RTMP(E) streams were turned off / all of them are DRM protected now<br />
+     * ~2016-01-01: RTMP(E) streams were turned off / all of them are DRM protected/crypted now<br />
      * ~2016-02-24: Summary: There is absolutely NO WAY to download from this website <br />
      */
     @SuppressWarnings({ "deprecation", "unchecked" })
