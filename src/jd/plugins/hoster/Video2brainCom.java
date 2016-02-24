@@ -20,6 +20,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -32,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|en/videos\\-\\d+\\.htm|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }, flags = { 2 })
 public class Video2brainCom extends PluginForHost {
 
     public Video2brainCom(PluginWrapper wrapper) {
@@ -61,6 +62,8 @@ public class Video2brainCom extends PluginForHost {
 
     private boolean       premiumonly          = false;
 
+    private final String  TYPE_OLD             = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -72,17 +75,31 @@ public class Video2brainCom extends PluginForHost {
             this.login(aa);
         }
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches("https?://(?:www\\.)?video2brain\\.com/[^/]+/[^/]+/[^/]+")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /* 404 - standard offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.getURL().matches("https?://(?:www\\.)?video2brain\\.com/[^/]+/[^/]+/[^/]+") && !this.br.getURL().matches(TYPE_OLD)) {
+            /* Current url is wrong --> Probably we were redirected because the added URL does not lead us to any downloadable content. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean set_final_filename = true;
         final String url_language = getUrlLanguage(link);
-        final String productid = this.br.getRegex("Video\\.product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
-        final String videoid = this.br.getRegex("Video\\.active_video_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+        final String productid = getProductID(this.br);
+        String videoid = getActiveVideoID(this.br);
+        final String url_name;
+        if (this.br.getURL().matches(TYPE_OLD)) {
+            url_name = new Regex(this.br.getURL(), "(\\d+)\\.htm$").getMatch(0);
+            if (videoid == null) {
+                /* Fallback to find the videoid but actually this should not be needed but ... just in case! */
+                videoid = url_name;
+            }
+        } else {
+            url_name = new Regex(this.br.getURL(), "([A-Za-z0-9\\-]+)$").getMatch(0);
+        }
         String title = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         if (title == null) {
             /* Fallback to url filename */
-            title = new Regex(this.br.getURL(), "([A-Za-z0-9\\-]+)$").getMatch(0);
+            title = url_name;
         }
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -123,32 +140,56 @@ public class Video2brainCom extends PluginForHost {
             /* This can even happen to paid users! */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        final Browser br2 = newBrowser(new Browser());
+        final String videoid = getActiveVideoID(this.br);
+        final String url_language = getUrlLanguage(downloadLink);
+        Browser br2 = newBrowser(new Browser());
         /* User-Agent is not necessarily needed! */
         br2.getHeaders().put("User-Agent", "iPad");
+        boolean http_url_is_okay = false;
         String html5_http_url = this.br.getRegex("<video src=\\'(http[^<>\"\\']+)\\'").getMatch(0);
         final String access_exp = this.br.getRegex("Video\\.access_exp[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
         final String access_hash = this.br.getRegex("Video\\.access_hash[\t\n\r ]*?=[\t\n\r ]*?\"([a-f0-9]+)\";").getMatch(0);
+        try {
+            prepareAjaxRequest(br2);
+            /* Not necessarily needed */
+            br2.postPage("https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", "video_id=" + videoid);
+        } catch (final Throwable e) {
+        }
         if (html5_http_url != null && access_exp != null && access_hash != null) {
             /* Let's try to build our http url first - we can still fallback to rtmp if this fails! */
             /* They usually only use these urls for Apple devices. */
             try {
                 final String postData = "expire=1&path=" + Encoding.urlEncode(html5_http_url) + "&access_exp=" + access_exp + "&access_hash=" + access_hash;
-                br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.postPage("https://www.video2brain.com/de/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData);
+                /*
+                 * E.g. call for officially available downloads:
+                 * https://www.video2brain.com/de/custom/modules/product/product_ajax.cfc?method
+                 * =renderProductDetailDownloads&product_ids=2853&t=
+                 */
+                prepareAjaxRequest(br2);
+                /* Works fine via GET request too */
+                br2.postPage("https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData);
                 final String final_http_url_token = br2.getRegex("\"([^<>\"\\'\\\\]+)").getMatch(0);
-                if (final_http_url_token == null) {
-                    html5_http_url = null;
-                } else {
+                if (final_http_url_token != null) {
                     html5_http_url += "?" + final_http_url_token;
+                    URLConnectionAdapter con = null;
+                    try {
+                        /* Remove old headers/cookies - not necessarily needed! */
+                        br2 = newBrowser(new Browser());
+                        br2.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
+                        br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
+                        con = br2.openHeadConnection(html5_http_url);
+                        if (con.isOK() && !con.getContentType().contains("html")) {
+                            http_url_is_okay = true;
+                        }
+                    } finally {
+                        con.disconnect();
+                    }
                 }
             } catch (final Throwable e) {
-                html5_http_url = null;
             }
         }
 
-        if (html5_http_url != null) {
+        if (http_url_is_okay) {
             /* Prefer http - quality-wise rtmp and http are the same! */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, html5_http_url, RESUME_HTTP, MAXCHUNKS_HTTP);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -158,12 +199,11 @@ public class Video2brainCom extends PluginForHost {
         } else {
             /* E.g. https://www.video2brain.com/en/video-info-8581.xml */
             String config_url = this.br.getRegex("configuration:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
-            final String url_language = getUrlLanguage(downloadLink);
             if (config_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (config_url.startsWith("trailer")) {
-                /* Fix trailer xml url */
+                /* Fix trailer xml url as it is escaped and incomplete. */
                 config_url = "/" + url_language + "/" + Encoding.unescape(config_url);
             }
             this.br.getPage(config_url);
@@ -295,6 +335,28 @@ public class Video2brainCom extends PluginForHost {
         /* No need to log in - we're already logged in! */
         // login(account);
         handleDownload(link);
+    }
+
+    public static void prepareAjaxRequest(final Browser br) {
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+    }
+
+    public static String getProductID(final Browser br) {
+        String productid = br.getRegex("Video\\.product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+        if (productid == null) {
+            productid = br.getRegex("var support_product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+        }
+        return productid;
+    }
+
+    public static String getActiveVideoID(final Browser br) {
+        String productid = br.getRegex("Video\\.product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+        if (productid == null) {
+            productid = br.getRegex("var support_product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+        }
+        return productid;
     }
 
     @Override
