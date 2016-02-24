@@ -9,8 +9,8 @@ import org.appwork.exceptions.WTFException;
 
 public class FreeAccountReference extends AccountReference {
 
-    static final int FREE_ID = 0;
-    private String   hoster;
+    static final int     FREE_ID = 0;
+    private final String hoster;
 
     public FreeAccountReference(String hoster) {
         this.hoster = hoster;
@@ -23,6 +23,10 @@ public class FreeAccountReference extends AccountReference {
 
     public Date getExpireDate() {
         return null;
+    }
+
+    public boolean isAvailable() {
+        return true;
     }
 
     public AccountInfo getAccountInfo() {
@@ -56,10 +60,20 @@ public class FreeAccountReference extends AccountReference {
         return "";
     }
 
+    public String toString() {
+        return "Account: " + getHoster();
+    }
+
     public static boolean isFreeAccount(AccountReference ar) {
-        if (ar == null) return false;
-        if (ar instanceof FreeAccountReference) return true;
-        if (ar.getAccount() != null && ar.getID() == FREE_ID) return true;
+        if (ar == null) {
+            return false;
+        }
+        if (ar instanceof FreeAccountReference) {
+            return true;
+        }
+        if (ar.getAccount() != null && ar.getID() == FREE_ID) {
+            return true;
+        }
         return false;
 
     }
