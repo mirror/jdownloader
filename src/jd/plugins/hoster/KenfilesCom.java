@@ -332,7 +332,7 @@ public class KenfilesCom extends PluginForHost {
 
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
         br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
-        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     @Override

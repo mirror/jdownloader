@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -48,11 +53,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
@@ -132,7 +132,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                            = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.1.7<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.1.8<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -233,6 +233,13 @@ public class XFileSharingProBasic extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
+
+        // abbreviated over x chars long
+        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        }
+
         if (fileInfo[0] == null && SUPPORTS_AVAILABLECHECK_ABUSE) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
@@ -336,7 +343,7 @@ public class XFileSharingProBasic extends PluginForHost {
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
         getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
-        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     /**

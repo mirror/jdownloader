@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,11 +54,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingfiles.net" }, urls = { "https?://(www\\.)?kingfiles\\.net/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class KingFilesNet extends PluginForHost {
@@ -228,10 +228,13 @@ public class KingFilesNet extends PluginForHost {
             logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-        scanInfo(fileInfo);
-        if (fileInfo[0] == null && SUPPORTS_AVAILABLECHECK_ABUSE) {
+
+        // abbreviated over x chars long
+        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
+
         if (fileInfo[0] == null && IMAGEHOSTER) {
             /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
             fileInfo[0] = this.fuid;
@@ -332,7 +335,7 @@ public class KingFilesNet extends PluginForHost {
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
         getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
-        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     /**
