@@ -16,7 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.text.DecimalFormat;
+
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,6 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }, flags = { 2 })
 public class Video2brainCom extends PluginForHost {
@@ -39,6 +44,7 @@ public class Video2brainCom extends PluginForHost {
     public Video2brainCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.video2brain.com/en/support/faq");
+        setConfigElements();
     }
 
     @Override
@@ -54,15 +60,18 @@ public class Video2brainCom extends PluginForHost {
     /* Connection stuff */
     // private final boolean FREE_RESUME = false;
     // private final int FREE_MAXCHUNKS = 0;
-    private final int     FREE_MAXDOWNLOADS    = 20;
-    private final boolean RESUME_RTMP          = false;
-    private final boolean RESUME_HTTP          = true;
-    private final int     MAXCHUNKS_HTTP       = 0;
-    private final int     ACCOUNT_MAXDOWNLOADS = 20;
+    private final int           FREE_MAXDOWNLOADS    = 20;
+    private final boolean       RESUME_RTMP          = false;
+    private final boolean       RESUME_HTTP          = true;
+    private final int           MAXCHUNKS_HTTP       = 0;
+    private final int           ACCOUNT_MAXDOWNLOADS = 20;
 
-    private boolean       premiumonly          = false;
+    private boolean             premiumonly          = false;
 
-    private final String  TYPE_OLD             = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
+    private final String        TYPE_OLD             = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
+    public static final String  ADD_ORDERID          = "ADD_ORDERID";
+
+    public static final boolean defaultADD_ORDERID   = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -72,7 +81,7 @@ public class Video2brainCom extends PluginForHost {
         this.br = newBrowser(new Browser());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            this.login(aa);
+            login(this.br, aa);
         }
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -83,6 +92,7 @@ public class Video2brainCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean set_final_filename = true;
+        final long order_id = link.getLongProperty("order_id", 0);
         final String url_language = getUrlLanguage(link);
         final String productid = getProductID(this.br);
         String videoid = getActiveVideoID(this.br);
@@ -105,7 +115,14 @@ public class Video2brainCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = Encoding.htmlDecode(title.trim());
-        String filename = "video2brain_" + url_language;
+        String filename = "video2brain";
+        if (order_id > 0 && this.getPluginConfig().getBooleanProperty(ADD_ORDERID, defaultADD_ORDERID)) {
+            filename += "_" + getFormattedVideoPositionNumber(order_id);
+        }
+        if (productid != null && videoid != null) {
+            filename += "_" + productid + "_" + videoid;
+        }
+        filename += "_" + url_language;
         if (this.br.containsHTML("class=\"only\\-register\\-player\"") || this.br.containsHTML("class=\"video\\-detail\\-player no\\-access\\-player standard\"")) {
             filename += "_paid_content";
             set_final_filename = false;
@@ -114,9 +131,6 @@ public class Video2brainCom extends PluginForHost {
             filename += "_trailer";
         } else {
             filename += "_tutorial";
-        }
-        if (productid != null && videoid != null) {
-            filename += "_" + productid + "_" + videoid;
         }
         filename += "_" + title + ".mp4";
         filename = encodeUnicode(filename);
@@ -237,43 +251,42 @@ public class Video2brainCom extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "video2brain\\.com/([^/]+)").getMatch(0);
     }
 
-    private static final String MAINPAGE = "http://video2brain.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings("deprecation")
-    private void login(final Account account) throws Exception {
+    public static void login(Browser br, final Account account) throws Exception {
         synchronized (LOCK) {
             try {
-                this.br = newBrowser(new Browser());
+                br = newBrowser(new Browser());
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    this.br.getPage("https://www." + this.getHost() + "/de/");
-                    if (this.br.containsHTML("user\\-logout\\.htm\"")) {
+                    br.getPage("https://www." + account.getHoster() + "/de/");
+                    if (br.containsHTML("user\\-logout\\.htm\"")) {
                         /* Save new cookie timestamp */
-                        account.saveCookies(this.br.getCookies(MAINPAGE), "");
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
-                    this.br = newBrowser(new Browser());
+                    br = newBrowser(new Browser());
                 }
                 br.postPage("https://www.video2brain.com/de/custom/modules/user/user_ajax.cfc?method=login", "set_cookie=true&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 /* TODO: Maybe make sure this also works for users of other countries! */
-                if (br.getCookie(MAINPAGE, "V2B_USER_DE") == null) {
+                if (br.getCookie(account.getHoster(), "V2B_USER_DE") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                String continue_url = this.br.getRegex("\"url\":\"(https[^<>\"\\']+)\"").getMatch(0);
+                String continue_url = br.getRegex("\"url\":\"(https[^<>\"\\']+)\"").getMatch(0);
                 if (continue_url != null) {
                     continue_url = continue_url.replace("\\", "");
                 } else {
                     /* TODO: Maybe make sure this also works for users of other countries! */
                     continue_url = "/de/login";
                 }
-                this.br.getPage(continue_url);
-                account.saveCookies(this.br.getCookies(MAINPAGE), "");
+                br.getPage(continue_url);
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -281,7 +294,7 @@ public class Video2brainCom extends PluginForHost {
         }
     }
 
-    private Browser newBrowser(final Browser br) {
+    private static Browser newBrowser(final Browser br) {
         br.setFollowRedirects(true);
         return br;
     }
@@ -298,7 +311,7 @@ public class Video2brainCom extends PluginForHost {
         }
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(this.br, account);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -352,11 +365,16 @@ public class Video2brainCom extends PluginForHost {
     }
 
     public static String getActiveVideoID(final Browser br) {
-        String productid = br.getRegex("Video\\.product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+        String productid = br.getRegex("Video\\.active_video_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
         if (productid == null) {
-            productid = br.getRegex("var support_product_id[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
+            productid = br.getRegex("Video\\.initVideoDetails\\((\\d+)").getMatch(0);
         }
         return productid;
+    }
+
+    public static String getFormattedVideoPositionNumber(final long videoposition) {
+        final DecimalFormat df = new DecimalFormat("000");
+        return df.format(videoposition);
     }
 
     @Override
@@ -378,6 +396,15 @@ public class Video2brainCom extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's video2brain Plugin helps downloading videoclips from video2brain.com.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID, JDL.L("plugins.hoster.orf.video2braincom", "Add position number to filename?\r\nE.g. '001_somevideoname.mp4', '002_somevideoname.mp4'\r\nKeep in mind that this will only work for courses that were added via course-urls and NOT for single videos!")).setDefaultValue(defaultADD_ORDERID));
     }
 
     @Override

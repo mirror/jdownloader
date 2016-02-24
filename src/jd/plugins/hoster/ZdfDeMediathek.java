@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://(www\\.)?phoenix\\.de/content/\\d+\\&quality=\\w+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "tivi.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+", "decrypted://tivi\\.de/content/\\d+\\&quality=\\w+" }, flags = { 2, 2, 2 })
 public class ZdfDeMediathek extends PluginForHost {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
@@ -71,19 +71,13 @@ public class ZdfDeMediathek extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getStringProperty("directURL", null) == null) {
-            if (link.getBooleanProperty("offline", false) || link.getContentUrl().contains("phoenix.de/")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* fetch fresh directURL */
-            this.setBrowserExclusive();
-            br.setFollowRedirects(true);
+            /* We should not ever need to refresh zdf directlinks as they should last forever! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Nur iPads bekommen (vermutlich aufgrund der veralteten Technik :D)
             // die Videos als HTTP Streams
-            br.getHeaders().put("User-Agent", "iPad");
-            br.getPage("http://www.zdf.de/ZDFmediathek/" + new Regex(link.getDownloadURL(), "(beitrag/video/\\d+(/.+)?)").getMatch(0) + "?flash=off&ipad=true");
-            if (br.containsHTML("Der Beitrag konnte nicht gefunden werden")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            // br.getHeaders().put("User-Agent", "iPad");
+            // br.getPage("http://www.zdf.de/ZDFmediathek/" + new Regex(link.getDownloadURL(), "(beitrag/video/\\d+(/.+)?)").getMatch(0) +
+            // "?flash=off&ipad=true");
         }
         link.setFinalFileName(link.getStringProperty("directName", null));
         return AvailableStatus.TRUE;
