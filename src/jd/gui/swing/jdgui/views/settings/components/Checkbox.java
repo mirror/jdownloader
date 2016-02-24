@@ -21,7 +21,9 @@ public class Checkbox extends ExtCheckBox implements SettingsComponent {
         this.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<Checkbox>(Checkbox.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<Checkbox>(Checkbox.this));
+                }
             }
         });
         SwingUtils.setOpaque(this, false);
@@ -34,7 +36,9 @@ public class Checkbox extends ExtCheckBox implements SettingsComponent {
         this.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<Checkbox>(Checkbox.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<Checkbox>(Checkbox.this));
+                }
             }
         });
         SwingUtils.setOpaque(this, false);
@@ -42,7 +46,6 @@ public class Checkbox extends ExtCheckBox implements SettingsComponent {
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         eventSender.addListener(listener);
-
     }
 
     @Override
@@ -50,11 +53,9 @@ public class Checkbox extends ExtCheckBox implements SettingsComponent {
         try {
             setting = true;
             super.setSelected(b);
-
         } finally {
             setting = false;
         }
-
     }
 
     public Checkbox() {
