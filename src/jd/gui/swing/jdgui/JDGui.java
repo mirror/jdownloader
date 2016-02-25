@@ -58,6 +58,20 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -137,20 +151,6 @@ import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
-
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
     private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
@@ -1708,38 +1708,36 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                             }
                         }
                         break;
-
                     }
 
                     WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
-
                     switch (estate) {
                     case MAXIMIZED_BOTH:
-
                         WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.MAXIMIZED_BOTH);
                         break;
                     default:
                         WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
                         break;
                     }
-
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;
                     }
                 } else {
                     if (estate == ExtendedState.ICONIFIED) {
-
                         WindowManager.getInstance().hide(getMainFrame());
                     } else {
-                        getMainFrame().addWindowListener(new WindowAdapter() {
-                            public void windowIconified(WindowEvent e) {
-                                getMainFrame().removeWindowListener(this);
-                                System.out.println("HIDE");
-                                WindowManager.getInstance().hide(getMainFrame());
-                            };
-                        });
-                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.ICONIFIED);
+                        if (CrossSystem.isLinux()) {
+                            WindowManager.getInstance().hide(getMainFrame());
+                        } else {
+                            getMainFrame().addWindowListener(new WindowAdapter() {
+                                public void windowIconified(WindowEvent e) {
+                                    getMainFrame().removeWindowListener(this);
+
+                                };
+                            });
+                            WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.ICONIFIED);
+                        }
                     }
                     trayIconChecker = new Thread() {
                         @Override
