@@ -21,7 +21,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
@@ -34,6 +35,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionController;
@@ -43,9 +45,6 @@ import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
-
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-import jd.gui.swing.laf.LookAndFeelController;
 
 public class Main {
 
@@ -88,46 +87,20 @@ public class Main {
         Dialog.getInstance().setLafManager(LookAndFeelController.getInstance());
 
         IO.setErrorHandler(new IOErrorHandler() {
-            private final AtomicBoolean reported = new AtomicBoolean(Application.isHeadless());
 
             @Override
             public void onWriteException(final Throwable e, final File file, final byte[] data) {
-                LogController.getInstance().getLogger("GlobalIOErrors").severe("An error occured while writing " + data.length + " bytes to " + file);
-                LogController.getInstance().getLogger("GlobalIOErrors").log(e);
-                if (reported.compareAndSet(false, true)) {
-                    new Thread() {
-                        public void run() {
-                            Dialog.getInstance().showExceptionDialog("Write Error occured", "An error occured while writing " + data.length + " bytes to " + file, e);
-                            try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException e1) {
-                                e1.printStackTrace();
-                            }
-                            LogAction la = new LogAction();
-                            la.actionPerformed(null);
-                        }
-                    }.start();
-                }
-
+                final LogSource logger = LogController.getInstance().getLogger("GlobalIOErrors");
+                logger.log(e);
+                logger.severe("An error occured while writing " + data.length + " bytes to " + file);
+                logger.close();
             }
 
             @Override
             public void onReadStreamException(final Throwable e, final java.io.InputStream fis) {
-                LogController.getInstance().getLogger("GlobalIOErrors").log(e);
-                if (reported.compareAndSet(false, true)) {
-                    new Thread() {
-                        public void run() {
-                            Dialog.getInstance().showExceptionDialog("Read Error occured", "An error occured while reading data", e);
-                            try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException e1) {
-                                e1.printStackTrace();
-                            }
-                            LogAction la = new LogAction();
-                            la.actionPerformed(null);
-                        }
-                    }.start();
-                }
+                final LogSource logger = LogController.getInstance().getLogger("GlobalIOErrors");
+                logger.log(e);
+                logger.close();
             }
 
             @Override
