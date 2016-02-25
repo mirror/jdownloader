@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -41,7 +39,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30447 $", interfaceVersion = 3, names = { "shortenurl.pw", "hwba.ch", "888.xirkle.com", "gempixel.com" }, urls = { "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?hwba\\.ch/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30447 $", interfaceVersion = 3, names = { "shortenurl.pw", "hwba.ch", "888.xirkle.com", "gempixel.com", "susutin.com" }, urls = { "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?hwba\\.ch/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+", "https?://(?:www\\.)?susutin\\.com/[a-zA-Z0-9]+" }, flags = { 0 })
 public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
 
     public GemPixelPremiumURLShortener(PluginWrapper wrapper) {
@@ -88,7 +86,7 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
         String[] hrefs = br.getRegex("<a [^>]*>.*?<\\s*/a\\s*>").getColumn(-1);
         if (hrefs != null) {
             for (final String href : hrefs) {
-                if (StringUtils.containsIgnoreCase(href, "btn btn-primary btn-block redirect")) {
+                if (new Regex(href, "btn btn-primary btn-block redirect|\"btn-primary\"").matches()) {
                     final String b64 = new Regex(href, "/\\?r=([a-zA-Z0-9_/\\+\\=\\-%]+)").getMatch(0);
                     final HashSet<String> results = jd.plugins.decrypter.GenericBase64Decrypter.handleBase64Decode(b64);
                     if (results != null) {
