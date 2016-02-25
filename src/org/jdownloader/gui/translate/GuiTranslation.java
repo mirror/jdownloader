@@ -6095,4 +6095,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Unknown Error: %s1" })
     String DBC_UNKNOWN_ERROR(String msg);
+
+    @Default(lngs = { "en" }, values = { "Total Progress & Connections" })
+    String DockProgressDisplay_connections_and_progress();
 }

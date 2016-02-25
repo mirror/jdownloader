@@ -3,12 +3,6 @@ package jd.plugins.components;
 import java.io.File;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
@@ -22,12 +16,18 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.updatev2.UpdateController;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
     private static final YoutubeMp4ToM4aAudio INSTANCE = new YoutubeMp4ToM4aAudio();
 
     /**
      * get the only existing instance of YoutubeMp4ToM4aAudio. This is a singleton
-     * 
+     *
      * @return
      */
     public static YoutubeMp4ToM4aAudio getInstance() {
@@ -92,7 +92,7 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
             }
 
             file.delete();
-            downloadLink.setDownloadSize(finalFile.length());
+            downloadLink.setVerifiedFileSize(finalFile.length());
             downloadLink.setDownloadCurrent(finalFile.length());
             try {
 

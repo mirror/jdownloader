@@ -1,5 +1,17 @@
 package org.jdownloader.crosssystem.windows;
 
+import java.awt.BasicStroke;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -122,9 +134,9 @@ public class WindowsApplicationAdapter {
         });
     }
 
-    private final Object       LOCK = new Object();
+    private final Object LOCK = new Object();
 
-    private double             lastPercent;
+    private double lastPercent;
 
     private ScheduledFuture<?> queueHandler;
 
@@ -154,6 +166,16 @@ public class WindowsApplicationAdapter {
                             return;
                         }
                         lastPercent = percent;
+                        if (CFG_GUI.CFG.getWindowsTaskbarProgressDisplay() == WindowsTaskBarProgressDisplay.TOTAL_PROGRESS_AND_CONNECTIONS) {
+                            BufferedImage image = createImage(DownloadWatchDog.getInstance().getActiveDownloads());
+                            ByteArrayOutputStream baos;
+                            Win7TaskBar.writeTransparentIcoImageWithSanselan(image, baos = new ByteArrayOutputStream());
+                            Object icon = Win7TaskBar.createIcon(baos.toByteArray());
+
+                            if (icon != null) {
+                                Win7TaskBar.setOverlayIcon(JDGui.getInstance().getMainFrame(), icon, true);
+                            }
+                        }
                         Win7TaskBar.setProgress(JDGui.getInstance().getMainFrame(), lastPercent, true);
                     } catch (Throwable er) {
                         Log.log(er);
@@ -172,6 +194,45 @@ public class WindowsApplicationAdapter {
         }
     }
 
+    protected BufferedImage createImage(int speed) {
+        String speedString = (speed) + "";
+
+        Color fg = Color.WHITE;
+        Color bg = Color.GREEN.darker();
+
+        Font font = new Font("Arial", Font.BOLD, 24);
+        Canvas c = new Canvas();
+        FontMetrics fm = c.getFontMetrics(font);
+        int stringwidth = Math.max(fm.getAscent(), fm.stringWidth(speedString)) + 6;
+
+        int w;
+        // GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        // GraphicsDevice gd = ge.getDefaultScreenDevice();
+
+        int h;
+        // GraphicsConfiguration gc = gd.getDefaultConfiguration();
+        // final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
+        final BufferedImage image = new BufferedImage(w = stringwidth, h = stringwidth, Transparency.TRANSLUCENT);
+        final Graphics2D g = image.createGraphics();
+
+        // paint
+        // Graphics2D g = image.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setFont(font);
+        RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 16, 16);
+        g.setColor(bg);
+        g.fillOval(0, 0, w, h);
+        g.setColor(Color.WHITE);
+        g.setStroke(new BasicStroke(2));
+        g.drawOval(0, 0, w - 1, h - 1);
+        g.setColor(fg);
+        Rectangle2D bounds = g.getFontMetrics().getStringBounds(speedString, g);
+        g.drawString(speedString, (int) (w - bounds.getWidth()) / 2, (int) (-bounds.getY() + (h - bounds.getHeight()) / 2));
+
+        g.dispose();
+        return image;
+    }
+
     private void stopDockUpdater() {
         synchronized (LOCK) {
 
@@ -185,6 +246,7 @@ public class WindowsApplicationAdapter {
 
     private void reset() {
         try {
+            Win7TaskBar.setOverlayIcon(JDGui.getInstance().getMainFrame(), null, true);
             Win7TaskBar.hideProgress(JDGui.getInstance().getMainFrame());
         } catch (Throwable er) {
             Log.log(er);
