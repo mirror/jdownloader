@@ -523,7 +523,7 @@ public class Keep2ShareCc extends K2SApi {
                 getPage(MAINPAGE + "/site/profile.html");
             }
             account.setValid(true);
-            if (br.containsHTML("class=\"free\">Free</a>")) {
+            if (br.containsHTML("class=\"free\"[^>]*>Free</a>")) {
                 account.setProperty("free", true);
                 ai.setStatus("Free Account");
             } else {
