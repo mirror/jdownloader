@@ -6,7 +6,6 @@ public class PackagizerRuleWrapper extends RuleWrapper<PackagizerRule> {
 
     public PackagizerRuleWrapper(PackagizerRule rule) {
         super(rule);
-
     }
 
 }

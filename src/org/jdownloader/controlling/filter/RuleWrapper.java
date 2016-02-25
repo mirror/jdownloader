@@ -14,13 +14,13 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
 
-    protected CompiledRegexFilter      fileNameRule;
-    protected boolean                  requiresLinkcheck = false;
-    private CompiledPluginStatusFilter pluginStatusFilter;
-    private BooleanFilter              alwaysFilter;
-    private CompiledOriginFilter       originFilter;
-    private CompiledRegexFilter        packageNameRule;
-    private CompiledConditionFilter    conditionFilter;
+    private final CompiledRegexFilter        fileNameRule;
+    private final boolean                    requiresLinkcheck;
+    private final CompiledPluginStatusFilter pluginStatusFilter;
+    private final BooleanFilter              alwaysFilter;
+    private final CompiledOriginFilter       originFilter;
+    private final CompiledRegexFilter        packageNameRule;
+    private final CompiledConditionFilter    conditionFilter;
 
     public CompiledPluginStatusFilter getPluginStatusFilter() {
         return pluginStatusFilter;
@@ -28,55 +28,83 @@ public class RuleWrapper<T extends FilterRule> {
 
     public RuleWrapper(T rule2) {
         this.rule = rule2;
-
+        boolean requiresHoster = false;
+        boolean requiresLinkcheck = false;
         if (rule.getPluginStatusFilter().isEnabled()) {
             pluginStatusFilter = new CompiledPluginStatusFilter(rule.getPluginStatusFilter());
             requiresHoster = true;
+        } else {
+            pluginStatusFilter = null;
         }
 
         if (rule.getOnlineStatusFilter().isEnabled()) {
             onlineStatusFilter = new CompiledOnlineStatusFiler(rule.getOnlineStatusFilter());
             requiresLinkcheck = true;
+        } else {
+            onlineStatusFilter = null;
         }
 
         if (rule.getFilenameFilter().isEnabled()) {
             fileNameRule = new CompiledRegexFilter(rule.getFilenameFilter());
             requiresLinkcheck = true;
+        } else {
+            fileNameRule = null;
         }
+
         if (rule.getPackagenameFilter().isEnabled()) {
             packageNameRule = new CompiledRegexFilter(rule.getPackagenameFilter());
-            // requiresLinkcheck = true;
+        } else {
+            packageNameRule = null;
         }
+
         if (rule.getFilesizeFilter().isEnabled()) {
             filesizeRule = new CompiledFilesizeFilter(rule.getFilesizeFilter());
             requiresLinkcheck = true;
+        } else {
+            filesizeRule = null;
         }
+
         if (rule.getFiletypeFilter().isEnabled()) {
             filetypeFilter = new CompiledFiletypeFilter(rule.getFiletypeFilter());
-            requiresLinkcheck = true;
+        } else {
+            filetypeFilter = null;
         }
 
         if (rule.getHosterURLFilter().isEnabled()) {
             hosterRule = new CompiledRegexFilter(rule.getHosterURLFilter());
             requiresHoster = true;
+        } else {
+            hosterRule = null;
         }
+
         if (rule.getSourceURLFilter().isEnabled()) {
             sourceRule = new CompiledRegexFilter(rule.getSourceURLFilter());
+        } else {
+            sourceRule = null;
         }
 
         if (rule.getOriginFilter().isEnabled()) {
             originFilter = new CompiledOriginFilter(rule.getOriginFilter());
+        } else {
+            originFilter = null;
         }
 
         if (rule.getConditionFilter().isEnabled()) {
             conditionFilter = new CompiledConditionFilter(rule.getConditionFilter());
+        } else {
+            conditionFilter = null;
         }
+
         if (rule.getMatchAlwaysFilter().isEnabled()) {
             alwaysFilter = rule.getMatchAlwaysFilter();
             // overwrites all others
             requiresHoster = false;
             requiresLinkcheck = false;
+        } else {
+            alwaysFilter = null;
         }
+        this.requiresLinkcheck = requiresLinkcheck;
+        this.requiresHoster = requiresHoster;
     }
 
     public CompiledConditionFilter getConditionFilter() {
@@ -123,13 +151,13 @@ public class RuleWrapper<T extends FilterRule> {
         return filetypeFilter;
     }
 
-    protected boolean                   requiresHoster = false;
-    protected CompiledRegexFilter       hosterRule;
-    protected CompiledRegexFilter       sourceRule;
-    protected CompiledFilesizeFilter    filesizeRule;
-    protected CompiledFiletypeFilter    filetypeFilter;
-    protected T                         rule;
-    protected CompiledOnlineStatusFiler onlineStatusFilter;
+    private final boolean                   requiresHoster;
+    private final CompiledRegexFilter       hosterRule;
+    private final CompiledRegexFilter       sourceRule;
+    private final CompiledFilesizeFilter    filesizeRule;
+    private final CompiledFiletypeFilter    filetypeFilter;
+    private final T                         rule;
+    private final CompiledOnlineStatusFiler onlineStatusFilter;
 
     public T getRule() {
         return rule;
@@ -143,14 +171,13 @@ public class RuleWrapper<T extends FilterRule> {
         if (useRegex) {
             return Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         } else {
-            String[] parts = regex.split("\\*+");
-            StringBuilder sb = new StringBuilder();
+            final String[] parts = regex.split("\\*+");
+            final StringBuilder sb = new StringBuilder();
             if (regex.startsWith("*")) {
                 sb.append("(.*)");
             }
             int actualParts = 0;
             for (int i = 0; i < parts.length; i++) {
-
                 if (parts[i].length() != 0) {
                     if (actualParts > 0) {
                         sb.append("(.*?)");
@@ -165,7 +192,6 @@ public class RuleWrapper<T extends FilterRule> {
                 if (regex.endsWith("*")) {
                     sb.append("(.*)");
                 }
-
             }
             return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         }
@@ -183,10 +209,13 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileSize(final CrawledLink link) {
         final CompiledFilesizeFilter fileSizeRule = getFilesizeRule();
         if (fileSizeRule != null) {
-            if (link.getLinkState() != AvailableLinkState.ONLINE) {
-                return false;
-            } else {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null && downloadLink.getVerifiedFileSize() >= 0) {
+                return fileSizeRule.matches(downloadLink.getVerifiedFileSize());
+            } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
                 return fileSizeRule.matches(link.getSize());
+            } else {
+                return false;
             }
         }
         return true;
@@ -216,10 +245,13 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileName(final CrawledLink link) {
         final CompiledRegexFilter fileNameRule = getFileNameRule();
         if (fileNameRule != null) {
-            if (link.getLinkState() != AvailableLinkState.ONLINE) {
-                return false;
-            } else {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null && (downloadLink.getFinalFileName() != null || downloadLink.getForcedFileName() != null)) {
                 return fileNameRule.matches(link.getName());
+            } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
+                return fileNameRule.matches(link.getName());
+            } else {
+                return false;
             }
         }
         return true;
