@@ -44,6 +44,22 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.resources.AWUTheme;
@@ -94,7 +110,6 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.crosssystem.windows.WindowsApplicationAdapter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.gui.IconKey;
@@ -127,22 +142,6 @@ import com.btr.proxy.selector.pac.PacScriptParser;
 import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
-
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
 
 public class SecondLevelLaunch {
     static {
@@ -255,17 +254,14 @@ public class SecondLevelLaunch {
     }
 
     protected static File getInfoPlistPath() {
-
         String ownBundlePath = System.getProperty("i4j.ownBundlePath");
         if (StringUtils.isNotEmpty(ownBundlePath) && ownBundlePath.endsWith(".app")) {
-
             // folder installer
             File file = new File(new File(ownBundlePath), "Contents/Info.plist");
             if (file.exists()) {
                 return file;
             }
         }
-
         // old singlebundle installer
         File file = Application.getResource("../../Info.plist");
         if (file.exists()) {
@@ -323,9 +319,7 @@ public class SecondLevelLaunch {
      */
 
     public static void mainStart(final String args[]) {
-
         /* setup JSPermission */
-
         try {
             // Ensure that proxyVole uses Rhino and not the build-in engines.
             // Rhino is Sandboxed by JSRhinoPermissionRestricter
@@ -333,9 +327,7 @@ public class SecondLevelLaunch {
 
                 @Override
                 public PacScriptParser selectEngine(PacProxySelector selector, PacScriptSource pacSource) throws ProxyEvaluationException {
-
                     return new RhinoPacScriptParser(pacSource);
-
                 }
             };
 
@@ -343,16 +335,13 @@ public class SecondLevelLaunch {
             LoggerFactory.getDefaultLogger().log(e);
         }
         try {
-
             JSRhinoPermissionRestricter.init();
-
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
 
         try {
             JSHtmlUnitPermissionRestricter.init();
-
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
@@ -428,8 +417,15 @@ public class SecondLevelLaunch {
     }
 
     private static void initWindowsSpecials() {
-        WindowsApplicationAdapter.getInstance();
-
+        // SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+        //
+        // @Override
+        // public void run() {
+        // if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7)) {
+        // WindowsApplicationAdapter.getInstance();
+        // }
+        // }
+        // });
     }
 
     private static void initLinuxSpecials() {

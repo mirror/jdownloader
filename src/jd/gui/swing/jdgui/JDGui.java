@@ -1733,7 +1733,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                             getMainFrame().addWindowListener(new WindowAdapter() {
                                 public void windowIconified(WindowEvent e) {
                                     getMainFrame().removeWindowListener(this);
-
+                                    WindowManager.getInstance().hide(getMainFrame());
                                 };
                             });
                             WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.ICONIFIED);
