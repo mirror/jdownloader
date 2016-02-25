@@ -80,12 +80,9 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         }
 
         /* fernsehen/.* links |mediathek/.* links */
-        final boolean page_contains_video = br.containsHTML("class=\"videoLink\"") || br.containsHTML("class=\"mediaInfo\"") || br.containsHTML("dataExtensionURL:");
-        if (parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
+        if (parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38) {
             /* Add offline link so user can see it */
             final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setAvailable(false);
-            dl.setProperty("OFFLINE", true);
             dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -105,6 +102,9 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         }
         if (sendung == null) {
             sendung = br.getRegex("<title>([^<>]*?)\\- WDR Fernsehen</title>").getMatch(0);
+        }
+        if (sendung == null) {
+            sendung = br.getRegex("class=\"ressort\">Startseite ([^<>\"]+)<").getMatch(0);
         }
         if (sendung == null) {
             sendung = inforegex.getMatch(1);
@@ -154,6 +154,8 @@ public class WdrDeDecrypt extends PluginForDecrypt {
              * Possible json "API" e.g. http://www1.wdr.de/mediathek/video/sendungen/videokoelnerlichter112.html
              * http://deviceids-medstdp-id1.wdr.de/ondemand/76/760987.js
              */
+            boolean api_in_use = false;
+            final String json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
             String player_link = br.getRegex("\\&#039;mcUrl\\&#039;:\\&#039;(/[^<>\"]*?\\.json)").getMatch(0);
             if (player_link == null) {
                 player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
@@ -162,12 +164,28 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 player_link = br.getRegex("\"(/[^<>\"]*?)\" rel=\"nofollow\" class=\"videoButton play\"").getMatch(0);
             }
             if (player_link == null) {
+                /* Last chance */
+                api_in_use = true;
+                player_link = json_api_url;
+            }
+            if (player_link == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            br.getPage("http://www1.wdr.de" + player_link);
-            if (date == null) {
-                date = br.getRegex("name=\"DC\\.Date\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (!player_link.startsWith("http")) {
+                player_link = "http://www1.wdr.de" + player_link;
+            }
+            br.getPage(player_link);
+            if (api_in_use) {
+                /* With API */
+                if (date == null) {
+                    date = br.getRegex("\"trackerClipAirTime\":\"([^<>\"]+)\"").getMatch(0);
+                }
+            } else {
+                /* Without API */
+                if (date == null) {
+                    date = br.getRegex("name=\"DC\\.Date\" content=\"([^<>\"]*?)\"").getMatch(0);
+                }
             }
             String flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
             if (flashvars == null) {
@@ -184,7 +202,8 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 subtitle_url = Encoding.htmlDecode(subtitle_url);
             }
             /* We know how their http links look - this way we can avoid HDS/HLS/RTMP */
-            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/([a-z]{2})/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
+            /* http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4 */
+            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/med[a-z0-9]+/([a-z]{2})/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
             String region = hds_convert.getMatch(0);
             final String fsk_url = hds_convert.getMatch(1);
             final String quality_string = hds_convert.getMatch(2);
@@ -203,7 +222,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 if (counter > qualities.length - 1) {
                     break;
                 }
-                String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
+                /* Old */
+                // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
+                /* 2016-02-16 new */
+                String final_url = "http://http-ras.wdr.de/CMS2010/medp/ondemand/" + region + "/" + fsk_url + "/";
                 final String single_quality_string_correct;
                 String resolution;
                 String quality_name;

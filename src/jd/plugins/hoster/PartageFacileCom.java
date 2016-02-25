@@ -15,9 +15,11 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,6 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage\\-facile\\.com/([0-9A-Z]+/.+|\\d+.*?\\.html)" }, flags = { 0 })
 public class PartageFacileCom extends PluginForHost {
@@ -49,12 +52,18 @@ public class PartageFacileCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Page introuvable<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("http\\-equiv=\"refresh\" content=\"0;url=http://(www\\.)?partage\\-facile\\.com\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Page introuvable<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("http\\-equiv=\"refresh\" content=\"0;url=http://(www\\.)?partage\\-facile\\.com\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filesize = br.getRegex("<th>Taille :</th>[\t\n\r ]+<td>([^<>\"\\']+)</td>").getMatch(0);
         String filename = br.getRegex("<th class=\"span4\">Nom :</th>[\t\n\r ]+<td>([^<>\"\\']+)</td>").getMatch(0);
         if (filename == null) {
@@ -63,7 +72,9 @@ public class PartageFacileCom extends PluginForHost {
                 filename = br.getRegex("Partage-Facile : Fichier ([^<>\"\\']+)\\.html").getMatch(0);
             }
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (filesize.contains("Mo")) {
             filesize = filesize.replaceAll("Mo", "MB");
         } else if (filesize.contains("Go")) {
@@ -80,18 +91,36 @@ public class PartageFacileCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        boolean hasCaptcha = false;
         br.postPage(downloadLink.getDownloadURL(), "freedl=T%C3%A9l%C3%A9chargement+gratuit+%28Vitesse+NORMAL%29");
         Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dlform.remove("u");
+        if (dlform.hasInputFieldByName("recaptcha_response_field")) {
+            hasCaptcha = true;
+            final Recaptcha rc = new Recaptcha(br, this);
+            rc.findID();
+            rc.load();
+            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+            dlform.put("recaptcha_challenge_field", rc.getChallenge());
+            dlform.put("recaptcha_response_field", Encoding.urlEncode(c));
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Taille maximum du fichier")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+            if (br.containsHTML("Taille maximum du fichier")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+            } else if (hasCaptcha) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
