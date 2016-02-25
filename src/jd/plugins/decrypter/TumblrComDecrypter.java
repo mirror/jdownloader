@@ -61,6 +61,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private String                  parameter      = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         decryptedLinks = new ArrayList<DownloadLink>();
         dupe = new LinkedHashSet<String>();
         parameter = param.toString().replace("www.", "");
@@ -254,13 +255,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        // find photo set iframe... can be outside of 'string' source
-        final String photoset = br.getRegex("<iframe [^>]*src=(\"|')([^<>]+?/post/\\d+/photoset_iframe/[^<>]+?)\\1").getMatch(1);
-        // note the /post/\d+ uid isn't same as /post/\d+/photoset_iframe
-        if (photoset != null || br.containsHTML("<article class=\"post-photoset\" id=\"" + puid + "\">|<div id=\"photoset_" + puid + "\" class=\"html_photoset\">")) {
-            // ok we don't need to process the iframe src link as best images which we are interested in are within google
+        if (isPhotoSet(br, puid)) {
             // getGoogleCarousel!
-            processPhotoSet(decryptedLinks, puid, fpName);
+            processPhotoSet(decryptedLinks, br, puid, fpName);
             return decryptedLinks;
         }
         // FINAL FAILOVER FOR UNSUPPORTED CONTENT, this way we wont have to keep making updates to this plugin! only time we would need to
@@ -300,7 +297,18 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void processPhotoSet(final ArrayList<DownloadLink> decryptedLinks, final String puid, final String fpname) throws Exception {
+    private boolean isPhotoSet(final Browser br, final String puid) {
+        // find photo set iframe... can be outside of 'string' source
+        // ok we don't need to process the iframe src link as best images which we are interested in are within google
+        final String photoset = br.getRegex("<iframe [^>]*src=(\"|')([^<>]+?/post/\\d+/photoset_iframe/[^<>]+?)\\1").getMatch(1);
+        // note the /post/\d+ uid isn't same as /post/\d+/photoset_iframe
+        if (photoset != null || br.containsHTML("<article class=\"post-photoset\" id=\"" + puid + "\">|<div id=\"photoset_" + puid + "\" class=\"html_photoset\">|<article id=\"post-" + puid + "139711801296\" class=\"post\\s+[^\"]*type-photoset|<div class=\"photo-slideshow\" id=\"photoset_" + puid + "\"|")) {
+            return true;
+        }
+        return false;
+    }
+
+    private void processPhotoSet(final ArrayList<DownloadLink> decryptedLinks, final Browser br, final String puid, final String fpname) throws Exception {
         final String gc = getGoogleCarousel(br);
         if (gc != null) {
             FilePackage fp = null;
