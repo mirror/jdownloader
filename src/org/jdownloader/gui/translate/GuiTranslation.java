@@ -6086,4 +6086,14 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Remote Menu Manager" })
     String MyJDownloaderSettingsPanelForTab_menus();
+
+    @Default(lngs = { "en" }, values = { "Total Progress" })
+    String DockProgressDisplay_total_progress();
+
+    @Default(lngs = { "en" }, values = { "Nothing" })
+    String DockProgressDisplay_nothing();
+
+    @Default(lngs = { "en" }, values = { "Unknown Error: %s1" })
+
+    String DBC_UNKNOWN_ERROR(String msg);
 }

@@ -61,7 +61,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected static int getRequiredCorrectAnswersGuess() {
 
         synchronized (CORRECT_AFTER_LIST) {
-            if (CORRECT_AFTER_LIST.size() < 5) {
+            if (CORRECT_AFTER_LIST.size() < 2) {
                 return 1;
             }
             int min = Integer.MAX_VALUE;
