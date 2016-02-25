@@ -1,8 +1,4 @@
-/*
- * Source: http://deathbycaptcha.eu/user/api
- * Slightly modified to work without json and base64 dependencies
- */
-package org.jdownloader.captcha.v2.solver.dbc.api;
+package org.jdownloader.captcha.v2.solver.dbc.test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,35 +6,30 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-
 /**
  * Base Death by Captcha API client.
- * 
+ *
  */
 abstract public class Client {
-    final static public String API_VERSION        = "DBC/Java v4.1.0";
+    final static public String API_VERSION        = "DBC/Java v4.3.0";
     final static public int    SOFTWARE_VENDOR_ID = 0;
 
     final static public int    DEFAULT_TIMEOUT    = 60;
-    final static public int    POLLS_INTERVAL     = 3;
+    final static public int    POLLS_INTERVAL     = 5;
 
     /**
      * Client verbosity flag.
-     * 
+     *
      * When it's set to true, the client will dump API calls for debug purpose.
      */
     public boolean             isVerbose          = false;
 
     protected String           _username          = "";
     protected String           _password          = "";
-    protected LogSource        logger;
 
     protected void log(String call, String msg) {
         if (this.isVerbose) {
-            logger.info(call + (null != msg ? ": " + msg : ""));
-
+            System.out.println((System.currentTimeMillis() / 1000) + " " + call + (null != msg ? ": " + msg : ""));
         }
     }
 
@@ -97,7 +88,7 @@ abstract public class Client {
 
     /**
      * Opens API-specific connection if not opened yet.
-     * 
+     *
      * @return true on success
      */
     abstract public boolean connect() throws IOException;
@@ -111,37 +102,41 @@ abstract public class Client {
     public Client(String username, String password) {
         this._username = username;
         this._password = password;
-        logger = LogController.getInstance().getLogger(Client.class.getName());
-
     }
 
     /**
      * Fetches user details.
-     * 
+     *
      * @return user details object
      */
     abstract public User getUser() throws IOException, Exception;
 
     /**
      * Fetches user balance (in US cents).
-     * 
+     *
      * @return user balance
      */
     public double getBalance() throws IOException, Exception {
-        return this.getUser().getBalance();
+        return this.getUser().balance;
     }
 
     /**
      * Uploads a CAPTCHA to the service.
-     * 
+     *
      * @param img
      *            CAPTCHA image byte vector
      * @return CAPTCHA object on success, null otherwise
      */
+    abstract public Captcha upload(byte[] img, String challenge, int type, byte[] banner, String banner_text, String grid) throws IOException, Exception;
+
+    abstract public Captcha upload(byte[] img, String challenge, int type, byte[] banner, String banner_text) throws IOException, Exception;
+
+    abstract public Captcha upload(byte[] img, int type, byte[] banner, String banner_text) throws IOException, Exception;
+
     abstract public Captcha upload(byte[] img) throws IOException, Exception;
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
+     * @see com.DeathByCaptcha.Client#upload
      * @param st
      *            CAPTCHA image stream
      */
@@ -150,7 +145,7 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
+     * @see com.DeathByCaptcha.Client#upload
      * @param f
      *            CAPTCHA image file
      */
@@ -159,7 +154,7 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
+     * @see com.DeathByCaptcha.Client#upload
      * @param fn
      *            CAPTCHA image file name
      */
@@ -169,7 +164,7 @@ abstract public class Client {
 
     /**
      * Fetches an uploaded CAPTCHA details.
-     * 
+     *
      * @param id
      *            CAPTCHA ID
      * @return CAPTCHA object if found, null otherwise
@@ -177,7 +172,7 @@ abstract public class Client {
     abstract public Captcha getCaptcha(int id) throws IOException, Exception;
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getCaptcha
+     * @see com.DeathByCaptcha.Client#getCaptcha
      * @param captcha
      *            CAPTCHA object
      */
@@ -187,7 +182,7 @@ abstract public class Client {
 
     /**
      * Fetches an uploaded CAPTCHA text.
-     * 
+     *
      * @param id
      *            CAPTCHA ID
      * @return CAPTCHA text if solved, null otherwise
@@ -197,7 +192,7 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getText
+     * @see com.DeathByCaptcha.Client#getText
      * @param captcha
      *            CAPTCHA object
      */
@@ -207,7 +202,7 @@ abstract public class Client {
 
     /**
      * Reports an incorrectly solved CAPTCHA
-     * 
+     *
      * @param id
      *            CAPTCHA ID
      * @return true on success
@@ -215,7 +210,7 @@ abstract public class Client {
     abstract public boolean report(int id) throws IOException, Exception;
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#report
+     * @see com.DeathByCaptcha.Client#report
      * @param captcha
      *            CAPTCHA object
      */
@@ -225,16 +220,16 @@ abstract public class Client {
 
     /**
      * Tries to solve a CAPTCHA by uploading it and polling for its status and text with arbitrary timeout.
-     * 
+     *
      * @param img
      *            CAPTCHA image byte vector
      * @param timeout
      *            Solving timeout (in seconds)
      * @return CAPTCHA object if uploaded and correctly solved, null otherwise
      */
-    public Captcha decode(byte[] img, int timeout) throws IOException, Exception, InterruptedException {
+    public Captcha decode(byte[] img, String challenge, int type, byte[] banner, String banner_text, String grid, int timeout) throws IOException, Exception, InterruptedException {
         long deadline = System.currentTimeMillis() + (0 < timeout ? timeout : Client.DEFAULT_TIMEOUT) * 1000;
-        Captcha captcha = this.upload(img);
+        Captcha captcha = this.upload(img, challenge, type, banner, banner_text, grid);
         if (null != captcha) {
             while (deadline > System.currentTimeMillis() && !captcha.isSolved()) {
                 Thread.sleep(Client.POLLS_INTERVAL * 1000);
@@ -247,62 +242,160 @@ abstract public class Client {
         return null;
     }
 
-    /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(byte[], int)
-     */
-    public Captcha decode(byte[] img) throws IOException, Exception, InterruptedException {
-        return this.decode(img, 0);
+    public Captcha decode(byte[] img, String challenge, int type, byte[] banner, String banner_text, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(img, challenge, type, banner, banner_text, "", 0);
+    }
+
+    public Captcha decode(byte[] img, int type, byte[] banner, String banner_text) throws IOException, Exception, InterruptedException {
+        return this.decode(img, "", type, banner, banner_text, 0);
+    }
+
+    public Captcha decode(byte[] img, int type) throws IOException, Exception, InterruptedException {
+        return this.decode(img, "", type, null, "", 0);
+    }
+
+    public Captcha decode(byte[] img, String challenge) throws IOException, Exception, InterruptedException {
+        return this.decode(img, challenge, 0, null, "", 0);
+    }
+
+    public Captcha decode(byte[] img, int type, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(img, "", type, null, "", timeout);
+    }
+
+    public Captcha decode(byte[] img, String challenge, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(img, challenge, 0, null, "", timeout);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode
+     * @see com.DeathByCaptcha.Client#decode(byte[], int)
+     */
+    public Captcha decode(byte[] img) throws IOException, Exception, InterruptedException {
+        return this.decode(img, "", 0, null, "", 0);
+    }
+
+    /**
+     * @see com.DeathByCaptcha.Client#decode
      * @param st
      *            CAPTCHA image stream
      * @param timeout
      *            Solving timeout (in seconds)
      */
+    public Captcha decode(InputStream st, String challenge, int type, InputStream banner_st, String banner_text, String grid, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(st), challenge, type, this.load(banner_st), banner_text, grid, timeout);
+    }
+
+    public Captcha decode(InputStream st, String challenge, int type, InputStream banner_st, String banner_text, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(st), challenge, type, this.load(banner_st), banner_text, "", timeout);
+    }
+
+    public Captcha decode(InputStream st, int type, InputStream banner_st, String banner_text, String grid) throws IOException, Exception, InterruptedException {
+        return this.decode(st, "", type, banner_st, banner_text, grid, 0);
+    }
+
+    public Captcha decode(InputStream st, int type, InputStream banner_st, String banner_text) throws IOException, Exception, InterruptedException {
+        return this.decode(st, "", type, banner_st, banner_text, "", 0);
+    }
+
+    public Captcha decode(InputStream st, int type, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(st), "", type, null, "", timeout);
+    }
+
+    public Captcha decode(InputStream st, String challenge) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(st), challenge, 0, null, "", 0);
+    }
+
+    public Captcha decode(InputStream st, String challenge, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(st), challenge, 0, null, "", timeout);
+    }
+
     public Captcha decode(InputStream st, int timeout) throws IOException, Exception, InterruptedException {
         return this.decode(this.load(st), timeout);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(InputStream, int)
+     * @see com.DeathByCaptcha.Client#decode(InputStream, int)
      */
     public Captcha decode(InputStream st) throws IOException, Exception, InterruptedException {
         return this.decode(st, 0);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode
+     * @see com.DeathByCaptcha.Client#decode
      * @param f
      *            CAPTCHA image file
      * @param timeout
      *            Solving timeout (in seconds)
      */
+
+    public Captcha decode(File f, String challenge, int type, File banner_f, String banner_text, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(f), challenge, type, this.load(banner_f), banner_text, timeout);
+    }
+
+    public Captcha decode(File f, int type, File banner_f, String banner_text) throws IOException, Exception, InterruptedException {
+        return this.decode(f, "", type, banner_f, banner_text, 0);
+    }
+
+    public Captcha decode(File f, int type, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(f), "", type, null, "", timeout);
+    }
+
+    public Captcha decode(File f, String challenge) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(f), challenge, 0, null, "", 0);
+    }
+
+    public Captcha decode(File f, String challenge, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(f), challenge, 0, null, "", timeout);
+    }
+
     public Captcha decode(File f, int timeout) throws IOException, FileNotFoundException, Exception, InterruptedException {
         return this.decode(this.load(f), timeout);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(File, int)
+     * @see com.DeathByCaptcha.Client#decode(File, int)
      */
     public Captcha decode(File f) throws IOException, FileNotFoundException, Exception, InterruptedException {
         return this.decode(f, 0);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode
+     * @see com.DeathByCaptcha.Client#decode
      * @param fn
      *            CAPTCHA image file name
      * @param timeout
      *            Solving timeout (in seconds)
      */
+
+    public Captcha decode(String fn, String challenge, int type, String banner_fn, String banner_text, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(fn), challenge, type, this.load(banner_fn), banner_text, timeout);
+    }
+
+    public Captcha decode(String fn, int type, String banner_fn, String banner_text) throws IOException, Exception, InterruptedException {
+        return this.decode(fn, "", type, banner_fn, banner_text, 0);
+    }
+
+    public Captcha decode(String fn, int type, String banner_fn, String banner_text, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(fn, "", type, banner_fn, banner_text, timeout);
+    }
+
+    public Captcha decode(String fn, int type, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(fn), "", type, null, "", timeout);
+    }
+
+    public Captcha decode(String fn, String challenge) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(fn), challenge, 0, null, "", 0);
+    }
+
+    public Captcha decode(String fn, String challenge, int timeout) throws IOException, Exception, InterruptedException {
+        return this.decode(this.load(fn), challenge, 0, null, "", timeout);
+    }
+
     public Captcha decode(String fn, int timeout) throws IOException, FileNotFoundException, Exception, InterruptedException {
         return this.decode(this.load(fn), timeout);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(String, int)
+     * @see com.DeathByCaptcha.Client#decode(String, int)
      */
     public Captcha decode(String fn) throws IOException, FileNotFoundException, Exception, InterruptedException {
         return this.decode(fn, 0);

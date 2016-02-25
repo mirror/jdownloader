@@ -80,7 +80,7 @@ public class ChallengeResponseController {
         }
         boolean save = false;
         save = addDefaultRules(rules, "recaptcha", new CaptchaQualityEnsuranceRule(20, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(4, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
-        save = addDefaultRules(rules, RecaptchaV2Challenge.RECAPTCHAV2, new CaptchaQualityEnsuranceRule(20, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(4, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
+        save = addDefaultRules(rules, RecaptchaV2Challenge.RECAPTCHAV2, new CaptchaQualityEnsuranceRule(60, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(6, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
         if (save) {
             CFG_CAPTCHA.CFG.setQualityEnsuranceRules(rules);
         }

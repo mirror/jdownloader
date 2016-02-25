@@ -44,22 +44,6 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.resources.AWUTheme;
@@ -110,6 +94,7 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.crosssystem.windows.WindowsApplicationAdapter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.gui.IconKey;
@@ -143,6 +128,22 @@ import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
 
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+
 public class SecondLevelLaunch {
     static {
         statics();
@@ -164,6 +165,7 @@ public class SecondLevelLaunch {
      * Sets special Properties for MAC
      */
     private static void initMACProperties() {
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
         // set DockIcon (most used in Building)
         try {
             com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
@@ -358,21 +360,12 @@ public class SecondLevelLaunch {
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
             // Must be in Main
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
+
             SecondLevelLaunch.initMACProperties();
         } else if (CrossSystem.isUnix()) {
-            // set WM Class explicitly
-            try {
-                if (!org.appwork.utils.Application.isHeadless()) {
-                    // patch by Vampire
-                    Toolkit toolkit = Toolkit.getDefaultToolkit();
-                    final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
-                    awtAppClassName.setAccessible(true);
-                    awtAppClassName.set(toolkit, "JDownloader");
-                }
-            } catch (final Throwable e) {
-                e.printStackTrace();
-            }
+            initLinuxSpecials();
+        } else if (CrossSystem.isWindows()) {
+            initWindowsSpecials();
         }
 
         /* hack for ftp plugin to use new ftp style */
@@ -432,6 +425,26 @@ public class SecondLevelLaunch {
         }
         SecondLevelLaunch.preInitChecks();
         SecondLevelLaunch.start(args);
+    }
+
+    private static void initWindowsSpecials() {
+        WindowsApplicationAdapter.getInstance();
+
+    }
+
+    private static void initLinuxSpecials() {
+        // set WM Class explicitly
+        try {
+            if (!org.appwork.utils.Application.isHeadless()) {
+                // patch by Vampire
+                Toolkit toolkit = Toolkit.getDefaultToolkit();
+                final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
+                awtAppClassName.setAccessible(true);
+                awtAppClassName.set(toolkit, "JDownloader");
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private static void vmOptionsWorkaround(long maxHeap) {

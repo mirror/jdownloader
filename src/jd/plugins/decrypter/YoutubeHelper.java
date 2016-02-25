@@ -103,11 +103,11 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
 public class YoutubeHelper implements YoutubeHelperInterface {
-    private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP = "\"dashmpd\"\\s*:\\s*(\".*?\")";
+    private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
 
     private static final String REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
 
-    private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
+    private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP       = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
 
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -127,17 +127,17 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
     }
 
-    public static final String PAID_VIDEO = "Paid Video:";
+    public static final String    PAID_VIDEO        = "Paid Video:";
 
-    protected static final String YT_CHANNEL_ID = "YT_CHANNEL_ID";
+    protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
 
-    protected static final String YT_DURATION = "YT_DURATION";
+    protected static final String YT_DURATION       = "YT_DURATION";
 
-    protected static final String YT_DATE_UPDATE = "YT_DATE_UPDATE";
+    protected static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
 
     protected static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
 
-    private Browser br;
+    private Browser               br;
 
     public Browser getBr() {
         return br;
@@ -147,7 +147,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.br = br;
     }
 
-    private final YoutubeConfig cfg;
+    private final YoutubeConfig           cfg;
 
     private final LogInterface            logger;
     private String                        base;
@@ -613,20 +613,20 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         });
     }
 
-    public static final String YT_EXT                      = "YT_EXT";
-    public static final String YT_TITLE                    = "YT_TITLE";
-    public static final String YT_PLAYLIST_INT             = "YT_PLAYLIST_INT";
-    public static final String YT_ID                       = "YT_ID";
-    public static final String YT_AGE_GATE                 = "YT_AGE_GATE";
-    public static final String YT_CHANNEL                  = "YT_CHANNEL";
-    public static final String YT_USER                     = "YT_USER";
-    public static final String YT_DATE                     = "YT_DATE";
-    public static final String YT_VARIANTS                 = "YT_VARIANTS";
-    public static final String YT_VARIANT                  = "YT_VARIANT";
-    public static final String YT_STREAMURL_VIDEO          = "YT_STREAMURL_VIDEO";
-    public static final String YT_STREAMURL_AUDIO          = "YT_STREAMURL_AUDIO";
-    public static final String YT_STREAMURL_VIDEO_SEGMENTS = "YT_STREAMURL_VIDEO_SEGMENTS";
-    public static final String YT_STREAMURL_AUDIO_SEGMENTS = "YT_STREAMURL_AUDIO_SEGMENTS";
+    public static final String  YT_EXT                           = "YT_EXT";
+    public static final String  YT_TITLE                         = "YT_TITLE";
+    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String  YT_ID                            = "YT_ID";
+    public static final String  YT_AGE_GATE                      = "YT_AGE_GATE";
+    public static final String  YT_CHANNEL                       = "YT_CHANNEL";
+    public static final String  YT_USER                          = "YT_USER";
+    public static final String  YT_DATE                          = "YT_DATE";
+    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String  YT_VARIANT                       = "YT_VARIANT";
+    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
 
     private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
@@ -713,21 +713,21 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.variantsMap = Collections.unmodifiableMap(variantsMap);
     }
 
-    private HashMap<String, HashMap<String, String>> jsCache = new HashMap<String, HashMap<String, String>>();
+    private HashMap<String, HashMap<String, String>> jsCache             = new HashMap<String, HashMap<String, String>>();
 
-    private HashSet<String> fmtMaps;
+    private HashSet<String>                          fmtMaps;
 
-    private HashSet<String> mpdUrls;
+    private HashSet<String>                          mpdUrls;
 
-    private HashMap<String, String> videoInfo;
+    private HashMap<String, String>                  videoInfo;
 
-    private boolean hlsEnabled = false;
+    private boolean                                  hlsEnabled          = false;
 
-    private boolean dashMpdEnabled = true;
+    private boolean                                  dashMpdEnabled      = true;
 
-    private boolean adaptiveFmtsEnabled = true;
+    private boolean                                  adaptiveFmtsEnabled = true;
 
-    private boolean fmtMapEnabled = true;
+    private boolean                                  fmtMapEnabled       = true;
 
     String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
         if (sig == null) {
@@ -1371,28 +1371,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                             validateItag(query.get("size"), c.height, query.get("type"), itag);
                             YoutubeStreamData vsd;
                             ret.put(itag, vsd = new YoutubeStreamData(vid, c.downloadurl, itag));
-                            // NodeList segmentListNodes = representation.getElementsByTagName("SegmentList");
-                            // ArrayList<String> segmentsList = new ArrayList<String>();
-                            // if (segmentListNodes != null && segmentListNodes.getLength() > 0) {
-                            // // we have segments
-                            //
-                            // Node segments = segmentListNodes.item(0);
-                            // NodeList childs = segments.getChildNodes();
-                            // for (int c = 0; c < childs.getLength(); c++) {
-                            // String seg = ((Element) childs.item(c)).getAttribute("sourceURL");
-                            // if (StringUtils.isEmpty(seg)) {
-                            // seg = ((Element) childs.item(c)).getAttribute("media");
-                            // }
-                            // segmentsList.add(seg);
-                            // }
-                            //
-                            // }
-                            // if (url != null && itag != null) {
-                            //
-
-                            // if (segmentsList.size() > 0) {
-                            // vsd.setSegments(segmentsList.toArray(new String[] {}));
-                            // }
 
                         }
                     } else {
@@ -2009,16 +1987,16 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return;
     }
 
-    public static final String YT_LENGTH_SECONDS = "YT_LENGTH_SECONDS";
-    public static final String YT_STATIC_URL     = "YT_STATIC_URL";
+    public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
+    public static final String YT_STATIC_URL         = "YT_STATIC_URL";
 
     public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
     public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
     public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
-    public static final String YT_BEST_VIDEO = "YT_BEST_VIDEO";
+    public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
 
-    public static final String YT_DESCRIPTION = "YT_DESCRIPTION";
+    public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
 
     public String createFilename(DownloadLink link) {
 
