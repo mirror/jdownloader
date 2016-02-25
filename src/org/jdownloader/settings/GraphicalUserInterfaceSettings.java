@@ -468,6 +468,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
             public String getLabel() {
                 return _GUI.T.DockProgressDisplay_nothing();
             }
+        },
+        TOTAL_PROGRESS_AND_CONNECTIONS() {
+
+            @Override
+            public String getLabel() {
+                return _GUI.T.DockProgressDisplay_connections_and_progress();
+            }
         };
     }
 
