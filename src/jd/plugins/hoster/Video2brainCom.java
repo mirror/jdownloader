@@ -38,7 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com", "video2brain.com_EDUCATION" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 2 })
 public class Video2brainCom extends PluginForHost {
 
     public Video2brainCom(PluginWrapper wrapper) {
@@ -60,18 +60,20 @@ public class Video2brainCom extends PluginForHost {
     /* Connection stuff */
     // private final boolean FREE_RESUME = false;
     // private final int FREE_MAXCHUNKS = 0;
-    private final int           FREE_MAXDOWNLOADS    = 20;
-    private final boolean       RESUME_RTMP          = false;
-    private final boolean       RESUME_HTTP          = true;
-    private final int           MAXCHUNKS_HTTP       = 0;
-    private final int           ACCOUNT_MAXDOWNLOADS = 20;
+    private final int           FREE_MAXDOWNLOADS      = 20;
+    private final boolean       RESUME_RTMP            = false;
+    private final boolean       RESUME_HTTP            = true;
+    private final int           MAXCHUNKS_HTTP         = 0;
+    private final int           ACCOUNT_MAXDOWNLOADS   = 20;
 
-    private boolean             premiumonly          = false;
+    private boolean             premiumonly            = false;
 
-    private final String        TYPE_OLD             = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
-    public static final String  ADD_ORDERID          = "ADD_ORDERID";
+    public static final String  domain                 = "video2brain.com";
+    public static final String  domain_dummy_education = "video2brain.com_EDUCATION";
+    private final String        TYPE_OLD               = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
+    public static final String  ADD_ORDERID            = "ADD_ORDERID";
 
-    public static final boolean defaultADD_ORDERID   = false;
+    public static final boolean defaultADD_ORDERID     = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -257,36 +259,54 @@ public class Video2brainCom extends PluginForHost {
     public static void login(Browser br, final Account account) throws Exception {
         synchronized (LOCK) {
             try {
-                br = newBrowser(new Browser());
+                br = newBrowser(br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.getPage("https://www." + account.getHoster() + "/de/");
+                    br.setCookies(domain, cookies);
+                    br.getPage("https://www." + domain + "/de/");
                     if (br.containsHTML("user\\-logout\\.htm\"")) {
                         /* Save new cookie timestamp */
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        account.saveCookies(br.getCookies(domain), "");
                         return;
                     }
                     br = newBrowser(new Browser());
                 }
-                br.postPage("https://www.video2brain.com/de/custom/modules/user/user_ajax.cfc?method=login", "set_cookie=true&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                /* TODO: Maybe make sure this also works for users of other countries! */
-                if (br.getCookie(account.getHoster(), "V2B_USER_DE") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                String continue_url = br.getRegex("\"url\":\"(https[^<>\"\\']+)\"").getMatch(0);
-                if (continue_url != null) {
-                    continue_url = continue_url.replace("\\", "");
-                } else {
+                if (domain_dummy_education.equalsIgnoreCase(account.getHoster())) {
+                    /*
+                     * IP-Based education login - does not matter which logindata user enters - if his University VPN IP is correct he
+                     * should be able to use account based viodeo2brain services this way.
+                     */
                     /* TODO: Maybe make sure this also works for users of other countries! */
-                    continue_url = "/de/login";
+                    br.getPage("https://www." + domain + "/de/education");
+                    /* E.g. errormessage: Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 91.49.11.2 */
+                    if (br.containsHTML("class=\"notice\\-page\\-msg\"")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültige education VPN IP!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid university VPN IP!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                } else {
+                    br.postPage("https://www." + domain + "/de/custom/modules/user/user_ajax.cfc?method=login", "set_cookie=true&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    /* TODO: Maybe make sure this also works for users of other countries! */
+                    if (br.getCookie(domain, "V2B_USER_DE") == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    String continue_url = br.getRegex("\"url\":\"(https[^<>\"\\']+)\"").getMatch(0);
+                    if (continue_url != null) {
+                        continue_url = continue_url.replace("\\", "");
+                    } else {
+                        /* TODO: Maybe make sure this also works for users of other countries! */
+                        continue_url = "/de/login";
+                    }
+                    br.getPage(continue_url);
                 }
-                br.getPage(continue_url);
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(domain), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -302,7 +322,7 @@ public class Video2brainCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (!account.getUser().matches(".+@.+\\..+")) {
+        if (domain_dummy_education.equalsIgnoreCase(account.getHoster()) && !account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {

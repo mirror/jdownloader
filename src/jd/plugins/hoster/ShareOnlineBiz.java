@@ -1063,7 +1063,15 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if ("Sammler".equals(infos.get("group"))) {
+                /*
+                 * Directly after a premium account expires it can happen that API still returns "Premium" as "Group" but download is
+                 * impossible --> It is actually a free account then
+                 */
+                boolean premium_valid = dl != null && !"not_available".equalsIgnoreCase(dl);
+                if (premium_valid == false) {
+                    premium_valid = a != null && !"not_available".equalsIgnoreCase(a);
+                }
+                if ("Sammler".equals(infos.get("group")) || !premium_valid) {
                     account.setProperty("free", true);
                     account.setType(AccountType.FREE);
                     try {
@@ -1083,17 +1091,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 } else {
                     account.setProperty("free", false);
                     account.setType(AccountType.PREMIUM);
-                    boolean valid = dl != null && !"not_available".equalsIgnoreCase(dl);
-                    if (valid == false) {
-                        valid = a != null && !"not_available".equalsIgnoreCase(a);
-                    }
-                    if (valid == false) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
                     /*
                      * check expire date, expire >0 (normal handling) expire<0 (never expire)
                      */
