@@ -421,7 +421,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                         existingAutoStartStatus = link.getArchiveInfo().getAutoExtract();
                     }
                     if (query.isOverwritePackagizerRules() || BooleanStatus.UNSET.equals(existingAutoStartStatus)) {
-                        switch (BooleanStatus.convert(query.isAutoExtract())) {
+                        switch (BooleanStatus.convert(query.isAutostart())) {
                         case TRUE:
                             link.setAutoConfirmEnabled(true);
                             link.setAutoStartEnabled(true);
