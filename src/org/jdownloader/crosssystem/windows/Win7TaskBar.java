@@ -204,37 +204,32 @@ public class Win7TaskBar {
         }
     }
 
-    private static boolean ourInitialized = true;
+    private static final boolean initialized = initialize();
 
-    static {
+    private static boolean initialize() {
         try {
-            initialize();
+            final Ole32 ole32 = Ole32.INSTANCE;
+            ole32.CoInitializeEx(Pointer.NULL, 0);
+            final Guid.GUID CLSID_TaskbarList = Ole32Util.getGUIDFromString("{56FDF344-FD6D-11d0-958A-006097C9A090}");
+            final Guid.GUID IID_ITaskbarList3 = Ole32Util.getGUIDFromString("{EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF}");
+            final PointerByReference p = new PointerByReference();
+            final WinNT.HRESULT hr = ole32.CoCreateInstance(CLSID_TaskbarList, Pointer.NULL, ObjBase.CLSCTX_ALL, IID_ITaskbarList3, p);
+            if (!W32Errors.S_OK.equals(hr)) {
+                LOG.info("Win7TaskBar CoCreateInstance(IID_ITaskbarList3) hResult: " + hr);
+                return false;
+            }
+            myInterfacePointer = p.getValue();
+            final Pointer vTablePointer = myInterfacePointer.getPointer(0);
+            final Pointer[] vTable = new Pointer[TaskBarList_Methods];
+            vTablePointer.read(0, vTable, 0, vTable.length);
+            mySetProgressValue = Function.getFunction(vTable[TaskBarList_SetProgressValue], Function.ALT_CONVENTION);
+            mySetProgressState = Function.getFunction(vTable[TaskBarList_SetProgressState], Function.ALT_CONVENTION);
+            mySetOverlayIcon = Function.getFunction(vTable[TaskBarList_SetOverlayIcon], Function.ALT_CONVENTION);
+            return true;
         } catch (Throwable e) {
             LOG.log(e);
-            ourInitialized = false;
         }
-    }
-
-    private static void initialize() {
-
-        Ole32 ole32 = Ole32.INSTANCE;
-        ole32.CoInitializeEx(Pointer.NULL, 0);
-        Guid.GUID CLSID_TaskbarList = Ole32Util.getGUIDFromString("{56FDF344-FD6D-11d0-958A-006097C9A090}");
-        Guid.GUID IID_ITaskbarList3 = Ole32Util.getGUIDFromString("{EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF}");
-        PointerByReference p = new PointerByReference();
-        WinNT.HRESULT hr = ole32.CoCreateInstance(CLSID_TaskbarList, Pointer.NULL, ObjBase.CLSCTX_ALL, IID_ITaskbarList3, p);
-        if (!W32Errors.S_OK.equals(hr)) {
-            LOG.info("Win7TaskBar CoCreateInstance(IID_ITaskbarList3) hResult: " + hr);
-            ourInitialized = false;
-            return;
-        }
-        myInterfacePointer = p.getValue();
-        Pointer vTablePointer = myInterfacePointer.getPointer(0);
-        Pointer[] vTable = new Pointer[TaskBarList_Methods];
-        vTablePointer.read(0, vTable, 0, vTable.length);
-        mySetProgressValue = Function.getFunction(vTable[TaskBarList_SetProgressValue], Function.ALT_CONVENTION);
-        mySetProgressState = Function.getFunction(vTable[TaskBarList_SetProgressState], Function.ALT_CONVENTION);
-        mySetOverlayIcon = Function.getFunction(vTable[TaskBarList_SetOverlayIcon], Function.ALT_CONVENTION);
+        return false;
     }
 
     public static void setProgress(JFrame frame, double value, boolean isOk) {
@@ -247,7 +242,7 @@ public class Win7TaskBar {
     }
 
     private static boolean isEnabled() {
-        return ourInitialized;
+        return initialized;
     }
 
     public static void hideProgress(JFrame frame) {
