@@ -224,8 +224,12 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 }
                 /* Old */
                 // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
-                /* 2016-02-16 new */
-                String final_url = "http://http-ras.wdr.de/CMS2010/medp/ondemand/" + region + "/" + fsk_url + "/";
+                /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
+                String final_url = "http://ondemand-ww.wdr.de/medp/";
+                if (!api_in_use) {
+                    final_url += region + "/";
+                }
+                final_url += fsk_url + "/";
                 final String single_quality_string_correct;
                 String resolution;
                 String quality_name;

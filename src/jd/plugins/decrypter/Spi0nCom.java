@@ -46,13 +46,8 @@ public class Spi0nCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (!br.containsHTML("id=\"container\"") || !br.containsHTML("class=\"headline\"")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline (no video on this page?!): " + parameter);
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        } else if (br.containsHTML("Archives des catégorie:")) {
-            logger.info("Link offline (invalid link!): " + parameter);
             final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
