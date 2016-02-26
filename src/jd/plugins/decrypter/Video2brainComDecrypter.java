@@ -70,7 +70,9 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
         long counter = 1;
 
         if (productid == null) {
-            return null;
+            logger.info("productid is null either the content is offline or it has not yet been released!");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         jd.plugins.hoster.Video2brainCom.prepareAjaxRequest(this.br);
         final String json_update_loader_function_name = br.getRegex("Video\\.(updateWeeklySeriesEpisodes|updateDocumentaryProductChapters)").getMatch(0);
