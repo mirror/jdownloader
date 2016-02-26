@@ -131,7 +131,7 @@ public class ArtstationCom extends PluginForDecrypt {
                 final String url = (String) imageJson.get("image_url");
                 final String fid = Long.toString(DummyScriptEnginePlugin.toLong(imageJson.get("id"), -1));
                 final String imageTitle = (String) imageJson.get("title");
-                final String assetType = (String) imageJson.get("asset_type");
+                final Boolean hasImage = (Boolean) imageJson.get("has_image");
                 final String playerEmbedded = (String) imageJson.get("player_embedded");
                 if (!inValidate(playerEmbedded)) {
                     final String[] results = HTMLParser.getHttpLinks(playerEmbedded, null);
@@ -143,7 +143,7 @@ public class ArtstationCom extends PluginForDecrypt {
                         }
                     }
                 }
-                if (fid.equals("-1") || url == null || "cover".equalsIgnoreCase(assetType)) {
+                if (fid.equals("-1") || url == null || Boolean.FALSE.equals(hasImage)) {
                     continue;
                 }
                 String filename = null;

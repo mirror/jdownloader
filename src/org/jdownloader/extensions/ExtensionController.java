@@ -246,8 +246,7 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     private synchronized java.util.List<LazyExtension> load() {
-        java.util.List<LazyExtension> ret = new ArrayList<LazyExtension>();
-
+        final List<LazyExtension> ret;
         if (Application.isJared(ExtensionController.class)) {
             ret = loadJared();
         } else {

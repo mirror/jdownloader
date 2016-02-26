@@ -19,7 +19,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -38,7 +37,7 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
 
         /*
          * Override default implementation of MigLayout layout manager and use one more suitable to this panel
-         * 
+         *
          * Useful resources: http://www.migcalendar.com/miglayout/mavensite/apidocs/index.html
          * http://www.migcalendar.com/miglayout/mavensite/docs/cheatsheet.pdf
          */
@@ -73,8 +72,9 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 try {
-                    extension.setEnabled(header.isHeaderEnabled());
-                    updateHeaders(header.isHeaderEnabled());
+                    final boolean enabled = Boolean.TRUE.equals(newValue);
+                    extension.setEnabled(enabled);
+                    updateHeaders(enabled);
                 } catch (Exception e1) {
                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                     Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
