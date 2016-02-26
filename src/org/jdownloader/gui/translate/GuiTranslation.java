@@ -6110,4 +6110,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please enter valid account information first." })
 
     String add_or_edit_account_dialog_ok_button_tooltip_bad_input();
+
+    @Default(lngs = { "en" }, values = { "Subtitle: %s1 [%s2]" })
+
+    String YoutubeDash_getName_subtitles_annotated(String displayName, String annotation);
+
+    @Default(lngs = { "en" }, values = { "translated" })
+
+    String lit_translated();
+
+    @Default(lngs = { "en" }, values = { "Speech2Text" })
+
+    String lit_speedtotext();
 }

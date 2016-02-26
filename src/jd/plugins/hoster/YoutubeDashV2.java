@@ -19,6 +19,49 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.JScrollMenu;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
+import org.jdownloader.controlling.DownloadLinkView;
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
@@ -67,50 +110,6 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.storage.config.annotations.RequiresRestart;
-import org.appwork.swing.action.BasicAction;
-import org.appwork.swing.components.JScrollMenu;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
-import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.segment.SegmentDownloader;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
@@ -312,8 +311,7 @@ public class YoutubeDashV2 extends PluginForHost {
                 public String getLabel() {
                     return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
                 }
-            },
-            ;
+            },;
 
         }
 
@@ -622,6 +620,8 @@ public class YoutubeDashV2 extends PluginForHost {
     private boolean                             isDownloading = false;
 
     private Map<YoutubeITAG, YoutubeStreamData> info;
+
+    private ArrayList<YoutubeSubtitleInfo>      subtitles;
 
     protected void checkOldLink(DownloadLink downloadLink) throws PluginException {
         if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
@@ -1046,12 +1046,13 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeHelper helper = getCachedHelper();
         if (info == null) {
             info = helper.loadVideo(vid);
+            subtitles = helper.loadSubtitles();
             if (info == null) {
 
-                if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error, /*
-                 * 15.12
-                 * .2014
-                 */"This video is not available.")) {
+                if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.")
+                        || StringUtils.equalsIgnoreCase(vid.error, /*
+                                                                    * 15.12 .2014
+                                                                    */"This video is not available.")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1069,11 +1070,11 @@ public class YoutubeDashV2 extends PluginForHost {
 
         if (variant.getGroup() == YoutubeVariantInterface.VariantGroup.SUBTITLES) {
 
-            String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, null);
+            String id = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, null);
 
-            for (YoutubeSubtitleInfo si : helper.loadSubtitles(vid)) {
+            for (YoutubeSubtitleInfo si : subtitles) {
 
-                if (si.getLang().equals(code)) {
+                if (si._getIdentifier().equals(id)) {
 
                     downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_DATA, si._getUrl(vid.videoID));
                     break;
@@ -1772,7 +1773,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
             this.requestFileInformation(downloadLink);
             this.br.setDebug(true);
-
+            // downloadLink.setInternalTmpFilenameAppend(fileName);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).video, resume, getChunksPerStream());
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
                 if (dl.getConnection().getResponseCode() == 500) {
@@ -1841,8 +1842,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                         if (StringUtils.isNotEmpty(ext)) {
                                             String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
 
-                                            String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, "");
-                                            Locale locale = TranslationFactory.stringToLocale(code);
+                                            Locale locale = new SubtitleVariant(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, ""))._getLocale();
 
                                             File newFile;
                                             IO.copyFile(finalFile, newFile = new File(finalFile.getParentFile(), base + "." + locale.getDisplayLanguage() + ".srt"));
@@ -2144,7 +2144,7 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, Property.NULL);
             downloadLink.setProperty(YoutubeHelper.YT_VARIANT, YoutubeVariant.SUBTITLES.name());
             downloadLink.setProperty(YoutubeHelper.YT_EXT, YoutubeVariant.SUBTITLES.getFileExtension());
-            downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariant) variant)._getCode());
+            downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariant) variant)._getIdentifier());
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
             downloadLink.setPluginPatternMatcher("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
@@ -2217,22 +2217,30 @@ public class YoutubeDashV2 extends PluginForHost {
         if (StringUtils.isNotEmpty(lngCodes)) {
 
             // subtitles variants
-            List<LinkVariant> ret2 = new ArrayList<LinkVariant>();
+            List<SubtitleVariant> ret2 = new ArrayList<SubtitleVariant>();
             for (String code : JSonStorage.restoreFromString(lngCodes, new TypeRef<ArrayList<String>>() {
             })) {
                 ret2.add(new SubtitleVariant(code));
             }
-            Collections.sort(ret2, new Comparator<LinkVariant>() {
+            Collections.sort(ret2, new Comparator<SubtitleVariant>() {
+                public int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? 1 : -1);
+                }
 
                 @Override
-                public int compare(LinkVariant o1, LinkVariant o2) {
+                public int compare(SubtitleVariant o1, SubtitleVariant o2) {
+
+                    int ret = compare(o1._isTranslated(), o2._isTranslated());
+                    if (ret != 0) {
+                        return ret;
+                    }
                     return o1._getName().compareToIgnoreCase(o2._getName());
 
                 }
 
             });
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANTS, ret2);
-            return ret2;
+            return new ArrayList<LinkVariant>(ret2);
         }
         String idsString = downloadLink.getStringProperty(YoutubeHelper.YT_VARIANTS, "[]");
         ArrayList<String> ids = JSonStorage.restoreFromString(idsString, new TypeRef<ArrayList<String>>() {
@@ -2569,5 +2577,6 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public void reset() {
         info = null;
+        subtitles = null;
     }
 }
