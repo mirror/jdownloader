@@ -19,11 +19,19 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,21 +44,28 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
-public class NCryptIn extends PluginForDecrypt {
+public class NCryptIn extends antiDDoSForDecrypt {
 
     private static final String RECAPTCHA      = "recaptcha/api/challenge";
     private static final String ANICAPTCHA     = "/temp/anicaptcha/\\d+\\.gif";
     private static final String CIRCLECAPTCHA  = "\"/classes/captcha/circlecaptcha\\.php\"";
     private static final String PASSWORDTEXT   = "password";
-    private static final String PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>";
+    private static final String PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>|<td class=\"error\">&bull; This password is invalid!\\s*</td>";
     private String              aBrowser       = "";
+
+    @Override
+    protected boolean useRUA() {
+        return super.useRUA();
+    }
+
+    @Override
+    protected void runPostRequestTask(Browser ibr) throws Exception {
+        haveFun(ibr);
+        simulateBrowser(ibr);
+    }
 
     public NCryptIn(final PluginWrapper wrapper) {
         super(wrapper);
@@ -58,6 +73,7 @@ public class NCryptIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        br = new Browser();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("open-", "folder-").replace("urlcrypt.com/", "ncrypt.in/");
         try {
@@ -76,28 +92,20 @@ public class NCryptIn extends PluginForDecrypt {
                 if (additional != null) {
                     logger.info(additional);
                 }
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                offline.setFinalFileName(new Regex(parameter, "ncrypt\\.in/link(.+)").getMatch(0));
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "ncrypt\\.in/link(.+)").getMatch(0), null));
                 return decryptedLinks;
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             br.setFollowRedirects(true);
-            br.getPage(parameter);
-            haveFun();
+            getPage(parameter);
             if (br.getURL().contains("error=crypted_id_invalid")) {
                 logger.info("This link might be offline: " + parameter);
                 final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
                 if (additional != null) {
                     logger.info(additional);
                 }
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             // Handle Captcha and/or password
@@ -112,38 +120,45 @@ public class NCryptIn extends PluginForDecrypt {
                 }
             }
             br.getRequest().setHtmlCode(aBrowser);
-            boolean password = false;
+            boolean containsPassword = allForm.hasInputFieldByName(PASSWORDTEXT);
+            String password = null;
+            if (containsPassword) {
+                password = getPassword(param);
+                if (StringUtils.isEmpty(password)) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+            }
             boolean captcha = false;
             if (allForm != null) {
                 if (allForm.containsHTML(RECAPTCHA)) {
                     captcha = true;
-                    for (int i = 0; i <= 5; i++) {
+                    for (int i = 0; i <= 3; i++) {
                         final Recaptcha rc = new Recaptcha(br, this);
                         rc.parse();
+                        final Form f = rc.getForm();
+                        // password first because no point solving the captcha if user doesn't know the password!
+                        if (containsPassword) {
+                            f.put(PASSWORDTEXT, Encoding.urlEncode(password));
+                        }
                         rc.load();
                         final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                         final String c = this.getCaptchaCode("recaptcha", cf, param);
-                        if (allForm.containsHTML(PASSWORDTEXT)) {
-                            final String passCode = getPassword(param);
-                            rc.getForm().put(PASSWORDTEXT, passCode);
-                        }
-                        rc.setCode(c);
-                        haveFun();
+                        f.put("recaptcha_challenge_field", rc.getCaptchaAddress());
+                        f.put("recaptcha_response_field", Encoding.urlEncode(c));
+                        submitForm(f);
+                        // they tell you when password is wrong
                         if (new Regex(aBrowser, RECAPTCHA).matches()) {
-                            try {
-                                invalidateLastChallengeResponse();
-                            } catch (final Throwable e) {
+                            if (containsPassword) {
+                                throw new DecrypterException(DecrypterException.CAPTCHA);
                             }
+                            invalidateLastChallengeResponse();
                             continue;
                         } else {
-                            try {
-                                validateLastChallengeResponse();
-                            } catch (final Throwable e) {
-                            }
+                            validateLastChallengeResponse();
                         }
                         break;
                     }
-                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                    if (containsPassword && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
                     if (captcha && new Regex(aBrowser, RECAPTCHA).matches()) {
@@ -156,38 +171,35 @@ public class NCryptIn extends PluginForDecrypt {
                         if (captchaLink == null) {
                             return null;
                         }
+                        // password first because no point solving the captcha if user doesn't know the password!
+                        if (containsPassword) {
+                            allForm.put(PASSWORDTEXT, Encoding.urlEncode(password));
+                        }
                         String code = null;
                         final File captchaFile = this.getLocalCaptchaFile(".gif");
                         try {
-                            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in" + captchaLink));
+                            final Request r = br.cloneBrowser().createGetRequest(captchaLink);
+                            r.getHeaders().put("Accept", "image/webp,image/*,*/*;q=0.8");
+                            Browser.download(captchaFile, br.cloneBrowser().openRequestConnection(r));
                             jd.captcha.specials.Ncrypt.setDelay(captchaFile, 80);
                             code = getCaptchaCode(captchaFile, param);
                         } finally {
                             captchaFile.delete();
                         }
-                        allForm.setAction(parameter);
-                        allForm.put("captcha", code);
-                        if (allForm.containsHTML(PASSWORDTEXT)) {
-                            final String passCode = getPassword(param);
-                            allForm.put(PASSWORDTEXT, passCode);
-                        }
-                        br.submitForm(allForm);
-                        haveFun();
-                        if (new Regex(aBrowser, ANICAPTCHA).matches()) {
-                            try {
-                                invalidateLastChallengeResponse();
-                            } catch (final Throwable e) {
-                            }
+                        // for some reason we post form twice
+                        allForm.put("captcha", Encoding.urlEncode(code));
+                        submitForm(allForm);
+                        if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                            throw new DecrypterException(DecrypterException.PASSWORD);
+                        } else if (new Regex(aBrowser, ANICAPTCHA).matches()) {
+                            invalidateLastChallengeResponse();
                             continue;
                         } else {
-                            try {
-                                validateLastChallengeResponse();
-                            } catch (final Throwable e) {
-                            }
+                            validateLastChallengeResponse();
                         }
                         break;
                     }
-                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                    if (containsPassword && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
                     if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) {
@@ -196,37 +208,35 @@ public class NCryptIn extends PluginForDecrypt {
                 } else if (allForm.containsHTML(CIRCLECAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
                     captcha = true;
                     for (int i = 0; i <= 3; i++) {
+                        // password first because no point solving the captcha if user doesn't know the password!
+                        if (containsPassword) {
+                            allForm.put(PASSWORDTEXT, Encoding.urlEncode(password));
+                        }
                         final File captchaFile = this.getLocalCaptchaFile(".png");
                         ClickedPoint cp = null;
                         try {
-                            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in/classes/captcha/circlecaptcha.php"));
+                            // test
+                            final Request r = br.cloneBrowser().createGetRequest("/classes/captcha/circlecaptcha.php");
+                            r.getHeaders().put("Accept", "image/webp,image/*,*/*;q=0.8");
+                            Browser.download(captchaFile, br.cloneBrowser().openRequestConnection(r));
                             cp = getCaptchaClickedPoint(getHost(), captchaFile, param, null, "Click on the open circle");
                         } finally {
                             captchaFile.delete();
                         }
                         allForm.put("circle.x", String.valueOf(cp.getX()));
                         allForm.put("circle.y", String.valueOf(cp.getY()));
-                        if (allForm.containsHTML(PASSWORDTEXT)) {
-                            final String passCode = getPassword(param);
-                            allForm.put(PASSWORDTEXT, passCode);
-                        }
-                        br.submitForm(allForm);
-                        haveFun();
-                        if (new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
-                            try {
-                                invalidateLastChallengeResponse();
-                            } catch (final Throwable e) {
-                            }
+                        submitForm(allForm);
+                        if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                            throw new DecrypterException(DecrypterException.PASSWORD);
+                        } else if (new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
+                            invalidateLastChallengeResponse();
                             continue;
                         } else {
-                            try {
-                                validateLastChallengeResponse();
-                            } catch (final Throwable e) {
-                            }
+                            validateLastChallengeResponse();
                         }
                         break;
                     }
-                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                    if (containsPassword && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
                     if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) {
@@ -235,12 +245,10 @@ public class NCryptIn extends PluginForDecrypt {
                     if (captcha && new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
-                } else if (allForm.containsHTML(PASSWORDTEXT)) {
-                    password = true;
+                } else if (containsPassword) {
                     for (int i = 0; i <= 3; i++) {
-                        allForm.put(PASSWORDTEXT, getPassword(param));
-                        br.submitForm(allForm);
-                        haveFun();
+                        allForm.put(PASSWORDTEXT, Encoding.urlEncode(getPassword(param)));
+                        submitForm(allForm);
                         if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
                             continue;
                         }
@@ -251,7 +259,7 @@ public class NCryptIn extends PluginForDecrypt {
                     }
                 }
             }
-            String fpName = br.getRegex("<h1>(.*?)<img").getMatch(0);
+            String fpName = br.getRegex(">Filename:</span>(.*?)<br").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("title>nCrypt\\.in - (.*?)</tit").getMatch(0);
             }
@@ -305,13 +313,9 @@ public class NCryptIn extends PluginForDecrypt {
                     return null;
                 }
                 for (final String singleLink : links) {
-                    try {
-                        if (this.isAbort()) {
-                            logger.info("Decryption aborted by user: " + parameter);
-                            return decryptedLinks;
-                        }
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
                     }
                     final String finallink = decryptSingle(singleLink);
                     if (finallink == null) {
@@ -337,9 +341,10 @@ public class NCryptIn extends PluginForDecrypt {
         return null;
     }
 
-    private String decryptSingle(final String dcrypt) throws IOException {
+    private String decryptSingle(final String dcrypt) throws Exception {
+        final Browser br = this.br.cloneBrowser();
         br.setFollowRedirects(false);
-        br.getPage(dcrypt.replace("link-", "frame-"));
+        getPage(br, dcrypt.replace("link-", "frame-"));
         final String finallink = br.getRedirectLocation();
         return finallink;
     }
@@ -349,7 +354,7 @@ public class NCryptIn extends PluginForDecrypt {
         return passCode;
     }
 
-    public void haveFun() throws Exception {
+    public void haveFun(final Browser br) throws Exception {
         final ArrayList<String> someStuff = new ArrayList<String>();
         final ArrayList<String> regexStuff = new ArrayList<String>();
         // regexStuff.add("(<!--.*?-->)");
@@ -406,6 +411,69 @@ public class NCryptIn extends PluginForDecrypt {
 
         }
         return links;
+    }
+
+    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+
+    private void simulateBrowser(final Browser br) throws InterruptedException {
+        // dupe.clear();
+
+        final AtomicInteger requestQ = new AtomicInteger(0);
+        final AtomicInteger requestS = new AtomicInteger(0);
+        final ArrayList<String> links = new ArrayList<String>();
+
+        String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = new Regex(br, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        for (final String link : links) {
+            // lets only add links related to this hoster.
+            final String correctedLink = Request.getLocation(link, br.getRequest());
+            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("captcha/") && !correctedLink.contains("'")) {
+                if (dupe.add(correctedLink)) {
+
+                    final Thread simulate = new Thread("SimulateBrowser") {
+
+                        public void run() {
+                            final Browser rb = br.cloneBrowser();
+                            rb.getHeaders().put("Cache-Control", null);
+                            // open get connection for images, need to confirm
+                            if (correctedLink.matches(".+\\.png.*")) {
+                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                            } else if (correctedLink.matches(".+\\.js.*")) {
+                                rb.getHeaders().put("Accept", "*/*");
+                            } else if (correctedLink.matches(".+\\.css.*")) {
+                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                            }
+                            URLConnectionAdapter con = null;
+                            try {
+                                requestQ.getAndIncrement();
+                                con = openAntiDDoSRequestConnection(rb, rb.createGetRequest(correctedLink));
+                            } catch (final Exception e) {
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Exception e) {
+                                }
+                                requestS.getAndIncrement();
+                            }
+                            return;
+                        }
+
+                    };
+                    simulate.start();
+                    Thread.sleep(100);
+
+                }
+            }
+        }
+        while (requestQ.get() != requestS.get()) {
+            Thread.sleep(1000);
+        }
     }
 
     /* NO OVERRIDE!! */
