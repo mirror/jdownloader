@@ -1081,7 +1081,10 @@ public class SecondLevelLaunch {
                                 // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                             }
                         } finally {
-                            OperatingSystemEventSender.getInstance().init();
+                            OperatingSystemEventSender.getInstance();
+                            if (!(CrossSystem.isWindows() || CrossSystem.isMac()) && Application.isHeadless()) {
+                                OperatingSystemEventSender.getInstance().setIgnoreSignal("HUP", true);
+                            }
                         }
 
                         if (!Application.isHeadless() && CFG_GENERAL.CFG.isSambaPrefetchEnabled()) {
