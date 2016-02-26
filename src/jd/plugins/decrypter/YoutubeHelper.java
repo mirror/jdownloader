@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
@@ -26,8 +27,12 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
@@ -714,7 +719,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     private HashMap<String, HashMap<String, String>> jsCache             = new HashMap<String, HashMap<String, String>>();
-
+    private HashSet<String>                          subtitleUrls;
     private HashSet<String>                          fmtMaps;
 
     private HashSet<String>                          mpdUrls;
@@ -728,6 +733,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     private boolean                                  adaptiveFmtsEnabled = true;
 
     private boolean                                  fmtMapEnabled       = true;
+
+    private String                                   html5PlayerJs;
+
+    private YoutubeClipData                          vid;
 
     String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
         if (sig == null) {
@@ -943,7 +952,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     }
 
-    protected void extractData(final YoutubeClipData vid) {
+    protected void extractData() {
         if (StringUtils.isEmpty(vid.title) && this.br.containsHTML("&title=")) {
             final String match = this.br.getRegex("&title=([^&$]+)").getMatch(0);
             if (StringUtils.isNotEmpty(match)) {
@@ -1159,6 +1168,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     public Map<YoutubeITAG, YoutubeStreamData> loadVideo(final YoutubeClipData vid) throws Exception {
+
+        this.vid = vid;
         final Map<YoutubeITAG, YoutubeStreamData> ret = new HashMap<YoutubeITAG, YoutubeStreamData>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         boolean loggedIn = br.getCookie("https://youtube.com", "LOGIN_INFO") != null;
@@ -1171,15 +1182,16 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         getAbsolute(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999", null, br);
 
-        handleRentalVideos(vid);
+        handleRentalVideos();
 
-        String html5PlayerJs = this.br.getMatch("\"js\"\\s*:\\s*\"(.+?)\"");
+        html5PlayerJs = this.br.getMatch("\"js\"\\s*:\\s*\"(.+?)\"");
         if (html5PlayerJs != null) {
             html5PlayerJs = html5PlayerJs.replace("\\/", "/");
             html5PlayerJs = "http:" + html5PlayerJs;
         }
         String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
         fmtMaps = new HashSet<String>();
+        subtitleUrls = new HashSet<String>();
         mpdUrls = new HashSet<String>();
         videoInfo = new HashMap<String, String>();
 
@@ -1298,9 +1310,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 }
             }
         }
-        this.extractData(vid);
-        doFeedScan(vid);
-        doUserAPIScan(vid);
+        this.extractData();
+        doFeedScan();
+        doUserAPIScan();
 
         // String html5_fmt_map;
         // String dashFmt;
@@ -1326,7 +1338,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             for (final String line : fmt.split(",")) {
                 try {
-                    final YoutubeStreamData match = this.parseLine(vid, Request.parseQuery(line), html5PlayerJs);
+                    final YoutubeStreamData match = this.parseLine(Request.parseQuery(line));
                     if (match != null) {
                         if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
                             continue;
@@ -1345,6 +1357,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     Browser clone = br.cloneBrowser();
                     clone.getPage(mpdUrl);
                     String xml = clone.getRequest().getHtmlCode();
+                    if (!clone.getHttpConnection().isOK()) {
+                        logger.severe("Bad Request: ");
+                        logger.severe(clone.getHttpConnection() + "");
+                        continue;
+                    }
                     if (xml.trim().startsWith("#EXTM3U")) {
                         ArrayList<HlsContainer> containers = GenericM3u8Decrypter.getHlsQualities(clone);
                         for (HlsContainer c : containers) {
@@ -1374,35 +1391,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
                         }
                     } else {
-                        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-                        docFactory.setValidating(false);
-
-                        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-                        docBuilder.setEntityResolver(new EntityResolver() {
-
-                            @Override
-                            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-                                return null;
-                            }
-                        });
-
-                        docBuilder.setErrorHandler(new ErrorHandler() {
-
-                            @Override
-                            public void warning(SAXParseException exception) throws SAXException {
-                                logger.log(exception);
-                            }
-
-                            @Override
-                            public void fatalError(SAXParseException exception) throws SAXException {
-                                logger.log(exception);
-                            }
-
-                            @Override
-                            public void error(SAXParseException exception) throws SAXException {
-                                logger.log(exception);
-                            }
-                        });
+                        DocumentBuilder docBuilder = createXMLParser();
                         Document doc = docBuilder.parse(new InputSource(new StringReader(xml)));
                         NodeList representations = doc.getElementsByTagName("Representation");
                         for (int r = 0; r < representations.getLength(); r++) {
@@ -1418,7 +1407,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                                     query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
                                 }
                             }
-                            handleQuery(vid, representation, ret, html5PlayerJs, url, query);
+                            handleQuery(representation, ret, url, query);
 
                         }
                     }
@@ -1434,11 +1423,44 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 }
             }
         }
-        for (YoutubeStreamData sd : loadThumbnails(vid)) {
+        for (YoutubeStreamData sd : loadThumbnails()) {
             ret.put(sd.getItag(), sd);
         }
 
         return ret;
+    }
+
+    private DocumentBuilder createXMLParser() throws ParserConfigurationException {
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        docFactory.setValidating(false);
+
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        docBuilder.setEntityResolver(new EntityResolver() {
+
+            @Override
+            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+                return null;
+            }
+        });
+
+        docBuilder.setErrorHandler(new ErrorHandler() {
+
+            @Override
+            public void warning(SAXParseException exception) throws SAXException {
+                logger.log(exception);
+            }
+
+            @Override
+            public void fatalError(SAXParseException exception) throws SAXException {
+                logger.log(exception);
+            }
+
+            @Override
+            public void error(SAXParseException exception) throws SAXException {
+                logger.log(exception);
+            }
+        });
+        return docBuilder;
     }
 
     private void collectFmtMap(String htmlCode, String regex) {
@@ -1457,6 +1479,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     private void collectMapsFormHtmlSource(String html) {
+
+        collectSubtitleUrls(html, "['\"]TTS_URL['\"]\\s*:\\s*(['\"][^'\"]+['\"])");
         if (fmtMapEnabled) {
             collectFmtMap(html, REGEX_FMT_MAP_FROM_JSPLAYER_SETUP);
         }
@@ -1471,8 +1495,27 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
     }
 
+    private void collectSubtitleUrls(String html, String pattern) {
+        String json = new Regex(html, pattern).getMatch(0);
+        if (json == null) {
+            return;
+        }
+        json = JSonStorage.restoreFromString(json, TypeRef.STRING);
+        if (json != null) {
+            subtitleUrls.add(handleSignature(json));
+        }
+    }
+
     private void collectMapsFromVideoInfo(String queryString) throws MalformedURLException {
-        // QueryInfo map = Request.parseQuery(queryString);
+        QueryInfo map = Request.parseQuery(queryString);
+        for (Entry<String, String> es : map.toMap().entrySet()) {
+            videoInfo.put(es.getKey(), Encoding.urlDecode(es.getValue(), false));
+        }
+        String ttsurl = videoInfo.get("ttsurl");
+        if (StringUtils.isNotEmpty(ttsurl)) {
+            subtitleUrls.add(handleSignature(ttsurl));
+        }
+
         if (adaptiveFmtsEnabled) {
             String adaptive_fmts = videoInfo.get("adaptive_fmts");
             if (StringUtils.isNotEmpty(adaptive_fmts)) {
@@ -1491,14 +1534,14 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (dashMpdEnabled) {
             String dashmpd = videoInfo.get("dashmpd");
             if (StringUtils.isNotEmpty(dashmpd)) {
-                mpdUrls.add(dashmpd);
+                mpdUrls.add(handleSignature(dashmpd));
 
             }
         }
         if (hlsEnabled) {
             String hlsvp = videoInfo.get("hlsvp");
             if (StringUtils.isNotEmpty(hlsvp)) {
-                mpdUrls.add(hlsvp);
+                mpdUrls.add(handleSignature(hlsvp));
 
             }
         }
@@ -1512,13 +1555,19 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         map = JSonStorage.restoreFromString(map, TypeRef.STRING);
 
         if (StringUtils.isNotEmpty(map)) {
-            if (!mpdUrls.contains(map)) {
-                // if(!map.toLowerCase(Locale.ENGLISH).startsWith("http"))){
-                // map=br.getBaseURL()
-                // }
-                mpdUrls.add(map);
-            }
+
+            mpdUrls.add(handleSignature(map));
+
         }
+    }
+
+    private String handleSignature(String map) {
+        String s = new Regex(map, "/s/(.*?\\..*?)/").getMatch(0);
+        if (s != null) {
+            // the website does not load these urls neither
+            return null;
+        }
+        return map;
     }
 
     /**
@@ -1531,24 +1580,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
      * @throws IOException
      * @throws PluginException
      */
-    private void handleQuery(final YoutubeClipData vid, Element representation, final Map<YoutubeITAG, YoutubeStreamData> ret, String html5PlayerJs, String url, final QueryInfo query) throws IOException, PluginException {
+    private void handleQuery(Element representation, final Map<YoutubeITAG, YoutubeStreamData> ret, String url, final QueryInfo query) throws IOException, PluginException {
         String r = null;
-        try {
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer;
 
-            transformer = transformerFactory.newTransformer();
-
-            DOMSource source = new DOMSource(representation);
-            ByteArrayOutputStream bao;
-            StreamResult result = new StreamResult(bao = new ByteArrayOutputStream());
-            transformer.transform(source, result);
-            // r = result.getWriter().toString();
-            r = new String(bao.toByteArray(), "ASCII");
-
-        } catch (Throwable e1) {
-            logger.log(e1);
-        }
+        r = xmlNodeToString(representation);
 
         NamedNodeMap ats = representation.getAttributes();
         for (int a = 0; a < ats.getLength(); a++) {
@@ -1658,7 +1693,36 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
     }
 
-    private void handleRentalVideos(YoutubeClipData vid) throws Exception {
+    private String xmlNodeToString(Node representation) {
+        try {
+            String r;
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer;
+
+            transformer = transformerFactory.newTransformer();
+            transformer.setURIResolver(new URIResolver() {
+
+                @Override
+                public Source resolve(String href, String base) throws TransformerException {
+                    return null;
+                }
+            });
+
+            DOMSource source = new DOMSource(representation);
+
+            ByteArrayOutputStream bao;
+            StreamResult result = new StreamResult(bao = new ByteArrayOutputStream());
+            transformer.transform(source, result);
+            // r = result.getWriter().toString();
+            r = new String(bao.toByteArray(), "ASCII");
+            return r;
+        } catch (Throwable e1) {
+
+            return representation + "";
+        }
+    }
+
+    private void handleRentalVideos() throws Exception {
         String rentalText = br.getRegex("\"ypc_video_rental_bar_text\"\\s*\\:\\s*\"([^\"]+)").getMatch(0);
 
         if (StringUtils.isNotEmpty(rentalText)) {
@@ -1675,7 +1739,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
     }
 
-    private void doUserAPIScan(YoutubeClipData vid) throws IOException {
+    private void doUserAPIScan() throws IOException {
         String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern();
 
         boolean extended = false;
@@ -1719,7 +1783,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
      * @param vid
      * @throws IOException
      */
-    private void doFeedScan(YoutubeClipData vid) throws IOException {
+    private void doFeedScan() throws IOException {
         if (true) {
             return;
         }
@@ -1787,7 +1851,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     }
 
-    private List<YoutubeStreamData> loadThumbnails(YoutubeClipData vid) {
+    private List<YoutubeStreamData> loadThumbnails() {
         ArrayList<YoutubeStreamData> ret = new ArrayList<YoutubeStreamData>();
         String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
         ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ));
@@ -2062,7 +2126,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return formattedFilename;
     }
 
-    protected YoutubeStreamData parseLine(final YoutubeClipData vid, final QueryInfo query, String html5PlayerJs) throws MalformedURLException, IOException, PluginException {
+    protected YoutubeStreamData parseLine(final QueryInfo query) throws MalformedURLException, IOException, PluginException {
 
         if (StringUtils.equalsIgnoreCase(query.get("conn"), "rtmp")) {
             logger.info("Stream is not supported: " + query);
@@ -2277,32 +2341,129 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.br.setProxy(this.br.getThreadProxy());
     }
 
-    public ArrayList<YoutubeSubtitleInfo> loadSubtitles(YoutubeClipData vid) throws IOException {
+    public ArrayList<YoutubeSubtitleInfo> loadSubtitles() throws IOException, ParserConfigurationException, SAXException {
         HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
-        String ttsUrl = br.getRegex("\"ttsurl\"\\s*:\\s*(\"http.*?\")").getMatch(0);
-        if (ttsUrl != null) {
-            ttsUrl = JSonStorage.restoreFromString(ttsUrl, TypeRef.STRING);
-        } else {
-            ttsUrl = br.getRegex("\\&ttsurl=([^\\&]+)").getMatch(0);
-            if (ttsUrl != null) {
-                ttsUrl = Encoding.urlDecode(ttsUrl, false);
+
+        for (String ttsUrl : subtitleUrls) {
+            String xml = getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);
+
+            DocumentBuilder docBuilder = createXMLParser();
+            InputSource is = new InputSource(new StringReader(xml));
+
+            Document doc = docBuilder.parse(is);
+
+            NodeList tracks = doc.getElementsByTagName("track");
+            YoutubeSubtitleInfo defaultLanguage = null;
+            for (int trackIndex = 0; trackIndex < tracks.getLength(); trackIndex++) {
+                Element track = (Element) tracks.item(trackIndex);
+
+                String trackID = track.getAttribute("id");
+                String lang = track.getAttribute("lang_code");
+                String name = track.getAttribute("name");
+                String kind = track.getAttribute("kind");
+                String langOrg = track.getAttribute("lang_original");
+                String langTrans = track.getAttribute("lang_translated");
+                if (name == null) {
+                    name = "";
+                }
+                if (kind == null) {
+                    kind = "";
+                }
+
+                if (StringUtils.isNotEmpty(langTrans)) {
+                    langOrg = langTrans;
+                }
+                if (StringUtils.isEmpty(langOrg)) {
+
+                    langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
+                }
+                YoutubeSubtitleInfo old = urls.get(lang);
+                if (old != null) {
+                    // speech recognition
+                    // if ("asr".equalsIgnoreCase(old.getKind())) {
+                    // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+                    //
+                    // }
+                    continue;
+                }
+                YoutubeSubtitleInfo info;
+                urls.put(lang, info = new YoutubeSubtitleInfo(ttsUrl, lang, null, kind));
+                if ("true".equalsIgnoreCase(track.getAttribute("lang_default"))) {
+                    defaultLanguage = info;
+                }
+                // System.out.println(lang);
+            }
+            if (defaultLanguage != null) {
+                NodeList targets = doc.getElementsByTagName("target");
+                for (int targetIndex = 0; targetIndex < targets.getLength(); targetIndex++) {
+                    Element target = (Element) targets.item(targetIndex);
+
+                    String targetID = target.getAttribute("id");
+                    String lang = target.getAttribute("lang_code");
+                    String name = target.getAttribute("name");
+                    String kind = target.getAttribute("kind");
+                    String langOrg = target.getAttribute("lang_original");
+                    String langTrans = target.getAttribute("lang_translated");
+                    String urlfrag = target.getAttribute("urlfrag");
+                    if (name == null) {
+                        name = "";
+                    }
+                    if (kind == null) {
+                        kind = "";
+                    }
+
+                    if (StringUtils.isNotEmpty(langTrans)) {
+                        langOrg = langTrans;
+                    }
+                    if (StringUtils.isEmpty(langOrg)) {
+
+                        langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
+                    }
+                    YoutubeSubtitleInfo old = urls.get(lang);
+                    if (old != null) {
+                        // speech recognition
+                        // if ("asr".equalsIgnoreCase(old.getKind())) {
+                        // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+                        //
+                        // }
+                        continue;
+                    }
+                    urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, defaultLanguage.getLanguage(), defaultLanguage.getKind()));
+                    // System.out.println("->" + lang);
+                }
             }
         }
-        if (ttsUrl == null) {
-            return new ArrayList<YoutubeSubtitleInfo>();
-        }
-        getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);
-
-        ttsUrl = ttsUrl.replace("&v=" + vid.videoID, "");
-        ttsUrl = ttsUrl.replace("?v=" + vid.videoID, "");
-        ttsUrl = ttsUrl.replace("timedtext&", "timedtext?");
-
-        String[] matches = br.getRegex("<track id=\"(.*?)\".*?/>").getColumn(0);
-
-        for (String trackID : matches) {
-            parseSubtitleTrack(urls, ttsUrl, trackID);
-
-        }
+        // String[] matches = br.getRegex("<(target|track) id=\"(.*?)\".*?/>").getColumn(0);
+        //
+        // for (String trackID : matches) {
+        // parseSubtitleTrack(urls, ttsUrl, trackID);
+        //
+        // }
+        // String ttsUrl = br.getRegex("\"ttsurl\"\\s*:\\s*(\"http.*?\")").getMatch(0);
+        // if (ttsUrl != null) {
+        // ttsUrl = JSonStorage.restoreFromString(ttsUrl, TypeRef.STRING);
+        // } else {
+        // ttsUrl = br.getRegex("\\&ttsurl=([^\\&]+)").getMatch(0);
+        // if (ttsUrl != null) {
+        // ttsUrl = Encoding.urlDecode(ttsUrl, false);
+        // }
+        // }
+        // if (ttsUrl == null) {
+        // return new ArrayList<YoutubeSubtitleInfo>();
+        // }
+        // getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" +
+        // vid.videoID, br);
+        //
+        // ttsUrl = ttsUrl.replace("&v=" + vid.videoID, "");
+        // ttsUrl = ttsUrl.replace("?v=" + vid.videoID, "");
+        // ttsUrl = ttsUrl.replace("timedtext&", "timedtext?");
+        //
+        // String[] matches = br.getRegex("<track id=\"(.*?)\".*?/>").getColumn(0);
+        //
+        // for (String trackID : matches) {
+        // parseSubtitleTrack(urls, ttsUrl, trackID);
+        //
+        // }
         return new ArrayList<YoutubeSubtitleInfo>(urls.values());
     }
 
@@ -2312,40 +2473,40 @@ public class YoutubeHelper implements YoutubeHelperInterface {
      * @param duplicate
      * @param trackID
      */
-    private void parseSubtitleTrack(HashMap<String, YoutubeSubtitleInfo> urls, String ttsUrl, String trackID) {
-
-        String track = br.getRegex("<track id=\"" + trackID + "\".*?/>").getMatch(-1);
-        String lang = new Regex(track, "lang_code=\"(.*?)\".*?/>").getMatch(0);
-        String name = new Regex(track, "name=\"(.*?)\".*?/>").getMatch(0);
-        String kind = new Regex(track, "kind=\"(.*?)\".*?/>").getMatch(0);
-        String langOrg = new Regex(track, "lang_original=\"(.*?)\".*?/>").getMatch(0);
-        String langTrans = new Regex(track, "lang_translated=\"(.*?)\".*?/>").getMatch(0);
-        if (name == null) {
-            name = "";
-        }
-        if (kind == null) {
-            kind = "";
-        }
-
-        if (StringUtils.isNotEmpty(langTrans)) {
-            langOrg = langTrans;
-        }
-        if (StringUtils.isEmpty("langOrg")) {
-
-            langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
-        }
-        YoutubeSubtitleInfo old = urls.get(lang);
-        if (old != null) {
-            // speech recognition
-            if ("asr".equalsIgnoreCase(old.getKind())) {
-                urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
-                return;
-            } else {
-                return;
-            }
-        }
-        urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
-    }
+    // private void parseSubtitleTrack(HashMap<String, YoutubeSubtitleInfo> urls, String ttsUrl, String trackID) {
+    //
+    // String track = br.getRegex("<(target|track) id=\"" + trackID + "\".*?/>").getMatch(-1);
+    // String lang = new Regex(track, "lang_code=\"(.*?)\".*?/>").getMatch(0);
+    // String name = new Regex(track, "name=\"(.*?)\".*?/>").getMatch(0);
+    // String kind = new Regex(track, "kind=\"(.*?)\".*?/>").getMatch(0);
+    // String langOrg = new Regex(track, "lang_original=\"(.*?)\".*?/>").getMatch(0);
+    // String langTrans = new Regex(track, "lang_translated=\"(.*?)\".*?/>").getMatch(0);
+    // if (name == null) {
+    // name = "";
+    // }
+    // if (kind == null) {
+    // kind = "";
+    // }
+    //
+    // if (StringUtils.isNotEmpty(langTrans)) {
+    // langOrg = langTrans;
+    // }
+    // if (StringUtils.isEmpty("langOrg")) {
+    //
+    // langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
+    // }
+    // YoutubeSubtitleInfo old = urls.get(lang);
+    // if (old != null) {
+    // // speech recognition
+    // if ("asr".equalsIgnoreCase(old.getKind())) {
+    // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+    // return;
+    // } else {
+    // return;
+    // }
+    // }
+    // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+    // }
 
     public YoutubeVariantInterface getVariantById(String ytv) {
         return variantsMap.get(ytv);
@@ -2366,10 +2527,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     public YoutubeConfig getConfig() {
         return cfg;
-    }
-
-    public String loadDescription(YoutubeClipData vid) {
-        return vid.description;
     }
 
 }

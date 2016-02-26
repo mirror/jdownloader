@@ -66,18 +66,6 @@ import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAct
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\&variant=[a-z\\_0-9]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\?variant=[a-z_0.9]+)?" }, flags = { 0, 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
@@ -542,7 +530,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
             List<VariantInfo> allSubtitles = new ArrayList<VariantInfo>();
             if (cfg.isSubtitlesEnabled()) {
-                ArrayList<YoutubeSubtitleInfo> subtitles = helper.loadSubtitles(vid);
+                ArrayList<YoutubeSubtitleInfo> subtitles = helper.loadSubtitles();
 
                 ArrayList<String> whitelist = cfg.getSubtitleWhiteList();
 
@@ -556,7 +544,7 @@ public class TbCmV2 extends PluginForDecrypt {
                             groupID = "srt";
                             break;
                         case NO_GROUP:
-                            groupID = "srt-" + si.getLang();
+                            groupID = "srt-" + si.getLanguage();
                             break;
                         case BY_MEDIA_TYPE:
                             groupID = YoutubeVariantInterface.VariantGroup.SUBTITLES.name();
@@ -568,7 +556,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                             @Override
                             public void fillExtraProperties(DownloadLink thislink, List<VariantInfo> alternatives) {
-                                thislink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, si.getLang());
+                                thislink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, si._getIdentifier());
                                 final ArrayList<String> lngCodes = new ArrayList<String>();
                                 for (final VariantInfo si : alternatives) {
                                     lngCodes.add(si.getIdentifier());
@@ -578,7 +566,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                             @Override
                             public String getIdentifier() {
-                                return si.getLang();
+                                return si._getIdentifier();
                             }
 
                             @Override
@@ -588,7 +576,7 @@ public class TbCmV2 extends PluginForDecrypt {
                             }
                         };
                         if (whitelist != null) {
-                            if (whitelist.contains(si.getLang())) {
+                            if (whitelist.contains(si.getLanguage())) {
                                 List<VariantInfo> list = groups.get(groupID);
                                 if (list == null) {
                                     list = new ArrayList<TbCmV2.VariantInfo>();
@@ -617,7 +605,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                         allSubtitles.add(vi);
                     } catch (Exception e) {
-                        getLogger().warning("New Subtitle Language: " + si.getLang() + " - " + si.getKind() + " - " + si.getLangOrg() + " - " + si.getName());
+                        getLogger().warning("New Subtitle Language: " + JSonStorage.serializeToJson(si));
                     }
 
                 }
@@ -626,7 +614,7 @@ public class TbCmV2 extends PluginForDecrypt {
             ArrayList<VariantInfo> descriptions = new ArrayList<VariantInfo>();
             if (cfg.isDescriptionTextEnabled()) {
 
-                final String descText = helper.loadDescription(vid);
+                final String descText = vid.description;
                 if (StringUtils.isNotEmpty(descText)) {
                     try {
 
