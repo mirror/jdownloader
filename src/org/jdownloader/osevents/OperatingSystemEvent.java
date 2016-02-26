@@ -8,7 +8,8 @@ public class OperatingSystemEvent extends SimpleEvent<Object, Object, OperatingS
         SHUTDOWN_VETO,
         SESSION_END,
         SIGNAL,
-        SIGNAL_TERM
+        SIGNAL_TERM,
+        SIGNAL_HUP
     }
 
     public OperatingSystemEvent(Type type, Object... parameters) {
