@@ -25,6 +25,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -40,14 +47,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -106,8 +105,8 @@ public class OpenLoadIo extends antiDDoSForHost {
     }
 
     @Override
-    public AccountFactory getAccountFactory() {
-        return new OpenLoadIoAccountFactory();
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new OpenLoadIoAccountFactory(callback);
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -593,7 +592,9 @@ public class OpenLoadIo extends antiDDoSForHost {
         return maxPrem.get();
     }
 
-    /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
+    /**
+     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     */
     @SuppressWarnings("unused")
     private void waitTime(long timeBefore, int wait, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -608,124 +609,108 @@ public class OpenLoadIo extends antiDDoSForHost {
         return br;
     }
 
-    public static class OpenLoadIoAccountFactory extends AccountFactory {
+    public static class OpenLoadIoAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
 
-        public static class OpenLoadIoPanel extends MigPanel implements EditAccountPanel {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
+        private final String      IDHELP           = "Enter your FTP Username/API Login";
+        private final String      PINHELP          = "Enter your FTP Password/API Key";
 
-            private final String      IDHELP           = "Enter your FTP Username/API Login";
-            private final String      PINHELP          = "Enter your FTP Password/API Key";
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
 
-            private String getPassword() {
-                if (this.pass == null) {
-                    return null;
+        private String getUsername() {
+            if (IDHELP.equals(this.name.getText())) {
+                return null;
+            }
+            return this.name.getText();
+        }
+
+        private ExtTextField                  name;
+
+        ExtPasswordField                      pass;
+
+        private static String                 EMPTYPW = "                 ";
+        private final JLabel                  idLabel;
+
+        private InputChangedCallbackInterface callback;
+
+        public OpenLoadIoAccountFactory(InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            this.callback = callback;
+            final String lang = System.getProperty("user.language");
+            String usertext_finddata;
+            String usertext_uid;
+            if ("de".equalsIgnoreCase(lang)) {
+                usertext_finddata = "<html>Klicke hier und dann auf \"User Settings\" um dein API loginname- und Passwort zu sehen:<br/></html>";
+                usertext_uid = "FTP Username/API Login";
+            } else {
+                usertext_finddata = "<html>Click here and then on \"User Settings\"  to find your FTP Username/API Login AND FTP Password/API Key:<br/></html>";
+                usertext_uid = "FTP Username/API Login";
+            }
+            add(new JLabel(usertext_finddata));
+            add(new JLink("https://openload.co/account"));
+            add(idLabel = new JLabel(usertext_uid));
+            add(this.name = new ExtTextField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
                 }
-                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                    return null;
+
+            });
+
+            name.setHelpText(IDHELP);
+
+            add(new JLabel("FTP Password/API Key:"));
+            add(this.pass = new ExtPasswordField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
                 }
-                return new String(this.pass.getPassword());
-            }
 
-            private String getUsername() {
-                if (IDHELP.equals(this.name.getText())) {
-                    return null;
-                }
-                return this.name.getText();
-            }
+            }, "");
+            pass.setHelpText(PINHELP);
+        }
 
-            private ExtTextField      name;
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
 
-            ExtPasswordField          pass;
-
-            private volatile Notifier notifier = null;
-            private static String     EMPTYPW  = "                 ";
-            private final JLabel      idLabel;
-
-            public OpenLoadIoPanel() {
-                super("ins 0, wrap 2", "[][grow,fill]", "");
-                final String lang = System.getProperty("user.language");
-                String usertext_finddata;
-                String usertext_uid;
-                if ("de".equalsIgnoreCase(lang)) {
-                    usertext_finddata = "<html>Klicke hier und dann auf \"User Settings\" um dein API loginname- und Passwort zu sehen:<br/></html>";
-                    usertext_uid = "FTP Username/API Login";
-                } else {
-                    usertext_finddata = "<html>Click here and then on \"User Settings\"  to find your FTP Username/API Login AND FTP Password/API Key:<br/></html>";
-                    usertext_uid = "FTP Username/API Login";
-                }
-                add(new JLabel(usertext_finddata));
-                add(new JLink("https://openload.co/account"));
-                add(idLabel = new JLabel(usertext_uid));
-                add(this.name = new ExtTextField() {
-
-                    @Override
-                    public void onChanged() {
-                        if (notifier != null) {
-                            notifier.onNotify();
-                        }
-                    }
-
-                });
-
-                name.setHelpText(IDHELP);
-
-                add(new JLabel("FTP Password/API Key:"));
-                add(this.pass = new ExtPasswordField() {
-
-                    @Override
-                    public void onChanged() {
-                        if (notifier != null) {
-                            notifier.onNotify();
-                        }
-                    }
-
-                }, "");
-                pass.setHelpText(PINHELP);
-            }
-
-            @Override
-            public JComponent getComponent() {
-                return this;
-            }
-
-            @Override
-            public void setAccount(Account defaultAccount) {
-                if (defaultAccount != null) {
-                    name.setText(defaultAccount.getUser());
-                    pass.setText(defaultAccount.getPass());
-                }
-            }
-
-            @Override
-            public boolean validateInputs() {
-                final String userName = getUsername();
-                if (userName == null) {
-                    idLabel.setForeground(Color.RED);
-                    return false;
-                }
-                idLabel.setForeground(Color.BLACK);
-                return getPassword() != null;
-            }
-
-            @Override
-            public void setNotifyCallBack(Notifier notifier) {
-                this.notifier = notifier;
-            }
-
-            @Override
-            public Account getAccount() {
-                return new Account(getUsername(), getPassword());
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
             }
         }
 
         @Override
-        public EditAccountPanel getPanel() {
-            return new OpenLoadIoPanel();
+        public boolean validateInputs() {
+            final String userName = getUsername();
+            if (userName == null) {
+                idLabel.setForeground(Color.RED);
+                return false;
+            }
+            idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
         }
 
+        @Override
+        public Account getAccount() {
+            return new Account(getUsername(), getPassword());
+        }
     }
 
     @Override

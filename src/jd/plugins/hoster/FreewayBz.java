@@ -24,6 +24,12 @@ import java.util.HashMap;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -38,13 +44,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "freeway.bz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2 })
 public class FreewayBz extends antiDDoSForHost {
@@ -86,8 +85,8 @@ public class FreewayBz extends antiDDoSForHost {
     }
 
     @Override
-    public AccountFactory getAccountFactory() {
-        return new FreewayBZAccountFactory();
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new FreewayBZAccountFactory(callback);
     }
 
     @Override
@@ -390,124 +389,108 @@ public class FreewayBz extends antiDDoSForHost {
         link.setProperty(globalRetry, Property.NULL);
     }
 
-    public static class FreewayBZAccountFactory extends AccountFactory {
+    public static class FreewayBZAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
 
-        public static class FreewayBZPanel extends MigPanel implements EditAccountPanel {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
+        private final String      IDHELP           = "Enter your user id (9 digits)";
+        private final String      PINHELP          = "Enter your pin";
 
-            private final String      IDHELP           = "Enter your user id (9 digits)";
-            private final String      PINHELP          = "Enter your pin";
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
 
-            private String getPassword() {
-                if (this.pass == null) {
-                    return null;
+        private String getUsername() {
+            if (IDHELP.equals(this.name.getText())) {
+                return null;
+            }
+            return this.name.getText();
+        }
+
+        private ExtTextField                  name;
+
+        ExtPasswordField                      pass;
+
+        private static String                 EMPTYPW = "                 ";
+        private final JLabel                  idLabel;
+
+        private InputChangedCallbackInterface callback;
+
+        public FreewayBZAccountFactory(InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            this.callback = callback;
+            final String lang = System.getProperty("user.language");
+            String usertext_finddata;
+            String usertext_uid;
+            if ("de".equalsIgnoreCase(lang)) {
+                usertext_finddata = "Klicke hier um deine User-ID und PIN zu sehen:";
+                usertext_uid = "User-ID (muss 9-stellig sein)";
+            } else {
+                usertext_finddata = "Click here to find your User-ID/PIN:";
+                usertext_uid = "User-ID: (must be 9 digis)";
+            }
+            add(new JLabel(usertext_finddata));
+            add(new JLink("https://www.freeway.bz/account"));
+            add(idLabel = new JLabel(usertext_uid));
+            add(this.name = new ExtTextField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
                 }
-                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                    return null;
+
+            });
+
+            name.setHelpText(IDHELP);
+
+            add(new JLabel("PIN:"));
+            add(this.pass = new ExtPasswordField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
                 }
-                return new String(this.pass.getPassword());
-            }
 
-            private String getUsername() {
-                if (IDHELP.equals(this.name.getText())) {
-                    return null;
-                }
-                return this.name.getText();
-            }
+            }, "");
+            pass.setHelpText(PINHELP);
+        }
 
-            private ExtTextField      name;
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
 
-            ExtPasswordField          pass;
-
-            private volatile Notifier notifier = null;
-            private static String     EMPTYPW  = "                 ";
-            private final JLabel      idLabel;
-
-            public FreewayBZPanel() {
-                super("ins 0, wrap 2", "[][grow,fill]", "");
-                final String lang = System.getProperty("user.language");
-                String usertext_finddata;
-                String usertext_uid;
-                if ("de".equalsIgnoreCase(lang)) {
-                    usertext_finddata = "Klicke hier um deine User-ID und PIN zu sehen:";
-                    usertext_uid = "User-ID (muss 9-stellig sein)";
-                } else {
-                    usertext_finddata = "Click here to find your User-ID/PIN:";
-                    usertext_uid = "User-ID: (must be 9 digis)";
-                }
-                add(new JLabel(usertext_finddata));
-                add(new JLink("https://www.freeway.bz/account"));
-                add(idLabel = new JLabel(usertext_uid));
-                add(this.name = new ExtTextField() {
-
-                    @Override
-                    public void onChanged() {
-                        if (notifier != null) {
-                            notifier.onNotify();
-                        }
-                    }
-
-                });
-
-                name.setHelpText(IDHELP);
-
-                add(new JLabel("PIN:"));
-                add(this.pass = new ExtPasswordField() {
-
-                    @Override
-                    public void onChanged() {
-                        if (notifier != null) {
-                            notifier.onNotify();
-                        }
-                    }
-
-                }, "");
-                pass.setHelpText(PINHELP);
-            }
-
-            @Override
-            public JComponent getComponent() {
-                return this;
-            }
-
-            @Override
-            public void setAccount(Account defaultAccount) {
-                if (defaultAccount != null) {
-                    name.setText(defaultAccount.getUser());
-                    pass.setText(defaultAccount.getPass());
-                }
-            }
-
-            @Override
-            public boolean validateInputs() {
-                final String userName = getUsername();
-                if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-                    idLabel.setForeground(Color.RED);
-                    return false;
-                }
-                idLabel.setForeground(Color.BLACK);
-                return getPassword() != null;
-            }
-
-            @Override
-            public void setNotifyCallBack(Notifier notifier) {
-                this.notifier = notifier;
-            }
-
-            @Override
-            public Account getAccount() {
-                return new Account(getUsername(), getPassword());
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
             }
         }
 
         @Override
-        public EditAccountPanel getPanel() {
-            return new FreewayBZPanel();
+        public boolean validateInputs() {
+            final String userName = getUsername();
+            if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+                idLabel.setForeground(Color.RED);
+                return false;
+            }
+            idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
         }
 
+        @Override
+        public Account getAccount() {
+            return new Account(getUsername(), getPassword());
+        }
     }
 
 }

@@ -6098,4 +6098,16 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Total Progress & Connections" })
     String DockProgressDisplay_connections_and_progress();
+
+    @Default(lngs = { "en" }, values = { "Click here to find your ID/PIN" })
+
+    String premiumize_add_account_click_here();
+
+    @Default(lngs = { "en" }, values = { "ID: (must be 9 digis)" })
+
+    String premiumize_add_account_idlabel();
+
+    @Default(lngs = { "en" }, values = { "Please enter valid account information first." })
+
+    String add_or_edit_account_dialog_ok_button_tooltip_bad_input();
 }

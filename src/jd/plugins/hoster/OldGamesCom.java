@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,13 +39,10 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LetitBitAccountFactory;
+import jd.plugins.LetitBitAccountBuilderImpl;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.accounts.AccountFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "http://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/\\d+" }, flags = { 2 })
 public class OldGamesCom extends PluginForHost {
@@ -52,8 +53,8 @@ public class OldGamesCom extends PluginForHost {
     }
 
     @Override
-    public AccountFactory getAccountFactory() {
-        return new LetitBitAccountFactory();
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new LetitBitAccountBuilderImpl(callback);
     }
 
     @Override

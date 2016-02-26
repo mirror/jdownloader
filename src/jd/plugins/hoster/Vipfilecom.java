@@ -20,6 +20,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -31,13 +36,11 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LetitBitAccountBuilderImpl;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://(u\\d+\\.)?vip\\-file\\.com/download(lib)?/[^<>\"/]*?/[^<>\"/]*?\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
@@ -64,10 +67,15 @@ public class Vipfilecom extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new LetitBitAccountBuilderImpl(callback);
+    }
+
     /**
      * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
      * minute
-     * */
+     */
     @SuppressWarnings("deprecation")
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {

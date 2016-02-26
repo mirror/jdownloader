@@ -24,6 +24,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -41,14 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "filecloud.io", "ezfile.ch" }, urls = { "https?://(?:www\\.)?(?:filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
 public class FilecloudIo extends PluginForHost {
@@ -90,8 +89,8 @@ public class FilecloudIo extends PluginForHost {
     }
 
     @Override
-    public AccountFactory getAccountFactory() {
-        return new EzFileChAccountFactory();
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new EzFileChAccountFactory(callback);
     }
 
     /**
@@ -564,82 +563,69 @@ public class FilecloudIo extends PluginForHost {
         return false;
     }
 
-    public static class EzFileChAccountFactory extends AccountFactory {
+    public static class EzFileChAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
 
-        public static class EzFileChPanel extends MigPanel implements EditAccountPanel {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
+        private final String      APIKEYHELP       = "Enter your APIKey / APIKey eingeben";
 
-            private final String      APIKEYHELP       = "Enter your APIKey / APIKey eingeben";
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
 
-            private String getPassword() {
-                if (this.pass == null) {
-                    return null;
+        ExtPasswordField                      pass;
+
+        private InputChangedCallbackInterface callback;
+
+        private static String                 EMPTYPW = "                 ";
+
+        public EzFileChAccountFactory(InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            this.callback = callback;
+            add(new JLabel("Instructions / Anleitung:"));
+            add(new JLink(MAINPAGE + "/?m=help&a=jdownloader"));
+
+            add(new JLabel("APIKey:"));
+            add(this.pass = new ExtPasswordField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
                 }
-                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                    return null;
-                }
-                return new String(this.pass.getPassword());
-            }
 
-            ExtPasswordField          pass;
+            }, "");
+            pass.setHelpText(APIKEYHELP);
+        }
 
-            private volatile Notifier notifier = null;
-            private static String     EMPTYPW  = "                 ";
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
 
-            public EzFileChPanel() {
-                super("ins 0, wrap 2", "[][grow,fill]", "");
-                add(new JLabel("Instructions / Anleitung:"));
-                add(new JLink(MAINPAGE + "/?m=help&a=jdownloader"));
-
-                add(new JLabel("APIKey:"));
-                add(this.pass = new ExtPasswordField() {
-
-                    @Override
-                    public void onChanged() {
-                        if (notifier != null) {
-                            notifier.onNotify();
-                        }
-                    }
-
-                }, "");
-                pass.setHelpText(APIKEYHELP);
-            }
-
-            @Override
-            public JComponent getComponent() {
-                return this;
-            }
-
-            @Override
-            public void setAccount(Account defaultAccount) {
-                if (defaultAccount != null) {
-                    pass.setText(defaultAccount.getPass());
-                }
-            }
-
-            @Override
-            public boolean validateInputs() {
-                return getPassword() != null;
-            }
-
-            @Override
-            public void setNotifyCallBack(Notifier notifier) {
-                this.notifier = notifier;
-            }
-
-            @Override
-            public Account getAccount() {
-                return new Account(null, getPassword());
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                pass.setText(defaultAccount.getPass());
             }
         }
 
         @Override
-        public EditAccountPanel getPanel() {
-            return new EzFileChPanel();
+        public boolean validateInputs() {
+            return getPassword() != null;
         }
 
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
+        }
     }
+
 }

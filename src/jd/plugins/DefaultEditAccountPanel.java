@@ -6,13 +6,14 @@ import javax.swing.JLabel;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-public class DefaultEditAccountPanel extends MigPanel implements EditAccountPanel {
+public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderInterface {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -33,24 +34,24 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
         return this.name.getText();
     }
 
-    private ExtTextField  name;
+    private ExtTextField          name;
 
-    ExtPasswordField      pass;
+    ExtPasswordField              pass;
 
-    Notifier              notifier;
-    private static String EMPTYPW = "                 ";
+    InputChangedCallbackInterface callback;
+    private static String         EMPTYPW = "                 ";
 
-    public DefaultEditAccountPanel() {
+    public DefaultEditAccountPanel(InputChangedCallbackInterface callback) {
         super("ins 0, wrap 2", "[][grow,fill]", "");
-
+        this.callback = callback;
         add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
         add(this.name = new ExtTextField() {
 
             @Override
             public void onChanged() {
-                if (notifier != null) {
-                    notifier.onNotify();
-                }
+
+                callback.onChangedInput(name);
+
             }
 
         });
@@ -62,21 +63,19 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
 
             @Override
             public void onChanged() {
-                if (notifier != null) {
-                    notifier.onNotify();
-                }
+
+                callback.onChangedInput(name);
+
             }
 
         }, "");
         pass.setHelpText(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_pass());
     }
 
-    @Override
-    public JComponent getComponent() {
-        return this;
+    public InputChangedCallbackInterface getCallback() {
+        return callback;
     }
 
-    @Override
     public void setAccount(Account defaultAccount) {
         if (defaultAccount != null) {
 
@@ -88,17 +87,17 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
 
     @Override
     public boolean validateInputs() {
-        return getPassword() != null || getUsername() != null;
-    }
-
-    @Override
-    public void setNotifyCallBack(Notifier notifier) {
-        this.notifier = notifier;
+        return StringUtils.isNotEmpty(getPassword(), getUsername());
     }
 
     @Override
     public Account getAccount() {
         return new Account(getUsername(), getPassword());
+    }
+
+    @Override
+    public JComponent getComponent() {
+        return this;
     }
 
 }

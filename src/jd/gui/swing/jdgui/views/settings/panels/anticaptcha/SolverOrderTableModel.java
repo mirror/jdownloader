@@ -304,6 +304,14 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
                 return 3;
             }
 
+            public Dimension getCellSizeEstimation(SolverService element, int row) {
+
+                Component c = getTableCellRendererComponent(getModel().getTable(), element, false, false, row, 1);
+                rendererBtn.setMaximumSize(null);
+                return c.getPreferredSize();
+
+            }
+
             @Override
             public boolean isSortable(final SolverService obj) {
                 return false;
@@ -342,7 +350,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
                 editorBtn.setText(_GUI.T.lit_edit());
-                rendererBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 2));
+                editorBtn.setMaximumSize(new Dimension(getWidth(), getTable().getRowHeight(row) - 2));
 
             }
 

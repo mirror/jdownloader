@@ -43,33 +43,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -121,6 +94,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions
 import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -134,13 +108,40 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.SleepPluginProgress;
-import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
+
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
@@ -152,14 +153,13 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[] PATTERNS       = new Pattern[] {
 
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+            /**
+             * these patterns should split filename and fileextension (extension must include the point)
+             */
+            // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin         lazyP          = null;
     /**
@@ -1616,12 +1616,9 @@ public abstract class PluginForHost extends Plugin {
      *
      * @return
      */
-    public AccountFactory getAccountFactory() {
-        // this should be plugincode as soon as we can ignore 0.9 compatibility
-        if (getHost().equalsIgnoreCase("letitbit.net") || getHost().equalsIgnoreCase("shareflare.net") || getHost().equalsIgnoreCase("vip-file.com") || getHost().equalsIgnoreCase("multivip.net")) {
-            return new LetitBitAccountFactory();
-        }
-        return new DefaultAccountFactory();
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+
+        return new DefaultEditAccountPanel(callback);
     }
 
     public void resumeDownloadlink(DownloadLink downloadLink) {
