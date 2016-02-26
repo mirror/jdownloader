@@ -69,38 +69,52 @@ public class FivehundretPxCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String json = this.br.getRegex("PxInitialData\\[\"photo\"\\] = (\\{.*?\\});\n").getMatch(0);
-        if (json == null) {
-            json = this.br.getRegex("window\\.PxPreloadedData = (\\{.*?\\});\n").getMatch(0);
-        }
-        if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String json = getJson();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        String title = null, user_firstname = null, user_lastname = null, ext = null;
         final Object photoo = entries.get("photo");
         if (photoo != null && photoo instanceof LinkedHashMap) {
             entries = (LinkedHashMap<String, Object>) photoo;
         }
-        final String title = (String) entries.get("name");
-        final String user_firstname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/firstname");
-        final String user_lastname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/lastname");
-        final String ext = (String) entries.get("image_format");
-        dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
-        if (dllink == null) {
-            dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
+        if (photoo == null && entries.get("offers") != null) {
+            title = (String) entries.get("name");
+            // no first last and last name seperately
+            user_firstname = (String) entries.get("creator"); // or you could use copyrightHolder
+            // seems to be only one link because they want you buy it!
+            dllink = (String) entries.get("image");
+            ext = getFileNameExtensionFromString(dllink);
+        } else {
+            title = (String) entries.get("name");
+            user_firstname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/firstname");
+            user_lastname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/lastname");
+            /*
+             * this will show jpeg when its actually jpg on server. this is because content distribution filename is real name and not
+             * abbreviated.
+             */
+            // ext = (String) entries.get("image_format");
+            if (ext != null) {
+                ext = "." + ext;
+            }
+            dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
+            if (dllink == null) {
+                dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
+            }
         }
-        if (title == null || ext == null || dllink == null) {
+        if (title == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String filename = (user_firstname != null ? user_firstname + " ": "") + (user_lastname  != null ? user_lastname  + " - ": "") + title + "." + ext;
-        dllink = Encoding.htmlDecode(dllink);
+        String filename = (user_firstname != null ? user_firstname : "");
+        filename += (user_lastname != null ? (filename.equals("") ? user_lastname : " " + user_lastname) : "");
+        filename += (title != null ? (filename.equals("") ? title : " - " + title) : "");
+        filename += (ext != null ? ext : "");
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (!downloadLink.isNameSet()) {
+            // set part name if not set previously
+            downloadLink.setFinalFileName(filename);
         }
-        downloadLink.setFinalFileName(filename);
+        dllink = Encoding.htmlDecode(dllink);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -108,6 +122,13 @@ public class FivehundretPxCom extends PluginForHost {
         try {
             try {
                 con = br2.openHeadConnection(dllink);
+                if (ext == null) {
+                    // update info
+                    ext = getFileNameExtensionFromString(getFileNameFromHeader(con), ".jpg");
+                    filename += (ext != null ? ext : "");
+                }
+                // set filename here.
+                downloadLink.setFinalFileName(filename);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -124,6 +145,21 @@ public class FivehundretPxCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    private String getJson() throws PluginException {
+        String json = br.getRegex("PxInitialData\\[\"photo\"\\] = (\\{.*?\\});\n").getMatch(0);
+        if (json == null) {
+            json = br.getRegex("window\\.PxPreloadedData = (\\{.*?\\});\n").getMatch(0);
+            if (json == null) {
+                // for offers
+                json = br.getRegex("<script type='application/ld\\+json'>(.*?)</script>").getMatch(0);
+                if (json == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+        return json;
     }
 
     @Override
