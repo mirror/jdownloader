@@ -19,6 +19,7 @@ package jd.gui.swing.dialog;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
@@ -43,13 +44,12 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.sponsor.Sponsor;
 import org.jdownloader.gui.sponsor.SponsorUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -69,7 +69,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
-public class AddAccountDialog extends AbstractDialog<Integer> {
+public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
 
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
         final AddAccountDialog dialog = new AddAccountDialog(pluginForHost, acc);
@@ -93,7 +93,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     private Account getAccount() {
-        EditAccountPanel leditAccountPanel = editAccountPanel;
+        AccountBuilderInterface leditAccountPanel = accountBuilderUI;
         if (leditAccountPanel != null) {
             return leditAccountPanel.getAccount();
         }
@@ -203,11 +203,13 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     private Account                        defaultAccount;
 
-    private EditAccountPanel               editAccountPanel;
+    AccountBuilderInterface                accountBuilderUI;
 
     private JPanel                         content;
 
     private final PluginClassLoaderChild   cl;
+
+    protected MouseAdapter                 mouseAdapter;
 
     private AddAccountDialog(final PluginForHost plugin, Account acc) {
         super(UserIO.NO_ICON, _GUI.T.jd_gui_swing_components_AccountDialog_title(), null, _GUI.T.lit_save(), null);
@@ -264,7 +266,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                     if (plg != plugin) {
                         plugin = plg;
                         updatePanel();
-                        checkOK();
+
                     }
 
                 } catch (UpdateRequiredClassNotFoundException e1) {
@@ -377,23 +379,16 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 plg = p.newInstance(cl);
             }
 
-            AccountFactory accountFactory = plg.getAccountFactory();
-            if (editAccountPanel != null) {
-                defaultAccount = editAccountPanel.getAccount();
-                content.remove(editAccountPanel.getComponent());
+            AccountBuilderInterface accountFactory = plg.getAccountFactory(this);
+            if (accountBuilderUI != null) {
+                defaultAccount = accountBuilderUI.getAccount();
+                content.remove(accountBuilderUI.getComponent());
             }
-            editAccountPanel = accountFactory.getPanel();
-            content.add(editAccountPanel.getComponent(), "gapleft 32,spanx");
-            editAccountPanel.setAccount(defaultAccount);
-            editAccountPanel.setNotifyCallBack(new Notifier() {
+            accountBuilderUI = accountFactory;
+            content.add(accountBuilderUI.getComponent(), "gapleft 32,spanx");
+            accountBuilderUI.setAccount(defaultAccount);
 
-                @Override
-                public void onNotify() {
-                    checkOK();
-                }
-
-            });
-            checkOK();
+            onChangedInput(null);
             getDialog().pack();
 
         } catch (UpdateRequiredClassNotFoundException e) {
@@ -404,7 +399,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == okButton) {
-            if (hoster != null && hoster.getSelectedItem() != null && editAccountPanel.validateInputs()) {
+            if (hoster != null && hoster.getSelectedItem() != null && accountBuilderUI.validateInputs()) {
                 super.actionPerformed(e);
             }
         } else {
@@ -418,13 +413,16 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         return ret;
     }
 
-    private void checkOK() {
-        editAccountPanel.validateInputs();
-    }
-
     @Override
     protected void packed() {
         super.packed();
+
+    }
+
+    @Override
+    public void onChangedInput(Object component) {
+
+        InputOKButtonAdapter.register(this, accountBuilderUI);
 
     }
 

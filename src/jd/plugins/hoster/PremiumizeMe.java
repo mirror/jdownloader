@@ -38,9 +38,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -116,8 +116,8 @@ public class PremiumizeMe extends UseNet {
     }
 
     @Override
-    public AccountFactory getAccountFactory() {
-        return new PremiumizeMeAccountFactory();
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new PremiumizeMeAccountFactory(callback);
     }
 
     @Override
@@ -682,113 +682,98 @@ public class PremiumizeMe extends UseNet {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public static class PremiumizeMeAccountFactory extends AccountFactory {
+    public static class PremiumizeMeAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
 
-        public static class PremiumizeMePanel extends MigPanel implements EditAccountPanel {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
+        private final String      IDHELP           = "Enter your account id (9 digits)";
+        private final String      PINHELP          = "Enter your pin";
 
-            private final String      IDHELP           = "Enter your account id (9 digits)";
-            private final String      PINHELP          = "Enter your pin";
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
 
-            private String getPassword() {
-                if (this.pass == null) {
-                    return null;
+        private String getUsername() {
+            if (IDHELP.equals(this.name.getText())) {
+                return null;
+            }
+            return this.name.getText();
+        }
+
+        private ExtTextField                  name;
+
+        ExtPasswordField                      pass;
+
+        private static String                 EMPTYPW = "                 ";
+        private final JLabel                  idLabel;
+
+        private InputChangedCallbackInterface callback;
+
+        public PremiumizeMeAccountFactory(InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            this.callback = callback;
+            add(new JLabel(_GUI.T.premiumize_add_account_click_here()));
+            add(new JLink(getProtocol() + "www.premiumize.me/account"));
+            add(idLabel = new JLabel(_GUI.T.premiumize_add_account_idlabel()));
+            add(this.name = new ExtTextField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
                 }
-                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                    return null;
+
+            });
+
+            name.setHelpText(IDHELP);
+
+            add(new JLabel("PIN:"));
+            add(this.pass = new ExtPasswordField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
                 }
-                return new String(this.pass.getPassword());
-            }
 
-            private String getUsername() {
-                if (IDHELP.equals(this.name.getText())) {
-                    return null;
-                }
-                return this.name.getText();
-            }
+            }, "");
+            pass.setHelpText(PINHELP);
+        }
 
-            private ExtTextField      name;
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
 
-            ExtPasswordField          pass;
-
-            private volatile Notifier notifier = null;
-            private static String     EMPTYPW  = "                 ";
-            private final JLabel      idLabel;
-
-            public PremiumizeMePanel() {
-                super("ins 0, wrap 2", "[][grow,fill]", "");
-                add(new JLabel("Click here to find your ID/PIN"));
-                add(new JLink(getProtocol() + "www.premiumize.me/account"));
-                add(idLabel = new JLabel("ID: (must be 9 digis)"));
-                add(this.name = new ExtTextField() {
-
-                    @Override
-                    public void onChanged() {
-                        if (notifier != null) {
-                            notifier.onNotify();
-                        }
-                    }
-
-                });
-
-                name.setHelpText(IDHELP);
-
-                add(new JLabel("PIN:"));
-                add(this.pass = new ExtPasswordField() {
-
-                    @Override
-                    public void onChanged() {
-                        if (notifier != null) {
-                            notifier.onNotify();
-                        }
-                    }
-
-                }, "");
-                pass.setHelpText(PINHELP);
-            }
-
-            @Override
-            public JComponent getComponent() {
-                return this;
-            }
-
-            @Override
-            public void setAccount(Account defaultAccount) {
-                if (defaultAccount != null) {
-                    name.setText(defaultAccount.getUser());
-                    pass.setText(defaultAccount.getPass());
-                }
-            }
-
-            @Override
-            public boolean validateInputs() {
-                final String userName = getUsername();
-                if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-                    idLabel.setForeground(Color.RED);
-                    return false;
-                }
-                idLabel.setForeground(Color.BLACK);
-                return getPassword() != null;
-            }
-
-            @Override
-            public void setNotifyCallBack(Notifier notifier) {
-                this.notifier = notifier;
-            }
-
-            @Override
-            public Account getAccount() {
-                return new Account(getUsername(), getPassword());
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
             }
         }
 
         @Override
-        public EditAccountPanel getPanel() {
-            return new PremiumizeMePanel();
+        public boolean validateInputs() {
+            final String userName = getUsername();
+            if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+                idLabel.setForeground(Color.RED);
+                return false;
+            }
+            idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
         }
 
+        @Override
+        public Account getAccount() {
+            return new Account(getUsername(), getPassword());
+        }
     }
+
 }

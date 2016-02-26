@@ -21,33 +21,30 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.plugins.Account;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-public class EditAccountDialog extends AbstractDialog<Integer> {
+import jd.controlling.TaskQueue;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.gui.swing.dialog.InputOKButtonAdapter;
+import jd.plugins.Account;
+import net.miginfocom.swing.MigLayout;
 
-    private final Account    acc;
+public class EditAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
 
-    private EditAccountPanel editAccountPanel;
+    private final Account           acc;
 
-    private JPanel           content;
+    private AccountBuilderInterface accountBuilderUI;
+
+    private JPanel                  content;
 
     public EditAccountDialog(Account acc) {
         super(0, _GUI.T.jd_gui_swing_components_AccountDialog_edit_title(), DomainInfo.getInstance(acc.getHoster()).getFavIcon(), _GUI.T.lit_save(), null);
@@ -86,19 +83,12 @@ public class EditAccountDialog extends AbstractDialog<Integer> {
                 getDialog().removeWindowFocusListener(this);
             }
         });
-        final AccountFactory accountFactory = acc.getPlugin().getAccountFactory();
-        editAccountPanel = accountFactory.getPanel();
-        content.add(editAccountPanel.getComponent(), "gapleft 32,spanx");
-        editAccountPanel.setAccount(acc);
-        editAccountPanel.setNotifyCallBack(new Notifier() {
+        final AccountBuilderInterface accountFactory = acc.getPlugin().getAccountFactory(this);
+        accountBuilderUI = accountFactory;
+        content.add(accountBuilderUI.getComponent(), "gapleft 32,spanx");
+        accountBuilderUI.setAccount(acc);
 
-            @Override
-            public void onNotify() {
-                checkOK();
-            }
-
-        });
-        checkOK();
+        onChangedInput(null);
         getDialog().pack();
         return content;
     }
@@ -110,8 +100,8 @@ public class EditAccountDialog extends AbstractDialog<Integer> {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == okButton) {
-            if (editAccountPanel.validateInputs()) {
-                final Account newAcc = editAccountPanel.getAccount();
+            if (accountBuilderUI.validateInputs()) {
+                final Account newAcc = accountBuilderUI.getAccount();
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
@@ -138,19 +128,14 @@ public class EditAccountDialog extends AbstractDialog<Integer> {
         }
     }
 
-    private JComponent header(String buyAndAddPremiumAccount_layoutDialogContent_get) {
-        JLabel ret = SwingUtils.toBold(new JLabel(buyAndAddPremiumAccount_layoutDialogContent_get));
-        ret.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ret.getForeground()));
-        return ret;
-    }
-
-    private void checkOK() {
-        editAccountPanel.validateInputs();
-    }
-
     @Override
     protected void packed() {
         super.packed();
+    }
+
+    @Override
+    public void onChangedInput(Object component) {
+        InputOKButtonAdapter.register(this, accountBuilderUI);
     }
 
 }

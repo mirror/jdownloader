@@ -11,33 +11,34 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.gui.swing.dialog.AddAccountDialog;
-import jd.plugins.Account;
-import jd.plugins.PluginForHost;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
-public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements BuyAndAddPremiumDialogInterface {
+import jd.gui.swing.dialog.AddAccountDialog;
+import jd.gui.swing.dialog.InputOKButtonAdapter;
+import jd.plugins.Account;
+import jd.plugins.PluginForHost;
+
+public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements BuyAndAddPremiumDialogInterface, InputChangedCallbackInterface {
 
     private DomainInfo                   info;
 
     private String                       id;
 
-    private EditAccountPanel             creater;
+    private AccountBuilderInterface      accountBuilderUI;
 
     private final PluginClassLoaderChild cl;
 
@@ -55,9 +56,9 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
 
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.okButton) {
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
 
-            Account ac = creater.getAccount();
+            Account ac = accountBuilderUI.getAccount();
             ac.setHoster(info.getTld());
             try {
                 if (!AddAccountDialog.addAccount(ac)) {
@@ -70,7 +71,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
             }
             this.setReturnmask(true);
         } else if (e.getSource() == this.cancelButton) {
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
             this.setReturnmask(false);
         }
         this.dispose();
@@ -82,7 +83,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         super.layoutDialog();
         getDialog().setContentPane(new JPanel() {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -121,9 +122,9 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         } catch (UpdateRequiredClassNotFoundException e) {
             throw new WTFException(e);
         }
-        creater = plg.getAccountFactory().getPanel();
-        ret.add(creater.getComponent(), "gapleft 27");
-
+        accountBuilderUI = plg.getAccountFactory(this);
+        ret.add(accountBuilderUI.getComponent(), "gapleft 27");
+        onChangedInput(null);
         return ret;
     }
 
@@ -131,5 +132,10 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         JLabel ret = SwingUtils.toBold(new JLabel(buyAndAddPremiumAccount_layoutDialogContent_get));
         ret.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ret.getForeground()));
         return ret;
+    }
+
+    @Override
+    public void onChangedInput(Object component) {
+        InputOKButtonAdapter.register(this, accountBuilderUI);
     }
 }
