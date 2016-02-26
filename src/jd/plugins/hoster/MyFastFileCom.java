@@ -24,12 +24,6 @@ import java.util.HashMap;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -44,6 +38,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "myfastfile.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class MyFastFileCom extends antiDDoSForHost {
@@ -416,18 +416,15 @@ public class MyFastFileCom extends antiDDoSForHost {
             return this.name.getText();
         }
 
-        private ExtTextField                  name;
+        private final ExtTextField     name;
 
-        ExtPasswordField                      pass;
+        private final ExtPasswordField pass;
 
-        private static String                 EMPTYPW = "                 ";
-        private final JLabel                  idLabel;
+        private static String          EMPTYPW = "                 ";
+        private final JLabel           idLabel;
 
-        private InputChangedCallbackInterface callback;
-
-        public MyFastFileComAccountFactory(InputChangedCallbackInterface callback) {
+        public MyFastFileComAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            this.callback = callback;
             final String lang = System.getProperty("user.language");
             String usertext_finddata;
             String usertext_uid;

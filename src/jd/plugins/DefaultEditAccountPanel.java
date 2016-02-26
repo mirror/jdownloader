@@ -34,14 +34,14 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
         return this.name.getText();
     }
 
-    private ExtTextField          name;
+    private ExtTextField                        name;
 
-    ExtPasswordField              pass;
+    ExtPasswordField                            pass;
 
-    InputChangedCallbackInterface callback;
-    private static String         EMPTYPW = "                 ";
+    private final InputChangedCallbackInterface callback;
+    private static String                       EMPTYPW = "                 ";
 
-    public DefaultEditAccountPanel(InputChangedCallbackInterface callback) {
+    public DefaultEditAccountPanel(final InputChangedCallbackInterface callback) {
         super("ins 0, wrap 2", "[][grow,fill]", "");
         this.callback = callback;
         add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));

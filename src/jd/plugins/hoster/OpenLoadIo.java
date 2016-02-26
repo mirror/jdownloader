@@ -25,13 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -47,6 +40,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -635,18 +635,13 @@ public class OpenLoadIo extends antiDDoSForHost {
             return this.name.getText();
         }
 
-        private ExtTextField                  name;
+        private final ExtTextField     name;
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = "                 ";
+        private final JLabel           idLabel;
 
-        ExtPasswordField                      pass;
-
-        private static String                 EMPTYPW = "                 ";
-        private final JLabel                  idLabel;
-
-        private InputChangedCallbackInterface callback;
-
-        public OpenLoadIoAccountFactory(InputChangedCallbackInterface callback) {
+        public OpenLoadIoAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            this.callback = callback;
             final String lang = System.getProperty("user.language");
             String usertext_finddata;
             String usertext_uid;

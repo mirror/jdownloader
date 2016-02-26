@@ -24,13 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -48,6 +41,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "filecloud.io", "ezfile.ch" }, urls = { "https?://(?:www\\.)?(?:filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
 public class FilecloudIo extends PluginForHost {
@@ -581,15 +581,11 @@ public class FilecloudIo extends PluginForHost {
             return new String(this.pass.getPassword());
         }
 
-        ExtPasswordField                      pass;
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = "                 ";
 
-        private InputChangedCallbackInterface callback;
-
-        private static String                 EMPTYPW = "                 ";
-
-        public EzFileChAccountFactory(InputChangedCallbackInterface callback) {
+        public EzFileChAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            this.callback = callback;
             add(new JLabel("Instructions / Anleitung:"));
             add(new JLink(MAINPAGE + "/?m=help&a=jdownloader"));
 

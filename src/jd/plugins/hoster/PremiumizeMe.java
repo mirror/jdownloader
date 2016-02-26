@@ -29,19 +29,6 @@ import java.util.zip.GZIPOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,6 +50,19 @@ import jd.plugins.PluginException;
 import jd.plugins.components.UsenetConfigInterface;
 import jd.plugins.components.UsenetServer;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }, flags = { 2 })
 public class PremiumizeMe extends UseNet {
@@ -708,18 +708,15 @@ public class PremiumizeMe extends UseNet {
             return this.name.getText();
         }
 
-        private ExtTextField                  name;
+        private final ExtTextField     name;
 
-        ExtPasswordField                      pass;
+        private final ExtPasswordField pass;
 
-        private static String                 EMPTYPW = "                 ";
-        private final JLabel                  idLabel;
+        private static String          EMPTYPW = "                 ";
+        private final JLabel           idLabel;
 
-        private InputChangedCallbackInterface callback;
-
-        public PremiumizeMeAccountFactory(InputChangedCallbackInterface callback) {
+        public PremiumizeMeAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            this.callback = callback;
             add(new JLabel(_GUI.T.premiumize_add_account_click_here()));
             add(new JLink(getProtocol() + "www.premiumize.me/account"));
             add(idLabel = new JLabel(_GUI.T.premiumize_add_account_idlabel()));
