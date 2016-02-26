@@ -70,10 +70,14 @@ public class WebShareCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("https://webshare.cz/api/file_info/", "wst=&ident=" + getFID(link));
-        if (br.containsHTML("<status>FATAL</status>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<status>FATAL</status>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = getXMLtagValue("name");
         final String filesize = getXMLtagValue("size");
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -88,12 +92,18 @@ public class WebShareCz extends PluginForHost {
         br.getHeaders().put("Referer", null);
         br.getHeaders().put("X-Requested-With", null);
         final String dllink = getXMLtagValue("link");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.getURL().contains("error=")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.getURL().contains("error=")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -118,7 +128,9 @@ public class WebShareCz extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -214,7 +226,7 @@ public class WebShareCz extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -229,26 +241,26 @@ public class WebShareCz extends PluginForHost {
 
     /*
      * Copyright (c) 1999 University of California. All rights reserved.
-     * 
+     *
      * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
      * are met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following
      * disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
      * disclaimer in the documentation and/or other materials provided with the distribution. 3. Neither the name of the author nor the
      * names of any co-contributors may be used to endorse or promote products derived from this software without specific prior written
      * permission.
-     * 
+     *
      * THIS SOFTWARE IS PROVIDED BY CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
      * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL CONTRIBUTORS BE LIABLE FOR ANY
      * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
      * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
      * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
      * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-     * 
+     *
      * $FreeBSD: src/lib/libcrypt/misc.c,v 1.1 1999/09/20 12:45:49 markm Exp $
      */
 
     static char[] itoa64 = /* 0 ... 63 => ascii - 64 */
-                         "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+            "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
 
     private static String cryptTo64(long v, int n) {
         StringBuilder result = new StringBuilder();
@@ -264,12 +276,12 @@ public class WebShareCz extends PluginForHost {
      * <phk@login.dknet.dk> wrote this file. As long as you retain this notice you can do whatever you want with this stuff. If we meet some
      * day, and you think this stuff is worth it, you can buy me a beer in return. Poul-Henning Kamp
      * ----------------------------------------------------------------------------
-     * 
+     *
      * $FreeBSD: src/lib/libcrypt/crypt-md5.c,v 1.5 1999/12/17 20:21:45 peter Exp $
      */
     private static String magic    = "$1$"; /*
-                                             * This string is magic for this algorithm. Having it this way, we can get get better later on
-                                             */
+     * This string is magic for this algorithm. Having it this way, we can get get better later on
+     */
     private static int    MD5_SIZE = 16;
 
     private static void memset(byte[] array) {

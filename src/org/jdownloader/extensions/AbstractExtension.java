@@ -21,6 +21,11 @@ import java.net.URL;
 
 import javax.swing.Icon;
 
+import jd.config.ConfigContainer;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.AddonPanel;
+import jd.plugins.ExtensionConfigInterface;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationFactory;
@@ -31,10 +36,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-import jd.config.ConfigContainer;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.plugins.AddonPanel;
-import jd.plugins.ExtensionConfigInterface;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 /**
@@ -189,8 +190,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * @param contentType
      *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. We used to use this localized name
      *            as config key.
-     * @throws @throws
-     *             StartException
+     * @throws @throws StartException
      */
     public AbstractExtension() {
         this.name = getClass().getSimpleName();
@@ -311,7 +311,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     public void init() throws StartException {
         long t = System.currentTimeMillis();
         initExtension();
-
         if (store.isFreshInstall()) {
             store.setEnabled(this.isDefaultEnabled());
             store.setFreshInstall(false);
@@ -323,7 +322,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
                 // cannot happen
             }
         }
-
         logger.info("Init Duration: " + (System.currentTimeMillis() - t));
     }
 

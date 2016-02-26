@@ -126,9 +126,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                // LinkCollector.getInstance().getEventsender().addListener(highListener);
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         try {
@@ -136,16 +134,13 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                 initGUI(true);
                                 LogController.CL(TrayExtension.class).info("Systemtray OK");
                             }
-
                         } catch (Exception e) {
                             LogController.CL(TrayExtension.class).log(e);
                         }
-
                     }
                 };
             }
         });
-
     }
 
     @Override
@@ -201,67 +196,22 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public static void writeEnableBalloonTips(final int foregroundLockTimeout) {
         try {
-
             final Process p = Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"EnableBalloonTips\" /t REG_DWORD /d 0x" + Integer.toHexString(foregroundLockTimeout) + " /f");
             IO.readInputStreamToString(p.getInputStream());
             final int exitCode = p.exitValue();
-            if (exitCode == 0) {
-
-            } else {
+            if (exitCode != 0) {
                 throw new IOException("Reg add execution failed");
             }
-        } catch (final UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (final IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
 
-    // public static int readShowInfoTip() throws UnsupportedEncodingException, IOException {
-    // final String iconResult =
-    // IO.readInputStreamToString(Runtime.getRuntime().exec("reg query
-    // \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"ShowInfoTip\"").getInputStream());
-    // final Matcher matcher = Pattern.compile("ShowInfoTip\\s+REG_DWORD\\s+0x(.*)").matcher(iconResult);
-    // matcher.find();
-    // final String value = matcher.group(1);
-    // return Integer.parseInt(value, 16);
-    // }
-
-    // public static void writeShowInfoTip(final int foregroundLockTimeout) {
-    // try {
-    //
-    // final Process p =
-    // Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v
-    // \"ShowInfoTip\" /t REG_DWORD /d 0x"
-    // + Integer.toHexString(foregroundLockTimeout) + " /f");
-    // IO.readInputStreamToString(p.getInputStream());
-    // final int exitCode = p.exitValue();
-    // if (exitCode == 0) {
-    //
-    // } else {
-    // throw new IOException("Reg add execution failed");
-    // }
-    // } catch (final UnsupportedEncodingException e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // } catch (final IOException e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // }
-    //
-    // }
-
     public void initGUI(final boolean startup) {
-
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         try {
@@ -269,7 +219,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             final SystemTray systemTray = SystemTray.getSystemTray();
                             final int trayIconWidth = (int) systemTray.getTrayIconSize().getWidth();
                             final int trayIconHeight = (int) systemTray.getTrayIconSize().getHeight();
-
                             final BufferedImage img;
                             if (getSettings().isGreyIconEnabled()) {
                                 img = ImageProvider.convertToGrayScale(IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_128_128", -1), trayIconWidth, trayIconHeight));
@@ -301,67 +250,51 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     }
                                 }
                             }
-
                             /*
                              * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
                              */
                             trayIcon = new TrayIcon(img, "JDownloader");
-
                             trayIcon.setImageAutoSize(true);
                             trayIcon.addActionListener(TrayExtension.this);
-
                             ma = new TrayMouseAdapter(TrayExtension.this, trayIcon);
-
                             trayIconTooltip = new TrayIconTooltip();
                             LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
                             if (guiFrame == null) {
                                 guiFrame = JDGui.getInstance().getMainFrame();
-
                                 if (guiFrame != null) {
-
                                     JDGui.getInstance().setClosingHandler(TrayExtension.this);
                                     guiFrame.addComponentListener(new ComponentListener() {
-
                                         @Override
                                         public void componentShown(ComponentEvent e) {
-
                                             if (getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled()) {
                                                 new EDTRunner() {
 
                                                     @Override
                                                     protected void runInEDT() {
                                                         removeTrayIcon();
-                                                        // initGUI(false);
                                                     }
                                                 };
-
                                             }
                                         }
 
                                         @Override
                                         public void componentResized(ComponentEvent e) {
-
                                         }
 
                                         @Override
                                         public void componentMoved(ComponentEvent e) {
-
                                         }
 
                                         @Override
                                         public void componentHidden(ComponentEvent e) {
                                             if (getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled()) {
                                                 new EDTRunner() {
-
                                                     @Override
                                                     protected void runInEDT() {
-
                                                         removeTrayIcon();
                                                         initGUI(false);
-
                                                     }
                                                 };
-
                                             }
                                         }
                                     });
@@ -370,25 +303,22 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     if (startup && getSettings().isStartMinimizedEnabled()) {
                                         JDGui.getInstance().setWindowToTray(true);
                                     }
-
                                 }
                             }
                             if (!getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled() || !guiFrame.isVisible()) {
-
                                 systemTray.add(trayIcon);
                                 trayIcon.addMouseListener(ma);
                                 trayIcon.addMouseMotionListener(ma);
                             }
-
                         } catch (Throwable e) {
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             * 
+                             *
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             * 
+                             *
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             * 
+                             *
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -401,9 +331,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                     }
                 };
             }
-
         });
-
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -418,9 +346,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public void mousePressed(MouseEvent e) {
         trayIconTooltip.hideTooltip();
-
         if (e.getSource() instanceof TrayIcon) {
-
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
                     JDGui.getInstance().setWindowToTray(guiFrame.isVisible());
@@ -462,22 +388,20 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private boolean checkPassword() {
-        boolean visible = JDGui.getInstance().getMainFrame().isVisible();
+        final boolean visible = JDGui.getInstance().getMainFrame().isVisible();
         if (visible) {
             return true;
         }
-        boolean pwEnabled = CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled();
+        final boolean pwEnabled = CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled();
         if (!pwEnabled) {
             return true;
         }
-        boolean pwEmpty = StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue());
+        final boolean pwEmpty = StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue());
         if (pwEmpty) {
             return true;
         }
-
-        String password;
         try {
-            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI.T.JDGui_setVisible_password_(), _GUI.T.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
+            final String password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI.T.JDGui_setVisible_password_(), _GUI.T.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
             if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
                 Dialog.getInstance().showMessageDialog(_GUI.T.JDGui_setVisible_password_wrong());
                 return false;
@@ -529,7 +453,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         window.setLocation(p.x - window.getWidth(), 22);
                     }
                 }
-
                 return null;
             }
         }.waitForEDT();
@@ -539,7 +462,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
      * gets called if mouse stays over the tray. Edit delay in {@link TrayMouseAdapter}
      */
     public void mouseStay(MouseEvent e) {
-
         if (!getSettings().isToolTipEnabled()) {
             return;
         }
@@ -583,20 +505,16 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             return;
         }
         if ((oldState & JFrame.ICONIFIED) == 0 && (newState & JFrame.ICONIFIED) != 0) {
-
             switch (getSettings().getOnMinimizeAction()) {
-
             case TO_TASKBAR:
                 return;
             case TO_TRAY:
                 // let's hope that this does not flicker. works fine for win7
                 JDGui.getInstance().setWindowToTray(true);
                 // JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
-
             }
             // Frame was not iconified
         } else if ((oldState & JFrame.ICONIFIED) != 0 && (newState & JFrame.ICONIFIED) == 0) {
-
             // Frame was iconified
         }
     }
@@ -608,7 +526,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public void handleCommand(String command, String... parameters) {
-
     }
 
     private OnCloseAction windowClosedTray(final WindowEvent e) {
@@ -618,9 +535,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
         final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, T.JDGui_windowClosing_try_title(), T.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), T.JDGui_windowClosing_try_asnwer_close(), null);
-
         try {
-
             d.setLeftActions(new AppAction() {
                 {
                     setName(T.JDGui_windowClosing_try_answer_totaskbar());
@@ -630,7 +545,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 public void actionPerformed(ActionEvent e1) {
                     ret[0] = OnCloseAction.TO_TASKBAR;
                     d.dispose();
-
                 }
             }, new AppAction() {
                 {
@@ -640,7 +554,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                 @Override
                 public void actionPerformed(ActionEvent e1) {
-
                     ret[0] = OnCloseAction.TO_TRAY;
                     d.dispose();
                 }
@@ -650,7 +563,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (ret[0] == null) {
                 ret[0] = OnCloseAction.EXIT;
             }
-
         } catch (DialogNoAnswerException e1) {
             // set source to null in order to avoid further actions in - for example the Tray extension listsners
             e.setSource(null);
@@ -664,13 +576,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private OnCloseAction windowClosedTrayForMac(WindowEvent e) {
-
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
         final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, T.JDGui_windowClosing_try_title(), T.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), T.JDGui_windowClosing_try_asnwer_close(), null);
-
         try {
-
             d.setLeftActions(new AppAction() {
                 {
                     setName(T.JDGui_windowClosing_try_answer_totaskbar());
@@ -680,7 +589,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 public void actionPerformed(ActionEvent e1) {
                     ret[0] = OnCloseAction.TO_TASKBAR;
                     d.dispose();
-
                 }
             }, new AppAction() {
                 {
@@ -690,7 +598,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                 @Override
                 public void actionPerformed(ActionEvent e1) {
-
                     ret[0] = OnCloseAction.TO_TRAY;
                     d.dispose();
                 }
@@ -700,7 +607,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (ret[0] == null) {
                 ret[0] = OnCloseAction.EXIT;
             }
-
         } catch (DialogNoAnswerException e1) {
             // set source to null in order to avoid further actions in - for example the Tray extension listsners
             e.setSource(null);
@@ -760,9 +666,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public Icon _getIcon(int size) {
-
         return NewTheme.I().getIcon(getIconKey(), size);
-
     }
 
     @Override
@@ -772,7 +676,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public void _setEnabled(boolean b) throws StartException, StopException {
-
         setEnabled(b);
     }
 
@@ -781,7 +684,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public boolean isActive() {
-
         return trayIconPopup != null && trayIconPopup.hasBeenRecentlyActive();
     }
 
