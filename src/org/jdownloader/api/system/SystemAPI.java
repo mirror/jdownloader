@@ -1,7 +1,9 @@
 package org.jdownloader.api.system;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiNamespace;
+import org.jdownloader.myjdownloader.client.bindings.SystemInformationStorable;
 
 @ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.SystemInterface.NAMESPACE)
 public interface SystemAPI extends RemoteAPIInterface {
@@ -15,4 +17,7 @@ public interface SystemAPI extends RemoteAPIInterface {
     public void restartJD();
 
     public void exitJD();
+
+    @AllowNonStorableObjects
+    public SystemInformationStorable getSystemInfos();
 }

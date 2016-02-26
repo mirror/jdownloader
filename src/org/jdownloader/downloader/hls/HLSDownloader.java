@@ -13,6 +13,24 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -44,28 +62,10 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
 
-    private long                              bytesWritten = 0l;
+    private long                              bytesWritten   = 0l;
     private DownloadLinkDownloadable          downloadable;
     private final DownloadLink                link;
     private long                              startTimeStamp;
@@ -76,17 +76,17 @@ public class HLSDownloader extends DownloadInterface {
     private File                              outputFinalCompleteFile;
     private File                              outputPartFile;
 
-    private PluginException caughtPluginException;
-    private final String    m3uUrl;
-    private HttpServer      server;
+    private PluginException                   caughtPluginException;
+    private final String                      m3uUrl;
+    private HttpServer                        server;
 
-    private final Browser obr;
+    private final Browser                     obr;
 
-    protected long                          duration       = -1l;
-    protected int                           bitrate        = -1;
-    private long                            processID;
-    protected MeteredThrottledInputStream   meteredThrottledInputStream;
-    protected final AtomicReference<byte[]> instanceBuffer = new AtomicReference<byte[]>();
+    protected long                            duration       = -1l;
+    protected int                             bitrate        = -1;
+    private long                              processID;
+    protected MeteredThrottledInputStream     meteredThrottledInputStream;
+    protected final AtomicReference<byte[]>   instanceBuffer = new AtomicReference<byte[]>();
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
         this.m3uUrl = m3uUrl;
@@ -248,8 +248,13 @@ public class HLSDownloader extends DownloadInterface {
 
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } catch (FFMpegException e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage());
+        } catch (final FFMpegException e) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage()) {
+                @Override
+                public synchronized Throwable getCause() {
+                    return e;
+                }
+            };
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
