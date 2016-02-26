@@ -71,12 +71,10 @@ public class WindowsApplicationAdapter {
 
                         @Override
                         public void onDownloadWatchdogStateIsStopping() {
-                            stopDockUpdater();
                         }
 
                         @Override
                         public void onDownloadWatchdogStateIsStopped() {
-                            stopDockUpdater();
                         }
 
                         @Override
@@ -128,7 +126,7 @@ public class WindowsApplicationAdapter {
                     double lastPercent = -1;
                     try {
                         final JDownloaderMainFrame mainFrame = JDGui.getInstance().getMainFrame();
-                        while (WindowsApplicationAdapter.this.thread.get() == Thread.currentThread()) {
+                        while (WindowsApplicationAdapter.this.thread.get() == Thread.currentThread() && DownloadWatchDog.getInstance().isRunning()) {
                             final AggregatedNumbers aggn = new AggregatedNumbers(DownloadController.getInstance().getSelectionInfo());
                             final double percent;
                             if (aggn.getTotalBytes() > 0) {
