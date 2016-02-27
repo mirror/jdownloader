@@ -42,6 +42,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 
@@ -121,7 +122,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
             boolean containsPassword = allForm.hasInputFieldByName(passwordInputFieldName);
             String password = null;
             if (containsPassword) {
-                password = "decter";// Plugin.getUserInput(null, param);
+                password = Plugin.getUserInput(null, param);
                 if (StringUtils.isEmpty(password)) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
