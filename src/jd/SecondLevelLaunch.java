@@ -44,22 +44,6 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.resources.AWUTheme;
@@ -87,6 +71,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.os.CrossSystem;
@@ -110,7 +95,6 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.crosssystem.windows.WindowsApplicationAdapter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.gui.IconKey;
@@ -144,6 +128,22 @@ import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
 
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+
 public class SecondLevelLaunch {
     static {
         statics();
@@ -156,8 +156,8 @@ public class SecondLevelLaunch {
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
 
-    private static File                      FILE;
-    public final static long                 startup               = System.currentTimeMillis();
+    private static File      FILE;
+    public final static long startup = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
 
@@ -417,17 +417,21 @@ public class SecondLevelLaunch {
     }
 
     private static void initWindowsSpecials() {
-        if (!Application.isJared(null)) {
-            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
-                @Override
-                public void run() {
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
                     if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7)) {
-                        WindowsApplicationAdapter.getInstance();
+                        org.jdownloader.crosssystem.windows.WindowsApplicationAdapter.getInstance();
                     }
+                } catch (Throwable e) {
+                    Log.log(e);
                 }
-            });
-        }
+            }
+        });
+
     }
 
     private static void initLinuxSpecials() {
