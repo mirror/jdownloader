@@ -42,19 +42,17 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends antiDDoSForDecrypt {
 
-    private static final String RECAPTCHA      = "recaptcha/api/challenge";
-    private static final String ANICAPTCHA     = "/temp/anicaptcha/\\d+\\.gif";
-    private static final String CIRCLECAPTCHA  = "\"/classes/captcha/circlecaptcha\\.php\"";
-    private static final String PASSWORDTEXT   = "password";
-    private static final String PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>|<td class=\"error\">&bull; This password is invalid!\\s*</td>";
-    private String              aBrowser       = "";
+    private final String reCaptcha              = "recaptcha/api/challenge";
+    private final String aniCaptcha             = "/temp/anicaptcha/\\d+\\.gif";
+    private final String circleCaptcha          = "\"/classes/captcha/circlecaptcha\\.php\"";
+    private final String passwordInputFieldName = "password";
+    private String       aBrowser               = "";
 
     @Override
     protected boolean useRUA() {
@@ -120,60 +118,55 @@ public class NCryptIn extends antiDDoSForDecrypt {
                 }
             }
             br.getRequest().setHtmlCode(aBrowser);
-            boolean containsPassword = allForm.hasInputFieldByName(PASSWORDTEXT);
+            boolean containsPassword = allForm.hasInputFieldByName(passwordInputFieldName);
             String password = null;
             if (containsPassword) {
-                password = getPassword(param);
+                password = "decter";// Plugin.getUserInput(null, param);
                 if (StringUtils.isEmpty(password)) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
             }
-            boolean captcha = false;
             if (allForm != null) {
-                if (allForm.containsHTML(RECAPTCHA)) {
-                    captcha = true;
-                    for (int i = 0; i <= 3; i++) {
+                final int maxRetries = 3;
+                if (allForm.containsHTML(reCaptcha)) {
+                    for (int i = 0; i <= maxRetries; i++) {
                         final Recaptcha rc = new Recaptcha(br, this);
                         rc.parse();
                         final Form f = rc.getForm();
                         // password first because no point solving the captcha if user doesn't know the password!
                         if (containsPassword) {
-                            f.put(PASSWORDTEXT, Encoding.urlEncode(password));
+                            f.put(passwordInputFieldName, Encoding.urlEncode(password));
                         }
                         rc.load();
                         final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                         final String c = this.getCaptchaCode("recaptcha", cf, param);
-                        f.put("recaptcha_challenge_field", rc.getCaptchaAddress());
+                        f.put("recaptcha_challenge_field", rc.getChallenge());
                         f.put("recaptcha_response_field", Encoding.urlEncode(c));
                         submitForm(f);
-                        // they tell you when password is wrong
-                        if (new Regex(aBrowser, RECAPTCHA).matches()) {
-                            if (containsPassword) {
+                        // they show when password and captcha is incorrect.
+                        if (isPasswordIncorrect(containsPassword)) {
+                            // no retry
+                            throw new DecrypterException(DecrypterException.PASSWORD);
+                        } else if (isCaptchaIncorrect()) {
+                            invalidateLastChallengeResponse();
+                            if (i + 1 == maxRetries) {
                                 throw new DecrypterException(DecrypterException.CAPTCHA);
                             }
-                            invalidateLastChallengeResponse();
                             continue;
                         } else {
                             validateLastChallengeResponse();
+                            break;
                         }
-                        break;
                     }
-                    if (containsPassword && new Regex(aBrowser, PASSWORDFAILED).matches()) {
-                        throw new DecrypterException(DecrypterException.PASSWORD);
-                    }
-                    if (captcha && new Regex(aBrowser, RECAPTCHA).matches()) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                } else if (allForm.containsHTML(ANICAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
-                    captcha = true;
-                    for (int i = 0; i <= 3; i++) {
-                        final String captchaLink = new Regex(aBrowser, ANICAPTCHA).getMatch(-1);
+                } else if (allForm.containsHTML(aniCaptcha) && !allForm.containsHTML("recaptcha_challenge")) {
+                    for (int i = 0; i <= maxRetries; i++) {
+                        final String captchaLink = new Regex(aBrowser, aniCaptcha).getMatch(-1);
                         if (captchaLink == null) {
                             return null;
                         }
                         // password first because no point solving the captcha if user doesn't know the password!
                         if (containsPassword) {
-                            allForm.put(PASSWORDTEXT, Encoding.urlEncode(password));
+                            allForm.put(passwordInputFieldName, Encoding.urlEncode(password));
                         }
                         String code = null;
                         final File captchaFile = this.getLocalCaptchaFile(".gif");
@@ -189,28 +182,26 @@ public class NCryptIn extends antiDDoSForDecrypt {
                         // for some reason we post form twice
                         allForm.put("captcha", Encoding.urlEncode(code));
                         submitForm(allForm);
-                        if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                        // they show when password and captcha is incorrect.
+                        if (isPasswordIncorrect(containsPassword)) {
+                            // no retry
                             throw new DecrypterException(DecrypterException.PASSWORD);
-                        } else if (new Regex(aBrowser, ANICAPTCHA).matches()) {
+                        } else if (isCaptchaIncorrect()) {
                             invalidateLastChallengeResponse();
+                            if (i + 1 == maxRetries) {
+                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                            }
                             continue;
                         } else {
                             validateLastChallengeResponse();
+                            break;
                         }
-                        break;
                     }
-                    if (containsPassword && new Regex(aBrowser, PASSWORDFAILED).matches()) {
-                        throw new DecrypterException(DecrypterException.PASSWORD);
-                    }
-                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                } else if (allForm.containsHTML(CIRCLECAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
-                    captcha = true;
-                    for (int i = 0; i <= 3; i++) {
+                } else if (allForm.containsHTML(circleCaptcha) && !allForm.containsHTML("recaptcha_challenge")) {
+                    for (int i = 0; i <= maxRetries; i++) {
                         // password first because no point solving the captcha if user doesn't know the password!
                         if (containsPassword) {
-                            allForm.put(PASSWORDTEXT, Encoding.urlEncode(password));
+                            allForm.put(passwordInputFieldName, Encoding.urlEncode(password));
                         }
                         final File captchaFile = this.getLocalCaptchaFile(".png");
                         ClickedPoint cp = null;
@@ -226,40 +217,37 @@ public class NCryptIn extends antiDDoSForDecrypt {
                         allForm.put("circle.x", String.valueOf(cp.getX()));
                         allForm.put("circle.y", String.valueOf(cp.getY()));
                         submitForm(allForm);
-                        if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                        // they show when password and captcha is incorrect.
+                        if (isPasswordIncorrect(containsPassword)) {
+                            // no retry
                             throw new DecrypterException(DecrypterException.PASSWORD);
-                        } else if (new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
+                        } else if (isCaptchaIncorrect()) {
                             invalidateLastChallengeResponse();
+                            if (i + 1 == maxRetries) {
+                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                            }
                             continue;
                         } else {
                             validateLastChallengeResponse();
+                            break;
                         }
-                        break;
-                    }
-                    if (containsPassword && new Regex(aBrowser, PASSWORDFAILED).matches()) {
-                        throw new DecrypterException(DecrypterException.PASSWORD);
-                    }
-                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                    if (captcha && new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
                 } else if (containsPassword) {
-                    for (int i = 0; i <= 3; i++) {
-                        allForm.put(PASSWORDTEXT, Encoding.urlEncode(getPassword(param)));
+                    // this one has to be last!
+                    for (int i = 0; i <= maxRetries; i++) {
+                        allForm.put(passwordInputFieldName, Encoding.urlEncode(password));
                         submitForm(allForm);
-                        if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                        if (isPasswordIncorrect(containsPassword)) {
+                            if (i + 1 == maxRetries) {
+                                throw new DecrypterException(DecrypterException.PASSWORD);
+                            }
                             continue;
                         }
                         break;
                     }
-                    if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
-                        throw new DecrypterException(DecrypterException.PASSWORD);
-                    }
                 }
             }
-            String fpName = br.getRegex(">Filename:</span>(.*?)<br").getMatch(0);
+            String fpName = br.getRegex("<h1>(.*?)<img").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("title>nCrypt\\.in - (.*?)</tit").getMatch(0);
             }
@@ -291,7 +279,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
                 // Webprotection decryption
                 logger.info("ContainerID is null, trying webdecryption...");
                 br.setFollowRedirects(false);
-                String[] links = br.getRegex("\\'(http://ncrypt\\.in/link\\-.*?=)\\'").getColumn(0);
+                String[] links = br.getRegex("\\'(https?://ncrypt\\.in/link-.*?=)\\'").getColumn(0);
                 if (links == null || links.length == 0) {
                     links = br.getRegex("'(/link-\\d+)'").getColumn(0);
                 }
@@ -334,7 +322,20 @@ public class NCryptIn extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    public static String getValue(final InputField inputField) {
+    private boolean isCaptchaIncorrect() {
+        final boolean hasFailed = new Regex(aBrowser, "<td class=\"error\">&bull; The securitycheck was wrong!\\s*</td>").matches();
+        return hasFailed;
+    }
+
+    private boolean isPasswordIncorrect(final boolean containsPassword) {
+        if (!containsPassword) {
+            return false;
+        }
+        final boolean hasFailed = new Regex(aBrowser, "<td class=\"error\">&bull; This password is invalid!\\s*</td>").matches();
+        return hasFailed;
+    }
+
+    private String getValue(final InputField inputField) {
         if (inputField != null) {
             return Encoding.urlDecode(inputField.getValue(), false);
         }
@@ -347,11 +348,6 @@ public class NCryptIn extends antiDDoSForDecrypt {
         getPage(br, dcrypt.replace("link-", "frame-"));
         final String finallink = br.getRedirectLocation();
         return finallink;
-    }
-
-    private String getPassword(final CryptedLink param) throws DecrypterException {
-        final String passCode = Plugin.getUserInput(null, param);
-        return passCode;
     }
 
     public void haveFun(final Browser br) throws Exception {
