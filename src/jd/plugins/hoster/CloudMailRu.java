@@ -207,13 +207,13 @@ public class CloudMailRu extends PluginForHost {
                 dllink = getJson("body", br.toString());
             } else if (dl.getBooleanProperty("noapi", false)) {
                 br.getPage(getMainlink(dl));
-                final String json = br.getRegex("window\\.app = cloudBuilder\\((.*?)\\);").getMatch(0);
+                final String json = br.getRegex("(\\{\\s*\"tree\":.*?)\\);").getMatch(0);
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
                 final LinkedHashMap<String, Object> folders = (LinkedHashMap<String, Object>) entries.get("folders");
-                final LinkedHashMap<String, Object> folder = (LinkedHashMap<String, Object>) folders.get("folder");
+                final LinkedHashMap<String, Object> folder = (LinkedHashMap<String, Object>) entries.get("folder");
                 final ArrayList<Object> list = (ArrayList) folder.get("list");
                 for (final Object o : list) {
                     final LinkedHashMap<String, Object> filemap = (LinkedHashMap<String, Object>) o;
