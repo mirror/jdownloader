@@ -25,12 +25,24 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.UpdateController;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import jd.config.SubConfiguration;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.QueryInfo;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -43,21 +55,10 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.updatev2.UpdateController;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
 public class D extends PluginsC {
 
-    private byte[]                  b3;
-    private byte[]                  d;
+    private byte[] b3;
+    private byte[] d;
 
     private HashMap<String, String> header;
 
@@ -179,19 +180,23 @@ public class D extends PluginsC {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_java", "DLC: Outdated Javaversion ") + e.getMessage() + " ";
 
                 } catch (MalformedURLException e) {
-                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
+                    // occured",e);
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_url", "DLC: URL Fehler: ") + e.getMessage() + " ";
                 } catch (IOException e) {
-                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
+                    // occured",e);
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_io", "DLC: Server Fehler(offline? ") + e.getMessage() + " ";
 
                 } catch (SAXException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (1) ") + " ";
 
-                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
+                    // occured",e);
                 } catch (ParserConfigurationException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (2)") + " ";
-                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
+                    // occured",e);
                 }
 
                 catch (Exception e) {
@@ -302,7 +307,7 @@ public class D extends PluginsC {
 
     // private String cs2(String s, String m) throws IOException {
     //
-    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Call  " + s);
+    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Call " + s);
     // Browser br = new Browser();
     //
     // String rk = br.postPage(s, "dt=jdtc&st=dlc&d=" + Encoding.urlEncode(m));
@@ -379,7 +384,8 @@ public class D extends PluginsC {
             br.getHeaders().put("rev", JDUtilities.getRevision());
 
             //
-            br.postPage(s9 + "", "destType=jdtc6&b=" + UpdateController.getInstance().getAppID() + "&srcType=dlc&data=" + bin + "&v=" + JDUtilities.getRevision());
+            QueryInfo qi = new QueryInfo().addAndReplace("destType", "jdtc6").addAndReplace("b", Encoding.urlEncode(UpdateController.getInstance().getAppID())).addAndReplace("srcType", "dlc").addAndReplace("data", Encoding.urlEncode(bin)).addAndReplace("v", JDUtilities.getRevision());
+            br.postPage(s9 + "", qi);
 
             // 3f69b642cc403506ff1ee7f22b23ce40
             // new byte[]{(byte) 0xef, (byte) 0xe9, (byte) 0x0a, (byte) 0x8e,
