@@ -1,15 +1,25 @@
+##Synthetica Look and Feel License##
+//This license is Limited to Products created and distributed by AppWork GmbH (http://appwork.org)
+Licensee=AppWork GmbH
+LicenseRegistrationNumber=112044
+Product=Synthetica
+LicenseType=Enterprise Site License
+ExpireDate=--.--.----
+MaxVersion=2.29.999
+
+
 http://www.javasoft.de/jsf/public/products/synthetica/license
 
                        JAVASOFT  SOFTWARE  ENGINEERING
              Synthetica Single Developer Software License Agreement
 
-This  License   Agreement  (the   “Agreement”)  is   between  JAVASOFT  Software
+This  License   Agreement  (the   ï¿½Agreementï¿½)  is   between  JAVASOFT  Software
  Engineering  with a  principal place  of business  at St.-Martin-Weg  4, 86874
- Tussenhausen, GERMANY (“Licensor”), and the customer ("Licensee") identified on
+ Tussenhausen, GERMANY (ï¿½Licensorï¿½), and the customer ("Licensee") identified on
  the electronic order form submitted on behalf of Licensee (the "Order Form"). 
 
 Licensor  agrees  to  license  its  Synthetica  Look  and  Feel  software   (the
- “Software”)  to  Licensee on  the  terms and  conditions  described more  fully
+ ï¿½Softwareï¿½)  to  Licensee on  the  terms and  conditions  described more  fully
  herein. Software means a complete and unchanged copy of the object code version
  of the Synthetica software (including images) identified in the Order Form  and
  posted on a download page of the Synthetica website (the "Download Page")  made
@@ -22,13 +32,13 @@ By installing, copying, or otherwise using the Software, you are agreeing to  be
 1.License  Grant.  Licensor  grants to  Licensee a  limited, non-exclusive,  non
  -transferable, and worldwide right  to (a)  use, publicly  perform, display and
  support the Software, and  (b) to copy, make  derivative works of, market,  and
- distribute any portion  of the Software  directly and indirectly  to Licensee’s
+ distribute any portion  of the Software  directly and indirectly  to Licenseeï¿½s
  end user customer in connection with  or as part of a Licensee  product without
  modifying the Software.
 
 2.Restrictions.  Licensee shall not (a) provide its end user customers (each, an
- “End User”)  with any  versions of  the Software  on a  stand-alone basis;  (b)
- sublicense, transfer  or assign  this License  Agreement or  any of  Licensee’s
+ ï¿½End Userï¿½)  with any  versions of  the Software  on a  stand-alone basis;  (b)
+ sublicense, transfer  or assign  this License  Agreement or  any of  Licenseeï¿½s
  rights or obligations under  this License Agreement, in  whole or in part;  (c)
  remove or obscure any copyright and trademark notices relating to the Software;
  (d) lease, license, use, make available,  distribute or modify all or any  part
@@ -77,11 +87,11 @@ By installing, copying, or otherwise using the Software, you are agreeing to  be
  minor  revisions of  the Software  (b) bug  fixes for  errors that  render the
  Software inoperative, that cause failure in a production environment.
 
-(b)In addition, upon Licensee’s  request, Licensor shall provide  e-mail support
+(b)In addition, upon Licenseeï¿½s  request, Licensor shall provide  e-mail support
  to Licensee with regard to the Software. Licensee shall pay Licensor a  Support
  Fee  as specified  in the  Order Form  for each  year of  support. Such  e-mail
  support shall entitle Licensee to receive a satisfactory response from Licensor
- within five (5) days of Licensee’s request for assistance.
+ within five (5) days of Licenseeï¿½s request for assistance.
 
 (c)Upgrades to Software major releases are  not part of this agreement. In  case
  of Licensee requires a major upgrade a license agreement renewal is necessary.
@@ -114,7 +124,7 @@ By installing, copying, or otherwise using the Software, you are agreeing to  be
  Software shall  conform in  all material  respects with  the description of the
  Software set forth in the documentation.
 
-(d)Services Warranty.  Licensor represents and warrants that each of  Licensor’s
+(d)Services Warranty.  Licensor represents and warrants that each of  Licensorï¿½s
  employees,  agents  and  subcontractors   assigned  to  perform  any   services
  hereunder, including training  or maintenance services,  shall have the  proper
  skills, training, and  professional background to  perform such services,  that
@@ -175,7 +185,7 @@ By installing, copying, or otherwise using the Software, you are agreeing to  be
  THIS AGREEMENT.
 
 10.Authority.  Each party to this Agreement represents that the person executing
- this Agreement on such party’s  behalf is authorized to execute  this Agreement
+ this Agreement on such partyï¿½s  behalf is authorized to execute  this Agreement
  and upon execution this Agreement shall be a valid and binding agreement of the
  parties enforceable in accordance with its terms.
 
