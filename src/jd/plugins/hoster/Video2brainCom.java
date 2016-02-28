@@ -27,6 +27,9 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -162,20 +165,27 @@ public class Video2brainCom extends PluginForHost {
         /* User-Agent is not necessarily needed! */
         br2.getHeaders().put("User-Agent", "iPad");
         boolean http_url_is_okay = false;
-        String html5_http_url = this.br.getRegex("<video src=\\'(http[^<>\"\\']+)\\'").getMatch(0);
+        final String html5_http_url_plain = this.br.getRegex("<video src=\\'(http[^<>\"\\']+)\\'").getMatch(0);
+        String html5_http_url_full = null;
         final String access_exp = this.br.getRegex("Video\\.access_exp[\t\n\r ]*?=[\t\n\r ]*?(\\d+);").getMatch(0);
         final String access_hash = this.br.getRegex("Video\\.access_hash[\t\n\r ]*?=[\t\n\r ]*?\"([a-f0-9]+)\";").getMatch(0);
+        final String token = jd.plugins.hoster.Video2brainCom.getToken(this.br);
+        String postData = "";
+        if (token != null) {
+            postData = "token=" + Encoding.urlEncode(token) + "&";
+        }
         try {
             prepareAjaxRequest(br2);
             /* Not necessarily needed */
-            br2.postPage("https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", "video_id=" + videoid);
+            br2.postPage("https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData + "video_id=" + videoid);
         } catch (final Throwable e) {
         }
-        if (html5_http_url != null && access_exp != null && access_hash != null) {
+        if (html5_http_url_plain != null && access_exp != null && access_hash != null) {
+            /* 2016-02-28: TODO: Fix this handling! */
             /* Let's try to build our http url first - we can still fallback to rtmp if this fails! */
             /* They usually only use these urls for Apple devices. */
             try {
-                final String postData = "expire=1&path=" + Encoding.urlEncode(html5_http_url) + "&access_exp=" + access_exp + "&access_hash=" + access_hash;
+                postData += "expire=1&path=" + Encoding.urlEncode(html5_http_url_plain) + "&access_exp=" + access_exp + "&access_hash=" + access_hash;
                 /*
                  * E.g. call for officially available downloads:
                  * https://www.video2brain.com/de/custom/modules/product/product_ajax.cfc?method
@@ -186,14 +196,19 @@ public class Video2brainCom extends PluginForHost {
                 br2.postPage("https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData);
                 final String final_http_url_token = br2.getRegex("\"([^<>\"\\'\\\\]+)").getMatch(0);
                 if (final_http_url_token != null) {
-                    html5_http_url += "?" + final_http_url_token;
+                    html5_http_url_full = html5_http_url_plain + "?" + final_http_url_token;
                     URLConnectionAdapter con = null;
                     try {
                         /* Remove old headers/cookies - not necessarily needed! */
                         br2 = newBrowser(new Browser());
                         br2.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
                         br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-                        con = br2.openHeadConnection(html5_http_url);
+                        try {
+                            /* Quickly access url without token (as website does) */
+                            con = br2.openGetConnection(html5_http_url_plain);
+                        } catch (final Throwable e) {
+                        }
+                        con = br2.openHeadConnection(html5_http_url_full);
                         if (con.isOK() && !con.getContentType().contains("html")) {
                             http_url_is_okay = true;
                         }
@@ -207,7 +222,7 @@ public class Video2brainCom extends PluginForHost {
 
         if (http_url_is_okay) {
             /* Prefer http - quality-wise rtmp and http are the same! */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, html5_http_url, RESUME_HTTP, MAXCHUNKS_HTTP);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, html5_http_url_plain, RESUME_HTTP, MAXCHUNKS_HTTP);
             if (dl.getConnection().getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
@@ -255,7 +270,6 @@ public class Video2brainCom extends PluginForHost {
 
     private static Object LOCK = new Object();
 
-    @SuppressWarnings("deprecation")
     public static void login(Browser br, final Account account) throws Exception {
         synchronized (LOCK) {
             try {
@@ -288,7 +302,34 @@ public class Video2brainCom extends PluginForHost {
                         }
                     }
                 } else {
-                    br.postPage("https://www." + domain + "/de/custom/modules/user/user_ajax.cfc?method=login", "set_cookie=true&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    br.getPage("https://www." + domain + "/de/login");
+                    Form loginform = br.getFormbyProperty("id", "login_form");
+                    if (loginform == null) {
+                        loginform = new Form();
+                        loginform.setMethod(MethodType.POST);
+                    }
+                    /* Fix action */
+                    if (loginform.getAction() == null || loginform.getAction().isEmpty()) {
+                        loginform.setAction("/de/custom/modules/user/user_ajax.cfc?method=login");
+                    }
+                    /* Remove trash fields */
+                    loginform.remove("v2b_userpassword");
+                    final String token = getToken(br);
+                    /* Fix token */
+                    final InputField tokenfield = loginform.getInputFieldByName("sectoken");
+                    if (tokenfield != null) {
+                        loginform.remove("sectoken");
+                    }
+                    if (token != null) {
+                        loginform.put("token", Encoding.urlEncode(token));
+                    }
+                    /* Add logindata */
+                    loginform.put("email", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    loginform.put("set_cookie", "true");
+                    /* Prepare Headers */
+                    prepAjaxHeaders(br);
+                    br.submitForm(loginform);
                     /* TODO: Maybe make sure this also works for users of other countries! */
                     if (br.getCookie(domain, "V2B_USER_DE") == null) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -314,8 +355,29 @@ public class Video2brainCom extends PluginForHost {
         }
     }
 
+    public static void prepAjaxHeaders(final Browser br) {
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+    }
+
+    public static String getToken(final Browser br) {
+        /* Usually needed for logín */
+        String token = br.getRegex("var[\t\n\r ]*?ajftok[\t\n\r ]*?=[\t\n\r ]*?\"([^<>\"]+)\";").getMatch(0);
+        if (token == null) {
+            /* Usually needed for all other json requests */
+            token = br.getRegex("var[\t\n\r ]*?ajtok[\t\n\r ]*?=[\t\n\r ]*?\"([^<>\"]+)\";").getMatch(0);
+        }
+        return token;
+    }
+
     private static Browser newBrowser(final Browser br) {
         br.setFollowRedirects(true);
+        /* Some unnecessary cookies */
+        br.setCookie(domain, "v2babde", "A");
+        br.setCookie(domain, "v2babes", "A");
+        br.setCookie(domain, "v2babfr", "B");
+        br.setCookie(domain, "GA_INIT", "1");
         return br;
     }
 
@@ -339,7 +401,7 @@ public class Video2brainCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         if (br.containsHTML("class=\"subscription btn green\"")) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
+            ai.setStatus("Free Account (Account ohne Abo)");
         } else {
             /* TODO: Add expire date support if possible */
             // final String expire = br.getRegex("").getMatch(0);
@@ -354,7 +416,7 @@ public class Video2brainCom extends PluginForHost {
             // }
             // }
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
+            ai.setStatus("Premium Account (Account mit Abo)");
         }
         account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
