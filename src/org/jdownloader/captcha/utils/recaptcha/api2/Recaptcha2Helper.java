@@ -4,12 +4,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -17,9 +19,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
 
 public class Recaptcha2Helper {
 
@@ -56,7 +55,7 @@ public class Recaptcha2Helper {
 
     public void init(final Browser br) throws RecaptchaException, IOException {
         this.br = br.cloneBrowser();
-        this.host = new URL(br.getURL()).getHost();
+        this.host = br._getURL().getHost();
         this.siteKey = new Regex(br.toString(), "data-sitekey\\s*=\\s*\"([^\"]+)").getMatch(0);
         if (isEmpty(siteKey)) {
             throw new RecaptchaException("Parsing Error: Could not find data-sitekey");
@@ -71,8 +70,8 @@ public class Recaptcha2Helper {
      * Browser can be null and new Browser session will be used. Be aware it will be using JDownloader default User-Agent <br />
      * Provided Browser referer is nullfied. <br />
      * Host can be null only when existing Browser is provided, host will be determined from current URL. <br />
-     * 
-     * 
+     *
+     *
      * @author raztoki
      * @param br
      * @param siteKey
@@ -91,7 +90,7 @@ public class Recaptcha2Helper {
             this.br = new Browser();
         } else {
             if (host == null) {
-                final String brHost = new URL(br.getURL()).getHost();
+                final String brHost = br._getURL().getHost();
                 if (brHost == null) {
                     throw new RecaptchaException("'host' can not be determined!");
                 } else {
