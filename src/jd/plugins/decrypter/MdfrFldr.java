@@ -170,7 +170,7 @@ public class MdfrFldr extends PluginForDecrypt {
                 String name = getXML("filename", browser);
                 String size = getXML("size", browser);
                 if (name != null) {
-                    link.setName(Encoding.htmlDecode(name));
+                    link.setFinalFileName(Encoding.htmlDecode(name));
                 } else {
                     link.setName(id);
                 }

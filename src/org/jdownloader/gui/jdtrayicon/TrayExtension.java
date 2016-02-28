@@ -43,12 +43,6 @@ import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainFrameClosingHandler;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-import jd.plugins.AddonPanel;
-
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -81,6 +75,12 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
+import jd.plugins.AddonPanel;
+
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
     @Override
     public boolean isHeadlessRunnable() {
@@ -89,7 +89,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     protected void stop() throws StopException {
-
         removeTrayIcon();
         if (guiFrame != null) {
             JDGui.getInstance().setClosingHandler(null);
