@@ -350,6 +350,7 @@ public class MediafireCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -409,6 +410,7 @@ public class MediafireCom extends PluginForHost {
                 handleNonAPIErrors(downloadLink, br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl.setFilenameFix(true);
             dl.startDownload();
         }
     }
@@ -697,7 +699,7 @@ public class MediafireCom extends PluginForHost {
                             final String privacy = JSonUtils.getJson(result, "privacy");
                             final String pass = JSonUtils.getJson(result, "password_protected");
                             if (StringUtils.isNotEmpty(name)) {
-                                dl.setName(name);
+                                dl.setFinalFileName(name);
                             }
                             if (size != null && size.matches("^\\d+$")) {
                                 dl.setVerifiedFileSize(Long.parseLong(size));
