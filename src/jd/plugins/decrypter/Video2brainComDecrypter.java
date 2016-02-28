@@ -116,7 +116,7 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                 /* Remove js escape */
                 this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
             }
-            String[] htmls = br.getRegex("class=\"video\\-title lvl\\-3 \"(.*?)class=\"additional\\-wrapper\"").getColumn(0);
+            String[] htmls = br.getRegex("class=\"video\\-title lvl\\-\\d+ \"(.*?)class=\"additional\\-wrapper\"").getColumn(0);
             if (htmls != null) {
                 for (final String html : htmls) {
                     String title = new Regex(html, "<strong>([^<>\"]+)</strong></a>").getMatch(0);

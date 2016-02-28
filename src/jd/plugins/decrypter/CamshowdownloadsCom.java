@@ -42,27 +42,25 @@ public class CamshowdownloadsCom extends antiDDoSForDecrypt {
         }
         // String fpName = br.getRegex("").getMatch(0);
         final String[] links = br.getRegex("\"(/dl/[^<>\"]*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        br.setFollowRedirects(false);
-        for (final String singleLink : links) {
-            if (this.isAbort()) {
-                return decryptedLinks;
+        if (links != null && links.length > 0) {
+            br.setFollowRedirects(false);
+            for (final String singleLink : links) {
+                if (this.isAbort()) {
+                    return decryptedLinks;
+                }
+                getPage(singleLink);
+                final String finallink = this.br.getRedirectLocation();
+                if (finallink != null) {
+                    decryptedLinks.add(createDownloadlink(finallink));
+                }
             }
-            getPage(singleLink);
-            final String finallink = this.br.getRedirectLocation();
-            if (finallink != null) {
-                decryptedLinks.add(createDownloadlink(finallink));
-            }
-        }
 
-        // if (fpName != null) {
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(Encoding.htmlDecode(fpName.trim()));
-        // fp.addLinks(decryptedLinks);
-        // }
+            // if (fpName != null) {
+            // final FilePackage fp = FilePackage.getInstance();
+            // fp.setName(Encoding.htmlDecode(fpName.trim()));
+            // fp.addLinks(decryptedLinks);
+            // }
+        }
 
         return decryptedLinks;
     }

@@ -88,6 +88,11 @@ public class Video2brainCom extends PluginForHost {
         if (aa != null) {
             login(this.br, aa);
         }
+        /*
+         * 2nd way to get videoinfo if videoid is given:
+         * https://www.video2brain.com/de/custom/modules/feedback/feedback_ajax.cfc?method=renderFeedbackFormJSON&type=video&id=19752
+         */
+        /* 2rd way to get videoinfo if videoid is given: https://www.video2brain.com/de/video-info-19752.xml */
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* 404 - standard offline */
