@@ -383,6 +383,9 @@ public class Video2brainCom extends PluginForHost {
         br.setCookie(domain, "v2babes", "A");
         br.setCookie(domain, "v2babfr", "B");
         br.setCookie(domain, "GA_INIT", "1");
+        /* Set higher timeout value as servers are often slow/overloaded */
+        br.setReadTimeout(1 * 60 * 1000);
+        br.setConnectTimeout(1 * 60 * 1000);
         return br;
     }
 
