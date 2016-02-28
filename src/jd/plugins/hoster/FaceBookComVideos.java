@@ -17,13 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.storage.simplejson.JSonUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
@@ -45,7 +42,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?(facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+|facebook\\.com/download/\\d+)" }, flags = { 2 })
@@ -364,14 +361,13 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private String getHigh() {
-        return br.getRegex("%22hd_src%22%3A%22(http[^<>\"\\']*?)%22").getMatch(0);
+        final String result = PluginJSonUtils.getJson(br, "hd_src");
+        return result;
     }
 
     private String getLow() {
-        final String dllink = br.getRegex("%22sd_src%22%3A%22(http[^<>\"\\']*?)%22").getMatch(0);
-        // if (dllink == null) dllink =
-        // br.getRegex("\\\\u002522sd_src\\\\u002522\\\\u00253A\\\\u002522(http[^<>\"/]*?)\\\\u002522\\\\u00252C\\\\u002522thumbnail_src").getMatch(0);
-        return dllink;
+        final String result = PluginJSonUtils.getJson(br, "sd_src");
+        return result;
     }
 
     @Override
@@ -390,31 +386,21 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     public void handleVideo(final DownloadLink downloadLink) throws Exception {
-        if (dllink == null) {
-            boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD);
-            br.getRequest().setHtmlCode(unescape(br.toString()));
-            if (preferHD) {
-                dllink = getHigh();
-                if (dllink == null) {
-                    dllink = getLow();
-                }
-            } else {
+        boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD);
+        if (preferHD) {
+            dllink = getHigh();
+            if (dllink == null) {
                 dllink = getLow();
-                if (dllink == null) {
-                    dllink = getHigh();
-                }
             }
+        } else {
+            dllink = getLow();
             if (dllink == null) {
-                logger.warning("Final downloadlink (dllink) is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = getHigh();
             }
-            dllink = Encoding.urlDecode(decodeUnicode(dllink), true);
-            dllink = Encoding.htmlDecode(dllink);
-            dllink = JSonUtils.unescape(dllink);
-            if (dllink == null) {
-                logger.warning("Final downloadlink (dllink) is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink \"dllink\" is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting download...");
         final String Vollkornkeks = downloadLink.getDownloadURL().replace(FACEBOOKMAINPAGE, "");
@@ -684,34 +670,12 @@ public class FaceBookComVideos extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_ALBUM_NAME_IN_FILENAME, JDL.L("plugins.hoster.facebookcomvideos.usealbumnameinfilename", "Photos: Use album name in filename [note that filenames change once the download starts]?")).setDefaultValue(true));
     }
 
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
-    public String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
-        }
-        return res;
-    }
-
     private static String getUser(final Browser br) {
         return jd.plugins.decrypter.FaceBookComGallery.getUser(br);
     }
 
     private String getajaxpipeToken() {
-        return br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
+        return PluginJSonUtils.getJson(br, "ajaxpipe_token");
     }
 
     private void checkFeatureDialog() {
