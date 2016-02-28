@@ -103,13 +103,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Captcha for %s1 to continue!" })
     String gui_captchaWindow_askForInput(String hoster);
 
-    @Default(lngs = { "en", "de" }, values = { "Enable shared IP workaround?", "Aktiviere shared IP workaround?\r\nSofern du deine share-online Accounts mit einem VPN benutzt oder mit Freunden teilst kann dieser von share-online temporär gesperrt werden.\r\nEr wird dann normalerweise auch in JDownloader temporär deaktiviert.\r\nDiese Einstellung bewirkt, dass der Account aktiv bleibt und die Downloads nach einiger Zeit erneut versucht werden." })
+    @Default(lngs = { "en", "de" }, values = { "<html>Enable shared IP workaround?</html>", "<html>Aktiviere shared IP workaround?<br />Sofern du deine share-online Accounts mit einem VPN benutzt oder mit Freunden teilst kann dieser von share-online temporär gesperrt werden.<br />Er wird dann normalerweise auch in JDownloader temporär deaktiviert.<br />Diese Einstellung bewirkt, dass der Account aktiv bleibt und die Downloads nach einiger Zeit erneut versucht werden.</html>" })
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
-    @Default(lngs = { "en", "de" }, values = { "Enable traffic workaround?", "Aktiviere traffic workaround?\r\nShare-Online.biz hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man gedrosselt weiter herunterladen.\r\nNormalerweise deaktiviert JDownloader Accounts ohne Traffic - wenn aktiviert werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet." })
+    @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?</html>", "<html>Aktiviere traffic workaround?<br />Share-Online.biz hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts ohne Traffic - wenn aktiviert werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.</html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
-    @Default(lngs = { "en", "de" }, values = { "Prefer HTTPS communication? Only available for premium user and will be limited in speed.", "Bevorzuge sichere Kommunikation per HTTPS?\r\nVerringert die Downloadgeschwindigkeit und ist nur für Premium Nutzer verfügbar!" })
+    @Default(lngs = { "en", "de" }, values = { "<html>Prefer HTTPS communication?<br />Only available for premium user and will be limited in speed.</html>", "<html>Bevorzuge sichere Kommunikation per HTTPS?<br />Verringert die Downloadgeschwindigkeit und ist nur für Premium Nutzer verfügbar!</html>" })
     String gui_plugin_settings_share_online_traffic_premium_prefer_https();
 
     @Default(lngs = { "en" }, values = { "Host/IP/Address" })
@@ -6100,26 +6100,20 @@ public interface GuiTranslation extends TranslateInterface {
     String DockProgressDisplay_connections_and_progress();
 
     @Default(lngs = { "en" }, values = { "Click here to find your ID/PIN" })
-
     String premiumize_add_account_click_here();
 
     @Default(lngs = { "en" }, values = { "ID: (must be 9 digis)" })
-
     String premiumize_add_account_idlabel();
 
     @Default(lngs = { "en" }, values = { "Please enter valid account information first." })
-
     String add_or_edit_account_dialog_ok_button_tooltip_bad_input();
 
     @Default(lngs = { "en" }, values = { "Subtitle: %s1 [%s2]" })
-
     String YoutubeDash_getName_subtitles_annotated(String displayName, String annotation);
 
     @Default(lngs = { "en" }, values = { "translated" })
-
     String lit_translated();
 
     @Default(lngs = { "en" }, values = { "Speech2Text" })
-
     String lit_speedtotext();
 }

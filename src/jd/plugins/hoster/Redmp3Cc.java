@@ -68,8 +68,14 @@ public class Redmp3Cc extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "redmp3\\.cc/(\\d+)/").getMatch(0);
-            dllink = "http://redmp3.cc/findfile/?id=" + fid + "&v=2.1";
+            dllink = this.br.getRegex("\"(/findfile/\\?id=[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                final String fid = new Regex(downloadLink.getDownloadURL(), "redmp3\\.cc/(\\d+)/").getMatch(0);
+                dllink = "http://redmp3.cc/findfile/?id=" + fid + "&v=2.1";
+            }
+        }
+        if (!dllink.startsWith("http")) {
+            dllink = "http://redmp3.cc" + dllink;
         }
         // if (dllink == null) {
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
