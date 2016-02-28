@@ -22,6 +22,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,16 +43,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }, flags = { 0 })
 public class Rlnks extends PluginForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "relink.to", "relink.us" };
+    }
 
     private Form         allForm = null;
     public static Object LOCK    = new Object();
+    private final String domains = "relink\\.(?:us|to)";
 
     public Rlnks(final PluginWrapper wrapper) {
         super(wrapper);
@@ -66,15 +72,17 @@ public class Rlnks extends PluginForDecrypt {
 
     private String correctCryptedLink(final String input) {
         return input.replaceAll("(go|view|container_captcha)\\.php\\?id=", "f/");
+        // they are not redirecting as of yet.
+        // .replace("relink.us/", getHost() + "/");
     }
 
     private boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        final String containerURL = new Regex(page, "(download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
+        final String containerURL = new Regex(page, "(/download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
         if (containerURL != null) {
             final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             final Browser browser = br.cloneBrowser();
             browser.getHeaders().put("Referer", cryptedLink);
-            browser.getDownload(container, "http://relink.us/" + Encoding.htmlDecode(containerURL));
+            browser.getDownload(container, Encoding.htmlDecode(containerURL));
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return decryptedLinks.isEmpty() ? false : true;
@@ -86,19 +94,19 @@ public class Rlnks extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         synchronized (LOCK) {
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            final String parameter = correctCryptedLink(param.toString().replace(".to/", ".us/"));
+            final String parameter = correctCryptedLink(param.toString());
             setBrowserExclusive();
             br.setFollowRedirects(true);
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
 
             /* Handle Captcha and/or password */
             handleCaptchaAndPassword(parameter, param);
-            if (!br.getURL().contains("relink.us/")) {
+            if (!new Regex(br.getURL(), domains).matches()) {
                 validateLastChallengeResponse();
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            if (br.containsHTML("<title>404</title>") || this.br.getURL().contains("relink.us/notfound.php")) {
+            if (br.containsHTML("<title>404</title>") || br.getURL().endsWith("/notfound.php")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
@@ -165,7 +173,7 @@ public class Rlnks extends PluginForDecrypt {
                 decryptLinks(decryptedLinks, param);
                 final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
                 for (final String link : more_links) {
-                    br.getPage("http://relink.us/" + link);
+                    br.getPage(link);
                     decryptLinks(decryptedLinks, param);
                 }
             }
@@ -187,13 +195,13 @@ public class Rlnks extends PluginForDecrypt {
             Browser brc = null;
             for (final String match : matches) {
                 Thread.sleep(2333);
-                handleCaptchaAndPassword("http://www.relink.us/frame.php?" + match, param);
+                handleCaptchaAndPassword("/frame.php?" + match, param);
                 if (allForm != null && allForm.getRegex("captcha").matches()) {
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
                     continue;
                 }
                 brc = br.cloneBrowser();
-                if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
+                if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().matches(".*?" + domains + "/getfile.*?")) {
                     brc.getPage(brc.getRedirectLocation());
                 }
                 if (brc.getRedirectLocation() != null) {
@@ -225,7 +233,7 @@ public class Rlnks extends PluginForDecrypt {
         // 20150120 - raztoki
         if (allForm == null && br.containsHTML(">Please Wait\\.\\.\\.<") && br.containsHTML("class=\"timer\">\\d+</span>\\s*seconds</div>")) {
             // pile of redirects happen here
-            final String link = br.getRegex("class=\"timer\">\\d+</span>\\s*seconds</div>\\s*<a href=\"\\s*(https?://(\\w+\\.)?relink\\.us/.*?)\\s*\"").getMatch(0);
+            final String link = br.getRegex("class=\"timer\">\\d+</span>\\s*seconds</div>\\s*<a href=\"\\s*(https?://(\\w+\\.)?" + domains + "/.*?)\\s*\"").getMatch(0);
             if (link != null) {
                 br.getPage(link.trim());
                 allForm = br.getFormbyProperty("name", "form");
@@ -238,7 +246,7 @@ public class Rlnks extends PluginForDecrypt {
 
         if (b) {
             allForm = br.getForm(0);
-            allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?relink\\.us/container_password\\.php.*") ? allForm : null;
+            allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?" + domains + "/container_password\\.php.*") ? allForm : null;
         }
         if (allForm != null) {
             for (int i = 0; i < 5; i++) {
@@ -253,8 +261,8 @@ public class Rlnks extends PluginForDecrypt {
                         break;
                     }
                     final File captchaFile = this.getLocalCaptchaFile();
-                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.relink.us/" + captchaLink));
-                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, "relink.us | " + String.valueOf(i + 1) + "/5", null);
+                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/" + captchaLink));
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/5", null);
                     allForm.put("button.x", String.valueOf(cp.getX()));
                     allForm.put("button.y", String.valueOf(cp.getY()));
                 }
