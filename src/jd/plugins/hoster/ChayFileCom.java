@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chayfile.com" }, urls = { "https?://(www\\.)?chayfile\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chayfile.com" }, urls = { "https?://(www\\.)?chayfile\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class ChayFileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -113,7 +113,10 @@ public class ChayFileCom extends PluginForHost {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         }
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
+        final String downloadurl = COOKIE_HOST + "/" + fid;
+        final String contenturl = downloadurl + ".html";
+        link.setUrlDownload(downloadurl);
+        link.setContentUrl(contenturl);
     }
 
     @Override
