@@ -73,6 +73,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         br = new Browser();
+        dupe.clear();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("open-", "folder-").replace("urlcrypt.com/", "ncrypt.in/");
         try {
@@ -119,7 +120,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
                 }
             }
             br.getRequest().setHtmlCode(aBrowser);
-            boolean containsPassword = allForm.hasInputFieldByName(passwordInputFieldName);
+            boolean containsPassword = allForm == null ? false : allForm.hasInputFieldByName(passwordInputFieldName);
             String password = null;
             if (containsPassword) {
                 password = Plugin.getUserInput(null, param);
@@ -267,7 +268,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
                     final String containerHash = new Regex(containerLink, regexContainer).getMatch(0);
                     if (!dupeContainers.contains(containerHash)) {
                         // need to find a container with a result first.
-                        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+                        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
                         links.addAll(loadcontainer(containerLink));
                         if (!links.isEmpty()) {
                             decryptedLinks.addAll(links);
