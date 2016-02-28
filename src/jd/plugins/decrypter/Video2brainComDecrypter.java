@@ -75,15 +75,21 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         jd.plugins.hoster.Video2brainCom.prepareAjaxRequest(this.br);
+        final String token = jd.plugins.hoster.Video2brainCom.getToken(this.br);
         final String json_update_loader_function_name = br.getRegex("Video\\.(updateWeeklySeriesEpisodes|updateDocumentaryProductChapters)").getMatch(0);
+        String postData = "";
+        if (token != null) {
+            postData += "token=" + Encoding.urlEncode(token) + "&";
+        }
         if (json_update_loader_function_name != null && videoid_first_video != null) {
             /*
              * Find all chapters (= single videos - same URL structure as normal courses but for some reason they are called 'Chapters'
              * here)
              */
-            final String postData = "product_id=" + productid + "&active_video_id=" + videoid_first_video;
+            postData += "product_id=" + productid + "&active_video_id=" + videoid_first_video;
             /* Works fine via GET request too */
             final String postURL = "/" + url_language + "/custom/modules/video/video_ajax.cfc?method=" + json_update_loader_function_name + "JSON";
+            jd.plugins.hoster.Video2brainCom.prepAjaxHeaders(this.br);
             this.br.postPage(postURL, postData);
             /* E.g. updateDocumentaryProductChapters */
             String[] videoIDs = this.br.getRegex("id=(?:\\\\)?\"video_cell_(\\d+)(?:\\\\)?\"").getColumn(0);
@@ -105,7 +111,8 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
             }
         } else {
             if (loggedIN) {
-                this.br.postPage("/" + url_language + "/custom/modules/product/product_ajax.cfc?method=renderProductDetailTOC", "product_id=" + productid);
+                postData += "product_id=" + productid;
+                this.br.postPage("/" + url_language + "/custom/modules/product/product_ajax.cfc?method=renderProductDetailTOC", postData);
                 /* Remove js escape */
                 this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
             }
