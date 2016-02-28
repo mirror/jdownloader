@@ -21,7 +21,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -30,6 +31,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -42,9 +44,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "http://clouddecrypted\\.mail\\.ru/\\d+|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/a13a79fc6e6f/[^<>\"/]+/[^<>\"/]+" }, flags = { 2 })
 public class CloudMailRu extends PluginForHost {
@@ -70,9 +71,6 @@ public class CloudMailRu extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @Override
     public String getAGBLink() {
@@ -204,7 +202,7 @@ public class CloudMailRu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + Encoding.urlEncode(request_id) + "%22%5D&name=" + Encoding.urlEncode(dl.getName()) + "&cp866=false&api=2&build=" + BUILD);
-                dllink = getJson("body", br.toString());
+                dllink = PluginJSonUtils.getJson(br, "body");
             } else if (dl.getBooleanProperty("noapi", false)) {
                 br.getPage(getMainlink(dl));
                 final String json = br.getRegex("(\\{\\s*\"tree\":.*?)\\);").getMatch(0);
@@ -212,7 +210,6 @@ public class CloudMailRu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-                final LinkedHashMap<String, Object> folders = (LinkedHashMap<String, Object>) entries.get("folders");
                 final LinkedHashMap<String, Object> folder = (LinkedHashMap<String, Object>) entries.get("folder");
                 final ArrayList<Object> list = (ArrayList) folder.get("list");
                 for (final Object o : list) {
@@ -221,7 +218,7 @@ public class CloudMailRu extends PluginForHost {
                     final String get_url = (String) url.get("get");
                     if (Encoding.htmlDecode(get_url).contains(dl.getName())) {
                         if (get_url.startsWith("//")) {
-                            dllink = "http:" + get_url;
+                            dllink = Request.getLocation(get_url, br.getRequest());
                         } else {
                             dllink = get_url;
                         }
@@ -233,13 +230,13 @@ public class CloudMailRu extends PluginForHost {
                 logger.warning("Failed to use saved dllink, trying to generate new link");
                 final String mainlink = getMainlink(dl);
                 this.br.getPage(mainlink);
-                final String pageid = this.br.getRegex("\"x\\-page\\-id\"[\n\r\t ]*?:[\n\r\t ]*?\"([^<>\"]*?)\"").getMatch(0);
+                final String pageid = this.br.getRegex("\"x-page-id\"[\n\r\t ]*?:[\n\r\t ]*?\"([^<>\"]*?)\"").getMatch(0);
                 if (pageid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 String dataserver;
-                this.br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=hotfix-32-0-3.201511121458&x-page-id=" + pageid);
-                final String token = this.br.getRegex("\"token\":\"([^<>\"]*?)\"").getMatch(0);
+                br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=hotfix-32-0-3.201511121458&x-page-id=" + pageid);
+                final String token = PluginJSonUtils.getJson(br, "token");
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -263,14 +260,6 @@ public class CloudMailRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return dllink;
-    }
-
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
     }
 
     private String getID(final DownloadLink dl) {
@@ -383,18 +372,13 @@ public class CloudMailRu extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("free", false)) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
+        if (AccountType.FREE.equals(account.getType())) {
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
+            // why is expire = "" ? -raztok20160228
             final String expire = br.getRegex("").getMatch(0);
             if (expire == null) {
                 final String lang = System.getProperty("user.language");
@@ -406,14 +390,9 @@ public class CloudMailRu extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             }
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
         account.setValid(true);
@@ -426,32 +405,23 @@ public class CloudMailRu extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("free", false)) {
+        if (AccountType.FREE.equals(account.getType())) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dllink);
-            dl.startDownload();
+            return;
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        String dllink = this.checkDirectLink(link, "premium_directlink");
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("premium_directlink", dllink);
+        dl.startDownload();
     }
 
     private void setConfigElements() {
