@@ -5,8 +5,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1485,10 +1483,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         } catch (Throwable e1) {
             logger.log(e1);
         }
-    }
-
-    public static void main(String[] args) throws MalformedURLException {
-        System.out.println(new URL("uploaded.to").getHost());
     }
 
     public void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
