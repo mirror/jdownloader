@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -63,16 +61,14 @@ public class EightMusesCom extends antiDDoSForHost {
         }
         String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/picture/(?:\\d+\\-)?(.+)").getMatch(0);
         filename = filename.replace("/", "_");
-        dllink = br.getRegex("\"(//s\\.8muses\\.com/(?:.{2}/_?data|data/.{2})/[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(//\\w+\\.8muses\\.com/(?:.{2}/_?data|data/.{2})/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // jd Request.getLocation is stupid! urls starting with // are base!
-        dllink = new Regex(br.getURL(), "https?:").getMatch(-1) + dllink;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
+        String ext = getFileNameExtensionFromString(dllink);
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = ".jpg";
@@ -87,7 +83,7 @@ public class EightMusesCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -132,7 +128,7 @@ public class EightMusesCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -169,20 +165,6 @@ public class EightMusesCom extends antiDDoSForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
