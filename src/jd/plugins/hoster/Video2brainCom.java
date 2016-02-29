@@ -63,20 +63,20 @@ public class Video2brainCom extends PluginForHost {
     /* Connection stuff */
     // private final boolean FREE_RESUME = false;
     // private final int FREE_MAXCHUNKS = 0;
-    private final int           FREE_MAXDOWNLOADS      = 20;
-    private final boolean       RESUME_RTMP            = false;
-    private final boolean       RESUME_HTTP            = true;
-    private final int           MAXCHUNKS_HTTP         = 0;
-    private final int           ACCOUNT_MAXDOWNLOADS   = 20;
+    private final int     FREE_MAXDOWNLOADS    = 20;
+    private final boolean RESUME_RTMP          = false;
+    private final boolean RESUME_HTTP          = true;
+    private final int     MAXCHUNKS_HTTP       = 0;
+    private final int     ACCOUNT_MAXDOWNLOADS = 20;
 
-    private boolean             premiumonly            = false;
+    private boolean premiumonly = false;
 
-    public static final String  domain                 = "video2brain.com";
-    public static final String  domain_dummy_education = "video2brain.com_EDUCATION";
-    private final String        TYPE_OLD               = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
-    public static final String  ADD_ORDERID            = "ADD_ORDERID";
+    public static final String domain                 = "video2brain.com";
+    public static final String domain_dummy_education = "video2brain.com_EDUCATION";
+    private final String       TYPE_OLD               = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
+    public static final String ADD_ORDERID            = "ADD_ORDERID";
 
-    public static final boolean defaultADD_ORDERID     = false;
+    public static final boolean defaultADD_ORDERID = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -154,6 +154,10 @@ public class Video2brainCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        // disabled.
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         requestFileInformation(downloadLink);
         handleDownload(downloadLink);
     }
