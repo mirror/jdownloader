@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,6 +36,36 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
@@ -77,42 +108,12 @@ import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
 public class YoutubeHelper implements YoutubeHelperInterface {
-    private static final String   REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
+    private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
 
-    private static final String   REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
+    private static final String REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
 
-    private static final String   REGEX_FMT_MAP_FROM_JSPLAYER_SETUP       = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
+    private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP       = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
 
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -132,15 +133,15 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
     }
 
-    public static final String    PAID_VIDEO                              = "Paid Video:";
+    public static final String    PAID_VIDEO        = "Paid Video:";
 
-    protected static final String YT_CHANNEL_ID                           = "YT_CHANNEL_ID";
+    protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
 
-    protected static final String YT_DURATION                             = "YT_DURATION";
+    protected static final String YT_DURATION       = "YT_DURATION";
 
-    protected static final String YT_DATE_UPDATE                          = "YT_DATE_UPDATE";
+    protected static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
 
-    protected static final String YT_GOOGLE_PLUS_ID                       = "YT_GOOGLE_PLUS_ID";
+    protected static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
 
     private Browser               br;
 
@@ -168,8 +169,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return variantsMap;
     }
 
-    public static LogSource             LOGGER                           = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
+    public static LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
 
     static {
         REPLACER.add(new YoutubeReplacer("group") {
@@ -618,22 +619,22 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         });
     }
 
-    public static final String          YT_EXT                           = "YT_EXT";
-    public static final String          YT_TITLE                         = "YT_TITLE";
-    public static final String          YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
-    public static final String          YT_ID                            = "YT_ID";
-    public static final String          YT_AGE_GATE                      = "YT_AGE_GATE";
-    public static final String          YT_CHANNEL                       = "YT_CHANNEL";
-    public static final String          YT_USER                          = "YT_USER";
-    public static final String          YT_DATE                          = "YT_DATE";
-    public static final String          YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String          YT_VARIANT                       = "YT_VARIANT";
-    public static final String          YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
-    public static final String          YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
-    public static final String          YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
-    public static final String          YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    public static final String  YT_EXT                           = "YT_EXT";
+    public static final String  YT_TITLE                         = "YT_TITLE";
+    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String  YT_ID                            = "YT_ID";
+    public static final String  YT_AGE_GATE                      = "YT_AGE_GATE";
+    public static final String  YT_CHANNEL                       = "YT_CHANNEL";
+    public static final String  YT_USER                          = "YT_USER";
+    public static final String  YT_DATE                          = "YT_DATE";
+    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String  YT_VARIANT                       = "YT_VARIANT";
+    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
 
-    private static final String         REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
 
@@ -722,7 +723,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     private HashSet<String>                          subtitleUrls;
     private HashSet<String>                          fmtMaps;
 
-    private HashSet<String>                          mpdUrls;
+    private LinkedHashSet<String>                    mpdUrls;
 
     private HashMap<String, String>                  videoInfo;
 
@@ -1192,7 +1193,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
         fmtMaps = new HashSet<String>();
         subtitleUrls = new HashSet<String>();
-        mpdUrls = new HashSet<String>();
+        mpdUrls = new LinkedHashSet<String>();
         videoInfo = new HashMap<String, String>();
 
         vid.ageCheck = br.containsHTML("age-gate");
@@ -1353,7 +1354,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (cfg.isExternMultimediaToolUsageEnabled()) {
             mpd: for (String mpdUrl : mpdUrls) {
                 try {
-
+                    if (StringUtils.isEmpty(mpdUrl)) {
+                        continue;
+                    }
                     Browser clone = br.cloneBrowser();
                     clone.getPage(mpdUrl);
                     String xml = clone.getRequest().getHtmlCode();
@@ -1534,15 +1537,19 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (dashMpdEnabled) {
             String dashmpd = videoInfo.get("dashmpd");
             if (StringUtils.isNotEmpty(dashmpd)) {
-                mpdUrls.add(handleSignature(dashmpd));
-
+                final String url = handleSignature(dashmpd);
+                if (url != null) {
+                    mpdUrls.add(url);
+                }
             }
         }
         if (hlsEnabled) {
             String hlsvp = videoInfo.get("hlsvp");
             if (StringUtils.isNotEmpty(hlsvp)) {
-                mpdUrls.add(handleSignature(hlsvp));
-
+                final String url = handleSignature(hlsvp);
+                if (url != null) {
+                    mpdUrls.add(url);
+                }
             }
         }
     }
@@ -1553,11 +1560,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             return;
         }
         map = JSonStorage.restoreFromString(map, TypeRef.STRING);
-
         if (StringUtils.isNotEmpty(map)) {
-
-            mpdUrls.add(handleSignature(map));
-
+            final String url = handleSignature(map);
+            if (url != null) {
+                mpdUrls.add(url);
+            }
         }
     }
 
