@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -124,6 +126,10 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final String crypted = request.getParameterbyKey("crypted");
             final String jk = request.getParameterbyKey("jk");
             final String k = request.getParameterbyKey("k");
+            if (StringUtils.isEmpty(crypted) || (StringUtils.isEmpty(jk) && StringUtils.isEmpty(k))) {
+                writeString(response, request, "failed\r\n", true);
+                return;
+            }
             final String dummyCNL = createDummyCNL(crypted, jk, k);
             clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL, request);
             /*
@@ -136,10 +142,27 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
+    private String sourceWorkaround(final String source) {
+        if (source != null) {
+            try {
+                return new URL(source).toString();
+            } catch (MalformedURLException e) {
+            }
+            if (source.contains("filecrypt.cc")) {
+                return "http://filecrypt.cc";
+            }
+        }
+        return source;
+    }
+
     // For My JD API
     public void addcrypted2Remote(RemoteAPIResponse response, RemoteAPIRequest request, String crypted, String jk, String source) {
         try {
+            source = sourceWorkaround(source);
             askPermission(request, source);
+            if (StringUtils.isEmpty(crypted) || StringUtils.isEmpty(jk)) {
+                return;
+            }
             final String dummyCNL = createDummyCNL(crypted, jk, null);
             final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL);
             job.setCustomSourceUrl(source);
@@ -407,7 +430,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
              */
             return;
         }
-        HTTPHeader referer = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER);
+        final HTTPHeader referer = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER);
         String check = null;
         if (referer != null && (check = referer.getValue()) != null) {
             if (check.equalsIgnoreCase("http://localhost:9666/flashgot") || check.equalsIgnoreCase("http://127.0.0.1:9666/flashgot")) {
@@ -418,7 +441,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             }
         }
         String app = "unknown application";
-        HTTPHeader agent = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
+        final HTTPHeader agent = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
         if (agent != null && agent.getValue() != null) {
             /* try to parse application name from user agent header */
             app = agent.getValue().replaceAll("\\(.*\\)", "");

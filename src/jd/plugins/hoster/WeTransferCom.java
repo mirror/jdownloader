@@ -91,8 +91,7 @@ public class WeTransferCom extends PluginForHost {
         if (recepientID == null) {
             recepientID = "";
         }
-        String filesize = br.getRegex("<br>([^<>\"]*?)</div>[\t\n\r ]+<a href=\"#\" data\\-hash=").getMatch(0);
-        filesize = new Regex(filesize, "(\\d (K|M|G)B)").getMatch(0);
+        String filesize = br.getRegex("class='filename'>.*?</span>.*?([0-9,\\.]+\\s*(K|M|G)B)").getMatch(0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
         br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=" + recepientID + "&security_hash=" + HASH + "&password=&ie=false&ts=" + System.currentTimeMillis());
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
@@ -218,7 +217,7 @@ public class WeTransferCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -228,7 +227,7 @@ public class WeTransferCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -238,7 +237,7 @@ public class WeTransferCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -248,7 +247,7 @@ public class WeTransferCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -258,7 +257,7 @@ public class WeTransferCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -268,7 +267,7 @@ public class WeTransferCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return

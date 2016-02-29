@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -103,8 +102,6 @@ public class AbelhasPt extends PluginForHost {
             /* Whatever happens here, always show server error... */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
-        /* Low quality stream = always .mp4 -> (Might) need to change filename */
-        fixFilename(downloadLink);
         dl.startDownload();
     }
 
@@ -269,41 +266,6 @@ public class AbelhasPt extends PluginForHost {
             /* We don't want to work with the encoded json bla html response */
             br.getPage(dl.getStringProperty("mainlink", null));
         }
-    }
-
-    private void fixFilename(final DownloadLink downloadLink) {
-        String orgName = null;
-        String orgExt = null;
-        String servName = null;
-        String servExt = null;
-        String orgNameExt = downloadLink.getFinalFileName();
-        if (orgNameExt == null) {
-            orgNameExt = downloadLink.getName();
-        }
-        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) {
-            orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
-        }
-        if (!inValidate(orgExt)) {
-            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
-        } else {
-            orgName = orgNameExt;
-        }
-        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
-        String servNameExt = ".mp4";
-        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
-            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
-            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
-        }
-        String FFN = null;
-        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
-            FFN = servNameExt;
-        } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
-            FFN = orgName + servExt;
-        } else {
-            FFN = orgNameExt;
-        }
-        downloadLink.setFinalFileName(FFN);
     }
 
     /**
