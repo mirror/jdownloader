@@ -95,7 +95,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
         super();
 
         setName(T.T.menu_tools_extract_files());
-        setIconKey(org.jdownloader.gui.IconKey.ICON_COMPRESS);
+        setIconKey(org.jdownloader.gui.IconKey.ICON_EXTRACT);
 
     }
 
@@ -242,7 +242,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                 public String getLabelString() {
                                     return null;
                                 }
-                            }, 0, T.T.extracting_archive(archive.getName()), T.T.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {
+                            }, 0, T.T.extracting_archive(archive.getName()), T.T.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {
                                 @Override
                                 public ModalityType getModalityType() {
                                     return ModalityType.MODELESS;

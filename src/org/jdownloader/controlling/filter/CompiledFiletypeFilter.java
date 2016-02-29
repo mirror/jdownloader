@@ -315,7 +315,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return org.jdownloader.gui.IconKey.ICON_COMPRESS;
+            return org.jdownloader.gui.IconKey.ICON_EXTRACT;
         }
     }
 

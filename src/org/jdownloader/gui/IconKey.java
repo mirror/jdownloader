@@ -160,7 +160,7 @@ public class IconKey {
     public static final String ICON_RESTART                     = "restart";
     public static final String ICON_URL                         = "url";
     public static final String ICON_BUBBLE                      = "bubble";
-    public static final String ICON_COMPRESS                    = "compress";
+
     public static final String ICON_CLEAR                       = "clear";
     public static final String ICON_WRENCH                      = "wrench";
     public static final String ICON_ABOUT                       = "about";

@@ -349,7 +349,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 case RUNNING:
 
                     label = extractionStatus.getExplanation();
-                    dls.setStatusIconKey(IconKey.ICON_COMPRESS);
+                    dls.setStatusIconKey(IconKey.ICON_EXTRACT);
                     dls.setStatus(label);
                     return dls;
                 }
