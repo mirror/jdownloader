@@ -38,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision: 26673$", interfaceVersion = 3, names = { "putdrive.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PutDriveCom extends PluginForHost {
@@ -56,12 +57,12 @@ public class PutDriveCom extends PluginForHost {
 
     public PutDriveCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://api.putdrive.com/Prices.aspx");
+        this.enablePremium("http://www.putdrive.com/Prices.aspx");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://api.putdrive.com/Terms.aspx";
+        return "http://www.putdrive.com/Terms.aspx";
     }
 
     private Browser newBrowser() {
@@ -89,9 +90,9 @@ public class PutDriveCom extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         api_loginJson(account);
         // login(account);
-        final String trafficleft = getJson("ExtraTrafficLeftInMBytes");
+        final String trafficleft = PluginJSonUtils.getJson(br, "ExtraTrafficLeftInMBytes");
         ac.setTrafficLeft(Long.parseLong(trafficleft) * 1024 * 1024);
-        final String expiredate = getJson("ExpirationDate");
+        final String expiredate = PluginJSonUtils.getJson(br, "ExpirationDate");
         ac.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH));
         // now let's get a list of all supported hosts:
         br.getPage("http://putdrive.com/jdownloader.ashx?cmd=gethosters");
@@ -121,7 +122,7 @@ public class PutDriveCom extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/soap+xml; charset=utf-8");
         boolean failed = false;
         try {
-            br.postPage("http://api.putdrive.com/DownloadAPI.asmx", sb.toString());
+            br.postPageRaw("http://api.putdrive.com/DownloadAPI.asmx", sb.toString());
         } catch (final BrowserException e) {
             if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                 failed = true;
@@ -154,7 +155,7 @@ public class PutDriveCom extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/soap+xml; charset=utf-8");
         boolean failed = false;
         try {
-            br.postPage("http://api.putdrive.com/DownloadAPI.asmx", sb.toString());
+            br.postPageRaw("http://api.putdrive.com/DownloadAPI.asmx", sb.toString());
         } catch (final BrowserException e) {
             if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                 failed = true;
@@ -171,14 +172,6 @@ public class PutDriveCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-    }
-
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
     }
 
     @Override
