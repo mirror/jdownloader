@@ -14,6 +14,15 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.controlling.proxy.NoProxySelector;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
@@ -30,15 +39,6 @@ import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 public class LiveHeaderInvoker extends ReconnectInvoker {
 
@@ -216,7 +216,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             final String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
                             final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%", -1);
-                            final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
+                            final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(0);
                             if (params.length > 0) {
                                 final StringBuilder newValue;
                                 newValue = new StringBuilder(tmp[0]);
@@ -453,7 +453,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
     /**
      * DO NOT REMOVE THIS OR REPLACE BY Regex.getLines()
-     * 
+     *
      * REGEX ARE COMPLETE DIFFERENT AND DO NOT TRIM
      */
     private static String[] splitLines(final String source) {
