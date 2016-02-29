@@ -22,6 +22,7 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -63,7 +64,15 @@ public class SpeedPortHybrid extends RouterPlugin {
 
     private ExtTextField                   txtIP;
 
-    private static String PBKDF2Key(String password, String salt) throws Exception {
+    private Browser                        br;
+
+    private String                         derivedk;
+
+    private String                         csrf;
+
+    private String                         challengev;
+
+    private String PBKDF2Key(String password, String salt) throws Exception {
 
         final PBEKeySpec spec = new PBEKeySpec(Hash.getSHA256(password).toCharArray(), salt.getBytes("UTF-8"), 1000, 16 * 8);
         final SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
@@ -128,7 +137,8 @@ public class SpeedPortHybrid extends RouterPlugin {
         System.out.println("Decrypted: " + new String(tmp, 0, len));
     }
 
-    public static String encrypt(String pt, String challengev, String derivedk) throws UnsupportedEncodingException, IllegalStateException, InvalidCipherTextException {
+    public String encrypt(String pt) throws UnsupportedEncodingException, IllegalStateException, InvalidCipherTextException {
+        Log.info("Encrypt " + pt);
         byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 32));
         byte[] adata = HexFormatter.hexToByteArray(challengev.substring(32, 32 + 16));
 
@@ -143,7 +153,7 @@ public class SpeedPortHybrid extends RouterPlugin {
         return HexFormatter.byteArrayToHex(tmp);
     }
 
-    public static String decrypt(String hex, String challengev, String derivedk) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
+    public String decrypt(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
         String ivs;
         byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 16 + 16));
         String ads;
@@ -158,7 +168,9 @@ public class SpeedPortHybrid extends RouterPlugin {
         dc.processAADBytes(adata, 0, adata.length);
         int len = dc.processBytes(enc, 0, enc.length, tmp, 0);
         len += dc.doFinal(tmp, len);
-        return new String(tmp, 0, len, "UTF-8");
+        String ret = new String(tmp, 0, len, "UTF-8");
+        updateCSRF(ret);
+        return ret;
     }
 
     private String getTimeParams() {
@@ -178,38 +190,25 @@ public class SpeedPortHybrid extends RouterPlugin {
 
             @Override
             public IP getExternalIP() throws IPCheckException {
-                try {
-                    Browser br = new Browser();
-                    br.setVerbose(true);
-                    br.setDebug(true);
-                    br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
+                synchronized (SpeedPortHybrid.this) {
+                    try {
 
-                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
-                    String challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
+                        ensureSession();
 
-                    Log.info("Challenge: " + challengev);
-                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
+                        String crypted = decrypt(br.getPage("http://" + config.getRouterIP() + "/data/INetIP.json?" + getTimeParams() + "&" + getTimeParams()));
 
-                    String derivedk;
-                    br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
-                    br.getPage("http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de");
-                    String csrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
-                    // http://192.168.2.1/data/INetIP.json?_time=1456755235240&_rand=805&_time=1456755235604&_rand=566
-                    String crypted = decrypt(br.getPage("http://" + config.getRouterIP() + "/data/INetIP.json?" + getTimeParams() + "&" + getTimeParams()), challengev, derivedk);
-                    // req_connect=online
-                    // req_connect=disabled
-                    // lte_reconn=1
-                    Log.info("Decrypted IP: " + crypted);
+                        Log.info("Decrypted IP: " + crypted);
 
-                    String externalIP = new Regex(crypted, "\"varid\"\\s*:\\s*\"public_ip_v4\",\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
-                    if (externalIP != null) {
-                        return IP.getInstance(externalIP);
+                        String externalIP = new Regex(crypted, "\"varid\"\\s*:\\s*\"public_ip_v4\",\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+                        if (externalIP != null) {
+                            return IP.getInstance(externalIP);
+                        }
+                    } catch (Throwable e) {
+                        Log.log(e);
+
                     }
-                } catch (Throwable e) {
-                    Log.log(e);
-
+                    throw new InvalidProviderException("Unknown UPNP Response Error");
                 }
-                throw new InvalidProviderException("Unknown UPNP Response Error");
             }
         });
         invoker = new ReconnectInvoker(this) {
@@ -224,69 +223,79 @@ public class SpeedPortHybrid extends RouterPlugin {
 
             @Override
             public void run() throws ReconnectException {
+                synchronized (SpeedPortHybrid.this) {
+                    try {
 
-                try {
-                    Browser br = new Browser();
-                    br.setVerbose(true);
-                    br.setDebug(true);
-                    br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
+                        ensureSession();
 
-                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
-                    challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
+                        String crypted = decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
+                        updateCSRF(crypted);
+                        // req_connect=online
+                        // req_connect=disabled
+                        // lte_reconn=1
+                        Log.info("Decrypted: " + new String(crypted));
 
-                    Log.info("Challenge: " + challengev);
-                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
+                        crypted = decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
 
-                    br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
-                    br.getPage("http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de");
-                    csrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
+                        // req_connect=online
+                        // req_connect=disabled
+                        // lte_reconn=1
+                        Log.info("Decrypted: " + new String(crypted));
 
-                    String crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
-                    // req_connect=online
-                    // req_connect=disabled
-                    // lte_reconn=1
-                    Log.info("Decrypted: " + new String(crypted));
+                        for (int i = 0; i < 10; i++) {
+                            Thread.sleep(3000);
+                            String dec = decrypt(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+                            updateCSRF(crypted);
+                            Log.info(dec);
+                        }
 
-                    crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
-                    // req_connect=online
-                    // req_connect=disabled
-                    // lte_reconn=1
-                    Log.info("Decrypted: " + new String(crypted));
+                        crypted = decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
 
-                    for (int i = 0; i < 10; i++) {
-                        Thread.sleep(3000);
-                        String dec = dec(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
-                        Log.info(dec);
+                        // req_connect=online
+                        // req_connect=disabled
+                        // lte_reconn=1
+                        Log.info("Decrypted: " + new String(crypted));
+                        /*
+                         * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32,
+                         * 16);
+                         *
+                         * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
+                         *
+                         * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv),
+                         * sjcl.codec.hex.toBits(adata)); pt = sjcl.codec.utf8String.fromBits(pt); return pt;
+                         */
+
+                    } catch (Throwable e) {
+                        throw new ReconnectException(e);
                     }
-
-                    crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
-                    // req_connect=online
-                    // req_connect=disabled
-                    // lte_reconn=1
-                    Log.info("Decrypted: " + new String(crypted));
-                    /*
-                     * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32, 16);
-                     *
-                     * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
-                     *
-                     * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv),
-                     * sjcl.codec.hex.toBits(adata)); pt = sjcl.codec.utf8String.fromBits(pt); return pt;
-                     */
-
-                } catch (Throwable e) {
-                    throw new ReconnectException(e);
                 }
             }
 
-            private String dec(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
-                return SpeedPortHybrid.decrypt(hex, challengev, derivedk);
-            }
-
-            private String encrypt(String pt) throws UnsupportedEncodingException, IllegalStateException, InvalidCipherTextException {
-                return SpeedPortHybrid.encrypt(pt, challengev, derivedk);
-            }
-
         };
+    }
+
+    private void updateCSRF(String crypted) {
+        String newCsrf = new Regex(crypted, "\"vartype\"\\s*:\\s*\"value\"\\s*,\\s*\"varid\"\\s*:\\s*\"csrf_token\"\\s*,\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+        if (StringUtils.isNotEmpty(newCsrf)) {
+            csrf = newCsrf;
+        }
+    }
+
+    protected void ensureSession() throws Exception {
+        br = new Browser();
+        br.setVerbose(true);
+        br.setDebug(true);
+        br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
+
+        br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
+        challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
+
+        Log.info("Challenge: " + challengev);
+        br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
+
+        br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
+        br.getPage("http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de");
+        csrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
     }
 
     @Override
