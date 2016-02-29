@@ -21,6 +21,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -40,6 +41,7 @@ import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
+import jd.controlling.reconnect.ipcheck.InvalidProviderException;
 import jd.http.Browser;
 import jd.http.QueryInfo;
 import net.miginfocom.swing.MigLayout;
@@ -199,11 +201,15 @@ public class SpeedPortHybrid extends RouterPlugin {
                     // lte_reconn=1
                     Log.info("Decrypted IP: " + crypted);
 
+                    String externalIP = new Regex(crypted, "\"varid\"\\s*:\\s*\"public_ip_v4\",\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+                    if (externalIP != null) {
+                        return IP.getInstance(externalIP);
+                    }
                 } catch (Throwable e) {
                     Log.log(e);
-                    return null;
+
                 }
-                return null;
+                throw new InvalidProviderException("Unknown UPNP Response Error");
             }
         });
         invoker = new ReconnectInvoker(this) {
