@@ -1,8 +1,9 @@
 package jd.controlling.reconnect.pluginsinc.speedporthybrid;
 
 import java.awt.Component;
-import java.io.IOException;
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -12,6 +13,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Hash;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
@@ -45,6 +47,14 @@ public class SpeedPortHybrid extends RouterPlugin {
 
     private ExtTextField                   txtIP;
 
+    private static String PBKDF2Key(String password, String salt) throws Exception {
+
+        final PBEKeySpec spec = new PBEKeySpec(Hash.getSHA256(password).toCharArray(), salt.getBytes("UTF-8"), 1000, 16 * 8);
+        final SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        final byte[] hash = skf.generateSecret(spec).getEncoded();
+        return HexFormatter.byteArrayToHex(hash);
+    }
+
     public SpeedPortHybrid() {
         super();
         config = JsonConfig.create(SpeedPortHybridReconnectConfig.class);
@@ -70,7 +80,10 @@ public class SpeedPortHybrid extends RouterPlugin {
                     Log.info("Challenge: " + challengev);
                     br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
 
-                } catch (IOException e) {
+                    br.setCookie("http://" + config.getRouterIP(), "derivedk", PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
+
+                    br.getPage("http://" + config.getRouterIP() + "/data/Overview.json?_time=" + System.currentTimeMillis() + "&_rand=" + (int) (Math.random() * 1000) + "&" + "_time=" + System.currentTimeMillis() + "&_rand=" + (int) (Math.random() * 1000));
+                } catch (Throwable e) {
                     throw new ReconnectException(e);
                 }
             }
