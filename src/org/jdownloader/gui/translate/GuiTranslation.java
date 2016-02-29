@@ -6132,36 +6132,4 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Furthermore, JDownloader makes use of several 3rd party resources and libraries." })
     String about_3rdparty();
 
-    @Default(lngs = { "en" }, values = { "http://www.gnu.de/documents/gpl-2.0.en.html" })
-    String credits_rtmpdump_license_url();
-
-    @Default(lngs = { "en" }, values = { "Protocol plugin for RTMP streams" })
-    String credits_rtmpdump_description();
-
-    @Default(lngs = { "en" }, values = { "Universal Plug and Play library" })
-    String credits_cling_description();
-
-    @Default(lngs = { "en" }, values = { "A java wrapper for 7-Zip C++ library" })
-    String credits_7zipjbindings_description();
-
-    @Default(lngs = { "en" }, values = { "Synthetica Look And Feel" })
-    String credits_synthetica_description();
-
-    @Default(lngs = { "en" }, values = { "Several Icons and Images" })
-    String credits_icons8_description();
-
-    @Default(lngs = { "en" }, values = { "Several Icons and Images" })
-    String credits_tango_description();
-
-    @Default(lngs = { "en" }, values = { "themes/standard/org/jdownloader/images/compress.png" })
-    String credits_fatcow_description();
-
-    @Default(lngs = { "en" }, values = { "Several Icons and Images" })
-    String credits_picol_description();
-
-    @Default(lngs = { "en" }, values = { "Several Icons and Images" })
-    String credits_aha_description();
-
-    @Default(lngs = { "en" }, values = { "Several Icons and Images" })
-    String credits_oxygen_description();
 }
