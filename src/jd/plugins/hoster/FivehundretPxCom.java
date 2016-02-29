@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/photo/\\d+/[a-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/photo/\\d+" }, flags = { 0 })
 public class FivehundretPxCom extends PluginForHost {
 
     public FivehundretPxCom(PluginWrapper wrapper) {
