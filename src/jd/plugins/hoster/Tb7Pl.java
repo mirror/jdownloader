@@ -22,9 +22,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +37,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tb7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class Tb7Pl extends PluginForHost {
@@ -108,10 +108,9 @@ public class Tb7Pl extends PluginForHost {
          */
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(
                 // "turbobit.net",
-                "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploadable.ch", "sharehost.eu"
+                "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "sharehost.eu", "uploaded.to", "uploaded.net", "ul.to"
         // "oboom.com", "fileparadox.in", "bitshare.com", "freakshare.net", "freakshare.com"
-        // "uploaded.to", "uploaded.net", "ul.to"
-        ));
+                ));
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
