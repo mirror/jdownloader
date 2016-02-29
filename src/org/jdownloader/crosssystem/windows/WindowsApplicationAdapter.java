@@ -146,9 +146,8 @@ public class WindowsApplicationAdapter {
                                     }
                                 }
                                 Win7TaskBar.setProgress(mainFrame, lastPercent, true);
-                            } else {
-                                Thread.sleep(1000);
                             }
+                            Thread.sleep(1000);
                         }
                     } catch (Throwable er) {
                         Log.log(er);
