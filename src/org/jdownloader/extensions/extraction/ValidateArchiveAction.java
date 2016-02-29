@@ -29,7 +29,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         } else {
             setName(T.T.ValidateArchiveAction_ValidateArchiveAction(as[0].getName()));
         }
-        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 20), NewTheme.I().getImage("ok", 12), 0, 0, 10, 10)));
+        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_EXTRACT, 20), NewTheme.I().getImage("ok", 12), 0, 0, 10, 10)));
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
         for (Archive a : as) {

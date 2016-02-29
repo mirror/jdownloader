@@ -23,7 +23,7 @@ public class ExtractionProgress extends PluginProgress {
 
     public ExtractionProgress(ExtractionController controller, long current, long total, Color color) {
         super(current, total, color);
-        setIcon(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16));
+        setIcon(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 16));
         message = T.T.plugins_optional_extraction_status_extracting2();
         super.setProgressSource(controller);
     }

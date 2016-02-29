@@ -237,7 +237,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public String getIconKey() {
-        return org.jdownloader.gui.IconKey.ICON_COMPRESS;
+        return org.jdownloader.gui.IconKey.ICON_EXTRACT;
     }
 
     /**
@@ -429,7 +429,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 } else {
                     if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
 
-                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT.T.Extraction_onShutdownRequest_(), _JDT.T.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 32), _JDT.T.literally_yes(), null)) {
+                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT.T.Extraction_onShutdownRequest_(), _JDT.T.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 32), _JDT.T.literally_yes(), null)) {
                             return;
                         }
                         throw new ShutdownVetoException("ExtractionExtension is still running", this);

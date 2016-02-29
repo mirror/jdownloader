@@ -463,7 +463,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(createIconLabel(IconKey.ICON_DOCUMENT, _GUI.T.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
         p.add(comment, "spanx,height " + height + "!");
 
-        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_COMPRESS, 24)).add(new AbstractIcon(IconKey.ICON_LOCK, 18), 6, 6), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
+        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_EXTRACT, 24)).add(new AbstractIcon(IconKey.ICON_LOCK, 18), 6, 6), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
 
         p.add(password, "pushx,growx,height " + height + "!");
         MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[" + height + "!,grow]");
