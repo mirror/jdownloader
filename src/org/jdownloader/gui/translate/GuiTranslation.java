@@ -3057,6 +3057,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Warn if the balance is not enough." })
     String NinekwService_createPanel_lowcredits_tooltiptext();
 
+    @Default(lngs = { "en" }, values = { "Warn on high queue" })
+    String NinekwService_createPanel_highqueue();
+
+    @Default(lngs = { "en" }, values = { "Warn if the server queue is high like 100 captchas and more." })
+    String NinekwService_createPanel_highqueue_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Https" })
     String NinekwService_createPanel_https();
 
@@ -3098,6 +3104,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Too many bad feedbacks like 30% captchas with NotOK. Please check it and then you can reset the stats." })
     String NinekwService_createPanel_notification_badfeedback_errortext();
+
+    @Default(lngs = { "en" }, values = { "High queue. Please check it." })
+    String NinekwService_createPanel_notification_highqueue_errortext();
 
     @Default(lngs = { "en" }, values = { "Without feedbacks" })
     String NinekwService_createPanel_notification_badnofeedback();
@@ -5970,6 +5979,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "(PAID) Fully automated remote Captcha Solving" })
     String CaptchaSolver_Type_paid_online();
 
+    @Default(lngs = { "en" }, values = { "(PAID) Fully automated remote Captcha Solving (OCR)" })
+    String CaptchaSolver_Type_paid_online_ocr();
+
     @Default(lngs = { "en" }, values = { "2160p" })
     String YoutubeVariant_filenametag_MP4_ORIGINAL();
 
@@ -6115,14 +6127,12 @@ public interface GuiTranslation extends TranslateInterface {
     String lit_translated();
 
     @Default(lngs = { "en" }, values = { "Speech2Text" })
-
     String lit_speedtotext();
 
     @Default(lngs = { "en" }, values = { "Furthermore, JDownloader makes use of several 3rd party resources and libraries." })
     String about_3rdparty();
 
     @Default(lngs = { "en" }, values = { "http://www.gnu.de/documents/gpl-2.0.en.html" })
-
     String credits_rtmpdump_license_url();
 
     @Default(lngs = { "en" }, values = { "Protocol plugin for RTMP streams" })
@@ -6132,11 +6142,9 @@ public interface GuiTranslation extends TranslateInterface {
     String credits_cling_description();
 
     @Default(lngs = { "en" }, values = { "A java wrapper for 7-Zip C++ library" })
-
     String credits_7zipjbindings_description();
 
     @Default(lngs = { "en" }, values = { "Synthetica Look And Feel" })
-
     String credits_synthetica_description();
 
     @Default(lngs = { "en" }, values = { "Several Icons and Images" })
@@ -6149,13 +6157,11 @@ public interface GuiTranslation extends TranslateInterface {
     String credits_fatcow_description();
 
     @Default(lngs = { "en" }, values = { "Several Icons and Images" })
-
     String credits_picol_description();
 
     @Default(lngs = { "en" }, values = { "Several Icons and Images" })
     String credits_aha_description();
 
     @Default(lngs = { "en" }, values = { "Several Icons and Images" })
-
     String credits_oxygen_description();
 }

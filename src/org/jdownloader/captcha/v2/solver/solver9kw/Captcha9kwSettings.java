@@ -229,6 +229,13 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setlowcredits(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the high queue dialog")
+    boolean gethighqueue();
+
+    void sethighqueue(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Activate the badfeedbacks dialog")
     boolean getbadfeedbacks();
@@ -266,7 +273,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @DefaultIntValue(180)
-    @SpinnerValidator(min = 30, max = 900)
+    @SpinnerValidator(min = 5, max = 1800)
     @DescriptionForConfigEntry("Interval for the notifications")
     int getDefaultTimeoutNotification();
 

@@ -14,6 +14,18 @@ import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileFilter;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
+import jd.http.Browser;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
@@ -38,18 +50,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
-import jd.http.Browser;
-import net.miginfocom.swing.MigLayout;
 
 public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
     private ExtButton                      btnRegister;
@@ -269,6 +269,11 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         lowcreditscaptchas.setToolTipText(_GUI.T.NinekwService_createPanel_lowcredits_tooltiptext());
         toolbar6.add(lowcreditscaptchas);
         toolbar6.add(label(_GUI.T.NinekwService_createPanel_lowcredits()));
+
+        Checkbox highqueuecaptchas = new Checkbox(CFG_9KWCAPTCHA.HIGHQUEUE);
+        highqueuecaptchas.setToolTipText(_GUI.T.NinekwService_createPanel_highqueue_tooltiptext());
+        toolbar6.add(highqueuecaptchas);
+        toolbar6.add(label(_GUI.T.NinekwService_createPanel_highqueue()));
         Tab1_9kw.add(toolbar6, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar7 = new MigPanel("ins 0", "[][][][]", "[]");
@@ -643,7 +648,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         });
         btnUserDebug3.setToolTipText(_GUI.T.NinekwService_createPanel_btnUserDebug3());
         toolbardebug1ex.add(btnUserDebug3);
-
         Tab4_9kw.add(toolbardebug1ex, "gapleft 33,spanx,pushx,growx");
 
         btnUserDebugStatReset = new ExtButton(new AppAction() {

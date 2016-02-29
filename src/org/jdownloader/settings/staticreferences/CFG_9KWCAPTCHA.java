@@ -119,6 +119,11 @@ public class CFG_9KWCAPTCHA {
     public static final BooleanKeyHandler                  LOWCREDITS               = SH.getKeyHandler("lowcredits", BooleanKeyHandler.class);
 
     /**
+     * Activate the high queue dialog
+     **/
+    public static final BooleanKeyHandler                  HIGHQUEUE                = SH.getKeyHandler("highqueue", BooleanKeyHandler.class);
+
+    /**
      * Activate the badfeedback dialog
      **/
     public static final BooleanKeyHandler                  BADFEEDBACKS             = SH.getKeyHandler("badfeedbacks", BooleanKeyHandler.class);
