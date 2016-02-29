@@ -15,6 +15,10 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -29,9 +33,6 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 
 public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> {
 
@@ -243,6 +244,24 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        boolean check_highqueue = config.gethighqueue();
+        if (check_highqueue == true) {
+            String servercheck = "";
+            try {
+                Browser br_short = new Browser();
+                servercheck = br_short.getPage(NineKwSolverService.getInstance().getAPIROOT() + "grafik/servercheck.txt");
+            } catch (IOException e) {
+
+            }
+
+            if (Integer.parseInt(new Regex(servercheck, "queue=(\\d+)").getMatch(0)) > 100) {
+                if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime6.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime6.get()) > config.getDefaultTimeoutNotification()) {
+                    org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime6.set((System.currentTimeMillis() / 1000));
+                    jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_highqueue_errortext());
                 }
             }
         }

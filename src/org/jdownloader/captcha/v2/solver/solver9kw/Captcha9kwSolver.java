@@ -13,6 +13,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
@@ -33,10 +38,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.seamless.util.io.IO;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-
 public class Captcha9kwSolver extends CESChallengeSolver<String> {
 
     private static final Captcha9kwSolver INSTANCE           = new Captcha9kwSolver();
@@ -55,6 +56,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
     AtomicLong                            counterdialogtime3 = new AtomicLong();
     AtomicLong                            counterdialogtime4 = new AtomicLong();
     AtomicLong                            counterdialogtime5 = new AtomicLong();
+    AtomicLong                            counterdialogtime6 = new AtomicLong();
 
     private String                        long_debuglog      = "";
     HashMap<DownloadLink, Integer>        captcha_map9kw     = new HashMap<DownloadLink, Integer>();
@@ -375,6 +377,23 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        boolean check_highqueue = config.gethighqueue();
+        if (check_highqueue == true) {
+            String servercheck = "";
+            Browser br_short = new Browser();
+            try {
+                servercheck = br_short.getPage(NineKwSolverService.getInstance().getAPIROOT() + "grafik/servercheck.txt");
+            } catch (IOException e) {
+            }
+
+            if (Integer.parseInt(new Regex(servercheck, "queue=(\\d+)").getMatch(0)) > 100) {
+                if (counterdialogtime6.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime6.get()) > config.getDefaultTimeoutNotification()) {
+                    counterdialogtime6.set((System.currentTimeMillis() / 1000));
+                    jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_highqueue_errortext());
                 }
             }
         }

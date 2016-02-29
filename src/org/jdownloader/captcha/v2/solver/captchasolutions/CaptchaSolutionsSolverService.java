@@ -7,6 +7,16 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -25,16 +35,6 @@ import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
 import org.jdownloader.statistics.StatsManager;
 
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-
 public class CaptchaSolutionsSolverService extends AbstractSolverService implements ServicePanelExtender {
     private CaptchaSolutionsConfigInterface config;
     private CaptchaSolutionsSolver          solver;
@@ -52,7 +52,7 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
 
     @Override
     public String getType() {
-        return _GUI.T.CaptchaSolver_Type_paid_online();
+        return _GUI.T.CaptchaSolver_Type_paid_online_ocr();
     }
 
     @Override
