@@ -92,6 +92,7 @@ public class WeTransferCom extends PluginForHost {
             recepientID = "";
         }
         String filesize = br.getRegex("<br>([^<>\"]*?)</div>[\t\n\r ]+<a href=\"#\" data\\-hash=").getMatch(0);
+        filesize = new Regex(filesize, "(\\d (K|M|G)B)").getMatch(0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
         br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=" + recepientID + "&security_hash=" + HASH + "&password=&ie=false&ts=" + System.currentTimeMillis());
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
