@@ -241,7 +241,7 @@ public class SpeedPortHybrid extends RouterPlugin {
                     // lte_reconn=1
                     Log.info("Decrypted: " + new String(crypted));
 
-                    crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
+                    crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
                     // req_connect=online
                     // req_connect=disabled
                     // lte_reconn=1
