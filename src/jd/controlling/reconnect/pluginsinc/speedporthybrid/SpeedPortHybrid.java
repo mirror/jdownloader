@@ -68,7 +68,7 @@ public class SpeedPortHybrid extends RouterPlugin {
                     String challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
 
                     Log.info("Challenge: " + challengev);
-                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev) + ":" + config.getPassword(), true));
+                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
 
                 } catch (IOException e) {
                     throw new ReconnectException(e);
