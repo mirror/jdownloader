@@ -36,36 +36,6 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
@@ -107,12 +77,42 @@ import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
 public class YoutubeHelper implements YoutubeHelperInterface {
-    private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
+    private static final String   REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
 
-    private static final String REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
+    private static final String   REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
 
-    private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP       = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
+    private static final String   REGEX_FMT_MAP_FROM_JSPLAYER_SETUP       = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
 
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -132,15 +132,15 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
     }
 
-    public static final String    PAID_VIDEO        = "Paid Video:";
+    public static final String    PAID_VIDEO                              = "Paid Video:";
 
-    protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
+    protected static final String YT_CHANNEL_ID                           = "YT_CHANNEL_ID";
 
-    protected static final String YT_DURATION       = "YT_DURATION";
+    protected static final String YT_DURATION                             = "YT_DURATION";
 
-    protected static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
+    protected static final String YT_DATE_UPDATE                          = "YT_DATE_UPDATE";
 
-    protected static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
+    protected static final String YT_GOOGLE_PLUS_ID                       = "YT_GOOGLE_PLUS_ID";
 
     private Browser               br;
 
@@ -168,8 +168,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return variantsMap;
     }
 
-    public static LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static LogSource             LOGGER                           = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
 
     static {
         REPLACER.add(new YoutubeReplacer("group") {
@@ -618,22 +618,22 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         });
     }
 
-    public static final String  YT_EXT                           = "YT_EXT";
-    public static final String  YT_TITLE                         = "YT_TITLE";
-    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
-    public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_AGE_GATE                      = "YT_AGE_GATE";
-    public static final String  YT_CHANNEL                       = "YT_CHANNEL";
-    public static final String  YT_USER                          = "YT_USER";
-    public static final String  YT_DATE                          = "YT_DATE";
-    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String  YT_VARIANT                       = "YT_VARIANT";
-    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
-    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
-    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
-    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    public static final String          YT_EXT                           = "YT_EXT";
+    public static final String          YT_TITLE                         = "YT_TITLE";
+    public static final String          YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String          YT_ID                            = "YT_ID";
+    public static final String          YT_AGE_GATE                      = "YT_AGE_GATE";
+    public static final String          YT_CHANNEL                       = "YT_CHANNEL";
+    public static final String          YT_USER                          = "YT_USER";
+    public static final String          YT_DATE                          = "YT_DATE";
+    public static final String          YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String          YT_VARIANT                       = "YT_VARIANT";
+    public static final String          YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String          YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String          YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String          YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
 
-    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    private static final String         REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
 
@@ -2433,80 +2433,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 }
             }
         }
-        // String[] matches = br.getRegex("<(target|track) id=\"(.*?)\".*?/>").getColumn(0);
-        //
-        // for (String trackID : matches) {
-        // parseSubtitleTrack(urls, ttsUrl, trackID);
-        //
-        // }
-        // String ttsUrl = br.getRegex("\"ttsurl\"\\s*:\\s*(\"http.*?\")").getMatch(0);
-        // if (ttsUrl != null) {
-        // ttsUrl = JSonStorage.restoreFromString(ttsUrl, TypeRef.STRING);
-        // } else {
-        // ttsUrl = br.getRegex("\\&ttsurl=([^\\&]+)").getMatch(0);
-        // if (ttsUrl != null) {
-        // ttsUrl = Encoding.urlDecode(ttsUrl, false);
-        // }
-        // }
-        // if (ttsUrl == null) {
-        // return new ArrayList<YoutubeSubtitleInfo>();
-        // }
-        // getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" +
-        // vid.videoID, br);
-        //
-        // ttsUrl = ttsUrl.replace("&v=" + vid.videoID, "");
-        // ttsUrl = ttsUrl.replace("?v=" + vid.videoID, "");
-        // ttsUrl = ttsUrl.replace("timedtext&", "timedtext?");
-        //
-        // String[] matches = br.getRegex("<track id=\"(.*?)\".*?/>").getColumn(0);
-        //
-        // for (String trackID : matches) {
-        // parseSubtitleTrack(urls, ttsUrl, trackID);
-        //
-        // }
         return new ArrayList<YoutubeSubtitleInfo>(urls.values());
     }
-
-    /**
-     * @param urls
-     * @param ttsUrl
-     * @param duplicate
-     * @param trackID
-     */
-    // private void parseSubtitleTrack(HashMap<String, YoutubeSubtitleInfo> urls, String ttsUrl, String trackID) {
-    //
-    // String track = br.getRegex("<(target|track) id=\"" + trackID + "\".*?/>").getMatch(-1);
-    // String lang = new Regex(track, "lang_code=\"(.*?)\".*?/>").getMatch(0);
-    // String name = new Regex(track, "name=\"(.*?)\".*?/>").getMatch(0);
-    // String kind = new Regex(track, "kind=\"(.*?)\".*?/>").getMatch(0);
-    // String langOrg = new Regex(track, "lang_original=\"(.*?)\".*?/>").getMatch(0);
-    // String langTrans = new Regex(track, "lang_translated=\"(.*?)\".*?/>").getMatch(0);
-    // if (name == null) {
-    // name = "";
-    // }
-    // if (kind == null) {
-    // kind = "";
-    // }
-    //
-    // if (StringUtils.isNotEmpty(langTrans)) {
-    // langOrg = langTrans;
-    // }
-    // if (StringUtils.isEmpty("langOrg")) {
-    //
-    // langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
-    // }
-    // YoutubeSubtitleInfo old = urls.get(lang);
-    // if (old != null) {
-    // // speech recognition
-    // if ("asr".equalsIgnoreCase(old.getKind())) {
-    // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
-    // return;
-    // } else {
-    // return;
-    // }
-    // }
-    // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
-    // }
 
     public YoutubeVariantInterface getVariantById(String ytv) {
         return variantsMap.get(ytv);
