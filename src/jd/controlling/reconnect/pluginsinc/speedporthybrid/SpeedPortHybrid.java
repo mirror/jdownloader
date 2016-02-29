@@ -37,6 +37,9 @@ import org.jdownloader.images.AbstractIcon;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 import jd.http.Browser;
 import jd.http.QueryInfo;
 import net.miginfocom.swing.MigLayout;
@@ -46,9 +49,7 @@ import net.miginfocom.swing.MigLayout;
  */
 public class SpeedPortHybrid extends RouterPlugin {
 
-    public static final String             ID              = "SpeedPortHybrid";
-
-    private static final Class             SpeedPortHybrid = null;
+    public static final String             ID = "SpeedPortHybrid";
 
     private Icon                           icon;
 
@@ -125,10 +126,86 @@ public class SpeedPortHybrid extends RouterPlugin {
         System.out.println("Decrypted: " + new String(tmp, 0, len));
     }
 
+    public static String encrypt(String pt, String challengev, String derivedk) throws UnsupportedEncodingException, IllegalStateException, InvalidCipherTextException {
+        byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 32));
+        byte[] adata = HexFormatter.hexToByteArray(challengev.substring(32, 32 + 16));
+
+        CCMBlockCipher chipher = new CCMBlockCipher(new AESFastEngine());
+        AEADParameters params = new AEADParameters(new KeyParameter(HexFormatter.hexToByteArray(derivedk)), 64, iv);
+        chipher.init(true, params);
+        byte[] enc = pt.getBytes("UTF-8");
+        byte[] tmp = new byte[enc.length + adata.length];
+        chipher.processAADBytes(adata, 0, adata.length);
+        int len = chipher.processBytes(enc, 0, enc.length, tmp, 0);
+        len += chipher.doFinal(tmp, len);
+        return HexFormatter.byteArrayToHex(tmp);
+    }
+
+    public static String decrypt(String hex, String challengev, String derivedk) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
+        String ivs;
+        byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 16 + 16));
+        String ads;
+        byte[] adata = HexFormatter.hexToByteArray(ads = challengev.substring(32, 32 + 16));
+
+        AEADParameters params = new AEADParameters(new KeyParameter(HexFormatter.hexToByteArray(derivedk)), 64, iv);
+        CCMBlockCipher dc = new CCMBlockCipher(new AESFastEngine());
+        dc.init(false, params);
+
+        byte[] enc = HexFormatter.hexToByteArray(hex);
+        byte[] tmp = new byte[enc.length + adata.length];
+        dc.processAADBytes(adata, 0, adata.length);
+        int len = dc.processBytes(enc, 0, enc.length, tmp, 0);
+        len += dc.doFinal(tmp, len);
+        return new String(tmp, 0, len, "UTF-8");
+    }
+
+    private String getTimeParams() {
+        return "_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000));
+    }
+
     public SpeedPortHybrid() {
         super();
         config = JsonConfig.create(SpeedPortHybridReconnectConfig.class);
         icon = new AbstractIcon(IconKey.ICON_RECONNECT, 16);
+        setIPCheckProvider(new IPCheckProvider() {
+
+            @Override
+            public int getIpCheckInterval() {
+                return 1000;
+            }
+
+            @Override
+            public IP getExternalIP() throws IPCheckException {
+                try {
+                    Browser br = new Browser();
+                    br.setVerbose(true);
+                    br.setDebug(true);
+                    br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
+
+                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
+                    String challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
+
+                    Log.info("Challenge: " + challengev);
+                    br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
+
+                    String derivedk;
+                    br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
+                    br.getPage("http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de");
+                    String csrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
+                    // http://192.168.2.1/data/INetIP.json?_time=1456755235240&_rand=805&_time=1456755235604&_rand=566
+                    String crypted = decrypt(br.getPage("http://" + config.getRouterIP() + "/data/INetIP.json?" + getTimeParams() + "&" + getTimeParams()), challengev, derivedk);
+                    // req_connect=online
+                    // req_connect=disabled
+                    // lte_reconn=1
+                    Log.info("Decrypted IP: " + crypted);
+
+                } catch (Throwable e) {
+                    Log.log(e);
+                    return null;
+                }
+                return null;
+            }
+        });
         invoker = new ReconnectInvoker(this) {
             private String derivedk;
             private String challengev;
@@ -137,25 +214,6 @@ public class SpeedPortHybrid extends RouterPlugin {
             @Override
             protected void testRun() throws ReconnectException, InterruptedException {
                 run();
-            }
-
-            protected String decrypt(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
-
-                String ivs;
-                byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 16 + 16));
-                String ads;
-                byte[] adata = HexFormatter.hexToByteArray(ads = challengev.substring(32, 32 + 16));
-
-                AEADParameters params = new AEADParameters(new KeyParameter(HexFormatter.hexToByteArray(derivedk)), 64, iv);
-                CCMBlockCipher dc = new CCMBlockCipher(new AESFastEngine());
-                dc.init(false, params);
-
-                byte[] enc = HexFormatter.hexToByteArray(hex);
-                byte[] tmp = new byte[enc.length + adata.length];
-                dc.processAADBytes(adata, 0, adata.length);
-                int len = dc.processBytes(enc, 0, enc.length, tmp, 0);
-                len += dc.doFinal(tmp, len);
-                return new String(tmp, 0, len, "UTF-8");
             }
 
             @Override
@@ -177,7 +235,13 @@ public class SpeedPortHybrid extends RouterPlugin {
                     br.getPage("http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de");
                     csrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
 
-                    String crypted = decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
+                    String crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
+                    // req_connect=online
+                    // req_connect=disabled
+                    // lte_reconn=1
+                    Log.info("Decrypted: " + new String(crypted));
+
+                    crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
                     // req_connect=online
                     // req_connect=disabled
                     // lte_reconn=1
@@ -185,9 +249,15 @@ public class SpeedPortHybrid extends RouterPlugin {
 
                     for (int i = 0; i < 10; i++) {
                         Thread.sleep(3000);
-                        String dec = decrypt(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+                        String dec = dec(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
                         Log.info(dec);
                     }
+
+                    crypted = dec(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
+                    // req_connect=online
+                    // req_connect=disabled
+                    // lte_reconn=1
+                    Log.info("Decrypted: " + new String(crypted));
                     /*
                      * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32, 16);
                      *
@@ -202,20 +272,14 @@ public class SpeedPortHybrid extends RouterPlugin {
                 }
             }
 
-            private String encrypt(String pt) throws UnsupportedEncodingException, IllegalStateException, InvalidCipherTextException {
-                byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 32));
-                byte[] adata = HexFormatter.hexToByteArray(challengev.substring(32, 32 + 16));
-
-                CCMBlockCipher chipher = new CCMBlockCipher(new AESFastEngine());
-                AEADParameters params = new AEADParameters(new KeyParameter(HexFormatter.hexToByteArray(derivedk)), 64, iv);
-                chipher.init(true, params);
-                byte[] enc = pt.getBytes("UTF-8");
-                byte[] tmp = new byte[enc.length + adata.length];
-                chipher.processAADBytes(adata, 0, adata.length);
-                int len = chipher.processBytes(enc, 0, enc.length, tmp, 0);
-                len += chipher.doFinal(tmp, len);
-                return HexFormatter.byteArrayToHex(tmp);
+            private String dec(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
+                return SpeedPortHybrid.decrypt(hex, challengev, derivedk);
             }
+
+            private String encrypt(String pt) throws UnsupportedEncodingException, IllegalStateException, InvalidCipherTextException {
+                return SpeedPortHybrid.encrypt(pt, challengev, derivedk);
+            }
+
         };
     }
 
