@@ -25,7 +25,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 public abstract class Challenge<T> {
-    private static final int      REDUCER      = 1;
+    private static final int      REDUCER      = 100;
     private final UniqueAlltimeID id           = new UniqueAlltimeID();
     private final Class<T>        resultType;
     private final long            created;
@@ -334,6 +334,8 @@ public abstract class Challenge<T> {
 
         info.put("service", solver.getService().getID());
         info.put("solver", solver.getClass().getSimpleName());
+        info.put("type", getTypeID());
+        info.put("host", getHost());
         return info;
     }
 }
