@@ -5,6 +5,8 @@ import java.awt.Point;
 
 import javax.swing.SwingUtilities;
 
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -26,8 +28,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import net.miginfocom.swing.MigLayout;
-
 public class LinkgrabberWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
 
     public void refreshAfterTabSwitch() {
@@ -43,12 +43,11 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
     }
 
-    private boolean                  propertiesPanelVisible;
-    private LinkgrabberOverview      overview;
-    private OverviewHeaderScrollPane overviewScrollPane;
-    private CustomizeableActionBar   rightBar;
-    private LinkgrabberPropertiesScrollPane     propertiesPanelScrollPane;
-    private CustomizeableActionBar   leftBar;
+    private boolean                         propertiesPanelVisible;
+
+    private CustomizeableActionBar          rightBar;
+    private LinkgrabberPropertiesScrollPane propertiesPanelScrollPane;
+    private CustomizeableActionBar          leftBar;
 
     public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         this.propertiesPanelVisible = propertiesPanelVisible;
@@ -180,32 +179,32 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
         return propertiesScrollPane;
     }
 
+    private OverviewHeaderScrollPane overviewScrollPane;
+
     private OverviewHeaderScrollPane getOverView() {
         if (overviewScrollPane != null) {
             return overviewScrollPane;
         }
-
-        overview = new LinkgrabberOverview(getTable());
-        OverviewHeaderScrollPane ret = new OverviewHeaderScrollPane(overview);
-        final OverviewHeaderScrollPane finalRet = ret;
+        final LinkgrabberOverview overview = new LinkgrabberOverview(getTable());
+        final OverviewHeaderScrollPane ret = new OverviewHeaderScrollPane(overview);
         LAFOptions.getInstance().applyPanelBackground(ret);
         ret.setColumnHeaderView(new LinkgrabberOverViewHeader(overview) {
 
             @Override
             protected void onCloseAction() {
+                if (overviewScrollPane == ret) {
+                    overviewScrollPane = null;
+                }
                 CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.setValue(false);
-
                 CustomizeableActionBar iconComp = rightBar;
                 Point loc = rightBar.getLocationOnScreen();
 
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                     HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadsPanel_onCloseAction(), _GUI.T.DownloadsPanel_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
-
             }
         });
         overviewScrollPane = ret;
-
         return overviewScrollPane;
     }
 

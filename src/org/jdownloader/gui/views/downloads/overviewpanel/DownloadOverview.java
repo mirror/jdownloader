@@ -45,22 +45,22 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> implements DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
 
     private static final AtomicBoolean INCLUDE_DISABLED = new AtomicBoolean(false) {
-        {
-            final AtomicBoolean variable = this;
-            CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                                                            {
+                                                                final AtomicBoolean variable = this;
+                                                                CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-                @Override
-                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                    variable.set(Boolean.TRUE.equals(newValue));
-                }
+                                                                    @Override
+                                                                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                                                                        variable.set(Boolean.TRUE.equals(newValue));
+                                                                    }
 
-                @Override
-                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                }
-            });
-            variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
-        }
-    };
+                                                                    @Override
+                                                                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                                                                    }
+                                                                });
+                                                                variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
+                                                            }
+                                                        };
 
     private final class FailedEntry extends DataEntry<AggregatedNumbers> {
         private FailedEntry(String label) {
@@ -334,7 +334,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     /**
      *
      */
-     private static final long                   serialVersionUID = 7849517111823717677L;
+    private static final long                   serialVersionUID = 7849517111823717677L;
 
     private ListSelectionListener               listSelection;
     private TableModelListener                  tableListener;
@@ -457,7 +457,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             protected void runInEDT() {
-
                 CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().removeListener(settingsListener);
                 CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
                 DownloadController.getInstance().removeListener(DownloadOverview.this);

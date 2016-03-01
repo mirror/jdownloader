@@ -33,8 +33,6 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
     private final DownloadsTable          table;
     private DownloadsPropertiesScrollPane propertiesPanelScrollPane;
     private boolean                       propertiesPanelVisible = false;
-    private OverviewHeaderScrollPane      overviewScrollPane;
-    private DownloadOverview              overView;
 
     @Override
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
@@ -110,11 +108,13 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         };
     }
 
+    private OverviewHeaderScrollPane overviewScrollPane = null;
+
     private OverviewHeaderScrollPane getOverView() {
         if (overviewScrollPane != null) {
             return overviewScrollPane;
         }
-        overView = new DownloadOverview(table);
+        final DownloadOverview overView = new DownloadOverview(table);
         final OverviewHeaderScrollPane ret = new OverviewHeaderScrollPane(overView);
         LAFOptions.getInstance().applyPanelBackground(ret);
         ret.setColumnHeaderView(new DownloadOverViewHeader(overView) {
@@ -123,6 +123,9 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
 
             @Override
             protected void onCloseAction() {
+                if (overviewScrollPane == ret) {
+                    overviewScrollPane = null;
+                }
                 CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.setValue(false);
                 CustomizeableActionBar iconComp = bottomBar;
                 final Point loc = bottomBar.getLocationOnScreen();
