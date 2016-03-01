@@ -2,14 +2,15 @@ package jd.controlling.reconnect.ipcheck;
 
 import java.util.ArrayList;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.Log;
+import org.jdownloader.logging.LogController;
+
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ipcheck.event.IPControllEvent;
 import jd.controlling.reconnect.ipcheck.event.IPControllEventSender;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**
@@ -144,6 +145,7 @@ public class IPController extends ArrayList<IPConnectionState> {
                 System.out.println("IP: " + newIP.getExternalIp());
                 break;
             } catch (final InvalidProviderException e) {
+                Log.log(e);
                 // IP check provider is bad.
                 this.badProviders.add(icp);
             } catch (final IPCheckException e) {
@@ -198,11 +200,17 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     private IPCheckProvider getIPCheckProvider() {
         final IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
+        Log.info("IP Check provider from Plugin: " + p);
         if (p == null || this.badProviders.contains(p)) {
+            Log.info(p + " is bad");
             if (!JsonConfig.create(ReconnectConfig.class).isCustomIPCheckEnabled()) {
+                Log.info("Use Custom");
                 return new BalancedWebIPCheck();
+
             } else {
+                Log.info("Use WebIP Check");
                 return CustomWebIpCheck.getInstance();
+
             }
         }
         return p;
