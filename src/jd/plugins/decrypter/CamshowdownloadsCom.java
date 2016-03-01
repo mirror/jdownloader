@@ -20,9 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camshowdownloads.com" }, urls = { "https?://(?:www\\.)?camshowdownloads\\.com/[A-Za-z0-9]+/model/.+" }, flags = { 0 })
 public class CamshowdownloadsCom extends antiDDoSForDecrypt {
@@ -41,26 +45,42 @@ public class CamshowdownloadsCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         // String fpName = br.getRegex("").getMatch(0);
-        final String[] links = br.getRegex("\"(/dl/[^<>\"]*?)\"").getColumn(0);
-        if (links != null && links.length > 0) {
-            br.setFollowRedirects(false);
-            for (final String singleLink : links) {
-                if (this.isAbort()) {
-                    return decryptedLinks;
-                }
-                getPage(singleLink);
-                final String finallink = this.br.getRedirectLocation();
-                if (finallink != null) {
-                    decryptedLinks.add(createDownloadlink(finallink));
-                }
+        String next = null;
+        do {
+            br.setFollowRedirects(true);
+            if (next != null) {
+                br.getPage(next);
             }
+            if (br.containsHTML("class=\"captcha\"")) {
+                /* Usually happens on all pages > 1 */
+                final String url_part = new Regex(this.br.getURL(), "camshowdownloads\\.com(/.+)").getMatch(0);
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                this.br.postPage("https://camshowdownloads.com/captcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&loc=" + Encoding.urlEncode(url_part));
+            }
+            final String[] links = br.getRegex("\"(/dl/[^<>\"]*?)\"").getColumn(0);
+            if (links != null && links.length > 0) {
+                br.setFollowRedirects(false);
+                for (final String singleLink : links) {
+                    if (this.isAbort()) {
+                        return decryptedLinks;
+                    }
+                    getPage(singleLink);
+                    final String finallink = this.br.getRedirectLocation();
+                    if (finallink != null) {
+                        final DownloadLink dl = createDownloadlink(finallink);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                    }
+                }
 
-            // if (fpName != null) {
-            // final FilePackage fp = FilePackage.getInstance();
-            // fp.setName(Encoding.htmlDecode(fpName.trim()));
-            // fp.addLinks(decryptedLinks);
-            // }
-        }
+                // if (fpName != null) {
+                // final FilePackage fp = FilePackage.getInstance();
+                // fp.setName(Encoding.htmlDecode(fpName.trim()));
+                // fp.addLinks(decryptedLinks);
+                // }
+            }
+            next = this.br.getRegex("class=\"icon\\-chevron\\-right\" href=\"(/[^<>\"]+\\d+)\"").getMatch(0);
+        } while (next != null);
 
         return decryptedLinks;
     }
