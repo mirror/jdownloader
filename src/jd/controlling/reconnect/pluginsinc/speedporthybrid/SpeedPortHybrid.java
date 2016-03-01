@@ -29,8 +29,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LoggerInitUtils;
 import org.appwork.utils.logging2.extmanager.Log;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.swing.SwingUtils;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESFastEngine;
@@ -41,6 +39,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
+import jd.controlling.proxy.NoProxySelector;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.RouterPlugin;
@@ -347,8 +346,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         br.setCookiesExclusive(true);
         br.setVerbose(true);
         br.setDebug(true);
-        br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
-        Log.info(config + "");
+        br.setProxySelector(new NoProxySelector());
         br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
         challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
         // br.setCookie("http://" + config.getRouterIP(), "challengev", challengev);
