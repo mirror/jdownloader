@@ -37,6 +37,7 @@ import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
 import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
 import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.pluginsinc.speedporthybrid.SpeedPortHybrid;
 import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.JDUtilities;
@@ -309,7 +310,7 @@ public class ReconnectPluginController {
             plugins.add(new ExternReconnectPlugin());
             plugins.add(new UPNPRouterPlugin());
             plugins.add(new LiveHeaderReconnect());
-            // plugins.add(new SpeedPortHybrid());
+            plugins.add(new SpeedPortHybrid());
             final java.util.List<URL> urls = new ArrayList<URL>();
             if (files != null) {
                 final int length = files.length;
