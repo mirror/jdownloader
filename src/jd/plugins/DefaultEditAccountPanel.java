@@ -87,7 +87,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
 
     @Override
     public boolean validateInputs() {
-        return StringUtils.isNotEmpty(getPassword(), getUsername());
+        return StringUtils.isAllNotEmpty(getPassword(), getUsername());
     }
 
     @Override

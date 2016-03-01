@@ -90,7 +90,7 @@ public class Video2brainCom extends PluginForHost {
         if (aa != null) {
             try {
                 login(this.br, aa);
-            } catch (final Throwable e) {
+            } catch (final PluginException e) {
                 /* Dont throw if user is in free mode anyways. */
                 if (inPremiumMode) {
                     throw e;
@@ -164,10 +164,9 @@ public class Video2brainCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         inPremiumMode = false;
-        /*
-         * 2016-03-01, psp: re-enabled free mode. Could not find any reason to temp disable it other than maybe the overloaded servers but
-         * that problem should be gone soon.
-         */
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         requestFileInformation(downloadLink);
         handleDownload(downloadLink);
     }
@@ -452,6 +451,9 @@ public class Video2brainCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         inPremiumMode = true;
         requestFileInformation(link);
+        if (AccountType.FREE.equals(account.getType())) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         /* No need to log in - we're already logged in! */
         // login(account);
         handleDownload(link);

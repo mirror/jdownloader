@@ -13,7 +13,7 @@ import org.jdownloader.logging.LogController;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**
-     * 
+     *
      */
     private static final long         serialVersionUID = -6856149094542337379L;
     private static final IPController INSTANCE         = new IPController();
@@ -131,7 +131,7 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     /**
      * forces the class to get a new IP
-     * 
+     *
      * @return
      */
     protected IP fetchIP() {
@@ -170,7 +170,7 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     /**
      * returns the latest log entry, or fetches the ip to get one
-     * 
+     *
      * @return
      */
     public synchronized IPConnectionState getIpState() {
@@ -182,8 +182,8 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     /**
      * Returns the current external IP. fetches new ip if if is marked as invalid, or is null
-     * 
-     * 
+     *
+     *
      * @return
      */
 
@@ -193,17 +193,16 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     /**
      * finds the best ipcheck provider
-     * 
+     *
      * @return
      */
     private IPCheckProvider getIPCheckProvider() {
-        IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
+        final IPCheckProvider p = ReconnectPluginController.getInstance().getActivePlugin().getIPCheckProvider();
         if (p == null || this.badProviders.contains(p)) {
-
             if (!JsonConfig.create(ReconnectConfig.class).isCustomIPCheckEnabled()) {
-                p = new BalancedWebIPCheck();
+                return new BalancedWebIPCheck();
             } else {
-                p = CustomWebIpCheck.getInstance();
+                return CustomWebIpCheck.getInstance();
             }
         }
         return p;
@@ -211,7 +210,7 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     /**
      * Tells the IpController, that the current ip is "BAD". We need a new one<br>
-     * 
+     *
      * @see #validate()
      * @see #validateAndWait(int, int, int)
      */
@@ -225,7 +224,7 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     /**
      * returns true if the current ip is "Bad" and we need a new one
-     * 
+     *
      * @return
      */
     public boolean isInvalidated() {
@@ -234,9 +233,9 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     /**
      * gets the latest connection state and validates if we have a new ip.<br>
-     * 
+     *
      * @see #validateAndWait(int, int, int) for more details.<br>
-     * 
+     *
      *      This method only does one single Check.
      */
     public boolean validate() {
@@ -276,8 +275,8 @@ public class IPController extends ArrayList<IPConnectionState> {
      * check for max waitForIPTime seconds in an interval of ipCheckInterval if the ip is valid.<br>
      * Call {@link #invalidate()} to invalidate the current state. AFterwards a reconnect can get a new ip.<br>
      * this method gets the new connectionstate and validates it
-     * 
-     * 
+     *
+     *
      * @param waitForIPTime
      * @param waitForOfflineTime
      *            TODO
