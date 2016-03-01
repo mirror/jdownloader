@@ -85,13 +85,18 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         return HexFormatter.byteArrayToHex(hash);
     }
 
-    public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, IllegalStateException, InvalidCipherTextException {
-        LoggerInitUtils.disableFileOut();
-        LoggerInitUtils.disableConsoleOut();
-        Application.setApplication(".appwork");
-        encryptTest();
+    public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, IllegalStateException, InvalidCipherTextException, SessionInvalidException {
+        try {
+            LoggerInitUtils.disableFileOut();
+            LoggerInitUtils.disableConsoleOut();
+            Application.setApplication(".appwork");
+            encryptTest();
 
-        decrpyttest();
+            decrpyttest();
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private static void encryptTest() throws UnsupportedEncodingException, InvalidCipherTextException {
@@ -104,12 +109,12 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         System.out.println("ENcrypting Works: " + "77e8cfe400a2e4896ee25d2f3177a474b43e67d55268662ffa8ec2c5225934f8a6df9b11641f0c0a8aec76509a7409c6fff6ff6369a60ae302eec9814f66de92dad0bc5eec71b40f8f".equals(result));
     }
 
-    private static void decrpyttest() throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
+    private static void decrpyttest() throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException {
         // decrypt
         SpeedPortHybrid inst = new SpeedPortHybrid();
         inst.challengev = "CD39f2B7e910aFe9FFA1A2F18DFFD28fB373dbAaaFa444DaBA3A";
         inst.derivedk = "595578fe25bca7f227bb2c84f3293fb6";
-        String result = inst.decrypt(
+        String result = inst.decryptAndHandle(
                 "47E742A51B14BA6A7DE0772B12C5ED2CBA6C82E3A68FE1B77777D7A2B1437592051DE2D1E53F3A79E8F00667AAB8C6E1CDF2242127C9D4210735997247DC6009FEA4D87F79161C69309585B80CEDED46B80B57A0DCF27036B3F38982AB1D4B8052841598741E494B412FF50098A22161CF3AA3E2BC56E49CDC7135D1E9276DB299EE9BE9BDE205C777FDA6C7EAF7652C6FDADA55892AA088FB017313AA6F1A9707530826389B41F5F50ED92D767423C1A7DDD88434FF372E20FF49B755359359B570CD0753FCB0CEA1B496308B9D49A442BF08A7949BE75B1AB188552B8FC46ADFDDBED4A9D0F9F12902CE9BD9BADA6448654296D65DB691562370BB979F3E844E2F1F136A4AA0CE9924CED5B9C8E25EFB85FE2ED41D275DE6418BDB747D8256AEE3642073958387B6EFB038E9EE994A58085560DE4353DF9C9406A89739CCF58462A96E627BF73C9AED3776873A2D970EF938B1CFDC9195F0C1FC8EE033E47351A6D543F0CFE89F9AD8211BA45811F03CFAB932DEA540C7C06DC92EE7BE317A7647A35904151F4B5DD86FB10F6822E0B696A823BB1B91E9AC201E78C5E2CEB35FF31AB1B8E0C0B0459E5DA85E9DB79EF4E5CD77640111249497BE11A7F2AAA410F053D0F2CEBBBA2FBF31512EE7195D081919FDBC260436A9E7241E40D41589A25FB91F214C36DC00DFF14EE012BA0245");
 
         System.out.println("Decryption Works: " + (result.contains("onlinestatus") && result.length() == 489));
@@ -131,31 +136,41 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         return HexFormatter.byteArrayToHex(tmp);
     }
 
-    public String decrypt(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
+    public String decryptAndHandle(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException {
         if (hex == null) {
             return null;
         }
+        String ret;
         if (hex.trim().startsWith("[") || hex.trim().startsWith("{")) {
             // unencrypted answers
-            return hex;
+            ret = hex;
+        } else {
+            String ivs;
+            byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 16 + 16));
+            String ads;
+            byte[] adata = HexFormatter.hexToByteArray(ads = challengev.substring(32, 32 + 16));
+
+            AEADParameters params = new AEADParameters(new KeyParameter(HexFormatter.hexToByteArray(derivedk)), 64, iv);
+            CCMBlockCipher dc = new CCMBlockCipher(new AESFastEngine());
+            dc.init(false, params);
+
+            byte[] enc = HexFormatter.hexToByteArray(hex);
+            byte[] tmp = new byte[enc.length + adata.length];
+            dc.processAADBytes(adata, 0, adata.length);
+            int len = dc.processBytes(enc, 0, enc.length, tmp, 0);
+            len += dc.doFinal(tmp, len);
+            ret = new String(tmp, 0, len, "UTF-8");
         }
-        String ivs;
-        byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 16 + 16));
-        String ads;
-        byte[] adata = HexFormatter.hexToByteArray(ads = challengev.substring(32, 32 + 16));
-
-        AEADParameters params = new AEADParameters(new KeyParameter(HexFormatter.hexToByteArray(derivedk)), 64, iv);
-        CCMBlockCipher dc = new CCMBlockCipher(new AESFastEngine());
-        dc.init(false, params);
-
-        byte[] enc = HexFormatter.hexToByteArray(hex);
-        byte[] tmp = new byte[enc.length + adata.length];
-        dc.processAADBytes(adata, 0, adata.length);
-        int len = dc.processBytes(enc, 0, enc.length, tmp, 0);
-        len += dc.doFinal(tmp, len);
-        String ret = new String(tmp, 0, len, "UTF-8");
         Log.info(ret);
-        updateCSRF(ret);
+        if (isLoggedIn()) {
+            updateCSRF(ret);
+            String loginstate = extractVariable(ret, "loginstate");
+            if ("0".equals(loginstate)) {
+                br.clearCookies("http://" + config.getRouterIP());
+                br = null;
+                throw new SessionInvalidException();
+            }
+        }
         return ret;
     }
 
@@ -172,16 +187,12 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     public IP getExternalIP() throws IPCheckException {
         synchronized (SpeedPortHybrid.this) {
             try {
+                try {
+                    getExternalIPOnce();
+                } catch (SessionInvalidException e) {
 
-                ensureSession();
-
-                String crypted = decrypt(br.getPage("http://" + config.getRouterIP() + "/data/INetIP.json?" + getTimeParams() + "&" + getTimeParams()));
-
-                Log.info("Decrypted IP: " + crypted);
-                onlineStatus = new Regex(crypted, "\"varid\"\\s*:\\s*\"onlinestatus\",\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
-                String externalIP = new Regex(crypted, "\"varid\"\\s*:\\s*\"public_ip_v4\",\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
-                if (externalIP != null) {
-                    return IP.getInstance(externalIP);
+                    // try again. session might be invalid
+                    getExternalIPOnce();
                 }
             } catch (Throwable e) {
                 Log.log(e);
@@ -189,6 +200,27 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             }
             throw new InvalidProviderException("Unknown UPNP Response Error");
         }
+    }
+
+    private IP getExternalIPOnce() throws Exception, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException, IPCheckException {
+        ensureSession();
+
+        String crypted = decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/INetIP.json?" + getTimeParams() + "&" + getTimeParams()));
+
+        Log.info("Decrypted IP: " + crypted);
+
+        onlineStatus = extractVariable(crypted, "onlinestatus");
+        String externalIP = extractVariable(crypted, "public_ip_v4");
+
+        if (externalIP != null) {
+            return IP.getInstance(externalIP);
+        } else {
+            throw new InvalidProviderException("Unknown UPNP Response Error");
+        }
+    }
+
+    private String extractVariable(String crypted, String key) {
+        return new Regex(crypted, "\"varid\"\\s*:\\s*\"" + key + "\",\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
     }
 
     public SpeedPortHybrid() {
@@ -210,48 +242,10 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             public void run() throws ReconnectException {
                 synchronized (SpeedPortHybrid.this) {
                     try {
-
-                        ensureSession();
-
-                        // http://192.168.2.1/html/content/internet/connection.html?lang=de
-                        Log.info("CurrentStatus " + onlineStatus);
-                        boolean changeConnectionOnline = false;
-                        boolean reconnectConnection_Lte = false;
-                        if (StringUtils.isEmpty(onlineStatus) || "disabled".equalsIgnoreCase(onlineStatus)) {
-                            changeConnectionOnline = true;
-                        } else if ("online".equalsIgnoreCase(onlineStatus)) {
-                            reconnectConnection_Lte = true;
-                        }
-
-                        if (changeConnectionOnline) {
-                            decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
-
-                        } else {
-                            decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
-
-                            // req_connect=online
-                            // req_connect=disabled
-                            // lte_reconn=1
-
-                            decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
-
-                            for (int i = 0; i < 10; i++) {
-                                Thread.sleep(3000);
-                                decrypt(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
-
-                            }
-
-                            decrypt(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
-
-                            /*
-                             * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata =
-                             * challengev.substr(32, 16);
-                             *
-                             * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
-                             *
-                             * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv),
-                             * sjcl.codec.hex.toBits(adata)); pt = sjcl.codec.utf8String.fromBits(pt); return pt;
-                             */
+                        try {
+                            runOnce();
+                        } catch (SessionInvalidException e) {
+                            runOnce();
                         }
                     } catch (Throwable e) {
                         throw new ReconnectException(e);
@@ -259,38 +253,61 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 }
             }
 
+            private void runOnce() throws Exception, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException, InterruptedException {
+                ensureSession();
+
+                // http://192.168.2.1/html/content/internet/connection.html?lang=de
+                Log.info("CurrentStatus " + onlineStatus);
+                boolean changeConnectionOnline = false;
+                boolean reconnectConnection_Lte = false;
+                if (StringUtils.isEmpty(onlineStatus) || "disabled".equalsIgnoreCase(onlineStatus)) {
+                    changeConnectionOnline = true;
+                } else if ("online".equalsIgnoreCase(onlineStatus)) {
+                    reconnectConnection_Lte = true;
+                }
+
+                if (changeConnectionOnline) {
+                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
+
+                } else {
+                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
+
+                    // req_connect=online
+                    // req_connect=disabled
+                    // lte_reconn=1
+
+                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
+
+                    for (int i = 0; i < 10; i++) {
+                        Thread.sleep(3000);
+                        decryptAndHandle(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+
+                    }
+
+                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
+
+                    /*
+                     * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32, 16);
+                     *
+                     * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
+                     *
+                     * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv),
+                     * sjcl.codec.hex.toBits(adata)); pt = sjcl.codec.utf8String.fromBits(pt); return pt;
+                     */
+                }
+            }
+
         };
     }
 
     private void updateCSRF(String crypted) {
-        String newCsrf = new Regex(crypted, "\"vartype\"\\s*:\\s*\"value\"\\s*,\\s*\"varid\"\\s*:\\s*\"csrf_token\"\\s*,\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+        String newCsrf = extractVariable(crypted, "csrf_token");
         if (StringUtils.isNotEmpty(newCsrf)) {
             Log.info("New CSRF: " + newCsrf);
             csrf = newCsrf;
         } else {
             Log.info("No new CSRF");
         }
-    }
-
-    protected void ensureSession() throws Exception {
-        br = new Browser();
-        br.setVerbose(true);
-        br.setDebug(true);
-        br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
-
-        br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
-        challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
-
-        Log.info("Challenge: " + challengev);
-        br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
-
-        br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
-        getPage("/html/content/internet/connection.html?lang=de");
-
-    }
-
-    private void getPage(String string) throws IOException {
-        br.getPage("http://" + config.getRouterIP() + string);
         String newcsrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
         if (StringUtils.isNotEmpty(newcsrf)) {
             Log.info("New CSRF: " + newcsrf);
@@ -298,6 +315,39 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         } else {
             Log.info("No new CSRF");
         }
+    }
+
+    protected void ensureSession() throws Exception {
+        if (isLoggedIn()) {
+            return;
+        }
+        br = new Browser();
+        br.setCookiesExclusive(true);
+        br.setVerbose(true);
+        br.setDebug(true);
+        br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
+
+        br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
+        challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
+        // br.setCookie("http://" + config.getRouterIP(), "challengev", challengev);
+
+        Log.info("Challenge: " + challengev);
+        decryptAndHandle(br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true)));
+
+        br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
+
+        getPage("/html/content/internet/connection.html?lang=de");
+
+    }
+
+    private boolean isLoggedIn() {
+        return br != null && br.getCookie("http://" + config.getRouterIP(), "challengev") != null;
+    }
+
+    private void getPage(String string) throws IOException, IllegalStateException, InvalidCipherTextException, SessionInvalidException {
+
+        decryptAndHandle(br.getPage("http://" + config.getRouterIP() + string));
+
     }
 
     @Override
