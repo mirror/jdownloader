@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
@@ -76,6 +77,8 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     private String                         challengev;
 
     private String                         onlineStatus;
+
+    private String                         session;
 
     private String PBKDF2Key(String password, String salt) throws Exception {
 
@@ -334,6 +337,12 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         Log.info("Challenge: " + challengev);
         decryptAndHandle(br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true)));
 
+        session = br.getCookie("http://" + config.getRouterIP(), "SessionID_R3");
+        if (StringUtils.isEmpty(session)) {
+            UIOManager.I().showErrorMessage("Login to Speedport Failed!");
+            br = null;
+            throw new SessionInvalidException();
+        }
         br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
 
         getPage("/html/content/internet/connection.html?lang=de");
