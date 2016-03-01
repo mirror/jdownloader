@@ -144,7 +144,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             return null;
         }
         String ret;
-        if (hex.trim().startsWith("[") || hex.trim().startsWith("{") || hex.trim().startsWith("<")) {
+        if (!hex.trim().matches("[a-fA-f0-9]+")) {
             // unencrypted answers
             ret = hex;
         } else {
