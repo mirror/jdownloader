@@ -26,10 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,6 +45,10 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movyo.to", "letwatch.us" }, urls = { "https?://(www\\.)?(?:movyo\\.to)/(embed\\-|video/)[a-z0-9]{12}", "https?://(www\\.)?(?:letwatch\\.us(\\.com)?)/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class LetWatchUs extends antiDDoSForHost {
@@ -73,6 +73,7 @@ public class LetWatchUs extends antiDDoSForHost {
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = false;
     private final boolean                  ENABLE_RANDOM_UA             = false;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK   = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
@@ -201,7 +202,11 @@ public class LetWatchUs extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(fileInfo[0].trim() + ".mp4");
+        fileInfo[0] = fileInfo[0].trim();
+        if (!fileInfo[0].endsWith(".mp4")) {
+            fileInfo[0] += ".mp4";
+        }
+        link.setName(fileInfo[0]);
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
@@ -243,12 +248,14 @@ public class LetWatchUs extends antiDDoSForHost {
                 }
             }
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "title=\"([0-9]+ bytes)\"").getMatch(0);
+        if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "title=\"([0-9]+ bytes)\"").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    if (fileInfo[1] == null) {
+                        fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    }
                 }
             }
         }

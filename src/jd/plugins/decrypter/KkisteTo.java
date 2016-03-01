@@ -75,6 +75,11 @@ public class KkisteTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (seasons == null || seasons.length == 0) {
+            if (!this.br.containsHTML("class=\"free\"") && !this.br.containsHTML("class=\"seasonselect\"")) {
+                /* There is nothing to download - the content has not yet been published! */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
