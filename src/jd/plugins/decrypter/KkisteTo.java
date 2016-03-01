@@ -37,7 +37,7 @@ public class KkisteTo extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -112,6 +112,7 @@ public class KkisteTo extends PluginForDecrypt {
                 dl._setFilePackage(fp);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
+                distribute(dl);
                 counter++;
             }
         }
