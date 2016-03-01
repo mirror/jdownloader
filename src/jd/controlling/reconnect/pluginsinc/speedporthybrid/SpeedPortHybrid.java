@@ -316,6 +316,8 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 config.setRouterIP(txtIP.getText());
             }
         };
+        txtPassword.setText(config.getPassword());
+        txtIP.setText(config.getRouterIP());
         p.add(label("Router IP"));
         p.add(txtIP);
         p.add(label("Password"));
