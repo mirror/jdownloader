@@ -267,46 +267,48 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 // http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de
                 Log.info("CurrentStatus " + onlineStatus);
                 boolean changeConnectionOnline = false;
-                boolean reconnectConnection_Lte = false;
+
                 if (StringUtils.isEmpty(onlineStatus) || "disabled".equalsIgnoreCase(onlineStatus)) {
                     changeConnectionOnline = true;
-                } else if ("online".equalsIgnoreCase(onlineStatus)) {
-                    reconnectConnection_Lte = true;
+                }
+                if (changeConnectionOnline) {
+                    // "req_connect=online&csrf_token=j2WMeJ%2BjJv4WlwLdwKuWoWxpNY6JXyC"
+                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=online&csrf_token=" + csrf)));
+                    waitForConnection();
+
                 }
 
-                if (changeConnectionOnline) {
-                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
-                    for (int i = 0; i < 10; i++) {
-                        Thread.sleep(3000);
-                        decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+                // "req_connect=disabled&csrf_token=j2WMeJ%2BjJv4WlwLdwKuWoWxpNY6JXyC"
+                decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
 
+                // req_connect=online
+                // req_connect=disabled
+                // lte_reconn=1
+                // "lte_reconn=1&csrf_token=j2WMeJ%2BjJv4WlwLdwKuWoWxpNY6JXyC"
+                decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
+
+                waitForConnection();
+
+                decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=online&csrf_token=" + csrf)));
+
+                /*
+                 * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32, 16);
+                 *
+                 * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
+                 *
+                 * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv), sjcl.codec.hex.toBits(adata));
+                 * pt = sjcl.codec.utf8String.fromBits(pt); return pt;
+                 */
+
+            }
+
+            private void waitForConnection() throws InterruptedException, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException {
+                for (int i = 0; i < 60 * 5; i++) {
+                    Thread.sleep(1000);
+                    String crypted = decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+                    if (!"establishing".equals(extractVariable(crypted, "onlinestatus"))) {
+                        break;
                     }
-
-                } else {
-                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
-
-                    // req_connect=online
-                    // req_connect=disabled
-                    // lte_reconn=1
-
-                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
-
-                    for (int i = 0; i < 10; i++) {
-                        Thread.sleep(3000);
-                        decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
-
-                    }
-
-                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
-
-                    /*
-                     * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32, 16);
-                     *
-                     * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
-                     *
-                     * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv),
-                     * sjcl.codec.hex.toBits(adata)); pt = sjcl.codec.utf8String.fromBits(pt); return pt;
-                     */
                 }
             }
 
@@ -360,7 +362,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     }
 
     private boolean isLoggedIn() {
-        return br != null && br.getCookie("http://" + config.getRouterIP(), "challengev") != null;
+        return br != null && br.getCookie("http://" + config.getRouterIP(), "SessionID_R3") != null;
     }
 
     private void getPage(String string) throws IOException, IllegalStateException, InvalidCipherTextException, SessionInvalidException {
