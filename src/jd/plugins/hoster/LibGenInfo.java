@@ -19,8 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,10 +34,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.(info|net)/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[A-Za-z0-9]{32}|https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.net/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[A-Za-z0-9]{32}|https?://(?:www\\.)?libgen\\.io/(?:ads|get)\\.php\\?md5=[a-f0-9]{32}|https?://libgen\\.(?:net|io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" }, flags = { 0 })
 public class LibGenInfo extends PluginForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "libgen.net", "libgen.io", "golibgen.io" };
+    }
 
     public LibGenInfo(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,11 +54,11 @@ public class LibGenInfo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("libgen\\.(net|info)/", "libgen.in/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("libgen\\.net/", "golibgen.io/"));
     }
 
-    private static final String  type_picture      = "https?://libgen\\.(?:in|info|net)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
-    public static final String   type_libgen_in    = "http://libgen\\.in/get\\.php\\?md5=[A-Za-z0-9]{32}";
+    private static final String  type_picture      = "https?://libgen\\.(?:net|io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
+    public static final String   type_libgen_in    = "/get\\.php\\?md5=[A-Za-z0-9]{32}";
 
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
@@ -68,11 +72,12 @@ public class LibGenInfo extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
 
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(this.br, link.getDownloadURL());
+                con = br.openGetConnection(link.getDownloadURL());
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -97,31 +102,52 @@ public class LibGenInfo extends PluginForHost {
         if (br.containsHTML(">There are no records to display\\.<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("name=\"hidden0\" type=\"hidden\"\\s+value=\"([^<>\"\\']+)\"").getMatch(0);
-        String filesize = br.getRegex(">size\\(bytes\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
+        String filename = null, filesize = null;
+        if (link.getDownloadURL().contains("/ads.php?md5=")) {
+            final String author = getBracketResult("author");
+            final String title = getBracketResult("title");
+            filename = author + " - " + title;
+        } else {
+            filename = br.getRegex("name=\"hidden0\" type=\"hidden\"\\s+value=\"([^<>\"\\']+)\"").getMatch(0);
+            filesize = br.getRegex(">size\\(bytes\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
+    }
+
+    private String getBracketResult(final String key) {
+        final String result = br.getRegex(key + "\\s*=\\s*\\{(.*?)\\},?[\r\n]+").getMatch(0);
+        return result;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (dllink == null) {
-            Form download = br.getFormbyProperty("name", "receive");
-            if (download == null) {
-                download = br.getForm(1);
+            if (downloadLink.getDownloadURL().contains("/ads.php?md5=")) {
+                dllink = br.getRegex("<a href=\"(/get\\.php\\?md5=[a-f0-9]{32}.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                Form download = br.getFormbyProperty("name", "receive");
+                if (download == null) {
+                    download = br.getForm(1);
+                }
+                if (download == null) {
+                    logger.info("Could not find download form");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // they have use multiple quotation marks within form input lines. This returns null values.
+                download = cleanForm(download);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, FREE_RESUME, FREE_MAXCHUNKS);
             }
-            if (download == null) {
-                logger.info("Could not find download form");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // they have use multiple quotation marks within form input lines. This returns null values.
-            download = cleanForm(download);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, FREE_RESUME, FREE_MAXCHUNKS);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         }
@@ -155,7 +181,7 @@ public class LibGenInfo extends PluginForHost {
      * TODO: remove after JD2 goes stable!
      *
      * @author raztoki
-     * */
+     */
     private Form cleanForm(Form form) {
         if (form == null) {
             return null;
@@ -180,20 +206,6 @@ public class LibGenInfo extends PluginForHost {
         return ret;
     }
 
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
     public boolean hasAutoCaptcha() {
         return false;
     }
@@ -208,11 +220,6 @@ public class LibGenInfo extends PluginForHost {
             return false;
         }
         return false;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "libgen.info", "libgen.net", "libgen.in" };
     }
 
 }
