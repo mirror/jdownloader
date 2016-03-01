@@ -135,6 +135,7 @@ public class LibGenInfo extends PluginForHost {
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             } else {
                 Form download = br.getFormbyProperty("name", "receive");
                 if (download == null) {
