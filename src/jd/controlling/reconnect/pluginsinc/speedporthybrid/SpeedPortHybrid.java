@@ -200,11 +200,11 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         synchronized (SpeedPortHybrid.this) {
             try {
                 try {
-                    getExternalIPOnce();
+                    return getExternalIPOnce();
                 } catch (SessionInvalidException e) {
 
                     // try again. session might be invalid
-                    getExternalIPOnce();
+                    return getExternalIPOnce();
                 }
             } catch (Throwable e) {
                 Log.log(e);
