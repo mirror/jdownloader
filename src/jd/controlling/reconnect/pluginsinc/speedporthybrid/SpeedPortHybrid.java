@@ -132,6 +132,13 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     }
 
     public String decrypt(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException {
+        if (hex == null) {
+            return null;
+        }
+        if (hex.trim().startsWith("[") || hex.trim().startsWith("{")) {
+            // unencrypted answers
+            return hex;
+        }
         String ivs;
         byte[] iv = HexFormatter.hexToByteArray(challengev.substring(16, 16 + 16));
         String ads;
