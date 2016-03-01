@@ -204,11 +204,12 @@ public class IPController extends ArrayList<IPConnectionState> {
         if (p == null || this.badProviders.contains(p)) {
             Log.info(p + " is bad");
             if (!JsonConfig.create(ReconnectConfig.class).isCustomIPCheckEnabled()) {
-                Log.info("Use Custom");
+                Log.info("Use WebIP Check");
+
                 return new BalancedWebIPCheck();
 
             } else {
-                Log.info("Use WebIP Check");
+                Log.info("Use Custom");
                 return CustomWebIpCheck.getInstance();
 
             }
