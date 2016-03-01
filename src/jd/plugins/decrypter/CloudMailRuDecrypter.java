@@ -30,8 +30,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru((/|%2F)public(/|%2F)[a-z0-9]+(/|%2F)[^<>\"]+|/[A-Z0-9]{32})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru((?:/|%2F)public(?:/|%2F)[a-z0-9]+(?:/|%2F)[^<>\"]+|(?:/|%2F)(?:files(?:/|%2F))?[A-Z0-9]{32})" }, flags = { 0 })
 public class CloudMailRuDecrypter extends PluginForDecrypt {
 
     public CloudMailRuDecrypter(PluginWrapper wrapper) {
@@ -43,24 +44,24 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
     private static final double MAX_ZIP_FILESIZE = 4194304;
     private static String       DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
 
-    private static final String TYPE_APIV2       = "https?://(www\\.)?cloud\\.mail\\.ru/[A-Z0-9]{32}";
+    private static final String TYPE_APIV2       = "https?://(www\\.)?cloud\\.mail\\.ru/(?:files/)?[A-Z0-9]{32}";
 
     private String              json;
-    private String              PARAMETER        = null;
+    private String              parameter        = null;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         prepBR();
-        PARAMETER = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
-        if (PARAMETER.endsWith("/")) {
-            PARAMETER = PARAMETER.substring(0, PARAMETER.lastIndexOf("/"));
+        parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
+        if (parameter.endsWith("/")) {
+            parameter = parameter.substring(0, parameter.lastIndexOf("/"));
         }
         String id;
         final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        if (PARAMETER.matches(TYPE_APIV2)) {
-            id = new Regex(PARAMETER, "([A-Z0-9]{32})$").getMatch(0);
-            main.setName(PARAMETER);
+        if (parameter.matches(TYPE_APIV2)) {
+            id = new Regex(parameter, "([A-Z0-9]{32})$").getMatch(0);
+            main.setName(parameter);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             try {
                 br.postPage("https://cloud.mail.ru/api/v2/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
@@ -81,8 +82,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             }
             json = br.toString();
         } else {
-            id = new Regex(PARAMETER, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
-            main.setName(new Regex(PARAMETER, "public/[a-z0-9]+/(.+)").getMatch(0));
+            id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
+            main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
             final String id_url_encoded = Encoding.urlEncode(id);
             try {
                 br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
@@ -102,11 +103,11 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             }
         }
         main.setProperty("plain_request_id", id);
-        main.setProperty("mainlink", PARAMETER);
+        main.setProperty("mainlink", parameter);
 
         String mainName = new Regex(json, "\"body\":\\{\"count\":\\{\"folders\":\\d+,\"files\":\\d+\\},\"name\":\"([^<>\"]*?)\"").getMatch(0);
         if (mainName == null) {
-            mainName = new Regex(PARAMETER, "public/([a-z0-9]+)/").getMatch(0);
+            mainName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
         }
         if (mainName == null) {
             mainName = id;
@@ -114,17 +115,17 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         mainName = Encoding.htmlDecode(mainName.trim());
         final String[] links = getList(id);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + PARAMETER);
+            logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
         final String dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
         long totalSize = 0;
         for (final String singleinfo : links) {
-            if ("folder".equals(getJson(singleinfo, "kind"))) {
-                String folder_url = getJson(singleinfo, "weblink");
+            if ("folder".equals(PluginJSonUtils.getJson(singleinfo, "kind"))) {
+                String folder_url = PluginJSonUtils.getJson(singleinfo, "weblink");
                 if (folder_url == null) {
-                    logger.warning("Decrypter broken for link: " + PARAMETER);
+                    logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 folder_url = Encoding.htmlDecode(folder_url);
@@ -134,10 +135,10 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 String browserurl;
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String weblink = new Regex(singleinfo, "\"weblink\":\"([^<>\"]*?)/[^<>\"/]+\"").getMatch(0);
-                final String filesize = getJson(singleinfo, "size");
-                String filename = getJson(singleinfo, "name");
+                final String filesize = PluginJSonUtils.getJson(singleinfo, "size");
+                String filename = PluginJSonUtils.getJson(singleinfo, "name");
                 if (filesize == null || filename == null) {
-                    logger.warning("Decrypter broken for link: " + PARAMETER);
+                    logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 String unique_id;
@@ -157,11 +158,11 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 dl.setFinalFileName(filename);
                 dl.setProperty("plain_name", filename);
                 dl.setProperty("plain_size", filesize);
-                dl.setProperty("mainlink", PARAMETER);
+                dl.setProperty("mainlink", parameter);
                 dl.setProperty("plain_request_id", id);
                 dl.setProperty("unique_id", unique_id);
                 /** TODO: Remove this */
-                if (PARAMETER.matches(TYPE_APIV2)) {
+                if (parameter.matches(TYPE_APIV2)) {
                     dl.setProperty("noapi", true);
                 }
                 browserurl = "https://cloud.mail.ru/public/" + unique_id;
@@ -172,12 +173,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                     fp.setProperty("ALLOW_MERGE", true);
                     dl._setFilePackage(fp);
                 }
-                try {
-                    dl.setContentUrl(browserurl);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    dl.setBrowserUrl(browserurl);
-                }
+                dl.setContentUrl(browserurl);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
@@ -202,7 +198,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         }
         String[] lists;
         String[] links;
-        if (PARAMETER.matches(TYPE_APIV2)) {
+        if (parameter.matches(TYPE_APIV2)) {
             lists = new Regex(json, "\"list\":([\t\n\r ]+)?\\[(.*?)\\]").getColumn(1);
             links = lists[lists.length - 1].split("\\},\\{");
         } else {
@@ -213,14 +209,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             return null;
         }
         return links;
-    }
-
-    private String getJson(final String source, final String PARAMETER) {
-        String result = new Regex(source, "\"" + PARAMETER + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + PARAMETER + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
     }
 
     private void prepBR() {
