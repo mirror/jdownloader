@@ -6132,4 +6132,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Furthermore, JDownloader makes use of several 3rd party resources and libraries." })
     String about_3rdparty();
 
+    @Default(lngs = { "en" }, values = { "Router IP" })
+    String lit_router_ip();
+
 }

@@ -38,6 +38,7 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 import jd.controlling.reconnect.ReconnectException;
@@ -393,9 +394,9 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         };
         txtPassword.setText(config.getPassword());
         txtIP.setText(config.getRouterIP());
-        p.add(label("Router IP"));
+        p.add(label(_GUI.T.lit_router_ip()));
         p.add(txtIP);
-        p.add(label("Password"));
+        p.add(label(_GUI.T.lit_password()));
         p.add(txtPassword);
         return p;
     }
