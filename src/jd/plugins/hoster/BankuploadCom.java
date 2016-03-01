@@ -128,7 +128,7 @@ public class BankuploadCom extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.9<br />
-     * mods:<br />
+     * mods: doFree[Extra errorhandling for missing download button - this is some kind of wait limit]<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -468,6 +468,9 @@ public class BankuploadCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                if (!download1.hasInputFieldByName("down_direct")) {
+                    download1.put("down_direct", "1");
+                }
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(downloadLink, false);
@@ -593,6 +596,10 @@ public class BankuploadCom extends PluginForHost {
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                    if (!this.br.containsHTML("id=\"btn_download\"")) {
+                        /* Special case: Download button is simply missing - this is some kind of limit that needs a short waittime. */
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before you can start new downloads", 3 * 60 * 1000l);
+                    }
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {

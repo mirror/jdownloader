@@ -422,7 +422,7 @@ public class Video2brainCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        if (br.containsHTML("class=\"subscription btn green\"")) {
+        if (br.containsHTML("class=\"overlay\\-buy\\-subscription btn green\"")) {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account (Account ohne Abo)");
         } else {

@@ -117,7 +117,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_SHORT                           = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
     private static final String     PATTERN_URL_EXTERN                      = "https?://(?:www\\.)?vk\\.com/away\\.php\\?to=.+";
     private static final String     PATTERN_GENERAL_AUDIO                   = "https?://(www\\.)?vk\\.com/audio.*?";
-    private static final String     PATTERN_AUDIO_ALBUM                     = "https?://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios(\\-)?\\d+)";
+    private static final String     PATTERN_AUDIO_ALBUM                     = "https?://(?:www\\.)?vk\\.com/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
     private static final String     PATTERN_AUDIO_PAGE                      = "https?://(www\\.)?vk\\.com/page\\-\\d+_\\d+.*?";
     private static final String     PATTERN_AUDIO_PAGE_oid                  = "https?://(www\\.)?vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
     private static final String     PATTERN_AUDIO_AUDIOS_ALBUM              = "https?://(www\\.)?vk\\.com/audios\\-\\d+\\?album_id=\\d+";
@@ -134,11 +134,11 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_PHOTO_SINGLE_Z                  = "https?://(?:www\\.)?vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PHOTO_MODULE                    = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                     = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
-    private static final String     PATTERN_PHOTO_ALBUMS                    = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
-    private static final String     PATTERN_PHOTO_ALBUMS_USERNAME_Z         = "https?://(www\\.)?vk\\.com/[^<>\"/]+\\?z=albums\\d+";
+    private static final String     PATTERN_PHOTO_ALBUMS                    = "https?://(?:www\\.)?vk\\.com/.*?albums\\d+";
     private static final String     PATTERN_GENERAL_WALL_LINK               = "https?://(www\\.)?vk\\.com/wall(?:\\-)?\\d+(?:\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
     private static final String     PATTERN_WALL_LOOPBACK_LINK              = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
-    private static final String     PATTERN_WALL_POST_LINK                  = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+_\\d+";
+    private static final String     PATTERN_WALL_POST_LINK                  = "https?://(?:www\\.)?vk\\.com/wall(?:\\-)?\\d+_\\d+";
+    private static final String     PATTERN_WALL_POST_LINK_2                = "https?://(?:www\\.)?vk\\.com/wall\\-\\d+.+w=wall(?:\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PUBLIC_LINK                     = "https?://(www\\.)?vk\\.com/public\\d+";
     private static final String     PATTERN_CLUB_LINK                       = "https?://(www\\.)?vk\\.com/club\\d+.*?";
     private static final String     PATTERN_EVENT_LINK                      = "https?://(www\\.)?vk\\.com/event\\d+";
@@ -294,15 +294,14 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
                     /* Remove loopback-part as it only contains information which we need later but not in the link */
                     newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(https?://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
-                } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS_USERNAME_Z)) {
-                    /* Change PATTERN_PHOTO_ALBUMS_USERNAME_Z --> PATTERN_PHOTO_ALBUMS */
-                    newLink = "https://vk.com/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "albums(\\d+)").getMatch(0);
                 } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_ALBUM)) {
-                    newLink = "https://vk.com/audios" + new Regex(CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)").getMatch(0);
+                    newLink = "https://vk.com/audios" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(?:audio(?:\\.php)?\\?id=|audios)((?:\\-)?\\d+)").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE)) {
                     /* PATTERN_AUDIO_PAGE RegEx is wide open --> Make sure that our URL is correct! */
                     final String pageID = get_ID_PAGE(this.CRYPTEDLINK_FUNCTIONAL);
                     newLink = getBaseURL() + "/page-" + pageID;
+                } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK_2)) {
+                    newLink = getBaseURL() + "/wall" + new Regex(this.CRYPTEDLINK_ORIGINAL, "((?:\\-)?\\d+_\\d+)").getMatch(0);
                 } else if (isKnownType()) {
                     /* Don't change anything */
                 } else {
@@ -910,8 +909,8 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         final String type = "multiplephotoalbums";
-        if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
-            this.CRYPTEDLINK_FUNCTIONAL = getProtocol() + "vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+        if (this.CRYPTEDLINK_FUNCTIONAL.contains("z=")) {
+            this.CRYPTEDLINK_FUNCTIONAL = getProtocol() + "vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "albums(\\d+)").getMatch(0);
             if (!this.CRYPTEDLINK_FUNCTIONAL.equalsIgnoreCase(br.getURL())) {
                 getPage(br, this.CRYPTEDLINK_FUNCTIONAL);
             }
