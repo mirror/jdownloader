@@ -149,7 +149,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
         getPage("/hosts.html");
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
+        final String[] possible_domains = { "al", "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomainsInfo = br.getRegex("(<img src=\"/assets/images/hosts/.*?)</tr>").getColumn(0);
         for (String hinfo : hostDomainsInfo) {
