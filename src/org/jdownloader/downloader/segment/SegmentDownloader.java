@@ -181,7 +181,7 @@ public class SegmentDownloader extends DownloadInterface {
         try {
 
             connectionHandler = new ManagedThrottledConnectionHandler();
-            if (downloadable != null) {
+            if (downloadable == null) {
                 downloadable = new DownloadLinkDownloadable(link) {
                     @Override
                     public boolean isResumable() {
