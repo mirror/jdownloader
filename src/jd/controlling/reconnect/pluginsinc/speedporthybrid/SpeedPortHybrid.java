@@ -175,12 +175,16 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
         if (isLoggedIn()) {
             updateCSRF(ret);
+            if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+                throw new SessionInvalidException("Invalid ResponseCode");
+            }
             String loginstate = extractVariable(ret, "loginstate");
             if ("0".equals(loginstate)) {
                 br.clearCookies("http://" + config.getRouterIP());
                 br = null;
-                throw new SessionInvalidException();
+                throw new SessionInvalidException("LoginState=0");
             }
+
         }
         return ret;
     }
@@ -353,7 +357,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         if (StringUtils.isEmpty(session)) {
             UIOManager.I().showErrorMessage("Login to Speedport Failed!");
             br = null;
-            throw new SessionInvalidException();
+            throw new SessionInvalidException("Login Failed");
         }
         br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
 
