@@ -163,8 +163,9 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             int len = dc.processBytes(enc, 0, enc.length, tmp, 0);
             len += dc.doFinal(tmp, len);
             ret = new String(tmp, 0, len, "UTF-8");
+            Log.info(ret);
         }
-        Log.info(ret);
+
         if (isLoggedIn()) {
             updateCSRF(ret);
             String loginstate = extractVariable(ret, "loginstate");
