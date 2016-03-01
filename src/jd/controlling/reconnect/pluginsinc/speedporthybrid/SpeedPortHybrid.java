@@ -233,9 +233,6 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         icon = new AbstractIcon(IconKey.ICON_RECONNECT, 16);
         setIPCheckProvider(this);
         invoker = new ReconnectInvoker(this) {
-            private String derivedk;
-            private String challengev;
-            private String csrf;
 
             @Override
             protected void testRun() throws ReconnectException, InterruptedException {
@@ -260,7 +257,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             private void runOnce() throws Exception, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException, InterruptedException {
                 ensureSession();
 
-                // http://192.168.2.1/html/content/internet/connection.html?lang=de
+                // http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de
                 Log.info("CurrentStatus " + onlineStatus);
                 boolean changeConnectionOnline = false;
                 boolean reconnectConnection_Lte = false;
@@ -274,7 +271,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                     decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
                     for (int i = 0; i < 10; i++) {
                         Thread.sleep(3000);
-                        decryptAndHandle(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+                        decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
 
                     }
 
@@ -289,7 +286,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
                     for (int i = 0; i < 10; i++) {
                         Thread.sleep(3000);
-                        decryptAndHandle(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+                        decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
 
                     }
 
