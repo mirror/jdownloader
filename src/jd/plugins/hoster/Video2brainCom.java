@@ -164,6 +164,10 @@ public class Video2brainCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         inPremiumMode = false;
+        /*
+         * 2016-03-01, psp: re-enabled free mode. Could not find any reason to temp disable it other than maybe the overloaded servers but
+         * that problem should be gone soon.
+         */
         requestFileInformation(downloadLink);
         handleDownload(downloadLink);
     }
