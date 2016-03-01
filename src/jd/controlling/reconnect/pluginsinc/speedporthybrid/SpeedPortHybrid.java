@@ -80,6 +80,8 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
     private String                         session;
 
+    private String                         externalIP;
+
     private String PBKDF2Key(String password, String salt) throws Exception {
 
         final PBEKeySpec spec = new PBEKeySpec(Hash.getSHA256(password).toCharArray(), salt.getBytes("UTF-8"), 1000, 16 * 8);
@@ -93,6 +95,10 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             LoggerInitUtils.disableFileOut();
             LoggerInitUtils.disableConsoleOut();
             Application.setApplication(".appwork");
+
+            String result = "\"varid\":\"always_online\",\r\n  \"varvalue\":\"1\"\r\n },\r\n {\r\n  \"vartype\":\"value\",\r\n  \"varid\":\"public_ip_v4\",\r\n  \"varvalue\":\"217.241.66.150\"\r\n  },\r\n  {\r\n  \"vartype\":\"value\",\r\n \"varid\":\"gateway_ip_v4\",\r\n\"varvalue\":\"217.241.0.1\"\r\n}";
+            String ip = new SpeedPortHybrid().extractVariable(result, "public_ip_v4");
+            System.out.println("Parser: " + ("217.241.66.150".equals(ip)));
             encryptTest();
 
             decrpyttest();
@@ -212,11 +218,10 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
         String crypted = decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/INetIP.json?" + getTimeParams() + "&" + getTimeParams()));
 
-        Log.info("Decrypted IP: " + crypted);
-
         onlineStatus = extractVariable(crypted, "onlinestatus");
-        String externalIP = extractVariable(crypted, "public_ip_v4");
-
+        externalIP = extractVariable(crypted, "public_ip_v4");
+        Log.info("Online Status: " + onlineStatus);
+        Log.info("IP: " + externalIP);
         if (externalIP != null) {
             return IP.getInstance(externalIP);
         } else {
