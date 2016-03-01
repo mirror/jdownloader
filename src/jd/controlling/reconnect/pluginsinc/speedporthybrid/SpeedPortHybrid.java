@@ -176,11 +176,12 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         if (isLoggedIn()) {
             updateCSRF(ret);
             if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+                br = null;
                 throw new SessionInvalidException("Invalid ResponseCode");
             }
             String loginstate = extractVariable(ret, "loginstate");
             if ("0".equals(loginstate)) {
-                br.clearCookies("http://" + config.getRouterIP());
+
                 br = null;
                 throw new SessionInvalidException("LoginState=0");
             }
@@ -206,6 +207,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 try {
                     return getExternalIPOnce();
                 } catch (SessionInvalidException e) {
+                    Log.info("Try again ip check");
 
                     // try again. session might be invalid
                     return getExternalIPOnce();
@@ -257,6 +259,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                         try {
                             runOnce();
                         } catch (SessionInvalidException e) {
+                            Log.info("Try again");
                             runOnce();
                         }
                     } catch (Throwable e) {
