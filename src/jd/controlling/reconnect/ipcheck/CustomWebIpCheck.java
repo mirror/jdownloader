@@ -11,9 +11,9 @@ import org.appwork.storage.config.JsonConfig;
 
 /**
  * Allows the user to define his own ip check rules.
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public class CustomWebIpCheck implements IPCheckProvider {
 
@@ -31,7 +31,7 @@ public class CustomWebIpCheck implements IPCheckProvider {
 
     /**
      * gets the external IP.
-     * 
+     *
      * @throws IPCheckException
      *             if there is no valid external IP
      */
@@ -48,8 +48,8 @@ public class CustomWebIpCheck implements IPCheckProvider {
             final Matcher matcher = Pattern.compile(patt, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(this.br.getPage(site));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
-
-                return IP.getInstance(matcher.group(1)); }
+                    return IP.getInstance(matcher.group(1));
+                }
             }
 
         } catch (final Exception e) {
