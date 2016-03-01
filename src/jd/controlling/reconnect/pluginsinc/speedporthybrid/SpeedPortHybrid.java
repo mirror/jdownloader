@@ -329,7 +329,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         br.setVerbose(true);
         br.setDebug(true);
         br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
-
+        Log.info(config + "");
         br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
         challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
         // br.setCookie("http://" + config.getRouterIP(), "challengev", challengev);
