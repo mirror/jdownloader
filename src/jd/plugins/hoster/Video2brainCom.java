@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 
 import jd.PluginWrapper;
@@ -63,20 +64,21 @@ public class Video2brainCom extends PluginForHost {
     /* Connection stuff */
     // private final boolean FREE_RESUME = false;
     // private final int FREE_MAXCHUNKS = 0;
-    private final int     FREE_MAXDOWNLOADS    = 20;
-    private final boolean RESUME_RTMP          = false;
-    private final boolean RESUME_HTTP          = true;
-    private final int     MAXCHUNKS_HTTP       = 0;
-    private final int     ACCOUNT_MAXDOWNLOADS = 20;
+    private final int           FREE_MAXDOWNLOADS      = 20;
+    private final boolean       RESUME_RTMP            = false;
+    private final boolean       RESUME_HTTP            = true;
+    private final int           MAXCHUNKS_HTTP         = 0;
+    private final int           ACCOUNT_MAXDOWNLOADS   = 20;
 
-    private boolean premiumonly = false;
+    private boolean             premiumonly            = false;
+    private boolean             inPremiumMode          = false;
 
-    public static final String domain                 = "video2brain.com";
-    public static final String domain_dummy_education = "video2brain.com_EDUCATION";
-    private final String       TYPE_OLD               = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
-    public static final String ADD_ORDERID            = "ADD_ORDERID";
+    public static final String  domain                 = "video2brain.com";
+    public static final String  domain_dummy_education = "video2brain.com_EDUCATION";
+    private final String        TYPE_OLD               = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
+    public static final String  ADD_ORDERID            = "ADD_ORDERID";
 
-    public static final boolean defaultADD_ORDERID = false;
+    public static final boolean defaultADD_ORDERID     = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -86,14 +88,21 @@ public class Video2brainCom extends PluginForHost {
         this.br = newBrowser(new Browser());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            login(this.br, aa);
+            try {
+                login(this.br, aa);
+            } catch (final Throwable e) {
+                /* Dont throw if user is in free mode anyways. */
+                if (inPremiumMode) {
+                    throw e;
+                }
+            }
         }
         /*
          * 2nd way to get videoinfo if videoid is given:
          * https://www.video2brain.com/de/custom/modules/feedback/feedback_ajax.cfc?method=renderFeedbackFormJSON&type=video&id=19752
          */
         /* 2rd way to get videoinfo if videoid is given: https://www.video2brain.com/de/video-info-19752.xml */
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* 404 - standard offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -154,10 +163,7 @@ public class Video2brainCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        // disabled.
-        if (true) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
+        inPremiumMode = false;
         requestFileInformation(downloadLink);
         handleDownload(downloadLink);
     }
@@ -170,9 +176,10 @@ public class Video2brainCom extends PluginForHost {
         }
         final String videoid = getActiveVideoID(this.br);
         final String url_language = getUrlLanguage(downloadLink);
-        Browser br2 = newBrowser(new Browser());
+        Browser br2 = this.br.cloneBrowser();
         /* User-Agent is not necessarily needed! */
         br2.getHeaders().put("User-Agent", "iPad");
+
         boolean http_url_is_okay = false;
         final String html5_http_url_plain = this.br.getRegex("<video src=\\'(http[^<>\"\\']+)\\'").getMatch(0);
         String html5_http_url_full = null;
@@ -186,7 +193,8 @@ public class Video2brainCom extends PluginForHost {
         try {
             prepareAjaxRequest(br2);
             /* Not necessarily needed */
-            br2.postPage("https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData + "video_id=" + videoid);
+            getPage(br2, "https://www." + this.getHost() + "/" + url_language + "/custom/modules/feedback/feedback_ajax.cfc?method=renderFeedbackFormJSON&type=video&id=" + videoid);
+            postPage(br2, "https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData + "video_id=" + videoid);
         } catch (final Throwable e) {
         }
         if (html5_http_url_plain != null && access_exp != null && access_hash != null) {
@@ -202,13 +210,13 @@ public class Video2brainCom extends PluginForHost {
                  */
                 prepareAjaxRequest(br2);
                 /* Works fine via GET request too */
-                br2.postPage("https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData);
+                postPage(br2, "https://www." + this.getHost() + "/" + url_language + "/custom/modules/cdn/cdn.cfc?method=getSecureTokenJSON", postData);
                 final String final_http_url_token = br2.getRegex("\"([^<>\"\\'\\\\]+)").getMatch(0);
                 if (final_http_url_token != null) {
                     html5_http_url_full = html5_http_url_plain + "?" + final_http_url_token;
                     URLConnectionAdapter con = null;
                     try {
-                        /* Remove old headers/cookies - not necessarily needed! */
+                        /* Remove old headers/cookies - not needed! */
                         br2 = newBrowser(new Browser());
                         br2.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
                         br2.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
@@ -231,7 +239,7 @@ public class Video2brainCom extends PluginForHost {
 
         if (http_url_is_okay) {
             /* Prefer http - quality-wise rtmp and http are the same! */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, html5_http_url_plain, RESUME_HTTP, MAXCHUNKS_HTTP);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, html5_http_url_full, RESUME_HTTP, MAXCHUNKS_HTTP);
             if (dl.getConnection().getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
@@ -246,7 +254,7 @@ public class Video2brainCom extends PluginForHost {
                 /* Fix trailer xml url as it is escaped and incomplete. */
                 config_url = "/" + url_language + "/" + Encoding.unescape(config_url);
             }
-            this.br.getPage(config_url);
+            getPage(config_url);
             final String rtmpurl = this.br.getRegex("<src>(rtmp[^\n]+)").getMatch(0);
             if (rtmpurl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -287,7 +295,7 @@ public class Video2brainCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(domain, cookies);
-                    br.getPage("https://www." + domain + "/de/");
+                    getPage(br, "https://www." + domain + "/de/");
                     if (br.containsHTML("user\\-logout\\.htm\"")) {
                         /* Save new cookie timestamp */
                         account.saveCookies(br.getCookies(domain), "");
@@ -301,7 +309,7 @@ public class Video2brainCom extends PluginForHost {
                      * should be able to use account based viodeo2brain services this way.
                      */
                     /* TODO: Maybe make sure this also works for users of other countries! */
-                    br.getPage("https://www." + domain + "/de/education");
+                    getPage(br, "https://www." + domain + "/de/education");
                     /* E.g. errormessage: Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 91.49.11.2 */
                     if (br.containsHTML("class=\"notice\\-page\\-msg\"")) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -311,7 +319,7 @@ public class Video2brainCom extends PluginForHost {
                         }
                     }
                 } else {
-                    br.getPage("https://www." + domain + "/de/login");
+                    getPage(br, "https://www." + domain + "/de/login");
                     Form loginform = br.getFormbyProperty("id", "login_form");
                     if (loginform == null) {
                         loginform = new Form();
@@ -339,7 +347,7 @@ public class Video2brainCom extends PluginForHost {
                     /* Prepare Headers */
                     prepAjaxHeaders(br);
                     br.submitForm(loginform);
-                    /* TODO: Maybe make sure this also works for users of other countries! */
+                    /* TODO: Maybe make sure/check if this also works for users of other countries! */
                     if (br.getCookie(domain, "V2B_USER_DE") == null) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -354,7 +362,7 @@ public class Video2brainCom extends PluginForHost {
                         /* TODO: Maybe make sure this also works for users of other countries! */
                         continue_url = "/de/login";
                     }
-                    br.getPage(continue_url);
+                    getPage(br, continue_url);
                 }
                 account.saveCookies(br.getCookies(domain), "");
             } catch (final PluginException e) {
@@ -438,10 +446,46 @@ public class Video2brainCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        inPremiumMode = true;
         requestFileInformation(link);
         /* No need to log in - we're already logged in! */
         // login(account);
         handleDownload(link);
+    }
+
+    private void getPage(final String url) throws IOException, PluginException {
+        this.br.getPage(url);
+        getPage(this.br, url);
+    }
+
+    private void postPage(final String url, final String data) throws IOException, PluginException {
+        postPage(this.br, url, data);
+    }
+
+    public static void getPage(final Browser br, final String url) throws IOException, PluginException {
+        br.getPage(url);
+        generalErrorhandling(br);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void postPage(final Browser br, final String url, final String data) throws IOException, PluginException {
+        br.postPage(url, data);
+        generalErrorhandling(br);
+    }
+
+    public static void generalErrorhandling(final Browser br) throws PluginException {
+        if (br.containsHTML("Sie sind wegen zu großer Serverbelastung ausgeloggt worden")) {
+            /**
+             * <div class="notice-page-msg"> Sie sind wegen zu großer Serverbelastung ausgeloggt worden. Sie können sich wieder in 86
+             * Minuten einloggen. Vielen Dank für Ihre Geduld. </div>
+             */
+            /* TODO: Add this errorhandling for other languages too. */
+            /*
+             * That means that our account is valid but at the same time cookies will be invalid/missing --> We can accept such accounts but
+             * are not yet able to download using them!
+             */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer says: 'Sie sind wegen zu großer Serverbelastung ausgeloggt worden'!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
     }
 
     public static void prepareAjaxRequest(final Browser br) {

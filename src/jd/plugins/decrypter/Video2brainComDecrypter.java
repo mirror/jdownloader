@@ -50,8 +50,11 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
         boolean loggedIN = false;
         final Account aa = AccountController.getInstance().getValidAccount(hosterplugin);
         if (aa != null) {
-            jd.plugins.hoster.Video2brainCom.login(this.br, aa);
-            loggedIN = true;
+            try {
+                jd.plugins.hoster.Video2brainCom.login(this.br, aa);
+                loggedIN = true;
+            } catch (final Throwable e) {
+            }
         }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches("https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/[^/]+/[a-z0-9\\-]+")) {
