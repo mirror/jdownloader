@@ -84,7 +84,7 @@ public class MyviRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage("http://myvi.ru" + html_embed_url);
-        final String api_url = br.getRegex("(/player/api/Video/Get/[^<>\"/]+)").getMatch(0);
+        final String api_url = br.getRegex("([\"'])(/player/api/Video/Get/[^\"']+?)\\1").getMatch(1);
         if (api_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
