@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,7 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript", "lourl.us", "urlshortener.co.in", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?lourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?urlshortener\\.co\\.in/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }, flags = { 0 })
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript", "lourl.us", "urlshortener.co.in", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?lourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?urlshortener\\.co\\.in/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }, flags = { 0, 0, 0, 0 })
 public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
 
     /**
