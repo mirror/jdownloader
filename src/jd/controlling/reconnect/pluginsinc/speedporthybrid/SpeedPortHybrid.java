@@ -46,7 +46,7 @@ import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
-import jd.controlling.reconnect.ipcheck.InvalidProviderException;
+import jd.controlling.reconnect.ipcheck.InvalidIPException;
 import jd.http.Browser;
 import jd.http.QueryInfo;
 import net.miginfocom.swing.MigLayout;
@@ -183,6 +183,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
     @Override
     public int getIpCheckInterval() {
+
         return 1000;
     }
 
@@ -201,7 +202,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 Log.log(e);
 
             }
-            throw new InvalidProviderException("Unknown UPNP Response Error");
+            throw new InvalidIPException("Unknown");
         }
     }
 
@@ -218,7 +219,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         if (externalIP != null) {
             return IP.getInstance(externalIP);
         } else {
-            throw new InvalidProviderException("Unknown UPNP Response Error");
+            throw new InvalidIPException("null");
         }
     }
 
@@ -271,6 +272,11 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
                 if (changeConnectionOnline) {
                     decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("lte_reconn=online&csrf_token=" + csrf)));
+                    for (int i = 0; i < 10; i++) {
+                        Thread.sleep(3000);
+                        decryptAndHandle(br.getPage("http://192.168.2.1/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
+
+                    }
 
                 } else {
                     decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
