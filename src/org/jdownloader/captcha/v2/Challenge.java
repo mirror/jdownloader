@@ -306,7 +306,7 @@ public abstract class Challenge<T> {
         HashMap<String, String> info = createStatsInfoMap(solver);
         info.put("errorclass", e.getClass().getSimpleName());
         info.put("errormessage", e.getMessage());
-        StatsManager.I().track(REDUCER, "captcha", "error", info, CollectionName.CAPTCHA);
+        StatsManager.I().track(REDUCER, "captchaCES", "error", info, CollectionName.CAPTCHA);
     }
 
     public void sendStatsSolving(ChallengeSolver solver) {
@@ -315,7 +315,7 @@ public abstract class Challenge<T> {
         }
         HashMap<String, String> info = createStatsInfoMap(solver);
 
-        StatsManager.I().track(REDUCER, "captcha", "solving", info, CollectionName.CAPTCHA);
+        StatsManager.I().track(REDUCER, "captchaCES", "solving", info, CollectionName.CAPTCHA);
     }
 
     public void sendStatsValidation(ChallengeSolver solver, String status) {
@@ -325,7 +325,7 @@ public abstract class Challenge<T> {
         HashMap<String, String> info = createStatsInfoMap(solver);
 
         info.put("status", status);
-        StatsManager.I().track(REDUCER, "captcha", "validation", info, CollectionName.CAPTCHA);
+        StatsManager.I().track(REDUCER, "captchaCES", "validation", info, CollectionName.CAPTCHA);
     }
 
     private HashMap<String, String> createStatsInfoMap(ChallengeSolver solver) {
