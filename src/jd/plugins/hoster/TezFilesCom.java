@@ -21,10 +21,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,12 +40,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 /**
- *
+ * 
  * @author raztoki
- *
+ * 
  */
-@HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/file/[a-z0-9]{13,}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(ile)?/[a-z0-9]{13,}" }, flags = { 2 })
 public class TezFilesCom extends K2SApi {
 
     private final String MAINPAGE = "http://tezfiles.com";
@@ -88,7 +88,7 @@ public class TezFilesCom extends K2SApi {
 
     /**
      * easiest way to set variables, without the need for multiple declared references
-     *
+     * 
      * @param account
      */
     private void setConstants(final Account account) {
