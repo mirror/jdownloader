@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com", "video2brain.com_EDUCATION" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }, flags = { 2 })
 public class Video2brainCom extends PluginForHost {
 
     public Video2brainCom(PluginWrapper wrapper) {
@@ -298,7 +298,15 @@ public class Video2brainCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(domain, cookies);
-                    getPage(br, "https://www." + domain + "/de/");
+                    /**
+                     * Education users need to access this page first otherwise they will NOT be logged in! <br />
+                     * So what do we do? Simply access that url regarding of the user account type.<br />
+                     * If the user uses a normal account with E-Mail and password he will get an errormessage similar to this:<br />
+                     * "Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 1.1.1.1".<br />
+                     * This does not matter as he is still loggedin with his logindata via cookies so html code will contain the "logout"
+                     * button --> Login should work fine!<br />
+                     */
+                    getPage(br, "https://www." + domain + "/de/education");
                     if (br.containsHTML("user\\-logout\\.htm\"")) {
                         /* Save new cookie timestamp */
                         account.saveCookies(br.getCookies(domain), "");
@@ -306,22 +314,23 @@ public class Video2brainCom extends PluginForHost {
                     }
                     br = newBrowser(new Browser());
                 }
-                if (domain_dummy_education.equalsIgnoreCase(account.getHoster())) {
-                    /*
-                     * IP-Based education login - does not matter which logindata user enters - if his University VPN IP is correct he
-                     * should be able to use account based viodeo2brain services this way.
-                     */
-                    /* TODO: Maybe make sure this also works for users of other countries! */
-                    getPage(br, "https://www." + domain + "/de/education");
-                    /* E.g. errormessage: Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 91.49.11.2 */
-                    if (br.containsHTML("class=\"notice\\-page\\-msg\"")) {
+                /* TODO: Maybe make sure this also works for users of other countries! */
+                /* First lets check if maybe the user has VPN education access --> No need to login with logindata! */
+                getPage(br, "https://www." + domain + "/de/education");
+                /* E.g. errormessage: Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 91.49.11.2 */
+                if (br.containsHTML("class=\"notice\\-page\\-msg\"")) {
+                    /* Either EDU user is not connected to his VPN or our user is a normal user who needs username & password to login */
+                    /* First thing we can do is to do is make sure user entered a valid E-Mail address in the username field! */
+                    if (!account.getUser().matches(".+@.+\\..+")) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültige education VPN IP!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid university VPN IP!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                } else {
+
+                    /* Set this property on account - it might be useful later */
+                    account.setProperty("education", false);
                     getPage(br, "https://www." + domain + "/de/login");
                     Form loginform = br.getFormbyProperty("id", "login_form");
                     if (loginform == null) {
@@ -366,7 +375,11 @@ public class Video2brainCom extends PluginForHost {
                         continue_url = "/de/login";
                     }
                     getPage(br, continue_url);
+                } else {
+                    /* Set this property on account - it might be useful later */
+                    account.setProperty("education", true);
                 }
+
                 account.saveCookies(br.getCookies(domain), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -407,13 +420,6 @@ public class Video2brainCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (domain_dummy_education.equalsIgnoreCase(account.getHoster()) && !account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         final AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account);

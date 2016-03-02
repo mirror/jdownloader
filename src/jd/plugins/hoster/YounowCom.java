@@ -30,7 +30,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younow\\.com/[^/]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younowdecrypted\\.com/[^/]+/\\d+" }, flags = { 0 })
 public class YounowCom extends PluginForHost {
 
     public YounowCom(PluginWrapper wrapper) {
@@ -42,10 +42,16 @@ public class YounowCom extends PluginForHost {
         return "https://www.younow.com/terms.php";
     }
 
-    private String server     = null;
-    private String stream     = null;
+    private String  server          = null;
+    private String  stream          = null;
     /* 2016-02-28: hls only has one quality so it does not matter whether we use hls or rtmp. */
-    private String hls_master = null;
+    private String  hls_master      = null;
+    private boolean private_content = false;
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("younowdecrypted.com/", "younow.com/"));
+    }
 
     /**
      * List of API errorCodes and their meaning: <br />
@@ -54,6 +60,7 @@ public class YounowCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        private_content = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -61,9 +68,16 @@ public class YounowCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String name_url = fid + ".mp4";
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
 
         final long errorcode = DummyScriptEnginePlugin.toLong(entries.get("errorCode"), 0);
+        if (errorcode == 247) {
+            /* {"errorCode":247,"errorMsg":"Broadcast is private"} */
+            link.setName(name_url);
+            private_content = true;
+            return AvailableStatus.TRUE;
+        }
         if (errorcode > 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -74,7 +88,7 @@ public class YounowCom extends PluginForHost {
         }
 
         final String profileUrlString = (String) entries.get("profileUrlString");
-        final String broadcastTitle = (String) entries.get("broadcastTitle");
+        final String broadcastTitle = getbroadcastTitle(entries);
         String filename;
         if (profileUrlString != null && broadcastTitle != null) {
             filename = profileUrlString + " - " + broadcastTitle;
@@ -93,6 +107,9 @@ public class YounowCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (private_content) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Private broadcast");
+        }
         if ((server == null || stream == null) && hls_master == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -123,6 +140,10 @@ public class YounowCom extends PluginForHost {
             rtmp.setResume(false);
             ((RTMPDownload) dl).startDownload();
         }
+    }
+
+    public static String getbroadcastTitle(final LinkedHashMap<String, Object> entries) {
+        return (String) entries.get("broadcastTitle");
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
