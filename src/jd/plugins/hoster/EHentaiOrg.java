@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map.Entry;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,11 +49,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org", "exhentai.org" }, urls = { "http://g\\.e\\-hentai\\.orgdecrypted\\d+", "http://exhentai\\.orgdecrypted\\d+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^http://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/\\d+-\\d+$" }, flags = { 2 })
 public class EHentaiOrg extends PluginForHost {
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "exhentai.org".equals(host) || "e-hentai.org".equals(host)) {
+            return "e-hentai.org";
+        }
+        return super.rewriteHost(host);
+    }
 
     public EHentaiOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,13 +79,11 @@ public class EHentaiOrg extends PluginForHost {
 
     private static final long    minimal_filesize        = 1000;
 
-    private String               DLLINK                  = null;
+    private String               dllink                  = null;
     private final boolean        ENABLE_RANDOM_UA        = true;
     private static final String  PREFER_ORIGINAL_QUALITY = "PREFER_ORIGINAL_QUALITY";
 
-    private static final String  TYPE_EHENTAI            = "http://g\\.e\\-hentai\\.orgdecrypted\\d+";
-    private static final String  TYPE_EXHENTAI           = "http://exhentai\\.orgdecrypted\\d+";
-    private static final String  default_ext             = ".jpg";
+    private static final String  TYPE_EXHENTAI           = "exhentai\\.org";
 
     @Override
     public String getAGBLink() {
@@ -86,11 +93,9 @@ public class EHentaiOrg extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String namepart = downloadLink.getStringProperty("namepart", null);
         final String mainlink = getMainlink(downloadLink);
         String dllink_fullsize = null;
-        String ext = null;
-        DLLINK = null;
+        dllink = null;
         boolean loggedin = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -103,7 +108,7 @@ public class EHentaiOrg extends PluginForHost {
                 loggedin = false;
             }
         }
-        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_EXHENTAI)) {
+        if (!loggedin && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
             downloadLink.getLinkStatus().setStatusText("Account needed to check this linktype");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -118,6 +123,7 @@ public class EHentaiOrg extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String namepart = getNamePart(downloadLink);
         if (loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
             /* Try to get fullsize (original) image. */
             final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:g\\.e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
@@ -127,20 +133,20 @@ public class EHentaiOrg extends PluginForHost {
                 downloadLink.setDownloadSize(SizeFormatter.getSize(html_filesize));
             }
         }
-        DLLINK = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         downloadLink.setFinalFileName(namepart + ext);
 
         if (dllink_fullsize != null) {
             dllink_fullsize = Encoding.htmlDecode(dllink_fullsize);
             /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
-            DLLINK = dllink_fullsize;
+            dllink = dllink_fullsize;
             return AvailableStatus.TRUE;
         }
 
@@ -150,7 +156,7 @@ public class EHentaiOrg extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException ebr) {
                 /* Whatever happens - its most likely a server problem for this host! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -161,7 +167,7 @@ public class EHentaiOrg extends PluginForHost {
             final long conlength = con.getLongContentLength();
             if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
                 downloadLink.setDownloadSize(conlength);
-                downloadLink.setProperty("directlink", DLLINK);
+                downloadLink.setProperty("directlink", dllink);
                 return AvailableStatus.TRUE;
             } else {
                 return AvailableStatus.UNCHECKABLE;
@@ -184,15 +190,8 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_EXHENTAI)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        if (new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         doFree(downloadLink);
     }
@@ -204,7 +203,7 @@ public class EHentaiOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         } catch (final BrowserException ebr) {
             /* Whatever happens - its most likely a server problem for this host! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -335,7 +334,36 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     private String getMainlink(final DownloadLink dl) {
-        return dl.getStringProperty("individual_link", null);
+        final String link = dl.getStringProperty("individual_link", null);
+        if (link != null) {
+            return link;
+        } else {
+            return dl.getDownloadURL();
+        }
+    }
+
+    private String getNamePart(DownloadLink downloadLink) throws PluginException {
+        final String namelink = downloadLink.getStringProperty("namepart", null);
+        if (namelink != null) {
+            // return what's from decrypter as gospel.
+            return namelink;
+        }
+        // link has added in a single manner outside of decrypter, so we need to construct!
+        final DecimalFormat df = new DecimalFormat("0000");
+        // we can do that based on image part
+        final String[] uidPart = new Regex(downloadLink.getDownloadURL(), "/(\\d+)-(\\d+)$").getRow(0);
+
+        final String fpName = getTitle(br);
+        if (fpName == null || uidPart == null || uidPart.length != 2) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String title = fpName + "_" + uidPart[0] + "-" + df.format(Integer.parseInt(uidPart[1]));
+        return title;
+    }
+
+    public String getTitle(final Browser br) {
+        final String fpName = br.getRegex("<title>([^<>\"]*?)(?:\\s*-\\s*E-Hentai Galleries|\\s*-\\s*ExHentai\\.org)?</title>").getMatch(0);
+        return fpName;
     }
 
     @Override
