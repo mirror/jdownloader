@@ -108,22 +108,7 @@ public class KumpulbagiCom extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 logger.info("Decrypting page " + currentPage + " of ??");
-                String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
-                if (linkinfo == null || linkinfo.length == 0) {
-                    linkinfo = br.getRegex("<p class=\"filename\">(.*?)class=\"fileActionsFacebookSend\"").getColumn(0);
-                }
-                if (linkinfo == null || linkinfo.length == 0) {
-                    linkinfo = br.getRegex("<div class=\"filerow fileItemContainer\">(.*?)class=\"fileCommentsAction\"").getColumn(0);
-                }
-                if (linkinfo == null || linkinfo.length == 0) {
-                    linkinfo = br.getRegex("class=\"filename\"(.*?)class=\"showSharedOptions\"").getColumn(0);
-                }
-                if (linkinfo == null || linkinfo.length == 0) {
-                    linkinfo = br.getRegex("(<li data-file-id=.*?)</li>").getColumn(0);
-                }
-                if (linkinfo == null || linkinfo.length == 0) {
-                    linkinfo = br.getRegex("(<div class=\"list_row\".*?class=\"desc\")").getColumn(0); // <===
-                }
+                String[] linkinfo = br.getRegex("(<div class=\"list_row\".*?class=\"desc\")").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -160,17 +145,9 @@ public class KumpulbagiCom extends PluginForDecrypt {
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     // String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
-                    String filename = null;
-                    String filename_content_url = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
-                    if (filename_content_url != null) {
-                        filename_content_url = filename_content_url.replace("," + fid, "");
-                        filename_content_url = filename_content_url.replaceAll(",gallery,\\d+,\\d+", "");
-                        final String filename_html = new Regex(lnkinfo, "data-action-before=\"preview\">([^<>]+?)<").getMatch(0);
-                        if (filename_html != null && (filename_content_url.length() > filename_html.length() || filename_html.endsWith("..."))) {
-                            filename = filename_content_url;
-                        } else {
-                            filename = filename_html;
-                        }
+                    String filename = new Regex(lnkinfo, "\"preview\">([^<>]+)</a>").getMatch(0);
+                    logger.info("lnkinfo: " + lnkinfo);
+                    if (filename != null) {
                         filename = Encoding.htmlDecode(filename);
                     } else {
                         filename = finfo.getMatch(0);
