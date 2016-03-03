@@ -29,11 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -58,6 +53,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.eu" }, urls = { "https?://(www\\.)?rockfile\\.eu/(embed\\-)?[a-z0-9]{12}\\.html" }, flags = { 2 })
 public class RockFileEu extends PluginForHost {
@@ -388,7 +388,7 @@ public class RockFileEu extends PluginForHost {
                         }
                     }
                     /* Captcha START */
-                    if (correctedBR.contains("var capCodeV")) {
+                    if (correctedBR.contains("var capCodeV") && !correctedBR.contains("/recaptcha/api/")) {
                         logger.info("Detected captcha method \"plaintext captchas\" for this host");
                         /* Captcha method by ManiacMansion */
                         final String[][] letters = new Regex(br, "position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
@@ -585,13 +585,13 @@ public class RockFileEu extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlFree
      *            (+1|-1)
      */
@@ -733,7 +733,7 @@ public class RockFileEu extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     *
+     * 
      * @param key
      * @param value
      * @return
@@ -759,7 +759,7 @@ public class RockFileEu extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -776,7 +776,7 @@ public class RockFileEu extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     *
+     * 
      * @version 0.2
      * @author raztoki
      */
@@ -966,7 +966,7 @@ public class RockFileEu extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
