@@ -29,7 +29,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
 /**
  * Earn money sharing shrinked links<br />
@@ -38,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{6}|[A-Za-z0-9]{4}=(?:https?|ftp)://.+)" }, flags = { 0 })
-public class LnkShnkNt extends PluginForDecrypt {
+public class LnkShnkNt extends antiDDoSForDecrypt {
 
     public LnkShnkNt(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,7 +60,7 @@ public class LnkShnkNt extends PluginForDecrypt {
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || (br.getRedirectLocation() != null && br.getRedirectLocation().matches(type_invalid))) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -71,7 +70,7 @@ public class LnkShnkNt extends PluginForDecrypt {
         }
         String link = br.getRedirectLocation();
         if (link != null && link.contains("linkshrink.net/")) {
-            br.getPage(link);
+            getPage(link);
             link = null;
         }
         if (link == null) {
@@ -91,7 +90,7 @@ public class LnkShnkNt extends PluginForDecrypt {
                     }
                     final String code = getCaptchaCode(cf, param);
                     final String chid = sm.getChallenge(code);
-                    br.postPage(br.getURL(), "adcopy_response=manual_challenge&adcopy_challenge=" + Encoding.urlEncode(chid));
+                    postPage(br.getURL(), "adcopy_response=manual_challenge&adcopy_challenge=" + Encoding.urlEncode(chid));
                     if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
                         continue;
                     }
@@ -105,7 +104,7 @@ public class LnkShnkNt extends PluginForDecrypt {
             if (continu == null) {
                 return null;
             }
-            br.getPage(continu);
+            getPage(continu);
             link = br.getRedirectLocation();
         }
         if (link != null) {
