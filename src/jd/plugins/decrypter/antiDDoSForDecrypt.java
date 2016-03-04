@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -20,10 +19,19 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.QueryInfo;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -37,15 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.KeyValueStringEntry;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -218,7 +217,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
-        final PostRequest request = ibr.createPostRequest(page, new ArrayList<KeyValueStringEntry>(), null);
+        final PostRequest request = ibr.createPostRequest(page, new QueryInfo(), null);
         request.setPostDataString(post);
         setContentType(request, isJson);
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -409,8 +408,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
     }
 
-    private int responseCode429 = 0;
-    private int responseCode5xx = 0;
+    private int     a_responseCode429    = 0;
+    private int     a_responseCode5xx    = 0;
+    private boolean a_captchaRequirement = false;
+
+    protected final boolean hasAntiddosCaptchaRequirement() {
+        return a_captchaRequirement;
+    }
 
     /**
      * uses common method antiDDoS
@@ -483,11 +487,9 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 ibr.followConnection();
             }
         }
-        Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
-        if (cloudflare == null) {
-            cloudflare = ibr.getFormbyProperty("id", "challenge-form");
-        }
+        final Form cloudflare = getCloudflareChallengeForm(ibr);
         if (responseCode == 403 && cloudflare != null) {
+            a_captchaRequirement = true;
             // recapthcha v2
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                 final Form cf = cloudflare;
@@ -535,24 +537,42 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String response = getCaptchaCode("recaptcha", cf, param);
                 if (inValidate(response)) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                 }
                 cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                 cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
             }
+            final Request originalRequest = ibr.getRequest();
             if (request != null) {
                 ibr.openFormConnection(cloudflare);
             } else {
                 ibr.submitForm(cloudflare);
             }
-            if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
+            if (getCloudflareChallengeForm(ibr) != null) {
                 logger.warning("Wrong captcha");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
             }
-            // if it works, there should be a redirect.
-            if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+            // on success cf_clearance cookie is set and a redirect will be present!
+            // we have a problem here when site expects POST request and redirects are always are GETS
+            if (originalRequest instanceof PostRequest) {
+                try {
+                    sendRequest(ibr, originalRequest.cloneRequest());
+                } catch (final Exception t) {
+                    // we want to preserve proper exceptions!
+                    if (t instanceof PluginException) {
+                        throw t;
+                    }
+                    t.printStackTrace();
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                }
+                // because next round could be 200 response code, you need to nullify this value here.
+                a_captchaRequirement = false;
+                // new sendRequest saves cookie session
+                return;
+            } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                 ibr.getPage(ibr.getRedirectLocation());
             }
+            a_captchaRequirement = false;
         } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
             // website address could be www. or what ever prefixes, need to make sure
             // eg. within 403 response code,
@@ -567,7 +587,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
             String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
             StringBuilder sb = new StringBuilder();
-            sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr._getURL(), true) + "\";\r\n");
+            sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
             sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
             sb.append(line2);
 
@@ -588,7 +608,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         } else if (responseCode == 521) {
             // this basically indicates that the site is down, no need to retry.
             // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
-            responseCode5xx++;
+            a_responseCode5xx++;
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"521 Origin Sever\" is down!", 5 * 60 * 1000l);
         } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
             // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
@@ -606,11 +626,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
             // server.<
             // cache system with possible origin dependency... we will wait and retry
-            if (responseCode5xx == 4) {
+            if (a_responseCode5xx == 4) {
                 // this only shows the last error in request, not the previous retries.
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"" + responseCode + " " + ibr.getHttpConnection().getResponseMessage() + "\"", 5 * 60 * 1000l);
             }
-            responseCode5xx++;
+            a_responseCode5xx++;
             // this html based cookie, set by <meta (for responseCode 522)
             // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
             String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
@@ -641,13 +661,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 t.printStackTrace();
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
             }
-            // new sendRequest saves.
+            // new sendRequest saves cookie session
             return;
         } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
-            if (responseCode429 == 4) {
+            if (a_responseCode429 == 4) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
             }
-            responseCode429++;
+            a_responseCode429++;
             // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
             Thread.sleep(61000);
             // try again! -NOTE: this isn't stable compliant-
@@ -661,6 +681,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 t.printStackTrace();
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
             }
+            // new sendRequest saves cookie session
             return;
 
             // new code here...
@@ -685,6 +706,18 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 cookies.add(c);
             }
         }
+    }
+
+    private Form getCloudflareChallengeForm(final Browser ibr) {
+        // speed things up, maintain our own code vs using br.getformby each time has to search and construct forms/inputfields! this is
+        // slow!
+        final Form[] forms = ibr.getForms();
+        for (final Form form : forms) {
+            if (form.getStringProperty("id") != null && (form.getStringProperty("id").equalsIgnoreCase("challenge-form") || form.getStringProperty("id").equalsIgnoreCase("ChallengeForm"))) {
+                return form;
+            }
+        }
+        return null;
     }
 
     private void processIncapsula(final Browser ibr, final Cookies cookies) throws Exception {
@@ -750,6 +783,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 if (captcha == null) {
                     System.out.println("error");
                 }
+                a_captchaRequirement = true;
                 String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                 if (apiKey == null) {
                     apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
@@ -776,6 +810,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // they show z again after captcha...
                     getPage(ibr.getURL());
                     // above request saves, as it re-enters this method!
+                    a_captchaRequirement = false;
                     return;
                 } else {
                     // shouldn't happen???

@@ -21,6 +21,9 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,9 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -176,12 +176,7 @@ public abstract class K2SApi extends PluginForHost {
     @Override
     public void init() {
         try {
-            if (isNewJD()) {
-                Browser.setRequestIntervalLimitGlobal(getDomain(), 3000, 20, 60000);
-            } else {
-                // law of averages, client shouldn't be making a heap of requests every second...
-                Browser.setRequestIntervalLimitGlobal(getDomain(), 1500);
-            }
+            Browser.setRequestIntervalLimitGlobal(getDomain(), 3000, 20, 60000);
         } catch (final Throwable t) {
             t.printStackTrace();
         }
@@ -1175,7 +1170,11 @@ public abstract class K2SApi extends PluginForHost {
 
     private AvailableStatus reqFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
-        if (!checkLinks(new DownloadLink[] { link }) || !link.isAvailabilityStatusChecked()) {
+        final boolean checked = checkLinks(new DownloadLink[] { link });
+        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
+        if (!checked && hasAntiddosCaptchaRequirement()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (!checked || !link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1458,8 +1457,13 @@ public abstract class K2SApi extends PluginForHost {
         sendRequest(br, request);
     }
 
-    private int responseCode429 = 0;
-    private int responseCode5xx = 0;
+    private int     a_responseCode429    = 0;
+    private int     a_responseCode5xx    = 0;
+    private boolean a_captchaRequirement = false;
+
+    protected final boolean hasAntiddosCaptchaRequirement() {
+        return a_captchaRequirement;
+    }
 
     /**
      * Performs Cloudflare and Incapsula requirements.<br />
@@ -1477,11 +1481,9 @@ public abstract class K2SApi extends PluginForHost {
         if (ibr.getHttpConnection() != null) {
             final int responseCode = ibr.getHttpConnection().getResponseCode();
             if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
-                Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
-                if (cloudflare == null) {
-                    cloudflare = ibr.getFormbyProperty("id", "challenge-form");
-                }
+                final Form cloudflare = getCloudflareChallengeForm(ibr);
                 if (responseCode == 403 && cloudflare != null) {
+                    a_captchaRequirement = true;
                     // recapthcha v2
                     if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                         final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
@@ -1532,21 +1534,40 @@ public abstract class K2SApi extends PluginForHost {
                             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                             final String response = getCaptchaCode("recaptcha", cf, dllink);
                             if (inValidate(response)) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                             }
                             cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                             cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         }
                     }
+                    final Request originalRequest = ibr.getRequest();
                     ibr.submitForm(cloudflare);
-                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
+                    if (getCloudflareChallengeForm(ibr) != null) {
                         logger.warning("Wrong captcha");
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        a_captchaRequirement = true;
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
                     }
-                    // if it works, there should be a redirect.
-                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                    // on success cf_clearance cookie is set and a redirect will be present!
+                    // we have a problem here when site expects POST request and redirects are always are GETS
+                    if (originalRequest instanceof PostRequest) {
+                        try {
+                            sendRequest(ibr, originalRequest.cloneRequest());
+                        } catch (final Exception t) {
+                            // we want to preserve proper exceptions!
+                            if (t instanceof PluginException) {
+                                throw t;
+                            }
+                            t.printStackTrace();
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                        }
+                        // because next round could be 200 response code, you need to nullify this value here.
+                        a_captchaRequirement = false;
+                        // new sendRequest saves cookie session
+                        return;
+                    } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());
                     }
+                    a_captchaRequirement = false;
                 } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // website address could be www. or what ever prefixes, need to make sure
                     // eg. within 403 response code, Link; 5544562095341.log; 162684; jdlog://5544562095341
@@ -1561,7 +1582,7 @@ public abstract class K2SApi extends PluginForHost {
                     final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                     String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                     StringBuilder sb = new StringBuilder();
-                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr._getURL(), true) + "\";\r\n");
+                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
                     sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                     sb.append(line2);
 
@@ -1578,7 +1599,7 @@ public abstract class K2SApi extends PluginForHost {
                 } else if (responseCode == 521) {
                     // this basically indicates that the site is down, no need to retry.
                     // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
-                    responseCode5xx++;
+                    a_responseCode5xx++;
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
                 } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
                     // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
@@ -1596,10 +1617,10 @@ public abstract class K2SApi extends PluginForHost {
                     // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
                     // server.<
                     // cache system with possible origin dependency... we will wait and retry
-                    if (responseCode5xx == 4) {
+                    if (a_responseCode5xx == 4) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare can not contact \"Origin Server\"", 5 * 60 * 1000l);
                     }
-                    responseCode5xx++;
+                    a_responseCode5xx++;
                     // this html based cookie, set by <meta (for responseCode 522)
                     // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
                     String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
@@ -1630,13 +1651,13 @@ public abstract class K2SApi extends PluginForHost {
                         t.printStackTrace();
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
                     }
-                    // new sendRequest saves.
+                    // new sendRequest saves cookie session
                     return;
                 } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
-                    if (responseCode429 == 4) {
+                    if (a_responseCode429 == 4) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                     }
-                    responseCode429++;
+                    a_responseCode429++;
                     // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
                     Thread.sleep(61000);
                     // try again! -NOTE: this isn't stable compliant-
@@ -1649,6 +1670,7 @@ public abstract class K2SApi extends PluginForHost {
                         }
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                     }
+                    // new sendRequest saves cookie session
                     return;
 
                     // new code here...
@@ -1676,11 +1698,24 @@ public abstract class K2SApi extends PluginForHost {
             }
             // save the session!
             synchronized (antiDDoSCookies) {
-                antiDDoSCookies.clear();
+                // why do I clear cookies? -raztok20160304
+                // antiDDoSCookies.clear();
                 antiDDoSCookies.putAll(cookies);
             }
         }
 
+    }
+
+    private Form getCloudflareChallengeForm(final Browser ibr) {
+        // speed things up, maintain our own code vs using br.getformby each time has to search and construct forms/inputfields! this is
+        // slow!
+        final Form[] forms = ibr.getForms();
+        for (final Form form : forms) {
+            if (form.getStringProperty("id") != null && (form.getStringProperty("id").equalsIgnoreCase("challenge-form") || form.getStringProperty("id").equalsIgnoreCase("ChallengeForm"))) {
+                return form;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1710,20 +1745,6 @@ public abstract class K2SApi extends PluginForHost {
             return true;
         }
         return false;
-    }
-
-    // stable browser is shite.
-
-    private boolean isJava7nJDStable() {
-        if (!isNewJD() && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean isNewJD() {
-        return System.getProperty("jd.revision.jdownloaderrevision") != null ? true : false;
     }
 
     /**
