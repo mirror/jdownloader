@@ -25,6 +25,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -40,13 +47,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -180,14 +180,15 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            return AvailableStatus.UNCHECKED;
-        }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+        final boolean checked = checkLinks(new DownloadLink[] { downloadLink });
+        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
+        if (!checked && hasAntiddosCaptchaRequirement()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (!checked || !downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!downloadLink.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.updatestatuscode();
         return AvailableStatus.TRUE;
     }
 

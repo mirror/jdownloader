@@ -232,11 +232,15 @@ public class MangaTradersOrg extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        if (checkLinks(new DownloadLink[] { downloadLink }) == false) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        final boolean checked = checkLinks(new DownloadLink[] { downloadLink });
+        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
+        if (!checked && hasAntiddosCaptchaRequirement()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (!checked || !downloadLink.isAvailabilityStatusChecked()) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return getAvailableStatus(downloadLink);
     }

@@ -29,6 +29,13 @@ import java.util.Random;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,13 +55,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" }, flags = { 2 })
 public class NitroFlareCom extends antiDDoSForHost {
@@ -936,7 +936,11 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformationApi(final DownloadLink link) throws IOException, PluginException {
-        if (!checkLinks(new DownloadLink[] { link }) || !link.isAvailabilityStatusChecked()) {
+        final boolean checked = checkLinks(new DownloadLink[] { link });
+        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
+        if (!checked && hasAntiddosCaptchaRequirement()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (!checked || !link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

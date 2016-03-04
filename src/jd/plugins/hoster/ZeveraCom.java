@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -44,10 +48,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" }, flags = { 2 })
 public class ZeveraCom extends antiDDoSForHost {
@@ -141,8 +141,13 @@ public class ZeveraCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
-        checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailable()) {
+        final boolean checked = checkLinks(new DownloadLink[] { link });
+        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
+        if (!checked && hasAntiddosCaptchaRequirement()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (!checked || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return getAvailableStatus(link);
