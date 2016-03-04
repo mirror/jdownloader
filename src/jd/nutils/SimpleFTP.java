@@ -961,17 +961,17 @@ public abstract class SimpleFTP {
             }
         } catch (IOException e) {
             disconnect();
-            if (e.getMessage().contains("was unable to log in with the supplied") || e.getMessage().contains("530 Login or Password incorrect")) {
+            final String message = e.getMessage();
+            if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
                 if (autoTry) {
                     connect(host, port);
                 } else {
                     final Login ret = AuthenticationController.getInstance().getBestLogin("ftp://" + url.getHost());
-                    if (ret == null) {
-                        throw e;
+                    if (ret != null) {
+                        connect(host, port, ret.getUsername(), ret.getPassword());
+                        return;
                     }
-                    connect(host, port, ret.getUsername(), ret.getPassword());
                 }
-                return;
             }
             throw e;
         }

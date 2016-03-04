@@ -81,8 +81,8 @@ public class Ftp extends PluginForDecrypt {
             try {
                 ftp.connect(url);
             } catch (IOException e) {
-                final String msg = e.getMessage();
-                if ((StringUtils.containsIgnoreCase(msg, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(msg, "421")) && maxFTPConnections == -1) {
+                final String message = e.getMessage();
+                if ((StringUtils.containsIgnoreCase(message, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(message, "421")) && maxFTPConnections == -1) {
                     final String lockHost = Browser.getHost(cLink.getCryptedUrl());
                     final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
                     synchronized (LOCKS) {
@@ -93,7 +93,7 @@ public class Ftp extends PluginForDecrypt {
                         }
                     }
                     return decryptIt(cLink, progress);
-                } else if (msg.contains("was unable to log in with the supplied") || msg.contains("530 Login or Password incorrect")) {
+                } else if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
                     final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
                     final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), dummyLink);
                     if (login != null) {
@@ -103,6 +103,8 @@ public class Ftp extends PluginForDecrypt {
                             port = 21;
                         }
                         ftp.connect(host, port, login.getUsername(), login.getPassword());
+                    } else {
+                        throw e;
                     }
                 } else {
                     throw e;
