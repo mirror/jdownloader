@@ -15,7 +15,6 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 public class RuleWrapper<T extends FilterRule> {
 
     private final CompiledRegexFilter        fileNameRule;
-    private final boolean                    requiresLinkcheck;
     private final CompiledPluginStatusFilter pluginStatusFilter;
     private final BooleanFilter              alwaysFilter;
     private final CompiledOriginFilter       originFilter;
@@ -29,7 +28,6 @@ public class RuleWrapper<T extends FilterRule> {
     public RuleWrapper(T rule2) {
         this.rule = rule2;
         boolean requiresHoster = false;
-        boolean requiresLinkcheck = false;
         if (rule.getPluginStatusFilter().isEnabled()) {
             pluginStatusFilter = new CompiledPluginStatusFilter(rule.getPluginStatusFilter());
             requiresHoster = true;
@@ -39,14 +37,12 @@ public class RuleWrapper<T extends FilterRule> {
 
         if (rule.getOnlineStatusFilter().isEnabled()) {
             onlineStatusFilter = new CompiledOnlineStatusFiler(rule.getOnlineStatusFilter());
-            requiresLinkcheck = true;
         } else {
             onlineStatusFilter = null;
         }
 
         if (rule.getFilenameFilter().isEnabled()) {
             fileNameRule = new CompiledRegexFilter(rule.getFilenameFilter());
-            requiresLinkcheck = true;
         } else {
             fileNameRule = null;
         }
@@ -59,7 +55,6 @@ public class RuleWrapper<T extends FilterRule> {
 
         if (rule.getFilesizeFilter().isEnabled()) {
             filesizeRule = new CompiledFilesizeFilter(rule.getFilesizeFilter());
-            requiresLinkcheck = true;
         } else {
             filesizeRule = null;
         }
@@ -99,11 +94,9 @@ public class RuleWrapper<T extends FilterRule> {
             alwaysFilter = rule.getMatchAlwaysFilter();
             // overwrites all others
             requiresHoster = false;
-            requiresLinkcheck = false;
         } else {
             alwaysFilter = null;
         }
-        this.requiresLinkcheck = requiresLinkcheck;
         this.requiresHoster = requiresHoster;
     }
 
@@ -125,10 +118,6 @@ public class RuleWrapper<T extends FilterRule> {
 
     public CompiledRegexFilter getPackageNameRule() {
         return packageNameRule;
-    }
-
-    public boolean isRequiresLinkcheck() {
-        return requiresLinkcheck;
     }
 
     public boolean isRequiresHoster() {
@@ -322,12 +311,12 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkOnlineStatus(final CrawledLink link) {
-        final AvailableLinkState linkState = link.getLinkState();
-        if (AvailableLinkState.UNKNOWN == linkState) {
-            return false;
-        }
         final CompiledOnlineStatusFiler onlineStatusFilter = getOnlineStatusFilter();
         if (onlineStatusFilter != null) {
+            final AvailableLinkState linkState = link.getLinkState();
+            if (AvailableLinkState.UNKNOWN == linkState) {
+                return false;
+            }
             return onlineStatusFilter.matches(linkState);
         }
         return true;

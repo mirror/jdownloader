@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -560,8 +561,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         synchronized (this) {
             for (PackagizerRule lgr : list) {
                 if (lgr.isEnabled() && lgr.isValid()) {
-                    PackagizerRuleWrapper compiled = lgr.compile();
-                    if (!compiled.isRequiresLinkcheck()) {
+                    final PackagizerRuleWrapper compiled = lgr.compile();
+                    if (compiled.getOnlineStatusFilter() == null) {
                         urlFilter.add(compiled);
                         fileFilter.add(compiled);
                     } else {
@@ -645,52 +646,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }
-        java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
-        for (PackagizerRuleWrapper lgr : lfileFilter) {
-            if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
-                try {
-                    if (!lgr.checkHoster(link)) {
-                        continue;
-                    }
-                } catch (NoDownloadLinkException e) {
-                    throw new WTFException();
-                }
-                try {
-                    if (!lgr.checkPluginStatus(link)) {
-                        continue;
-                    }
-                } catch (NoDownloadLinkException e) {
-                    throw new WTFException();
-                }
-                if (!lgr.checkOrigin(link)) {
-                    continue;
-                }
-                if (!lgr.checkConditions(link)) {
-                    continue;
-                }
-                if (!lgr.checkSource(link)) {
-                    continue;
-                }
-                if (!lgr.checkPackageName(link)) {
-                    continue;
-                }
-                if (!lgr.checkFileType(link)) {
-                    continue;
-                }
-                if (lgr.isRequiresLinkcheck()) {
-                    if (!lgr.checkOnlineStatus(link)) {
-                        continue;
-                    }
-                    if (!lgr.checkFileName(link)) {
-                        continue;
-                    }
-                    if (!lgr.checkFileSize(link)) {
-                        continue;
-                    }
-                }
-            }
-            set(link, lgr);
-        }
+        applyPackagizerRules(link, fileFilter);
     }
 
     public void runByUrl(final CrawledLink link) {
@@ -706,47 +662,54 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }
-        java.util.List<PackagizerRuleWrapper> lurlFilter = urlFilter;
-        for (PackagizerRuleWrapper lgr : lurlFilter) {
-            try {
-                if (!lgr.checkHoster(link)) {
-                    continue;
+        applyPackagizerRules(link, urlFilter);
+    }
+
+    private void applyPackagizerRules(final CrawledLink link, final List<PackagizerRuleWrapper> rules) {
+        if (rules != null) {
+            for (final PackagizerRuleWrapper lgr : rules) {
+                if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
+                    try {
+                        if (!lgr.checkHoster(link)) {
+                            continue;
+                        }
+                    } catch (NoDownloadLinkException e) {
+                        continue;
+                    }
+                    try {
+                        if (!lgr.checkPluginStatus(link)) {
+                            continue;
+                        }
+                    } catch (NoDownloadLinkException e) {
+                        continue;
+                    }
+                    if (!lgr.checkOrigin(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkConditions(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkSource(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkPackageName(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkFileType(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkOnlineStatus(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkFileName(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkFileSize(link)) {
+                        continue;
+                    }
                 }
-            } catch (NoDownloadLinkException e) {
-                continue;
+                set(link, lgr);
             }
-            try {
-                if (!lgr.checkPluginStatus(link)) {
-                    continue;
-                }
-            } catch (NoDownloadLinkException e) {
-                continue;
-            }
-            if (!lgr.checkOrigin(link)) {
-                continue;
-            }
-            if (!lgr.checkConditions(link)) {
-                continue;
-            }
-            if (!lgr.checkSource(link)) {
-                continue;
-            }
-            if (!lgr.checkPackageName(link)) {
-                continue;
-            }
-            if (!lgr.checkFileType(link)) {
-                continue;
-            }
-            if (!lgr.checkOnlineStatus(link)) {
-                continue;
-            }
-            if (!lgr.checkFileName(link)) {
-                continue;
-            }
-            if (!lgr.checkFileSize(link)) {
-                continue;
-            }
-            set(link, lgr);
         }
     }
 
@@ -997,16 +960,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     if (!lgr.checkFileType(dummyLink)) {
                         continue;
                     }
-                    if (lgr.isRequiresLinkcheck()) {
-                        if (!lgr.checkOnlineStatus(dummyLink)) {
-                            continue;
-                        }
-                        if (!lgr.checkFileName(dummyLink)) {
-                            continue;
-                        }
-                        if (!lgr.checkFileSize(dummyLink)) {
-                            continue;
-                        }
+
+                    if (!lgr.checkOnlineStatus(dummyLink)) {
+                        continue;
+                    }
+                    if (!lgr.checkFileName(dummyLink)) {
+                        continue;
+                    }
+                    if (!lgr.checkFileSize(dummyLink)) {
+                        continue;
                     }
                 }
                 if (!StringUtils.isEmpty(renameRule)) {
