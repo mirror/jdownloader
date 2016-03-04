@@ -604,6 +604,7 @@ public abstract class SimpleFTP {
             if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) {
                 return -1;
             }
+            throw e;
         }
         final String[] split = size.split(" ");
         return Long.parseLong(split[1].trim());
