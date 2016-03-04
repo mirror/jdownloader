@@ -1440,6 +1440,20 @@ public class LinkCrawler {
                             if (HTMLParser.getProtocol(possibleURLs) != null) {
                                 possibleEmbeddedLinks.add(possibleURLs);
                             }
+                        } else {
+                            try {
+                                final String maybeURL;
+                                if (checkParam.contains("%3")) {
+                                    maybeURL = "http://" + URLDecoder.decode(checkParam, "UTF-8").replaceFirst("^:?/?/?", "");
+                                } else {
+                                    maybeURL = "http://" + checkParam.replaceFirst("^:?/?/?", "");
+                                }
+                                final URL dummyURL = new URL(maybeURL);
+                                if (dummyURL != null && dummyURL.getHost() != null && dummyURL.getHost().contains(".")) {
+                                    possibleEmbeddedLinks.add(maybeURL);
+                                }
+                            } catch (final MalformedURLException e) {
+                            }
                         }
                     } catch (final Throwable e) {
                         LogController.CL().log(e);
