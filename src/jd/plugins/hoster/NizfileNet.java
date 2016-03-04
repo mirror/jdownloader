@@ -27,11 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -55,6 +50,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nizfile.net" }, urls = { "https?://(www\\.)?nizfile\\.net/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class NizfileNet extends PluginForHost {
@@ -135,7 +135,7 @@ public class NizfileNet extends PluginForHost {
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.5<br />
      * Tags: Script, template<br />
-     * mods:<br />
+     * mods: getDllink[One extra RegEx]<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -738,6 +738,10 @@ public class NizfileNet extends PluginForHost {
                     }
                 }
             }
+        }
+        if (dllink == null) {
+            /* Special - use original HTML */
+            dllink = new Regex(this.br.toString(), "\"(https?://[^<>\"/]+/d/[^<>\"]+)\"").getMatch(0);
         }
         if (dllink == null) {
             /* Sometimes used for streaming */

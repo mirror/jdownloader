@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -36,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com" }, urls = { "http://(?:www\\.)?members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p|film/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p|film/\\d+)", "https?://members\\.evilangelnetwork\\.com/en/video/[A-Za-z0-9\\-_]+/\\d+" }, flags = { 2, 2 })
 public class EvilAngelCom extends PluginForHost {
 
     public EvilAngelCom(PluginWrapper wrapper) {
@@ -49,12 +48,13 @@ public class EvilAngelCom extends PluginForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
-    private String              DLLINK           = null;
+    private String              dllink           = null;
     public static final long    trust_cookie_age = 30000l;
     private static final String HTML_LOGGEDIN    = "id=\"headerLinkLogout\"";
     public static final String  LOGIN_PAGE       = "http://members.evilangel.com/en";
 
-    private static final String FILMLINK         = "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
+    private static final String URL_FILM         = "https?://members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
+    private static final String URL_VIDEO        = "https?://members\\.evilangelnetwork\\.com/en/video/[A-Za-z0-9\\-_]+/\\d+";
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -75,37 +75,55 @@ public class EvilAngelCom extends PluginForHost {
         if (aa != null) {
             String filename = null;
             loginEvilAngelNetwork(this.br, aa, LOGIN_PAGE, HTML_LOGGEDIN);
-            if (link.getDownloadURL().matches(FILMLINK)) {
+            if (link.getDownloadURL().matches(URL_FILM)) {
                 br.getPage(link.getDownloadURL());
-                filename = br.getRegex("<h1 class=\"title\">([^<>\"]*?)</h1>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<h1 class=\"h1_title\">([^<>\"]*?)</h1>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<h2 class=\"h2_title\">([^<>\"]*?)</h2>").getMatch(0);
-                    }
+                if (this.br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                filename = getVideoTitle();
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 filename = Encoding.htmlDecode(filename.trim());
-                DLLINK = getDllink(this.br);
-                if (DLLINK == null) {
+                dllink = getDllink(this.br);
+                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                DLLINK = "http://members.evilangel.com" + DLLINK;
-                final String quality = new Regex(DLLINK, "(\\d+p)").getMatch(0);
+                dllink = "http://members.evilangel.com" + dllink;
+                final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
+                if (quality == null) {
+                    filename += ".mp4";
+                } else {
+                    filename = filename + "-" + quality + ".mp4";
+                }
+            } else if (link.getDownloadURL().matches(URL_VIDEO)) {
+                br.getPage(link.getDownloadURL());
+                if (this.br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                filename = getVideoTitle();
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                filename = Encoding.htmlDecode(filename.trim());
+                dllink = getDllink(this.br);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = "http://members.evilangelnetwork.com" + dllink;
+                final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
                 if (quality == null) {
                     filename += ".mp4";
                 } else {
                     filename = filename + "-" + quality + ".mp4";
                 }
             } else {
-                DLLINK = link.getDownloadURL();
+                dllink = link.getDownloadURL();
             }
             final Browser br2 = br.cloneBrowser();
             URLConnectionAdapter con = null;
             try {
-                con = openConnection(br2, DLLINK);
+                con = br2.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     if (filename == null) {
@@ -143,6 +161,17 @@ public class EvilAngelCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Links can only be checked and downloaded via account!");
     }
 
+    private String getVideoTitle() {
+        String title = br.getRegex("<h1 class=\"title\">([^<>\"]*?)</h1>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<h1 class=\"h1_title\">([^<>\"]*?)</h1>").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<h2 class=\"h2_title\">([^<>\"]*?)</h2>").getMatch(0);
+            }
+        }
+        return title;
+    }
+
     public static String getDllink(final Browser br) {
         /** INFO: There are also .wmv versions available but we prefer .mp4 here as 1080p is only available as .mp4 */
         String dllink = null;
@@ -159,6 +188,7 @@ public class EvilAngelCom extends PluginForHost {
     private static Object LOCK = new Object();
 
     /** Function can be used for all evilangel type of networks/websites. */
+    @SuppressWarnings("deprecation")
     public void loginEvilAngelNetwork(Browser br, final Account account, final String getpage, final String html_loggedin) throws Exception {
         synchronized (LOCK) {
             try {
@@ -215,12 +245,16 @@ public class EvilAngelCom extends PluginForHost {
                 br.setCookie(url_main, "mOffset", "1");
                 br.setCookie(url_main, "origin", "promo");
                 br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
-                final String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([A-Za-z0-9\\.]+)\"").getMatch(0);
+                String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([A-Za-z0-9\\.]+)\"").getMatch(0);
                 String postData = "csrfToken=" + csrftoken + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Click+here+to+login&mDate=&mTime=&mOffset=&back=" + Encoding.urlEncode(back);
                 /* Handle stupid login captcha */
                 if (captcha != null) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", host, "http://" + host, true);
-                    final String code = getCaptchaCode("http://www." + host + "/en/captcha/" + captcha, dummyLink);
+                    if (this.getDownloadLink() == null) {
+                        this.setDownloadLink(dummyLink);
+                    }
+                    captcha = "http://www." + host + "/en/captcha/" + captcha;
+                    final String code = getCaptchaCode(captcha, dummyLink);
                     postData += "&captcha%5Bid%5D=" + captcha + "&captcha%5Binput%5D=" + Encoding.urlEncode(code);
                 }
                 br.postPage(br.getURL(), postData);
@@ -276,11 +310,6 @@ public class EvilAngelCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        final URLConnectionAdapter con = br.openHeadConnection(directlink);
-        return con;
     }
 
     public static Browser prepBR(final Browser br, final String host) {

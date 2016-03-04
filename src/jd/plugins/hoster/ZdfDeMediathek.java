@@ -26,6 +26,8 @@ import java.util.Scanner;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser.BrowserException;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -47,6 +49,8 @@ public class ZdfDeMediathek extends PluginForHost {
     private static final String Q_HD          = "Q_HD";
     private static final String FASTLINKCHECK = "FASTLINKCHECK";
 
+    private String              dllink        = null;
+
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -63,23 +67,30 @@ public class ZdfDeMediathek extends PluginForHost {
         return "http://zdf.de";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         final String filename = link.getStringProperty("directName", null);
-        if (filename == null) {
+        dllink = link.getStringProperty("directURL", null);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (link.getStringProperty("directURL", null) == null) {
-            /* We should not ever need to refresh zdf directlinks as they should last forever! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // Nur iPads bekommen (vermutlich aufgrund der veralteten Technik :D)
-            // die Videos als HTTP Streams
-            // br.getHeaders().put("User-Agent", "iPad");
-            // br.getPage("http://www.zdf.de/ZDFmediathek/" + new Regex(link.getDownloadURL(), "(beitrag/video/\\d+(/.+)?)").getMatch(0) +
-            // "?flash=off&ipad=true");
-        }
         link.setFinalFileName(link.getStringProperty("directName", null));
+        URLConnectionAdapter con = null;
+        try {
+            try {
+                con = br.openHeadConnection(dllink);
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
