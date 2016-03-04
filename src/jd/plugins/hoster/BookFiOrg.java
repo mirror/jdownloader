@@ -16,20 +16,21 @@
 
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.org" }, urls = { "http://(www\\.)?([a-z]+\\.)?bookfi\\.org/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" }, flags = { 0 })
-public class BookFiOrg extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.net" }, urls = { "http://(www\\.)?([a-z]+\\.)?bookfi\\.(?:org|net)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" }, flags = { 0 })
+public class BookFiOrg extends antiDDoSForHost {
 
     // DEV NOTES
     // they share the same template
@@ -45,9 +46,11 @@ public class BookFiOrg extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches("http://(?:www\\.)?bookfi\\.org/dl/\\d+.+")) {
-            final String fid = new Regex(link.getDownloadURL(), "bookfi\\.org/dl/(\\d+)").getMatch(0);
-            link.setUrlDownload("http://bookfi.org/book/" + fid);
+        if (link.getDownloadURL().matches("http://(?:www\\.)?bookfi\\.(?:net|org)/dl/\\d+.+")) {
+            final String fid = new Regex(link.getDownloadURL(), "bookfi\\.(?:net|org)/dl/(\\d+)").getMatch(0);
+            link.setUrlDownload("http://bookfi.net/book/" + fid);
+        } else {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("(?:www\\.)?(?:[a-z]{2}\\.)?bookfi.org/", "en.bookfi.net/"));
         }
     }
 
@@ -56,15 +59,16 @@ public class BookFiOrg extends PluginForHost {
         return 1;
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink param) throws Exception {
+        correctDownloadLink(param);
         final String parameter = param.getDownloadURL();
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML("class=\"notFound")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -78,7 +82,7 @@ public class BookFiOrg extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            br.getPage("/" + bookid);
+            getPage("/" + bookid);
         }
 
         // bookfi
@@ -98,9 +102,28 @@ public class BookFiOrg extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        param.setFinalFileName(filename + ".pdf");
+        dllink = info[0];
+        {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openHeadConnection(dllink);
+                param.setFinalFileName(filename.trim() + getFileNameExtensionFromString(getFileNameFromHeader(con), "pdf"));
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                param.setVerifiedFileSize(con.getLongContentLength());
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        param.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.PDF);
         param.setDownloadSize(SizeFormatter.getSize(info[1]));
-        DLLINK = info[0];
         if (parameter.contains("/md5/")) {
             // now everything is aok, we should correct to a single url/file uid
             param.setUrlDownload(br.getURL());
@@ -111,26 +134,12 @@ public class BookFiOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fixFilename(link);
         dl.startDownload();
-    }
-
-    private void fixFilename(final DownloadLink downloadLink) {
-        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-        if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
-            final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));
-            if (oldExtension != null) {
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
-            } else {
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
-            }
-        }
     }
 
     @Override
