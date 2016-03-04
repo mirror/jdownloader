@@ -884,6 +884,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Audio File" })
     String FilterRuleDialog_createTypeFilter_mime_audio();
 
+    @Default(lngs = { "en" }, values = { "Document File" })
+    String FilterRuleDialog_createTypeFilter_mime_document();
+
     @Default(lngs = { "en" }, values = { "Checksums" })
     String FilterRuleDialog_createTypeFilter_mime_checksums();
 

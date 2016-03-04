@@ -102,6 +102,56 @@ public class CompiledFiletypeFilter {
 
     }
 
+    public static enum DocumentExtensions implements ExtensionsFilterInterface {
+        TXT,
+        DOC("(docx?)"),
+        EPUB,
+        README,
+        RTF,
+        PDF;
+
+        private final Pattern  pattern;
+        private static Pattern allPattern;
+
+        public Pattern getPattern() {
+            return pattern;
+        }
+
+        private DocumentExtensions() {
+            pattern = Pattern.compile(name(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        private DocumentExtensions(String id) {
+            this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        public String getDesc() {
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_document();
+        }
+
+        public String getIconID() {
+            return "audio";
+        }
+
+        public Pattern compiledAllPattern() {
+            if (allPattern == null) {
+                allPattern = compileAllPattern(DocumentExtensions.values());
+            }
+            return allPattern;
+        }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension != null && extension instanceof DocumentExtensions;
+        }
+
+        @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
+        }
+
+    }
+
     public static enum AudioExtensions implements ExtensionsFilterInterface {
         MP3,
         WMA,
