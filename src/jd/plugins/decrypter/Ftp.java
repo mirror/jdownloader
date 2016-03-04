@@ -3,16 +3,18 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Locale;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.jdownloader.auth.Login;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,12 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.jdownloader.auth.Login;
 
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
@@ -126,12 +122,16 @@ public class Ftp extends PluginForDecrypt {
             }
             final String finalFilePath = filePath;
             String nameString = filePath.substring(filePath.lastIndexOf("/") + 1);
-            final byte[] nameBytes;
+            String nameStringUpper = nameString.toUpperCase(Locale.ENGLISH);
+            final byte[] nameBytes, nameBytesUpper;
             if (StringUtils.isEmpty(nameString)) {
                 nameString = null;
+                nameStringUpper = null;
                 nameBytes = null;
+                nameBytesUpper = null;
             } else {
                 nameBytes = SimpleFTP.toRawBytes(nameString);
+                nameBytesUpper = SimpleFTP.toRawBytes(nameStringUpper);
             }
             filePath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
             String packageName = new Regex(filePath, "/([^/]+)(/$|$)").getMatch(0);
@@ -147,6 +147,7 @@ public class Ftp extends PluginForDecrypt {
 
             if (ftp.cwd(filePath)) {
                 SimpleFTPListEntry[] entries = ftp.listEntries();
+                final boolean allUpperCase = ftp.isSiteInUpperCase(entries);
                 if (entries != null) {
                     /*
                      * logic for only adding a given file, ie. ftp://domain/directory/file.exe, you could also have subdirectory of the same
@@ -154,14 +155,14 @@ public class Ftp extends PluginForDecrypt {
                      */
                     for (final SimpleFTPListEntry entry : entries) {
                         // we compare bytes because of hex encoding
-                        if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes)) {
+                        if ((allUpperCase && Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytesUpper)) || (!allUpperCase && Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes))) {
                             if (entry.isFile()) {
                                 final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
                                 }
-                                link.setFinalFileName(BestEncodingGuessingURLDecode(entry.getName()));
+                                link.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(entry.getName()));
                                 ret.add(link);
                                 break;
                             } else {
@@ -191,7 +192,7 @@ public class Ftp extends PluginForDecrypt {
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
                                 }
-                                link.setFinalFileName(BestEncodingGuessingURLDecode(entry.getName()));
+                                link.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(entry.getName()));
                                 ret.add(link);
                             }
                         }
@@ -206,14 +207,14 @@ public class Ftp extends PluginForDecrypt {
                         final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + finalFilePath);
                         link.setAvailable(true);
                         link.setVerifiedFileSize(size);
-                        link.setFinalFileName(BestEncodingGuessingURLDecode(nameString));
+                        link.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(nameString));
                         ret.add(link);
                     }
                 }
             }
             if (ret.size() > 0 && packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(BestEncodingGuessingURLDecode(packageName));
+                fp.setName(SimpleFTP.BestEncodingGuessingURLDecode(packageName));
                 fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, Boolean.TRUE);
                 fp.addLinks(ret);
             }
@@ -251,52 +252,6 @@ public class Ftp extends PluginForDecrypt {
             throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + url);
         }
         return list;
-    }
-
-    // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
-    public static String BestEncodingGuessingURLDecode(String urlCoded) throws IOException {
-        final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
-        for (final String encoding : new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }) {
-            try {
-                results.put(encoding, URLDecoder.decode(urlCoded, encoding));
-            } catch (final Throwable ignore) {
-                ignore.printStackTrace();
-            }
-        }
-        final List<String> bestMatchRound1 = new ArrayList<String>();
-        int bestCountRound1 = -1;
-        for (final Entry<String, String> result : results.entrySet()) {
-            int count = 0;
-            for (int index = 0; index < result.getValue().length(); index++) {
-                if ('\uFFFD' == result.getValue().charAt(index)) {
-                    count++;
-                }
-            }
-            if (bestCountRound1 == -1 || bestCountRound1 == count) {
-                bestCountRound1 = count;
-                bestMatchRound1.add(result.getKey());
-            } else {
-                bestCountRound1 = count;
-                bestMatchRound1.clear();
-                bestMatchRound1.add(result.getKey());
-            }
-        }
-        final List<String> bestMatches = new ArrayList<String>();
-        for (final String bestMatchEncoding : bestMatchRound1) {
-            bestMatches.add(results.get(bestMatchEncoding));
-        }
-        Collections.sort(bestMatches, new Comparator<String>() {
-            private final int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
-
-            @Override
-            public final int compare(String o1, String o2) {
-                return compare(o1.length(), o2.length());
-            }
-
-        });
-        return bestMatches.get(0);
     }
 
     @Override

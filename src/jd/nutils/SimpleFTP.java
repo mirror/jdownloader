@@ -50,7 +50,12 @@ import java.net.URLEncoder;
 import java.rmi.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.appwork.utils.Regex;
@@ -148,6 +153,52 @@ public abstract class SimpleFTP {
             }
             return null;
         }
+    }
+
+    // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
+    public static String BestEncodingGuessingURLDecode(String urlCoded) throws IOException {
+        final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
+        for (final String encoding : new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }) {
+            try {
+                results.put(encoding, URLDecoder.decode(urlCoded, encoding));
+            } catch (final Throwable ignore) {
+                ignore.printStackTrace();
+            }
+        }
+        final List<String> bestMatchRound1 = new ArrayList<String>();
+        int bestCountRound1 = -1;
+        for (final Entry<String, String> result : results.entrySet()) {
+            int count = 0;
+            for (int index = 0; index < result.getValue().length(); index++) {
+                if ('\uFFFD' == result.getValue().charAt(index)) {
+                    count++;
+                }
+            }
+            if (bestCountRound1 == -1 || bestCountRound1 == count) {
+                bestCountRound1 = count;
+                bestMatchRound1.add(result.getKey());
+            } else {
+                bestCountRound1 = count;
+                bestMatchRound1.clear();
+                bestMatchRound1.add(result.getKey());
+            }
+        }
+        final List<String> bestMatches = new ArrayList<String>();
+        for (final String bestMatchEncoding : bestMatchRound1) {
+            bestMatches.add(results.get(bestMatchEncoding));
+        }
+        Collections.sort(bestMatches, new Comparator<String>() {
+            private final int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            @Override
+            public final int compare(String o1, String o2) {
+                return compare(o1.length(), o2.length());
+            }
+
+        });
+        return bestMatches.get(0);
     }
 
     private static final int   TIMEOUT            = 20 * 1000;
@@ -929,6 +980,27 @@ public abstract class SimpleFTP {
 
     public static byte[] toRawBytes(String nameString) throws IOException {
         return ENCODING.ASCII7BIT.toBytes(nameString);
+    }
+
+    /**
+     * crude way to detect if ftp site has all upper case listings
+     *
+     * @author raztoki
+     * @param entries
+     * @return
+     * @throws IOException
+     */
+    public boolean isSiteInUpperCase(final SimpleFTPListEntry[] entries) throws IOException {
+        for (final SimpleFTPListEntry entry : entries) {
+            // not sure if I need to use BestEncodingGuessingURLDecode to determine this!
+            final String encoded = BestEncodingGuessingURLDecode(entry.getName());
+            final String upperName = encoded.toUpperCase(Locale.ENGLISH);
+            final boolean result = encoded.equals(upperName);
+            if (!result) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
