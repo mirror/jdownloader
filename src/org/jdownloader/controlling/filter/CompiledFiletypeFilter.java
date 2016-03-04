@@ -5,11 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import jd.plugins.LinkInfo;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.plugins.LinkInfo;
 
 public class CompiledFiletypeFilter {
     private final Pattern[]                   list;
@@ -39,7 +40,7 @@ public class CompiledFiletypeFilter {
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
         if (fileExtension != null) {
-            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { HashExtensions.values(), AudioExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values() }) {
+            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { HashExtensions.values(), AudioExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values(), DocumentExtensions.values() }) {
                 for (final ExtensionsFilterInterface extension : extensions) {
                     final Pattern pattern = extension.getPattern();
                     if (pattern != null && pattern.matcher(fileExtension).matches()) {
@@ -80,7 +81,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return "hashsum";
+            return IconKey.ICON_HASHSUM;
         }
 
         public Pattern compiledAllPattern() {
@@ -130,7 +131,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return "audio";
+            return IconKey.ICON_TEXT;
         }
 
         public Pattern compiledAllPattern() {
@@ -199,7 +200,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return "audio";
+            return IconKey.ICON_AUDIO;
         }
 
         public Pattern compiledAllPattern() {
@@ -277,7 +278,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return "video";
+            return IconKey.ICON_VIDEO;
         }
 
         @Override
@@ -365,7 +366,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return org.jdownloader.gui.IconKey.ICON_EXTRACT;
+            return IconKey.ICON_VIDEO;
         }
     }
 
@@ -418,7 +419,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return "image";
+            return IconKey.ICON_IMAGE;
         }
     }
 
@@ -439,6 +440,9 @@ public class CompiledFiletypeFilter {
         }
         if (filetypeFilter.isVideoFilesEnabled()) {
             filterInterfaces.add(VideoExtensions.ASF);
+        }
+        if (filetypeFilter.isDocFilesEnabled()) {
+            filterInterfaces.add(DocumentExtensions.TXT);
         }
         try {
             if (filetypeFilter.getCustoms() != null) {
