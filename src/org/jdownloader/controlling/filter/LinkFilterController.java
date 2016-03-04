@@ -199,13 +199,13 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
                 LinkgrabberFilterRuleWrapper compiled = lgr.compile();
                 if (lgr.isAccept()) {
-                    if (!compiled.isRequiresLinkcheck()) {
+                    if (compiled.getConditionFilter() == null) {
                         newacceptUrlFilter.add(compiled);
                     } else {
                         newacceptFileFilter.add(compiled);
                     }
                 } else {
-                    if (!compiled.isRequiresLinkcheck()) {
+                    if (compiled.getConditionFilter() == null) {
                         newdenyUrlFilter.add(compiled);
                     } else {
                         newdenyFileFilter.add(compiled);

@@ -29,7 +29,6 @@ import javax.swing.JToggleButton;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
@@ -38,7 +37,6 @@ import javax.swing.event.ListSelectionListener;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.VariousCrawledLinkFlags;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
@@ -176,7 +174,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbPlugin.setSelected(f.isEnabled());
         cobPlugin.setSelectedIndex(f.getMatchType().ordinal());
         cobPluginOptions.setSelectedIndex(f.getPluginStatus().ordinal());
-
     }
 
     public void setFilesizeFilter(FilesizeFilter f) {
@@ -247,13 +244,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             selection.add(FileType.CUSTOM);
         }
         cbTypeSelection.setSelectedItems(selection);
-
         txtCustumMime.setText(f.getCustoms());
-
         cobType.setSelectedIndex(f.getMatchType().ordinal());
-
         cbRegFileType.setSelected(f.isUseRegex());
-
     }
 
     protected boolean isResizable() {
@@ -563,7 +556,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             @Override
             public void updateDependencies() {
                 super.updateDependencies();
-                updateOnline();
 
             }
 
@@ -658,7 +650,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             @Override
             public void updateDependencies() {
                 super.updateDependencies();
-                updateOnline();
 
             }
 
@@ -925,7 +916,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             @Override
             public void updateDependencies() {
                 super.updateDependencies();
-                updateOnline();
 
             }
 
@@ -1073,38 +1063,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     private String convert(String text, boolean regex2) {
 
         return null;
-    }
-
-    protected void updateOnline() {
-        // we have to enqueue it at the edt. This is important!
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                if (cbOnline == null) {
-                    return;
-                }
-                if (cbFilename.isSelected() || cbSize.isSelected()) {
-                    if (!cbOnline.isSelected() || cobOnline.getSelectedIndex() != 0 || cobOnlineOptions.getSelectedIndex() != 1) {
-                        autoset = true;
-                        if (cbOnline.isEnabled()) {
-                            cbOnline.setSelected(true);
-                        }
-                        cobOnline.setSelectedIndex(0);
-                        cobOnlineOptions.setSelectedIndex(1);
-                        if (JDGui.bugme(WarnLevel.NORMAL)) {
-                            Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.literally_warning(), _GUI.T.ConditionDialog_updateOnline_linkcheck_required());
-                        }
-                        return;
-                    }
-                } else if (autoset) {
-                    cbOnline.setSelected(false);
-                    autoset = false;
-
-                }
-            }
-
-        });
-
     }
 
     protected String getIfText() {
