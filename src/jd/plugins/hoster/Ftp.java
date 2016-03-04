@@ -25,6 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.jdownloader.DomainInfo;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.proxy.ProxyController;
@@ -44,11 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.SimpleFTPDownloadInterface;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.jdownloader.DomainInfo;
 
 // DEV NOTES:
 // - ftp filenames can contain & characters!
@@ -185,7 +185,7 @@ public class Ftp extends PluginForHost {
                 final SimpleFTPListEntry fileInfo = ftp.getFileInfo(filePath);
                 if (fileInfo != null) {
                     size = fileInfo.getSize();
-                    name = jd.plugins.decrypter.Ftp.BestEncodingGuessingURLDecode(name);
+                    name = SimpleFTP.BestEncodingGuessingURLDecode(name);
                 }
             } else {
                 /* some server need / at the beginning */
@@ -198,7 +198,7 @@ public class Ftp extends PluginForHost {
                 /* cut off all ?xyz at the end */
                 name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
                 if (name != null) {
-                    name = jd.plugins.decrypter.Ftp.BestEncodingGuessingURLDecode(name);
+                    name = SimpleFTP.BestEncodingGuessingURLDecode(name);
                 } else {
                     logger.severe("could not get filename from ftpurl");
                     name = downloadLink.getName();
