@@ -180,7 +180,10 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
+            String fpName = br.getRegex("class=\"T_selected\">(.*?)</span></a").getMatch(0);
+            if (fpName != null) {
+                fpName = fpName.replaceAll("<span.*?>\\s*</span>", "");
+            }
             if (fpName == null) {
                 fpName = new Regex(parameter, "abelhas\\.pt/(.+)").getMatch(0);
             }
