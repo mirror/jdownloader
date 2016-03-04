@@ -419,7 +419,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     }
 
     private synchronized void askPermission(final RemoteAPIRequest request, final String fallbackSource) throws IOException, DialogNoAnswerException {
-        if (false && request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
+        if (request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
             // valid
             return;
         }

@@ -10,12 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.jdownloader.auth.Login;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -32,6 +26,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.jdownloader.auth.Login;
 
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
@@ -141,37 +141,49 @@ public class Ftp extends PluginForDecrypt {
             } else {
                 auth = "";
             }
-
+            // ftp.listFeatures();
             // ftp.sendClientID("JDownloader");
             // ftp.setUTF8(true);
 
             if (ftp.cwd(filePath)) {
                 SimpleFTPListEntry[] entries = ftp.listEntries();
-                final boolean allUpperCase = ftp.isSiteInUpperCase(entries);
                 if (entries != null) {
                     /*
                      * logic for only adding a given file, ie. ftp://domain/directory/file.exe, you could also have subdirectory of the same
                      * name ftp.../file.exe/file.exe -raztoki
                      */
+                    SimpleFTPListEntry found = null;
                     for (final SimpleFTPListEntry entry : entries) {
                         // we compare bytes because of hex encoding
-                        if ((allUpperCase && Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytesUpper)) || (!allUpperCase && Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes))) {
-                            if (entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
-                                link.setAvailable(true);
-                                if (entry.getSize() >= 0) {
-                                    link.setVerifiedFileSize(entry.getSize());
-                                }
-                                link.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(entry.getName()));
-                                ret.add(link);
+                        if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes)) {
+                            found = entry;
+                            break;
+                        }
+                    }
+                    if (found == null) {
+                        for (final SimpleFTPListEntry entry : entries) {
+                            // we compare bytes because of hex encoding
+                            if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytesUpper)) {
+                                found = entry;
                                 break;
+                            }
+                        }
+                    }
+
+                    if (found != null) {
+                        if (found.isFile()) {
+                            final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + found.getFullPath());
+                            link.setAvailable(true);
+                            if (found.getSize() >= 0) {
+                                link.setVerifiedFileSize(found.getSize());
+                            }
+                            link.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(found.getName()));
+                            ret.add(link);
+                        } else {
+                            if (ftp.cwd(found.getName())) {
+                                entries = ftp.listEntries();
                             } else {
-                                if (ftp.cwd(entry.getName())) {
-                                    entries = ftp.listEntries();
-                                    break;
-                                } else {
-                                    entries = new SimpleFTPListEntry[0];
-                                }
+                                entries = new SimpleFTPListEntry[0];
                             }
                         }
                     }

@@ -54,7 +54,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
@@ -980,27 +979,6 @@ public abstract class SimpleFTP {
 
     public static byte[] toRawBytes(String nameString) throws IOException {
         return ENCODING.ASCII7BIT.toBytes(nameString);
-    }
-
-    /**
-     * crude way to detect if ftp site has all upper case listings
-     *
-     * @author raztoki
-     * @param entries
-     * @return
-     * @throws IOException
-     */
-    public boolean isSiteInUpperCase(final SimpleFTPListEntry[] entries) throws IOException {
-        for (final SimpleFTPListEntry entry : entries) {
-            // not sure if I need to use BestEncodingGuessingURLDecode to determine this!
-            final String encoded = BestEncodingGuessingURLDecode(entry.getName());
-            final String upperName = encoded.toUpperCase(Locale.ENGLISH);
-            final boolean result = encoded.equals(upperName);
-            if (!result) {
-                return false;
-            }
-        }
-        return true;
     }
 
 }
