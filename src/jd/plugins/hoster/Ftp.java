@@ -25,11 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.jdownloader.DomainInfo;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.proxy.ProxyController;
@@ -50,6 +45,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.SimpleFTPDownloadInterface;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.jdownloader.DomainInfo;
+
 // DEV NOTES:
 // - ftp filenames can contain & characters!
 
@@ -61,12 +61,12 @@ public class Ftp extends PluginForHost {
     }
 
     @Override
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(final DownloadLink link, Account account) {
         if (link != null) {
-            return Browser.getHost(link.getDownloadURL(), true);
-        } else {
-            return super.getHost(link, account);
+            // prefer domain via public suffic list
+            return Browser.getHost(link.getDownloadURL());
         }
+        return super.getHost(link, account);
     }
 
     @Override
