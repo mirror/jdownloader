@@ -1190,6 +1190,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             html5PlayerJs = html5PlayerJs.replace("\\/", "/");
             html5PlayerJs = "http:" + html5PlayerJs;
         }
+        if (html5PlayerJs == null) {
+            html5PlayerJs = br.getMatch("src=\"//(.*?/base.js\" name=\"player\\/base\"");
+            if (html5PlayerJs != null) {
+                html5PlayerJs = "https://" + html5PlayerJs;
+            }
+        }
         String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
         fmtMaps = new HashSet<String>();
         subtitleUrls = new HashSet<String>();
