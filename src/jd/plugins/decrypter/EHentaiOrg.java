@@ -46,24 +46,23 @@ public class EHentaiOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_EXHENTAI = "http://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+";
-
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // links are transferable between the login enforced url and public
-        final String parameter = param.toString().replace("exhentai.org/", "g.e-hentai.org/");
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("e-hentai.org");
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
         if (aa != null) {
             ((jd.plugins.hoster.EHentaiOrg) hostplugin).login(this.br, aa, false);
         }
+        // links are transferable between the login enforced url and public, but may not be available on public
+        final String parameter = aa == null ? param.toString().replace("exhentai.org/", "g.e-hentai.org/") : param.toString().replace("g.e-hentai.org/", "exhentai.org/");
+
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         if (uid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "fuid can not be found");
         }
         this.br.setFollowRedirects(true);
-        br.setCookie(getHost(), "nw", "1");
+        br.setCookie(Browser.getHost(parameter), "nw", "1");
         br.getPage(parameter);
         if (br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -107,12 +106,10 @@ public class EHentaiOrg extends PluginForDecrypt {
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink(singleLink);
                 final String namepart = fpName + "_" + uid + "-" + df.format(counter);
-                dl.setProperty("mainlink", parameter);
                 dl.setProperty("namepart", namepart);
                 dl.setName(namepart);
                 dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 dl.setAvailable(true);
-                dl.setContentUrl(singleLink);
                 fp.add(dl);
                 distribute(dl);
                 decryptedLinks.add(dl);
