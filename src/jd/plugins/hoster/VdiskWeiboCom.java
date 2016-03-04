@@ -103,9 +103,11 @@ public class VdiskWeiboCom extends PluginForHost {
         }
         if (filename == null) {
             filename = fid;
+            link.setName(filename);
+        } else {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setFinalFileName(filename);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
