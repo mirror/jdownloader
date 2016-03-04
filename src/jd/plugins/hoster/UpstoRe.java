@@ -24,8 +24,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,12 +50,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
 public class UpstoRe extends antiDDoSForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
@@ -164,14 +165,7 @@ public class UpstoRe extends antiDDoSForHost {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
             if (br.containsHTML(">This file is available only for Premium users<")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             if (br.containsHTML(">Server for free downloads is overloaded<")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
@@ -221,7 +215,10 @@ public class UpstoRe extends antiDDoSForHost {
             if (wait > 0) {
                 sleep(wait * 1000l, downloadLink);
             }
-            postPage(downloadLink.getDownloadURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+            // some javascript crapola
+            final String antispam = Encoding.urlEncode(getSoup());
+            final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
+            postPage(downloadLink.getDownloadURL(), "antispam=" + antispam + "&" + (kpw != null ? kpw : "kpw") + "=" + antispam + "&free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
             if (br.containsHTML("limit for today|several files recently")) {
                 setDownloadStarted(downloadLink, 0);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
@@ -259,6 +256,16 @@ public class UpstoRe extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    private String getSoup() {
+        final Random r = new Random();
+        final String soup = "()_+-=:;?.,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        String v = "";
+        for (int i = 0; i < 20; i++) {
+            v = v + soup.charAt(r.nextInt(soup.length()));
+        }
+        return v;
+    }
+
     @SuppressWarnings("deprecation")
     private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws PluginException {
         synchronized (CTRLLOCK) {
@@ -275,7 +282,9 @@ public class UpstoRe extends antiDDoSForHost {
                 }
                 timestamp_download_started = System.currentTimeMillis() - timePassed;
             } else {
-                /* Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download just now. */
+                /*
+                 * Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download just now.
+                 */
                 timestamp_download_started = System.currentTimeMillis();
             }
             blockedIPsMap.put(currentIP.get(), timestamp_download_started);
