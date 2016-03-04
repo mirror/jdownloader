@@ -4,6 +4,7 @@ import javax.swing.Icon;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
@@ -19,6 +20,7 @@ public enum FileType {
     VIDEO(VideoExtensions.ASF),
     ARCHIVE(ArchiveExtensions.ACE),
     IMAGE(ImageExtensions.BMP),
+    TXT(DocumentExtensions.TXT),
     CUSTOM(null) {
         @Override
         public Icon getIcon() {

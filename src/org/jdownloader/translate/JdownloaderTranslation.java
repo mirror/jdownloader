@@ -418,6 +418,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Image Files: jpg, png, gif,..." })
     String image_description();
 
+    @Default(lngs = { "en" }, values = { "Doc Files: txt, rtf, doc,..." })
+    String doc_description();
+
     @Default(lngs = { "en" }, values = { "All files except audio, archive, video & image files" })
     String other_files_description();
 

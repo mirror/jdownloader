@@ -6,6 +6,7 @@ import java.util.List;
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
@@ -33,6 +34,9 @@ public class FiletypeFilter extends Filter implements Storable {
         }
         if (imagesEnabled) {
             cond.add(ImageExtensions.BMP.getDesc());
+        }
+        if (docFilesEnabled) {
+            cond.add(DocumentExtensions.TXT.getDesc());
         }
         if (customs != null) {
             cond.add(_GUI.T.FiletypeFilter_toString_custom(customs));
@@ -85,7 +89,7 @@ public class FiletypeFilter extends Filter implements Storable {
      * @param customs
      * @param regex
      */
-    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean hashEnabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs, boolean regex) {
+    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean hashEnabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, final boolean docFilesEnabled, String customs, boolean regex) {
         super();
         this.enabled = enabled;
         this.audioFilesEnabled = audioFilesEnabled;
@@ -96,7 +100,7 @@ public class FiletypeFilter extends Filter implements Storable {
         this.useRegex = regex;
         this.hashEnabled = hashEnabled;
         this.matchType = typeMatchType;
-
+        this.docFilesEnabled = docFilesEnabled;
     }
 
     public boolean isUseRegex() {
@@ -167,6 +171,16 @@ public class FiletypeFilter extends Filter implements Storable {
     }
 
     private boolean videoFilesEnabled;
+    private boolean docFilesEnabled;
+
+    public boolean isDocFilesEnabled() {
+        return docFilesEnabled;
+    }
+
+    public void setDocFilesEnabled(boolean docFilesEnabled) {
+        this.docFilesEnabled = docFilesEnabled;
+    }
+
     private boolean archivesEnabled;
     private boolean imagesEnabled;
     private String  customs;
