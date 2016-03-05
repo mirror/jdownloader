@@ -75,7 +75,7 @@ public class DrawcrowdCom extends PluginForHost {
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
+        // dllink = Encoding.htmlDecode(dllink);
         if (full_name != null) {
             filename = full_name + "_" + filename;
         }
@@ -166,7 +166,7 @@ public class DrawcrowdCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
