@@ -1070,7 +1070,8 @@ public class HugeFilesNet extends PluginForHost {
             // Prevent another non account download method from starting, when account been determined as required.
             return false;
         } else if (account == null && downloadLink.getDownloadSize() > 786432000) {
-            return false;
+            // one can start over 750meg now, see https://board.jdownloader.org/showthread.php?p=365389#post365389
+            return true;
         } else {
             return true;
         }
