@@ -128,6 +128,7 @@ LinkSource_ADD_LINKS_DIALOG=添加链接动作
 LinkSource_CLIPBOARD=剪切板
 LinkSource_CNL=即点即载
 LinkSource_DOWNLOADED_CONTAINER=已下载的容器
+LinkSource_DRAG_DROP_ACTION=拖放操作
 LinkSource_EXTENSION=任意扩展名
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Dock (仅用于 Mac)
