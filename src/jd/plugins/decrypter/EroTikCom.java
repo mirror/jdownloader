@@ -38,44 +38,40 @@ public class EroTikCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches("http://www\\.ero-tik\\.com/(contact_us|login|memberlist|profile|register)\\.html")) {
             logger.info("Unsupported/invalid link: " + parameter);
-            return decryptedLinks;
+            return crawledLinks;
         }
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().contains("/index.html")) {
+            crawledLinks.add(this.createOfflinelink(parameter));
+            return crawledLinks;
         }
         if (br.containsHTML("video-watch")) { // Single links
-            decryptSingleLink(decryptedLinks, parameter);
+            crawlSingleLink(crawledLinks, parameter);
         } else { // Multi links
             final String fpName = "Ero-tik " + new Regex(parameter, "http://www\\.ero-tik\\.com/(.*)\\.html").getMatch(0);
             logger.info("fpName: " + fpName);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             final String[] items = br.getRegex("<h3><a href=\"([^<>\"].+?)\" class=\"pm-title-link ?\"").getColumn(0);
-            if ((items == null || items.length == 0) && decryptedLinks.isEmpty()) {
+            if ((items == null || items.length == 0) && crawledLinks.isEmpty()) {
                 logger.warning("Decrypter broken (items regex) for link: " + parameter);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String item : items) {
                 logger.info("item: " + item);
                 br.getPage(item);
-                decryptSingleLink(decryptedLinks, item);
-                fp.addLinks(decryptedLinks);
+                crawlSingleLink(crawledLinks, item);
+                fp.addLinks(crawledLinks);
             }
         }
-        return decryptedLinks;
+        return crawledLinks;
     }
 
-    private void decryptSingleLink(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws Exception {
+    private void crawlSingleLink(final ArrayList<DownloadLink> crawledLinks, final String parameter) throws Exception {
         String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (title == null) {
             logger.warning("Decrypter broken (title regex) for link: " + parameter);
@@ -103,12 +99,15 @@ public class EroTikCom extends PluginForDecrypt {
             String ref = br.getRegex(">ref=\"([^<>\"]*?)\"").getMatch(0);
             if (ref != null) {
                 externID = "http://videomega.tv/view.php?ref=" + ref;
+            } else if (br.containsHTML("<iframe src=")) {
+                externID = br.getRegex("<iframe src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             } else {
-                externID = br.getRegex("\"(https?://videomega\\.tv/[^<>\"]*?)\"").getMatch(0);
-                if (externID == null) {
-                    externID = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
-                }
+                externID = br.getRegex("src=\"(http://videomega[^<>\"]*?)\"").getMatch(0);
             }
+        }
+        if (externID == null) {
+            logger.warning("Decrypter broken (externID == null) for link: " + parameter);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("externID: " + externID);
         DownloadLink dl = createDownloadlink(externID);
@@ -117,8 +116,8 @@ public class EroTikCom extends PluginForDecrypt {
         }
         dl.setContentUrl(externID);
         dl.setFinalFileName(filename + "." + "mp4");
-        decryptedLinks.add(dl);
-        logger.info("decryptedLinks.add(dl) done");
+        crawledLinks.add(dl);
+        logger.info("crawledLinks.add(dl) done");
         return;
     }
 
