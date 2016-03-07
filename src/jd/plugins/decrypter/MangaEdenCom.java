@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -28,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangaeden.com" }, urls = { "http://(www\\.)?mangaeden\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+(?:\\.\\d+)?/1/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangaeden.com" }, urls = { "http://(www\\.)?mangaeden\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+(?:\\.\\d+)?/1/" }, flags = { 0 })
 public class MangaEdenCom extends antiDDoSForDecrypt {
 
     public MangaEdenCom(PluginWrapper wrapper) {
@@ -36,9 +37,10 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> cryptedLinks = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> cryptedLinks = new ArrayList<String>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         getPage(parameter);
         if (br.containsHTML("404 NOT FOUND")) {
             logger.info("Link offline: " + parameter);
@@ -48,8 +50,8 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
             logger.info("Link offline (next chapter isn't out yet): " + parameter);
             return decryptedLinks;
         }
-        final String thisLinkpart = new Regex(parameter, "mangaeden\\.com(/.*?)1/$").getMatch(0);
-        String fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*-\\s*(?:Read Manga Online Free|Manga Eden)").getMatch(0);
+        final String thisLinkpart = new Regex(br.getURL(), "mangaeden\\.com(/.*?)1/$").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*([^<>\"]*?)(?:\\s*-\\s*page \\d+)?\\s*-\\s*(?:Read Manga Online Free|Manga Eden)").getMatch(0);
         final String[] pages = br.getRegex("<option[^>]+value=\"(" + thisLinkpart + "\\d+/)\"").getColumn(0);
         if (pages == null || pages.length == 0 || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -73,7 +75,7 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
             final String decryptedlink = getSingleLink();
             final DownloadLink dd = createDownloadlink("directhttp://" + decryptedlink);
             dd.setAvailable(true);
-            dd.setFinalFileName(fpName + "_" + df.format(counter) + decryptedlink.substring(decryptedlink.lastIndexOf(".")));
+            dd.setFinalFileName(fpName + "_" + df.format(counter) + getFileNameExtensionFromString(decryptedlink, ".jpg"));
             decryptedLinks.add(dd);
             counter++;
         }
@@ -91,9 +93,7 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
         if (finallink == null) {
             return null;
         }
-        if (finallink.startsWith("//")) {
-            finallink = new Regex(br.getURL(), "https?:").getMatch(-1) + finallink;
-        }
+        finallink = Request.getLocation(finallink, br.getRequest());
         return finallink;
     }
 
