@@ -9,12 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.download.Downloadable;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
@@ -28,12 +22,18 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.download.Downloadable;
+
 public class RAFChunk extends Thread {
     /**
      * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen
      * kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
      */
-    public static final long                MIN_CHUNKSIZE    = 1 * 1024 * 1024;
+    public static final long                MIN_CHUNKSIZE    = 100 * 1024;
 
     private long                            chunkBytesLoaded = 0;
 
@@ -228,7 +228,7 @@ public class RAFChunk extends Thread {
             /*
              * now we calculate the max fill level when to force buffer flushing
              */
-            flushLevel = Math.max((maxbuffersize / 100 * 80), 1);
+            flushLevel = Math.max((maxbuffersize / 100 * JsonConfig.create(GeneralSettings.class).getFlushBufferLevel()), 1);
         } catch (Throwable e) {
             dl.error(new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.download_error_message_outofmemory()));
             return;

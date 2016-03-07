@@ -3685,6 +3685,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
+    private final static HashSet<String> accessChecks = new HashSet<String>();
+
     public void localFileCheck(final SingleDownloadController controller, final ExceptionRunnable runOkay, final ExceptionRunnable runFailed) throws Exception {
         final NullsafeAtomicReference<Object> asyncResult = new NullsafeAtomicReference<Object>(null);
         enqueueJob(new DownloadWatchDogJob() {
@@ -3722,26 +3724,40 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                         }
                     }
-                    File writeTest = new File(fileOutput.getParentFile(), "jd_accessCheck_" + System.currentTimeMillis());
-                    try {
-                        if (writeTest.exists() == false) {
-                            if (!writeTest.createNewFile()) {
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                            }
-                        } else {
-                            if (!writeTest.canWrite()) {
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                            }
-                        }
-                    } catch (Throwable e) {
 
-                        LogSource.exception(controller.getLogger(), e);
-                        if (e instanceof SkipReasonException) {
-                            throw (SkipReasonException) e;
+                    if (!accessChecks.contains(fileOutput.getParentFile().getAbsolutePath())) {
+                        final File writeTest = new File(fileOutput.getParentFile(), "jd_accessCheck_" + System.currentTimeMillis());
+                        try {
+                            if (writeTest.exists() == false) {
+                                if (!writeTest.createNewFile()) {
+                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                                }
+                            } else {
+                                if (!writeTest.canWrite()) {
+                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                                }
+                            }
+                            accessChecks.add(fileOutput.getParentFile().getAbsolutePath());
+                        } catch (Exception e) {
+                            LogSource.exception(controller.getLogger(), e);
+                            if (e instanceof SkipReasonException) {
+                                throw (SkipReasonException) e;
+                            }
+                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
+                        } finally {
+                            if (!writeTest.delete()) {
+                                controller.getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                                    @Override
+                                    public void interrupt() {
+                                    }
+
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        writeTest.delete();
+                                    }
+                                });
+                            }
                         }
-                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                    } finally {
-                        writeTest.delete();
                     }
                 }
                 final boolean insideDownloadInstance = controller.getDownloadInstance() != null;
