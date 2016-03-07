@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+[^\\s]*)|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" }, flags = { 0, 0 })
 public class TwitterCom extends PornEmbedParser {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -234,11 +234,11 @@ public class TwitterCom extends PornEmbedParser {
         } else {
             tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
             final String twitter_text = this.br.getRegex("<title>(.*?)</title>").getMatch(0);
-            if (br.containsHTML("data-autoplay-src=")) {
+            if (br.containsHTML("data-autoplay-src=|video:url")) {
                 final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
                 decryptedLinks.add(dl);
             } else {
-                final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "<source video\\-src=\"(https?://[^<>\"]*?)\"" };
+                final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "(<source video\\-src=|video_url\":)\"(https?://[^<>\"]*?)\"" };
                 for (final String regex : regexes) {
                     final String[] alllinks = br.getRegex(regex).getColumn(0);
                     if (alllinks != null && alllinks.length > 0) {
