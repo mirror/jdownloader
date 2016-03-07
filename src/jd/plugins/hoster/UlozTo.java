@@ -204,8 +204,9 @@ public class UlozTo extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             boolean failed = true;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final Browser cbr = br.cloneBrowser();
+            Browser cbr = null;
             for (int i = 0; i <= 5; i++) {
+                cbr = br.cloneBrowser();
                 cbr.getPage("/reloadXapca.php?rnd=" + System.currentTimeMillis());
                 if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -218,8 +219,6 @@ public class UlozTo extends PluginForHost {
                 if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /* Fix that url */
-                captchaUrl = captchaUrl.replace("\\", "");
 
                 String code = null, ts = null, sign = null, cid = null;
                 // Tries to read if property selected
