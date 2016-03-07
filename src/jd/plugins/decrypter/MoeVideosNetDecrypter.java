@@ -30,8 +30,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "http://(www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/((?:\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
@@ -121,7 +119,8 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
         }
         letilink = letilink.replaceAll("\\\\", "");
         if (StringUtils.contains(letilink, "/video/404.mp4")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
         String filename = null;
         DownloadLink fina;
