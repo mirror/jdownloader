@@ -50,7 +50,6 @@ public class Grab8Com extends antiDDoSForHost {
     private static final String                            NORESUME                       = NICE_HOSTproperty + "NORESUME";
     private static final String                            CLEAR_DOWNLOAD_HISTORY         = "CLEAR_DOWNLOAD_HISTORY";
     private final boolean                                  default_clear_download_history = false;
-    private static final String                            default_premium_page           = "http://p5.grab8.com/2/index.php";
 
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME         = true;
@@ -61,7 +60,7 @@ public class Grab8Com extends antiDDoSForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                        = null;
     private DownloadLink                                   currDownloadLink               = null;
-    private String                                         currTransloadPage              = null;
+    private String                                         currPremiumPage                = null;
     private static Object                                  LOCK                           = new Object();
 
     public Grab8Com(PluginWrapper wrapper) {
@@ -146,16 +145,14 @@ public class Grab8Com extends antiDDoSForHost {
         login(false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            br.setFollowRedirects(true);
-            getPage("http://grab8.com/member/index.php");
-            currTransloadPage = br.getRegex("<b>Your Premium Page is at: </b><a href=('|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)\\1").getMatch(1);
-            if (currTransloadPage == null) {
-                logger.warning("Transloadpage is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            currPremiumPage = getPremiumPage();
+            if (currPremiumPage == null) {
+                setPremiumPage(br);
+                if (currPremiumPage == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            /* Save this for later usage! */
-            link.setProperty("premiumPage", currTransloadPage);
-            getPage(currTransloadPage);
+            getPage(currPremiumPage);
             dllink = br.getBaseURL();
             br.setFollowRedirects(true);
             postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -205,7 +202,6 @@ public class Grab8Com extends antiDDoSForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         final String transferID = link.getStringProperty("transferID", null);
         final boolean deleteAfterDownload = this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, false);
-        currTransloadPage = link.getStringProperty("premiumPage", default_premium_page);
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         /* First set hardcoded limit */
@@ -282,7 +278,7 @@ public class Grab8Com extends antiDDoSForHost {
         try {
             /* We can skip this first step and directly confirm that we want to delete that file. */
             // br.postPage(premiumPage, "act=delete&files%5B%5D=" + transferID);
-            postPage(currTransloadPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
+            postPage(currPremiumPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
             success = true;
         } catch (final Throwable e) {
         }
@@ -404,10 +400,9 @@ public class Grab8Com extends antiDDoSForHost {
                         return;
                     }
                 }
-                // some login routines have captcha
-                getAPISafe(default_premium_page);
+                getAPISafe("http://grab8.com/member/index.php");
                 // find the form
-                final Form login = br.getFormByInputFieldKeyValue("user", "Username");
+                Form login = br.getFormByInputFieldKeyValue("user", "Username");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -422,6 +417,7 @@ public class Grab8Com extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                setPremiumPage(br);
                 currAcc.setProperty("name", Encoding.urlEncode(currAcc.getUser()));
                 currAcc.setProperty("pass", Encoding.urlEncode(currAcc.getPass()));
                 currAcc.setProperty("cookies", fetchCookies(NICE_HOST));
@@ -446,6 +442,27 @@ public class Grab8Com extends antiDDoSForHost {
             unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    private void setPremiumPage(final Browser br) throws Exception {
+        synchronized (LOCK) {
+            // this is after login! cookies are present!
+            // lets do this in another browser, wont effect download stuff
+            final Browser br2 = br.cloneBrowser();
+            if (br2.getURL() != null && !br2.getURL().endsWith("//grab8.com/member/index.php")) {
+                getPage(br2, "http://grab8.com/member/index.php");
+            }
+            currPremiumPage = br2.getRegex("<b>Your Premium Page is at: </b><a href=('|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)\\1").getMatch(1);
+            if (currPremiumPage == null) {
+                logger.warning("PremiumPage is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            currAcc.setProperty("premiumPage", currPremiumPage);
+        }
+    }
+
+    private String getPremiumPage() throws Exception {
+        return currAcc.getStringProperty("premiumPage", null);
     }
 
     private void getAPISafe(final String accesslink) throws Exception {
