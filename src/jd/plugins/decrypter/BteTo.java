@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byte.to" }, urls = { "http://(?:www\\.)?byte\\.to/(?:category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byte.to" }, urls = { "https?://(?:www\\.)?byte\\.to/(?:category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)" }, flags = { 0 })
 public class BteTo extends PluginForDecrypt {
 
     public BteTo(PluginWrapper wrapper) {
@@ -36,15 +36,19 @@ public class BteTo extends PluginForDecrypt {
 
     // This is a modified CMS site
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Es existiert kein Eintrag mit der ID")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<title>Byte\\.to \\-([^<>\"]*?)</title>").getMatch(0);
-        final String[] links = br.getRegex("<A HREF=\"(http[^<>\"]*?)\"").getColumn(0);
+        String fpName = br.getRegex("<title>Byte\\.to \\-([^<>\"]*?)</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<TITLE>\\s*(.*?)</TITLE>").getMatch(0);
+        }
+        final String[] links = br.getRegex("<A HREF=\"(https?[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -52,7 +56,7 @@ public class BteTo extends PluginForDecrypt {
         for (String singleLink : links) {
             singleLink = singleLink.replace("http://www.dereferer.org/?", "");
             singleLink = Encoding.htmlDecode(singleLink);
-            if (!singleLink.matches("http://(www\\.)?byte\\.to/category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html")) {
+            if (!singleLink.matches("https?://(www\\.)?byte\\.to/category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html")) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
