@@ -247,7 +247,7 @@ public class UlozTo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
 
-                captchaForm.put("captcha_value", code);
+                captchaForm.put("captcha_value", Encoding.urlEncode(code));
                 captchaForm.remove(null);
                 captchaForm.remove("freeDownload");
                 if (ts != null) {
