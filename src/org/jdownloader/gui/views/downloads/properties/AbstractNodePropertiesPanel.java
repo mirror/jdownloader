@@ -33,6 +33,11 @@ import javax.swing.KeyStroke;
 import javax.swing.text.DefaultEditorKit.CopyAction;
 import javax.swing.text.TextAction;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.plugins.download.HashInfo;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -65,10 +70,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperties> extends MigPanel implements ActionListener, GenericConfigEventListener<Boolean> {
 
@@ -780,13 +781,16 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             if (checksum.getParent() != null) {
                 String cs = checksum.getText();
                 cs = cs.replaceAll("\\[.*?\\]", "").trim();
-                if (cs.length() == 32) {
-                    abstractNodes.saveMd5(cs);
+                if (cs.length() == 8) {
+                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.CRC32));
+                } else if (cs.length() == 32) {
+                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.MD5));
                 } else if (cs.length() == 40) {
-                    abstractNodes.saveSha1(cs);
+                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA1));
+                } else if (cs.length() == 64) {
+                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA256));
                 } else {
-                    abstractNodes.saveMd5(null);
-                    abstractNodes.saveSha1(null);
+                    abstractNodes.saveHashInfo(null);
                 }
             }
             if (packagename.getParent() != null) {
@@ -907,12 +911,9 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 destination.setFile(new File(saveTo));
             }
             if (checksum.getParent() != null && (newData || !checksum.hasFocus())) {
-                final String sha1 = abstractNodes.loadSha1();
-                final String md5 = abstractNodes.loadMD5();
-                if (!StringUtils.isEmpty(sha1)) {
-                    checksum.setText("[SHA1] " + sha1);
-                } else if (!StringUtils.isEmpty(md5)) {
-                    checksum.setText("[MD5] " + md5);
+                final HashInfo hashInfo = abstractNodes.loadHashInfo();
+                if (hashInfo != null) {
+                    checksum.setText("[" + hashInfo.getType() + "] " + hashInfo.getHash());
                 } else {
                     checksum.setText(null);
                 }

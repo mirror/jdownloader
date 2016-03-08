@@ -123,20 +123,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request, null, null);
-            final String crypted = request.getParameterbyKey("crypted");
-            final String jk = request.getParameterbyKey("jk");
-            final String k = request.getParameterbyKey("k");
-            if (StringUtils.isEmpty(crypted) || (StringUtils.isEmpty(jk) && StringUtils.isEmpty(k))) {
+            final CnlQueryStorable cnl = new CnlQueryStorable();
+            cnl.setCrypted(request.getParameterbyKey("crypted"));
+            cnl.setJk(request.getParameterbyKey("jk"));
+            cnl.setKey(request.getParameterbyKey("k"));
+            if (StringUtils.isEmpty(cnl.getCrypted()) || (StringUtils.isEmpty(cnl.getJk()) && StringUtils.isEmpty(cnl.getKey()))) {
                 writeString(response, request, "failed\r\n", true);
                 return;
             }
-            final String dummyCNL = createDummyCNL(crypted, jk, k);
-            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL, request);
-            /*
-             * we need the \r\n else the website will not handle response correctly
-             */
-            writeString(response, request, "success\r\n", true);
+            addcnl(response, request, cnl);
         } catch (Throwable e) {
             e.printStackTrace();
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
@@ -362,7 +357,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         try {
             askPermission(request, null, null);
             final String urls = request.getParameterbyKey("urls");
-            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
+            if (StringUtils.isNotEmpty(urls)) {
+                clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
+            }
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);

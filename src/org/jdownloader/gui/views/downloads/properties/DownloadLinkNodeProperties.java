@@ -10,6 +10,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -76,11 +77,6 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected String loadMD5() {
-        return currentLink.getMD5Hash();
-    }
-
-    @Override
     protected String loadPackageName() {
         if (currentPackage != null) {
             return currentPackage.getName();
@@ -111,11 +107,6 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected String loadSha1() {
-        return currentLink.getSha1Hash();
-    }
-
-    @Override
     protected void saveComment(String text) {
         currentLink.getDownloadLink().setComment(text);
     }
@@ -140,11 +131,6 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected void saveMd5(String cs) {
-        currentLink.getDownloadLink().setMD5Hash(cs);
-    }
-
-    @Override
     protected void savePriority(Priority priop) {
         currentLink.setPriorityEnum(priop);
     }
@@ -164,11 +150,6 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
             }.actionPerformed(null);
         }
         // currentPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(destination.getPath(), currentPackage.getName()));
-    }
-
-    @Override
-    protected void saveSha1(String cs) {
-        currentLink.getDownloadLink().setSha1Hash(cs);
     }
 
     @Override
@@ -202,6 +183,16 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
     @Override
     protected boolean hasLoadedArchives() {
         return archives != null;
+    }
+
+    @Override
+    protected HashInfo loadHashInfo() {
+        return currentLink.getHashInfo();
+    }
+
+    @Override
+    protected void saveHashInfo(HashInfo hashInfo) {
+        currentLink.setHashInfo(hashInfo);
     }
 
 }

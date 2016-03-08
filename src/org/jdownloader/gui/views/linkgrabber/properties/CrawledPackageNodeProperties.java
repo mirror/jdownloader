@@ -7,6 +7,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.plugins.download.HashInfo;
 
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
@@ -122,24 +123,6 @@ public class CrawledPackageNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected String loadMD5() {
-        return null;
-    }
-
-    @Override
-    protected String loadSha1() {
-        return null;
-    }
-
-    @Override
-    protected void saveMd5(String cs) {
-    }
-
-    @Override
-    protected void saveSha1(String cs) {
-    }
-
-    @Override
     protected void saveArchivePasswords(List<String> hashSet) {
         if (archives != null && archives.size() == 1) {
             archives.get(0).getSettings().setPasswords(hashSet);
@@ -164,5 +147,14 @@ public class CrawledPackageNodeProperties extends AbstractNodeProperties {
     @Override
     protected boolean hasLoadedArchives() {
         return archives != null;
+    }
+
+    @Override
+    protected HashInfo loadHashInfo() {
+        return null;
+    }
+
+    @Override
+    protected void saveHashInfo(HashInfo hashInfo) {
     }
 }
