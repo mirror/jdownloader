@@ -101,7 +101,8 @@ public class BbcCom extends PluginForHost {
                 }
             }
             if (filesize_str == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* No filesize given? Skip this media! */
+                continue;
             }
             filesize_temp = Long.parseLong(filesize_str);
             if (filesize_temp > filesize_max) {

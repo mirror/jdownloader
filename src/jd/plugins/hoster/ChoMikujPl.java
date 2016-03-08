@@ -18,16 +18,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -76,6 +72,7 @@ public class ChoMikujPl extends PluginForHost {
     private boolean             account_resume              = true;
     private int                 account_maxdls              = -1;
     private boolean             serverIssue                 = false;
+    private boolean             premiumonly                 = false;
 
     /* ChomikujPlScript */
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -92,6 +89,7 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         serverIssue = false;
+        premiumonly = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         final String mainlink = link.getStringProperty("mainlink", null);
@@ -116,6 +114,7 @@ public class ChoMikujPl extends PluginForHost {
             }
         }
         if (!getDllink(link, br.cloneBrowser(), false)) {
+            premiumonly = true;
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
             return AvailableStatus.TRUE;
         }
@@ -179,6 +178,8 @@ public class ChoMikujPl extends PluginForHost {
         account.setValid(true);
         final String remainingTraffic = br.getRegex("<strong>([^<>\"]*?)</strong>[\t\n\r ]+transferu").getMatch(0);
         if (remainingTraffic != null) {
+            /* Basically uploaders can always download their own files no matter how much traffic they have left ... */
+            ai.setSpecialTraffic(true);
             ai.setTrafficLeft(SizeFormatter.getSize(remainingTraffic.replace(",", ".")));
         } else {
             ai.setUnlimitedTraffic();
@@ -219,6 +220,10 @@ public class ChoMikujPl extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage("http://chomikuj.pl/Video.ashx?id=" + fid + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
             DLLINK = br.getRedirectLocation();
+            if (DLLINK == null) {
+                /* Probably not free downloadable! */
+                return false;
+            }
             theLink.setFinalFileName(theLink.getName());
         } else if (theLink.getName().toLowerCase().endsWith(".mp3") && !premium) {
             DLLINK = getDllinkMP3(theLink);
@@ -449,28 +454,14 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (cbr.containsHTML(PREMIUMONLY)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        if (cbr.containsHTML(PREMIUMONLY) || premiumonly) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (serverIssue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
         if (!isVideo(downloadLink)) {
             if (!getDllink(downloadLink, br, false)) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
         }
         if (DLLINK == null) {
@@ -489,6 +480,7 @@ public class ChoMikujPl extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -549,28 +541,16 @@ public class ChoMikujPl extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 getPage(this.br, MAINPAGE);
                 final String lang = System.getProperty("user.language");
@@ -599,17 +579,9 @@ public class ChoMikujPl extends PluginForHost {
                 postPageRaw(this.br, "http://chomikuj.pl/" + Encoding.urlEncode(account.getUser()), "ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
                 getPage(this.br, "http://chomikuj.pl/" + Encoding.urlEncode(account.getUser()));
 
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
