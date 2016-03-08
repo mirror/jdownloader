@@ -38,13 +38,13 @@ public class SslNewsInfo extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface UsenetNowConfigInterface extends UsenetConfigInterface {
+    public static interface SslNewsInfoConfigInterface extends UsenetConfigInterface {
 
     };
 
     @Override
-    public Class<UsenetNowConfigInterface> getConfigInterface() {
-        return UsenetNowConfigInterface.class;
+    public Class<SslNewsInfoConfigInterface> getConfigInterface() {
+        return SslNewsInfoConfigInterface.class;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class SslNewsInfo extends UseNet {
                 br.setCookies(getHost(), cookies);
                 br.getPage("https://www.ssl-news.info/myaccount.php?lang=en");
                 login = br.getFormbyActionRegex("myaccount");
-                if (login != null && login.containsHTML("amember_login") && login.containsHTML("amember_pass")) {
+                if (login != null && login.containsHTML("username") && login.containsHTML("pword")) {
                     br.getCookies(getHost()).clear();
                 } else if (br.getCookie(getHost(), "PHPSESSID") == null) {
                     br.getCookies(getHost()).clear();
