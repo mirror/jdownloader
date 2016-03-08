@@ -34,7 +34,7 @@ public class LibGen extends PluginForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "libgen.org", "gen.lib.rus.ec", "libgen.io" };
+        return new String[] { "gen.lib.rus.ec", "libgen.io" };
     }
 
     public LibGen(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class LibGen extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("libgen.org/", "gen.lib.rus.ec/");
         final String host = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         br.setCookie(host, "lang", "en");
         br.setCustomCharset("utf-8");
