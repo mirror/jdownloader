@@ -24,17 +24,19 @@ public class CFG_GENERAL {
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
 
+    public static final BooleanKeyHandler               HASH_RETRY_ENABLED                                               = SH.getKeyHandler("HashRetryEnabled", BooleanKeyHandler.class);
+
     /**
      * How often a Plugin restarts a download if download failed
      **/
     public static final IntegerKeyHandler               MAX_PLUGIN_RETRIES                                               = SH.getKeyHandler("MaxPluginRetries", IntegerKeyHandler.class);
 
-    public static final EnumKeyHandler                  IF_FILE_EXISTS_ACTION                                            = SH.getKeyHandler("IfFileExistsAction", EnumKeyHandler.class);
-
     /**
      * How many entries will be in the download Destination quick selection
      **/
     public static final IntegerKeyHandler               DOWNLOAD_DESTINATION_HISTORY_LENGTH                              = SH.getKeyHandler("DownloadDestinationHistoryLength", IntegerKeyHandler.class);
+
+    public static final EnumKeyHandler                  IF_FILE_EXISTS_ACTION                                            = SH.getKeyHandler("IfFileExistsAction", EnumKeyHandler.class);
 
     /**
      * What Action should be performed after adding a container (DLC RSDF,METALINK,CCF,...)
@@ -48,6 +50,12 @@ public class CFG_GENERAL {
      **/
     public static final IntegerKeyHandler               FORCED_FREE_SPACE_ON_DISK                                        = SH.getKeyHandler("ForcedFreeSpaceOnDisk", IntegerKeyHandler.class);
 
+    /**
+     * If the Download Destination of a packages changes (Merge packages, changed destination,...) JD will try to move or rename already
+     * downloaded files.
+     **/
+    public static final BooleanKeyHandler               RENAME_FILES_IF_DOWNLOAD_LINK_NAME_CHANGES_ENABLED               = SH.getKeyHandler("RenameFilesIfDownloadLinkNameChangesEnabled", BooleanKeyHandler.class);
+
     public static final EnumKeyHandler                  ON_SKIP_DUE_TO_ALREADY_EXISTS_ACTION                             = SH.getKeyHandler("OnSkipDueToAlreadyExistsAction", EnumKeyHandler.class);
 
     /**
@@ -55,9 +63,9 @@ public class CFG_GENERAL {
      **/
     public static final LongKeyHandler                  DOWNLOAD_UNKNOWN_IOEXCEPTION_WAITTIME                            = SH.getKeyHandler("DownloadUnknownIOExceptionWaittime", LongKeyHandler.class);
 
-    public static final EnumKeyHandler                  AUTO_START_DOWNLOAD_OPTION                                       = SH.getKeyHandler("AutoStartDownloadOption", EnumKeyHandler.class);
-
     public static final BooleanKeyHandler               FILTER_REGEX                                                     = SH.getKeyHandler("FilterRegex", BooleanKeyHandler.class);
+
+    public static final EnumKeyHandler                  AUTO_START_DOWNLOAD_OPTION                                       = SH.getKeyHandler("AutoStartDownloadOption", EnumKeyHandler.class);
 
     public static final BooleanKeyHandler               HASH_CHECK_ENABLED                                               = SH.getKeyHandler("HashCheckEnabled", BooleanKeyHandler.class);
 
@@ -77,9 +85,24 @@ public class CFG_GENERAL {
     public static final BooleanKeyHandler               CLOSED_WITH_RUNNING_DOWNLOADS                                    = SH.getKeyHandler("ClosedWithRunningDownloads", BooleanKeyHandler.class);
 
     /**
+     * If Enabled, the linkgrabber will detect links that are already in the downloadlist
+     **/
+    public static final BooleanKeyHandler               DUPE_MANAGER_ENABLED                                             = SH.getKeyHandler("DupeManagerEnabled", BooleanKeyHandler.class);
+
+    /**
+     * Enable/Disable JXBrowser usage. JXBrowser Plugin required!
+     **/
+    public static final BooleanKeyHandler               JX_BROWSER_ENABLED                                               = SH.getKeyHandler("JxBrowserEnabled", BooleanKeyHandler.class);
+
+    /**
      * Use available Accounts?
      **/
     public static final BooleanKeyHandler               USE_AVAILABLE_ACCOUNTS                                           = SH.getKeyHandler("UseAvailableAccounts", BooleanKeyHandler.class);
+
+    /**
+     * How many history entries will be kept in the download links
+     **/
+    public static final IntegerKeyHandler               MAX_DOWNLOAD_LINK_HISTORY_ENTRIES                                = SH.getKeyHandler("MaxDownloadLinkHistoryEntries", IntegerKeyHandler.class);
 
     /**
      * Should JDownloader check free available diskspace before download starts?
@@ -100,9 +123,9 @@ public class CFG_GENERAL {
     public static final LongKeyHandler                  PROXY_HOST_BAN_TIMEOUT                                           = SH.getKeyHandler("ProxyHostBanTimeout", LongKeyHandler.class);
 
     /**
-     * Load balance free downloads over all possible connections
+     * Prefer BouncyCastle for TLS
      **/
-    public static final BooleanKeyHandler               FREE_DOWNLOAD_LOAD_BALANCING_ENABLED                             = SH.getKeyHandler("FreeDownloadLoadBalancingEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler               PREFER_BOUNCY_CASTLE_FOR_TLS                                     = SH.getKeyHandler("PreferBouncyCastleForTLS", BooleanKeyHandler.class);
 
     /**
      * Mirrordetection enforces verified filesizes!
@@ -146,14 +169,19 @@ public class CFG_GENERAL {
      **/
     public static final EnumKeyHandler                  CREATE_FOLDER_TRIGGER                                            = SH.getKeyHandler("CreateFolderTrigger", EnumKeyHandler.class);
 
+    public static final BooleanKeyHandler               COPY_SINGLE_REAL_URL                                             = SH.getKeyHandler("CopySingleRealURL", BooleanKeyHandler.class);
+
     /**
      * Download Speed limit in bytes.
      **/
     public static final IntegerKeyHandler               DOWNLOAD_SPEED_LIMIT                                             = SH.getKeyHandler("DownloadSpeedLimit", IntegerKeyHandler.class);
 
-    public static final BooleanKeyHandler               COPY_SINGLE_REAL_URL                                             = SH.getKeyHandler("CopySingleRealURL", BooleanKeyHandler.class);
-
     public static final BooleanKeyHandler               SAMBA_PREFETCH_ENABLED                                           = SH.getKeyHandler("SambaPrefetchEnabled", BooleanKeyHandler.class);
+
+    /**
+     * flush download buffers when x % full
+     **/
+    public static final IntegerKeyHandler               FLUSH_BUFFER_LEVEL                                               = SH.getKeyHandler("FlushBufferLevel", IntegerKeyHandler.class);
 
     /**
      * Waittime in ms if a Download HashCheck Failed
@@ -210,6 +238,16 @@ public class CFG_GENERAL {
     public static final EnumKeyHandler                  CLEANUP_AFTER_DOWNLOAD_ACTION                                    = SH.getKeyHandler("CleanupAfterDownloadAction", EnumKeyHandler.class);
 
     /**
+     * The Autosolver is still very buggy. Use at your own risk!
+     **/
+    public static final BooleanKeyHandler               MY_JDOWNLOADER_CAPTCHA_SOLVER_ENABLED                            = SH.getKeyHandler("MyJDownloaderCaptchaSolverEnabled", BooleanKeyHandler.class);
+
+    /**
+     * Delay writes to disk of background tasks
+     **/
+    public static final EnumKeyHandler                  DELAY_WRITE_MODE                                                 = SH.getKeyHandler("DelayWriteMode", EnumKeyHandler.class);
+
+    /**
      * Setup Rules by Domain. Let us know if you use this feature and require a nicer User Interface
      **/
     public static final ObjectKeyHandler                DOMAIN_RULES                                                     = SH.getKeyHandler("DomainRules", ObjectKeyHandler.class);
@@ -217,6 +255,11 @@ public class CFG_GENERAL {
     public static final BooleanKeyHandler               MAX_DOWNLOADS_PER_HOST_ENABLED                                   = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler               AUTOADD_LINKS_AFTER_LINKCHECK                                    = SH.getKeyHandler("AutoaddLinksAfterLinkcheck", BooleanKeyHandler.class);
+
+    /**
+     * Enable shared memory state info.
+     **/
+    public static final BooleanKeyHandler               SHARED_MEMORY_STATE_ENABLED                                      = SH.getKeyHandler("SharedMemoryStateEnabled", BooleanKeyHandler.class);
 
     /**
      * Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth
@@ -230,12 +273,12 @@ public class CFG_GENERAL {
      **/
     public static final BooleanKeyHandler               DIRECT_HTTPCRAWLER_ENABLED                                       = SH.getKeyHandler("DirectHTTPCrawlerEnabled", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                  MIRROR_DETECTION_DECISION                                        = SH.getKeyHandler("MirrorDetectionDecision", EnumKeyHandler.class);
-
     /**
      * Disable this option if you do not want to see the filename in a captchadialog
      **/
     public static final BooleanKeyHandler               SHOW_FILE_NAME_IN_CAPTCHA_DIALOG_ENABLED                         = SH.getKeyHandler("ShowFileNameInCaptchaDialogEnabled", BooleanKeyHandler.class);
+
+    public static final EnumKeyHandler                  MIRROR_DETECTION_DECISION                                        = SH.getKeyHandler("MirrorDetectionDecision", EnumKeyHandler.class);
 
     /**
      * [ms] Define how long an account should stay disabled if a "temporarily disabled event" occures (Like Download Quota reached)
@@ -256,6 +299,11 @@ public class CFG_GENERAL {
      * max buffer size for write operations in kb
      **/
     public static final IntegerKeyHandler               MAX_BUFFER_SIZE                                                  = SH.getKeyHandler("MaxBufferSize", IntegerKeyHandler.class);
+
+    /**
+     * Load balance free downloads over all possible connections
+     **/
+    public static final EnumKeyHandler                  FREE_PROXY_BALANCE_MODE                                          = SH.getKeyHandler("FreeProxyBalanceMode", EnumKeyHandler.class);
 
     /**
      * If >0, JD will start additional downloads when total speed is below this value
@@ -285,13 +333,13 @@ public class CFG_GENERAL {
     public static final StringListHandler               BROWSER_COMMAND_LINE                                             = SH.getKeyHandler("BrowserCommandLine", StringListHandler.class);
 
     /**
+     * If the Download Destination of a packages changes (Merge packages, changed destination,...) JD will try to move or rename already
+     * downloaded files.
+     **/
+    public static final BooleanKeyHandler               MOVE_FILES_IF_DOWNLOAD_DESTINATION_CHANGES_ENABLED               = SH.getKeyHandler("MoveFilesIfDownloadDestinationChangesEnabled", BooleanKeyHandler.class);
+
+    /**
      * Penaltytime before a retry if JDownloader lost connection
      **/
     public static final IntegerKeyHandler               WAITTIME_ON_CONNECTION_LOSS                                      = SH.getKeyHandler("WaittimeOnConnectionLoss", IntegerKeyHandler.class);
-
-    /**
-     * Enable shared memory state.
-     **/
-    public static final BooleanKeyHandler               SHARED_MEMORY_STATE_ENABLED                                      = SH.getKeyHandler("SharedMemoryStateEnabled", BooleanKeyHandler.class);
-
 }
