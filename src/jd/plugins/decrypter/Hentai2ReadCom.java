@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -28,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai2read.com" }, urls = { "http://(www\\.)?hentai2read.com/(?!latest)[a-z0-9\\-_]+/\\d+" }, flags = { 0 })
 public class Hentai2ReadCom extends PluginForDecrypt {
@@ -62,15 +64,28 @@ public class Hentai2ReadCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            final Regex linkStructure = br.getRegex("(http://hentai2read\\.com/wp\\-content/[a-z0-9\\-_]+/\\d+/\\d+/p)\\d{3}\\.jpg");
-            final String lastpage = br.getRegex("value=\"(\\d+)\">\\d+</option></select></li><li>").getMatch(0);
-            final String mainpart = linkStructure.getMatch(0);
-            final DecimalFormat df = new DecimalFormat("000");
-            for (int i = 1; i <= Integer.parseInt(lastpage); i++) {
-                final String finallink = "directhttp://" + mainpart + df.format(i) + ".jpg";
-                final DownloadLink dl = createDownloadlink(finallink);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
+            // all links are now within json!
+            final String json = br.getRegex("var rff_imageList = (\\[.*?\\]);").getMatch(0);
+            if (json != null) {
+                final String[] results = PluginJSonUtils.getJsonResultsFromArray(json);
+                for (final String result : results) {
+                    final String escaped = Request.getLocation(PluginJSonUtils.unescape(result), br.getRequest());
+                    final DownloadLink dl = createDownloadlink("directhttp://" + escaped);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
+            } else {
+                // old method
+                final Regex linkStructure = br.getRegex("(http://hentai2read\\.com/wp\\-content/[a-z0-9\\-_]+/\\d+/\\d+/p)\\d{3}\\.jpg");
+                final String lastpage = br.getRegex("value=\"(\\d+)\">\\d+</option></select></li><li>").getMatch(0);
+                final String mainpart = linkStructure.getMatch(0);
+                final DecimalFormat df = new DecimalFormat("000");
+                for (int i = 1; i <= Integer.parseInt(lastpage); i++) {
+                    final String finallink = "directhttp://" + mainpart + df.format(i) + ".jpg";
+                    final DownloadLink dl = createDownloadlink(finallink);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
             }
         }
 
