@@ -127,8 +127,8 @@ public class CoolbytezCom extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.9<br />
-     * mods: fetchAccountInfo[Some changes for premium accounts without expire date], doFree[small changes on download1 Form], getDllink[one
-     * new dllink RegEx]<br />
+     * mods: fetchAccountInfo[Some changes for premium account expire date], doFree[small changes on download1 Form], getDllink[one new
+     * dllink RegEx]<br />
      * limit-info: No limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -1161,7 +1161,11 @@ public class CoolbytezCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         /* If the premium account is expired we'll simply accept it as a free account. */
-        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        if (expire == null) {
+            /* Special: Expire date is in commented out html --> We cannot RegEx from correctedBR here! */
+            expire = new Regex(this.br.toString(), "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        }
         long expire_milliseconds = 0;
         if (expire != null) {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);

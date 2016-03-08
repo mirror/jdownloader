@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.at" }, urls = { "https?://(?:www\\.)?otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.net" }, urls = { "https?://otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" }, flags = { 2 })
 public class OtrDatenkellerAt extends PluginForHost {
 
     public static String agent             = RandomUserAgent.generate();
@@ -61,6 +61,16 @@ public class OtrDatenkellerAt extends PluginForHost {
     @Override
     public String getAGBLink() {
         return MAINPAGE;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("otr.datenkeller.at".equals(getHost())) {
+            if (host == null || "otr.datenkeller.at".equals(host)) {
+                return "otr.datenkeller.net";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     /* API was implemented AFTER rev 26273 */
@@ -370,7 +380,9 @@ public class OtrDatenkellerAt extends PluginForHost {
         }
         account.setValid(true);
         final String expires = getJson(br.toString(), "expires");
-        ai.setValidUntil(Long.parseLong(expires) * 1000);
+        if (expires != null && expires.matches("\\d+")) {
+            ai.setValidUntil(Long.parseLong(expires) * 1000);
+        }
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
         ai.setUnlimitedTraffic();
@@ -400,7 +412,7 @@ public class OtrDatenkellerAt extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
     }

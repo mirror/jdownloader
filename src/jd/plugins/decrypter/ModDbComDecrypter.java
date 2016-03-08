@@ -72,7 +72,9 @@ public class ModDbComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(parameter.replace("moddb.com/", "moddbdecrypted.com/")));
             return decryptedLinks;
         }
-        if (br.containsHTML("(Mirror provided by Mod DB|Mirror provided by FDCCDN)")) decryptedLinks.add(createDownloadlink(parameter.replace("moddb.com/", "moddbdecrypted.com/")));
+        if (br.containsHTML("(Mirror provided by Mod DB|Mirror provided by FDCCDN)")) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("moddb.com/", "moddbdecrypted.com/")));
+        }
         return decryptedLinks;
     }
 

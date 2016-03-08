@@ -220,32 +220,55 @@ public class CloudMailRu extends PluginForHost {
                     }
                 }
             } else {
-
-                logger.warning("Failed to use saved dllink, trying to generate new link");
+                logger.info("Failed to use saved dllink, trying to generate new link");
                 final String mainlink = getMainlink(dl);
+                String dataserver = null;
+                String pageid = null;
+                String linkpart = new Regex(mainlink, "/public/([^/]+/[^/]+)").getMatch(0);
+                if (linkpart == null) {
+                    linkpart = unique_id;
+                }
+
                 this.br.getPage(mainlink);
-                final String pageid = this.br.getRegex("\"x-page-id\"[\n\r\t ]*?:[\n\r\t ]*?\"([^<>\"]*?)\"").getMatch(0);
+                final String web_json = this.br.getRegex("window\\[\"__configObject[^<>\"]+\"\\] =(\\{.*?\\});<").getMatch(0);
+                if (web_json != null) {
+                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(web_json);
+                    dataserver = (String) DummyScriptEnginePlugin.walkJson(entries, "dispatcher/weblink_get/{0}/url");
+                    pageid = (String) DummyScriptEnginePlugin.walkJson(entries, "params/x-page-id");
+                    // final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
+                    // final ArrayList<Object> ressourcelist = (ArrayList) entries.get("");
+                }
+                if (pageid == null) {
+                    pageid = this.br.getRegex("\"x-page-id\"[\n\r\t ]*?:[\n\r\t ]*?\"([^<>\"]*?)\"").getMatch(0);
+                }
                 if (pageid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String dataserver;
-                br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=hotfix-32-0-3.201511121458&x-page-id=" + pageid);
+
+                br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid);
                 final String token = PluginJSonUtils.getJson(br, "token");
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
-                dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
                 if (dataserver != null) {
-                    /* Old handling see Rev. 29087 */
-                    String linkpart = new Regex(mainlink, "/public/([^/]+/[^/]+)").getMatch(0);
-                    if (linkpart == null) {
-                        linkpart = unique_id;
-                    }
-                    logger.info("Successfully found new finallink");
-                    dllink = dataserver + "get/" + linkpart + "?key=" + token;
+                    /* TODO: Check for encoding problems here! */
+                    String encoded_unique_id = Encoding.urlEncode(unique_id);
+                    /* We need the "/" so let's encode them back. */
+                    encoded_unique_id = encoded_unique_id.replace("%2F", "/");
+                    encoded_unique_id = encoded_unique_id.replace("+", "%20");
+
+                    dllink = dataserver + "/" + encoded_unique_id + "?key=" + token;
                 } else {
-                    logger.warning("Failed to find dataserver for finallink");
+                    /* Usually this should not be needed! */
+                    br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
+                    dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
+                    if (dataserver != null) {
+                        /* Old handling see Rev. 29087 */
+                        logger.info("Successfully found new finallink");
+                        dllink = dataserver + "get/" + linkpart + "?key=" + token;
+                    } else {
+                        logger.warning("Failed to find dataserver for finallink");
+                    }
                 }
 
             }

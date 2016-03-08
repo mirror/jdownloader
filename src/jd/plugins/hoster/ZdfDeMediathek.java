@@ -26,6 +26,7 @@ import java.util.Scanner;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -67,9 +68,15 @@ public class ZdfDeMediathek extends PluginForHost {
         return "http://zdf.de";
     }
 
+    public static Browser prepBR(final Browser br) {
+        br.getHeaders().put("User-Agent", "Opera/9.80 (Linux armv7l; HbbTV/1.1.1 (; Sony; KDL32W650A; PKG3.211EUA; 2013;); ) Presto/2.12.362 Version/12.11");
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         final String filename = link.getStringProperty("directName", null);
+        prepBR(this.br);
         dllink = link.getStringProperty("directURL", null);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

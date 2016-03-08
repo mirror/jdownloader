@@ -67,7 +67,10 @@ public class BundestagDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String linkid = new Regex(link.getDownloadURL(), "ids=(\\d+)").getMatch(0);
+        String linkid = new Regex(link.getDownloadURL(), "ids=(\\d+)").getMatch(0);
+        if (linkid == null) {
+            linkid = new Regex(link.getDownloadURL(), "id=(\\d+)").getMatch(0);
+        }
         if (linkid == null) {
             /* Seems like user added an invalid url. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

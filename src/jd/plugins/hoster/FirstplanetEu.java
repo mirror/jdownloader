@@ -289,21 +289,40 @@ public class FirstplanetEu extends PluginForHost {
         if (api_use_api_free || api_use_api_premium) {
             loginAPI(account, true);
             postPage(API_ENDPOINT, "{\"method\":\"user.getServices\",\"params\":{\"accessToken\":\"" + this.api_token + "\"}}");
+            final String kind = getJson("kind");
+            long trafficleft = 0;
+            final String trafficleft_str = getJson("numeric");
+            if (trafficleft_str != null) {
+                trafficleft = Long.parseLong(trafficleft_str);
+            }
             expire = br.getRegex("(\\d{1,2}\\.\\d{1,2}\\.\\d{4})").getMatch(0);
-            if (expire == null) {
+            if ("traffic".equals(kind) && trafficleft_str != null) {
+                /* Premium volume account */
+                ai.setTrafficLeft(trafficleft);
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Premium volume account");
+            } else if (expire != null) {
+                /* Premium time account */
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
+                if (trafficleft > 0) {
+                    /* Maybe time accounts can also have traffic?! */
+                    ai.setTrafficLeft(trafficleft);
+                }
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Premium time account");
+            } else {
+                /* Free account or unsupported account type. */
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setType(AccountType.FREE);
                 /* free accounts can still have captcha */
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
                 ai.setStatus("Registered (free) user");
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-                ai.setStatus("Premium account");
             }
         } else {
             if (this.br.getURL() == null || !this.br.getURL().contains("/account/services")) {

@@ -49,42 +49,59 @@ public class YounowComChannel extends PluginForDecrypt {
             fpName = username;
             br.getPage(parameter);
             br.getPage("https://www.younow.com/php/api/broadcast/info/user=" + username + "/curId=0");
-            final String userid = getJson("userId");
+            int addedlinks = 0;
+            int addedlinks_temp = 0;
+            String userid = this.br.getRegex("\"userId\":\"(\\d+)\"").getMatch(0);
+            if (userid == null) {
+                userid = getJson("userId");
+            }
             if (inValidate(userid)) {
                 /* Probably that user does not exist */
                 return decryptedLinks;
             }
-            br.getPage("https://cdn2.younow.com/php/api/post/getBroadcasts/channelId=" + userid);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("posts");
-            for (final Object objecto : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) objecto;
-                entries = (LinkedHashMap<String, Object>) entries.get("media");
-                final long mediatype = DummyScriptEnginePlugin.toLong(entries.get("type"), 0);
-                if (mediatype != 5) {
-                    /* Skip non-video-content */
-                    continue;
+            do {
+                addedlinks_temp = 0;
+                this.br.getHeaders().put("Accept", "application/json, text/plain, */*");
+                this.br.getHeaders().put("Referer", "https://www.younow.com/" + username + "/channel");
+                // this.br.getHeaders().put("Origin", "https://www.younow.com");
+                br.getPage("https://cdn2.younow.com/php/api/post/getBroadcasts/channelId=" + userid + "/startFrom=" + (addedlinks + 1));
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList) entries.get("posts");
+                if (ressourcelist == null) {
+                    break;
                 }
-                entries = (LinkedHashMap<String, Object>) entries.get("broadcast");
-                final long broadcastID = DummyScriptEnginePlugin.toLong(entries.get("broadcastId"), 0);
-                final String broadcasttitle = jd.plugins.hoster.YounowCom.getbroadcastTitle(entries);
-                if (broadcastID == 0 || inValidate(broadcasttitle)) {
-                    continue;
+                for (final Object objecto : ressourcelist) {
+                    addedlinks++;
+                    addedlinks_temp++;
+                    entries = (LinkedHashMap<String, Object>) objecto;
+                    entries = (LinkedHashMap<String, Object>) entries.get("media");
+                    final long mediatype = DummyScriptEnginePlugin.toLong(entries.get("type"), 0);
+                    if (mediatype != 5) {
+                        /* Skip non-video-content */
+                        continue;
+                    }
+                    entries = (LinkedHashMap<String, Object>) entries.get("broadcast");
+                    final long broadcastID = DummyScriptEnginePlugin.toLong(entries.get("broadcastId"), 0);
+                    final String broadcasttitle = jd.plugins.hoster.YounowCom.getbroadcastTitle(entries);
+                    if (broadcastID == 0 || inValidate(broadcasttitle)) {
+                        continue;
+                    }
+                    final DownloadLink dl = this.createDownloadlink("https://www.younowdecrypted.com/" + username + "/" + broadcastID);
+                    String temp_filename;
+                    if (!inValidate(broadcasttitle)) {
+                        /* We might not be able to easily get this information later --> Save it on our DownloadLink */
+                        dl.setProperty("decryptedbroadcasttitle", broadcasttitle);
+                        temp_filename = username + "_" + broadcastID + "_" + broadcasttitle;
+                    } else {
+                        temp_filename = username + " - " + broadcastID;
+                    }
+                    temp_filename = encodeUnicode(temp_filename) + ".mp4";
+                    dl.setName(temp_filename);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
                 }
-                final DownloadLink dl = this.createDownloadlink("https://www.younowdecrypted.com/" + username + "/" + broadcastID);
-                String temp_filename;
-                if (!inValidate(broadcasttitle)) {
-                    /* We might not be able to easily get this information later --> Save it on our DownloadLink */
-                    dl.setProperty("decryptedbroadcasttitle", broadcasttitle);
-                    temp_filename = username + " - " + broadcasttitle;
-                } else {
-                    temp_filename = username + " - " + broadcastID;
-                }
-                temp_filename = encodeUnicode(temp_filename) + ".mp4";
-                dl.setName(temp_filename);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
-            }
+            } while (addedlinks_temp == 10);
         }
 
         if (fpName != null) {
