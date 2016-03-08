@@ -34,9 +34,9 @@ public class GeTtDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String parameter = param.toString().replace("#", "");
+        final String parameter = param.toString().replace("#", "");
 
         br.getPage(parameter);
 
@@ -45,9 +45,10 @@ public class GeTtDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String singleFile = new Regex(parameter, "/v/(\\d+)").getMatch(0);
-        String fid = new Regex(parameter, "ge\\.tt/([A-Za-z0-9]+)(/v/\\d+)?").getMatch(0);
-        br.getPage("http://open.ge.tt/1/shares/" + fid);
+        final String singleFile = new Regex(parameter, "/v/(\\d+)").getMatch(0);
+        final String fid = new Regex(parameter, "ge\\.tt/([A-Za-z0-9]+)(/v/\\d+)?").getMatch(0);
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        br.getPage("//api.ge.tt/1/shares/" + fid);
 
         if (br.containsHTML("\"error\":\"share not found\"") || br.containsHTML(">404 Not Found<")) {
             final DownloadLink dlink = createDownloadlink("http://open.ge.tt/1/files/" + fid + "/0/blob");
@@ -57,9 +58,13 @@ public class GeTtDecrypter extends PluginForDecrypt {
         }
 
         for (String id : br.getRegex("\"fileid\":\"(\\d+)\"").getColumn(0)) {
-            if (singleFile != null) id = singleFile;
+            if (singleFile != null) {
+                id = singleFile;
+            }
             decryptedLinks.add(createDownloadlink("http://open.ge.tt/1/files/" + fid + "/" + id + "/blob"));
-            if (singleFile != null) break;
+            if (singleFile != null) {
+                break;
+            }
         }
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
