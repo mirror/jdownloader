@@ -3,14 +3,6 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storable;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -29,6 +21,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 
 //"https?://put\\.io/(?:file|v2/files)/\\d+" website link
 //actuall downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
@@ -150,14 +150,14 @@ public class PutIO extends PluginForHost {
             // freemode is possible if the link has a token
             return StringUtils.isNotEmpty(downloadLink.getPluginPatternMatcher());
         }
-
-        String user = downloadLink.getStringProperty(REQUIRES_ACCOUNT, null);
-        if (user == null) {
-            // works with any account
-            return true;
+        if (downloadLink != null) {
+            final String user = downloadLink.getStringProperty(REQUIRES_ACCOUNT, null);
+            if (user != null) {
+                return StringUtils.equalsIgnoreCase(user, account.getUser());
+            }
         }
+        return super.canHandle(downloadLink, account);
 
-        return StringUtils.equalsIgnoreCase(user, account.getUser());
     }
 
     @Override
@@ -188,7 +188,7 @@ public class PutIO extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        String accessToken = getToken(link.getPluginPatternMatcher());
+        final String accessToken = getToken(link.getPluginPatternMatcher());
         if (StringUtils.isNotEmpty(accessToken)) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, "https://put.io/v2/files/" + getID(link.getPluginPatternMatcher()) + "/download?token=" + accessToken, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
