@@ -4,6 +4,7 @@ import java.util.List;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.plugins.download.HashInfo;
 
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
@@ -22,7 +23,9 @@ public abstract class AbstractNodeProperties {
 
     abstract protected String loadFilename();
 
-    abstract protected String loadMD5();
+    abstract protected HashInfo loadHashInfo();
+
+    abstract protected void saveHashInfo(HashInfo hashInfo);
 
     abstract protected String loadPackageName();
 
@@ -30,17 +33,11 @@ public abstract class AbstractNodeProperties {
 
     abstract protected String loadSaveTo();
 
-    abstract protected String loadSha1();
-
-    abstract protected void saveMd5(String cs);
-
     abstract protected void savePackageName(String text);
 
     abstract protected void savePriority(Priority priop);
 
     abstract protected void saveSaveTo(String path);
-
-    abstract protected void saveSha1(String cs);
 
     abstract protected void saveArchivePasswords(List<String> hashSet);
 

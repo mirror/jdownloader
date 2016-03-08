@@ -7,6 +7,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.download.HashInfo;
 
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
@@ -55,11 +56,6 @@ public class FilePackageNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected String loadMD5() {
-        return null;
-    }
-
-    @Override
     protected String loadComment() {
         return currentPackage.getComment();
     }
@@ -72,15 +68,6 @@ public class FilePackageNodeProperties extends AbstractNodeProperties {
     @Override
     protected String loadSaveTo() {
         return LinkTreeUtils.getRawDownloadDirectory(currentPackage).getAbsolutePath();
-    }
-
-    @Override
-    protected String loadSha1() {
-        return null;
-    }
-
-    @Override
-    protected void saveMd5(String cs) {
     }
 
     @Override
@@ -136,10 +123,6 @@ public class FilePackageNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected void saveSha1(String cs) {
-    }
-
-    @Override
     protected String loadPackageName() {
         return currentPackage.getName();
     }
@@ -161,6 +144,15 @@ public class FilePackageNodeProperties extends AbstractNodeProperties {
     @Override
     protected boolean hasLoadedArchives() {
         return archives != null;
+    }
+
+    @Override
+    protected HashInfo loadHashInfo() {
+        return null;
+    }
+
+    @Override
+    protected void saveHashInfo(HashInfo hashInfo) {
     }
 
 }

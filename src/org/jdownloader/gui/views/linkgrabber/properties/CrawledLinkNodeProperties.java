@@ -9,6 +9,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.Priority;
@@ -70,11 +71,6 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected String loadMD5() {
-        return currentLink.getDownloadLink().getMD5Hash();
-    }
-
-    @Override
     protected Priority loadPriority() {
         return currentLink.getPriority();
     }
@@ -86,11 +82,6 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
         } else {
             return JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         }
-    }
-
-    @Override
-    protected String loadSha1() {
-        return currentLink.getDownloadLink().getSha1Hash();
     }
 
     @Override
@@ -109,18 +100,8 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected void saveMd5(String cs) {
-        currentLink.getDownloadLink().setMD5Hash(cs);
-    }
-
-    @Override
     protected void savePriority(Priority priop) {
         currentLink.setPriority(priop);
-    }
-
-    @Override
-    protected void saveSha1(String cs) {
-        currentLink.getDownloadLink().setSha1Hash(cs);
     }
 
     @Override
@@ -187,6 +168,16 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
     @Override
     protected boolean hasLoadedArchives() {
         return archives != null;
+    }
+
+    @Override
+    protected HashInfo loadHashInfo() {
+        return currentLink.getDownloadLink().getHashInfo();
+    }
+
+    @Override
+    protected void saveHashInfo(HashInfo hashInfo) {
+        currentLink.getDownloadLink().setHashInfo(hashInfo);
     }
 
 }
