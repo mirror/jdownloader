@@ -1,5 +1,7 @@
 package jd.plugins.download;
 
+import java.util.Locale;
+
 import org.appwork.utils.StringUtils;
 
 public class HashInfo {
@@ -80,12 +82,24 @@ public class HashInfo {
         } else if (hash.length() > type.getSize()) {
             throw new IllegalArgumentException("invalid hash size");
         }
-        this.hash = hash;
+        this.hash = hash.toLowerCase(Locale.ENGLISH);
         this.trustworthy = trustworthy;
     }
 
     public HashInfo(String hash, TYPE type) {
         this(hash, type, true);
+    }
+
+    public static HashInfo newInstanceSafe(String hash, TYPE type) {
+        return newInstanceSafe(hash, type, true);
+    }
+
+    public static HashInfo newInstanceSafe(String hash, TYPE type, boolean trustworthy) {
+        try {
+            return new HashInfo(hash, type, trustworthy);
+        } catch (IllegalArgumentException e) {
+        }
+        return null;
     }
 
     @Override
