@@ -47,8 +47,8 @@ public class Property implements Serializable {
     public Property() {
     }
 
-    public void removeProperty(String key) {
-        setProperty(key, Property.NULL);
+    public boolean removeProperty(String key) {
+        return setProperty(key, Property.NULL);
     }
 
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {

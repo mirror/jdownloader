@@ -43,6 +43,8 @@ import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.plugins.DownloadLinkDatabindingInterface.Key;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -97,6 +99,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     private static final String                         PROPERTY_MD5                        = "MD5";
+    private static final String                         PROPERTY_HASHINFO                   = "HASHINFO";
     private static final String                         PROPERTY_MIRRORID                   = "MID";
     private static final String                         PROPERTY_SHA1                       = "SHA1";
     private static final String                         PROPERTY_SHA256                     = "SHA256";
@@ -1693,7 +1696,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return;
         }
         if (StringUtils.isEmpty(pass)) {
-            this.setProperty(PROPERTY_PASS, Property.NULL);
+            this.removeProperty(PROPERTY_PASS);
         } else {
             this.setProperty(PROPERTY_PASS, pass);
         }
@@ -1703,19 +1706,54 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setMD5Hash(final String md5) {
-        if (StringUtils.equals(md5, getMD5Hash())) {
-            return;
-        }
-        // validate md5 String is a MD5 hash!
-        if (StringUtils.isEmpty(md5) || !md5.trim().matches("[a-fA-F0-9]{32}")) {
-            this.setProperty(PROPERTY_MD5, Property.NULL);
+        setHashInfo(HashInfo.newInstanceSafe(md5, HashInfo.TYPE.MD5));
+    }
+
+    public HashInfo getHashInfo() {
+        final String hashInfo = getStringProperty(PROPERTY_HASHINFO, (String) null);
+        if (hashInfo != null) {
+            return HashInfo.importFromString(hashInfo);
         } else {
-            this.setProperty(PROPERTY_MD5, md5.trim());
-            setSha1Hash(null);
-            setSha256Hash(null);
+            final String sha1 = getStringProperty(PROPERTY_SHA1, null);
+            if (sha1 != null) {
+                return HashInfo.newInstanceSafe(sha1, TYPE.SHA1);
+            }
+            final String sha256 = getStringProperty(PROPERTY_SHA256, null);
+            if (sha256 != null) {
+                return HashInfo.newInstanceSafe(sha256, TYPE.SHA256);
+            }
+            final String md5 = getStringProperty(PROPERTY_MD5, null);
+            if (md5 != null) {
+                return HashInfo.newInstanceSafe(md5, TYPE.MD5);
+            }
         }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.MD5, md5));
+        return null;
+    }
+
+    public void setHashInfo(HashInfo hashInfo) {
+        final boolean changed;
+        if (hashInfo == null) {
+            changed = this.removeProperty(PROPERTY_HASHINFO);
+        } else {
+            changed = this.setProperty(PROPERTY_HASHINFO, hashInfo.exportAsString());
+        }
+        if (changed) {
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.HASHINFO, hashInfo));
+                switch (hashInfo.getType()) {
+                case MD5:
+                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.MD5, hashInfo.getHash()));
+                    break;
+                case SHA1:
+                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA1, hashInfo.getHash()));
+                    break;
+                case SHA256:
+                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA256, hashInfo.getHash()));
+                    break;
+                default:
+                    break;
+                }
+            }
         }
     }
 
@@ -1725,8 +1763,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
+    @Deprecated
     public String getMD5Hash() {
-        return getStringProperty(PROPERTY_MD5, (String) null);
+        final HashInfo hashInfo = getHashInfo();
+        if (hashInfo != null && HashInfo.TYPE.MD5.equals(hashInfo.getType())) {
+            return hashInfo.getHash();
+        }
+        return null;
     }
 
     public void addPluginProgress(final PluginProgress progress) {
@@ -1797,20 +1840,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setSha1Hash(final String sha1) {
-        if (StringUtils.equals(sha1, getSha1Hash())) {
-            return;
-        }
-        // validate sha1 String is a SHA1 hash!
-        if (StringUtils.isEmpty(sha1) || !sha1.trim().matches("[a-fA-F0-9]{40}")) {
-            this.setProperty(PROPERTY_SHA1, Property.NULL);
-        } else {
-            this.setProperty(PROPERTY_SHA1, sha1.trim());
-            setMD5Hash(null);
-            setSha256Hash(null);
-        }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA1, sha1));
-        }
+        setHashInfo(HashInfo.newInstanceSafe(sha1, HashInfo.TYPE.SHA1));
     }
 
     /**
@@ -1819,20 +1849,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @since JD2
      */
     public void setSha256Hash(final String sha256) {
-        if (StringUtils.equals(sha256, getSha1Hash())) {
-            return;
-        }
-        // validate sha1 String is a SHA1 hash!
-        if (StringUtils.isEmpty(sha256) || !sha256.trim().matches("[a-fA-F0-9]{64}")) {
-            this.setProperty(PROPERTY_SHA256, Property.NULL);
-        } else {
-            this.setProperty(PROPERTY_SHA256, sha256.trim());
-            setMD5Hash(null);
-            setSha1Hash(null);
-        }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA256, sha256));
-        }
+        setHashInfo(HashInfo.newInstanceSafe(sha256, HashInfo.TYPE.SHA256));
     }
 
     public void setMirrorID(long mirrorID) {
@@ -1847,8 +1864,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getLongProperty(PROPERTY_MIRRORID, -1l);
     }
 
+    @Deprecated
     public String getSha1Hash() {
-        return getStringProperty(PROPERTY_SHA1, (String) null);
+        final HashInfo hashInfo = getHashInfo();
+        if (hashInfo != null && HashInfo.TYPE.SHA1.equals(hashInfo.getType())) {
+            return hashInfo.getHash();
+        }
+        return null;
     }
 
     public void setMimeHint(final ExtensionsFilterInterface extensionFilter) {
@@ -1863,14 +1885,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(PROPERTY_MIME_HINT, null);
     }
 
-    /**
-     * @author raztoki
-     * @return
-     * @since JD2
-     *
-     */
+    @Deprecated
     public String getSha256Hash() {
-        return getStringProperty(PROPERTY_SHA256, (String) null);
+        final HashInfo hashInfo = getHashInfo();
+        if (hashInfo != null && HashInfo.TYPE.SHA256.equals(hashInfo.getType())) {
+            return hashInfo.getHash();
+        }
+        return null;
     }
 
     /**

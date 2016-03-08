@@ -12,18 +12,6 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -42,6 +30,17 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 
 public class DownloadLinkDownloadable implements Downloadable {
     /**
@@ -65,31 +64,6 @@ public class DownloadLinkDownloadable implements Downloadable {
     public Browser getContextBrowser() {
         return plugin.getBrowser().cloneBrowser();
 
-    }
-
-    @Override
-    public String getMD5Hash() {
-        return downloadLink.getMD5Hash();
-    }
-
-    @Override
-    public String getSha1Hash() {
-        return downloadLink.getSha1Hash();
-    }
-
-    @Override
-    public String getSha256Hash() {
-        return downloadLink.getSha256Hash();
-    }
-
-    @Override
-    public long[] getChunksProgress() {
-        return downloadLink.getView().getChunksProgress();
-    }
-
-    @Override
-    public void setChunksProgress(long[] ls) {
-        downloadLink.setChunksProgress(ls);
     }
 
     @Override
@@ -323,19 +297,14 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public HashInfo getHashInfo() {
-        String hash;
         // StatsManager
-        String name = getName();
-        if ((hash = downloadLink.getMD5Hash()) != null && hash.matches("^[a-fA-F0-9]{32}$")) {
-            /* MD5 Check */
-            return new HashInfo(hash, HashInfo.TYPE.MD5);
-        } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.matches("^[a-fA-F0-9]{40}$")) {
-            /* SHA1 Check */
-            return new HashInfo(hash, HashInfo.TYPE.SHA1);
-        } else if (!StringUtils.isEmpty(hash = downloadLink.getSha256Hash()) && hash.matches("^[a-fA-F0-9]{64}$")) {
-            /* SHA256 Check */
-            return new HashInfo(hash, HashInfo.TYPE.SHA256);
-        } else if ((hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
+        final HashInfo hashInfo = downloadLink.getHashInfo();
+        if (hashInfo != null) {
+            return hashInfo;
+        }
+        final String name = getName();
+        String hash = null;
+        if ((hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
             return new HashInfo(hash, HashInfo.TYPE.CRC32, false);
         } else {
             FilePackage filePackage = downloadLink.getFilePackage();
@@ -498,7 +467,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             @Override
             public long getSize() {
                 final File partFile = new File(getFileOutputPart());
-                long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadBytesLoaded());
+                final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadBytesLoaded());
                 return getKnownDownloadSize() - Math.max(0, doneSize);
             }
 
@@ -568,20 +537,35 @@ public class DownloadLinkDownloadable implements Downloadable {
         return plugin.getDownloadInterface();
     }
 
-    public void setHashInfo(HashInfo hashInfo) {
+    public void setHashInfo(final HashInfo hashInfo) {
         if (hashInfo != null && hashInfo.isTrustworthy() && getHashInfo() == null) {
-            switch (hashInfo.getType()) {
-            case MD5:
-                downloadLink.setMD5Hash(hashInfo.getHash());
-                break;
-            case SHA1:
-                downloadLink.setSha1Hash(hashInfo.getHash());
-                break;
-            case SHA256:
-                downloadLink.setSha256Hash(hashInfo.getHash());
-                break;
-            }
+            downloadLink.setHashInfo(hashInfo);
         }
+    }
+
+    @Override
+    public String getMD5Hash() {
+        return downloadLink.getMD5Hash();
+    }
+
+    @Override
+    public String getSha1Hash() {
+        return downloadLink.getSha1Hash();
+    }
+
+    @Override
+    public String getSha256Hash() {
+        return downloadLink.getSha256Hash();
+    }
+
+    @Override
+    public long[] getChunksProgress() {
+        return downloadLink.getView().getChunksProgress();
+    }
+
+    @Override
+    public void setChunksProgress(long[] ls) {
+        downloadLink.setChunksProgress(ls);
     }
 
     @Override
