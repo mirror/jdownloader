@@ -389,16 +389,16 @@ public class FaceBookComVideos extends PluginForHost {
         boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD);
         if (preferHD) {
             dllink = getHigh();
-            if (dllink == null) {
+            if (dllink == null || "null".equals(dllink)) {
                 dllink = getLow();
             }
         } else {
             dllink = getLow();
-            if (dllink == null) {
+            if (dllink == null || "null".equals(dllink)) {
                 dllink = getHigh();
             }
         }
-        if (dllink == null) {
+        if (dllink == null || "null".equals(dllink)) {
             logger.warning("Final downloadlink \"dllink\" is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
