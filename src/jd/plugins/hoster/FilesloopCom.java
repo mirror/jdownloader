@@ -147,7 +147,8 @@ public class FilesloopCom extends PluginForHost {
         synchronized (hostMaxfilesizeMap) {
             final long downloadfilesize = downloadLink.getDownloadSize();
             if (hostMaxfilesizeMap.containsKey(currentHost)) {
-                if (downloadfilesize > downloadfilesize) {
+                final long filesizemax = hostMaxfilesizeMap.get(currentHost);
+                if (downloadfilesize > filesizemax) {
                     return false;
                 }
             }
@@ -376,7 +377,7 @@ public class FilesloopCom extends PluginForHost {
                 resumable = Boolean.parseBoolean((String) resumableo);
             }
 
-            /* WTF they pur their own domain in there... */
+            /* WTF they put their own domain in there - skip that! */
             if (host.equals("filesloop.com")) {
                 continue;
             }
