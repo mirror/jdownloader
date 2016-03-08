@@ -17,11 +17,15 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" }, flags = { 0 })
 public class GenericAutoContainer extends PluginForDecrypt {
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
 
     public GenericAutoContainer(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,11 +72,6 @@ public class GenericAutoContainer extends PluginForDecrypt {
             }
         }
         return ret;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.GenericAutoContainer;
     }
 
 }

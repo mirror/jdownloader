@@ -127,7 +127,7 @@ public class Rlnks extends PluginForDecrypt {
             }
 
             /* use cnl2 button if available */
-            String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
+            final String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
             if (br.containsHTML(cnlUrl)) {
                 final Browser cnlbr = br.cloneBrowser();
 

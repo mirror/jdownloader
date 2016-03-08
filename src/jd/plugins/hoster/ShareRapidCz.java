@@ -67,6 +67,12 @@ public class ShareRapidCz extends PluginForHost {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        // this shall prevent share-rapid.cz from been tested, it has no dns record.
+        return new String[] { "file-share.top" };
+    }
+
+    @Override
     public String rewriteHost(String host) {
         if (host == null || "share-rapid.cz".equals(host) || "sharerapid.cz".equals(host) || "sharerapid.sk".equals(host) || "megarapid.cz".equals(host) || "share-rapid.cz".equals(host)) {
             return "file-share.top";

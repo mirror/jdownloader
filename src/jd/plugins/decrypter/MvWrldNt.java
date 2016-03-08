@@ -33,7 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?\\.html" }, flags = { 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class MvWrldNt extends PluginForDecrypt {
     }
 
     private static final String redirectLinks            = "http://(www\\.)?mov\\-world\\.net/[a-z]{2}-[a-zA-Z0-9]+/";
-    private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt|tv-serien/[^/]+/(seite-\\d+|index))\\.html";
+    private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx-4\\-free\\.net|mov\\-world\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt|tv-serien/[^/]+/(seite-\\d+|index))\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS  = "http://(www\\.)?[^/]+/.*?seite\\-\\d+\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS2 = "http://(www\\.)?[^/]+/(stories/[a-z0-9\\-]+|news/[a-z0-9\\-]+|topliste/.+|suche/.+)\\.html";
     private static final String XXX4FREESTREAMLINK       = "http://(www\\.)?xxx\\-4\\-free\\.net/streams/[a-z0-9\\-]+\\.html";

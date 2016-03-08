@@ -47,27 +47,6 @@ public class SiteType {
         GeneralLinkAnonymizer,
 
         /**
-         * Decrypter to auto download- and add these linkcontainers: DLC, RSDF, CCF<br />
-         * <b>Main decrypter class:</b> GenericAutoContainer<br />
-         */
-        GenericAutoContainer,
-
-        /**
-         * Script for URLs containing base64 strings which lead to downloadlinks.<br />
-         * <b>Example that suits main decrypter class:</b> <a href="http:/free.downloader.my/">free.downloader.my</a><br />
-         * <b>Main decrypter class:</b> GenericBase64Decrypter<br />
-         * <b>Requirements to be added to main class:</b> CryptedLink must NOT be accessed - final links can be build using the information
-         * we have in the urls which the user added.<br />
-         */
-        GenericBase64Decrypter,
-
-        /**
-         * Script for .m38u (master) hls URLs.<br />
-         * <b>Main decrypter class:</b> GenericM3u8Decrypter<br />
-         */
-        GenericM3u8Decrypter,
-
-        /**
          * Script to be used for all kinds of direct-redirect (http response 302) websites.<br />
          * <b>Main decrypter class:</b> Rdrctr<br />
          * Example: <a href="http://www.smarturl.it/">smarturl.it</a>
@@ -83,11 +62,13 @@ public class SiteType {
 
         /**
          * Script used by some image hosting sites e.g.: <a href="http:/damimage.com/">damimage.com</a>. <br />
-         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
-         * >http://codecanyon.net/item/imgshot-image-hosting- script/2558257</a>.<br />
+         * Can be bought e.g. from here:
+         * <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257" >http://codecanyon.net/item/imgshot-image-hosting-
+         * script/2558257</a>.<br />
          * <b>Main decrypter class:</b> ImgShotDecrypt<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/imgshot.com/">imgshot.com</a><br />
-         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a> <br />
+         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a>
+         * <br />
          * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
          */
         ImageHosting_ImgShot,
@@ -117,8 +98,8 @@ public class SiteType {
         MFScripts_Wurlie,
 
         /**
-         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by <a
-         * href="http://pimproll.com/">pimproll.com</a>
+         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by
+         * <a href="http://pimproll.com/">pimproll.com</a>
          */
         PimpRoll_HostedTube,
 
@@ -235,7 +216,9 @@ public class SiteType {
 
         /**
          * Old link crypt script e.g. <a href="http://save-link.info">save-link.info</a> <br />
-         * <b>Main decrypter class:</b> Zro10BasicDecrypt
+         * <b>Main decrypter class:</b> Zro10BasicDecrypt. <br />
+         * NOTE: identifiable by: - domain/(\d+) links and /m1.php?id=$1 next step task
+         *
          */
         Zero10BasicDecrypt;
 

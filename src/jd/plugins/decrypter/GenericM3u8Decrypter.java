@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -25,13 +27,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.Regex;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8[^\\s<>\"']*" }, flags = { 0 })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
 
     public GenericM3u8Decrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,11 +70,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             ret.add(link);
         }
         return ret;
-    }
-
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
     }
 
     /** Finds the highest video quality based on the max filesize. */
@@ -163,8 +162,4 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
 
     }
 
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.GenericM3u8Decrypter;
-    }
 }

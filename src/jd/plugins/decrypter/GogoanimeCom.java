@@ -36,7 +36,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "gogoanime.com", "goodanime.net", "goodanime.eu", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "animetoon.eu", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
+        return new String[] { "gogoanime.com", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "animetoon.eu", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
     }
 
     /**

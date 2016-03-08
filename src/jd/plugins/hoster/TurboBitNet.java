@@ -64,8 +64,13 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|dz-files\\.ru|file\\.grad\\.by|gdefile\\.ru|mnogofiles\\.com|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "filesmail.ru", "hotshare.biz", "dz-files.ru", "file.grad.by", "gdefile.ru", "mnogofiles.com", "sibit.net", "turbobit.net", "upload.mskvn.by", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "freefo.ru", "savebit.net", "filemaster.ru", "файлообменник.рф", "turboot.ru", "filez.ninja", "kilofile.com" };
+    }
 
     /**
      * TODO: Check if we already got errorhandling for this kind of error http://turbobit.net/error/download/dcount/xxxtesst --> "
@@ -1169,11 +1174,6 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Turbobit_Turbobit;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "filesmail.ru", "hotshare.biz", "bluetooths.pp.ru", "dz-files.ru", "file.alexforum.ws", "file.grad.by", "files.best-trainings.org.ua", "files.wzor.ws", "gdefile.ru", "mnogofiles.com", "share.uz", "sibit.net", "turbobit.net", "upload.mskvn.by", "files.prime-speed.ru", "filestore.net.ru", "turbobit.ru", "upload.uz", "xrfiles.ru", "turbobax.net", "alfa-files.com", "turbabit.net", "filedeluxe.com", "freefo.ru", "savebit.net", "filemaster.ru", "файлообменник.рф", "turbovit.com.ua", "turboot.ru", "filez.ninja", "kilofile.com" };
     }
 
 }
