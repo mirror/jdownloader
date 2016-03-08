@@ -553,6 +553,19 @@ public class CloudSixMe extends antiDDoSForHost {
         return prepBr;
     }
 
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (downloadLink != null) {
+            final long size = downloadLink.getKnownDownloadSize();
+            if (size > 200 * 1000 * 1000l) {
+                if (account == null || Account.AccountType.FREE.equals(account.getType())) {
+                    return false;
+                }
+            }
+        }
+        return super.canHandle(downloadLink, account);
+    }
+
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
