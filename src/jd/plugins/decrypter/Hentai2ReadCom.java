@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -68,8 +69,17 @@ public class Hentai2ReadCom extends PluginForDecrypt {
             final String json = br.getRegex("var rff_imageList = (\\[.*?\\]);").getMatch(0);
             if (json != null) {
                 final String[] results = PluginJSonUtils.getJsonResultsFromArray(json);
+                String base = null;
                 for (final String result : results) {
-                    final String escaped = Request.getLocation(PluginJSonUtils.unescape(result), br.getRequest());
+                    final String res = PluginJSonUtils.unescape(result);
+                    // for first one we need to decide base
+                    if (base == null) {
+                        base = br.getRegex("\"([^\"]+)" + Pattern.quote(res) + "\"").getMatch(0);
+                        if (base == null) {
+                            return null;
+                        }
+                    }
+                    final String escaped = Request.getLocation(base + res, br.getRequest());
                     final DownloadLink dl = createDownloadlink("directhttp://" + escaped);
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
