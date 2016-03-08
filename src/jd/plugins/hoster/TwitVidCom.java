@@ -27,8 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com", "twitvid.com" }, urls = { "http://(www\\.)?tellydecrypted\\.com/[A-Z0-9]+", "djg35zu54o9zhjrofnvfheDELETEMEfdhzk67rfwdefvki" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?tellydecrypted\\.com/[A-Z0-9]+" }, flags = { 0 })
 public class TwitVidCom extends PluginForHost {
 
     private String dllink = null;
@@ -56,10 +57,16 @@ public class TwitVidCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage("http://telly.com/?s=api&feed_type=stories&limit=10&guid=" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-        if (!br.containsHTML("video_path")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = getJson("title", br.toString());
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("video_path")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = PluginJSonUtils.getJson(br, "title");
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (filename.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
@@ -67,9 +74,10 @@ public class TwitVidCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String vPath = getJson("video_path", br.toString());
-        if (vPath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://www.telly.com" + vPath;
+        final String vPath = PluginJSonUtils.getJson(br, "video_path");
+        if (vPath == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -78,11 +86,6 @@ public class TwitVidCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String getJson(final String parameter, String source) {
-        source = source.replace("\\", "");
-        return new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
     }
 
     @Override

@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -30,10 +32,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "rfh5ujnthUNUSED_REGEX_HAHHAHAHAHAdcj43z8hgto9vhr", "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" }, flags = { 0 })
 public class IFilezComDecrypter extends PluginForDecrypt {
 
     public IFilezComDecrypter(PluginWrapper wrapper) {

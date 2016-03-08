@@ -40,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "UNUSED_REGEX_BHAHAHHAHAHAHA", "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 2 })
 public class IFilezCom extends PluginForHost {
 
     private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
@@ -58,10 +58,8 @@ public class IFilezCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("i-filez.com".equals(getHost())) {
-            if (host == null || "i-filez.com".equals(host)) {
-                return "depfile.com";
-            }
+        if (host == null || "i-filez.com".equals(host) || "depfile.com".equals(host)) {
+            return "depfile.com";
         }
         return super.rewriteHost(host);
     }
