@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[a-zA-Z0-9]+/.+", "http://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[a-zA-Z0-9]+/.+", "http://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
 
     private boolean              passwordProtected            = false;
@@ -93,6 +93,7 @@ public class UlozTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        passwordProtected = false;
         this.setBrowserExclusive();
         correctDownloadLink(downloadLink);
         br.setCustomCharset("utf-8");
@@ -266,7 +267,7 @@ public class UlozTo extends PluginForHost {
 
                 // If captcha fails, throrotws exception
                 // If in automatic mode, clears saved data
-                if (br.containsHTML("\"errors\":\\[\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně)")) {
+                if (br.containsHTML("\"errors\":\\[\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)")) {
                     if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
                         getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
                         getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);
