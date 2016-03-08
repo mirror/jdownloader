@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,9 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 /**
  *
@@ -87,6 +87,13 @@ public class KisAmeCm extends antiDDoSForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
+        } else {
+            // iframed.. seen openload.. but maybe others
+            final String link = br.getRegex("\\$\\('#divContentVideo'\\)\\.html\\('<iframe\\s+[^>]* src=\"(.*?)\"").getMatch(0);
+            if (link != null) {
+                decryptedLinks.add(createDownloadlink(link));
+            }
+
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
