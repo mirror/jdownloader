@@ -6,6 +6,16 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
+
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
@@ -17,22 +27,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
+import org.jdownloader.myjdownloader.client.bindings.SkipReasonStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.UrlDisplayType;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
@@ -547,5 +548,24 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     @Override
     public void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
         packageControllerUtils.cleanup(linkIds, packageIds, action, mode, selectionType);
+    }
+
+    @Override
+    public boolean unskip(final long[] linkIds, final long[] packageIds, SkipReasonStorable.Reason reason) throws BadParameterException {
+        final List<DownloadLink> links = packageControllerUtils.getSelectionInfo(linkIds, packageIds).getChildren();
+        List<DownloadLink> unskipLinks = new ArrayList<DownloadLink>();
+        if (reason != null) {
+            final SkipReason checkReason=SkipReason.valueOf(reason.name());
+            for (DownloadLink link : links) {
+                final SkipReason skipReason=link.getSkipReason();               
+                if (skipReason!=null && checkReason.equals(skipReason)) {
+                    unskipLinks.add(link);
+                }                
+            }
+        } else {
+            unskipLinks = links;
+        }
+        DownloadWatchDog.getInstance().unSkip(unskipLinks);
+        return true;
     }
 }

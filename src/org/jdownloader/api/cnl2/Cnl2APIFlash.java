@@ -10,6 +10,9 @@ import org.appwork.remoteapi.exceptions.InternalApiException;
 
 @ApiNamespace("flash")
 public interface Cnl2APIFlash extends RemoteAPIInterface {
+    @ApiMethodName("addcnl")
+    public void addcnl(RemoteAPIResponse response, RemoteAPIRequest request, CnlQueryStorable cnl) throws InternalApiException;
+
     @ApiMethodName("addcrypted2")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**

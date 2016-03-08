@@ -415,11 +415,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     }
                 }
 
-                if (overwritePackagizerRules && query.isAutostart() != null) {
-                    BooleanStatus existingAutoStartStatus = BooleanStatus.UNSET;
-                    if (link.hasArchiveInfo()) {
-                        existingAutoStartStatus = link.getArchiveInfo().getAutoExtract();
-                    }
+                if (query.isAutostart() != null) {
+                    BooleanStatus existingAutoStartStatus = BooleanStatus.convert(link.isAutoStartEnabled());
                     if (query.isOverwritePackagizerRules() || BooleanStatus.UNSET.equals(existingAutoStartStatus)) {
                         switch (BooleanStatus.convert(query.isAutostart())) {
                         case TRUE:
@@ -436,7 +433,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     }
                 }
 
-                if (overwritePackagizerRules && query.isAutoExtract() != null) {
+                if (query.isAutoExtract() != null) {
                     BooleanStatus existingAutoExtractStatus = BooleanStatus.UNSET;
                     if (link.hasArchiveInfo()) {
                         existingAutoExtractStatus = link.getArchiveInfo().getAutoExtract();
