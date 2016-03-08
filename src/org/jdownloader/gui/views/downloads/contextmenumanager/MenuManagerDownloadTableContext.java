@@ -1,5 +1,8 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -54,9 +57,6 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.AddContainerContextMenu
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
-
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
 
@@ -171,9 +171,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         settings.add(new MenuItemData(new ActionData(SetDownloadFolderInDownloadTableAction.class)));
         settings.add(new MenuItemData(new ActionData(SetDownloadPassword.class)));
         settings.add(createPriorityMenu());
-        if (false) {
-            settings.add(createChunksMenu());
-        }
+        settings.add(createChunksMenu());
         return settings;
 
     }
