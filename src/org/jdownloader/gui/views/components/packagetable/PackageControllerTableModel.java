@@ -30,6 +30,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -63,7 +64,18 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 final PackageController<PackageType, ChildrenType> controller = getController();
                 int lastOldRowIndex = -1;
                 while (selectedRowIndex >= 0) {
-                    final int oldRowIndex = selectedRowsBitSet.previousSetBit(selectedRowIndex);
+                    final int oldRowIndex;
+                    if (Application.getJavaVersion() >= Application.JAVA17) {
+                        oldRowIndex = selectedRowsBitSet.previousSetBit(selectedRowIndex);
+                    } else {
+                        int index = selectedRowIndex;
+                        for (; index >= 0; index--) {
+                            if (selectedRowsBitSet.get(index)) {
+                                break;
+                            }
+                        }
+                        oldRowIndex = index;
+                    }
                     selectedRowIndex = oldRowIndex - 1;
                     if (oldRowIndex >= 0) {
                         lastOldRowIndex = oldRowIndex;
