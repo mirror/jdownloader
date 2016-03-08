@@ -25,9 +25,6 @@ public class CrawledLinkQueryStorable extends CrawledLinkQuery implements Storab
         FULL.setVariantIcon(true);
         FULL.setVariantID(true);
         FULL.setVariantName(true);
-
-        ;
-
     }
 
     public CrawledLinkQueryStorable() {

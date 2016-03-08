@@ -173,13 +173,13 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
-    public void addcnl(RemoteAPIResponse response, RemoteAPIRequest request, CnlQueryStorable cnl) throws InternalApiException {
+    public void addcnl(final RemoteAPIResponse response, final RemoteAPIRequest request, final CnlQueryStorable cnl) throws InternalApiException {
         try {
             final String packageName = request.getParameterbyKey("package");
             if (packageName != null) {
                 // Workaround: "package" can't be used as a field name in CnlQueryStorable as it's a reserved name
                 cnl.setPackageName(packageName);
-            }            
+            }
             askPermission(request, cnl.getSource(), cnl.isPermission());
             final List<LinkCollectingJob> jobs = new ArrayList<LinkCollectingJob>();
             if (StringUtils.isNotEmpty(cnl.getCrypted()) && (StringUtils.isNotEmpty(cnl.getJk()) || StringUtils.isNotEmpty(cnl.getKey()))) {

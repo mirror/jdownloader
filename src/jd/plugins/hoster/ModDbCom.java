@@ -67,7 +67,6 @@ public class ModDbCom extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex(FDCCDNREGEX2).getMatch(0);
             }
-
         } else if (configuredServer == 2) {
             dllink = br.getRegex(SERVER4REGEX).getMatch(0);
         } else if (configuredServer == 3) {

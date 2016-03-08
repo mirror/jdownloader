@@ -64,6 +64,13 @@ public class DownloadLinkCandidateSelector {
         IMPOSSIBLE
     }
 
+    public static enum ProxyBalanceMode {
+        DISABLED,
+        RANDOM,
+        CYCLE,
+        BALANCE
+    }
+
     private final Comparator<CandidateResultHolder>                                                        RESULT_SORTER = new Comparator<CandidateResultHolder>() {
         private final DownloadLinkCandidateResult.RESULT[] FINAL_RESULT_SORT_ORDER = new RESULT[] { DownloadLinkCandidateResult.RESULT.SKIPPED, DownloadLinkCandidateResult.RESULT.ACCOUNT_REQUIRED, DownloadLinkCandidateResult.RESULT.PLUGIN_DEFECT, DownloadLinkCandidateResult.RESULT.FATAL_ERROR };
 
@@ -102,7 +109,7 @@ public class DownloadLinkCandidateSelector {
 
     private LinkedHashMap<DownloadLink, LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>> roundResults  = new LinkedHashMap<DownloadLink, LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>>();
 
-    private final boolean                                                                                  loadBalanceFreeDownloads;
+    private final ProxyBalanceMode                                                                         freeProxyBalanceMode;
 
     public DownloadSession getSession() {
         return session;
@@ -110,18 +117,45 @@ public class DownloadLinkCandidateSelector {
 
     public DownloadLinkCandidateSelector(DownloadSession session) {
         this.session = session;
-        this.loadBalanceFreeDownloads = JsonConfig.create(GeneralSettings.class).isFreeDownloadLoadBalancingEnabled();
+        this.freeProxyBalanceMode = JsonConfig.create(GeneralSettings.class).getFreeProxyBalanceMode();
     }
 
     public int getMaxNumberOfDownloadLinkCandidatesResults(DownloadLinkCandidate candidate) {
         return -1;
     }
 
+    private final static AtomicInteger CYCLE = new AtomicInteger(0);
+
     public List<AbstractProxySelectorImpl> getProxies(final DownloadLinkCandidate candidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
         List<AbstractProxySelectorImpl> ret = ProxyController.getInstance().getProxySelectors(candidate, ignoreConnectBans, ignoreAllBans);
-        if (loadBalanceFreeDownloads && ret != null && candidate.getCachedAccount().getAccount() == null) {
+        if (candidate.getCachedAccount().getAccount() == null) {
             try {
-                Collections.sort(ret, new DownloadLinkCandidateLoadBalancer(candidate));
+                switch (freeProxyBalanceMode) {
+                case BALANCE:
+                    Collections.sort(ret, new DownloadLinkCandidateLoadBalancer(candidate));
+                    break;
+                case RANDOM:
+                    Collections.shuffle(ret);
+                    break;
+                case CYCLE:
+                    int cyleIndex = CYCLE.getAndIncrement();
+                    if (cyleIndex >= ret.size()) {
+                        CYCLE.set(0);
+                        cyleIndex = 0;
+                    }
+                    final ArrayList<AbstractProxySelectorImpl> cycle = new ArrayList<AbstractProxySelectorImpl>();
+                    for (; cyleIndex < ret.size(); cyleIndex++) {
+                        cycle.add(ret.get(cyleIndex));
+                    }
+                    if (cyleIndex > 0) {
+                        cycle.addAll(ret.subList(0, cyleIndex));
+                    }
+                    ret = cycle;
+                    break;
+                default:
+                case DISABLED:
+                    break;
+                }
             } catch (final Throwable e) {
                 LogController.CL(true).log(e);
             }

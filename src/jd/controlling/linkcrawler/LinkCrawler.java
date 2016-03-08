@@ -1485,7 +1485,9 @@ public class LinkCrawler {
             final ArrayList<CrawledLink> embeddedLinks = new ArrayList<CrawledLink>();
             for (final String possibleURL : possibleEmbeddedLinks) {
                 final List<CrawledLink> links = find(possibleURL, null, false);
-                embeddedLinks.addAll(links);
+                if (links != null) {
+                    embeddedLinks.addAll(links);
+                }
             }
             if (embeddedLinks.size() > 0) {
                 final boolean singleDest = embeddedLinks.size() == 1;
