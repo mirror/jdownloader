@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -29,9 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "http://(www\\.)?solidfiles\\.com/d/[a-z0-9]+/?" }, flags = { 2 })
 public class SolidFilesCom extends PluginForHost {
@@ -66,16 +67,16 @@ public class SolidFilesCom extends PluginForHost {
         if (br.getURL().contains("/error/") || br.containsHTML("(>404<|>Not found<|>We couldn\\'t find the file you requested|Access to this file was disabled|The file you are trying to download has|>File not available)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- Solidfiles</title>").getMatch(0);
+        String filename = PluginJSonUtils.getJson(br, "name");
         if (filename == null) {
-            filename = br.getRegex("<div id=\"download\\-title\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) (?:-|\\|) Solidfiles</title>").getMatch(0);
         }
-        String filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        String filesize = PluginJSonUtils.getJson(br, "size");
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        }
         if (filesize == null) {
             filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
-        }
-        if (filesize == null) {
-            filesize = br.getRegex("<p class=\"meta\">([^<>\"]*?), <span title=\"").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -90,12 +91,16 @@ public class SolidFilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML("We're currently processing this file and it's unfortunately not available yet")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is not available yet", 5 * 60 * 1000l);
         }
         String dllink = br.getRegex("class=\"direct\\-download regular\\-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://s\\d+\\.solidfilesusercontent\\.com/[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("href\\s*=(\"|'|)(https?://s\\d+\\.solidfilesusercontent\\.com/[^<>\"]+)\\1").getMatch(1);
         }
         if (dllink == null) {
             logger.warning("Final downloadlink is null");
@@ -106,6 +111,7 @@ public class SolidFilesCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
+        dllink = dllink.trim();
         final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
