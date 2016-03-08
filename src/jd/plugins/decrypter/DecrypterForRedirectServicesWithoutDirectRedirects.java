@@ -37,7 +37,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
@@ -51,6 +50,14 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
         flags = { 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoSForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        if ("songspk.info".equals(this.getHost())) {
+            return new String[] { "link.songs.pk", "songspk.info" };
+        }
+        return super.siteSupportedNames();
+    }
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(final PluginWrapper wrapper) {
         super(wrapper);
@@ -698,19 +705,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        if ("songspk.info".equals(this.getHost())) {
-            return new String[] { "link.songs.pk", "songspk.info" };
-        }
-        return super.siteSupportedNames();
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.DecrypterForRedirectServicesWithoutDirectRedirects;
     }
 
 }

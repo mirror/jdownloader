@@ -22,14 +22,6 @@ public class SiteType {
         Danbooru,
 
         /**
-         * As the name says this class contains code to handle redirect/linkcrypt sites which have no direct redirects. Basically it is for
-         * websites for which a single class would be too much as only 1-2 lines of code are needed to handle them. <b>Main decrypter
-         * class:</b> DecrypterForRedirectServicesWithoutDirectRedirects<br />
-         * Example: <a href="http://migre.me/">migre.me</a>
-         */
-        DecrypterForRedirectServicesWithoutDirectRedirects,
-
-        /**
          * <a href="http://gempixel.com/project/premium-url-shortener/">Premium URL Shortener</a><br />
          * sold on <a href="http://codecanyon.net/item/premium-url-shortener/3688135">codecanyon.net</a><br />
          * examples <a href="http://cehs.ch/">cehs.ch</a> <a href="http://www.csurl.it">csurl.it</a>
@@ -45,13 +37,6 @@ public class SiteType {
          * we have in the urls which the user added.<br />
          */
         GeneralLinkAnonymizer,
-
-        /**
-         * Script to be used for all kinds of direct-redirect (http response 302) websites.<br />
-         * <b>Main decrypter class:</b> Rdrctr<br />
-         * Example: <a href="http://www.smarturl.it/">smarturl.it</a>
-         */
-        GeneralRedirectorDecrypter,
 
         /**
          * Script used by some video/porn hosting sites.<br />
@@ -217,8 +202,6 @@ public class SiteType {
         /**
          * Old link crypt script e.g. <a href="http://save-link.info">save-link.info</a> <br />
          * <b>Main decrypter class:</b> Zro10BasicDecrypt. <br />
-         * NOTE: identifiable by: - domain/(\d+) links and /m1.php?id=$1 next step task
-         *
          */
         Zero10BasicDecrypt;
 
