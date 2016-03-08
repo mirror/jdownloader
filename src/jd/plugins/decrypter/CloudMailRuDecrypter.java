@@ -39,7 +39,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final String  BUILD            = "hotfix-26-5.201411142035";
+    public static final String  BUILD            = "release-33-1.201603012259";
     /* Max .zip filesize = 4 GB */
     private static final double MAX_ZIP_FILESIZE = 4194304;
     private static String       DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";

@@ -164,6 +164,9 @@ public class ModDbCom extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) {
+            dllink = br.getRegex("\"(/downloads/mirror/[^<>\"]*?)\"").getMatch(0);
+        }
         return dllink;
     }
 
