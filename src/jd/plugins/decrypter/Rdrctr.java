@@ -27,7 +27,6 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
@@ -115,11 +114,6 @@ public class Rdrctr extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(declink));
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.GeneralRedirectorDecrypter;
     }
 
     /* NO OVERRIDE!! */

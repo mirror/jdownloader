@@ -38,7 +38,11 @@ public class LikeurOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @SuppressWarnings("static-access")
+    @Override
+    public String siteSupportedPath() {
+        return "/lien/";
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();

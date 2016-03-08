@@ -30,15 +30,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save-link.info" }, urls = { "https?://(?:www\\.)?(?:links-secure\\.com|save-link\\.info|share-link\\.info|h-link\\.us|forexurls\\.net|zmelody\\.com|filmey\\.co)/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save-link.info" }, urls = { "https?://(?:www\\.)?(?:links-secure\\.com|save-link\\.info|share-link\\.info|h-link\\.us|foxmoviez\\.com|forexurl\\.net|forexbux\\.net|forexurls\\.net|zmelody\\.com|filmey\\.co|dualmarket\\.info)/[0-9]+" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    // alot of these sites are all on the same ip http://samesites.com/ip/5.255.64.5
+
     public String[] siteSupportedNames() {
-        return new String[] { "links-secure.com", "save-link.info", "share-link.info", "h-link.us", "forexurls.net", "zmelody.com", "forexshare.net", "filmey.co" };
+        return new String[] { "links-secure.com", "save-link.info", "share-link.info", "h-link.us", "forexurls.net", "zmelody.com", "foxmoviez.com", "forexurl.net", "forexbux.net", "forexshare.net", "filmey.co", "dualmarket.info" };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
