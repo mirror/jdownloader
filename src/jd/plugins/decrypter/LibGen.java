@@ -34,7 +34,7 @@ public class LibGen extends PluginForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "libgen.org", "gen.lib.rus.ec", "libgen.in", "libgen.io" };
+        return new String[] { "libgen.org", "gen.lib.rus.ec", "libgen.io" };
     }
 
     public LibGen(PluginWrapper wrapper) {

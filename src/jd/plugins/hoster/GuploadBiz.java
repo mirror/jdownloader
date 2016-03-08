@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
@@ -38,11 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodload.com", "gupload.biz" }, urls = { "http://(www\\.)?(gupload\\.biz|hoodload\\.com)/[a-z0-9]+", "jnbg90p345uzj0ß4trjnhetpohnmDELETE_MErz67tzr5nd" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodload.com" }, urls = { "http://(www\\.)?(gupload\\.biz|hoodload\\.com)/[a-z0-9]+", }, flags = { 2 })
 public class GuploadBiz extends PluginForHost {
 
     private final String        MAINPAGE                 = "http://hoodload.com";
@@ -66,10 +66,8 @@ public class GuploadBiz extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("gupload.biz".equals(getHost())) {
-            if (host == null || "gupload.biz".equals(host)) {
-                return "hoodload.com";
-            }
+        if (host == null || "gupload.biz".equals(host) || "hoodload.com".equals(host)) {
+            return "hoodload.com";
         }
         return super.rewriteHost(host);
     }

@@ -52,16 +52,17 @@ import jd.plugins.PluginProgress;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.x10\\.bz|megacrypter\\.neerdi\\.com|encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.x10\\.bz|megacrypter\\.neerdi\\.com|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
 public class MegaCrypterCom extends antiDDoSForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "megacrypter.neerdi.x10.bz", "megacrypter.neerdi.com", "encrypterme.ga", "megacrypter.noestasinvitado.com", "youpaste.co" };
+        return new String[] { "megacrypter.neerdi.x10.bz", "megacrypter.neerdi.com", "megacrypter.noestasinvitado.com", "youpaste.co" };
     }
 
     // note: hosts removed due to be down.
     // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server.
+    // 20160308 encrypterme.ga, no dns
 
     public MegaCrypterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,7 +75,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
     }
 
     private void setUrl(final DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches("(?i).+(encrypterme\\.ga|megacrypter\\.neerdi\\.com|megacrypter\\.neerdi\\.x10\\.bz)/.+")) {
+        if (downloadLink.getDownloadURL().matches("(?i).+(megacrypter\\.neerdi\\.com|megacrypter\\.neerdi\\.x10\\.bz)/.+")) {
             // https seems to some soccer sports page
             supportsHTTPS = false;
             enforcesHTTPS = false;
@@ -118,36 +119,66 @@ public class MegaCrypterCom extends antiDDoSForHost {
     }
 
     private static enum MegaCrypterComApiErrorCodes {
-        FILE_NOT_FOUND(3),
-        MC_EMETHOD(1),
-        MC_EREQ(2),
-        MC_INTERNAL_ERROR(21),
-        MC_LINK_ERROR(22),
-        MC_BLACKLISTED_LINK(23),
-        MC_EXPIRED_LINK(24),
-        MEGA_EINTERNAL(-1),
-        MEGA_EARGS(-2),
-        MEGA_EAGAIN(-3),
-        MEGA_ERATELIMIT(-4),
-        MEGA_EFAILED(-5),
-        MEGA_ETOOMANY(-6),
-        MEGA_ERANGE(-7),
-        MEGA_EEXPIRED(-8),
-        MEGA_ENOENT(-9),
-        MEGA_ECIRCULAR(-10),
-        MEGA_EACCESS(-11),
-        MEGA_EEXIST(-12),
-        MEGA_EINCOMPLETE(-13),
-        MEGA_EKEY(-14),
-        MEGA_ESID(-15),
-        MEGA_EBLOCKED(-16),
-        MEGA_EOVERQUOTA(-17),
-        MEGA_ETEMPUNAVAIL(-18),
-        MEGA_ETOOMANYCONNECTIONS(-19),
-        MEGA_EWRITE(-20),
-        MEGA_EREAD(-21),
-        MEGA_EAPPKEY(-22),
-        MEGA_EDLURL(-101);
+        FILE_NOT_FOUND(
+                3),
+        MC_EMETHOD(
+                1),
+        MC_EREQ(
+                2),
+        MC_INTERNAL_ERROR(
+                21),
+        MC_LINK_ERROR(
+                22),
+        MC_BLACKLISTED_LINK(
+                23),
+        MC_EXPIRED_LINK(
+                24),
+        MEGA_EINTERNAL(
+                -1),
+        MEGA_EARGS(
+                -2),
+        MEGA_EAGAIN(
+                -3),
+        MEGA_ERATELIMIT(
+                -4),
+        MEGA_EFAILED(
+                -5),
+        MEGA_ETOOMANY(
+                -6),
+        MEGA_ERANGE(
+                -7),
+        MEGA_EEXPIRED(
+                -8),
+        MEGA_ENOENT(
+                -9),
+        MEGA_ECIRCULAR(
+                -10),
+        MEGA_EACCESS(
+                -11),
+        MEGA_EEXIST(
+                -12),
+        MEGA_EINCOMPLETE(
+                -13),
+        MEGA_EKEY(
+                -14),
+        MEGA_ESID(
+                -15),
+        MEGA_EBLOCKED(
+                -16),
+        MEGA_EOVERQUOTA(
+                -17),
+        MEGA_ETEMPUNAVAIL(
+                -18),
+        MEGA_ETOOMANYCONNECTIONS(
+                -19),
+        MEGA_EWRITE(
+                -20),
+        MEGA_EREAD(
+                -21),
+        MEGA_EAPPKEY(
+                -22),
+        MEGA_EDLURL(
+                -101);
         private int code;
 
         private MegaCrypterComApiErrorCodes(int code) {

@@ -31,8 +31,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { ".com" }, urls = { "http://(?:www\\.)?linksprotection\\.com/ddl/[^/]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksprotection.com" }, urls = { "http://(?:www\\.)?linksprotection\\.com/ddl/[^/]+\\.html" }, flags = { 0 })
 public class LinksDashProtectionCom extends PluginForDecrypt {
+
+    // note: linksprotection.com is advertising, linksprotection.com/ddl/ is protection service
 
     public LinksDashProtectionCom(PluginWrapper wrapper) {
         super(wrapper);

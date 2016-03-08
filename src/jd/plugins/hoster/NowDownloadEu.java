@@ -47,7 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.org" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
 public class NowDownloadEu extends PluginForHost {
 
     private static AtomicReference<String> MAINPAGE                = new AtomicReference<String>("http://www.nowdownload.sx");
@@ -95,7 +95,7 @@ public class NowDownloadEu extends PluginForHost {
             if (host == null || host.startsWith("nowdownload.")) {
                 return "nowdownload.eu";
             }
-        } else if ("likeupload.net".equals(getHost())) {
+        } else if ("likeupload.org".equals(getHost())) {
             if (host == null || host.startsWith("likeupload.")) {
                 return "nowdownload.eu";
             }
@@ -129,7 +129,7 @@ public class NowDownloadEu extends PluginForHost {
             synchronized (LOCK) {
                 /*
                  * == Fix original link ==
-                 * 
+                 *
                  * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
                  * proceed, to select one available.
                  */

@@ -49,7 +49,7 @@ public class EyesFileCom extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "eyesfiles.ca", "eyesfile.com" };
+        return new String[] { "eyesfile.ca", "eyesfile.com" };
         // note: .org and .co are parked.
     }
 

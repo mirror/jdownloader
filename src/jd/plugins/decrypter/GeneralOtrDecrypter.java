@@ -21,14 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-share.de", "tivootix.co.cc", "otr.seite.com" }, urls = { "http://(www\\.)?otr\\-share\\.de/\\?s=download\\&key=[^<>\"\\']+", "http://(www\\.)?tivootix\\.co\\.cc/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\.seite\\.com/get\\.php\\?file=[^<>\"\\']+" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tivootix.co.cc", "otr.seite.com" }, urls = { "http://(www\\.)?tivootix\\.co\\.cc/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\.seite\\.com/get\\.php\\?file=[^<>\"\\']+" }, flags = { 0, 0 })
 public class GeneralOtrDecrypter extends PluginForDecrypt {
 
     public GeneralOtrDecrypter(PluginWrapper wrapper) {
@@ -39,34 +38,7 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        if (parameter.contains("otr-share.de/")) {
-            br.getPage(parameter);
-            final String linkTable = br.getRegex("<table align=\"center\" class=\"stable\" width=\"360\">(.*?)</table>").getMatch(0);
-            if (linkTable == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            String[] ochLinks = HTMLParser.getHttpLinks(linkTable, "");
-            if (ochLinks == null || ochLinks.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String ochLink : ochLinks) {
-                if (!ochLink.contains("otr-share.de/")) {
-                    decryptedLinks.add(createDownloadlink(ochLink));
-                }
-            }
-            String ftpLink = br.getRegex("<td><center><strong><a href=\"(ftp://[^<<\"\\']+)\"").getMatch(0);
-            if (ftpLink == null) {
-                ftpLink = br.getRegex("\"(ftp://[A-Za-z0-9]+:[A-Za-z0-9]+@dl\\d+\\.otr\\-share\\.de/dl\\d+/[^<>\"\\']+)\"").getMatch(0);
-            }
-            if (ftpLink != null) {
-                decryptedLinks.add(createDownloadlink(ftpLink));
-            }
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(new Regex(parameter, "otr\\-share\\.de/\\?s=download\\&key=(.+)").getMatch(0));
-            fp.addLinks(decryptedLinks);
-        } else if (parameter.contains("tivootix.co.cc/")) {
+        if (parameter.contains("tivootix.co.cc/")) {
             br.getPage(parameter);
             final String tmplink = br.getRegex("\"(go2\\.php\\?id=\\d+)\"").getMatch(0);
             if (tmplink == null) {

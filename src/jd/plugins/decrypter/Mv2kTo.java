@@ -30,8 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "https?://(www\\.)?movie(2|4)k\\.to//?(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+|\\d+\\-[^<>\"/]*?)(\\.html)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(www\\.)?movie(2|4)k\\.to//?(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+|\\d+\\-[^<>\"/]*?)(\\.html)?" }, flags = { 0 })
 public class Mv2kTo extends PluginForDecrypt {
+
+    // note: movie2k.to no dns record raztoki20160308
 
     public Mv2kTo(PluginWrapper wrapper) {
         super(wrapper);

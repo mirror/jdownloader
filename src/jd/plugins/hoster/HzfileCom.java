@@ -29,6 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -54,12 +59,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hzfile.com", "hzfile.asia" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424", "https?://(?:www\\.)?hzfile\\.(?:com|asia)/(embed\\-)?[a-z0-9]{12}" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hzfile.asia" }, urls = { "https?://(?:www\\.)?hzfile\\.(?:com|asia)/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class HzfileCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -140,10 +140,8 @@ public class HzfileCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("hzfile.com".equals(getHost())) {
-            if (host == null || "hzfile.com".equals(host)) {
-                return "hzfile.asia";
-            }
+        if (host == null || "hzfile.com".equals(host) || "hzfile.asia".equals(host)) {
+            return "hzfile.asia";
         }
         return super.rewriteHost(host);
     }
@@ -438,7 +436,9 @@ public class HzfileCom extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -800,7 +800,9 @@ public class HzfileCom extends PluginForHost {
         correctBR();
     }
 
-    /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
+    /**
+     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     */
     @SuppressWarnings("unused")
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int wait = 0;
@@ -866,7 +868,7 @@ public class HzfileCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -881,7 +883,7 @@ public class HzfileCom extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -911,7 +913,9 @@ public class HzfileCom extends PluginForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;

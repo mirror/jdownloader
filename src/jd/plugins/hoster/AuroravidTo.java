@@ -48,8 +48,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to", "novamov.com", "novaup.com" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" }, flags = { 2 })
 public class AuroravidTo extends PluginForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "auroravid.to", "novamov.com" };
+        // novaup.com rip. no dns
+    }
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     private final String        TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
@@ -65,10 +71,8 @@ public class AuroravidTo extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("novaup.com".equals(getHost()) || "novamov.com".equals(getHost())) {
-            if (host == null || "novaup.com".equals(host) || "novamov.com".equals(host)) {
-                return "auroravid.to";
-            }
+        if (host == null || "novaup.com".equals(host) || "novamov.com".equals(host) || "auroravid.to".equals(host)) {
+            return "auroravid.to";
         }
         return super.rewriteHost(host);
     }

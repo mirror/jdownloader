@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,9 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "colayun.com", "colafile.com" }, urls = { "http://(www\\.)?(?:colafile|colayun)\\.com/file/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coladrive.com", "colayun.com", "colafile.com" }, urls = { "http://(www\\.)?(?:colafile|colayun|coladrive)\\.com/file/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424", "" }, flags = { 0, 0, 0 })
 public class ColaFileCom extends PluginForHost {
 
     public ColaFileCom(PluginWrapper wrapper) {
@@ -42,14 +42,14 @@ public class ColaFileCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.colayun.com/";
+        return "http://www.coladrive.com/";
     }
 
     @Override
     public String rewriteHost(String host) {
-        if ("colafile.com".equals(getHost())) {
-            if (host == null || "colafile.com".equals(host)) {
-                return "colayun.com";
+        if ("colafile.com".equals(getHost()) || "colayun.com".equals(getHost())) {
+            if (host == null || "colafile.com".equals(host) || "colayun.com".equals(host)) {
+                return "coladrive.com";
             }
         }
         return super.rewriteHost(host);
@@ -57,7 +57,7 @@ public class ColaFileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("colafile.com/", "colayun.com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("(colafile|colayun)\\.com/", "coladrive.com/"));
     }
 
     @SuppressWarnings("deprecation")
@@ -110,7 +110,7 @@ public class ColaFileCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            br.getPage(br.getURL().replace("/file/", "/down/"));
+            // br.getPage(br.getURL().replace("/file/", "/down/"));
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             final String uid = br.getRegex("uid: \"(\\d+)\"").getMatch(0);
