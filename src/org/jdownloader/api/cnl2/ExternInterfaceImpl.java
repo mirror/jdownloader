@@ -10,6 +10,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 
 import javax.swing.Icon;
@@ -122,7 +123,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request, null);
+            askPermission(request, null, null);
             final String crypted = request.getParameterbyKey("crypted");
             final String jk = request.getParameterbyKey("jk");
             final String k = request.getParameterbyKey("k");
@@ -159,7 +160,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public void addcrypted2Remote(RemoteAPIResponse response, RemoteAPIRequest request, String crypted, String jk, String source) {
         try {
             source = sourceWorkaround(source);
-            askPermission(request, source);
+            askPermission(request, source, null);
             if (StringUtils.isEmpty(crypted) || StringUtils.isEmpty(jk)) {
                 return;
             }
@@ -169,6 +170,75 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {
             e.printStackTrace();
+        }
+    }
+
+    public void addcnl(RemoteAPIResponse response, RemoteAPIRequest request, CnlQueryStorable cnl) throws InternalApiException {
+        try {
+            final String packageName = request.getParameterbyKey("package");
+            if (packageName != null) {
+                // Workaround: "package" can't be used as a field name in CnlQueryStorable as it's a reserved name
+                cnl.setPackageName(packageName);
+            }            
+            askPermission(request, cnl.getSource(), cnl.isPermission());
+            final List<LinkCollectingJob> jobs = new ArrayList<LinkCollectingJob>();
+            if (StringUtils.isNotEmpty(cnl.getCrypted()) && (StringUtils.isNotEmpty(cnl.getJk()) || StringUtils.isNotEmpty(cnl.getKey()))) {
+                final String dummyCNL = createDummyCNL(cnl.getCrypted(), cnl.getJk(), cnl.getKey());
+                jobs.add(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL));
+            }
+            if (StringUtils.isNotEmpty(cnl.getUrls())) {
+                final String urls = cnl.getUrls();
+                jobs.add(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls));
+            }
+
+            if (jobs.size() > 0) {
+                final CrawledLinkModifier modifier = new CrawledLinkModifier() {
+
+                    @Override
+                    public void modifyCrawledLink(CrawledLink link) {
+                        final DownloadLink dl = link.getDownloadLink();
+                        if (dl != null) {
+                            if (!StringUtils.isEmpty(cnl.getComment())) {
+                                dl.setComment(cnl.getComment());
+                            }
+                            if (!StringUtils.isEmpty(cnl.getReferrer())) {
+                                dl.setReferrerUrl(cnl.getReferrer());
+                            }
+                            if (!StringUtils.isEmpty(cnl.getSource())) {
+                                dl.setOriginUrl(cnl.getSource());
+                            }
+                        }
+                        if (cnl.getPasswords() != null && cnl.getPasswords().size() > 0) {
+                            link.getArchiveInfo().getExtractionPasswords().addAll(cnl.getPasswords());
+                        }
+                        if (StringUtils.isNotEmpty(cnl.getPackageName()) || !StringUtils.isEmpty(cnl.getDir())) {
+                            PackageInfo existing = link.getDesiredPackageInfo();
+                            if (existing == null) {
+                                existing = new PackageInfo();
+                            }
+                            boolean writeChanges = false;
+                            if (!StringUtils.isEmpty(cnl.getPackageName())) {
+                                existing.setName(cnl.getPackageName());
+                                writeChanges = true;
+                            }
+                            if (!StringUtils.isEmpty(cnl.getDir())) {
+                                existing.setDestinationFolder(cnl.getDir());
+                                writeChanges = true;
+                            }
+                            if (writeChanges) {
+                                link.setDesiredPackageInfo(existing);
+                            }
+                        }
+                    }
+                };
+                for (final LinkCollectingJob job : jobs) {
+                    job.setCrawledLinkModifierPrePackagizer(modifier);
+                    LinkCollector.getInstance().addCrawlerJob(job);
+                }
+            }
+            writeString(response, request, "success\r\n", true);
+        } catch (Throwable e) {
+            writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
     }
 
@@ -290,7 +360,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void add(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request, null);
+            askPermission(request, null, null);
             final String urls = request.getParameterbyKey("urls");
             clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             writeString(response, request, "success\r\n", true);
@@ -316,7 +386,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             if (source == null) {
                 source = sourceParam;
             }
-            askPermission(request, source);
+            askPermission(request, source, null);
             String urls = null;
             try {
                 if (keyValueParams) {
@@ -402,7 +472,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request, null);
+            askPermission(request, null, null);
             final String dlcContent = request.getParameterbyKey("crypted");
             if (dlcContent == null) {
                 throw new IllegalArgumentException("no DLC Content available");
@@ -418,8 +488,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
-    private synchronized void askPermission(final RemoteAPIRequest request, final String fallbackSource) throws IOException, DialogNoAnswerException {
-        if (request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
+    private synchronized void askPermission(final RemoteAPIRequest request, final String fallbackSource, final Boolean byPassPermission) throws IOException, DialogNoAnswerException {
+        if (!Boolean.FALSE.equals(byPassPermission) && request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
             // valid
             return;
         }
@@ -466,6 +536,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             /* the url is already allowed to add links */
             return;
         }
+
         String from = url != null ? url : app;
         try {
             ConfirmDialog d = new ConfirmDialog(0, ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_title(from), ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_message(), null, ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_btn_allow(), ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_btn_deny()) {
@@ -512,7 +583,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void flashgot(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
-            askPermission(request, null);
+            askPermission(request, null, null);
             StringBuilder sb = new StringBuilder();
             sb.append(jdpath + "\r\n");
             sb.append("java -Xmx512m -jar " + jdpath + "\r\n");

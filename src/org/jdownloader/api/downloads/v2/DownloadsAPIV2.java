@@ -8,6 +8,7 @@ import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
+import org.jdownloader.myjdownloader.client.bindings.SkipReasonStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 
 @ApiNamespace("downloadsV2")
@@ -46,7 +47,7 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
     List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException;
 
     void removeLinks(final long[] linkIds, final long[] packageIds) throws BadParameterException;
-    
+
     void renamePackage(Long packageId, String newName);
 
     void renameLink(Long linkId, String newName);
@@ -107,7 +108,9 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
     void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException;
 
     boolean setDownloadPassword(long[] linkIds, long[] packageIds, String pass) throws BadParameterException;
-    
+
     boolean forceDownload(long[] linkIds, long[] packageIds) throws BadParameterException;
+
+    boolean unskip(long[] packageIds, long[] linkIds, SkipReasonStorable.Reason filterByReason) throws BadParameterException;
 
 }
