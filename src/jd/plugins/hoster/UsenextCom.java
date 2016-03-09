@@ -61,7 +61,7 @@ public class UsenextCom extends UseNet {
                 br.getPage("https://www.usenext.com/UsenextDE/MemberAreaInt/misc/tutorial/tuIndex.cfm?sLangToken=ENG");
                 final String accountStatus = br.getRegex("Account status:.*?<span class=\".*?\">(.*?)</span>").getMatch(0);
                 if (!StringUtils.equalsIgnoreCase(accountStatus, "OK")) {
-                    account.clearCookies("");
+                    br.getCookies(getHost()).clear();
                 }
             }
             if (br.getCookie(getHost(), "SNUUID") == null) {
