@@ -15,6 +15,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -191,7 +192,7 @@ public class LinkInfo {
                 iconID = extension.getIconID();
             }
             if (StringUtils.isEmpty(iconID)) {
-                iconID = "file";
+                iconID = IconKey.ICON_FILE;
             }
             newIcon = NewTheme.I().getIcon(iconID, 16);
         }
