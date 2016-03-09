@@ -67,6 +67,19 @@ public class UseNet extends PluginForHost {
         return null;
     }
 
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if ("usenet".equals(getHost())) {
+            return false;
+        } else {
+            if (account == null) {
+                return false;
+            } else {
+                return super.canHandle(downloadLink, account);
+            }
+        }
+    }
+
     protected UsenetConfigInterface getUsenetConfig() {
         return PluginJsonConfig.get(getConfigInterface());
     }
