@@ -67,7 +67,7 @@ public class Account extends Property {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
         final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
         // do not cache antiddos cookies, this is job of the antiddos module, otherwise will can and will cause conflicts!
-        final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.getAntiDDoSCookiePattern();
+        final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.antiDDoSCookiePattern;
         for (final Cookie cookie : cookies.getCookies()) {
             if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies)) {
                 cookieStorables.add(new CookieStorable(cookie));
