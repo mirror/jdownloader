@@ -21,11 +21,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -35,6 +30,11 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class Account extends Property {
 
@@ -67,7 +67,7 @@ public class Account extends Property {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
         final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
         // do not cache antiddos cookies, this is job of the antiddos module, otherwise will can and will cause conflicts!
-        final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.cfRequiredCookies + "|" + jd.plugins.hoster.antiDDoSForHost.icRequiredCookies;
+        final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.getAntiDDoSCookiePattern();
         for (final Cookie cookie : cookies.getCookies()) {
             if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies)) {
                 cookieStorables.add(new CookieStorable(cookie));
@@ -515,7 +515,8 @@ public class Account extends Property {
         setProperty(LATEST_VALID_TIMESTAMP, currentTimeMillis);
     }
 
-    public static enum AccountType implements LabelInterface {
+    public static enum AccountType
+            implements LabelInterface {
         FREE {
             @Override
             public String getLabel() {
@@ -526,6 +527,12 @@ public class Account extends Property {
             @Override
             public String getLabel() {
                 return _JDT.T.AccountType_premium();
+            }
+        },
+        LIFETIME {
+            @Override
+            public String getLabel() {
+                return _JDT.T.AccountType_lifetime();
             }
         },
         UNKNOWN {

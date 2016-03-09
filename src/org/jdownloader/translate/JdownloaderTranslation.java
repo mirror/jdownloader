@@ -927,6 +927,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Premium Account" })
     String AccountType_premium();
 
+    @Default(lngs = { "en" }, values = { "Lifetime Account" })
+    String AccountType_lifetime();
+
     @Default(lngs = { "en" }, values = { "Unknown Account" })
     String AccountType_unknown();
 
