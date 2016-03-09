@@ -57,10 +57,10 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String REV_2                 = jd.plugins.decrypter.FaceBookComGallery.REV_2;
     private static final String REV_3                 = jd.plugins.decrypter.FaceBookComGallery.REV_3;
 
-    public static final long    trust_cookie_age      = 30000l;
+    // five minutes, not 30seconds! -raztoki20160309
+    private static final long   trust_cookie_age      = 300000l;
 
     private static Object       LOCK                  = new Object();
-    private boolean             pluginloaded          = false;
 
     private String              dllink                = null;
     private boolean             loggedIN              = false;
@@ -73,6 +73,11 @@ public class FaceBookComVideos extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.facebook.com/r.php");
         setConfigElements();
+        /*
+         * to prevent all downloads starting and finishing together (quite common with small image downloads), login, http request and json
+         * task all happen at same time and cause small hangups and slower download speeds. raztoki20160309
+         */
+        setStartIntervall(200l);
     }
 
     @SuppressWarnings("deprecation")
@@ -98,10 +103,12 @@ public class FaceBookComVideos extends PluginForHost {
         br = new Browser();
         is_private = link.getBooleanProperty("is_private", false);
         dllink = link.getStringProperty("directlink", null);
-        link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        final String lid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (!link.isNameSet()) {
+            link.setName(lid);
+        }
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
-        final String lid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null && aa.isValid()) {
             login(aa, br);
@@ -114,18 +121,18 @@ public class FaceBookComVideos extends PluginForHost {
             if (!loggedIN) {
                 return AvailableStatus.UNCHECKABLE;
             }
-            this.br.getPage(FACEBOOKMAINPAGE);
-            final String user = getUser(this.br);
+            br.getPage(FACEBOOKMAINPAGE);
+            final String user = getUser(br);
             final String image_id = getPICID(link);
             if (user == null || image_id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String getdata = "?photo_id=" + image_id + "&__pc=EXP1%3ADEFAULT&__user=" + user + "&__a=1&__dyn=" + jd.plugins.decrypter.FaceBookComGallery.getDyn() + "&__req=11&__rev=" + jd.plugins.decrypter.FaceBookComGallery.getRev(this.br);
-            this.br.getPage("https://www.facebook.com/mercury/attachments/photo/" + getdata);
-            this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
-            dllink = this.br.getRegex("\"(https?://[^/]+\\.fbcdn\\.net/[^<>\"]+)\"").getMatch(0);
+            br.getPage("https://www.facebook.com/mercury/attachments/photo/" + getdata);
+            br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+            dllink = br.getRegex("\"(https?://[^/]+\\.fbcdn\\.net/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
-                dllink = this.br.getRegex("(https?://[^<>\"]+\\&dl=1)").getMatch(0);
+                dllink = br.getRegex("(https?://[^<>\"]+\\&dl=1)").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
