@@ -69,7 +69,7 @@ public class Account extends Property {
         /*
          * do not cache antiddos cookies, this is job of the antiddos module, otherwise will can and will cause conflicts!
          */
-        final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.antiDDoSCookiePattern;
+        final String antiddosCookies = "__cfduid|cf_clearance|visid_incap_\\d+|incap_ses_\\d+_\\d+|sucuri_cloudproxy_uuid_[a-f0-9]+";
         for (final Cookie cookie : cookies.getCookies()) {
             if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies)) {
                 cookieStorables.add(new CookieStorable(cookie));
