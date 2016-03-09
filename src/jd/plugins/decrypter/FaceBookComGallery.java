@@ -36,6 +36,7 @@ import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -172,7 +173,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 return decryptedLinks;
             }
             synchronized (LOCK) {
-                logged_in = login();
+                if (true) {
+                    logged_in = login();
+                }
             }
             getpagefirsttime(parameter);
 
@@ -633,10 +636,31 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private void v2decryptSets() throws Exception {
         final String set_type = "3";
-        final String albumTitle = getPageAlbumTitle();
-        final String userProfile = getPageTitle();
+        String profileDisplayName = getProfileDisplayName();
+        String albumTitle = getPageAlbumTitle();
+        String userProfile = getPageTitle();
+        if ("Other Albums".equals(albumTitle)) {
+            // this picked up as false positive
+            albumTitle = null;
+        }
+        if (userProfile != null && albumTitle != null && userProfile.equals(albumTitle)) {
+            albumTitle = null;
+        }
+        if (userProfile != null && albumTitle == null && profileDisplayName != null) {
+            // cleanup
+            userProfile = userProfile.replaceFirst("^" + profileDisplayName + "'s ", "");
+            // Amend into 'profilename - setname/albumname'
+            if (!userProfile.startsWith(profileDisplayName)) {
+                userProfile = profileDisplayName + " - " + userProfile;
+            }
+        }
         String fpName = (userProfile != null && albumTitle != null && !userProfile.equals(albumTitle) ? userProfile + " - " + albumTitle : (albumTitle != null ? albumTitle : (userProfile != null ? userProfile : null)));
-        final String url_username = new Regex(parameter, "facebook\\.com/(?!media)([^<>\"\\?/]+)").getMatch(0);
+        String url_username = new Regex(parameter, "facebook\\.com/(?!media)([^<>\"\\?/]+)").getMatch(0);
+        if (url_username == null) {
+            // redirects happen... and it can become available.
+            url_username = new Regex(br.getURL(), "facebook\\.com/(?!media)([^<>\"\\?/]+)").getMatch(0);
+
+        }
         final String rev = getRev(this.br);
         final String user = getUser(this.br);
         final String dyn = getDyn();
@@ -650,16 +674,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (collection_token != null) {
             activecollection = new Regex(collection_token, ":(\\d+)$").getMatch(0);
         }
-        // this only seem relivant to pictures?
-        if (!parameter.matches(TYPE_SET_LINK_VIDEO) && (user == null || profileID == null || ajaxpipe_token == null || profileID == null)) {
-            /* Errorhandling for offline cases is just hard to do - we can never be 100% sure why it fails! */
-            logger.info("Decrypter broken or url offline: " + parameter);
-            return;
-        }
         if (fpName == null) {
             fpName = "Facebook_photos_stream_of_user_" + user;
         }
-        fpName = Encoding.htmlDecode(fpName.trim().replaceFirst("\\s*\\|\\s*Facebook$", ""));
+        fpName = Encoding.htmlDecode(fpName);
         fp = FilePackage.getInstance();
         fp.setName(fpName);
 
@@ -706,16 +724,32 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String data;
                 final int fetchSize = 1000;
                 if (this.parameter.matches(TYPE_SET_LINK_PHOTO)) {
+                    // handling here, since we can't do it else where with so many different request types.
+                    if (currentLastFbid == null || profileID == null || setid == null || set_type == null || ajaxpipe_token == null || dyn == null || rev == null || user == null) {
+                        break;
+                    }
                     if (collection_token != null) {
+                        // handling here, since we can't do it else where with so many different request types.
+                        if (activecollection == null) {
+                            break;
+                        }
                         data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":" + fetchSize + ",\"profile_id\":" + profileID + ",\"tab_key\":\"media_set\",\"set\":\"" + setid + "\",\"type\":\"" + set_type + "\",\"sk\":\"photos\",\"overview\":false,\"active_collection\":" + activecollection + ",\"collection_token\":\"" + collection_token + "\",\"cursor\":0,\"tab_id\":\"u_0_u\",\"order\":null,\"importer_state\":null}";
                     } else {
                         data = "{\"scroll_load\":true,\"last_fbid\":\"" + currentLastFbid + "\",\"fetch_size\":" + fetchSize + ",\"profile_id\":" + profileID + ",\"viewmode\":null,\"set\":\"" + setid + "\",\"type\":\"" + set_type + "\"}";
                     }
                     urlload = "/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?__pc=EXP1%3ADEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
                 } else if (this.parameter.matches(TYPE_SET_LINK_VIDEO)) {
+                    // handling here, since we can't do it else where with so many different request types.
+                    if (currentLastFbid == null || profileID == null || setid == null || ajaxpipe_token == null || dyn == null || rev == null || user == null) {
+                        break;
+                    }
                     data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":" + fetchSize + ",\"viewmode\":null,\"profile_id\":" + profileID + ",\"set\":\"" + setid + "\",\"type\":2}";
                     urlload = "/ajax/pagelet/generic.php/TimelinePhotoSetPagelet?__pc=EXP1:DEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
                 } else if (this.parameter.matches(TYPE_PHOTOS_STREAM_LINK)) {
+                    // handling here, since we can't do it else where with so many different request types.
+                    if (currentLastFbid == null || profileID == null || ajaxpipe_token == null || dyn == null || rev == null || user == null) {
+                        break;
+                    }
                     if (tab != null) {
                         /* E.g. https://www.facebook.com/JenniLee.Official/photos_stream?tab=photos */
                         data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":" + fetchSize + ",\"profile_id\":" + profileID + ",\"is_medley_view\":true,\"" + tab + "\":\"photos\",\"is_page_new_view\":true}";
@@ -728,12 +762,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.warning("Unsupported case");
                     return;
                 }
-                // final String data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" +
-                // profileID + ",\"tab\":\"photos_stream\",\"ajaxpipe\":\"1\",\"ajaxpipe_token\":\"" + ajaxpipe_token +
-                // "\",\"quickling\":{\"version\":\"" + rev + ";\"},\"__user\":\"" + user +
-                // "\",\"__a\":\"1\",\"__dyn\":\"7nmajEyl35xKt2u6aEyx90BGUsx6bF3ozzkC-K26m6oKewWhEoyUnwPUS2O4K5fzEvFoy8ACxuFAdAw\",\"__req\":\"jsonp_"
-                // + i + "\",\"__rev\":\"" + rev + "\",\"__adt\":\"7\",\"vanity\":\"" + url_username +
-                // "\",\"sk\":\"photos_stream\",\"tab_key\":\"photos_stream\",\"page\":" + profileID + ",\"is_medley_view\":true}";
                 br.getPage(urlload);
                 // this is dangerous as its ruins unicode also! -raztoki20160127
                 br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
@@ -1234,13 +1262,30 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private String getPageTitle() {
-        final String title = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
-        return title;
+        String pageTitle = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+        if (pageTitle != null) {
+            pageTitle = HTMLEntities.unhtmlentities(pageTitle);
+            pageTitle = pageTitle.trim().replaceFirst("\\s*\\|\\s*Facebook$", "");
+        }
+        return pageTitle;
     }
 
     private String getPageAlbumTitle() {
-        final String title = br.getRegex("<h1 class=\"fbPhotoAlbumTitle\">(.*?)</h1>").getMatch(0);
-        return title;
+        String albumTitle = br.getRegex("<h1 class=\"fbPhotoAlbumTitle\">(.*?)</h1>").getMatch(0);
+        if (albumTitle != null) {
+            albumTitle = HTMLEntities.unhtmlentities(albumTitle);
+            albumTitle = albumTitle.trim();
+        }
+        return albumTitle;
+    }
+
+    private String getProfileDisplayName() {
+        String profileDisplayName = (!logged_in) ? br.getRegex(">By <a href=\"https?://www\\.facebook\\.com/[^/]+/\">(.*?)</").getMatch(0) : br.getRegex("<a class=\"nameButton uiButton uiButtonOverlay\".*?<span class=\"uiButtonText\">(.*?)</span></a>").getMatch(0);
+        if (profileDisplayName != null) {
+            profileDisplayName = HTMLEntities.unhtmlentities(profileDisplayName);
+            profileDisplayName = profileDisplayName.trim();
+        }
+        return profileDisplayName;
     }
 
     public static String getDyn() {
