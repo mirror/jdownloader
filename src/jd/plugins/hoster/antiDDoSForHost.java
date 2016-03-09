@@ -62,16 +62,14 @@ public abstract class antiDDoSForHost extends PluginForHost {
         return false;
     }
 
-    private static final String                   cfRequiredCookies = "__cfduid|cf_clearance";
-    private static final String                   icRequiredCookies = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
-    private static final String                   suRequiredCookies = "sucuri_cloudproxy_uuid_[a-f0-9]+";
-    protected static HashMap<String, Cookies>     antiDDoSCookies   = new HashMap<String, Cookies>();
-    protected static AtomicReference<String>      userAgent         = new AtomicReference<String>(null);
-    protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
+    private static final String                   cfRequiredCookies     = "__cfduid|cf_clearance";
+    private static final String                   icRequiredCookies     = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
+    private static final String                   suRequiredCookies     = "sucuri_cloudproxy_uuid_[a-f0-9]+";
+    protected static HashMap<String, Cookies>     antiDDoSCookies       = new HashMap<String, Cookies>();
+    protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
+    protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
 
-    public final static String getAntiDDoSCookiePattern() {
-        return cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies;
-    }
+    public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies;
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
