@@ -457,6 +457,7 @@ FilterRuleDialog_createTypeFilter_mime_archives=Arhiva
 FilterRuleDialog_createTypeFilter_mime_audio=Audio dokument
 FilterRuleDialog_createTypeFilter_mime_checksums=Checksume-u
 FilterRuleDialog_createTypeFilter_mime_custom_help=Unesite ekstenzije razdvojene zarezom kao 'pdf',html,png,'... (Koristite * kao Zamjenski znak)
+FilterRuleDialog_createTypeFilter_mime_document=Dokument
 FilterRuleDialog_createTypeFilter_mime_images=Slika
 FilterRuleDialog_createTypeFilter_mime_video=Video Dokument
 FilterRuleDialog_getIfText_=Filtriraj sve Linkove koji se podudaraju sa ovim uslovima
