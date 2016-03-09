@@ -633,8 +633,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private void v2decryptSets() throws Exception {
         final String set_type = "3";
-        String fpName = getPageTitle();
-        final String url_username = new Regex(parameter, "facebook\\.com/([^<>\"\\?/]+)").getMatch(0);
+        final String albumTitle = getPageAlbumTitle();
+        final String userProfile = getPageTitle();
+        String fpName = (userProfile != null && albumTitle != null && !userProfile.equals(albumTitle) ? userProfile + " - " + albumTitle : (albumTitle != null ? albumTitle : (userProfile != null ? userProfile : null)));
+        final String url_username = new Regex(parameter, "facebook\\.com/(?!media)([^<>\"\\?/]+)").getMatch(0);
         final String rev = getRev(this.br);
         final String user = getUser(this.br);
         final String dyn = getDyn();
@@ -653,9 +655,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
             /* Errorhandling for offline cases is just hard to do - we can never be 100% sure why it fails! */
             logger.info("Decrypter broken or url offline: " + parameter);
             return;
-        }
-        if (fpName == null) {
-            fpName = this.br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
         }
         if (fpName == null) {
             fpName = "Facebook_photos_stream_of_user_" + user;
@@ -1235,7 +1234,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private String getPageTitle() {
-        return br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+        final String title = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+        return title;
+    }
+
+    private String getPageAlbumTitle() {
+        final String title = br.getRegex("<h1 class=\"fbPhotoAlbumTitle\">(.*?)</h1>").getMatch(0);
+        return title;
     }
 
     public static String getDyn() {
