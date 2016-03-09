@@ -457,6 +457,7 @@ FilterRuleDialog_createTypeFilter_mime_archives=Arşiv
 FilterRuleDialog_createTypeFilter_mime_audio=Ses Dosyası
 FilterRuleDialog_createTypeFilter_mime_checksums=Sağlamalar
 FilterRuleDialog_createTypeFilter_mime_custom_help='pdf,html,png,' gibi virgülle ayrılmış uzantılar girin... (Joker olarak * kullanın)
+FilterRuleDialog_createTypeFilter_mime_document=Belge Dosyası
 FilterRuleDialog_createTypeFilter_mime_images=Resim
 FilterRuleDialog_createTypeFilter_mime_video=Görüntü Dosyası
 FilterRuleDialog_getIfText_=Bu koşullarla eşleşen tüm Bağlantıları süz
