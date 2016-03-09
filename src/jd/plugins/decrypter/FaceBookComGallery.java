@@ -70,7 +70,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationUrls() {
-        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SINGLE_PHOTO + "|" + TYPE_SINGLE_VIDEO_MANY_TYPES + "|" + TYPE_SINGLE_VIDEO_EMBED + "|" + TYPE_SINGLE_VIDEO_VIDEOS + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
+        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SINGLE_PHOTO + "|" + TYPE_SINGLE_VIDEO_MANY_TYPES + "|" + TYPE_SINGLE_VIDEO_EMBED + "|" + TYPE_SINGLE_VIDEO_VIDEOS + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_PHOTOS_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
     }
 
     public static int[] getAnnotationFlags() {
@@ -85,7 +85,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(?:www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
     private static final String     TYPE_SET_LINK_PHOTO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
     private static final String     TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
-    private static final String     TYPE_ALBUMS_LINK                = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
+    private static final String     TYPE_PHOTOS_ALBUMS_LINK         = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
     private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
     private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
     private static final String     TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[^/]+/photos_stream.*";
@@ -191,8 +191,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (br.getURL().matches("https?://(?:www\\.)facebook\\.com/login\\.php.*?")) {
                 // login required to perform task
                 throw new DecrypterException(EXCEPTION_NOTLOGGEDIN);
-            } else if (parameter.matches(TYPE_ALBUMS_LINK)) {
-                decryptAlbums();
+            } else if (parameter.matches(TYPE_PHOTOS_ALBUMS_LINK)) {
+                decryptProfilePhotosAlbums();
             } else if (parameter.matches(TYPE_PHOTOS_OF_LINK)) {
                 decryptPhotosOf();
             } else if (parameter.matches(TYPE_PHOTOS_ALL_LINK)) {
@@ -243,7 +243,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void decryptAlbums() throws Exception {
+    private void decryptProfilePhotosAlbums() throws Exception {
+        // note this fucks up unicode!
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)(?:- Photos \\| Facebook)?</title>").getMatch(0);
         final String profileID = getProfileID();
@@ -252,6 +253,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
+        final String rev = getRev(this.br);
         if (fpName == null) {
             fpName = "Facebook_video_albums_of_user_" + new Regex(parameter, "facebook\\.com/(.*?)/photos_albums").getMatch(0);
         }
@@ -278,13 +280,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     /* E.g. from json */
                     collection_token = this.br.getRegex("\"collection_token\":\"([^<>\"]*?)\"").getMatch(0);
                 }
-                // String currentLastAlbumid = br.getRegex("\"last_album_id\":\"(\\d+)\"").getMatch(0);
-                // if (currentLastAlbumid == null) {
-                // currentLastAlbumid = br.getRegex("\"last_album_id\":(\\d+)").getMatch(0);
-                // }
-                // If we have exactly currentMaxPicCount pictures then we reload one
-                // time and got all, 2nd time will then be 0 more links
-                // -> Stop
                 if (collection_token == null && dynamicLoadAlreadyDecrypted) {
                     break;
                 } else if (collection_token == null) {
@@ -292,14 +287,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Returning already decrypted links anyways...");
                     break;
                 }
-                if (true) {
-                    /* TODO: !!! */
-                    break;
-                }
-                final String data = "{\"collection_token\":\"" + collection_token + "\",\"cursor\":\"" + cursor + "\",\"tab_key\":\"photos_albums\",\"profile_id\":" + profileID + ",\"overview\":false,\"ftid\":null,\"order\":null,\"sk\":\"photos\",\"importer_state\":null}";
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotoAlbumsPagelet?data=" + Encoding.urlEncode(data) + "&__user=" + user + "&dyn=" + getDyn() + "&__a=1&__dyn=&__req=a&__adt=" + i;
-                br.getPage(loadLink);
-                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+                // for some reason the collection token returns as 4 but should be 6 in request.
+                final String data = "{\"collection_token\":\"" + collection_token.replaceFirst(":4$", ":6") + "\",\"cursor\":\"" + cursor + "\",\"tab_key\":\"photos_albums\",\"profile_id\":" + profileID + ",\"overview\":false,\"ftid\":null,\"order\":null,\"sk\":\"photos\",\"importer_state\":null}";
+                final String loadLink = "/ajax/pagelet/generic.php/PhotoAlbumsAppCollectionPagelet?__pc=EXP1%3ADEFAULT&dpr=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__dyn=7AmajEzUGByEogDxyG9gigmzFEbEyGgyi8zQC-C26m6oKezob4q68K5UcU-8wwG3O7R88y8aGjzEZ7KuEjxC264EK14DyU9XxemFEW2PxO2i5o&__req=k&__a=" + (i - 1) + "&__rev=" + rev;
+                br.getHeaders().put("Accept", "*/*");
+                final String result = br.cloneBrowser().getPage(loadLink).toString().replace("\\", "");
+                // note this fucks up unicode!
+                br.getRequest().setHtmlCode(result);
                 links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=(?:a|vb)\\.[0-9\\.]+)\\&amp;type=\\d+\"").getColumn(0);
                 currentMaxPicCount = 12;
                 dynamicLoadAlreadyDecrypted = true;
@@ -320,7 +314,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(link);
                 fp.add(dl);
                 decryptedLinks.add(dl);
-                distribute(dl);
+                // distribute(dl);
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount || profileID == null) {
