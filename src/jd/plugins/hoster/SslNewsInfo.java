@@ -110,6 +110,7 @@ public class SslNewsInfo extends UseNet {
                     account.setMaxSimultanDownloads(5);
                 }
             } else {
+                account.setMaxSimultanDownloads(1);
                 ai.setStatus("Unknown Type");
             }
             if (validUntil != null) {
