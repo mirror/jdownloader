@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -34,9 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
@@ -139,8 +139,11 @@ public class DataHu extends PluginForHost {
                         /* Names via API are good --> Use as final filenames */
                         dllink.setFinalFileName(name);
                         dllink.setDownloadSize(SizeFormatter.getSize(size));
-                        dllink.setMD5Hash(md5);
-                        dllink.setSha1Hash(sha1);
+                        if (sha1 != null) {
+                            dllink.setSha1Hash(sha1);
+                        } else {
+                            dllink.setMD5Hash(md5);
+                        }
                         dllink.setAvailable(true);
                     }
                 }
@@ -299,7 +302,7 @@ public class DataHu extends PluginForHost {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
@@ -309,7 +312,7 @@ public class DataHu extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
@@ -319,7 +322,7 @@ public class DataHu extends PluginForHost {
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final Browser ibr, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
     }
@@ -329,7 +332,7 @@ public class DataHu extends PluginForHost {
      * Tries to return value given JSon Array of Key from JSon response provided String source.
      *
      * @author raztoki
-     * */
+     */
     private String getJsonArray(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
     }
@@ -339,7 +342,7 @@ public class DataHu extends PluginForHost {
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJsonArray(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
     }
