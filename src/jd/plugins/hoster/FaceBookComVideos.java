@@ -207,6 +207,8 @@ public class FaceBookComVideos extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = Encoding.htmlDecode(filename.trim());
+            // ive seen new lines within filename!
+            filename = filename.replaceAll("[\r\n]+", " ");
 
             if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO)) {
                 // Try if a downloadlink is available
