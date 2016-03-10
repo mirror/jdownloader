@@ -36,10 +36,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.IgnVariant;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
-import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -105,9 +103,7 @@ public class IgnCom extends PluginForDecrypt {
 
         } else {
             if (br.containsHTML("No htmlCode read")) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
+                final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
@@ -238,95 +234,85 @@ public class IgnCom extends PluginForDecrypt {
         }
     }
 
-    private static boolean ut_pluginLoaded = false;
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (ut_pluginLoaded == false) {
-
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            ut_pluginLoaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
     private String uid = null;
     private String vid = null;
 
     @Override
     protected DownloadLink createDownloadlink(String id) {
-        DownloadLink ret = super.createDownloadlink("http://video.decryptedrutube.ru/" + id);
-
-        try {
-            if (vid == null) {
-                // since we know the embed url for player/embed link types no need todo this step
-                br.getPage("http://rutube.ru/api/video/" + id);
-                if (br.containsHTML("<root><detail>Not found</detail></root>")) {
-                    return createOfflinelink(this.getCurrentLink().getURL());
+        final DownloadLink ret;
+        if (id.startsWith("directhttp://")) {
+            ret = super.createDownloadlink(id);
+        } else {
+            /** RODO: Check if this is still needed - this code is probably very old! */
+            ret = super.createDownloadlink("http://video.decryptedrutube.ru/" + id);
+            try {
+                if (vid == null) {
+                    // since we know the embed url for player/embed link types no need todo this step
+                    br.getPage("http://rutube.ru/api/video/" + id);
+                    if (br.containsHTML("<root><detail>Not found</detail></root>")) {
+                        return createOfflinelink(this.getCurrentLink().getURL());
+                    }
+                    vid = br.getRegex("/embed/(\\d+)").getMatch(0);
                 }
-                vid = br.getRegex("/embed/(\\d+)").getMatch(0);
-            }
-            br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
+                br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
 
-            String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
+                String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
 
-            if (videoBalancer != null) {
-                final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                final XPath xPath = XPathFactory.newInstance().newXPath();
+                if (videoBalancer != null) {
+                    final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                    final XPath xPath = XPathFactory.newInstance().newXPath();
 
-                br.getPage(videoBalancer);
+                    br.getPage(videoBalancer);
 
-                Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
-                String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+                    Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+                    String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
 
-                NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-                Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-                ArrayList<IgnVariant> variantsVideo = new ArrayList<IgnVariant>();
-                IgnVariant bestVariant = null;
-                for (int i = 0; i < f4mUrls.getLength(); i++) {
-                    best = f4mUrls.item(i);
-                    String width = getAttByNamedItem(best, "width");
-                    String height = getAttByNamedItem(best, "height");
-                    String bitrate = getAttByNamedItem(best, "bitrate");
-                    String f4murl = getAttByNamedItem(best, "href");
+                    NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+                    Node best = f4mUrls.item(f4mUrls.getLength() - 1);
+                    ArrayList<IgnVariant> variantsVideo = new ArrayList<IgnVariant>();
+                    IgnVariant bestVariant = null;
+                    for (int i = 0; i < f4mUrls.getLength(); i++) {
+                        best = f4mUrls.item(i);
+                        String width = getAttByNamedItem(best, "width");
+                        String height = getAttByNamedItem(best, "height");
+                        String bitrate = getAttByNamedItem(best, "bitrate");
+                        String f4murl = getAttByNamedItem(best, "href");
 
-                    br.getPage(baseUrl + f4murl);
+                        br.getPage(baseUrl + f4murl);
 
-                    d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
-                    // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
-                    double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
+                        d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+                        // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+                        double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
 
-                    NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-                    Node media;
-                    for (int j = 0; j < mediaUrls.getLength(); j++) {
-                        media = mediaUrls.item(j);
-                        // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
-                        // d).trim())));
+                        NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+                        Node media;
+                        for (int j = 0; j < mediaUrls.getLength(); j++) {
+                            media = mediaUrls.item(j);
+                            // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
+                            // d).trim())));
 
-                        IgnVariant var = new IgnVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
-                        variantsVideo.add(var);
-                        bestVariant = var;
+                            IgnVariant var = new IgnVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
+                            variantsVideo.add(var);
+                            bestVariant = var;
+
+                        }
 
                     }
+                    if (variantsVideo.size() > 0) {
+                        ret.setVariants(variantsVideo);
+                        ret.setVariant(bestVariant);
+                    }
 
+                    return ret;
+                } else {
+                    logger.warning("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
+                    return null;
                 }
-                if (variantsVideo.size() > 0) {
-                    ret.setVariants(variantsVideo);
-                    ret.setVariant(bestVariant);
-                }
-
-                return ret;
-            } else {
-                logger.warning("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
-                return null;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
+        return ret;
 
     }
 
