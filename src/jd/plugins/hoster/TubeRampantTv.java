@@ -49,7 +49,8 @@ public class TubeRampantTv extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
+    private boolean              premiumonly       = false;
 
     @Override
     public String getAGBLink() {
@@ -59,6 +60,8 @@ public class TubeRampantTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
+        premiumonly = false;
         String ext = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -76,9 +79,10 @@ public class TubeRampantTv extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            if (br.containsHTML("/premium/unleashed\\.php")) {
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            if (br.containsHTML("/premium/unleashed\\.php|\\&type=trial\\'")) {
+                premiumonly = true;
                 downloadLink.getLinkStatus().setStatusText("Only downloadable for premium users");
                 downloadLink.setName(filename + default_Extension);
                 return AvailableStatus.TRUE;
@@ -88,11 +92,11 @@ public class TubeRampantTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(playerConfigUrl);
-            DLLINK = br.getRegex("defaultVideo:(https?://[^<>\"]*?);").getMatch(0);
+            dllink = br.getRegex("defaultVideo:(https?://[^<>\"]*?);").getMatch(0);
         }
-        if (DLLINK != null) {
-            DLLINK = Encoding.htmlDecode(DLLINK);
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            ext = dllink.substring(dllink.lastIndexOf("."));
             /* Make sure that we get a correct extension */
             if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
                 ext = default_Extension;
@@ -107,7 +111,7 @@ public class TubeRampantTv extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = openConnection(br2, DLLINK);
+                    con = br2.openHeadConnection(dllink);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -116,7 +120,7 @@ public class TubeRampantTv extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                downloadLink.setProperty("directlink", DLLINK);
+                downloadLink.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -136,16 +140,9 @@ public class TubeRampantTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK == null && br.containsHTML("/premium/unleashed\\.php")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
-        } else if (DLLINK == null) {
+        if (dllink == null && premiumonly) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (dllink == null) {
             /* RTMP */
             final String rtmp_path = br.getRegex("flvMask:([^<>\"]*?);").getMatch(0);
             final String rtmp_host = br.getRegex("conn:(rtmp://[^<>\"]*?);").getMatch(0);
@@ -165,7 +162,7 @@ public class TubeRampantTv extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
         } else {
             /* HTTP */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -185,7 +182,7 @@ public class TubeRampantTv extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -217,20 +214,6 @@ public class TubeRampantTv extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

@@ -121,6 +121,9 @@ public class YourUploadCom extends antiDDoSForHost {
         }
         if (br.containsHTML(">System Error<|>could not find file|>File not found<|Array doesn\\'t have key named|File not found") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getURL().length() < 30) {
+            /* E.g. redirect to mainpage --> Offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         final String filesize = br.getRegex(">Size</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);

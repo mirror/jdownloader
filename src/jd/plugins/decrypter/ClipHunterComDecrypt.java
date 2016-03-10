@@ -38,7 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://(www\\.)?cliphunter\\.com/w/\\d+/\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cliphunter.com" }, urls = { "http://(www\\.)?cliphunter\\.com/w/\\d+/\\w+" }, flags = { 0 })
 public class ClipHunterComDecrypt extends PluginForDecrypt {
 
     public ClipHunterComDecrypt(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
     /**
      * sync with hoster
      */
-    private final String[][] qualities = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "p720.mp4" }, { "_h.flv", "540p.flv", "_p540.mp4" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
+    private final String[][] qualities = { { "_fhd.mp4", "_p1080" }, { "_hd.mp4", "_p720" }, { "_h.flv", "540p.flv", "_p540" }, { "_p.mp4", "_p480", "480p.mp4" }, { "_l.flv", "_p360", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -64,13 +64,8 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
             offline = true;
         }
         if (offline || br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)")) {
-            final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            try {
-                dl.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(parameter);
-            }
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            dl.setContentUrl(parameter);
             dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -134,12 +129,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                 dllink = foundQualities.get(quality[0]);
                 if (dllink != null) {
                     final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                    try {
-                        dl.setContentUrl(parameter);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                        dl.setBrowserUrl(parameter);
-                    }
+                    dl.setContentUrl(parameter);
                     dl.setFinalFileName(filename + "_" + quality[1]);
                     dl.setProperty("directlink", dllink);
                     dl.setProperty("originallink", parameter);
@@ -158,12 +148,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                     final String currentQualityValue = quality[0];
                     if ((currentQualityValue == selectedQuality) && dllink != null) {
                         final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                        try {
-                            dl.setContentUrl(parameter);
-                        } catch (final Throwable e) {
-                            /* Not available in old 0.9.581 Stable */
-                            dl.setBrowserUrl(parameter);
-                        }
+                        dl.setContentUrl(parameter);
                         dl.setFinalFileName(filename + "_" + quality[1]);
                         dl.setProperty("directlink", dllink);
                         dl.setProperty("originallink", parameter);
@@ -207,6 +192,8 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         String currentSr, tmpUrl;
         for (final String s : encryptedUrls) {
             tmpUrl = decryptUrl(decryptAlgo, s);
+            tmpUrl = tmpUrl.replace("\\k0026", ".");
+            tmpUrl = Encoding.unescape(tmpUrl);
             currentSr = new Regex(tmpUrl, "sr=(\\d+)").getMatch(0);
             if (currentSr == null) {
                 continue;

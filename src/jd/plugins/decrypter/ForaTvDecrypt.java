@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fora.tv" }, urls = { "http://(www\\.)?(library\\.)?fora\\.tv/\\d{4}/\\d{2}/\\d{2}/[A-Za-z0-9\\-_]+|http://library\\.fora\\.tv/program_landing\\.php\\?year=\\d{4}\\&month=\\d{2}\\&day=\\d{2}\\&title=[^<>\"/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fora.tv" }, urls = { "http://(www\\.)?(library\\.)?fora\\.tv/\\d{4}/\\d{2}/\\d{2}/[A-Za-z0-9\\-_]+|http://library\\.fora\\.tv/program_landing\\.php\\?year=\\d{4}\\&month=\\d{2}\\&day=\\d{2}\\&title=[^<>\"/]+" }, flags = { 0 })
 public class ForaTvDecrypt extends PluginForDecrypt {
 
     public ForaTvDecrypt(PluginWrapper wrapper) {
@@ -44,11 +44,14 @@ public class ForaTvDecrypt extends PluginForDecrypt {
         br.getPage(parameter);
         /* Offline|No downloads available|Download tab missing(they probably didn't even plan to provide downloads in this case) */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("There are no downloads for this program<") || !br.containsHTML("id=\"downloads_content\"")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createDownloadlink(parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (this.br.containsHTML("To download this program become a")) {
+            logger.info("This content is only downloadable for members");
             return decryptedLinks;
         }
         String title = br.getRegex("var full_program_title = \"([^<>\"]*?)\";").getMatch(0);

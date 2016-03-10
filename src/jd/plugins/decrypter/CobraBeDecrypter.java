@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://(www\\.)?cobra\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|cobra)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://(www\\.)?cobra(?:\\.canvas)?\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|cobra)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0 })
 public class CobraBeDecrypter extends PluginForDecrypt {
 
     public CobraBeDecrypter(PluginWrapper wrapper) {
@@ -40,22 +40,18 @@ public class CobraBeDecrypter extends PluginForDecrypt {
         parameter = parameter.replaceAll("/cm/vrtnieuws/mediatheek/[^/]+/[^/]+/[^/]+/([0-9\\.]+)(.+)?", "/permalink/$1");
         parameter = parameter.replaceAll("/cm/vrtnieuws([^/]+)?/mediatheek(\\w+)?/([0-9\\.]+)(.+)?", "/permalink/$3");
         final DownloadLink mainlink = createDownloadlink("http://cobradecrypted.be/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-        mainlink.setProperty("mainlink", parameter);
-        try {
-            br.getPage(parameter);
-        } catch (final Exception e) {
-            decryptedLinks.add(mainlink);
-            return decryptedLinks;
-        }
+        this.br.setFollowRedirects(true);
+        br.getPage(parameter);
+        mainlink.setProperty("mainlink", this.br.getURL());
         final String externID = br.getRegex("data\\-video\\-src=\"(https?://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        if (br.containsHTML(">Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden")) {
-            mainlink.setAvailable(false);
-            mainlink.setProperty("offline", true);
-            decryptedLinks.add(mainlink);
+
+        if (br.containsHTML(">Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden") || this.br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String filename = br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);

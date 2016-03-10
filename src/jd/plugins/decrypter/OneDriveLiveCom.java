@@ -150,14 +150,25 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
             accessItems_API(this.br, original_link, cid, id, additional_data);
         } catch (final BrowserException e) {
-            main.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final Object error = entries.get("error");
+        if (error != null) {
+            /*
+             * E.g. "{"error":{"code":3000,"debugMessage":"Item not found or access denied.","isExpected":true,"message":"This item might
+             * have been deleted, expired, or you might not have permission to access it. Contact the owner of this item for more
+             * information."....
+             */
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         ArrayList<Object> ressourcelist = (ArrayList) entries.get("items");
         entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
         fpName = (String) entries.get("name");

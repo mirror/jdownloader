@@ -26,6 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
@@ -40,11 +41,9 @@ public class CobraBe extends PluginForHost {
         super(wrapper);
     }
 
-    private String DLLINK = null;
-
     @Override
     public String getAGBLink() {
-        return "http://www.vrt.be/privacy-beleid";
+        return "http://cobra.canvas.be/";
     }
 
     // JSARRAY removed after rev 20337
@@ -54,7 +53,7 @@ public class CobraBe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getStringProperty("mainlink", null));
         // Link offline
-        if (br.containsHTML(">Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden") || !br.containsHTML("class=\"media flashPlayer bigMediaItem\"")) {
+        if (br.containsHTML(">Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden") || !br.containsHTML("class=\"media flashPlayer bigMediaItem\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
@@ -77,13 +76,13 @@ public class CobraBe extends PluginForHost {
         }
         final String hlsmanifest = hlsserver + "/" + hlsfile;
         br.getPage(hlsmanifest);
-        DLLINK = br.getRegex("(chunklist\\.m3u8.*?)\n").getMatch(0);
-        if (DLLINK == null) {
+        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = hlsmanifest.replace("/playlist.m3u8", "") + "/" + DLLINK;
+        final String url_hls = hlsbest.downloadurl;
         checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, DLLINK);
+        dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();
     }
 

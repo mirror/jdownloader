@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -38,6 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
@@ -75,15 +75,13 @@ public class FrShrdFldr extends PluginForDecrypt {
             offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
             decryptedLinks.add(offline);
             return decryptedLinks;
-        }
-        if (br.containsHTML(">You need owner\\'s permission to access this folder")) {
+        } else if (br.containsHTML(">You need owner\\'s permission to access this folder")) {
             logger.info("Link offline (no permissions): " + parameter);
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
             decryptedLinks.add(offline);
             return decryptedLinks;
-        }
-        if (br.containsHTML("class=\"emptyFolderPlaceholder\"")) {
+        } else if (br.containsHTML("class=\"emptyFolderPlaceholder\"")) {
             logger.info("Link offline (empty): " + parameter);
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
@@ -164,37 +162,53 @@ public class FrShrdFldr extends PluginForDecrypt {
                     logger.info("Decrypting page " + pagecounter + " of " + pages.size());
                     br.getPage(page);
                 }
+                final String subfolder_html = br.getRegex("id=\"folderContent\"(.*?)class=\"simplePagerAndUpload\"").getMatch(0);
                 String[] linkInfo = br.getRegex("<tr align=\"center\">(.*?)</tr>").getColumn(0);
                 if (linkInfo == null || linkInfo.length == 0) {
                     /* E.g. video */
                     linkInfo = br.getRegex("<div class=\"jsThumbPreview simpleTumbPreviewWrapper\\s*\">(.*?)</div>[\t\n\r ]*?</div>").getColumn(0);
                 }
-                if (linkInfo == null || linkInfo.length == 0) {
+                if ((linkInfo == null || linkInfo.length == 0) && subfolder_html == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (final String singleInfo : linkInfo) {
-                    final String dlink = new Regex(singleInfo, "\"(http://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?)\"").getMatch(0);
-                    String filename = new Regex(singleInfo, "data\\-element=\"72\">([^<>\"]*?)<").getMatch(0);
-                    if (filename == null) {
-                        /* E.g. video */
-                        filename = new Regex(singleInfo, "class=\"bluelink\" target=\"_blank\">([^<>\"]*?)<").getMatch(0);
+                if (linkInfo != null && linkInfo.length > 0) {
+                    for (final String singleInfo : linkInfo) {
+                        final String dlink = new Regex(singleInfo, "\"(http://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?)\"").getMatch(0);
+                        String filename = new Regex(singleInfo, "data\\-element=\"72\">([^<>\"]*?)<").getMatch(0);
+                        if (filename == null) {
+                            /* E.g. video */
+                            filename = new Regex(singleInfo, "class=\"bluelink\" target=\"_blank\">([^<>\"]*?)<").getMatch(0);
+                        }
+                        final String filesize = new Regex(singleInfo, "<div class=\"itemSizeInfo\">([^<>\"]*?)</div>").getMatch(0);
+                        if (dlink == null || filename == null) {
+                            logger.warning("Decrypter broken for link: " + parameter);
+                            return null;
+                        }
+                        final DownloadLink fina = createDownloadlink(dlink);
+                        fina.setName(Encoding.htmlDecode(filename.trim()));
+                        fina.setProperty("decrypterfilename", filename);
+                        if (filesize != null) {
+                            fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
+                        }
+                        /* Do NOT set available true because status is not known! */
+                        // fina.setAvailable(true);
+                        decryptedLinks.add(fina);
                     }
-                    final String filesize = new Regex(singleInfo, "<div class=\"itemSizeInfo\">([^<>\"]*?)</div>").getMatch(0);
-                    if (dlink == null || filename == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    final DownloadLink fina = createDownloadlink(dlink);
-                    fina.setName(Encoding.htmlDecode(filename.trim()));
-                    fina.setProperty("decrypterfilename", filename);
-                    if (filesize != null) {
-                        fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
-                    }
-                    /* Do NOT set available true because status is not known! */
-                    // fina.setAvailable(true);
-                    decryptedLinks.add(fina);
                 }
+
+                if (subfolder_html != null) {
+                    final String[] subfolders = new Regex(subfolder_html, "(/folder/[^<>\"]*?)\"").getColumn(0);
+                    if (subfolders != null && subfolders.length > 0) {
+                        for (String aSubfolder : subfolders) {
+                            if (!parameter.contains(aSubfolder)) {
+                                aSubfolder = "http://www." + this.br.getHost() + aSubfolder;
+                                decryptedLinks.add(this.createDownloadlink(aSubfolder));
+                            }
+                        }
+                    }
+                }
+
                 pagecounter++;
             }
         }

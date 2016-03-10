@@ -117,15 +117,15 @@ public class LinkSnappyCom extends antiDDoSForHost {
         final String expire = getJson("expire");
         if ("lifetime".equals(expire)) {
             accountType = "Lifetime Premium Account";
+            currentAcc.setType(AccountType.LIFETIME);
         } else if ("expired".equals(expire)) {
             /* Free account = also expired */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nIf your account is Premium contact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             ac.setValidUntil(Long.parseLong(expire) * 1000);
             accountType = "Premium Account";
+            currentAcc.setType(AccountType.PREMIUM);
         }
-        /* = all are premium anyways */
-        currentAcc.setType(AccountType.PREMIUM);
         ac.setStatus(accountType);
         /* Find traffic left */
         final String trafficLeft = getJson("trafficleft");

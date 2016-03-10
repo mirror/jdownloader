@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bleuup.com" }, urls = { "https?://(?:www\\.)?bleuup\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bleuup.net" }, urls = { "https?://(?:www\\.)?bleuup\\.(?:com|net)/[A-Za-z0-9]+" }, flags = { 2 })
 public class BleuupCom extends PluginForHost {
 
     public BleuupCom(PluginWrapper wrapper) {
@@ -73,9 +73,19 @@ public class BleuupCom extends PluginForHost {
         return mainpage + "/terms." + type;
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("bleuup.com".equals(getHost())) {
+            if (host == null || "bleuup.com".equals(host)) {
+                return "bleuup.net";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     /* Basic constants */
-    private final String                   mainpage                                     = "http://bleuup.com";
-    private final String                   domains                                      = "(bleuup\\.com)";
+    private final String                   mainpage                                     = "http://bleuup.net";
+    private final String                   domains                                      = "(bleuup\\.(?:com|net))";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
@@ -491,7 +501,7 @@ public class BleuupCom extends PluginForHost {
 
     private static final Object LOCK = new Object();
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     private void login(final Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
