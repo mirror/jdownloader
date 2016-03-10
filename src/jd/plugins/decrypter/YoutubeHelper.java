@@ -764,7 +764,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         Object result = null;
 
         HashMap<String, String> cache = jsCache.get(id);
-        if (cache != null && !cache.isEmpty() && false) {
+        if (cache != null && !cache.isEmpty()) {
             all = cache.get("all");
             descrambler = cache.get("descrambler");
             des = cache.get("des");
