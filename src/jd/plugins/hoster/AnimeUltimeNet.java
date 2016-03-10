@@ -51,26 +51,38 @@ public class AnimeUltimeNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("> 0 vostfr streaming<")) {
+        if (br.containsHTML("> 0 vostfr streaming<") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<h1>([^<>\"]*?)vostfr streaming</h1>").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String filename = br.getRegex("<h1>([^<>\"]*?)vostfr streaming</h1>").getMatch(0);
+        if (filename == null) {
+            filename = fid;
+        }
         String filesize = br.getRegex("Taille : ([^<>\"]*?)<br />").getMatch(0);
         String ext = br.getRegex("Conteneur : ([^<>\"]*?)<br />").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            return null;
         }
         if (ext != null) {
             ext = "." + ext.trim();
         } else {
             ext = "";
         }
-        filesize = filesize.replace("mo", "mb");
-        link.setName(Encoding.htmlDecode(filename.trim()) + ext);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            if (filesize.equals("")) {
+                /* Probably offline as filesize is not given and downloadlink is not available/dead(404) */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filesize = filesize.replace("mo", "mb");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        filename = Encoding.htmlDecode(filename).trim() + ext;
+        link.setName(filename);
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -94,6 +106,11 @@ public class AnimeUltimeNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 - file eventually offline", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
