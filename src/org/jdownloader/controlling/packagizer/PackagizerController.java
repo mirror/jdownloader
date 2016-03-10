@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -28,7 +27,6 @@ import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -659,18 +657,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (rules != null) {
             for (final PackagizerRuleWrapper lgr : rules) {
                 if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
-                    try {
-                        if (!lgr.checkHoster(link)) {
-                            continue;
-                        }
-                    } catch (NoDownloadLinkException e) {
+                    if (!lgr.checkHoster(link)) {
                         continue;
                     }
-                    try {
-                        if (!lgr.checkPluginStatus(link)) {
-                            continue;
-                        }
-                    } catch (NoDownloadLinkException e) {
+                    if (!lgr.checkPluginStatus(link)) {
                         continue;
                     }
                     if (!lgr.checkOrigin(link)) {
@@ -920,19 +910,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             String moveRule = lgr.getRule().getMoveto();
             if (!StringUtils.isEmpty(renameRule) || !StringUtils.isEmpty(moveRule)) {
                 if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
-                    try {
-                        if (!lgr.checkHoster(dummyLink)) {
-                            continue;
-                        }
-                    } catch (NoDownloadLinkException e) {
-                        throw new WTFException();
+                    if (!lgr.checkHoster(dummyLink)) {
+                        continue;
                     }
-                    try {
-                        if (!lgr.checkPluginStatus(dummyLink)) {
-                            continue;
-                        }
-                    } catch (NoDownloadLinkException e) {
-                        throw new WTFException();
+                    if (!lgr.checkPluginStatus(dummyLink)) {
+                        continue;
                     }
                     if (!lgr.checkOrigin(dummyLink)) {
                         continue;

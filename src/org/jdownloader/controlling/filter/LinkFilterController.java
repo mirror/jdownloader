@@ -293,15 +293,11 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     private boolean matches(CrawledLink link, LinkgrabberFilterRuleWrapper rule, final boolean afterOnlineCheck) {
-        try {
-            if (!rule.checkHoster(link)) {
-                return false;
-            }
-            if (!rule.checkPluginStatus(link)) {
-                return false;
-            }
-        } catch (NoDownloadLinkException e) {
-            throw new WTFException();
+        if (!rule.checkHoster(link)) {
+            return false;
+        }
+        if (!rule.checkPluginStatus(link)) {
+            return false;
         }
         if (!isTestInstance()) {
             if (!rule.checkOrigin(link)) {
