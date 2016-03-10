@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,6 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8[^\\s<>\"']*" }, flags = { 0 })
@@ -109,24 +109,27 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     break;
                 }
             }
-            if (bandwidth == null || resolution == null || hlsurl == null) {
+            if (bandwidth == null || hlsurl == null) {
                 continue;
             }
             hlsurl = hlsurl.trim();
             if (!hlsurl.startsWith("http")) {
                 hlsurl = br.getBaseURL() + hlsurl;
             }
-            final String[] resolution_info = resolution.split("x");
-            final String width = resolution_info[0];
-            final String height = resolution_info[1];
             final HlsContainer hls = new HlsContainer();
             hls.bandwidth = Long.parseLong(bandwidth);
-            hls.width = Integer.parseInt(width);
-            hls.height = Integer.parseInt(height);
             hls.codecs = codecs;
             hls.downloadurl = hlsurl;
             /* TODO: Add audio */
             hls.type = "video";
+
+            if (resolution != null) {
+                final String[] resolution_info = resolution.split("x");
+                final String width = resolution_info[0];
+                final String height = resolution_info[1];
+                hls.width = Integer.parseInt(width);
+                hls.height = Integer.parseInt(height);
+            }
 
             hlsqualities.add(hls);
         }

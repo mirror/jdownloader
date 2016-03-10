@@ -53,10 +53,12 @@ public class XXXAPornCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("xxxaporndecrypted.com/", "xxxaporn.com/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception, PluginException {
         this.setBrowserExclusive();
@@ -87,6 +89,9 @@ public class XXXAPornCom extends PluginForHost {
                 filename = br.getRegex("<div class=\"video\\-info\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
             }
             DLLINK = br.getRegex("\\(\\'flashvars\\',\\'file=(http://[^<>\"]*?)\\'\\)").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<source src=\"(http[^<>\"]+)\" type=\\'video/").getMatch(0);
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -23,6 +23,7 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -64,14 +65,19 @@ public class Vdnrlngn extends PluginForDecrypt {
     private Collection<? extends DownloadLink> parseClip(String u, String packagename) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
+        this.br.setFollowRedirects(true);
         br.getPage(u);
         if (packagename == null) {
-            packagename = br.getRegex("class=\"clipdetailtitel\">[\t\n\r ]+<br/>(.*?)</td>").getMatch(0).trim();
+            packagename = br.getRegex("class=\"clipdetailtitel\">[\t\n\r ]+<br/>(.*?)</td>").getMatch(0);
         }
+        if (packagename == null) {
+            packagename = new Regex(this.br.getURL(), "/id/(\\d+)").getMatch(0);
+        }
+        packagename = Encoding.htmlDecode(packagename).trim();
         FilePackage fp = FilePackage.getInstance();
         fp.setName(packagename);
 
-        String[] resources = br.getRegex("<div class=\"resource\">(.*?)</div>").getColumn(0);
+        String[] resources = br.getRegex("<div class=\"resource\">(.*?)</table>[\t\n\r ]+</div>").getColumn(0);
         for (String res : resources) {
             // String type = new Regex(res,
             // "<th class=\"detail_head\">Inhalt:</th>\\s+<td class=\"detail_field\">(.*?)</td>").getMatch(0).trim();
@@ -80,7 +86,7 @@ public class Vdnrlngn extends PluginForDecrypt {
             String size = new Regex(res, "<th class=\"detail_head\">Gr\\&ouml\\;\\&szlig\\;e:</th>\\s+<td class=\"detail_field\">(.*?)</td>").getMatch(0).trim();
             // String resolution = new Regex(res,
             // "<th class=\"detail_head\">Aufl\\&ouml\\;sung:</th>\\s+<td class=\"detail_field\">(.*?)</td>").getMatch(0).trim();
-            String download = new Regex(res, "<a class=\"download_link\" href=\"(.*?)\">").getMatch(0);
+            String download = new Regex(res, "\"(/[^<>\"]+\\?src=download)\"").getMatch(0);
             String url = "directhttp://http://video.uni-erlangen.de" + download;
             DownloadLink dl = createDownloadlink(url);
             dl.setDownloadSize(SizeFormatter.getSize(size));

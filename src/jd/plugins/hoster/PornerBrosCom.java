@@ -122,7 +122,7 @@ public class PornerBrosCom extends PluginForHost {
         if (DLLINK == null) {
             final String[] qualities = { "1080", "720", "480", "360", "240" };
             String availablequalities = br.getRegex("\\}\\)\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
-            final String lid = br.getRegex("<button data-id=\"(\\d+)\"").getMatch(0);
+            final String lid = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
             if (lid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -186,7 +186,12 @@ public class PornerBrosCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
+            br2.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
             con = br2.openHeadConnection(DLLINK);
+            if (con.getResponseCode() == 404) {
+                br2.getHeaders().put("Refefer", con.getURL().toString());
+                con = br2.openHeadConnection(DLLINK);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

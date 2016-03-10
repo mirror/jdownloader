@@ -19,9 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "http://files\\.fm/down\\.php\\?i=[a-z0-9]+\\&n=[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://files\\.fm/down\\.php\\?i=[a-z0-9]+\\&n=[^/]+" }, flags = { 0 })
 public class FilesFm extends PluginForHost {
 
     public FilesFm(PluginWrapper wrapper) {
@@ -56,9 +56,12 @@ public class FilesFm extends PluginForHost {
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
 
+    private String               dllink            = null;
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        dllink = null;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         final String mainlink = link.getStringProperty("mainlink", null);
@@ -67,15 +70,27 @@ public class FilesFm extends PluginForHost {
             this.br.getPage(mainlink);
             // this.br.getHeaders().put("Referer", mainlink);
         }
+        final String linkpart = new Regex(link.getDownloadURL(), "(\\?i=.+)").getMatch(0);
+        final String filename_url = new Regex(linkpart, "\\&n=(.+)").getMatch(0);
+        String filename_header = null;
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br.openHeadConnection(link.getDownloadURL());
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* 2016-03-10: They enforce https */
+            dllink = link.getDownloadURL().replace("http://", "https://");
+            con = br.openHeadConnection(dllink);
+            if (con.getURL().toString().contains("/private")) {
+                // https://files.fm/thumb_show.php?i=wfslpuh&n=20140908_073035.jpg&refresh1
+                /* Maybe we have a picture without official "Download" button ... */
+                dllink = "https://files.fm/thumb_show.php" + linkpart + "&refresh1";
+                con = br.openHeadConnection(dllink);
             }
             if (!con.getContentType().contains("html")) {
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                filename_header = Encoding.htmlDecode(getFileNameFromHeader(con));
+                if (filename_header.length() > filename_url.length()) {
+                    link.setFinalFileName(filename_header);
+                } else {
+                    link.setFinalFileName(filename_url);
+                }
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -96,7 +111,6 @@ public class FilesFm extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String dllink = downloadLink.getDownloadURL();
         // if (dllink == null) {
         // dllink = br.getRegex("").getMatch(0);
         // if (dllink == null) {

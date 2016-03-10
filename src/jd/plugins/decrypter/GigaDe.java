@@ -100,20 +100,41 @@ public class GigaDe extends PluginForDecrypt {
                     continue;
                 }
                 br.getPage("http://www.giga.de/api/syndication/video/video_id/" + api_link + "/playlist.json?content=syndication/key/368b5f151da4ae05ced7fa296bdff65a/");
-                final String[] qualities = br.getRegex("(\"\\d+\":\\{\"quality\".*?\\})").getColumn(0);
-                if (qualities != null && qualities.length != 0) {
-                    for (final String quality : qualities) {
-                        final String quali = getJson("quality", quality);
-                        String url = getJson("src", quality);
-                        if (url != null && !url.equals("") && quali != null) {
-                            url = url.replace("\\", "");
-                            final DownloadLink dl = createDownloadlink("directhttp://" + url);
-                            String ext = url.substring(url.lastIndexOf("."));
-                            if (ext == null || ext.length() > 5) {
-                                ext = ".mp4";
+                if (this.br.getHttpConnection().getResponseCode() == 404) {
+                    br.getPage("http://videos.giga.de/embed/" + api_link);
+                    final String[] qualities = br.getRegex("(\\{file:[\t\n\r ]*?\"https?://[^<>\"]+\\.mp4.*?\\})").getColumn(0);
+                    if (qualities != null && qualities.length != 0) {
+                        for (final String quality : qualities) {
+                            final String quali = new Regex(quality, "label[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]+)\"").getMatch(0);
+                            String url = new Regex(quality, "file[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]+)\"").getMatch(0);
+                            if (url != null && !url.equals("") && quali != null) {
+                                url = url.replace("\\", "");
+                                final DownloadLink dl = createDownloadlink("directhttp://" + url);
+                                String ext = url.substring(url.lastIndexOf("."));
+                                if (ext == null || ext.length() > 5) {
+                                    ext = ".mp4";
+                                }
+                                dl.setFinalFileName(fpName + "_" + api_link + "_" + quali + ext);
+                                decryptedLinks.add(dl);
                             }
-                            dl.setFinalFileName(fpName + ext);
-                            decryptedLinks.add(dl);
+                        }
+                    }
+                } else {
+                    final String[] qualities = br.getRegex("(\"\\d+\":\\{\"quality\".*?\\})").getColumn(0);
+                    if (qualities != null && qualities.length != 0) {
+                        for (final String quality : qualities) {
+                            final String quali = getJson("quality", quality);
+                            String url = getJson("src", quality);
+                            if (url != null && !url.equals("") && quali != null) {
+                                url = url.replace("\\", "");
+                                final DownloadLink dl = createDownloadlink("directhttp://" + url);
+                                String ext = url.substring(url.lastIndexOf("."));
+                                if (ext == null || ext.length() > 5) {
+                                    ext = ".mp4";
+                                }
+                                dl.setFinalFileName(fpName + "_" + api_link + "_" + quali + ext);
+                                decryptedLinks.add(dl);
+                            }
                         }
                     }
                 }

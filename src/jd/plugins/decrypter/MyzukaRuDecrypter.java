@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(www\\.)?myzuka\\.(ru|org)/Album/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(ru|org)/Album/\\d+" }, flags = { 0 })
 public class MyzukaRuDecrypter extends PluginForDecrypt {
 
     public MyzukaRuDecrypter(PluginWrapper wrapper) {
@@ -45,19 +45,20 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         /* offline|abused */
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Альбом удален по просьбе правообладателя")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String[] info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)class=\"player\\-controls\"").getColumn(0);
+        final String[] info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)lass=\"ico\\-rating\"").getColumn(0);
         if (info == null || info.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         String fpName = br.getRegex("<h1 class=\"green\">([^<>\"]*?)</h1>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
         if (fpName == null) {
             fpName = new Regex(br.getURL(), "myzuka\\.ru/Album/\\d+/(.+)").getMatch(0);
         }

@@ -150,7 +150,10 @@ public class RGhostRu extends PluginForHost {
         try {
             br.getPage(link.getDownloadURL());
         } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 503) {
+            if (br.getHttpConnection().getResponseCode() == 409) {
+                /* Cloudflare DNS issue --> In this case definitly offline! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 503) {
                 link.getLinkStatus().setStatusText("Server maintenance");
                 return AvailableStatus.UNCHECKABLE;
             }

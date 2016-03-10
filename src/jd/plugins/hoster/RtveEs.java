@@ -135,6 +135,10 @@ public class RtveEs extends PluginForHost {
         br.getPage(dllink);
         if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.|id=\"errorndispo\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("No hay vídeos o audios para la búsqueda efectuada")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
         if (downloadLink.getDownloadURL().matches(TYPE_SERIES)) {

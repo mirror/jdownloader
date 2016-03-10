@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "http://(www\\.)?files\\.fm/u/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:www\\.)?files\\.fm/u/[a-z0-9]+" }, flags = { 0 })
 public class FilesFmFolder extends PluginForDecrypt {
 
     public FilesFmFolder(PluginWrapper wrapper) {
@@ -39,15 +39,13 @@ public class FilesFmFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        /* 2016-03-10: They enforce https */
+        final String parameter = param.toString().replace("http://", "https://");
         final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        this.br.setFollowRedirects(true);
         br.getPage("http://files.fm/u/" + fid + "?view=gallery&items_only=true&index=0&count=10000");
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This link does not contain any files|These files are deleted by the owner<|The expiry date of these files is over<")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This link does not contain any files|These files are deleted by the owner<|The expiry date of these files is over<|class=\"deleted_wrapper\"")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = null;
@@ -57,13 +55,16 @@ public class FilesFmFolder extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            final String filename = new Regex(singleLink, "\\&n=([^<>\"]*?)\"").getMatch(0);
+            String filename = new Regex(singleLink, "\\&n=([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(singleLink, "\\&n=([^<>\"]*?)\\'").getMatch(0);
+            }
             final String filesize = new Regex(singleLink, "class=\"file_size\">([^<>}\"]*?)</span>").getMatch(0);
             final String fileid = new Regex(singleLink, "\\?i=([a-z0-9]+)").getMatch(0);
             if (filename == null || filesize == null || fileid == null) {
                 return null;
             }
-            final String contentUrl = "http://files.fm/down.php?i=" + fileid + "&n=" + filename;
+            final String contentUrl = "https://files.fm/down.php?i=" + fileid + "&n=" + filename;
             final DownloadLink dl = createDownloadlink(contentUrl);
             dl.setProperty("mainlink", parameter);
             dl.setContentUrl(contentUrl);
