@@ -1,5 +1,8 @@
 package jd.plugins.components;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.decrypter.YoutubeHelper;
+
 public class YoutubeClipData {
 
     /**
@@ -36,6 +39,22 @@ public class YoutubeClipData {
 
         this.videoID = videoID;
         this.playlistEntryNumber = playlistEntryNumber;
+    }
+
+    public void copyToDownloadLink(final DownloadLink thislink) {
+        thislink.setProperty(YoutubeHelper.YT_TITLE, title);
+        thislink.setProperty(YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
+
+        thislink.setProperty(YoutubeHelper.YT_AGE_GATE, ageCheck);
+        thislink.setProperty(YoutubeHelper.YT_CHANNEL, channel);
+        thislink.setProperty(YoutubeHelper.YT_USER, user);
+        thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.name());
+        thislink.setProperty(YoutubeHelper.YT_DATE, date);
+        thislink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, length);
+        thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
+        thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, channelID);
+        thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
+        thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
     }
 
 }
