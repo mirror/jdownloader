@@ -246,12 +246,12 @@ public class RuleWrapper<T extends FilterRule> {
         return true;
     }
 
-    public boolean checkHoster(final CrawledLink link) throws NoDownloadLinkException {
+    public boolean checkHoster(final CrawledLink link) {
         final CompiledRegexFilter hosterRule = getHosterRule();
         if (hosterRule != null) {
             final DownloadLink dlLink = link.getDownloadLink();
             if (dlLink == null || link.gethPlugin() == null) {
-                throw new NoDownloadLinkException();
+                return false;
             } else {
                 final String host = dlLink.getServiceHost();
                 switch (hosterRule.getMatchType()) {
@@ -343,11 +343,11 @@ public class RuleWrapper<T extends FilterRule> {
         return true;
     }
 
-    public boolean checkPluginStatus(final CrawledLink link) throws NoDownloadLinkException {
+    public boolean checkPluginStatus(final CrawledLink link) {
         final CompiledPluginStatusFilter pluginStatusFilter = getPluginStatusFilter();
         if (pluginStatusFilter != null) {
             if (link.getDownloadLink() == null || link.gethPlugin() == null) {
-                throw new NoDownloadLinkException();
+                return false;
             } else {
                 return pluginStatusFilter.matches(link);
             }

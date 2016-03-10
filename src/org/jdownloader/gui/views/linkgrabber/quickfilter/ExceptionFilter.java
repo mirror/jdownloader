@@ -1,9 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Hash;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
-import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.images.NewTheme;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -41,19 +39,11 @@ public class ExceptionFilter extends Filter {
 
     @Override
     public boolean isFiltered(CrawledLink link) {
-        try {
-            if (!wrapperRule.checkHoster(link)) {
-                return false;
-            }
-        } catch (NoDownloadLinkException e) {
-            throw new WTFException();
+        if (!wrapperRule.checkHoster(link)) {
+            return false;
         }
-        try {
-            if (!wrapperRule.checkPluginStatus(link)) {
-                return false;
-            }
-        } catch (NoDownloadLinkException e) {
-            throw new WTFException();
+        if (!wrapperRule.checkPluginStatus(link)) {
+            return false;
         }
         if (!wrapperRule.checkOrigin(link)) {
             return false;
