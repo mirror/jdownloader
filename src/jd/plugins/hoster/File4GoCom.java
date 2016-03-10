@@ -19,6 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,9 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0, 0 })
 public class File4GoCom extends PluginForHost {
@@ -60,27 +62,31 @@ public class File4GoCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         String id = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        try {
-            link.setLinkID(getHost() + "://" + id);
-        } catch (final Throwable t) {
-        }
+        link.setLinkID(getHost() + "://" + id);
         link.setUrlDownload(MAINPAGE + "/d/" + id);
     }
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host) || "file4go.net".equals(host) || "file4go.com".equals(host)) {
+        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host) || "file4go.com".equals(host)) {
             return "sizedrive.com";
         }
         return super.rewriteHost(host);
     }
 
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
+        // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
+        br.setFollowRedirects(false);
+        //
+        while (agent.get() == null || !agent.get().contains("Firefox/")) {
+            agent.set(UserAgents.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", agent.get());
         br.setCookie(MAINPAGE, "animesonline", "1");
         br.setCookie(MAINPAGE, "musicasab", "1");
         br.setCookie(MAINPAGE, "poup", "1");
@@ -90,10 +96,16 @@ public class File4GoCom extends PluginForHost {
         if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores") || br.getURL().endsWith("/404.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<div id=\"titulo_a\">\\s*(.*?)\\s*</div>").getMatch(0);
-        final String filesize = br.getRegex("<b>File size:</b>\\s*([^<>\"]+)\\s*</").getMatch(0);
+        String filename = br.getRegex(">Nome:</b>\\s*(.*?)\\s*</span>").getMatch(0);
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = br.getRegex("<div id=\"titulo_a\">\\s*(.*?)\\s*</div>").getMatch(0);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        String filesize = br.getRegex(">Tamanho:</b>\\s*(.*?)\\s*</span>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>File size:</b>\\s*([^<>\"]+)\\s*</").getMatch(0);
         }
         link.setName(filename.trim());
         if (filesize != null) {
@@ -112,14 +124,16 @@ public class File4GoCom extends PluginForHost {
             final Form getDownload = br.getFormByInputFieldKeyValue("id", id);
             int wait = 0;
             final String waittime = br.getRegex("var time = (\\d+)").getMatch(0);
-            if (waittime == null || getDownload == null) {
+            if (waittime == null && getDownload == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            wait = Integer.parseInt(waittime);
-            if (wait > 180) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+                if (wait > 180) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+                }
+                this.sleep(wait * 1001l, downloadLink);
             }
-            this.sleep(wait * 1001l, downloadLink);
             br.submitForm(getDownload);
             // dllink = br.getRegex("\"(https?://[a-z0-9]+\\.sizedrive\\.com:\\d+/betafree/[^<>\"]*?)\"").getMatch(0);
             dllink = br.getRegex("\"(https?://[a-z0-9]+\\.file4go\\.net:\\d+/betafree/[^<>\"]*?)\"").getMatch(0); // Free only
