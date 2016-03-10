@@ -9,11 +9,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
-
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -22,6 +17,11 @@ import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
 public class QuickFilterExceptionsTable extends FilterTable {
 
@@ -54,19 +54,15 @@ public class QuickFilterExceptionsTable extends FilterTable {
     }
 
     private void convertLinkgrabberFilterRuleWrapper() {
-        List<LinkgrabberFilterRuleWrapper> filtersToSetup = new ArrayList<LinkgrabberFilterRuleWrapper>();
-        List<LinkgrabberFilterRuleWrapper> filters = LinkFilterController.getInstance().getAcceptFileFilter();
+        final List<LinkgrabberFilterRuleWrapper> filtersToSetup = new ArrayList<LinkgrabberFilterRuleWrapper>();
+        final List<LinkgrabberFilterRuleWrapper> filters = LinkFilterController.getInstance().getAcceptFilters();
         if (filters != null) {
             filtersToSetup.addAll(filters);
         }
-        filters = LinkFilterController.getInstance().getAcceptUrlFilter();
-        if (filters != null) {
-            filtersToSetup.addAll(filters);
-        }
-        CopyOnWriteArrayList<ExceptionFilter> newAllFilters = new CopyOnWriteArrayList<ExceptionFilter>();
-        CopyOnWriteArraySet<Filter> newEnabledFilters = new CopyOnWriteArraySet<Filter>();
+        final CopyOnWriteArrayList<ExceptionFilter> newAllFilters = new CopyOnWriteArrayList<ExceptionFilter>();
+        final CopyOnWriteArraySet<Filter> newEnabledFilters = new CopyOnWriteArraySet<Filter>();
         for (final LinkgrabberFilterRuleWrapper rule : filtersToSetup) {
-            ExceptionFilter filter = new ExceptionFilter(rule) {
+            final ExceptionFilter filter = new ExceptionFilter(rule) {
                 @Override
                 public void setEnabled(boolean enabled) {
                     super.setEnabled(enabled);

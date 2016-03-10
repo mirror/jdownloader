@@ -12,19 +12,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.PackagizerInterface;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -52,25 +39,37 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.jd1import.JD1Importer;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.PackagizerInterface;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
-    private final PackagizerSettings              config;
-    private ArrayList<PackagizerRule>             list           = new ArrayList<PackagizerRule>();
-    private PackagizerControllerEventSender       eventSender;
-    private java.util.List<PackagizerRuleWrapper> fileFilter;
-    private java.util.List<PackagizerRuleWrapper> urlFilter;
+    private final PackagizerSettings            config;
+    private ArrayList<PackagizerRule>           list           = new ArrayList<PackagizerRule>();
+    private PackagizerControllerEventSender     eventSender;
+    private List<PackagizerRuleWrapper>         rules;
 
-    public static final String                    ORGFILENAME    = "orgfilename";
-    public static final String                    ORGFILETYPE    = "orgfiletype";
-    public static final String                    HOSTER         = "hoster";
-    public static final String                    SOURCE         = "source";
+    public static final String                  ORGFILENAME    = "orgfilename";
+    public static final String                  ORGFILETYPE    = "orgfiletype";
+    public static final String                  HOSTER         = "hoster";
+    public static final String                  SOURCE         = "source";
 
-    public static final String                    PACKAGENAME    = "packagename";
-    public static final String                    SIMPLEDATE     = "simpledate";
+    public static final String                  PACKAGENAME    = "packagename";
+    public static final String                  SIMPLEDATE     = "simpledate";
 
-    private static final PackagizerController     INSTANCE       = new PackagizerController(false);
-    public static final String                    ORGPACKAGENAME = "orgpackagename";
-    private HashMap<String, PackagizerReplacer>   replacers      = new HashMap<String, PackagizerReplacer>();
-    private final boolean                         testInstance;
+    private static final PackagizerController   INSTANCE       = new PackagizerController(false);
+    public static final String                  ORGPACKAGENAME = "orgpackagename";
+    private HashMap<String, PackagizerReplacer> replacers      = new HashMap<String, PackagizerReplacer>();
+    private final boolean                       testInstance;
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -556,25 +555,16 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     private void updateInternal() {
         // url filter only require the urls, and thus can be done before linkcheck
-        ArrayList<PackagizerRuleWrapper> urlFilter = new ArrayList<PackagizerRuleWrapper>();
-        ArrayList<PackagizerRuleWrapper> fileFilter = new ArrayList<PackagizerRuleWrapper>();
+        ArrayList<PackagizerRuleWrapper> newRules = new ArrayList<PackagizerRuleWrapper>();
         synchronized (this) {
             for (PackagizerRule lgr : list) {
                 if (lgr.isEnabled() && lgr.isValid()) {
                     final PackagizerRuleWrapper compiled = lgr.compile();
-                    if (compiled.getOnlineStatusFilter() == null) {
-                        urlFilter.add(compiled);
-                        fileFilter.add(compiled);
-                    } else {
-                        fileFilter.add(compiled);
-                    }
+                    newRules.add(compiled);
                 }
             }
         }
-        fileFilter.trimToSize();
-        this.fileFilter = fileFilter;
-        urlFilter.trimToSize();
-        this.urlFilter = urlFilter;
+        rules = newRules;
         if (getEventSender().hasListener()) {
             getEventSender().fireEvent(new PackagizerControllerEvent() {
 
@@ -646,7 +636,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }
-        applyPackagizerRules(link, fileFilter);
+        applyPackagizerRules(link, rules, true);
     }
 
     public void runByUrl(final CrawledLink link) {
@@ -662,10 +652,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }
-        applyPackagizerRules(link, urlFilter);
+        applyPackagizerRules(link, rules, false);
     }
 
-    private void applyPackagizerRules(final CrawledLink link, final List<PackagizerRuleWrapper> rules) {
+    private void applyPackagizerRules(final CrawledLink link, final List<PackagizerRuleWrapper> rules, final boolean afterOnlineCheck) {
         if (rules != null) {
             for (final PackagizerRuleWrapper lgr : rules) {
                 if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
@@ -922,11 +912,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private final static String ORGPACKAGETAG = "<jd:" + PackagizerController.ORGPACKAGENAME + ">";
 
     private void runAfterExtraction(File file, CrawledLink dummyLink) {
-        final java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
         final String originalFolder = file.getParent();
         String moveToFolder = originalFolder;
         final String originalFileName = dummyLink.getName();
-        for (PackagizerRuleWrapper lgr : lfileFilter) {
+        for (PackagizerRuleWrapper lgr : rules) {
             String renameRule = lgr.getRule().getRename();
             String moveRule = lgr.getRule().getMoveto();
             if (!StringUtils.isEmpty(renameRule) || !StringUtils.isEmpty(moveRule)) {
@@ -958,10 +947,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         continue;
                     }
                     if (!lgr.checkFileType(dummyLink)) {
-                        continue;
-                    }
-
-                    if (!lgr.checkOnlineStatus(dummyLink)) {
                         continue;
                     }
                     if (!lgr.checkFileName(dummyLink)) {

@@ -1,12 +1,12 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
-import jd.controlling.linkcrawler.CrawledLink;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Hash;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.linkcrawler.CrawledLink;
 
 public class ExceptionFilter extends Filter {
 
