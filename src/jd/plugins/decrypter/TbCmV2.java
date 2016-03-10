@@ -793,6 +793,7 @@ public class TbCmV2 extends PluginForDecrypt {
                             }
                         }
                     }
+
                 }
                 ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
                 if (extraSubtitles != null) {
@@ -937,21 +938,12 @@ public class TbCmV2 extends PluginForDecrypt {
             }
 
             // thislink.setProperty(key, value)
+            thislink.setProperty(YoutubeHelper.YT_ID, clip.videoID);
+
             thislink.setProperty(YoutubeHelper.YT_EXT, variantInfo.variant.getFileExtension());
 
-            thislink.setProperty(YoutubeHelper.YT_TITLE, clip.title);
-            thislink.setProperty(YoutubeHelper.YT_PLAYLIST_INT, clip.playlistEntryNumber);
-            thislink.setProperty(YoutubeHelper.YT_ID, clip.videoID);
-            thislink.setProperty(YoutubeHelper.YT_AGE_GATE, clip.ageCheck);
-            thislink.setProperty(YoutubeHelper.YT_CHANNEL, clip.channel);
-            thislink.setProperty(YoutubeHelper.YT_USER, clip.user);
-            thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, clip.bestVideoItag == null ? null : clip.bestVideoItag.name());
-            thislink.setProperty(YoutubeHelper.YT_DATE, clip.date);
-            thislink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, clip.length);
-            thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, clip.userGooglePlusID);
-            thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, clip.channelID);
-            thislink.setProperty(YoutubeHelper.YT_DURATION, clip.duration);
-            thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, clip.dateUpdated);
+            clip.copyToDownloadLink(thislink);
+
             if (variantInfo.videoStream != null) {
 
                 thislink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, variantInfo.videoStream.getUrl());
@@ -1040,10 +1032,9 @@ public class TbCmV2 extends PluginForDecrypt {
      * @throws IOException
      * @throws InterruptedException
      */
-    public ArrayList<YoutubeClipData> parsePlaylist(String playlistID) throws IOException, InterruptedException {
+    public ArrayList<YoutubeClipData> parsePlaylist(final String playlistID) throws IOException, InterruptedException {
         // this returns the html5 player
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
-
         if (StringUtils.isNotEmpty(playlistID)) {
             Browser pbr = new Browser();
             /* we first have to load the plugin, before we can reference it */
@@ -1059,8 +1050,6 @@ public class TbCmV2 extends PluginForDecrypt {
             int counter = 1;
             int round = 0;
             while (true) {
-
-                System.out.println(ret.size());
                 if (this.isAbort()) {
                     throw new InterruptedException();
                 }
@@ -1164,7 +1153,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
                 String nextPage = Encoding.htmlDecode(new Regex(content, "data-uix-load-more-href=\"(/[^<>\"]*?)\"").getMatch(0));
-                System.out.println(ret.size());
+
                 if (nextPage != null) {
                     pageUrl = getBase() + nextPage;
                     // anti ddos
@@ -1239,7 +1228,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
                 String nextPage = Encoding.htmlDecode(new Regex(content, "data-uix-load-more-href=\"(/[^<>\"]+)\"").getMatch(0));
-                System.out.println(ret.size());
+
                 if (nextPage != null) {
                     pageUrl = getBase() + nextPage;
                     round = antiDdosSleep(round);

@@ -133,17 +133,17 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
     }
 
-    public static final String    PAID_VIDEO        = "Paid Video:";
+    public static final String PAID_VIDEO        = "Paid Video:";
 
-    protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
+    public static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
 
-    protected static final String YT_DURATION       = "YT_DURATION";
+    public static final String YT_DURATION       = "YT_DURATION";
 
-    protected static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
+    public static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
 
-    protected static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
+    public static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
 
-    private Browser               br;
+    private Browser            br;
 
     public Browser getBr() {
         return br;
@@ -764,7 +764,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         Object result = null;
 
         HashMap<String, String> cache = jsCache.get(id);
-        if (cache != null && !cache.isEmpty()) {
+        if (cache != null && !cache.isEmpty() && false) {
             all = cache.get("all");
             descrambler = cache.get("descrambler");
             des = cache.get("des");

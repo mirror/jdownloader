@@ -286,7 +286,8 @@ public class YoutubeDashV2 extends PluginForHost {
 
         void setProxy(HTTPProxyStorable address);
 
-        public static enum IfUrlisAVideoAndPlaylistAction implements LabelInterface {
+        public static enum IfUrlisAVideoAndPlaylistAction
+                implements LabelInterface {
 
             ASK {
                 @Override
@@ -315,7 +316,8 @@ public class YoutubeDashV2 extends PluginForHost {
 
         }
 
-        public static enum IfUrlisAPlaylistAction implements LabelInterface {
+        public static enum IfUrlisAPlaylistAction
+                implements LabelInterface {
             ASK {
                 @Override
                 public String getLabel() {
@@ -364,7 +366,8 @@ public class YoutubeDashV2 extends PluginForHost {
         //
         // void setPreferHttpsEnabled(boolean b);
 
-        public static enum GroupLogic implements LabelInterface {
+        public static enum GroupLogic
+                implements LabelInterface {
             BY_MEDIA_TYPE {
                 @Override
                 public String getLabel() {
@@ -567,7 +570,6 @@ public class YoutubeDashV2 extends PluginForHost {
     public YoutubeDashV2(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.youtube.com/login?next=/index");
-
     }
 
     @Override
@@ -1057,16 +1059,11 @@ public class YoutubeDashV2 extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
             }
-        }
 
-        // write properties in old links and update properties in all others
-        downloadLink.setProperty(YoutubeHelper.YT_TITLE, vid.title);
-        downloadLink.setProperty(YoutubeHelper.YT_ID, vid.videoID);
-        downloadLink.setProperty(YoutubeHelper.YT_AGE_GATE, vid.ageCheck);
-        downloadLink.setProperty(YoutubeHelper.YT_CHANNEL, vid.channel);
-        downloadLink.setProperty(YoutubeHelper.YT_USER, vid.user);
-        downloadLink.setProperty(YoutubeHelper.YT_DATE, vid.date);
-        downloadLink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, vid.length);
+            // write properties in old links and update properties in all others
+
+            vid.copyToDownloadLink(downloadLink);
+        }
 
         if (variant.getGroup() == YoutubeVariantInterface.VariantGroup.SUBTITLES) {
 
