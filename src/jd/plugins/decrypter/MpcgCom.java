@@ -21,7 +21,7 @@ public class MpcgCom extends PluginForDecrypt {
         final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String[] links = br.getRegex("name=\"downloadLink\"\\s*value=\"(https?.*?)\"").getColumn(0);
+        final String[] links = br.getRegex("name=\"downloadLink\"\\s*(type=\"hidden\")?\\s*value=\"((ftp|https?).*?)\"").getColumn(1);
         if (links != null) {
             for (final String link : links) {
                 final DownloadLink downloadLink = createDownloadlink(link);
