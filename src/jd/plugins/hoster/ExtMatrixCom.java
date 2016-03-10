@@ -21,7 +21,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -41,11 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extmatrix.com" }, urls = { "https?://(www\\.)?extmatrix\\.com/(files|get)/[A-Za-z0-9]+/[^<>\"/]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extmatrix.com" }, urls = { "https?://(www\\.)?extmatrix\\.com/(files|get)/[A-Za-z0-9]+" }, flags = { 2 })
 public class ExtMatrixCom extends PluginForHost {
 
     public ExtMatrixCom(PluginWrapper wrapper) {
@@ -58,10 +57,9 @@ public class ExtMatrixCom extends PluginForHost {
         return MAINPAGE + "/help/terms.php";
     }
 
-    private static final String  MAINPAGE            = "http://www.extmatrix.com";
-    private static final String  PREMIUMONLYTEXT     = "(>Premium Only\\!|you have requested require a premium account for download\\.<)";
-    private static final String  PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.extmatrixcom.errors.premiumonly", "Only downloadable via premium account");
-    private static AtomicInteger maxPrem             = new AtomicInteger(1);
+    private static final String MAINPAGE            = "http://www.extmatrix.com";
+    private static final String PREMIUMONLYTEXT     = "(>Premium Only\\!|you have requested require a premium account for download\\.<)";
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.extmatrixcom.errors.premiumonly", "Only downloadable via premium account");
 
     // private static final String APIKEY = "4LYl9hFH1Xapzycg4fuFtUSPVvWsr";
 
@@ -103,14 +101,7 @@ public class ExtMatrixCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML(PREMIUMONLYTEXT)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         final String getLink = getLink();
         if (getLink == null) {
@@ -229,9 +220,9 @@ public class ExtMatrixCom extends PluginForHost {
             if (!br.containsHTML(PREMIUMTEXT)) {
                 br.getPage(MAINPAGE + "/members/myfiles.php");
                 if (!br.containsHTML(PREMIUMLIMIT)) {
-                    account.setProperty("freeacc", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("freeacc", false);
+                    account.setType(AccountType.PREMIUM);
                 }
             }
             /** Save cookies */
@@ -249,8 +240,6 @@ public class ExtMatrixCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -267,27 +256,17 @@ public class ExtMatrixCom extends PluginForHost {
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("freeacc", false)) {
-            try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-                account.setType(AccountType.FREE);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-            ai.setStatus("Registered (free) user");
+        if (AccountType.FREE.equals(account.getType())) {
+            // free accounts can still have captcha.
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free Account");
         } else {
-            try {
-                maxPrem.set(20);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-                account.setType(AccountType.PREMIUM);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-            ai.setStatus("Premium User");
+            account.setMaxSimultanDownloads(20);
+            account.setConcurrentUsePossible(true);
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium Account");
             br.getPage(MAINPAGE);
             final String validUntil = br.getRegex("Premium End:</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
             if (validUntil != null) {
@@ -303,7 +282,7 @@ public class ExtMatrixCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("freeacc", false)) {
+        if (AccountType.FREE.equals(account.getType())) {
             doFree(link);
         } else {
             // Little help from their admin^^
@@ -366,11 +345,6 @@ public class ExtMatrixCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
-    }
-
-    @Override
     public void reset() {
     }
 
@@ -384,7 +358,7 @@ public class ExtMatrixCom extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (AccountType.FREE.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
         }
