@@ -7,10 +7,11 @@ import org.appwork.utils.StringUtils;
 public class HashInfo {
 
     public static enum TYPE {
-        MD5("MD5", 32),
-        CRC32("CRC32", 8),
+        // order is important!
+        SHA256("SHA-256", 64),
         SHA1("SHA1", 40),
-        SHA256("SHA-256", 64);
+        MD5("MD5", 32),
+        CRC32("CRC32", 8);
 
         private final String digest;
         private final int    size;
