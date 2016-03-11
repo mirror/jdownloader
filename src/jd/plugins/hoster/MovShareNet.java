@@ -75,7 +75,7 @@ public class MovShareNet extends PluginForHost {
                 br.submitForm(humanform);
             }
         }
-        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) {
+        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers|>The file does not exist<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("Title:[\t\n\r ]*?</strong>([^<>\"]+)<").getMatch(0);
