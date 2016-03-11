@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,9 +35,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
-
-import org.appwork.utils.StringUtils;
+import jd.plugins.components.UnavailableHost;
 
 /**
  *
@@ -275,8 +275,8 @@ public class LeechMyLink extends antiDDoSForHost {
             }
             br.postPage("http://leechmy.link/api/leecher", "link=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getDownloadPassword() != null ? "&lpass=" + Encoding.urlEncode(link.getDownloadPassword()) : ""));
             /*
-             * Errorresponse on free account download attempt:
-             * {"status":"error","msg":"You are not logged in","link":"http:...","isVideo":false}
+             * Errorresponse on free account download attempt: {"status":"error","msg":"You are not logged in"
+             * ,"link":"http:...","isVideo":false}
              */
             dllink = getJson("download_link");
             if ("error".equalsIgnoreCase(getJson("status"))) {
