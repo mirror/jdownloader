@@ -47,6 +47,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.ZeveraApiTracker;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" }, flags = { 2 })
@@ -56,10 +57,12 @@ public class ZeveraCom extends antiDDoSForHost {
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
 
+    private static ZeveraApiTracker                                   API                = new ZeveraApiTracker();
+
     private static final String                                       mName              = "zevera.com";
     private static final String                                       NICE_HOSTproperty  = mName.replaceAll("(\\.|\\-)", "");
     private static final String                                       mProt              = "http://";
-    private static final String                                       mServ              = mProt + "api." + mName;
+    private String                                                    mServ              = mProt + API.get() + mName;
     private static Object                                             LOCK               = new Object();
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
 
@@ -87,8 +90,19 @@ public class ZeveraCom extends antiDDoSForHost {
             prepBr.setCustomCharset("utf-8");
             prepBr.setConnectTimeout(60 * 1000);
             prepBr.setReadTimeout(60 * 1000);
+            prepBr.addAllowedResponseCodes(500);
         }
         return prepBr;
+    }
+
+    @Override
+    protected void getPage(Browser ibr, String page) throws Exception {
+        super.getPage(ibr, page);
+        // try another server
+        if (ibr.getHttpConnection().getResponseCode() == 500) {
+            API.setFailure();
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
     }
 
     /**
@@ -498,7 +512,7 @@ public class ZeveraCom extends antiDDoSForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage(mServ + "/");
-                getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                getPage("/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
                     // they can make more steps here.
                     final Form more = getMoreForm(account);
