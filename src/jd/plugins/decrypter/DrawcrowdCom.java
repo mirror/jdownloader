@@ -32,13 +32,16 @@ import jd.plugins.hoster.DummyScriptEnginePlugin;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "http://(?:www\\.)?drawcrowd\\.com/(?!projects/)[^/]+" }, flags = { 0 })
 public class DrawcrowdCom extends PluginForDecrypt {
 
+    private ArrayList<DownloadLink> decryptedLinks = null;
+    private FilePackage             fp             = null;
+
     public DrawcrowdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br = new Browser();
         br.getPage(parameter);
@@ -53,49 +56,81 @@ public class DrawcrowdCom extends PluginForDecrypt {
         LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         json = (LinkedHashMap<String, Object>) json.get("user");
         final String full_name = (String) json.get("full_name");
+        final Integer userId = (Integer) json.get("id");
+
         final short entries_per_page = 200;
         int entries_total = (int) DummyScriptEnginePlugin.toLong(json.get("project_count"), 0);
         int offset = 0;
+        Integer metaTotal = 0;
 
-        final FilePackage fp = FilePackage.getInstance();
+        fp = FilePackage.getInstance();
         fp.setName(full_name);
 
         do {
             br = org.cloneBrowser();
             br.getPage(username + "/projects?sort=newest&offset=" + offset + "&limit=" + entries_per_page);
             json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            metaTotal = (Integer) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "meta/length");
             final ArrayList<Object> ressourcelist = (ArrayList) json.get("projects");
             for (final Object resource : ressourcelist) {
                 json = (LinkedHashMap<String, Object>) resource;
                 final String id = (String) json.get("slug");
-                final String description = (String) json.get("description");
-                if (inValidate(id)) {
-                    return null;
-                }
-                final String url_content = "http://drawcrowd.com/projects/" + id;
-                final DownloadLink dl = createDownloadlink(url_content);
-                dl.setContentUrl(url_content);
-                if (!inValidate(description)) {
-                    dl.setComment(description);
-                }
-                dl.setLinkID(id);
-                dl.setName(full_name + "_" + id + ".jpg");
-                dl.setProperty("full_name", full_name);
-                dl.setAvailable(true);
-                fp.add(dl);
-                decryptedLinks.add(dl);
-                distribute(dl);
+                final String description = (String) json.get("raw_description");
+                final String title = (String) json.get("title");
+                createDownloadLink(id, full_name, title, description);
                 offset++;
             }
+        } while (offset < metaTotal);
 
-            if (ressourcelist.size() < entries_per_page) {
-                /* Fail safe */
-                break;
-            }
+        // pins!
+        if (offset < entries_total) {
+            offset = 0;
+            do {
+                br = org.cloneBrowser();
+                br.getPage("//drawcrowd.com/users/" + userId + "/my_featured?limit=" + entries_per_page);
+                json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                metaTotal = (Integer) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "meta/length");
+                final ArrayList<Object> ressourcelist = (ArrayList) json.get("projects");
+                for (final Object resource : ressourcelist) {
+                    json = (LinkedHashMap<String, Object>) resource;
+                    final String id = (String) json.get("slug");
+                    final String description = (String) json.get("raw_description");
+                    final String title = (String) json.get("title");
+                    createDownloadLink(id, full_name, title, description);
+                    offset++;
+                }
+                /*
+                 * because no spanning support at this stage.. I would like to confirm that there are pages with more pins than offset. So
+                 * we will break.. raztoki20160311
+                 *
+                 */
+                if (true) {
+                    break;
+                }
+            } while (offset < metaTotal);
 
-        } while (decryptedLinks.size() < entries_total);
+        }
 
         return decryptedLinks;
+    }
+
+    private void createDownloadLink(final String id, final String full_name, final String title, final String description) {
+        if (inValidate(id)) {
+            return;
+        }
+        final String url_content = "http://drawcrowd.com/projects/" + id;
+        final DownloadLink dl = createDownloadlink(url_content);
+        dl.setContentUrl(url_content);
+        if (!inValidate(description)) {
+            dl.setComment(description.replaceAll("[\r\n]{1,}", " "));
+        }
+        dl.setLinkID(id);
+        dl.setName(full_name + " - " + (!inValidate(title) ? title + " - " : "") + id + ".jpg");
+        dl.setProperty("full_name", full_name);
+        dl.setAvailable(true);
+        fp.add(dl);
+        decryptedLinks.add(dl);
+        distribute(dl);
     }
 
     /**

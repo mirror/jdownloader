@@ -61,7 +61,7 @@ public class DrawcrowdCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        setHeaders(this.br);
+        setHeaders(br);
         /* This time we'll get a json answer. */
         br.getPage(downloadLink.getDownloadURL());
         LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -70,14 +70,15 @@ public class DrawcrowdCom extends PluginForHost {
         String filename = (String) json.get("title");
         if (inValidate(filename)) {
             filename = fid;
+        } else {
+            filename = filename + " - " + fid;
         }
         dllink = (String) json.get("original_image");
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // dllink = Encoding.htmlDecode(dllink);
         if (full_name != null) {
-            filename = full_name + "_" + filename;
+            filename = full_name + " - " + filename;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -151,6 +152,7 @@ public class DrawcrowdCom extends PluginForHost {
 
     /** Sets correct json headers */
     public static void setHeaders(final Browser br) {
+        // should have X-CSRF-Token and X-NewRelic-ID
         final String token = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         if (token != null) {
@@ -166,7 +168,7 @@ public class DrawcrowdCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
