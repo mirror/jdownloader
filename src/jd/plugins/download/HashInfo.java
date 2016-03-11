@@ -8,6 +8,7 @@ public class HashInfo {
 
     public static enum TYPE {
         // order is important!
+        SHA512("SHA-512", 128),
         SHA256("SHA-256", 64),
         SHA1("SHA1", 40),
         MD5("MD5", 32),

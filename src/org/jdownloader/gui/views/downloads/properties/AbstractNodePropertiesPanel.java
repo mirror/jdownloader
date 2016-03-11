@@ -789,6 +789,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                     abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA1));
                 } else if (cs.length() == 64) {
                     abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA256));
+                } else if (cs.length() == 128) {
+                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA512));
                 } else {
                     abstractNodes.saveHashInfo(null);
                 }
