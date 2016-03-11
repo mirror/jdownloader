@@ -178,7 +178,12 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             askPermission(request, cnl.getSource(), cnl.isPermission());
             final List<LinkCollectingJob> jobs = new ArrayList<LinkCollectingJob>();
             if (StringUtils.isNotEmpty(cnl.getCrypted()) && (StringUtils.isNotEmpty(cnl.getJk()) || StringUtils.isNotEmpty(cnl.getKey()))) {
-                final String dummyCNL = createDummyCNL(cnl.getCrypted(), cnl.getJk(), cnl.getKey());
+                String jk = cnl.getJk();
+                if (StringUtils.isNotEmpty(jk) && cnl.getJk().matches(".*[0-9];}")) {
+                    // TODO: remove after firefox addon version 2.0.16 was published
+                    jk = cnl.getJk().replace(";}", "';}");
+                }
+                final String dummyCNL = createDummyCNL(cnl.getCrypted(), jk, cnl.getKey());
                 jobs.add(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL));
             }
             if (StringUtils.isNotEmpty(cnl.getUrls())) {
