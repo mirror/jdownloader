@@ -363,11 +363,16 @@ public class ZeveraCom extends antiDDoSForHost {
         // handleErrors();
         br.setFollowRedirects(false);
         final String continuePage = br.getRedirectLocation();
-        getPage(continuePage);
-        String dllink = br.getRedirectLocation();
+        // quite possible no redirects here??
+        if (continuePage != null) {
+            getPage(continuePage);
+        }
+        final String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            // not defect, zevera will respond with invalid redirect
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // to check for newly reported logs via statserv reporting.
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+            // zevera will respond with invalid redirect
             // ----------------Response Information------------
             // Connection-Time: keep-Alive
             // ----------------Response------------------------
