@@ -37,7 +37,6 @@ public class ZeveraApiTracker {
     private boolean hasFailed = false;
 
     public final String get() {
-
         synchronized (failures) {
             if (current != null && !hasFailed) {
                 // reuse the last server that hasn't failed.
@@ -45,6 +44,7 @@ public class ZeveraApiTracker {
             } else if (current == null && failures.isEmpty()) {
                 // virgin
                 current = getRandomApi();
+                hasFailed = false;
                 return current;
             } else if (failures.size() != APIS.size()) {
                 // if not all within, choose a random server not within
@@ -52,6 +52,7 @@ public class ZeveraApiTracker {
                 while (failures.containsKey(current)) {
                     current = getRandomApi();
                 }
+                hasFailed = false;
                 return current;
             } else {
                 // failures contains each server, lets choose a server with the least amount of failures!
@@ -67,6 +68,7 @@ public class ZeveraApiTracker {
                     }
                 }
                 current = server;
+                hasFailed = false;
                 return server;
             }
         }
