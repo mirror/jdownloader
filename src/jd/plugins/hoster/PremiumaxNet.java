@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,61 +42,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import jd.plugins.components.UnavailableHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
-
-    /**
-     * test class, move to dedicated multihoster (helper) class and import.
-     *
-     * @author raztoki
-     *
-     */
-    public static final class UnavailableHost {
-
-        private String errorReason;
-        private Long   errorTimeout;
-
-        public UnavailableHost(final Long errorTimeout, final String errorReason) {
-            this.errorTimeout = errorTimeout;
-            this.errorReason = errorReason;
-        }
-
-        /**
-         * @return the errorReason
-         */
-        public final String getErrorReason() {
-            return errorReason;
-        }
-
-        /**
-         * @param errorReason
-         *            the errorReason to set
-         */
-        public final void setErrorReason(String errorReason) {
-            this.errorReason = errorReason;
-        }
-
-        /**
-         * @return the errorTimeout
-         */
-        public final Long getErrorTimeout() {
-            return errorTimeout;
-        }
-
-        /**
-         * @param errorTimeout
-         *            the errorTimeout to set
-         */
-        public final void setErrorTimeout(Long errorTimeout) {
-            this.errorTimeout = errorTimeout;
-        }
-
-    }
 
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
     private static final String                                       NOCHUNKS           = "NOCHUNKS";
