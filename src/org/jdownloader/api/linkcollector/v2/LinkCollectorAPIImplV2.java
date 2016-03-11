@@ -387,7 +387,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
 
                 if (StringUtils.isNotEmpty(query.getPackageName())) {
-                    if (overwritePackagizerRules || StringUtils.isEmpty(existing.getName())) {
+                    if (StringUtils.isEmpty(existing.getName())) {
                         existing.setName(query.getPackageName());
                         existing.setIgnoreVarious(true);
                         existing.setUniqueId(null);
@@ -400,7 +400,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
 
                 if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
-                    if (overwritePackagizerRules || StringUtils.isEmpty(existing.getDestinationFolder())) {
+                    if (StringUtils.isEmpty(existing.getDestinationFolder())) {
                         existing.setDestinationFolder(query.getDestinationFolder());
                         existing.setIgnoreVarious(true);
                         existing.setUniqueId(null);
@@ -416,20 +416,17 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
 
                 if (query.isAutostart() != null) {
-                    BooleanStatus existingAutoStartStatus = BooleanStatus.convert(link.isAutoStartEnabled());
-                    if (query.isOverwritePackagizerRules() || BooleanStatus.UNSET.equals(existingAutoStartStatus)) {
-                        switch (BooleanStatus.convert(query.isAutostart())) {
-                        case TRUE:
-                            link.setAutoConfirmEnabled(true);
-                            link.setAutoStartEnabled(true);
-                            break;
-                        case FALSE:
-                            link.setAutoConfirmEnabled(false);
-                            link.setAutoStartEnabled(false);
-                            break;
-                        default:
-                            break;
-                        }
+                    switch (BooleanStatus.convert(query.isAutostart())) {
+                    case TRUE:
+                        link.setAutoConfirmEnabled(true);
+                        link.setAutoStartEnabled(true);
+                        break;
+                    case FALSE:
+                        link.setAutoConfirmEnabled(false);
+                        link.setAutoStartEnabled(false);
+                        break;
+                    default:
+                        break;
                     }
                 }
 
@@ -444,7 +441,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
             }
         };
-        lcj.setCrawledLinkModifierPrePackagizer(modifier);
 
         switch (BooleanStatus.convert(query.isDeepDecrypt())) {
         case TRUE:
@@ -457,6 +453,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             break;
         }
 
+        lcj.setCrawledLinkModifierPrePackagizer(modifier);
         if (overwritePackagizerRules) {
             lcj.setCrawledLinkModifierPostPackagizer(modifier);
         }
