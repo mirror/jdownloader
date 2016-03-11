@@ -1,3 +1,4 @@
+CAPTCHA_CHALLENGE_AFTER=Dopo la richiesta di Captcha
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=Premuto pulsante Elenco download barra inferiore
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Devi aggiungere un pulsante EventScripter al menu inferiore Elenco downlaod usando il Gestore menu.
 DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=Premuto pulsante menu contestuale elenco download
@@ -32,10 +33,8 @@ TRAY_BUTTON=Premuto pulsante Barra di sistema
 TRAY_BUTTON_explain=Devi aggiungere un pulsante personalizzato script evento nella Barra di sistema usando il Gestore menu.
 allow=permetti
 btnExampleScripts=Script esempio
-classes=/* ===== Classes ===== */
 deny=nega
 description=Attesa evento interno JDownloader, e permetti l'esecuzione di script rilevanti (Javascript)
-downloadLink=// DownloadLink
 edit_script=Modifica script
 editor_autoformat=Formattazione automatica
 editor_showhelp=Visualizza/nascondi Guida in linea
@@ -45,8 +44,8 @@ emptyScript=// Aggiungi qui il tuo script. Puoi usare liberamente le proprietà 
 event_trigger=Trigger
 example_infoFile=Crea un file info nella cartella download con info dettagliate
 example_play_sound=Riproduci un file WAV
+example_play_sound_when_inactive=Riproduci suono (wav) quando scaricamento ed estrazione vengono fermati
 example_script_name=Esempio
-filepackage=// Pacchetto file
 interval_settings=Intervallo chiamate in ms
 loading_editor_title=Caricamento editor...
 none_trigger=// Questo evento non verra mai triggerato
