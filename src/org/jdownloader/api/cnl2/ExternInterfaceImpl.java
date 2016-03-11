@@ -190,7 +190,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final String urls = cnl.getUrls();
                 jobs.add(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls));
             }
-
             if (jobs.size() > 0) {
                 final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
