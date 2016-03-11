@@ -224,6 +224,31 @@ public class DownloadLinkDownloadable implements Downloadable {
         downloadLink.addPluginProgress(progress);
     }
 
+    @Override
+    public String getMD5Hash() {
+        return downloadLink.getMD5Hash();
+    }
+
+    @Override
+    public String getSha1Hash() {
+        return downloadLink.getSha1Hash();
+    }
+
+    @Override
+    public String getSha256Hash() {
+        return downloadLink.getSha256Hash();
+    }
+
+    @Override
+    public long[] getChunksProgress() {
+        return downloadLink.getView().getChunksProgress();
+    }
+
+    @Override
+    public void setChunksProgress(long[] ls) {
+        downloadLink.setChunksProgress(ls);
+    }
+
     public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
         if (hashInfo == null) {
             return null;
@@ -242,6 +267,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             case MD5:
             case SHA1:
             case SHA256:
+            case SHA512:
                 DigestInputStream is = null;
                 try {
                     is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.getDigest()));
@@ -541,31 +567,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         if (hashInfo != null && hashInfo.isTrustworthy() && getHashInfo() == null) {
             downloadLink.setHashInfo(hashInfo);
         }
-    }
-
-    @Override
-    public String getMD5Hash() {
-        return downloadLink.getMD5Hash();
-    }
-
-    @Override
-    public String getSha1Hash() {
-        return downloadLink.getSha1Hash();
-    }
-
-    @Override
-    public String getSha256Hash() {
-        return downloadLink.getSha256Hash();
-    }
-
-    @Override
-    public long[] getChunksProgress() {
-        return downloadLink.getView().getChunksProgress();
-    }
-
-    @Override
-    public void setChunksProgress(long[] ls) {
-        downloadLink.setChunksProgress(ls);
     }
 
     @Override
