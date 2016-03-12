@@ -24,10 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,7 +46,11 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "https?://(www\\.)?flashx\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "https?://(?:www\\.)?flashx\\.(?:tv|pw)/(?:(?:vid)?embed\\-|dl\\?)?[a-z0-9]{12}" }, flags = { 2 })
 public class FlashxTv extends antiDDoSForHost {
 
     private String                         correctedBR                  = "";
@@ -61,7 +61,7 @@ public class FlashxTv extends antiDDoSForHost {
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(flashx\\.tv)";
+    private static final String            DOMAINS                      = "(flashx\\.(?:tv|pw))";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode|>No data will be lost";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -72,6 +72,7 @@ public class FlashxTv extends antiDDoSForHost {
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           try_to_get_file_downloadlink = false;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK   = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
@@ -103,20 +104,15 @@ public class FlashxTv extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         String lnk = link.getDownloadURL();
-        /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
-            lnk = lnk.replaceFirst("https://", "http://");
-        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
-            lnk = lnk.replaceFirst("http://", "https://");
+            lnk = "http://www.flashx.tv/" + fid;
+        } else if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
+            lnk = "https://www.flashx.tv/" + fid;
         }
         lnk = lnk.replaceAll("/((vid)?embed\\-)", "/");
         link.setUrlDownload(lnk);
-        try {
-            link.setContentUrl(lnk);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-        }
     }
 
     @Override
@@ -129,6 +125,7 @@ public class FlashxTv extends antiDDoSForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -160,7 +157,15 @@ public class FlashxTv extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(fileInfo[0].trim());
+        fileInfo[0] = fileInfo[0].trim();
+        if (fileInfo[0].contains(".")) {
+            /* Fix wrong extensions of original filenames here already but don't set final filename! */
+            final String ext_current = fileInfo[0].substring(fileInfo[0].lastIndexOf(".") + 1);
+            if (!ext_current.equals("mp4")) {
+                fileInfo[0] = fileInfo[0].substring(0, fileInfo[0].lastIndexOf(".") + 1) + "mp4";
+            }
+        }
+        link.setName(fileInfo[0]);
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -193,12 +198,14 @@ public class FlashxTv extends antiDDoSForHost {
                 }
             }
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    if (fileInfo[1] == null) {
+                        fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    }
                 }
             }
         }
@@ -214,7 +221,7 @@ public class FlashxTv extends antiDDoSForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -314,10 +321,14 @@ public class FlashxTv extends antiDDoSForHost {
                             getPage("http://www.flashx.tv/dl?op=download_orig&id=" + fuid + "&mode=" + mode + "&hash=" + hash);
                             file_dllink = new Regex(correctedBR, "\"(https?://[A-Za-z0-9\\-\\.]+\\.flashx\\.tv/[a-z0-9]{20,}/[^<>\"/]*?)\"").getMatch(0);
                         } catch (final Throwable e) {
-                            logger.warning("HQ handling failed");
+                            logger.warning("Failed to find file_dllink");
+                        }
+                        if (file_dllink != null) {
+                            logger.info("Successfully found file_dllink");
                         }
                     }
                     if (stream_dllink == null && file_dllink == null) {
+                        logger.warning("Failed to find any valid downloadurl");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
