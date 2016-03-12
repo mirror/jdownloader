@@ -308,56 +308,46 @@ public class RedstreamBiz extends PluginForHost {
             timestamp_validuntil = Long.parseLong(validuntil) * 1000;
         }
 
-        if (trafficleft != null && trafficleft.matches("\\d+.*?")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-
         if ("premium".equals(accounttype)) {
             ai.setValidUntil(timestamp_validuntil);
-            account.setType(AccountType.PREMIUM);
+            if (trafficleft != null && trafficleft.matches("\\d+.*?")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            } else {
+                ai.setUnlimitedTraffic();
+            }
             ai.setStatus("Premium account");
+            account.setType(AccountType.PREMIUM);
         } else {
-            account.setType(AccountType.FREE);
+            /* According to admin, Free Accounts cannot download anything. */
+            ai.setTrafficLeft(0);
             ai.setStatus("Registered (free) account");
+            account.setType(AccountType.FREE);
         }
 
         this.getAPISafe(DOMAIN + "/hosters");
         ArrayList<String> supportedhostslist = new ArrayList();
-        final String[] hosts = this.br.getRegex("\"host\":\"([^<>\"]+)\"").getColumn(0);
-        for (final String host : hosts) {
-            hostMaxchunksMap.put(host, 1);
-            hostMaxdlsMap.put(host, 20);
-            hostResumeMap.put(host, defaultRESUME);
+        LinkedHashMap<String, Object> entries = null;
+        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+
+        for (final Object hostinfoo : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) hostinfoo;
+            final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("maxDowloads"), defaultMAXDOWNLOADS));
+            final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("maxChunks"), defaultMAXCHUNKS));
+            final String host = ((String) entries.get("host")).toLowerCase();
+
+            boolean resumable = defaultRESUME;
+            final Object resumableo = entries.get("resumable");
+            if (resumableo instanceof Boolean) {
+                resumable = ((Boolean) resumableo).booleanValue();
+            } else {
+                resumable = Boolean.parseBoolean((String) resumableo);
+            }
+
+            hostMaxchunksMap.put(host, maxchunks);
+            hostMaxdlsMap.put(host, maxdownloads);
+            hostResumeMap.put(host, resumable);
             supportedhostslist.add(host);
         }
-
-        /** TODO: 2016-03-09: Use json. Not possible so far as it is broken! */
-        // LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>)
-        // jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-        // final ArrayList<Object> ressourcelist = (ArrayList) entries.get("supportedhosts");
-        // for (final Object hostinfoo : ressourcelist) {
-        // entries = (LinkedHashMap<String, Object>) hostinfoo;
-        // final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_download"),
-        // defaultMAXDOWNLOADS));
-        // final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_connection"),
-        // defaultMAXCHUNKS));
-        // final String host = ((String) entries.get("domain")).toLowerCase();
-        //
-        // boolean resumable = defaultRESUME;
-        // final Object resumableo = entries.get("resumable");
-        // if (resumableo instanceof Boolean) {
-        // resumable = ((Boolean) resumableo).booleanValue();
-        // } else {
-        // resumable = Boolean.parseBoolean((String) resumableo);
-        // }
-        //
-        // hostMaxchunksMap.put(host, maxchunks);
-        // hostMaxdlsMap.put(host, maxdownloads);
-        // hostResumeMap.put(host, resumable);
-        // supportedhostslist.add(host);
-        // }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
 
@@ -502,7 +492,7 @@ public class RedstreamBiz extends PluginForHost {
     }
 
     /** List of possible errorcodes: http://redstream.biz/api/errors-list */
-    /** TODO: Find out difference between 1 and 7, 3 and 4, 5 and 6 */
+    /** 2016-03-12: Codes 4, 5 and 7 were removed */
     private void handleAPIErrors(final Browser br) throws PluginException {
         final String lang = System.getProperty("user.language");
         String statusMessage = null;

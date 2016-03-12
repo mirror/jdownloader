@@ -688,6 +688,16 @@ public class HighWayMe extends UseNet {
                     this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
+            case 13:
+                /* Download password for filehost needed - this should be handled via upper code - do not do anything here! */
+                break;
+            case 14:
+                /*
+                 * Host-specified traffic limit reached e.g. traffic for keep2share.cc is empty but account still has traffic left for other
+                 * hosts.
+                 */
+                statusMessage = "Host specified traffic limit has been reached";
+                tempUnavailableHoster(10 * 60 * 1000l);
             case 100:
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {

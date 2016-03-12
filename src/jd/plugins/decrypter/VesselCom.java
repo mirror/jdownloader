@@ -32,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "https?://www\\.vessel\\.com/(?:news/)?videos/[A-Za-z0-9\\-]+" }, flags = { 0 })
@@ -86,6 +87,12 @@ public class VesselCom extends PluginForDecrypt {
         }
         ((jd.plugins.hoster.VesselCom) plugin).postPageRaw(br, "https://www.vessel.com/api/view/items/" + vid, "{\"client\":\"web\",\"refresh\":true}");
         entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final String error = (String) DummyScriptEnginePlugin.walkJson(entries, "__view/error_code");
+        if (error != null) {
+            /* E.g. "ITEM_PAID_ONLY" */
+            logger.info("Cannot decrypt content because of API error: " + error);
+            return decryptedLinks;
+        }
         ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "assets/{2}/sources");
         title = (String) entries.get("title");
         title = encodeUnicode(title);

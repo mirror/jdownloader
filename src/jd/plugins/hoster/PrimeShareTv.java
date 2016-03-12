@@ -45,6 +45,7 @@ public class PrimeShareTv extends PluginForHost {
 
     private static final String AGENT = RandomUserAgent.generate();
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -62,10 +63,19 @@ public class PrimeShareTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
+        /* Add extension if not already given. */
         if (!filename.endsWith(".mp4")) {
             filename += ".mp4";
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        /* Fix double points before extension. */
+        if (filename.contains("..") && filename.contains("..mp4")) {
+            final String filename_ending = filename.substring(filename.lastIndexOf(".."));
+            if (filename_ending.equals("..mp4")) {
+                filename = filename.substring(0, filename.lastIndexOf(".")) + "mp4";
+            }
+        }
+        /* Server-filename might again be a crippled filename so let's use our fixed filename as final filename! */
+        link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -104,7 +114,8 @@ public class PrimeShareTv extends PluginForHost {
         if (dl.getConnection().getLongContentLength() < 100) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - File is too small (Below 100 bytes)");
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        /* Do NOT use Header-filename as we might get slightly crippled filenames! */
+        // downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
