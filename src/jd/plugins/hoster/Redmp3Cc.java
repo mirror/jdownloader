@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(www\\.)?redmp3\\.cc/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(www\\.)?redmp3\\.(cc|su)/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class Redmp3Cc extends PluginForHost {
 
     public Redmp3Cc(PluginWrapper wrapper) {
@@ -40,7 +40,12 @@ public class Redmp3Cc extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://redmp3.cc/dmca.html";
+        return "http://redmp3.su/dmca.html";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace(".cc", ".su"));
     }
 
     @SuppressWarnings("deprecation")
@@ -54,7 +59,7 @@ public class Redmp3Cc extends PluginForHost {
         }
         String filename = br.getRegex("<h1>([^<>\"]+) — listen online and download</h1>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(link.getDownloadURL(), "redmp3\\.cc/\\d+/([a-z0-9\\-]+)\\.html").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "redmp3\\.su/\\d+/([a-z0-9\\-]+)\\.html").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -70,12 +75,12 @@ public class Redmp3Cc extends PluginForHost {
         if (dllink == null) {
             dllink = this.br.getRegex("\"(/findfile/\\?id=[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                final String fid = new Regex(downloadLink.getDownloadURL(), "redmp3\\.cc/(\\d+)/").getMatch(0);
-                dllink = "http://redmp3.cc/findfile/?id=" + fid + "&v=2.1";
+                final String fid = new Regex(downloadLink.getDownloadURL(), "redmp3\\.su/(\\d+)/").getMatch(0);
+                dllink = "http://redmp3.su/findfile/?id=" + fid + "&v=2.1";
             }
         }
         if (!dllink.startsWith("http")) {
-            dllink = "http://redmp3.cc" + dllink;
+            dllink = "http://redmp3.su" + dllink;
         }
         // if (dllink == null) {
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
