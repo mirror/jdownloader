@@ -171,13 +171,15 @@ public class SpankWireCom extends PluginForHost {
                 break;
             }
         }
-        if (count_offline == count_max) {
-            /* No downloadlink available --> Video is not streamable --> Offline ?! */
-            /* E.g. http://www.spankwire.com/More-Teenager-Girls-On-Porn-Load/video1888571/ */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (count_offline > count_notfound) {
-            /* E.g. http://www.spankwire.com/More-Teenager-Girls-On-Porn-Load/video1888571/ */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dllink == null) {
+            if (count_offline == count_max) {
+                /* No downloadlink available --> Video is not streamable --> Offline ?! */
+                /* E.g. http://www.spankwire.com/More-Teenager-Girls-On-Porn-Load/video1888571/ */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (count_offline > count_notfound) {
+                /* E.g. http://www.spankwire.com/More-Teenager-Girls-On-Porn-Load/video1888571/ */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         if (dllink != null) {
             dllink = dllink.replace("\\", "");
