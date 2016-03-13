@@ -37,36 +37,6 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
@@ -108,6 +78,36 @@ import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
 public class YoutubeHelper implements YoutubeHelperInterface {
     private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
 
@@ -133,17 +133,17 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
     }
 
-    public static final String PAID_VIDEO        = "Paid Video:";
+    public static final String  PAID_VIDEO                              = "Paid Video:";
 
-    public static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
+    public static final String  YT_CHANNEL_ID                           = "YT_CHANNEL_ID";
 
-    public static final String YT_DURATION       = "YT_DURATION";
+    public static final String  YT_DURATION                             = "YT_DURATION";
 
-    public static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
+    public static final String  YT_DATE_UPDATE                          = "YT_DATE_UPDATE";
 
-    public static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
+    public static final String  YT_GOOGLE_PLUS_ID                       = "YT_GOOGLE_PLUS_ID";
 
-    private Browser            br;
+    private Browser             br;
 
     public Browser getBr() {
         return br;
@@ -169,8 +169,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return variantsMap;
     }
 
-    public static LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static LogSource             LOGGER                           = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
 
     static {
         REPLACER.add(new YoutubeReplacer("group") {
@@ -619,22 +619,22 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         });
     }
 
-    public static final String  YT_EXT                           = "YT_EXT";
-    public static final String  YT_TITLE                         = "YT_TITLE";
-    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
-    public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_AGE_GATE                      = "YT_AGE_GATE";
-    public static final String  YT_CHANNEL                       = "YT_CHANNEL";
-    public static final String  YT_USER                          = "YT_USER";
-    public static final String  YT_DATE                          = "YT_DATE";
-    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String  YT_VARIANT                       = "YT_VARIANT";
-    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
-    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
-    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
-    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    public static final String          YT_EXT                           = "YT_EXT";
+    public static final String          YT_TITLE                         = "YT_TITLE";
+    public static final String          YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String          YT_ID                            = "YT_ID";
+    public static final String          YT_AGE_GATE                      = "YT_AGE_GATE";
+    public static final String          YT_CHANNEL                       = "YT_CHANNEL";
+    public static final String          YT_USER                          = "YT_USER";
+    public static final String          YT_DATE                          = "YT_DATE";
+    public static final String          YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String          YT_VARIANT                       = "YT_VARIANT";
+    public static final String          YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String          YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String          YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String          YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
 
-    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    private static final String         REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
 
@@ -842,12 +842,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1191,7 +1191,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             html5PlayerJs = "http:" + html5PlayerJs;
         }
         if (html5PlayerJs == null) {
-            html5PlayerJs = br.getMatch("src=\"//(.*?/base.js\" name=\"player\\/base\"");
+            html5PlayerJs = br.getMatch("src=\"//(.*?/base.js\" name=\"player/base)\"");
             if (html5PlayerJs != null) {
                 html5PlayerJs = "https://" + html5PlayerJs;
             }
@@ -1791,7 +1791,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * this method calls an API which has been deprecated by youtube. TODO: Find new API!
-     *
+     * 
      * @deprecated
      * @param vid
      * @throws IOException
