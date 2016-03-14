@@ -288,15 +288,14 @@ public class ZeveraCom extends antiDDoSForHost {
                 }
             }
             return;
-        } else {
-            /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
-             */
-            if (dl.getConnection().getResponseCode() == 500) {
-                handleErrorRetries("servererror500", 20, 5 * 60 * 1000l);
-            }
-            br.followConnection();
         }
+        /* download is not content disposition! */
+        if (dl.getConnection().getResponseCode() == 500) {
+            handleErrorRetries("servererror500", 20, 5 * 60 * 1000l);
+        }
+        // it seems that they can give this error AFTER hoster link has been fetched...
+        handleRedirectionErrors(br.getURL());
+        br.followConnection();
         try {
             handleErrorRetries("unknowndlerroratend", 50, 10 * 60 * 1000l);
         } catch (final Throwable xxe) {
@@ -404,13 +403,13 @@ public class ZeveraCom extends antiDDoSForHost {
                 handleRedirectionErrors(dllink);
                 redirect_count++;
                 // standard redirect counter ?
-                if (redirect_count > 20) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Zevera Redirect Loop!");
+                if (redirect_count >= 20) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Redirect Loop!");
                 }
                 getPage(dllink);
                 dllink = br.getRedirectLocation();
             }
-        } while (dllink != null);
+        } while (redirect_count <= 20);
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink);
     }
