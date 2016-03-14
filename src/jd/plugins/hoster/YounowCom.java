@@ -91,9 +91,9 @@ public class YounowCom extends PluginForHost {
         final String broadcastTitle = getbroadcastTitle(entries);
         String filename;
         if (profileUrlString != null && broadcastTitle != null) {
-            filename = profileUrlString + " - " + broadcastTitle;
+            filename = profileUrlString + "_" + fid + " - " + broadcastTitle;
         } else {
-            filename = profileUrlString + " - " + broadcastTitle;
+            filename = profileUrlString + "_" + fid + " - " + broadcastTitle;
         }
         server = (String) entries.get("server");
         stream = (String) entries.get("stream");

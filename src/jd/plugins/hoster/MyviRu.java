@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "http://(www\\.)?myvi\\.ru/watch/[^/#\\?]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "https?://(?:www\\.)?myvi\\.ru/(watch/[^/#\\?]+|[A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)" }, flags = { 0 })
 public class MyviRu extends PluginForHost {
 
     public MyviRu(PluginWrapper wrapper) {
@@ -46,16 +46,18 @@ public class MyviRu extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+    private static final String  default_Extension = ".flv";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* Chunkload possible but not really stable --> Disable it right away */
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
-
+    private String               dllink            = null;
     private boolean              temp_unavailable  = false;
+
+    private final String         TYPE_NORMAL       = "https?://(?:www\\.)?myvi\\.ru/watch/[^/#\\?]+";
+    private final String         TYPE_PLAYER       = "https?://(?:www\\.)?myvi\\.ru/([A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)";
 
     @Override
     public String getAGBLink() {
@@ -65,40 +67,68 @@ public class MyviRu extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
+        temp_unavailable = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.getURL().contains("myvi.ru/coming-soon?aspxerrorpath")) {
-            temp_unavailable = true;
-            return AvailableStatus.TRUE;
+        String filename = null;
+        final String html_embed_url;
+        if (downloadLink.getDownloadURL().matches(TYPE_NORMAL)) {
+            /* Normal video url */
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.getURL().contains("myvi.ru/coming-soon?aspxerrorpath")) {
+                temp_unavailable = true;
+                return AvailableStatus.TRUE;
+            }
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(downloadLink.getDownloadURL(), "myvi\\.ru/watch/(.+)").getMatch(0);
+            }
+            html_embed_url = br.getRegex("myvi\\.ru(/player/embed/html/[^<>\"/]+)").getMatch(0);
+            if (html_embed_url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage("http://myvi.ru" + html_embed_url);
+        } else {
+            /*
+             * Embed url --> We could simply find the normal URL and continue from there but we can save 1 request by directly accessing our
+             * html_embed_url
+             */
+            final String video_embed_id = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_\\-]+)$").getMatch(0);
+            html_embed_url = "http://myvi.ru/player/embed/html/" + video_embed_id;
+            this.br.getPage(html_embed_url);
+            final String videojson = this.br.getRegex("sprutoData:(\\{.+\\}),").getMatch(0);
+            try {
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(videojson);
+                /*
+                 * This is a possible direct way to find our final downloadlink but lets prefer the API as formats of this json can differ
+                 * (last time I got a .flv - API usually delivers .mp4).
+                 */
+                // dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "playlist/{0}/video/{0}/url");
+                filename = (String) DummyScriptEnginePlugin.walkJson(entries, "playlist/{0}/title");
+            } catch (final Throwable e) {
+            }
+            if (filename == null) {
+                filename = video_embed_id;
+            }
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "myvi\\.ru/watch/(.+)").getMatch(0);
-        }
-        final String html_embed_url = br.getRegex("myvi\\.ru(/player/embed/html/[^<>\"/]+)").getMatch(0);
-        if (html_embed_url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.getPage("http://myvi.ru" + html_embed_url);
         final String api_url = br.getRegex("([\"'])(/player/api/Video/Get/[^\"']+?)\\1").getMatch(1);
         if (api_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage(api_url);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "sprutoData/playlist/{0}/video/{0}/url");
-        if (DLLINK == null) {
+        dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "sprutoData/playlist/{0}/video/{0}/url");
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -113,7 +143,7 @@ public class MyviRu extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -122,7 +152,7 @@ public class MyviRu extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -138,7 +168,7 @@ public class MyviRu extends PluginForHost {
         if (temp_unavailable) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is not available at the moment", 30 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
