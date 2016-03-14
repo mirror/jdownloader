@@ -232,7 +232,7 @@ public class ZeveraCom extends antiDDoSForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
         } catch (final PluginException e) {
             if ("Redirectloop".equals(e.getErrorMessage())) {
-                logger.info("zevera.com: Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");
+                logger.info("Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");
                 handleErrorRetries("redirectloop", 20, 2 * 60 * 1000l);
             }
             /* unknown error, we disable multiple chunks */
@@ -240,22 +240,22 @@ public class ZeveraCom extends antiDDoSForHost {
                 link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            logger.info("Zevera download failed because: " + e.getMessage());
-            logger.info("Zevera.com: Name of the errorMessage: " + e.getErrorMessage());
+            logger.info("Download failed because: " + e.getMessage());
+            logger.info("Name of the errorMessage: " + e.getErrorMessage());
             throw e;
         } catch (final SocketTimeoutException e) {
-            logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
+            logger.info("Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
             handleErrorRetries("timeout", 20, 5 * 60 * 1000l);
         } catch (final SocketException e) {
-            logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
+            logger.info("Download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
             handleErrorRetries("timeout", 20, 5 * 60 * 1000l);
         } catch (final BrowserException e) {
             // some exemptions happen in browser exceptions and not collected by sockettimeoutexception/socketexception
-            logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
+            logger.info("Download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
             getLogger().log(e);
             handleErrorRetries("BrowserException", 20, 5 * 60 * 1000l);
         } catch (final Exception e) {
-            logger.info("Zevera download FATAL failed because: " + e.getMessage());
+            logger.info("Download FATAL failed because: " + e.getMessage());
             throw e;
         }
         if (dl.getConnection().getResponseCode() == 404) {
@@ -319,13 +319,13 @@ public class ZeveraCom extends antiDDoSForHost {
     private void handleErrorRetries(final String error, final int maxRetries, final long timeout) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         if (timesFailed <= maxRetries) {
-            logger.info(mName + ": " + error + " -> Retrying");
+            logger.info(error + " -> Retrying");
             timesFailed++;
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(mName + ": " + error + " -> Disabling current host");
+            logger.info(error + " -> Disabling current host");
             tempUnavailableHoster(timeout, error);
         }
     }
@@ -364,50 +364,53 @@ public class ZeveraCom extends antiDDoSForHost {
                 }
             }
         }
-
+        br.setFollowRedirects(false);
         login(account, false);
         setConstants(account, link);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
-        if (link.getStringProperty("pass", null) != null) {
-            getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
-        } else {
-            getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
-        }
-        // handleErrors();
-        br.setFollowRedirects(false);
-        final String continuePage = br.getRedirectLocation();
-        // quite possible no redirects here??
-        if (continuePage != null) {
-            getPage(continuePage);
-        }
-        final String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            // to check for newly reported logs via statserv reporting.
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getStringProperty("pass", null) != null ? "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
+        String dllink = br.getRedirectLocation();
+        int redirect_count = 0;
+        do {
+            // wtf ?
+            if (dllink == null) {
+                // to check for newly reported logs via statserv reporting.
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-            // zevera will respond with invalid redirect
-            // ----------------Response Information------------
-            // Connection-Time: keep-Alive
-            // ----------------Response------------------------
-            // HTTP/1.1 302 Found
-            // Cache-Control: private
-            // Content-Type: text/html; charset=utf-8
-            // Server: Microsoft-IIS/8.0
-            // X-AspNet-Version: 4.0.30319
-            // X-Powered-By: ASP.NET
-            // Date: Wed, 01 Jul 2015 21:55:08 GMT
-            // Content-Length: 117
-            // ------------------------------------------------
-            //
-            //
-            // --ID:1927TS:1435787721587-7/2/15 5:55:21 AM - [jd.http.Browser(loadConnection)] ->
-            // <html><head><title>Object moved</title></head><body>
-            // <h2>Object moved to <a href="">here</a>.</h2>
-            // </body></html>
-        }
-        handleRedirectionErrors(dllink);
-
+                // zevera will respond with invalid redirect
+                // ----------------Response Information------------
+                // Connection-Time: keep-Alive
+                // ----------------Response------------------------
+                // HTTP/1.1 302 Found
+                // Cache-Control: private
+                // Content-Type: text/html; charset=utf-8
+                // Server: Microsoft-IIS/8.0
+                // X-AspNet-Version: 4.0.30319
+                // X-Powered-By: ASP.NET
+                // Date: Wed, 01 Jul 2015 21:55:08 GMT
+                // Content-Length: 117
+                // ------------------------------------------------
+                //
+                //
+                // --ID:1927TS:1435787721587-7/2/15 5:55:21 AM - [jd.http.Browser(loadConnection)] ->
+                // <html><head><title>Object moved</title></head><body>
+                // <h2>Object moved to <a href="">here</a>.</h2>
+                // </body></html>
+            } else if (dllink.matches(".*/Download/directDownload\\.ashx\\?.+")) {
+                break;
+            } else {
+                // general redirect handling
+                handleRedirectionErrors(dllink);
+                redirect_count++;
+                // standard redirect counter ?
+                if (redirect_count > 20) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Zevera Redirect Loop!");
+                }
+                getPage(dllink);
+                dllink = br.getRedirectLocation();
+            }
+        } while (dllink != null);
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink);
     }
@@ -491,6 +494,7 @@ public class ZeveraCom extends antiDDoSForHost {
 
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifr = br.isFollowingRedirects();
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
@@ -534,6 +538,8 @@ public class ZeveraCom extends antiDDoSForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(ifr);
             }
         }
     }
