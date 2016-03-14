@@ -107,7 +107,7 @@ public class BaixarPremiumNet extends PluginForHost {
             ac.setUnlimitedTraffic();
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", ".nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
+        final String[] possible_domains = { "com.br", "br", "to", "de", "com", "net", "co.nz", ".nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
         String[] crippledHosts;
         if (hoststext != null) {
             crippledHosts = hoststext.split(", ");

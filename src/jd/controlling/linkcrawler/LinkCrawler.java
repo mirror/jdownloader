@@ -2103,6 +2103,9 @@ public class LinkCrawler {
                 if (sourceDownloadLink.getVerifiedFileSize() >= 0 && destDownloadLink.getVerifiedFileSize() < 0) {
                     destDownloadLink.setVerifiedFileSize(sourceDownloadLink.getVerifiedFileSize());
                 }
+                if (sourceDownloadLink.hasTempProperties()) {
+                    destDownloadLink.getTempProperties().setProperties(sourceDownloadLink.getTempProperties().getProperties());
+                }
                 final Map<String, Object> sourceProperties = sourceDownloadLink.getProperties();
                 if (sourceProperties != null && !sourceProperties.isEmpty()) {
                     final Map<String, Object> destProperties = destDownloadLink.getProperties();
