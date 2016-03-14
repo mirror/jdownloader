@@ -106,26 +106,20 @@ public class IP {
         return this.ip != null ? this.ip : "unknown";
     }
 
-    public static void main(String[] args) {
-        System.out.println(isValidRouterIP("192.168.0.1"));
-    }
-
     public static boolean isValidRouterIP(String gatewayIP) {
         if (StringUtils.isEmpty(gatewayIP)) {
             return false;
-        }
-        boolean localip = isLocalIP(gatewayIP);
-        if (!localip) {
-            try {
-                localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
+        } else {
+            boolean localip = isLocalIP(gatewayIP);
+            if (!localip) {
+                try {
+                    localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
             }
+            return localip && RouterUtils.checkPort(gatewayIP);
         }
-        if (!localip) {
-            return false;
-        }
-        return RouterUtils.checkPort(gatewayIP);
     }
 
     public static boolean isLocalIP(String ip) {

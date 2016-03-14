@@ -134,7 +134,7 @@ public class RouterUtils {
      * @return
      */
     public static boolean checkPort(final String host) {
-        return (checkPort(host, 80) || checkPort(host, 443));
+        return checkPort(host, 80) || checkPort(host, 443);
     }
 
     private static boolean checkPort(String host, int port) {
@@ -143,12 +143,12 @@ public class RouterUtils {
         logger.setAllowTimeoutFlush(false);
         try {
             logger.info("Check " + host + ":" + port);
-            Browser br = new Browser();
+            final Browser br = new Browser();
             br.setLogger(logger);
             br.setDebug(true);
             br.setVerbose(true);
             br.setProxy(HTTPProxy.NONE);
-            InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
+            final InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
             br.setConnectTimeout(Math.max(1000, config.getRouterIPCheckConnectTimeout()));
             br.setReadTimeout(Math.max(1000, config.getRouterIPCheckReadTimeout2()));
             br.setFollowRedirects(false);
@@ -172,12 +172,12 @@ public class RouterUtils {
                         }
                     }
                     break;
-                } catch (final UnknownHostException ignore) {
-                    logger.clear();
-                    return false;
                 } catch (BrowserException e) {
-                    e.printStackTrace();
-                    SocketTimeoutException timeout = Exceptions.getInstanceof(e, SocketTimeoutException.class);
+                    if (Exceptions.getInstanceof(e, UnknownHostException.class) != null) {
+                        logger.clear();
+                    }
+                    logger.log(e);
+                    final SocketTimeoutException timeout = Exceptions.getInstanceof(e, SocketTimeoutException.class);
                     if (timeout != null && StringUtils.equalsIgnoreCase(timeout.getMessage(), "Read timed out")) {
                         // some router webinterfaces are kind of slow e.g. .::Willkommen bei zyxel VMG1312-B30A::.
                         Thread.sleep(500);
@@ -186,20 +186,22 @@ public class RouterUtils {
                     throw e;
                 }
             }
-
-            String redirect = br.getRedirectLocation();
-            String domain = Browser.getHost(redirect);
-            logger.info("Redirect To: " + redirect);
-            logger.info("Current Domain: " + domain);
-            // some isps or DNS server redirect in case of no server found
-            if (redirect != null && !InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
-                // if we have redirects, the new domain should be the local one,
-                // too
-
-                return false;
+            final String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                logger.clear();
+                return true;
+            } else {
+                final String domain = Browser.getHost(redirect);
+                logger.info("Redirect To: " + redirect + "|Domain:" + domain);
+                // some isps or DNS server redirect in case of no server found
+                if (redirect != null && !InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
+                    // if we have redirects, the new domain should be the local one,
+                    // too
+                    return false;
+                }
+                logger.clear();
+                return true;
             }
-            logger.clear();
-            return true;
         } catch (final Exception e) {
             logger.log(e);
         } finally {
