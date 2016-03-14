@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "http://(www\\.)?solidfiles\\.com/d/[a-z0-9]+/?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+/?" }, flags = { 2 })
 public class SolidFilesCom extends PluginForHost {
 
     public SolidFilesCom(PluginWrapper wrapper) {
@@ -60,7 +60,9 @@ public class SolidFilesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Offline links should also get nice filenames */
-        link.setName(new Regex(link.getDownloadURL(), "solidfiles\\.com/d/([a-z0-9]+)").getMatch(0));
+        if (!link.isNameSet()) {
+            link.setName(new Regex(link.getDownloadURL(), "solidfiles\\.com/(?:d|v)/([a-z0-9]+)").getMatch(0));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -98,7 +100,7 @@ public class SolidFilesCom extends PluginForHost {
         if (br.containsHTML("We're currently processing this file and it's unfortunately not available yet")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is not available yet", 5 * 60 * 1000l);
         }
-        String dllink = br.getRegex("class=\"direct\\-download regular\\-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
+        String dllink = br.getRegex("class=\"direct-download regular-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("href\\s*=(\"|'|)(https?://s\\d+\\.solidfilesusercontent\\.com/[^<>\"]+)\\1").getMatch(1);
         }
