@@ -189,17 +189,20 @@ public class EvilAngelCom extends PluginForHost {
 
     /** Function can be used for all evilangel type of networks/websites. */
     @SuppressWarnings("deprecation")
-    public void loginEvilAngelNetwork(Browser br, final Account account, final String getpage, final String html_loggedin) throws Exception {
+    public void loginEvilAngelNetwork(Browser br, final Account account, String getpage, final String html_loggedin) throws Exception {
         synchronized (LOCK) {
             try {
-                final String host = account.getHoster();
-                final String url_main = "http://" + host + "/";
+                final String host_account = account.getHoster();
+                final String url_main = "http://" + host_account + "/";
                 final Cookies cookies = account.loadCookies("");
                 /* Set Super br as we sometimes call this function inside other host plugins! */
-                this.br = prepBR(br, host);
-                br = prepBR(br, host);
+                this.br = prepBR(br, host_account);
+                br = prepBR(br, host_account);
+                if (host_account.equals("evilangelnetwork.com")) {
+                    getpage = "http://www.evilangelnetwork.com/en/login";
+                }
                 if (cookies != null) {
-                    br.setCookies(host, cookies);
+                    br.setCookies(host_account, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                         /* We trust these cookies --> Do not check them */
                         return;
@@ -207,10 +210,10 @@ public class EvilAngelCom extends PluginForHost {
 
                     br.getPage(getpage);
                     if (br.containsHTML(html_loggedin)) {
-                        account.saveCookies(br.getCookies(host), "");
+                        account.saveCookies(br.getCookies(host_account), "");
                         return;
                     }
-                    br = prepBR(new Browser(), host);
+                    br = prepBR(new Browser(), host_account);
                 }
                 /* We re over 18 */
                 br.setFollowRedirects(true);
@@ -245,17 +248,21 @@ public class EvilAngelCom extends PluginForHost {
                 br.setCookie(url_main, "mOffset", "1");
                 br.setCookie(url_main, "origin", "promo");
                 br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
-                String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([A-Za-z0-9\\.]+)\"").getMatch(0);
+                final String captcha_id = br.getRegex("name=\"captcha\\[id\\]\" value=\"([A-Za-z0-9\\.]+)\"").getMatch(0);
                 String postData = "csrfToken=" + csrftoken + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Click+here+to+login&mDate=&mTime=&mOffset=&back=" + Encoding.urlEncode(back);
+                String url_language = new Regex(br.getURL(), "https?://[^/]+/([A-Za-z]{2})/").getMatch(0);
+                if (url_language == null) {
+                    url_language = "en";
+                }
                 /* Handle stupid login captcha */
-                if (captcha != null) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", host, "http://" + host, true);
+                if (captcha_id != null) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", host_account, "http://" + host_account, true);
                     if (this.getDownloadLink() == null) {
                         this.setDownloadLink(dummyLink);
                     }
-                    captcha = "http://www." + host + "/en/captcha/" + captcha;
-                    final String code = getCaptchaCode(captcha, dummyLink);
-                    postData += "&captcha%5Bid%5D=" + captcha + "&captcha%5Binput%5D=" + Encoding.urlEncode(code);
+                    final String captcha_url = "http://www." + host_account + "/" + url_language + "/captcha/" + captcha_id;
+                    final String code = getCaptchaCode(captcha_url, dummyLink);
+                    postData += "&captcha%5Bid%5D=" + captcha_id + "&captcha%5Binput%5D=" + Encoding.urlEncode(code);
                 }
                 br.postPage(br.getURL(), postData);
                 if (br.containsHTML(">Your account is deactivated for abuse")) {
@@ -273,7 +280,7 @@ public class EvilAngelCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(host), "");
+                account.saveCookies(br.getCookies(host_account), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;

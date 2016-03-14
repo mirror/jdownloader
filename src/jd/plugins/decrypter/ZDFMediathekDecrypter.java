@@ -213,7 +213,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         ids = this.br.getRegex(regex).getColumn(0);
                         if (ids != null && ids.length > 0) {
                             for (final String videoid : ids) {
-                                final String video_mainlink = "http://www.zdf.de/ZDFmediathek/beitrag/video/" + videoid + "/#JDownloader";
+                                final String video_mainlink = createZdfLink(videoid);
                                 decryptedLinks.add(this.createDownloadlink(video_mainlink));
                             }
                         }
@@ -430,7 +430,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 final String[] videoids = this.br.getRegex("<assetId>(\\d+)</assetId>").getColumn(0);
                 if (videoids != null && videoids.length > 0) {
                     for (final String videoid : videoids) {
-                        final String video_mainlink = "http://www.zdf.de/ZDFmediathek/beitrag/video/" + videoid + "/#JDownloader";
+                        final String video_mainlink = createZdfLink(videoid);
                         decryptedLinks.add(this.createDownloadlink(video_mainlink));
                     }
                 }
@@ -448,7 +448,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     ids = this.br.getRegex(regex).getColumn(0);
                     if (ids != null && ids.length > 0) {
                         for (final String videoid : ids) {
-                            final String video_mainlink = "http://www.zdf.de/ZDFmediathek/beitrag/video/" + videoid + "/#JDownloader";
+                            final String video_mainlink = createZdfLink(videoid);
                             decryptedLinks.add(this.createDownloadlink(video_mainlink));
                         }
                     }
@@ -514,18 +514,24 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
 
                 /* E.g. http://www.metafilegenerator.de/ondemand/zdf/hbbtv/none/zdf/16/03/160304_top_mom_2328k_p35v12.mp4 */
+                boolean isHBBTV = false;
                 final String fixme = new Regex(url, "https?://(?:www\\.)?metafilegenerator\\.de/ondemand/zdf/hbbtv/(none/zdf/\\d+/\\d+/[^<>\"]+\\.mp4)").getMatch(0);
                 if (fixme != null) {
                     /* E.g. http://rodl.zdf.de/none/zdf/16/03/160304_top_mom_2328k_p35v12.mp4 */
                     /* Fix invalid / unauthorized hbbtv urls so that we get downloadable http urls */
                     url = "http://rodl.zdf.de/" + fixme;
+                    isHBBTV = true;
                 }
 
                 if (fmt != null) {
                     fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
                 }
 
-                if (!type.contains("mp4_http")) {
+                // if (!type.contains("mp4_http")) {
+                // continue;
+                // }
+                /** 2016-03-14: Only allow hbbtv variants as they have higher bitrates than other http variants */
+                if (!isHBBTV) {
                     continue;
                 }
                 /* best selection is done at the end */
@@ -634,6 +640,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return ret;
+    }
+
+    private String createZdfLink(final String videoid) {
+        return "http://www.zdf.de/ZDFmediathek/beitrag/video/" + videoid + "/#JDownloader";
     }
 
     private String getTitle(Browser br) {

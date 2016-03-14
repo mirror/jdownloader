@@ -46,6 +46,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -59,10 +60,9 @@ public class BrDeDecrypter extends PluginForDecrypt {
             /* Add offline link so user can see it */
             final DownloadLink dl = this.createOfflinelink(parameter);
             String offline_name = new Regex(parameter, "br\\.de/(.+)\\.html$").getMatch(0);
-            if (offline_name == null) {
-                offline_name = new Regex(parameter, "").getMatch(0);
+            if (offline_name != null) {
+                dl.setFinalFileName(offline_name);
             }
-            dl.setFinalFileName(offline_name);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -96,6 +96,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
             show = "-";
         }
         plain_name = encodeUnicode(Encoding.htmlDecode(plain_name).trim()).replace("\n", "");
+        show = encodeUnicode(Encoding.htmlDecode(show).trim());
 
         String subtitle_url = br.getRegex("<dataTimedText url=\"(/mediathek/video/untertitel[^<>\"/]+\\.xml)\"").getMatch(0);
         if (subtitle_url != null) {

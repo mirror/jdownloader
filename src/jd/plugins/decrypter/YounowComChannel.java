@@ -93,7 +93,7 @@ public class YounowComChannel extends PluginForDecrypt {
                         dl.setProperty("decryptedbroadcasttitle", broadcasttitle);
                         temp_filename = username + "_" + broadcastID + "_" + broadcasttitle;
                     } else {
-                        temp_filename = username + " - " + broadcastID;
+                        temp_filename = username + "_" + broadcastID;
                     }
                     temp_filename = encodeUnicode(temp_filename) + ".mp4";
                     dl.setName(temp_filename);
