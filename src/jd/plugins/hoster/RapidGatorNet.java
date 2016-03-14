@@ -34,13 +34,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,6 +56,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" }, flags = { 2 })
 public class RapidGatorNet extends PluginForHost {
@@ -781,6 +781,7 @@ public class RapidGatorNet extends PluginForHost {
         synchronized (RapidGatorNet.LOCK) {
             try {
                 this.prepareBrowser_api(this.br);
+                this.br.getPage("http://rapidgator.net");// required to prevent being blocked by firewall
                 con = this.br.openGetConnection(this.apiURL + "user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 this.handleErrors_api(null, null, account, con);
                 if (con.getResponseCode() == 200) {
@@ -1054,9 +1055,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
