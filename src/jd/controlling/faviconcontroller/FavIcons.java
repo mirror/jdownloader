@@ -28,6 +28,11 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import jd.captcha.utils.GifDecoder;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import net.sf.image4j.codec.ico.ICODecoder;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -44,12 +49,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.captcha.utils.GifDecoder;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.html.HTMLParser;
-import net.sf.image4j.codec.ico.ICODecoder;
 
 public class FavIcons {
 
@@ -475,16 +474,6 @@ public class FavIcons {
                 url = "http://images3.rapidshare.com/img/favicon.ico";
             }
             if (!StringUtils.isEmpty(url)) {
-                if (HTMLParser.getProtocol(url) == null) {
-                    final String protocol = HTMLParser.getProtocol(favBr.getRequest().getUrl());
-                    if (url.startsWith("//")) {
-                        url = protocol + url.substring(2);
-                    } else if (url.startsWith("/")) {
-                        url = protocol + host + url;
-                    } else if (!url.startsWith("../")) {
-                        url = protocol + host + "/" + url;
-                    }
-                }
                 /* favicon tag with ico extension */
                 favBr.setFollowRedirects(true);
                 favBr.getHeaders().put("Accept-Encoding", null);
