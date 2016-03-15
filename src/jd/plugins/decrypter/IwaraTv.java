@@ -27,10 +27,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trollvids.com" }, urls = { "http://(?:www\\.)?trollvids\\.com/video/\\d+/[^/]+" }, flags = { 0 })
-public class TrollVidsCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/videos/[^/]+" }, flags = { 0 })
+public class IwaraTv extends PluginForDecrypt {
 
-    public TrollVidsCom(PluginWrapper wrapper) {
+    public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,9 +42,9 @@ public class TrollVidsCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = this.br.getRegex("<title>Trollvids \\- ([^<>\"]*?)</title>").getMatch(0);
+        String filename = this.br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(parameter, "/video/\\d+/([^/]+)").getMatch(0);
+            filename = new Regex(parameter, "/videos/(.+)").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename).trim();
         String externID = this.br.getRegex("\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"").getMatch(0);
@@ -66,14 +66,7 @@ public class TrollVidsCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        final String fid = jd.plugins.hoster.TrollVidsCom.getFID(parameter);
-        this.br.getPage("http://trollvids.com/nuevo/player/config.php?v=" + fid);
-        externID = br.getRegex("<(?:filehd|file)>(http[^<>\"]*?)</(?:filehd|file)>").getMatch(0);
-        if (!externID.contains("trollvids.com/")) {
-            decryptedLinks.add(this.createDownloadlink(externID));
-            return decryptedLinks;
-        }
-        final DownloadLink dl = createDownloadlink(parameter.replace("trollvids.com/", "trollvidsdecrypted.com/"));
+        final DownloadLink dl = createDownloadlink(parameter.replace("iwara.tv/", "iwaradecrypted.tv/"));
         decryptedLinks.add(dl);
 
         return decryptedLinks;

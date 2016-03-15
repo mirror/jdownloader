@@ -213,7 +213,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 /* First let's remove all video extensions */
                 index = filename.lastIndexOf(".");
                 ext_temp = filename.substring(index);
-                if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv)")) {
+                if (ext_temp != null && ext_temp.matches("\\.(avi|mp4|flv|mkv)")) {
                     filename = filename.substring(0, index);
                     continue;
                 }

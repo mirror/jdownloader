@@ -75,7 +75,7 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                     fpName = fpName + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(0)) + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(1));
                 }
             }
-            final String[] links = br.getRegex("(/external\\.php[^<>\"]*?)\"").getColumn(0);
+            final String[] links = br.getRegex("(/(?:external|goto)\\.php[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 if (br.containsHTML("\\'HD Sponsor\\'")) {
                     logger.info("Found no downloadlink in link: " + parameter);

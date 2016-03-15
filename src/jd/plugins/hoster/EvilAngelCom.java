@@ -121,6 +121,7 @@ public class EvilAngelCom extends PluginForHost {
                 dllink = link.getDownloadURL();
             }
             final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
@@ -195,11 +196,18 @@ public class EvilAngelCom extends PluginForHost {
                 final String host_account = account.getHoster();
                 final String url_main = "http://" + host_account + "/";
                 final Cookies cookies = account.loadCookies("");
-                /* Set Super br as we sometimes call this function inside other host plugins! */
+                /*
+                 * Set Super br as we sometimes call this function inside other host plugins and we need it especially for the captcha
+                 * handling!
+                 */
                 this.br = prepBR(br, host_account);
                 br = prepBR(br, host_account);
                 if (host_account.equals("evilangelnetwork.com")) {
                     getpage = "http://www.evilangelnetwork.com/en/login";
+                } else if (host_account.equalsIgnoreCase("evilangel.com")) {
+                    getpage = "http://members.evilangel.com/en";
+                } else {
+                    /* getpage must have already been set via parameter */
                 }
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
@@ -323,6 +331,7 @@ public class EvilAngelCom extends PluginForHost {
         br.setCookie(host, "enterSite", "en");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
         return br;
     }
 

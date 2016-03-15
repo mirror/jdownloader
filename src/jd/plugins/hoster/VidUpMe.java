@@ -39,11 +39,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.me/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VidUpMe extends PluginForHost {
@@ -147,7 +147,9 @@ public class VidUpMe extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(fileInfo[0].trim() + ".mp4");
+        fileInfo[0] = fileInfo[0].trim();
+        fileInfo[0] = this.removeDoubleExtensions(fileInfo[0], "mp4");
+        link.setFinalFileName(fileInfo[0]);
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -195,6 +197,28 @@ public class VidUpMe extends PluginForHost {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
+    }
+
+    private String removeDoubleExtensions(String filename, final String defaultExtension) {
+        if (filename.contains(".")) {
+            String ext_temp = null;
+            int index = 0;
+            do {
+                /* First let's remove all video extensions */
+                index = filename.lastIndexOf(".");
+                ext_temp = filename.substring(index);
+                if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv|avi)")) {
+                    filename = filename.substring(0, index);
+                    continue;
+                }
+                break;
+            } while (true);
+        }
+        /* Add wished default video extension */
+        if (!filename.endsWith("." + defaultExtension)) {
+            filename += "." + defaultExtension;
+        }
+        return filename;
     }
 
     @Override
