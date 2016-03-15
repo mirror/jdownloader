@@ -173,11 +173,15 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public void setArchive(Archive archive) {
         if (archive != null) {
             final String archiveID = archive.getArchiveID();
+            boolean hasOldPasswords = false;
             for (final CrawledLink link : getLinks()) {
                 final DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
                     dlLink.setArchiveID(archiveID);
                     dlLink.setPartOfAnArchive(Boolean.TRUE);
+                    if (dlLink.getOldPluginPasswordList() != null) {
+                        hasOldPasswords = true;
+                    }
                 }
             }
             boolean hasArchiveInfo = false;
@@ -187,7 +191,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
                     break;
                 }
             }
-            if (hasArchiveInfo) {
+            if (hasArchiveInfo || hasOldPasswords) {
                 List<String> existingPws = archive.getSettings().getPasswords();
                 if (existingPws == null) {
                     existingPws = new ArrayList<String>();
@@ -202,6 +206,17 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
                         for (final String newPw : link.getArchiveInfo().getExtractionPasswords()) {
                             if (newPw != null && !existingPws.contains(newPw)) {
                                 newPws.add(newPw);
+                            }
+                        }
+                    }
+                    final DownloadLink dlLink = link.getDownloadLink();
+                    if (dlLink != null) {
+                        final List<String> oldPasswords = dlLink.getOldPluginPasswordList();
+                        if (oldPasswords != null) {
+                            for (final String newPw : oldPasswords) {
+                                if (newPw != null && !existingPws.contains(newPw)) {
+                                    newPws.add(newPw);
+                                }
                             }
                         }
                     }
