@@ -12,6 +12,19 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.PackagizerInterface;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -36,19 +49,6 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.jd1import.JD1Importer;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.PackagizerInterface;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private final PackagizerSettings            config;
@@ -785,11 +785,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             /* customize priority */
             link.setPriority(lgr.getRule().getPriority());
         }
-        if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
-            /* customize filename */
-            final String name = replaceVariables(lgr.getRule().getFilename(), link, lgr);
-            if (StringUtils.isNotEmpty(name)) {
-                link.setName(name);
+        if (isTestInstance() == false) {
+            if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
+                /* customize filename */
+                final String name = replaceVariables(lgr.getRule().getFilename(), link, lgr);
+                if (StringUtils.isNotEmpty(name)) {
+                    link.setName(name);
+                }
             }
         }
         if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
