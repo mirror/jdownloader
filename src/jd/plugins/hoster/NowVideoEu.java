@@ -25,8 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,6 +44,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 2 })
 public class NowVideoEu extends PluginForHost {
@@ -93,7 +93,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private final static String  PROPERTY_FILENAME_WITH_FUID         = "PROPERTY_FILENAME_WITH_FUID";
-    private final static boolean PROPERTY_DEFAULT_FILENAME_WITH_FUID = true;
+    private final static boolean PROPERTY_DEFAULT_FILENAME_WITH_FUID = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_FILENAME_WITH_FUID, "Use FUID (File Unquie ID) within File Name").setDefaultValue(PROPERTY_DEFAULT_FILENAME_WITH_FUID));

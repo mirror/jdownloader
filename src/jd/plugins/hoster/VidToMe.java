@@ -65,7 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -74,6 +73,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me" }, urls = { "https?://(www\\.)?vidto\\.me/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
@@ -99,6 +99,7 @@ public class VidToMe extends PluginForHost {
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
+    private static final boolean       ENABLE_HTML_FILESIZE_CHECK   = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -309,17 +310,19 @@ public class VidToMe extends PluginForHost {
             fileInfo[0] = fileInfo[0].trim() + fileExtension.trim();
         }
 
-        if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                     if (inValidate(fileInfo[1])) {
-                        try {
-                            // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
-                        } catch (Exception e) {
+                        fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                        if (inValidate(fileInfo[1])) {
+                            try {
+                                // only needed in rare circumstances
+                                // altAvailStat(downloadLink, fileInfo);
+                            } catch (Exception e) {
+                            }
                         }
                     }
                 }

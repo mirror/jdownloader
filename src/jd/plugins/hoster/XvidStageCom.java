@@ -50,7 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -58,6 +57,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvidstage.com" }, urls = { "https?://(www\\.)?xvidstage\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class XvidStageCom extends PluginForHost {
@@ -211,6 +211,10 @@ public class XvidStageCom extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        fileInfo[0] = fileInfo[0].replaceAll("\\.(avi\\.flv|avi|flv|mkv)", "\\.mp4");
+        if (!fileInfo[0].endsWith(".mp4")) {
+            fileInfo[0] += ".mp4";
+        }
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */

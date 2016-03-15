@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -49,8 +51,9 @@ public class SrfCh extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.setAllowedResponseCodes(410);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>]*?) \\- Play [^\"]+\"").getMatch(0);
@@ -68,27 +71,100 @@ public class SrfCh extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String domainpart = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
         final String videoid = new Regex(downloadLink.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
         final String channelname = convertDomainPartToShortChannelName(domainpart);
-        this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".xml");
-        final String url_hls_master = this.br.getRegex("<url quality=\"(?:HD|SD)\">(http[^<>\"]*?\\.m3u8)</url>").getMatch(0);
-        final String url_rtmp = this.br.getRegex("<url quality=\"(?:HD|HQ|MQ|SQ|SD)\">(rtmpe?://[^<>\"]*?\\.flv)</url>").getMatch(0);
-        if (url_hls_master == null && url_rtmp == null) {
+        /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
+        this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".json");
+        String url_http_download = null;
+        String url_hls_master = null;
+        String url_rtmp = null;
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("Video");
+        LinkedHashMap<String, Object> temp = null;
+        ArrayList<Object> ressourcelist = null;
+
+        /* Try to find http downloadurl (not always available) */
+        try {
+            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "Downloads/Download");
+            for (final Object streamtypeo : ressourcelist) {
+                temp = (LinkedHashMap<String, Object>) streamtypeo;
+                final String protocol = (String) temp.get("@protocol");
+                if (protocol == null) {
+                    continue;
+                }
+                if (protocol.equals("HTTP")) {
+                    url_http_download = this.findBestQualityForStreamtype(temp);
+                    break;
+                }
+            }
+        } catch (final Throwable e) {
+        }
+
+        /* Try to find hls master (usually available) */
+        try {
+            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "Playlists/Playlist");
+            for (final Object streamtypeo : ressourcelist) {
+                temp = (LinkedHashMap<String, Object>) streamtypeo;
+                final String protocol = (String) temp.get("@protocol");
+                if (protocol == null) {
+                    continue;
+                }
+                if (protocol.equals("HTTP-HLS")) {
+                    url_hls_master = this.findBestQualityForStreamtype(temp);
+                    break;
+                }
+            }
+        } catch (final Throwable e) {
+        }
+
+        /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
+        try {
+            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "Playlists/Playlist");
+            for (final Object streamtypeo : ressourcelist) {
+                temp = (LinkedHashMap<String, Object>) streamtypeo;
+                final String protocol = (String) temp.get("@protocol");
+                if (protocol == null) {
+                    continue;
+                }
+                if (protocol.equals("RTMP")) {
+                    url_rtmp = findBestQualityForStreamtype(temp);
+                    break;
+                }
+            }
+        } catch (final Throwable e) {
+        }
+
+        if (url_http_download == null && url_hls_master == null && url_rtmp == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* Prefer hls over rtmp but sometimes only one of both is available. */
-        if (url_hls_master != null) {
+
+        if (url_http_download != null) {
+            /* Prefer http download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http_download, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
+            this.dl.startDownload();
+        } else if (url_hls_master != null) {
+            /* Prefer hls over rtmp but sometimes only one of both is available. */
             logger.info("Downloading hls");
             this.br.getPage(url_hls_master);
-            try {
-            } catch (final Throwable e) {
-                this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid + "/clicked.xml");
-            }
+            // try {
+            // this.br.cloneBrowser().getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid +
+            // "/clicked.xml");
+            // } catch (final Throwable e) {
+            // }
             final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -118,6 +194,28 @@ public class SrfCh extends PluginForHost {
             rtmp.setResume(true);
             ((RTMPDownload) dl).startDownload();
         }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private String findBestQualityForStreamtype(LinkedHashMap<String, Object> temp) {
+        final String[] possibleQualities = { "HD", "HQ", "MQ", "SQ", "SD" };
+        String best_quality = null;
+        ArrayList<Object> ressourcelist2 = (ArrayList) temp.get("url");
+        for (final String possible_quality : possibleQualities) {
+            for (final Object hlso : ressourcelist2) {
+                temp = (LinkedHashMap<String, Object>) hlso;
+                final String quality = (String) temp.get("@quality");
+                if (quality == null) {
+                    continue;
+                }
+                if (quality.equals(possible_quality)) {
+                    /* We found the best available quality */
+                    best_quality = (String) temp.get("text");
+                    return best_quality;
+                }
+            }
+        }
+        return best_quality;
     }
 
     private String convertDomainPartToShortChannelName(final String input) {

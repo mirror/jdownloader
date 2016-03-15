@@ -24,9 +24,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,6 +44,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" }, flags = { 2 })
 public class AuroravidTo extends PluginForHost {
@@ -110,9 +110,10 @@ public class AuroravidTo extends PluginForHost {
         }
         // onlinecheck für Videolinks
         if (downloadLink.getDownloadURL().contains("video")) {
-            String filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
+            String filename = br.getRegex("property=\"og:title\" content=\"Watch ([^<>\"]+) online \\| AuroraVid\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
+                /* More open RegEx */
+                filename = br.getRegex("name=\"title\" content=\"Watch([^<>\"]+)online \\|[^<>\"]*?\"").getMatch(0);
             }
             if (filename == null) {
                 // filename isn't always present!
