@@ -387,7 +387,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
 
                 if (StringUtils.isNotEmpty(query.getPackageName())) {
-                    if (StringUtils.isEmpty(existing.getName())) {
+                    if (StringUtils.isEmpty(existing.getName()) || overwritePackagizerRules) {
                         existing.setName(query.getPackageName());
                         existing.setIgnoreVarious(true);
                         existing.setUniqueId(null);
@@ -400,7 +400,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
 
                 if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
-                    if (StringUtils.isEmpty(existing.getDestinationFolder())) {
+                    if (StringUtils.isEmpty(existing.getDestinationFolder()) || overwritePackagizerRules) {
                         existing.setDestinationFolder(query.getDestinationFolder());
                         existing.setIgnoreVarious(true);
                         existing.setUniqueId(null);
