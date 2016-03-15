@@ -29,6 +29,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -198,6 +199,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient List<HistoryEntry>                history                             = null;
 
     private transient Boolean                           partOfAnArchive                     = null;
+    private transient List<String>                      sourcePluginPasswordList            = null;
     public static final String                          RELATIVE_DOWNLOAD_FOLDER_PATH       = "subfolderbyplugin";
 
     public Boolean isPartOfAnArchive() {
@@ -337,6 +339,28 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } catch (final Throwable e) {
             e.printStackTrace();
         }
+
+        try {
+            final Object sourcePluginPasswordList = fields.get("sourcePluginPasswordList", null);
+            if (sourcePluginPasswordList != null && sourcePluginPasswordList instanceof List && ((List) sourcePluginPasswordList).size() > 0) {
+                final List<String> list = (List<String>) sourcePluginPasswordList;
+                list.remove("autopostpw");
+                list.remove("{}");
+                final Iterator<String> it = list.iterator();
+                while (it.hasNext()) {
+                    final String next = it.next();
+                    if (StringUtils.startsWithCaseInsensitive(next, "http://") || StringUtils.startsWithCaseInsensitive(next, "https://")) {
+                        it.remove();
+                    }
+                }
+                if (list.size() > 0) {
+                    this.sourcePluginPasswordList = list;
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+
         try {
             this.created = fields.get("created", -1l);
         } catch (final Throwable e) {
@@ -406,6 +430,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
         } catch (final Throwable e) {
         }
+    }
+
+    public List<String> getOldPluginPasswordList() {
+        return this.sourcePluginPasswordList;
     }
 
     public UniqueAlltimeID getUniqueID() {

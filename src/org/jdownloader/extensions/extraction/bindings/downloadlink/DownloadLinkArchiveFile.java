@@ -281,9 +281,39 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public void setArchive(final Archive archive) {
         if (archive != null) {
             final String archiveID = archive.getArchiveID();
+            boolean hasOldPasswords = false;
             for (final DownloadLink downloadLink : getDownloadLinks()) {
                 downloadLink.setArchiveID(archiveID);
                 downloadLink.setPartOfAnArchive(Boolean.TRUE);
+                if (downloadLink.getOldPluginPasswordList() != null) {
+                    hasOldPasswords = true;
+                }
+            }
+
+            if (hasOldPasswords) {
+                List<String> existingPws = archive.getSettings().getPasswords();
+                if (existingPws == null) {
+                    existingPws = new ArrayList<String>();
+                }
+                final List<String> newPws = new ArrayList<String>();
+                final String finalPassword = archive.getSettings().getFinalPassword();
+                if (finalPassword != null && !existingPws.contains(finalPassword)) {
+                    newPws.add(finalPassword);
+                }
+                for (final DownloadLink downloadLink : getDownloadLinks()) {
+                    final List<String> oldPasswords = downloadLink.getOldPluginPasswordList();
+                    if (oldPasswords != null) {
+                        for (final String newPw : oldPasswords) {
+                            if (newPw != null && !existingPws.contains(newPw)) {
+                                newPws.add(newPw);
+                            }
+                        }
+                    }
+                }
+                if (newPws.size() > 0) {
+                    existingPws.addAll(newPws);
+                    archive.getSettings().setPasswords(existingPws);
+                }
             }
         }
     }
