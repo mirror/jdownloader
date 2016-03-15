@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.UIOManager;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -34,9 +37,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.uio.UIOManager;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/|resource/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -114,7 +116,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             String nextbookmark = null;
 
             /* First, get the first 25 pictures from their site. */
-            final String board_id = br.getRegex("\"board_id\":[\t\n\r ]+\"(\\d+)\"").getMatch(0);
+            final String board_id = PluginJSonUtils.getJson(json_source, "board_id");
             final String source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
             if (board_id == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -188,7 +190,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             filename += "_" + description;
                         }
                     }
-                    filename += jd.plugins.hoster.PinterestCom.default_extension;
                     filename = encodeUnicode(filename);
 
                     dl.setContentUrl(content_url);
@@ -200,6 +201,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     dl.setProperty("decryptedfilename", filename);
                     dl.setName(filename);
                     dl.setAvailable(true);
+                    dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                     distribute(dl);
@@ -257,12 +259,12 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     filename += "_" + description;
                 }
             }
-            filename += jd.plugins.hoster.PinterestCom.default_extension;
             filename = encodeUnicode(filename);
 
             dl.setProperty("decryptedfilename", filename);
             dl.setName(filename);
             dl.setAvailable(true);
+            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
             decryptedLinks.add(dl);
             distribute(dl);
         }
