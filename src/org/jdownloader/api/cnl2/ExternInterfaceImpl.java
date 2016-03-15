@@ -235,9 +235,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     LinkCollector.getInstance().addCrawlerJob(job);
                 }
             }
-            writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
-            writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
     }
 
