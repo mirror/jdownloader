@@ -74,9 +74,10 @@ public class Hentai2ReadCom extends PluginForDecrypt {
                     final String res = PluginJSonUtils.unescape(result);
                     // for first one we need to decide base
                     if (base == null) {
-                        base = br.getRegex("\"([^\"]+)" + Pattern.quote(res) + "\"").getMatch(0);
+                        base = br.getRegex("\"([^\"]+)" + Pattern.quote(res) + "[^\"]*\"").getMatch(0);
                         if (base == null) {
-                            return null;
+                            // better than returning null?
+                            base = "//hentaicdn.com/hentai";
                         }
                     }
                     final String escaped = Request.getLocation(base + res, br.getRequest());
