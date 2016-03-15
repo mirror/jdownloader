@@ -48,18 +48,18 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clicknupload.me", "clicknupload.com" }, urls = { "https?://(?:www\\.)?clicknupload\\.(?:com|me)/(?:vidembed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clicknupload.link", }, urls = { "https?://(?:www\\.)?clicknupload\\.(?:com|me|link)/(?:vidembed\\-)?[a-z0-9]{12}", }, flags = { 0 })
 public class ClickNUploadCom extends antiDDoSForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://clicknupload.me";
+    private static final String            COOKIE_HOST                  = "http://clicknupload.link";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(clicknupload\\.com|clicknupload\\.net|clicknupload\\.me|clicknupload\\.org)";
+    private static final String            DOMAINS                      = "(clicknupload\\.link|clicknupload\\.com|clicknupload\\.net|clicknupload\\.me|clicknupload\\.org)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -114,10 +114,8 @@ public class ClickNUploadCom extends antiDDoSForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("clicknupload.com".equals(getHost())) {
-            if (host == null || "clicknupload.com".equals(host)) {
-                return "clicknupload.me";
-            }
+        if (host == null || "clicknupload.com".equals(host) || "clicknupload.me".equals(host) || "clicknupload.link".equals(host)) {
+            return "clicknupload.link";
         }
         return super.rewriteHost(host);
     }
