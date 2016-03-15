@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mdr.de" }, urls = { "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mdr.de", "kika.de" }, urls = { "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html" }, flags = { 0, 0 })
 public class MdrDeDecrypter extends PluginForDecrypt {
 
     public MdrDeDecrypter(PluginWrapper wrapper) {
@@ -66,29 +66,35 @@ public class MdrDeDecrypter extends PluginForDecrypt {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final Regex clipinfo = new Regex(parameter, "mdr\\.de/([^<>\"]+)/video((?:\\-)?\\d+)");
+        final Regex clipinfo = new Regex(parameter, "https?://(?:www\\.)?mdr\\.de/([^<>\"]+)/video((?:\\-)?\\d+)");
+        final String url_hostername = new Regex(parameter, "https?://(?:www\\.)?([^/]+)\\.de/.+").getMatch(0);
         final String url_clipname = clipinfo.getMatch(0);
-        final String clip_id = clipinfo.getMatch(1);
+        String clip_id = clipinfo.getMatch(1);
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         String player_xml_url;
         if (url_clipname != null && clip_id != null) {
             /* Short and safe way --> We can build our XML url */
-            player_xml_url = "http://www.mdr.de/" + url_clipname + "/video" + clip_id + "-avCustom.xml";
+            player_xml_url = "http://www." + url_hostername + ".de/" + url_clipname + "/video" + clip_id + "-avCustom.xml";
         } else {
             /* Longer way - we have to access the clip url first to find the XML url. */
             this.br.getPage(parameter);
-            player_xml_url = this.br.getRegex("\\'playerXml\\':\\'(\\\\/mediathek\\\\/[^<>\"/]+avCustom\\.xml)\\'").getMatch(0);
+            if (this.br.getHost().equals("mdr.de")) {
+                player_xml_url = this.br.getRegex("\\'playerXml\\':\\'(\\\\/mediathek\\\\/[^<>\"/]+avCustom\\.xml)\\'").getMatch(0);
+            } else {
+                player_xml_url = this.br.getRegex("dataURL:\\'(/[^<>\"]+avCustom\\.xml)\\'").getMatch(0);
+            }
             if (player_xml_url == null) {
                 /* Whatever we have it is probably not a video ... */
                 return decryptedLinks;
             }
             player_xml_url = player_xml_url.replace("\\", "");
+            /* Set url-part as clipid because we need a clip_id for our dupecheck! */
+            clip_id = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
         }
         br.getPage(player_xml_url);
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().endsWith(".xml")) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -138,11 +144,11 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                 qualityString = sizewidth + "x" + sizeheight_cut;
                 qualityString_full = sizewidth + "x" + sizeheight;
             }
-            String filename = date_formatted + "_mdr_" + title;
+            String filename = date_formatted + "_" + url_hostername + "_" + title;
             final String ext = ".mp4";
             filename += "_" + qualityString_full + ext;
-            final DownloadLink fina = createDownloadlink("http://mdrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-            final String linkdupeid = "mdrde" + clip_id + "_" + qualityString;
+            final DownloadLink fina = createDownloadlink("http://" + url_hostername + "decrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+            final String linkdupeid = url_hostername + clip_id + "_" + qualityString;
             fina.setDownloadSize(Long.parseLong(fsize));
             fina.setAvailable(true);
             fina.setFinalFileName(filename);
@@ -220,11 +226,11 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             final DownloadLink dl = FOUNDQUALITIES.get(selectedQualityValue);
             if (dl != null) {
                 if (grab_subtitles && subtitle_url != null) {
-                    final DownloadLink stitle_dl = createDownloadlink("http://mdrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+                    final DownloadLink stitle_dl = createDownloadlink("http://" + url_hostername + "decrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                     final String video_qualitystring = dl.getStringProperty("plain_qualityString", null);
                     final String video_linkdupeid = dl.getStringProperty("LINKDUPEID", null) + "_subtitle";
-                    final String subtitle_filename = date_formatted + "_mdr_" + title + "_" + video_qualitystring + ".xml";
-                    final String linkdupeid = "mdrde" + clip_id + "_subtitle" + video_qualitystring;
+                    final String subtitle_filename = date_formatted + "_" + url_hostername + "_" + title + "_" + video_qualitystring + ".xml";
+                    final String linkdupeid = url_hostername + clip_id + "_subtitle" + video_qualitystring;
                     stitle_dl.setProperty("mainlink", parameter);
                     stitle_dl.setProperty("directlink", subtitle_url);
                     stitle_dl.setProperty("LINKDUPEID", video_linkdupeid);

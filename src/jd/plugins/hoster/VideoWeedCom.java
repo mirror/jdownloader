@@ -109,13 +109,7 @@ public class VideoWeedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
-        final String ext = ".flv";
-        if (filename.contains(".")) {
-            String oldExt = filename.substring(filename.length() - 4, filename.length());
-            filename = filename.replace(oldExt, ext);
-        } else {
-            filename += ext;
-        }
+        filename = removeDoubleExtensions(filename, "flv");
         downloadLink.setFinalFileName(filename);
         if (br.containsHTML("error_msg=The video is being transfered")) {
             downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
@@ -126,11 +120,32 @@ public class VideoWeedCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (br.containsHTML("error_msg=The video is converting")) {
-            downloadLink.setName(filename + ext);
             downloadLink.getLinkStatus().setStatusText("Server says: This video is converting");
             return AvailableStatus.TRUE;
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String removeDoubleExtensions(String filename, final String defaultExtension) {
+        if (filename.contains(".")) {
+            String ext_temp = null;
+            int index = 0;
+            do {
+                /* First let's remove all video extensions */
+                index = filename.lastIndexOf(".");
+                ext_temp = filename.substring(index);
+                if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv)")) {
+                    filename = filename.substring(0, index);
+                    continue;
+                }
+                break;
+            } while (true);
+        }
+        /* Add wished default video extension */
+        if (!filename.endsWith("." + defaultExtension)) {
+            filename += "." + defaultExtension;
+        }
+        return filename;
     }
 
     private final void checkForThis() throws Exception {

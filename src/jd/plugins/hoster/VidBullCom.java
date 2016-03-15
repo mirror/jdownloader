@@ -69,7 +69,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -78,6 +77,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidbull.com" }, urls = { "https?://(www\\.)?vidbull\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -280,6 +280,7 @@ public class VidBullCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
+        fileInfo[0] = removeDoubleExtensions(fileInfo[0], "mp4");
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
             downloadLink.setAvailable(true);
@@ -288,6 +289,28 @@ public class VidBullCom extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return getAvailableStatus(downloadLink);
+    }
+
+    private String removeDoubleExtensions(String filename, final String defaultExtension) {
+        if (filename.contains(".")) {
+            String ext_temp = null;
+            int index = 0;
+            do {
+                /* First let's remove all video extensions */
+                index = filename.lastIndexOf(".");
+                ext_temp = filename.substring(index);
+                if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv)")) {
+                    filename = filename.substring(0, index);
+                    continue;
+                }
+                break;
+            } while (true);
+        }
+        /* Add wished default video extension */
+        if (!filename.endsWith("." + defaultExtension)) {
+            filename += "." + defaultExtension;
+        }
+        return filename;
     }
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {

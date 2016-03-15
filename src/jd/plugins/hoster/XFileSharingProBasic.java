@@ -65,75 +65,76 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     /* Some HTML code to identify different (error) states */
-    private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
+    private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
+    private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://ForDevsToPlayWith.com";
-    private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                        = "http://ForDevsToPlayWith.com";
+    private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(ForDevsToPlayWith\\.com)";
+    private static final String            DOMAINS                            = "(ForDevsToPlayWith\\.com)";
 
     /* Errormessages inside URLs */
-    private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
+    private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
 
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
      */
-    private static final boolean           AUDIOHOSTER                     = false;
+    private final boolean                  AUDIOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private static final boolean           VIDEOHOSTER                     = false;
+    private final boolean                  VIDEOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private static final boolean           VIDEOHOSTER_2                   = false;
+    private final boolean                  VIDEOHOSTER_2                      = false;
+    private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
     /* Enable this for imagehosts */
-    private static final boolean           IMAGEHOSTER                     = false;
+    private final boolean                  IMAGEHOSTER                        = false;
 
-    private static final boolean           SUPPORTS_HTTPS                  = false;
-    private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
-    private static final boolean           ENABLE_RANDOM_UA                = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
+    private final boolean                  SUPPORTS_HTTPS                     = false;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
+    private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
+    private final boolean                  ENABLE_RANDOM_UA                   = false;
+    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = true;
 
     /* Waittime stuff */
-    private static final boolean           WAITFORCED                      = false;
-    private static final int               WAITSECONDSMIN                  = 3;
-    private static final int               WAITSECONDSMAX                  = 100;
-    private static final int               WAITSECONDSFORCED               = 5;
+    private final boolean                  WAITFORCED                         = false;
+    private final int                      WAITSECONDSMIN                     = 3;
+    private final int                      WAITSECONDSMAX                     = 100;
+    private final int                      WAITSECONDSFORCED                  = 5;
 
     /* Supported linktypes */
-    private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private final String                   TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private final String                   TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
 
     /* Texts displaed to the user in some errorcases */
-    private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
-    private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
-    private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
+    private final String                   USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
+    private final String                   USERTEXT_MAINTENANCE               = "This server is under maintenance";
+    private final String                   USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
 
     /* Properties */
-    private static final String            PROPERTY_DLLINK_FREE            = "freelink";
-    private static final String            PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
-    private static final String            PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
-    private static final String            PROPERTY_PASS                   = "pass";
+    private final String                   PROPERTY_DLLINK_FREE               = "freelink";
+    private final String                   PROPERTY_DLLINK_ACCOUNT_FREE       = "freelink2";
+    private final String                   PROPERTY_DLLINK_ACCOUNT_PREMIUM    = "premlink";
+    private final String                   PROPERTY_PASS                      = "pass";
 
     /* Used variables */
-    private String                         correctedBR                     = "";
-    private String                         fuid                            = null;
-    private String                         passCode                        = null;
+    private String                         correctedBR                        = "";
+    private String                         fuid                               = null;
+    private String                         passCode                           = null;
 
-    private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(20);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(20);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                         = new AtomicInteger(1);
-    private static Object                  LOCK                            = new Object();
+    private static AtomicInteger           maxFree                            = new AtomicInteger(1);
+    private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.2.1<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.2.2<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -262,6 +263,9 @@ public class XFileSharingProBasic extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        if (VIDEOHOSTER || VIDEOHOSTER_2 || VIDEOHOSTER_ENFORCE_VIDEO_FILENAME) {
+            fileInfo[0] = this.removeDoubleExtensions(fileInfo[0], "mp4");
+        }
         link.setName(fileInfo[0].trim());
         if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
@@ -367,6 +371,28 @@ public class XFileSharingProBasic extends PluginForHost {
         } catch (final Throwable e) {
         }
         return filesize;
+    }
+
+    private String removeDoubleExtensions(String filename, final String defaultExtension) {
+        if (filename.contains(".")) {
+            String ext_temp = null;
+            int index = 0;
+            do {
+                /* First let's remove all video extensions */
+                index = filename.lastIndexOf(".");
+                ext_temp = filename.substring(index);
+                if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv)")) {
+                    filename = filename.substring(0, index);
+                    continue;
+                }
+                break;
+            } while (true);
+        }
+        /* Add wished default video extension */
+        if (!filename.endsWith("." + defaultExtension)) {
+            filename += "." + defaultExtension;
+        }
+        return filename;
     }
 
     @Override

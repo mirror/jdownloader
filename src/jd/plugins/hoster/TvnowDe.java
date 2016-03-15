@@ -53,10 +53,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowtv.de" }, urls = { "https?://(?:www\\.)?nowtv\\.(?:de|ch)/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/.+" }, flags = { 3 })
-public class NowtvDe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?(?:nowtv|tvnow)\\.(?:de|ch)/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/.+" }, flags = { 3 })
+public class TvnowDe extends PluginForHost {
 
-    public NowtvDe(final PluginWrapper wrapper) {
+    public TvnowDe(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
@@ -91,7 +91,8 @@ public class NowtvDe extends PluginForHost {
     private static final String           RTMPTYPE_VERY_OLD            = "^\\d+/.+\\.flv$";
     private static final String           RTMPTYPE_NEW                 = "^\\d+/.+\\.f4v$";
 
-    private static final String           TYPE_GENERAL_ALRIGHT         = "https?://(?:www\\.)?nowtv\\.(?:de|ch)/[^/]+/[a-z0-9\\-]+/[^/]+";
+    private static final String           TYPE_GENERAL_ALRIGHT         = "https?://(?:www\\.)?(?:nowtv|tvnow)\\.(?:de|ch)/[^/]+/[a-z0-9\\-]+/[^/]+";
+    private final String                  CURRENT_DOMAIN               = "tvnow.de";
 
     private Document                      doc;
     private static final boolean          ALLOW_RTMP_TO_HDS_WORKAROUND = true;
@@ -102,10 +103,24 @@ public class NowtvDe extends PluginForHost {
     private LinkedHashMap<String, Object> entries                      = null;
     private LinkedHashMap<String, Object> format                       = null;
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("nowtv.de".equals(getHost())) {
+            if (host == null || "nowtv.de".equals(host)) {
+                return "tvnow.de";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* First lets get our source url and remove the unneeded '/player' part which is usually at the end of our url. */
-        if (!link.getDownloadURL().matches(TYPE_GENERAL_ALRIGHT)) {
+        if (link.getDownloadURL().matches(TYPE_GENERAL_ALRIGHT)) {
+            final String url_part = new Regex(link.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0);
+            final String newlink = "http://www." + CURRENT_DOMAIN + "/" + url_part;
+            link.setUrlDownload(newlink);
+        } else {
             /* We have no supported url --> Fix eventually existing issues */
             String url_source = link.getDownloadURL();
 
@@ -119,12 +134,12 @@ public class NowtvDe extends PluginForHost {
                 url_source = url_source.replace(rubbish, "");
             }
 
-            final Regex sourceregex = new Regex(url_source, "nowtv\\.(?:de|ch)/([^/]+)/([a-z0-9\\-]+)");
+            final Regex sourceregex = new Regex(url_source, "https?://[^/]+/([^/]+)/([a-z0-9\\-]+)");
             final String name_tvstation = sourceregex.getMatch(0);
             final String name_series = sourceregex.getMatch(1);
             /* Find the name of the series which is usually at the end of our URL. */
             final String name_episode = new Regex(url_source, "/([^/]+)$").getMatch(0);
-            final String newlink = "http://www.nowtv.de/" + name_tvstation + "/" + name_series + "/" + name_episode;
+            final String newlink = "http://www." + CURRENT_DOMAIN + "/" + name_tvstation + "/" + name_series + "/" + name_episode;
             link.setUrlDownload(newlink);
         }
     }
@@ -242,12 +257,15 @@ public class NowtvDe extends PluginForHost {
      * ~2015-07-01: HLS streams were turned off <br />
      * ~2016-01-01: RTMP(E) streams were turned off / all of them are DRM protected/crypted now<br />
      * ~2016-02-24: Summary: There is absolutely NO WAY to download from this website <br />
+     * ~2016-03-15: Domainchange from nowtv.de to tvnow.de<br />
      */
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setConstants(null, downloadLink);
         setBrowserExclusive();
+        /* Fix old urls */
+        correctDownloadLink(downloadLink);
         /* 400-bad request for invalid API requests */
         this.br.setAllowedResponseCodes(400);
         String filename = "";
@@ -255,7 +273,8 @@ public class NowtvDe extends PluginForHost {
         final String urlpart = getURLPart(downloadLink);
         /* urlpart is the same throughout different TV stations so it is a reliable way to detect duplicate urls. */
         downloadLink.setLinkID(urlpart);
-        final String apiurl = "https://api.nowtv.de/v3/movies/" + urlpart + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures,isDrm";
+        // ?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages,isDrm
+        final String apiurl = "https://api." + CURRENT_DOMAIN + "/v3/movies/" + urlpart + "?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages,isDrm";
         br.getPage(apiurl);
         if (br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -360,7 +379,7 @@ public class NowtvDe extends PluginForHost {
             // url_hds = "http://hds.fra.rtlnow.de/hds-vod-enc";
         } else {
             /* check if rtmp is possible */
-            final String apiurl = "https://api.nowtv.de/v3/movies/" + getURLPart(downloadLink) + "?fields=files";
+            final String apiurl = "https://api." + CURRENT_DOMAIN + "/v3/movies/" + getURLPart(downloadLink) + "?fields=files";
             br.getPage(apiurl);
             LinkedHashMap<String, Object> entries_rtmp = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries_rtmp, "files/items");

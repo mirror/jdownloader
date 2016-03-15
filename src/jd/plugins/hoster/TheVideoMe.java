@@ -26,11 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,6 +46,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class TheVideoMe extends antiDDoSForHost {
@@ -150,6 +150,7 @@ public class TheVideoMe extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        fileInfo[0] = removeDoubleExtensions(fileInfo[0], "mp4");
         if (!fileInfo[0].endsWith(".mp4")) {
             fileInfo[0] += ".mp4";
         }
@@ -204,13 +205,35 @@ public class TheVideoMe extends antiDDoSForHost {
         return fileInfo;
     }
 
+    private String removeDoubleExtensions(String filename, final String defaultExtension) {
+        if (filename.contains(".")) {
+            String ext_temp = null;
+            int index = 0;
+            do {
+                /* First let's remove all video extensions */
+                index = filename.lastIndexOf(".");
+                ext_temp = filename.substring(index);
+                if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv)")) {
+                    filename = filename.substring(0, index);
+                    continue;
+                }
+                break;
+            } while (true);
+        }
+        /* Add wished default video extension */
+        if (!filename.endsWith("." + defaultExtension)) {
+            filename += "." + defaultExtension;
+        }
+        return filename;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings({ "unused", "deprecation", "static-access" })
+    @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");

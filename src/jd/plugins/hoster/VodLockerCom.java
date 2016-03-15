@@ -65,7 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -74,6 +73,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vodlocker.com" }, urls = { "https?://(www\\.)?vodlocker\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -276,7 +276,7 @@ public class VodLockerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
-        fileInfo[0] = fileInfo[0].replaceAll("\\.(avi\\.flv|avi|flv)", "\\.mp4");
+        fileInfo[0] = fileInfo[0].replaceAll("\\.(avi\\.flv|avi|flv|mkv)", "\\.mp4");
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
             downloadLink.setAvailable(true);
