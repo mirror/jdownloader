@@ -555,14 +555,14 @@ public class CloudSixMe extends antiDDoSForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (downloadLink != null) {
-            final long size = downloadLink.getKnownDownloadSize();
-            if (size > 200 * 1000 * 1000l) {
-                if (account == null || Account.AccountType.FREE.equals(account.getType())) {
-                    return false;
-                }
-            }
-        }
+        // if (downloadLink != null) {
+        // final long size = downloadLink.getKnownDownloadSize();
+        // if (size > 200 * 1000 * 1000l) {
+        // if (account == null || Account.AccountType.FREE.equals(account.getType())) {
+        // return false;
+        // }
+        // }
+        // }
         return super.canHandle(downloadLink, account);
     }
 
