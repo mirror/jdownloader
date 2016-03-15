@@ -31,10 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trollvids.com" }, urls = { "http://(?:www\\.)?trollvidsdecrypted\\.com/video/\\d+/[^/]+" }, flags = { 0 })
-public class TrollVidsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:www\\.)?iwaradecrypted\\.tv/videos/[^/]+" }, flags = { 0 })
+public class IwaraTv extends PluginForHost {
 
-    public TrollVidsCom(PluginWrapper wrapper) {
+    public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -51,55 +51,60 @@ public class TrollVidsCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
+    private boolean              serverIssue       = false;
 
     @Override
     public String getAGBLink() {
-        return "http://trollvids.com/contact";
+        return "http://www.iwara.tv/";
     }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         final String fid = getFID(link.getDownloadURL());
         link.setLinkID(fid);
-        link.setUrlDownload(link.getDownloadURL().replace("trollvidsdecrypted.com/", "trollvids.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("iwaradecrypted.tv/", "iwara.tv/"));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("trollvids.com".equals(getHost())) {
+            if (host == null || "trollvids.com".equals(host)) {
+                return "iwara.tv";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
+        serverIssue = false;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         this.br.setCustomCharset("UTF-8");
         final String fid = getFID(downloadLink.getDownloadURL());
-        this.br.getPage("http://trollvids.com/nuevo/player/config.php?v=" + fid);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("videos/no_video\\.flv")) {
+        this.br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = fid;
+        }
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("controls=\"controls\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title><\\!\\[CDATA\\[([^<>]*?)\\]\\]></title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+        dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://(?:www\\.)?iwara\\.tv/sites/default/files/videos/[^<>\"]+)\"").getMatch(0);
         }
-        if (filename == null) {
-            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        }
-        /* mp4 = "HD", flv = SD */
-        DLLINK = br.getRegex("<filehd>(http[^<>\"]*?)</filehd>").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<(?:filehd|file)>(http[^<>\"]*?)</(?:filehd|file)>").getMatch(0);
-        }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -114,16 +119,16 @@ public class TrollVidsCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setProperty("directlink", dllink);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                serverIssue = true;
             }
-            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -136,7 +141,10 @@ public class TrollVidsCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        if (serverIssue) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -153,9 +161,8 @@ public class TrollVidsCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     public static String getFID(final String url) {
-        return new Regex(url, "/video/(\\d+)/").getMatch(0);
+        return new Regex(url, "/videos/(.+)").getMatch(0);
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */

@@ -436,7 +436,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
                 return decryptedLinks;
             } else if (id == null) {
-                /* Let's look for embedded zdfmediathek videoids in the html. */
+                /* No videoid given in url added by user --> Let's look for embedded zdfmediathek videoids in the html. */
                 br.getPage(this.PARAMETER);
                 if (br.containsHTML("Der Beitrag konnte nicht gefunden werden") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
                     decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
@@ -471,10 +471,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
             final String basename = getXML("basename");
-            String streamVersion = getXML("streamVersion");
-            if (streamVersion == null) {
-                streamVersion = "1";
-            }
             if (basename == null) {
                 return null;
             }
@@ -500,9 +496,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             show = encodeUnicode(show);
             date_formatted = formatDateZDF(date);
 
-            this.br.getPage("http://www.zdf.de/ptmd/vod/mediathek/" + basename + "/" + streamVersion);
+            this.br.getPage("http://www.zdf.de/ptmd/vod/mediathek/" + basename);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("formitaeten");
+            ArrayList<Object> templist = null;
 
             for (final Object formato : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) formato;
@@ -515,12 +512,26 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
                 /* E.g. http://www.metafilegenerator.de/ondemand/zdf/hbbtv/none/zdf/16/03/160304_top_mom_2328k_p35v12.mp4 */
                 boolean isHBBTV = false;
-                final String fixme = new Regex(url, "https?://(?:www\\.)?metafilegenerator\\.de/ondemand/zdf/hbbtv/(none/zdf/\\d+/\\d+/[^<>\"]+\\.mp4)").getMatch(0);
+                final String fixme = new Regex(url, "https?://(?:www\\.)?metafilegenerator\\.de/ondemand/zdf/hbbtv/([A-Za-z0-9]+/zdf/\\d+/\\d+/[^<>\"]+\\.mp4)").getMatch(0);
                 if (fixme != null) {
                     /* E.g. http://rodl.zdf.de/none/zdf/16/03/160304_top_mom_2328k_p35v12.mp4 */
                     /* Fix invalid / unauthorized hbbtv urls so that we get downloadable http urls */
                     url = "http://rodl.zdf.de/" + fixme;
                     isHBBTV = true;
+                }
+                if (!isHBBTV) {
+                    /* Okay hbbtv formats do not necessarily have hbbtv urls ... */
+                    try {
+                        templist = (ArrayList) entries.get("facets");
+                        for (final Object faceto : templist) {
+                            final String facet = (String) faceto;
+                            if ("hbbtv".equals(facet)) {
+                                isHBBTV = true;
+                                break;
+                            }
+                        }
+                    } catch (final Throwable e) {
+                    }
                 }
 
                 if (fmt != null) {
@@ -530,8 +541,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 // if (!type.contains("mp4_http")) {
                 // continue;
                 // }
+                /* low is usually not available via hbbtv so we will use a non hbbtv variant for this */
+                final boolean isLowNonHbbtvQuality = "low".equals(fmt) && type.contains("mp4_http");
                 /** 2016-03-14: Only allow hbbtv variants as they have higher bitrates than other http variants */
-                if (!isHBBTV) {
+                if (!isHBBTV && !isLowNonHbbtvQuality) {
                     continue;
                 }
                 /* best selection is done at the end */

@@ -68,7 +68,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
     /**
@@ -81,8 +81,14 @@ public class SaveTv extends PluginForHost {
     // private static final String APIKEY_windows_xp_dlm_2_2_0_0 = "RTI4NDVGQUQtRkE2My00RTQ2LTlDRTgtRjlBNUE4REY0N0U4";
     // private static final String APIKEY_windows_8_beta_app = "QkQ3NTExRTEtOTk5Ni00QkMwLTlENDctMEI3QjRFNTk4RjI0";
     /* Doc of an eventually soon existing new (finally public) API [Date added: 2015-06-25]: https://api.save.tv/v3/docs/index */
+
+    /* Normal url */
     private final String          LINKTYPE_NORMAL                           = "https?://(?:www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+";
+    /* User has programmed something but it has not aired yet (is not downloadable yet) --> We will change these urls to LINKTYPE_NORMAL */
+    private final String          LINKTYPE_MAYBE_NOT_YET_DOWNLOADABLE       = "https?://(?:www\\.)?save\\.tv/STV/M/obj/TC/SendungsDetails\\.cfm\\?TelecastID=\\d+";
+    /* Direct url --> We will change these to LINKTYPE_NORMAL */
     private final String          LINKTYPE_DIRECT                           = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
+
     public static final String    APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
     public static final double    QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
@@ -240,14 +246,14 @@ public class SaveTv extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         String url = link.getDownloadURL();
+        final String telecastID;
         if (url.matches(LINKTYPE_DIRECT)) {
-            final String telecastID = new Regex(url, "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_(\\d+)").getMatch(0);
-            url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecastID;
+            telecastID = new Regex(url, "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_(\\d+)").getMatch(0);
         } else {
-            url = url.replaceFirst("http://", "https://");
+            telecastID = new Regex(url, "(\\d+)$").getMatch(0);
         }
+        url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecastID;
         link.setUrlDownload(url);
-        link.setContentUrl(url);
     }
 
     @Override
@@ -280,7 +286,7 @@ public class SaveTv extends PluginForHost {
      * @property "category": 0 = undefined, 1 = movies,category: 2 = series, 3 = show, 7 = music
      */
 
-    @SuppressWarnings({ "deprecation", "unused", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unused", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -290,7 +296,7 @@ public class SaveTv extends PluginForHost {
             link.setLinkID(getTelecastId(link));
         }
         /* Show telecast-ID + extension as dummy name for all error cases */
-        if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains("VideoArchiveDetails.cfm"))) {
+        if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
             link.setName(getTelecastId(link) + EXTENSION_default);
         }
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -737,7 +743,7 @@ public class SaveTv extends PluginForHost {
             final String[] formats = { stv_request_selected_format_value, API_FORMAT_HQ, API_FORMAT_LQ };
             for (final String format : formats) {
                 api_postDownloadPage(downloadLink, format, downloadWithoutAds_request_value);
-                /* TODO: Decide whether we want to throw an error here or try until we find an existing format. */
+                /* TODO: Decide if we want to throw an error here or try until we find an existing format. */
                 if ((br.containsHTML(HTML_API_DL_IMPOSSIBLE) || this.br.getHttpConnection().getResponseCode() == 500) && stv_request_selected_format_value == API_FORMAT_HD) {
                     // continue;
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
@@ -1240,7 +1246,7 @@ public class SaveTv extends PluginForHost {
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
      */
     private void api_postDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws IOException {
-        api_doSoapRequest(this.br, "http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
+        api_doSoapRequest(this.br, "http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + this.API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">" + downloadWithoutAds + "</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
     }
 
     /**
@@ -2069,7 +2075,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.ACTIVATE_BETA_FEATURES, JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell welche gibt steht im Support Forum.")).setEnabled(defaultACTIVATE_BETA_FEATURES));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")).setDefaultValue(defaultUSEAPI);
+        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")).setDefaultValue(defaultUSEAPI);
         getConfig().addEntry(api);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CONFIGURED_APIKEY, JDL.L("plugins.hoster.SaveTv.apikey", "Benutzerdefinierten API-Key eingeben:\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Die API ist nur mit gültigem API-Key (in der Regel mit den Standardeinstellungen) nutzbar!</p></html>")).setDefaultValue(defaultCONFIGURED_APIKEY).setEnabledCondidtion(api, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -2077,7 +2083,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Soll die telecastID in irgendeinem Fall aus dem save.tv Archiv gelöscht werden?\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Gelöschte telecastIDs können nicht wiederhergestellt werden!</p></html>"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDAfterDownload));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveIfFileAlreadyExists", "Falls Datei bereits auf der Festplatte existiert telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveIfFileAlreadyExists", "Falls Datei bereits auf der Festplatte existiert, telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SEPERATION_MARK, JDL.L("plugins.hoster.savetv.customFilenameSeperationmark", "Trennzeichen als Ersatz für '/'  (da ungültig in Dateinamen):")).setDefaultValue(defaultCustomSeperationMark).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, JDL.L("plugins.hoster.savetv.customEmptyTagsString", "Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen:")).setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(origName, false));
