@@ -49,6 +49,7 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.jd1import.JD1Importer;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private final PackagizerSettings            config;
@@ -728,6 +729,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {
+        if (SubFolderByPackageRule.ID.equals(lgr.getRule().getId()) && StringUtils.contains(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), "<jd:")) {
+            // ignore SubFolderByPackageRule when default folder already contains variables
+            return;
+        }
         if (lgr.getRule().getChunks() >= 0) {
             /* customize chunk numbers */
             link.setChunks(lgr.getRule().getChunks());

@@ -78,7 +78,6 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
 
     public void setAccount(Account defaultAccount) {
         if (defaultAccount != null) {
-
             name.setText(defaultAccount.getUser());
             pass.setText(defaultAccount.getPass());
         }
