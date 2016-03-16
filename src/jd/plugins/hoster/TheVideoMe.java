@@ -206,19 +206,20 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     private String removeDoubleExtensions(String filename, final String defaultExtension) {
-        if (filename.contains(".")) {
-            String ext_temp = null;
-            int index = 0;
-            do {
-                /* First let's remove all video extensions */
-                index = filename.lastIndexOf(".");
-                ext_temp = filename.substring(index);
-                if (ext_temp != null && ext_temp.matches("\\.(avi|mp4|flv|mkv)")) {
-                    filename = filename.substring(0, index);
-                    continue;
-                }
-                break;
-            } while (true);
+        if (filename == null) {
+            return filename;
+        }
+        String ext_temp = null;
+        int index = 0;
+        while (filename.contains(".")) {
+            /* First let's remove all video extensions */
+            index = filename.lastIndexOf(".");
+            ext_temp = filename.substring(index);
+            if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv|avi)")) {
+                filename = filename.substring(0, index);
+                continue;
+            }
+            break;
         }
         /* Add wished default video extension */
         if (!filename.endsWith("." + defaultExtension)) {
