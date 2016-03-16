@@ -42,6 +42,13 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         final Browser brdecrypt = br.cloneBrowser();
         // use plugin regex where possible... this means less maintaince required.
         Plugin plugin = null;
+
+        /* Cleanup/Improve title */
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            title = encodeUnicode(title);
+        }
+
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         // xvideos.com 2
@@ -515,13 +522,20 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(https?://(?:www\\.)?bemywife\\.cc/video/[a-z0-9]+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            if (title != null) {
+                dl.setProperty("decryptertitle", title);
+            }
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // filename needed for all IDs below
         if (title == null) {
             return decryptedLinks;
         }
         /* TODO: Remove as much Browser-accesses as possible, handle all embedded urls in the corresponding host plugins! */
-        title = Encoding.htmlDecode(title).trim();
-        title = encodeUnicode(title);
         externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
@@ -580,6 +594,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             return decryptedLinks;
 
         }
+
         // perm offline
         externID = br.getRegex("\"(http://(www\\.)?xrabbit\\.com/video/embed/[A-Za-z0-9=]+/?)\"").getMatch(0);
         if (externID != null) {

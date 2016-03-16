@@ -56,16 +56,16 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easydow.com" }, urls = { "https?://(www\\.)?easydow\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class EasydowCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easydow.org" }, urls = { "https?://(?:www\\.)?easydow\\.(?:com|org)/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class EasydowOrg extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://easydow.com";
+    private static final String  COOKIE_HOST                  = "http://easydow.org";
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(easydow\\.com)";
+    private static final String  DOMAINS                      = "(easydow\\.(?:com|org))";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -83,7 +83,7 @@ public class EasydowCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.1
-    // mods: apecial status check in handlePremium to get correct filename
+    // mods: special status check in handlePremium to get correct filename
     // non account: untested, free downloads were disabled
     // free account: untested, free downloads were disabled
     // premium account: chunks * maxdls
@@ -106,11 +106,21 @@ public class EasydowCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("easydow.com".equals(getHost())) {
+            if (host == null || "easydow.com".equals(host)) {
+                return "easydow.org";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public EasydowCom(PluginWrapper wrapper) {
+    public EasydowOrg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }

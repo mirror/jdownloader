@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p|film/\\d+)", "https?://members\\.evilangelnetwork\\.com/en/video/[A-Za-z0-9\\-_]+/\\d+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p|film/\\d+)", "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" }, flags = { 2, 2 })
 public class EvilAngelCom extends PluginForHost {
 
     public EvilAngelCom(PluginWrapper wrapper) {
@@ -48,13 +48,13 @@ public class EvilAngelCom extends PluginForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
-    private String              dllink           = null;
-    public static final long    trust_cookie_age = 30000l;
-    private static final String HTML_LOGGEDIN    = "id=\"headerLinkLogout\"";
-    public static final String  LOGIN_PAGE       = "http://members.evilangel.com/en";
+    private String              dllink                     = null;
+    public static final long    trust_cookie_age           = 30000l;
+    private static final String HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
+    public static final String  LOGIN_PAGE                 = "http://members.evilangel.com/en";
 
-    private static final String URL_FILM         = "https?://members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
-    private static final String URL_VIDEO        = "https?://members\\.evilangelnetwork\\.com/en/video/[A-Za-z0-9\\-_]+/\\d+";
+    private static final String URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[A-Za-z]{2}/[A-Za-z0-9\\-_]+/film/\\d+";
+    private static final String URL_EVILANGELNETWORK_VIDEO = "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+";
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -75,7 +75,7 @@ public class EvilAngelCom extends PluginForHost {
         if (aa != null) {
             String filename = null;
             loginEvilAngelNetwork(this.br, aa, LOGIN_PAGE, HTML_LOGGEDIN);
-            if (link.getDownloadURL().matches(URL_FILM)) {
+            if (link.getDownloadURL().matches(URL_EVILANGEL_FILM)) {
                 br.getPage(link.getDownloadURL());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -96,7 +96,7 @@ public class EvilAngelCom extends PluginForHost {
                 } else {
                     filename = filename + "-" + quality + ".mp4";
                 }
-            } else if (link.getDownloadURL().matches(URL_VIDEO)) {
+            } else if (link.getDownloadURL().matches(URL_EVILANGELNETWORK_VIDEO)) {
                 br.getPage(link.getDownloadURL());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
