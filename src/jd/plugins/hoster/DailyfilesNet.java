@@ -17,13 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,14 +41,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyfiles.net" }, urls = { "https?://dailyfiles\\.net/([A-Za-z0-9]+)/?" }, flags = { 2 })
+public class DailyfilesNet extends antiDDoSForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyfiles.net" }, urls = { "https?://dailyfiles\\.net/([A-Za-z0-9]+)(/)?" }, flags = { 2 })
-public class DailyfilesNet extends PluginForHost {
     private String  MAINPAGE = "http://dailyfiles.net/";
     private String  accountResponse;
     private Account currentAccount;
@@ -68,74 +65,34 @@ public class DailyfilesNet extends PluginForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
-
-        // correct link stuff goes here, stable is lame!
-        for (DownloadLink link : urls) {
-            if (link.getProperty("FILEID") == null) {
-                String downloadUrl = link.getDownloadURL();
-                String fileID;
-                fileID = new Regex(downloadUrl, "https?://dailyfiles\\.net/([A-Za-z0-9]+)/?").getMatch(0);
-
-                link.setProperty("FILEID", fileID);
-            }
-        }
         try {
             final Browser br = new Browser();
             br.setCookiesExclusive(true);
 
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.setFollowRedirects(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 49) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                boolean first = true;
-                for (final DownloadLink dl : links) {
-                    if (!first) {
-                        sb.append(",");
-                    }
-                    sb.append(dl.getProperty("FILEID"));
-                    first = false;
-                }
+            for (final DownloadLink dllink : urls) {
+                String fileID = new Regex(dllink.getDownloadURL(), "https?://dailyfiles\\.net/([A-Za-z0-9]+)/?").getMatch(0);
+                dllink.setLinkID(fileID);
                 // API CALL
                 // http://dailyfiles.net/API/apidownload.php?request=filecheck&url=http://dailyfiles.net/eacc7758a35bd234/FileUploader.exe
 
-                br.getPage(MAINPAGE + "API/apidownload.php?request=filecheck&url=" + MAINPAGE + sb);
+                getPage(br, MAINPAGE + "API/apidownload.php?request=filecheck&url=" + Encoding.urlEncode(dllink.getDownloadURL()));
 
                 // output: output: filename, filesize
                 String response = br.toString();
-                int fileNumber = 0;
-                for (final DownloadLink dllink : links) {
-                    final String error = checkForErrors(response, "error");
-                    // {"error":"File doesn't exists"}
-                    if (error == null) {
-                        String fileName = PluginJSonUtils.getJson(response, "fileName");
-                        String fileSize = PluginJSonUtils.getJson(response, "fileSize");
-                        fileName = Encoding.htmlDecode(fileName.trim());
-                        fileName = unescape(fileName);
-                        dllink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
-                        dllink.setDownloadSize(SizeFormatter.getSize(fileSize));
-                        dllink.setAvailable(true);
-                    } else {
-                        dllink.setAvailable(false);
-                        logger.warning("Linkchecker returns: " + error + " for: " + getHost() + " and link: " + dllink.getDownloadURL());
-                    }
-
-                    fileNumber++;
-
-                }
-                if (index == urls.length) {
-                    break;
+                final String error = checkForErrors(response, "error");
+                // {"error":"File doesn't exists"}
+                if (error == null) {
+                    String fileName = PluginJSonUtils.getJson(response, "fileName");
+                    String fileSize = PluginJSonUtils.getJson(response, "fileSize");
+                    fileName = Encoding.htmlDecode(fileName.trim());
+                    dllink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
+                    dllink.setDownloadSize(SizeFormatter.getSize(fileSize));
+                    dllink.setAvailable(true);
+                } else {
+                    dllink.setAvailable(false);
+                    logger.warning("Linkchecker returns: " + error + " for: " + getHost() + " and link: " + dllink.getDownloadURL());
                 }
             }
         } catch (final Exception e) {
@@ -146,15 +103,30 @@ public class DailyfilesNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            return AvailableStatus.UNCHECKED;
-        }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+        final boolean checked = checkLinks(new DownloadLink[] { downloadLink });
+        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
+        if (!checked && hasAntiddosCaptchaRequirement()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (!checked || !downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!downloadLink.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return AvailableStatus.TRUE;
+        return getAvailableStatus(downloadLink);
 
+    }
+
+    private AvailableStatus getAvailableStatus(final DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
     }
 
     @Override
@@ -171,16 +143,9 @@ public class DailyfilesNet extends PluginForHost {
 
         br.setFollowRedirects(false);
         requestFileInformation(downloadLink);
-        String getURL;
         Account currAccount = getCurrentAccount();
-        if (currAccount == null) {
-            getURL = MAINPAGE + "API/apidownload.php?request=getfile&url=" + downloadURL;
-        } else {
-            getURL = MAINPAGE + "API/apidownload.php?request=getfile&url=" + downloadURL + "&username=" + Encoding.urlEncode(currAccount.getUser()) + "&password=" + Encoding.urlEncode(currAccount.getPass());
-            // Encoding.urlEncode()
-        }
-
-        br.getPage(getURL);
+        final String getURL = MAINPAGE + "API/apidownload.php?request=getfile&url=" + Encoding.urlEncode(downloadURL) + (currAccount != null ? "&username=" + Encoding.urlEncode(currAccount.getUser()) + "&password=" + Encoding.urlEncode(currAccount.getPass()) : "");
+        getPage(getURL);
         String response = br.toString();
 
         String error = checkForErrors(response, "error");
@@ -198,24 +163,17 @@ public class DailyfilesNet extends PluginForHost {
             sleep(watiTime * 100l, downloadLink);
 
         }
-        String fileLocation = PluginJSonUtils.getJson(response, "downloadlink");
+        final String fileLocation = PluginJSonUtils.getJson(response, "downloadlink");
         if (fileLocation == null) {
-            logger.info("Hoster: DailytfilesNets reports: filelocation not found with link: " + downloadLink.getDownloadURL());
+            logger.info("filelocation not found with link: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, getPhrase("DOWNLOADLINK_ERROR"));
 
         }
-
-        String dllink = fileLocation.replace("\\", "");
-
         response = br.toString();
         if (response == null) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Host busy!", 1 * 60l * 1000l);
         }
-
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Can't find final download link!", -1l);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, fileLocation, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleDownloadServerErrors();
@@ -227,20 +185,6 @@ public class DailyfilesNet extends PluginForHost {
     private final void handleDownloadServerErrors() throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-    }
-
-    private void setLoginData(final Account account) throws Exception {
-        br.getPage(MAINPAGE);
-        br.setCookiesExclusive(true);
-        final Object ret = account.getProperty("cookies", null);
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-        if (account.isValid()) {
-            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                this.br.setCookie(MAINPAGE, key, value);
-            }
         }
     }
 
@@ -264,10 +208,8 @@ public class DailyfilesNet extends PluginForHost {
             return;
         }
 
-        String getURL = MAINPAGE + "API/apidownload.php?request=getfile&url=" +
-                // Encoding.urlEncode()
-                downloadURL + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-        br.getPage(getURL);
+        String getURL = MAINPAGE + "API/apidownload.php?request=getfile&url=" + Encoding.urlEncode(downloadURL) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+        getPage(getURL);
         response = br.toString();
 
         String error = checkForErrors(response, "error");
@@ -283,15 +225,13 @@ public class DailyfilesNet extends PluginForHost {
 
         String fileLocation = PluginJSonUtils.getJson(response, "downloadlink");
         if (fileLocation == null) {
-            logger.info("Hoster: DailytfilesNets reports: filelocation not found with link: " + downloadLink.getDownloadURL());
+            logger.info("filelocation not found with link: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, getPhrase("DOWNLOADLINK_ERROR"));
 
         }
         // setLoginData(account);
 
-        String dllink = fileLocation.replace("\\", "");
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, fileLocation, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.warning("The final dllink seems not to be a file!" + "Response: " + dl.getConnection().getResponseMessage() + ", code: " + dl.getConnection().getResponseCode() + "\n" + dl.getConnection().getContentType());
@@ -309,22 +249,20 @@ public class DailyfilesNet extends PluginForHost {
     private String login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             br.setCookiesExclusive(true);
-            final Object ret = account.getProperty("cookies", null);
-
             // API Call: /API/apidownload.php?request=usercheck&username=xxx&password=xxx
-            br.getPage(MAINPAGE + "/API/apidownload.php?request=usercheck&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            getPage(MAINPAGE + "/API/apidownload.php?request=usercheck&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             String response = br.toString();
 
             String error = checkForErrors(response, "error");
             if (error != null) {
-                logger.info("Hoster Dailyfiles.net reports: " + error);
+                logger.info(error);
                 if ("Not authenticated".equals(error)) {
                     error = getPhrase("NOT_AUTHENTICATED");
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, error);
 
             }
-            br.postPageRaw(MAINPAGE + "/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            postPage(MAINPAGE + "/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
 
             account.setProperty("name", Encoding.urlEncode(account.getUser()));
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
@@ -396,16 +334,6 @@ public class DailyfilesNet extends PluginForHost {
         return ai;
     }
 
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
     /*
      * @Override public int getMaxSimultanPremiumDownloadNum() { }
      */
@@ -455,8 +383,8 @@ public class DailyfilesNet extends PluginForHost {
                                                   {
 
                                                       put("LOGIN_ERROR", "Login Error");
-                                                      put("PREMIUM_USER", "Premium User");
-                                                      put("FREE_USER", "Registered (free) user");
+                                                      put("PREMIUM_USER", "Premium Account");
+                                                      put("FREE_USER", "Free Account");
                                                       put("NOT_AUTHENTICATED", "Not Authenticated");
                                                       put("DOWNLOADLINK_ERROR", "Downloadlink error");
                                                   }
