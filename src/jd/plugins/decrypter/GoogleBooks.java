@@ -32,11 +32,11 @@ import jd.utils.JDUtilities;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "https?://books\\.google(\\.[a-z]+){1,2}/books\\?id=[0-9a-zA-Z-_]+.*" }, flags = { 0 })
-public class GglBks extends PluginForDecrypt {
+public class GoogleBooks extends PluginForDecrypt {
 
     private final boolean useRUA = true;
 
-    public GglBks(PluginWrapper wrapper) {
+    public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
     }
 
