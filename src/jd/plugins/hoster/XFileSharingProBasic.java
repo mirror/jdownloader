@@ -129,7 +129,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(1);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(20);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
@@ -141,7 +141,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: reCaptchaV2<br />
+     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
      * other:<br />
      */
 
@@ -1307,7 +1307,7 @@ public class XFileSharingProBasic extends PluginForHost {
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
