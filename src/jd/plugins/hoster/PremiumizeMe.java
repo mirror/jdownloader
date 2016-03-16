@@ -29,6 +29,19 @@ import java.util.zip.GZIPOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,19 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.UnavailableHost;
 import jd.plugins.components.UsenetConfigInterface;
 import jd.plugins.components.UsenetServer;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }, flags = { 2 })
 public class PremiumizeMe extends UseNet {
@@ -140,7 +140,7 @@ public class PremiumizeMe extends UseNet {
                 }
                 if (!con.getContentType().contains("html") && con.isOK()) {
                     if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
+                        link.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(con), false));
                     }
                     link.setVerifiedFileSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
@@ -259,7 +259,7 @@ public class PremiumizeMe extends UseNet {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
         } catch (final SocketTimeoutException e) {
-            logger.info(this.getHost() + ": SocketTimeoutException on downloadstart");
+            logger.info("SocketTimeoutException on downloadstart");
             int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_sockettimeout", 1);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 20) {
@@ -268,7 +268,7 @@ public class PremiumizeMe extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
                 link.setProperty("timesfailed" + FAIL_STRING + "_sockettimeout", Property.NULL);
-                logger.info(this.getHost() + ": SocketTimeoutException on downloadstart -> Show 'Connection problems' error'");
+                logger.info("SocketTimeoutException on downloadstart -> Show 'Connection problems' error'");
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection problems", 5 * 60 * 1000l);
             }
         }
