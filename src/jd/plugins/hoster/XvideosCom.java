@@ -81,6 +81,7 @@ public class XvideosCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().matches(type_special)) {
             link.setUrlDownload("http://www.xvideos.com/video" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
+            link.setContentUrl(link.getDownloadURL());
         }
     }
 
