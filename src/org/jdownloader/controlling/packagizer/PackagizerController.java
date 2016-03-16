@@ -732,93 +732,94 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (SubFolderByPackageRule.ID.equals(lgr.getRule().getId()) && StringUtils.contains(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), "<jd:")) {
             // ignore SubFolderByPackageRule when default folder already contains variables
             return;
-        }
-        if (lgr.getRule().getChunks() >= 0) {
-            /* customize chunk numbers */
-            link.setChunks(lgr.getRule().getChunks());
-        }
-        if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
-            /* customize download destination folder */
-            final String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
-            final PackageInfo dpi;
-            if (link.getDesiredPackageInfo() != null) {
-                if (StringUtils.isNotEmpty(path)) {
-                    dpi = link.getDesiredPackageInfo();
-                } else {
-                    dpi = null;
-                }
-            } else {
-                if (StringUtils.isNotEmpty(path)) {
-                    dpi = new PackageInfo();
-                } else {
-                    dpi = null;
-                }
+        } else {
+            if (lgr.getRule().getChunks() >= 0) {
+                /* customize chunk numbers */
+                link.setChunks(lgr.getRule().getChunks());
             }
-            if (dpi != null) {
-                dpi.setPackagizerRuleMatched(true);
-                dpi.setDestinationFolder(path);
-                link.setDesiredPackageInfo(dpi);
-            }
-        }
-        if (lgr.getRule().getLinkEnabled() != null) {
-            link.setEnabled(lgr.getRule().getLinkEnabled());
-        }
-        if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
-            /* customize package name */
-            final String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
-            final PackageInfo dpi;
-            if (link.getDesiredPackageInfo() != null) {
-                if (StringUtils.isNotEmpty(name)) {
-                    dpi = link.getDesiredPackageInfo();
+            if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
+                /* customize download destination folder */
+                final String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
+                final PackageInfo dpi;
+                if (link.getDesiredPackageInfo() != null) {
+                    if (StringUtils.isNotEmpty(path)) {
+                        dpi = link.getDesiredPackageInfo();
+                    } else {
+                        dpi = null;
+                    }
                 } else {
-                    dpi = null;
+                    if (StringUtils.isNotEmpty(path)) {
+                        dpi = new PackageInfo();
+                    } else {
+                        dpi = null;
+                    }
                 }
-            } else {
-                if (StringUtils.isNotEmpty(name)) {
-                    dpi = new PackageInfo();
-                } else {
-                    dpi = null;
+                if (dpi != null) {
+                    dpi.setPackagizerRuleMatched(true);
+                    dpi.setDestinationFolder(path);
+                    link.setDesiredPackageInfo(dpi);
                 }
             }
-            if (dpi != null) {
-                dpi.setPackagizerRuleMatched(true);
-                dpi.setName(name);
-                link.setDesiredPackageInfo(dpi);
+            if (lgr.getRule().getLinkEnabled() != null) {
+                link.setEnabled(lgr.getRule().getLinkEnabled());
             }
-        }
-        if (lgr.getRule().getPriority() != null) {
-            /* customize priority */
-            link.setPriority(lgr.getRule().getPriority());
-        }
-        if (isTestInstance() == false) {
-            if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
+            if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
+                /* customize package name */
+                final String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
+                final PackageInfo dpi;
+                if (link.getDesiredPackageInfo() != null) {
+                    if (StringUtils.isNotEmpty(name)) {
+                        dpi = link.getDesiredPackageInfo();
+                    } else {
+                        dpi = null;
+                    }
+                } else {
+                    if (StringUtils.isNotEmpty(name)) {
+                        dpi = new PackageInfo();
+                    } else {
+                        dpi = null;
+                    }
+                }
+                if (dpi != null) {
+                    dpi.setPackagizerRuleMatched(true);
+                    dpi.setName(name);
+                    link.setDesiredPackageInfo(dpi);
+                }
+            }
+            if (lgr.getRule().getPriority() != null) {
+                /* customize priority */
+                link.setPriority(lgr.getRule().getPriority());
+            }
+            if (isTestInstance() == false) {
+                if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
+                    /* customize filename */
+                    final String name = replaceVariables(lgr.getRule().getFilename(), link, lgr);
+                    if (StringUtils.isNotEmpty(name)) {
+                        link.setName(name);
+                    }
+                }
+            }
+            if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
                 /* customize filename */
-                final String name = replaceVariables(lgr.getRule().getFilename(), link, lgr);
-                if (StringUtils.isNotEmpty(name)) {
-                    link.setName(name);
-                }
+                link.setComment(replaceVariables(lgr.getRule().getComment(), link, lgr));
             }
-        }
-        if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
-            /* customize filename */
-            link.setComment(replaceVariables(lgr.getRule().getComment(), link, lgr));
-        }
-        Boolean b = null;
-        if ((b = lgr.getRule().isAutoExtractionEnabled()) != null) {
-            /* customize auto extract */
-            link.getArchiveInfo().setAutoExtract(b ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-        }
-        if ((b = lgr.getRule().isAutoAddEnabled()) != null) {
-            /* customize auto add */
-            link.setAutoConfirmEnabled(b);
-        }
-        if ((b = lgr.getRule().isAutoStartEnabled()) != null) {
-            /* customize auto start */
-            link.setAutoStartEnabled(b);
-        }
-        if ((b = lgr.getRule().isAutoForcedStartEnabled()) != null) {
-            /* customize auto start */
-            link.setForcedAutoStartEnabled(b);
+            Boolean b = null;
+            if ((b = lgr.getRule().isAutoExtractionEnabled()) != null) {
+                /* customize auto extract */
+                link.getArchiveInfo().setAutoExtract(b ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            }
+            if ((b = lgr.getRule().isAutoAddEnabled()) != null) {
+                /* customize auto add */
+                link.setAutoConfirmEnabled(b);
+            }
+            if ((b = lgr.getRule().isAutoStartEnabled()) != null) {
+                /* customize auto start */
+                link.setAutoStartEnabled(b);
+            }
+            if ((b = lgr.getRule().isAutoForcedStartEnabled()) != null) {
+                /* customize auto start */
+                link.setForcedAutoStartEnabled(b);
+            }
         }
     }
 
