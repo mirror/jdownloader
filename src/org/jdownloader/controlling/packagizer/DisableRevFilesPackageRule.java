@@ -14,8 +14,6 @@ public class DisableRevFilesPackageRule extends PackagizerRule {
 
     public DisableRevFilesPackageRule() {
         super();
-        // setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, "*.rev", false));
-
     }
 
     public void init() {

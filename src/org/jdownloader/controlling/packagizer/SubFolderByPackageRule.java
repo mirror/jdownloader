@@ -10,12 +10,10 @@ public class SubFolderByPackageRule extends PackagizerRule {
 
     public SubFolderByPackageRule() {
         super();
-
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-
         super.setEnabled(enabled);
     }
 
