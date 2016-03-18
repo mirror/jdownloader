@@ -40,11 +40,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehost.eu" }, urls = { "https?://sharehost\\.eu/[^<>\"]*?/(.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehost.eu" }, urls = { "https?://(www\\.)?sharehost\\.eu/[^<>\"]*?/(.*)" }, flags = { 2 })
+
 public class ShareHostEu extends PluginForHost {
 
     public ShareHostEu(PluginWrapper wrapper) {
@@ -73,6 +74,7 @@ public class ShareHostEu extends PluginForHost {
         // filePassword - password for file (if exists)
         br.postPage(MAINPAGE + "/fapi/fileInfo", "url=" + downloadLink.getDownloadURL());
 
+        String response = br.toString();
         // Output:
         // fileName - file name
         // filePath - file path
@@ -85,9 +87,9 @@ public class ShareHostEu extends PluginForHost {
         // fileNotFound
         // filePasswordNotMatch - podane hasło dostępu do pliku jest niepoprawne
 
-        String success = getJson("success");
+        String success = PluginJSonUtils.getJson(response, "success");
         if ("false".equals(success)) {
-            String error = getJson("error");
+            String error = PluginJSonUtils.getJson(response, "error");
             if ("fileNotFound".equals(error)) {
                 return AvailableStatus.FALSE;
             } else if ("emptyUrl".equals(error)) {
@@ -96,17 +98,16 @@ public class ShareHostEu extends PluginForHost {
                 return AvailableStatus.UNCHECKED;
             }
         }
-        String fileName = getJson("fileName");
-        String filePath = getJson("filePath");
-        String fileSize = getJson("fileSize");
-        String fileAvailable = getJson("fileAvailable");
-        String fileDescription = getJson("fileDescription");
+        String fileName = PluginJSonUtils.getJson(response, "fileName");
+        String filePath = PluginJSonUtils.getJson(response, "filePath");
+        String fileSize = PluginJSonUtils.getJson(response, "fileSize");
+        String fileAvailable = PluginJSonUtils.getJson(response, "fileAvailable");
+        String fileDescription = PluginJSonUtils.getJson(response, "fileDescription");
 
         if ("false".equals(fileAvailable)) {
             downloadLink.setAvailable(false);
         } else {
             fileName = Encoding.htmlDecode(fileName.trim());
-            fileName = unescape(fileName);
             downloadLink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
             downloadLink.setAvailable(true);
@@ -159,9 +160,9 @@ public class ShareHostEu extends PluginForHost {
         // Errors:
         // emptyLoginOrPassword
         // userNotFound
-        String userIsPremium = getJson(accountResponse, "userIsPremium");
-        String userPremiumExpire = getJson(accountResponse, "userPremiumExpire");
-        String userTrafficToday = getJson(accountResponse, "userTrafficToday");
+        String userIsPremium = PluginJSonUtils.getJson(accountResponse, "userIsPremium");
+        String userPremiumExpire = PluginJSonUtils.getJson(accountResponse, "userPremiumExpire");
+        String userTrafficToday = PluginJSonUtils.getJson(accountResponse, "userTrafficToday");
         long userTrafficLeft = Long.parseLong(userTrafficToday);
         ai.setTrafficLeft(userTrafficLeft);
 
@@ -210,11 +211,11 @@ public class ShareHostEu extends PluginForHost {
                 // emptyLoginOrPassword
                 // userNotFound
                 String response = br.toString();
-                String success = getJson("success");
+                String success = PluginJSonUtils.getJson(response, "success");
                 if ("false".equals(success)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("INVALID_LOGIN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if ("true".equals(getJson(response, "userIsPremium"))) {
+                if ("true".equals(PluginJSonUtils.getJson(response, "userIsPremium"))) {
                     account.setProperty("premium", "true");
                 } else {
                     account.setProperty("premium", "false");
@@ -349,16 +350,16 @@ public class ShareHostEu extends PluginForHost {
             // filePasswordNotMatch - podane hasło dostępu do pliku jest niepoprawne
             // userAccountNotPremium - konto użytkownika nie posiada dostępu premium
             // userCanNotDownload - użytkownik nie może pobrać pliku z innych powodów (np. brak transferu)
-            String success = getJson("success");
+            String success = PluginJSonUtils.getJson(br, "success");
             if ("false".equals(success)) {
-                if ("userCanNotDownload".equals(getJson("error"))) {
+                if ("userCanNotDownload".equals(PluginJSonUtils.getJson(br, "error"))) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No traffic left!");
-                } else if (("fileNotFound".equals(getJson("error")))) {
+                } else if (("fileNotFound".equals(PluginJSonUtils.getJson(br, "error")))) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
 
-            String finalDownloadLink = getJson("fileUrlDownload");
+            String finalDownloadLink = PluginJSonUtils.getJson(br, "fileUrlDownload");
             setLoginData(account);
 
             String dllink = finalDownloadLink.replace("\\", "");
@@ -383,14 +384,6 @@ public class ShareHostEu extends PluginForHost {
 
     private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
 
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
     @Override
     public void reset() {
     }
@@ -402,20 +395,6 @@ public class ShareHostEu extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-    }
-
-    /*
-     * *
-     * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
     void setMainPage(String downloadUrl) {
@@ -447,35 +426,35 @@ public class ShareHostEu extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-                                                      put("PREMIUM", "Premium User");
-                                                      put("FREE", "Free (Registered) User");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-                                                      put("LOGIN_ERROR", "ShareHost.Eu: Login Error");
-                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-                                                      put("NO_TRAFFIC", "No traffic left");
-                                                      put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
-                                                      put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
-                                                      put("NO_FREE_SLOTS", "No free slots for downloading this file");
-                                                  }
-                                              };
+        {
+            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+            put("PREMIUM", "Premium User");
+            put("FREE", "Free (Registered) User");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+            put("LOGIN_ERROR", "ShareHost.Eu: Login Error");
+            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+            put("NO_TRAFFIC", "No traffic left");
+            put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
+            put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
+            put("NO_FREE_SLOTS", "No free slots for downloading this file");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-                                                      put("PREMIUM", "Użytkownik Premium");
-                                                      put("FREE", "Użytkownik zarejestrowany (darmowy)");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-                                                      put("LOGIN_ERROR", "ShareHost.Eu: Błąd logowania");
-                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
-                                                      put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
-                                                      put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
-                                                      put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
+        {
+            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+            put("PREMIUM", "Użytkownik Premium");
+            put("FREE", "Użytkownik zarejestrowany (darmowy)");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+            put("LOGIN_ERROR", "ShareHost.Eu: Błąd logowania");
+            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+            put("NO_TRAFFIC", "Brak dostępnego transferu");
+            put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
+            put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
+            put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
 
-                                                  }
-                                              };
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
