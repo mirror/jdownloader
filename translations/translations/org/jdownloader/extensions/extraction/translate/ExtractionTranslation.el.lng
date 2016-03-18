@@ -29,6 +29,7 @@ context_password_msg=Ορισμός Κωδικού για αποσυμπίεση
 context_password_msg2=Ορισμός Κωδικού για αποσυμπίεση του %s1.\r\nΠροτεινόμενοι κωδικοί:\n%s2
 context_password_msg2_multi=Ορισμός Κωδικού.\r\nΠροτεινόμενοι κωδικοί:\n%s1
 context_password_msg_multi=Ορισμός κωδικού
+contextmenu_abort=Ματαίωση αποσυμπίεσης
 contextmenu_autodeletefiles=Διαγραφή Αρχείων Συμπίεσης
 contextmenu_autodeletelinks=Αφαίρεση Συνδέσμων από τον Κατάλογο Λήψεων
 contextmenu_autoextract=Αυτόματη Αποσυμπίεση
