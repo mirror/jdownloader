@@ -27,6 +27,8 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -49,8 +51,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?\\&]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
@@ -62,7 +62,7 @@ public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal("vk.com", 50, 20, 2000);
+            Browser.setRequestIntervalLimitGlobal("vk.com", 250, 20, 30000);
         } catch (final Throwable e) {
         }
     }
@@ -180,12 +180,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private final boolean           docs_add_unique_id                      = true;
 
     private ArrayList<DownloadLink> decryptedLinks                          = null;
-
-    @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink ret = super.createDownloadlink(link);
-        return ret;
-    }
 
     /* General errorhandling language implementation: English | Rus | Polish */
     /*
@@ -948,7 +942,7 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
+        final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(-?\\d+)$").getMatch(0);
         String numberofentries = getJson("videoCount");
         if (numberofentries == null) {
             numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
@@ -959,13 +953,9 @@ public class VKontakteRu extends PluginForDecrypt {
         final int numberOfEntrys = Integer.parseInt(numberofentries);
         int totalCounter = 0;
         while (totalCounter < numberOfEntrys) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user, stopping...");
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in 0.9.851 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user, stopping...");
+                return;
             }
             String[] videos = null;
             if (totalCounter < 12) {
@@ -989,13 +979,9 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             for (String singleVideo : videos) {
                 try {
-                    try {
-                        if (this.isAbort()) {
-                            logger.info("Decryption aborted by user, stopping...");
-                            return;
-                        }
-                    } catch (final Throwable e) {
-                        // Not available in 0.9.851 Stable
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user, stopping...");
+                        return;
                     }
                     singleVideo = singleVideo.replace(",", "_");
                     singleVideo = singleVideo.replace(" ", "");
@@ -1178,7 +1164,9 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String wall_single_photo_content_url = getProtocol() + "vk.com/" + wall_ID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
 
                     dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
-                    /* Ovverride previously set content URL as this really is the direct link to the picture which works fine via browser. */
+                    /*
+                     * Ovverride previously set content URL as this really is the direct link to the picture which works fine via browser.
+                     */
                     try {
                         dl.setContentUrl(wall_single_photo_content_url);
                     } catch (final Throwable e) {
