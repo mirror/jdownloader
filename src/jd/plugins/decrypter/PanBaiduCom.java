@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?\\&dir.+)?|http://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?\\&dir.+)?|https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -60,7 +60,9 @@ public class PanBaiduCom extends PluginForDecrypt {
         if (!parameter.matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED) && !parameter.matches(TYPE_FOLDER_SHORT)) {
             /* Correct invalid "view" linktypes - we need one general linkformat! */
             final String replace_part = new Regex(parameter, "(baidu\\.com/share/[a-z]+)").getMatch(0);
-            parameter = parameter.replaceAll(replace_part, "baidu.com/share/link");
+            if (replace_part != null) {
+                parameter = parameter.replaceAll(replace_part, "baidu.com/share/link");
+            }
         }
         br.setFollowRedirects(true);
         this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0");
@@ -106,6 +108,18 @@ public class PanBaiduCom extends PluginForDecrypt {
             link_password_cookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
             br.getHeaders().remove("X-Requested-With");
             br.getPage(parameter);
+            if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
+                logger.info("Link offline: " + parameter);
+                final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                try {
+                    dl.setContentUrl(parameter);
+                } catch (Throwable e) {
+                }
+                dl.setProperty("offline", true);
+                dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
         }
 
         String singleFolder = new Regex(parameter, "#dir/path=(.*?)$").getMatch(0);
