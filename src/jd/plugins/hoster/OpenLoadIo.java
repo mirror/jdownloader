@@ -25,13 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -47,6 +40,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -163,7 +163,10 @@ public class OpenLoadIo extends antiDDoSForHost {
 
                     /* Trust API */
                     dl.setAvailable(true);
-                    dl.setFinalFileName(filename);
+                    // Check filename from any decrypter first, please do not remove
+                    if (dl.getFinalFileName() == null) {
+                        dl.setFinalFileName(filename);
+                    }
                     dl.setDownloadSize(filesize);
                     dl.setSha1Hash(sha1);
 
@@ -554,6 +557,9 @@ public class OpenLoadIo extends antiDDoSForHost {
         case 400:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error 400");
         case 403:
+            if (br.containsHTML("the owner of this file doesn't allow API downloads")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "The owner of this file doesn't allow API downloads");
+            }
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
