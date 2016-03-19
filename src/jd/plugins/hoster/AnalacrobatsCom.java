@@ -59,7 +59,7 @@ public class AnalacrobatsCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     private String               DLLINK                       = null;
-    public static final long     trust_cookie_age             = 30000l;
+    public static final long     trust_cookie_age             = 300000l;
     private static final String  HTML_LOGGEDIN                = "\"headerToolbarlinkLogout\"";
     public static final String   LOGIN_PAGE                   = "http://members.analacrobats.com/en";
     private static final String  HTML_ACCOUNTNEEDED           = "class=\"alertTitle\"";

@@ -95,7 +95,7 @@ public class FilePlanetaCom extends PluginForHost {
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000l;
-    public static final long           trust_cookie_age             = 30000l;
+    public static final long           trust_cookie_age             = 300000l;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;

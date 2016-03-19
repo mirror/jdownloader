@@ -24,6 +24,10 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,14 +50,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?fernsehkritik\\.tv/jdownloaderfolgeneu?\\d+", "https?://(?:www\\.)?massengeschmack\\.tv/(?:play|clip)/[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" }, flags = { 2, 2 })
 public class FernsehkritikTv extends PluginForHost {
 
-    public static final long trust_cookie_age = 30000l;
+    public static final long trust_cookie_age = 300000l;
 
     /* Officially their (API) cookie is only valid for max 30 minutes! */
     // public static final long max_cookie_age = 100800l;
@@ -142,7 +142,7 @@ public class FernsehkritikTv extends PluginForHost {
      * Another way to easily get the BEST(WORST) file/rendition of a video: <br />
      * https://massengeschmack.tv/dlr/<ClipID>/(best|mobile).mp4<br />
      * Example: https://massengeschmack.tv/dlr/sakura-1/best.mp4<br />
-     * */
+     */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.is_premiumonly_content = false;
@@ -724,11 +724,15 @@ public class FernsehkritikTv extends PluginForHost {
     // if (!hasLoginCookie(br)) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
+    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
+    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your
+    // password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without
+    // copy & paste.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -942,7 +946,7 @@ public class FernsehkritikTv extends PluginForHost {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     public static String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
@@ -952,7 +956,7 @@ public class FernsehkritikTv extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
