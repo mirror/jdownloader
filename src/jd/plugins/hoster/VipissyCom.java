@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -34,8 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipissy.com" }, urls = { "https?://(?:www\\.)?members\\.vipissy\\.com/(?:updates/)video\\-[^/]+/" }, flags = { 2 })
 public class VipissyCom extends PluginForHost {
@@ -125,7 +125,7 @@ public class VipissyCom extends PluginForHost {
 
     private static final String MAINPAGE         = "http://members.vipissy.com";
     private static Object       LOCK             = new Object();
-    public static final long    trust_cookie_age = 30000l;
+    public static final long    trust_cookie_age = 300000l;
 
     private void login(final Account account) throws Exception {
         synchronized (LOCK) {

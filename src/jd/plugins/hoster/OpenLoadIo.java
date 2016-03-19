@@ -86,7 +86,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     private LinkedHashMap<String, Object> api_data                     = null;
 
     /* Website related things */
-    private static final long             trust_cookie_age             = 30000l;
+    private static final long             trust_cookie_age             = 300000l;
 
     private static final boolean          ACCOUNT_FREE_RESUME          = true;
     private static final int              ACCOUNT_FREE_MAXCHUNKS       = 0;

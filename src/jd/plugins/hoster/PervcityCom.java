@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -35,9 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pervcity.com" }, urls = { "https?://(?:www\\.)?members\\.pervcity\\.com/scenes/[^<>\"/]+\\.html" }, flags = { 2 })
 public class PervcityCom extends PluginForHost {
@@ -144,7 +144,7 @@ public class PervcityCom extends PluginForHost {
 
     private static final String MAINPAGE         = "http://members.pervcity.com";
     private static Object       LOCK             = new Object();
-    public static final long    trust_cookie_age = 30000l;
+    public static final long    trust_cookie_age = 300000l;
 
     private void login(final Account account) throws Exception {
         synchronized (LOCK) {

@@ -48,10 +48,10 @@ public class EvilAngelCom extends PluginForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
-    private String              dllink                     = null;
-    public static final long    trust_cookie_age           = 30000l;
-    private static final String HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
-    public static final String  LOGIN_PAGE                 = "http://members.evilangel.com/en";
+    private String              dllink           = null;
+    public static final long    trust_cookie_age = 300000l;
+    private static final String HTML_LOGGEDIN    = "id=\"headerLinkLogout\"";
+    public static final String  LOGIN_PAGE       = "http://members.evilangel.com/en";
 
     private static final String URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[A-Za-z]{2}/[A-Za-z0-9\\-_]+/film/\\d+";
     private static final String URL_EVILANGELNETWORK_VIDEO = "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+";
