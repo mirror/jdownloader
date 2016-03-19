@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
@@ -30,8 +29,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 // DEV NOTES:
 // 162.158.0.0/15 cloudflare
@@ -88,19 +87,26 @@ public class LnkBcks extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private static AtomicReference<String> agent      = new AtomicReference<String>(null);
-    private final String                   surveyLink = "To access the content, you must complete a quick survey\\.";
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            prepBr.getHeaders().put("Accept-Charset", null);
+        }
+        return super.prepBrowser(prepBr, host);
+    }
+
+    private final String surveyLink = "To access the content, you must complete a quick survey\\.";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // urls containing /link/ are no longer valid, but uid seems to be transferable.
         String parameter = param.toString().replace("/link/", "");
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
         {
             // these link formats are derived from secondary url, without this information website takes you to some random website.
             String linkInsideLink = new Regex(parameter, "/[a-f0-9]{8}/url/(.+)").getMatch(0);
@@ -114,12 +120,8 @@ public class LnkBcks extends antiDDoSForDecrypt {
             }
         }
 
-        br.getHeaders().put("User-Agent", agent.get());
-        br.getHeaders().put("Accept-Language", "en,en-GB;q=0.8");
-        br.getHeaders().put("Accept-Charset", null);
-
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        getPage(parameter);
         long firstGet = System.currentTimeMillis();
         String link = br.getRedirectLocation();
         if ((link != null && link.contains("/notfound/")) || br.containsHTML("(>Link Not Found<|>The link may have been deleted by the owner|" + surveyLink + ")")) {
@@ -139,7 +141,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
             final String cuid = link.substring(link.lastIndexOf("/", link.length()));
             // unsupported site but we should grab the link!
             if (StringUtils.equals(puid, cuid)) {
-                br.getPage(link);
+                getPage(link);
                 link = null;
             }
         }
@@ -204,6 +206,14 @@ public class LnkBcks extends antiDDoSForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                {
+                    // javascript check!
+                    final Browser j = br.cloneBrowser();
+                    j.getHeaders().put("Accept", "*/*");
+                    j.getHeaders().put("Cache-Control", null);
+                    getPage(j, "/scripts/jquery.js?r=" + token);
+                }
+
                 // for uid/url/hash links, seem to be the only ones encoded, but for now we will use the JS to determine it as its more
                 // likely to be correct longer -- raztoki 20150425
                 final String urlEncoded = new Regex(js, "UrlEncoded\\s*:\\s*(true|false|null)").getMatch(0);
@@ -236,7 +246,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
                     if (adurl != null) {
                         final Browser ads = br.cloneBrowser();
                         try {
-                            ads.getPage(adurl);
+                            getPage(ads, adurl);
                         } catch (final Throwable t) {
                         }
                     }
@@ -247,11 +257,11 @@ public class LnkBcks extends antiDDoSForDecrypt {
                     final Browser br3 = br.cloneBrowser();
                     br3.getHeaders().put("Accept", "*/*");
                     br3.getHeaders().put("Cache-Control", null);
-                    br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey + "&a_b=false");
-                    link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
+                    getPage(br3, "/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey + "&a_b=false");
+                    link = PluginJSonUtils.getJson(br3, "Url");
                     if ("awe".equalsIgnoreCase(link)) {
                         // more steps y0!
-                        br.getPage("/awe");
+                        getPage("/awe");
                         firstGet = System.currentTimeMillis();
                         link = null;
                         // prevent inf loop.
