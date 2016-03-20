@@ -11,18 +11,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.RouterPlugin;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.IPCheckProvider;
-import jd.controlling.reconnect.ipcheck.InvalidIPException;
-import jd.http.Browser;
-import jd.http.QueryInfo;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
@@ -42,36 +30,48 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.IPCheckProvider;
+import jd.controlling.reconnect.ipcheck.InvalidIPException;
+import jd.http.Browser;
+import jd.http.QueryInfo;
+import net.miginfocom.swing.MigLayout;
+
 /**
  * Plugin to use an extern tool for reconnection
  */
 public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
-    public static final String             ID = "SpeedPortHybrid";
+    public static final String ID = "SpeedPortHybrid";
 
-    private Icon                           icon;
+    private Icon icon;
 
-    private ReconnectInvoker               invoker;
+    private ReconnectInvoker invoker;
 
-    private ExtPasswordField               txtPassword;
+    private ExtPasswordField txtPassword;
 
     private SpeedPortHybridReconnectConfig config;
 
-    private ExtTextField                   txtIP;
+    private ExtTextField txtIP;
 
-    private Browser                        br;
+    private Browser br;
 
-    private String                         derivedk;
+    private String derivedk;
 
-    private String                         csrf;
+    private String csrf;
 
-    private String                         challengev;
+    private String challengev;
 
-    private String                         onlineStatus;
+    private String onlineStatus;
 
-    private String                         session;
+    private String session;
 
-    private String                         externalIP;
+    private String externalIP;
 
     private String PBKDF2Key(String password, String salt) throws Exception {
         final PBEKeySpec spec = new PBEKeySpec(Hash.getSHA256(password).toCharArray(), salt.getBytes("UTF-8"), 1000, 16 * 8);
@@ -89,7 +89,9 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
     // Application.setApplication(".appwork");
     //
     // String result =
-    // "\"varid\":\"always_online\",\r\n  \"varvalue\":\"1\"\r\n },\r\n {\r\n  \"vartype\":\"value\",\r\n  \"varid\":\"public_ip_v4\",\r\n  \"varvalue\":\"217.241.66.150\"\r\n  },\r\n  {\r\n  \"vartype\":\"value\",\r\n \"varid\":\"gateway_ip_v4\",\r\n\"varvalue\":\"217.241.0.1\"\r\n}";
+    // "\"varid\":\"always_online\",\r\n \"varvalue\":\"1\"\r\n },\r\n {\r\n \"vartype\":\"value\",\r\n \"varid\":\"public_ip_v4\",\r\n
+    // \"varvalue\":\"217.241.66.150\"\r\n },\r\n {\r\n \"vartype\":\"value\",\r\n
+    // \"varid\":\"gateway_ip_v4\",\r\n\"varvalue\":\"217.241.0.1\"\r\n}";
     // String ip = new SpeedPortHybrid().extractVariable(result, "public_ip_v4");
     // System.out.println("Parser: " + ("217.241.66.150".equals(ip)));
     // encryptTest();
@@ -217,7 +219,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         if (externalIP != null) {
             return IP.getInstance(externalIP);
         } else {
-            throw new InvalidIPException("null");
+            throw new IPCheckException("Offline");
         }
     }
 
@@ -277,9 +279,9 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
                 decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=online&csrf_token=" + csrf)));
                 /*
                  * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32, 16);
-                 * 
+                 *
                  * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
-                 * 
+                 *
                  * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv), sjcl.codec.hex.toBits(adata));
                  * pt = sjcl.codec.utf8String.fromBits(pt); return pt;
                  */
