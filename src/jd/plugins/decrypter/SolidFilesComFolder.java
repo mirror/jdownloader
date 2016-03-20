@@ -26,11 +26,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/folder/[a-z0-9]+/" }, flags = { 0 })
 public class SolidFilesComFolder extends PluginForDecrypt {
@@ -43,20 +43,21 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
         br.getPage(parameter);
-        if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested|>This folder is empty.<") || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>\"]*?)\\- Solidfiles</title>").getMatch(0);
+        String fpName = br.getRegex("<title>([^<>\"]*?)(\\-|\\|) Solidfiles</title>").getMatch(0);
         if (fpName == null) {
             fpName = new Regex(parameter, "([a-z0-9]+)/$").getMatch(0);
         }
         final PluginForHost solidfiles_host = JDUtilities.getPluginForHost("solidfiles.com");
         final boolean decryptFolders = solidfiles_host.getPluginConfig().getBooleanProperty(jd.plugins.hoster.SolidFilesCom.DECRYPTFOLDERS, false);
-        final String[] finfo = br.getRegex("rel=\"file\">(.*?)</article>").getColumn(0);
+        String filelist = br.getRegex("<ul>(.+?)</ul>").getMatch(0);
+        String[] finfos = new Regex(filelist, "(<a href=[^\"]+?</a>)").getColumn(0);
         final String[] folders = br.getRegex("<a href=\"(/folder/[a-z0-9]+/?)\"").getColumn(0);
-        if ((folders == null || folders.length == 0) && (finfo == null || finfo.length == 0)) {
+        if ((folders == null || folders.length == 0) && (finfos == null || finfos.length == 0)) {
             if (br.containsHTML("id=\"file\\-list\"")) {
                 logger.info("Empty folder: " + parameter);
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -65,21 +66,21 @@ public class SolidFilesComFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (finfo != null && finfo.length != 0) {
-            for (final String finfos : finfo) {
-                final Regex urlfilename = new Regex(finfos, "<a href=\"(/d/[^<>\"]*?)\">([^<>\"]*?)</a>");
+        if (finfos != null && finfos.length != 0) {
+            for (final String finfo : finfos) {
+                final Regex urlfilename = new Regex(finfo, "<a href=\"?(/d/[^/]+?/)\"?.*?>([^<>]+?)</a>");
                 String url = urlfilename.getMatch(0);
                 String filename = urlfilename.getMatch(1);
-                final String filesize = new Regex(finfos, "(\\d+(?:\\.\\d+)? ?(bytes|KB|MB|GB))").getMatch(0);
-                if (url == null || filename == null || filesize == null) {
-                    return null;
+                // final String filesize = new Regex(finfo, "(\\d+(?:\\.\\d+)? ?(bytes|KB|MB|GB))").getMatch(0);
+                if (url == null || filename == null) {
+                    logger.info("finfo: " + finfo);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 url = "http://www.solidfiles.com" + url;
                 filename = Encoding.htmlDecode(filename);
-
                 final DownloadLink dl = createDownloadlink(url);
                 dl.setName(filename);
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                // dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
