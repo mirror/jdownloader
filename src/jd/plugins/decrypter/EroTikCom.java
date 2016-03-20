@@ -40,7 +40,7 @@ public class EroTikCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches("http://www\\.ero-tik\\.com/(contact_us|login|memberlist|profile|register)\\.html")) {
+        if (parameter.matches("http://www\\.ero-tik\\.com/(article|browse|contact_us|login|memberlist|profile|register)\\.html")) {
             logger.info("Unsupported/invalid link: " + parameter);
             return crawledLinks;
         }
@@ -87,6 +87,7 @@ public class EroTikCom extends PluginForDecrypt {
         String embed = br.getRegex("src=\"(http://www\\.ero-tik\\.com/embed[^<>\"]*?)\"").getMatch(0);
         if (externID == null && embed == null) {
             logger.info("externID & embed not found");
+            crawledLinks.add(this.createOfflinelink(parameter));
             return;
         }
         if (externID == "http://videomega.tv/iframe.js") {
@@ -94,16 +95,25 @@ public class EroTikCom extends PluginForDecrypt {
             String ref = br.getRegex(">ref=\"([^<>\"]*?)\"").getMatch(0);
             externID = "http://videomega.tv/view.php?ref=" + ref;
         }
-        if (embed != null) {
+        if (externID == null && embed != null) {
             br.getPage(embed);
             String ref = br.getRegex(">ref=\"([^<>\"]*?)\"").getMatch(0);
             if (ref != null) {
                 externID = "http://videomega.tv/view.php?ref=" + ref;
-            } else if (br.containsHTML("<iframe src=")) {
-                externID = br.getRegex("<iframe src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            } else if (br.containsHTML("<iframe")) {
+                externID = br.getRegex("<iframe .*?src=\"(http[^<>\"]*?)\"").getMatch(0);
             } else {
-                externID = br.getRegex("src=\"(http://videomega[^<>\"]*?)\"").getMatch(0);
+                logger.info("Empty embed, no iframe");
+                crawledLinks.add(this.createOfflinelink(parameter));
+                return;
             }
+        }
+        if (externID.contains("freemix")) {
+            // logger.info("Not supported yet: " + externID);
+            br.getPage(externID);
+            String config = br.getRegex("config:.*?(http[^<>\"]*?)(\'|\")").getMatch(0);
+            br.getPage(config);
+            externID = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
         }
         if (externID == null) {
             logger.warning("Decrypter broken (externID == null) for link: " + parameter);
