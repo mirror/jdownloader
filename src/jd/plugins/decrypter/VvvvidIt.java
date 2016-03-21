@@ -68,8 +68,10 @@ public class VvvvidIt extends PluginForDecrypt {
             conn_id = Encoding.urlEncode(conn_id);
         }
         if (season_id_str != null) {
+            /* season_id given via URL */
             season_id = Long.parseLong(season_id_str);
         } else {
+            /* season_id not given --> Get it */
             this.br.getPage("/vvvvid/ondemand/" + show_id + "/seasons/?conn_id=" + conn_id);
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
             final Object season_id_o = DummyScriptEnginePlugin.walkJson(entries, "data/{0}/season_id");
