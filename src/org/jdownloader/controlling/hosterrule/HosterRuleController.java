@@ -38,6 +38,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class HosterRuleController implements AccountControllerListener {
@@ -126,23 +127,19 @@ public class HosterRuleController implements AccountControllerListener {
     private void load() {
         if (configFile.exists()) {
             try {
-                ArrayList<AccountRuleStorable> loaded = JSonStorage.restoreFromString(IO.readFileToString(configFile), new TypeRef<ArrayList<AccountRuleStorable>>() {
+                final ArrayList<AccountRuleStorable> loaded = JSonStorage.restoreFromString(IO.readFileToString(configFile), new TypeRef<ArrayList<AccountRuleStorable>>() {
                 }, null);
                 if (loaded != null && loaded.size() > 0) {
-                    ArrayList<Account> availableAccounts = AccountController.getInstance().list(null);
+                    final ArrayList<Account> availableAccounts = AccountController.getInstance().list(null);
                     final PluginFinder pluginFinder = new PluginFinder(logger);
-                    List<AccountUsageRule> rules = new ArrayList<AccountUsageRule>();
+                    final List<AccountUsageRule> rules = new ArrayList<AccountUsageRule>();
                     for (AccountRuleStorable ars : loaded) {
                         try {
                             final AccountUsageRule rule = ars.restore(availableAccounts);
                             rule.setOwner(this);
                             final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
                             final PluginForHost plugin = pluginFinder.assignPlugin(link, false);
-                            if (plugin == null) {
-                                rule.setEnabled(false);
-                            } else {
-                                rule.setHoster(plugin.getHost());
-                            }
+                            assignPlugin(rule, plugin);
                             rules.add(rule);
                         } catch (Throwable e) {
                             logger.log(e);
@@ -155,6 +152,26 @@ public class HosterRuleController implements AccountControllerListener {
                 logger.log(e);
             }
         }
+    }
+
+    private boolean assignPlugin(final AccountUsageRule rule, final PluginForHost plugin) {
+        if (plugin == null) {
+            rule.setEnabled(false);
+        } else {
+            final LazyHostPlugin lazy = plugin.getLazyP();
+            final boolean isUpdateRequiredPlugin = "UpdateRequired".equalsIgnoreCase(lazy.getDisplayName());
+            final boolean isOfflinePlugin = !lazy.getClassName().endsWith("r.Offline");
+            if (!isUpdateRequiredPlugin && !isOfflinePlugin) {
+                final boolean changed = !StringUtils.equalsIgnoreCase(rule.getHoster(), lazy.getHost());
+                if (changed) {
+                    rule.setHoster(lazy.getHost());
+                    return true;
+                }
+            } else if (isOfflinePlugin) {
+                rule.setEnabled(false);
+            }
+        }
+        return false;
     }
 
     private void validateRules() {
@@ -180,14 +197,8 @@ public class HosterRuleController implements AccountControllerListener {
                     for (final AccountUsageRule rule : loadedRules) {
                         final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
                         final PluginForHost plugin = pluginFinder.assignPlugin(link, false);
-                        if (plugin == null) {
-                            rule.setEnabled(false);
-                        } else {
-                            final boolean fireUpdate = !StringUtils.equalsIgnoreCase(rule.getHoster(), plugin.getHost());
-                            rule.setHoster(plugin.getHost());
-                            if (fireUpdate) {
-                                fireUpdate(rule);
-                            }
+                        if (assignPlugin(rule, plugin)) {
+                            fireUpdate(rule);
                         }
                     }
                     return null;

@@ -144,8 +144,9 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private LazyHostPlugin getFallBackPlugin() {
         if ("UpdateRequired".equalsIgnoreCase(getDisplayName())) {
             return null;
+        } else {
+            return HostPluginController.getInstance().getFallBackPlugin();
         }
-        return HostPluginController.getInstance().getFallBackPlugin();
     }
 
     @Override

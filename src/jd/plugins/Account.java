@@ -258,7 +258,7 @@ public class Account extends Property {
         hoster = h;
     }
 
-    private AtomicBoolean checking = new AtomicBoolean(false);
+    private final AtomicBoolean checking = new AtomicBoolean(false);
 
     public void setChecking(boolean b) {
         checking.set(b);
@@ -302,14 +302,13 @@ public class Account extends Property {
      * @return
      */
     public long getValidPremiumUntil() {
-        AccountInfo info = getAccountInfo();
+        final AccountInfo info = getAccountInfo();
         long ret = -1;
         if (info != null) {
             if (AccountType.PREMIUM.equals(getType()) && !info.isExpired()) {
                 ret = info.getValidUntil();
             }
         }
-
         if (ret <= 0) {
             ret = getLongProperty(VALID_UNTIL, 0);
         }
@@ -482,7 +481,7 @@ public class Account extends Property {
     }
 
     public String toString() {
-        AccountInfo ai = this.accinfo;
+        final AccountInfo ai = this.accinfo;
         if (ai != null) {
             return user + ":" + pass + "@" + hoster + "=" + enabled + " " + super.toString() + " AccInfo: " + ai.toString();
         } else {
