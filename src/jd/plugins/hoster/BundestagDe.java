@@ -63,8 +63,9 @@ public class BundestagDe extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.setAllowedResponseCodes(400);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String linkid = new Regex(link.getDownloadURL(), "ids=(\\d+)").getMatch(0);

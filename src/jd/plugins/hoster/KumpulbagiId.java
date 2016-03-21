@@ -40,10 +40,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id", "kumpulbagi.com" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+", "REGEX_NOT_POSSIBLE" }, flags = { 2, 0 })
-public class KumpulbagiCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" }, flags = { 2 })
+public class KumpulbagiId extends PluginForHost {
 
-    public KumpulbagiCom(PluginWrapper wrapper) {
+    public KumpulbagiId(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE);
     }
@@ -192,6 +192,7 @@ public class KumpulbagiCom extends PluginForHost {
     private static final String MAINPAGE = "http://kumpulbagi.id";
     private static Object       LOCK     = new Object();
 
+    @SuppressWarnings("deprecation")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -202,18 +203,25 @@ public class KumpulbagiCom extends PluginForHost {
                     this.br.setCookies(MAINPAGE, cookies);
                     return;
                 }
+                // br.setAllowedResponseCodes(500);
                 br.getPage(MAINPAGE + "/");
-                br.getPage("/action/Account/Login?returnUrl=%2F");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage("/action/Account/Login?returnUrl=%2F&TimeStamp=" + System.currentTimeMillis());
                 String req_token = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (req_token == null) {
                     req_token = this.br.getCookie(MAINPAGE, "__RequestVerificationToken");
                 }
                 if (req_token == null) {
+                    req_token = this.br.getCookie(MAINPAGE, "__RequestVerificationToken_v2");
+                }
+                if (req_token == null) {
                     req_token = "undefined";
                 }
+
+                this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                // this.br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
+                this.br.getHeaders().put("Referer", "http://kumpulbagi.id/");
                 br.postPage("/action/Account/Login?returnUrl=%2F", "__RequestVerificationToken=" + req_token + "&UserName=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, ".ASPXAUTH") == null) {
+                if (br.getCookie(MAINPAGE, ".ASPXAUTH") == null && br.getCookie(MAINPAGE, ".ASPXAUTH_v2") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

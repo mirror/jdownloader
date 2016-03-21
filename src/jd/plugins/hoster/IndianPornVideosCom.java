@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indianpornvideos.com" }, urls = { "http://(www\\.)?indianpornvideos\\.com/video/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com" }, urls = { "http://(www\\.)?indianpornvideos\\.com/video/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class IndianPornVideosCom extends PluginForHost {
 
     public IndianPornVideosCom(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class IndianPornVideosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video does not exist")) {
+        if (br.containsHTML("This video does not exist") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
@@ -57,6 +57,9 @@ public class IndianPornVideosCom extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]+) \\- Indian Porn Videos</title>").getMatch(0);
         }
         DLLINK = br.getRegex("\"(https?://stream\\.indianpornvideos\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -72,13 +75,7 @@ public class IndianPornVideosCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                /* @since JD2 */
-                con = br2.openHeadConnection(DLLINK);
-            } catch (final Throwable t) {
-                /* Not supported in old 0.9.581 Stable */
-                con = br2.openGetConnection(DLLINK);
-            }
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

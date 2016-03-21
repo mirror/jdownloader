@@ -81,7 +81,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
 
         /* fernsehen/.* links |mediathek/.* links */
         if (parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38) {
-            /* Add offline link so user can see it */
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
             decryptedLinks.add(dl);
@@ -109,6 +108,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         if (sendung == null) {
             sendung = inforegex.getMatch(1);
         }
+        if (sendung == null) {
+            /* Finally fallback to url-information */
+            sendung = new Regex(parameter, "wdr\\.de/(.+)").getMatch(0);
+        }
         String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>]*?)<span class=\"hover\"").getMatch(0);
         if (episode_name == null) {
             episode_name = br.getRegex("class=\"hover\">:([^<>]*?)</span>").getMatch(0);
@@ -116,16 +119,16 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         if (episode_name == null) {
             episode_name = br.getRegex("class=\"siteHeadline hidden\">([^<>]*?)<").getMatch(0);
         }
-        if (sendung == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String plain_name = null;
+        if (sendung != null) {
+            sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
         }
-        String plain_name;
-        sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
         if (episode_name != null) {
             episode_name = Encoding.htmlDecode(episode_name).trim();
             episode_name = encodeUnicode(episode_name);
-            plain_name = sendung + " - " + episode_name;
+            if (sendung != null) {
+                plain_name = sendung + " - " + episode_name;
+            }
         } else {
             plain_name = sendung;
         }
@@ -134,7 +137,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         if (br.containsHTML("<div class=\"audioContainer\">")) {
             /* TODO: Check if that still works / is still required */
             final String finallink = br.getRegex("dslSrc: \\'dslSrc=(http://[^<>\"]*?)\\&amp;mediaDuration=\\d+\\'").getMatch(0);
-            if (finallink == null) {
+            if (finallink == null || sendung == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -169,8 +172,11 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 player_link = json_api_url;
             }
             if (player_link == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                /* No player --> No downloadable video/content */
+                final DownloadLink dl = this.createOfflinelink(parameter);
+                dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
             }
             if (!player_link.startsWith("http")) {
                 player_link = "http://www1.wdr.de" + player_link;
@@ -190,10 +196,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             String flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
             if (flashvars == null) {
                 flashvars = this.br.toString();
-            }
-            if (date == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
             }
             final String date_formatted = formatDate(date);
             flashvars = Encoding.htmlDecode(flashvars);
@@ -253,7 +255,11 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                     quality_name = "Q_LOW";
                 }
                 final_url += single_quality_string_correct + ".mp4";
-                final String final_video_name = date_formatted + "_wdr_" + plain_name + "_" + resolution + ".mp4";
+                String final_video_name = "";
+                if (date_formatted != null) {
+                    final_video_name += date_formatted + "_";
+                }
+                final_video_name += "wdr_" + plain_name + "_" + resolution + ".mp4";
                 final DownloadLink dl_video = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                 dl_video.setProperty("mainlink", parameter);
                 dl_video.setProperty("direct_link", final_url);
@@ -302,7 +308,11 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 if (keep != null) {
                     /* Add subtitle link for every quality so players will automatically find it */
                     if (grab_subtitle && subtitle_url != null) {
-                        final String subtitle_filename = date_formatted + "_wdr_" + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                        String subtitle_filename = "";
+                        if (date_formatted != null) {
+                            subtitle_filename = subtitle_filename + "_";
+                        }
+                        subtitle_filename += "wdr_" + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
                         final String resolution = keep.getStringProperty("plain_resolution", null);
                         final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                         dl_subtitle.setProperty("mainlink", parameter);
@@ -318,7 +328,12 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 }
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(date_formatted + "_wdr_" + plain_name);
+            String packagename = "";
+            if (date_formatted != null) {
+                packagename += date_formatted + "_";
+            }
+            packagename += "wdr_" + plain_name;
+            fp.setName(packagename);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
@@ -360,6 +375,9 @@ public class WdrDeDecrypt extends PluginForDecrypt {
     }
 
     private String formatDate(String input) {
+        if (input == null) {
+            return null;
+        }
         final long date;
         if (input.matches("\\d{2}\\.\\d{2}\\.\\d{4}")) {
             date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);

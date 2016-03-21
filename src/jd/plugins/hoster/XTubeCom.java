@@ -90,7 +90,7 @@ public class XTubeCom extends PluginForHost {
         br.setCookie(MAINPAGE, "cookie_warning", "S");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">Video not available<|>This video has been removed from XTube")) {
+        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">Video not available<|>This video has been removed from XTube") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;

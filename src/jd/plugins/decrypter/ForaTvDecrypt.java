@@ -44,10 +44,8 @@ public class ForaTvDecrypt extends PluginForDecrypt {
         br.getPage(parameter);
         /* Offline|No downloads available|Download tab missing(they probably didn't even plan to provide downloads in this case) */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("There are no downloads for this program<") || !br.containsHTML("id=\"downloads_content\"")) {
-            final DownloadLink offline = this.createDownloadlink(parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (this.br.containsHTML("To download this program become a")) {

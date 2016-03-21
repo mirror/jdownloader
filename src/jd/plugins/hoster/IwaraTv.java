@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:www\\.)?iwaradecrypted\\.tv/videos/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:www\\.)?iwaradecrypted\\.tv/.+" }, flags = { 0 })
 public class IwaraTv extends PluginForHost {
 
     public IwaraTv(PluginWrapper wrapper) {

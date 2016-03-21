@@ -18,12 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -31,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "http://(www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/((?:\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
 public class MoeVideosNetDecrypter extends PluginForDecrypt {
@@ -49,19 +48,19 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.contains("moevideos.net/.+")) {
+            /* 2016-03-01: This domain is parked */
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         /* uid */
         String uid = new Regex(parameter, "uid=(.*?)$").getMatch(0);
         if (uid == null) {
             uid = new Regex(parameter, "(video/|file=)(.*?)$").getMatch(1);
         }
         if (uid == null) {
-            try {
-                br.setFollowRedirects(true);
-                br.getPage(parameter);
-            } catch (final BrowserException e) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
-            }
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
 
             if (br.containsHTML("Vídeo no existe posiblemente")) {
                 decryptedLinks.add(createOfflinelink(parameter));

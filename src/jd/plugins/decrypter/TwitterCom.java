@@ -137,13 +137,9 @@ public class TwitterCom extends PornEmbedParser {
             int reloadNumber = 0;
             String maxid = br.getRegex("data-min-position=\"(\\d+)\"").getMatch(0);
             do {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted at reload " + reloadNumber);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in 0.9.581
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted at reload " + reloadNumber);
+                    return decryptedLinks;
                 }
                 logger.info("Decrypting reloadnumber " + reloadNumber + ", found " + decryptedLinks.size() + " links till now");
                 if (reloadNumber > 0) {
@@ -265,6 +261,14 @@ public class TwitterCom extends PornEmbedParser {
                         }
                     }
                 }
+                if (decryptedLinks.size() == 0 && this.br.containsHTML("class=\"modal\\-title embed\\-video\\-title\"")) {
+                    /* Seems like we have a single video */
+                    this.br.getPage("/i/videos/tweet/" + tweet_id + "?embed_source=clientlib&player_id=0&rpc_init=1");
+                    final String final_videolink = regexTwitterVideo();
+                    if (final_videolink != null) {
+                        decryptedLinks.add(this.createDownloadlink(final_videolink));
+                    }
+                }
                 if (decryptedLinks.size() == 0 && twitter_text != null) {
                     /* Maybe the tweet only consists of text which maybe contains URLs which maybe lead to content. */
                     final String[] urls_in_text = HTMLParser.getHttpLinks(twitter_text, "");
@@ -287,6 +291,18 @@ public class TwitterCom extends PornEmbedParser {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    private String regexTwitterVideo() {
+        return regexTwitterVideo(this.br.toString());
+    }
+
+    private String regexTwitterVideo(final String source) {
+        String finallink = new Regex(source, "video_url\\&quot;:\\&quot;(https:[^<>\"]*?\\.mp4)\\&").getMatch(0);
+        if (finallink != null) {
+            finallink = finallink.replace("\\", "");
+        }
+        return finallink;
     }
 
     private String createVideourl(final String stream_id) {

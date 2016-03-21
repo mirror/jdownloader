@@ -23,6 +23,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -52,6 +53,7 @@ public class VvvvidIt extends PluginForDecrypt {
         final String show_id_str = urlinfo.getMatch(0);
         final String season_id_str = urlinfo_2.getMatch(0);
         final String episode_videoid = urlinfo_2.getMatch(1);
+        String conn_id;
 
         long episode_videoid_target = 0;
         if (episode_videoid != null) {
@@ -59,19 +61,28 @@ public class VvvvidIt extends PluginForDecrypt {
         }
         final long show_id = Long.parseLong(show_id_str);
         final long season_id;
+        this.br.postPageRaw("http://www.vvvvid.it/user/login", "{\"action\":\"login\",\"email\":\"\",\"password\":\"\",\"facebookParams\":\"\",\"mobile\":false,\"hls\":false,\"flash\":true,\"isIframe\":false}");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        conn_id = (String) DummyScriptEnginePlugin.walkJson(entries, "data/conn_id");
+        if (conn_id != null) {
+            conn_id = Encoding.urlEncode(conn_id);
+        }
         if (season_id_str != null) {
             season_id = Long.parseLong(season_id_str);
         } else {
-            season_id = show_id - 10;
+            this.br.getPage("/vvvvid/ondemand/" + show_id + "/seasons/?conn_id=" + conn_id);
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            final Object season_id_o = DummyScriptEnginePlugin.walkJson(entries, "data/{0}/season_id");
+            season_id = DummyScriptEnginePlugin.toLong(season_id_o, (show_id - 10));
         }
-        this.br.getPage("http://www.vvvvid.it/vvvvid/ondemand/" + show_id + "/info/");
+        this.br.getPage("/vvvvid/ondemand/" + show_id + "/info/" + "?conn_id=" + conn_id);
+        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getHttpConnection().getContentType().contains("json")) {
             /* Offline or geo-blocked */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
 
         String show_title_main = (String) entries.get("title");
@@ -79,7 +90,7 @@ public class VvvvidIt extends PluginForDecrypt {
             show_title_main = urlinfo.getMatch(1);
         }
 
-        this.br.getPage("/vvvvid/ondemand/" + show_id + "/season/" + season_id);
+        this.br.getPage("/vvvvid/ondemand/" + show_id + "/season/" + season_id + "?conn_id=" + conn_id);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
