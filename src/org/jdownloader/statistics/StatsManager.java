@@ -1098,6 +1098,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                              // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
                              final Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<RIDWrapper<Response>>() {
                              }).getData();
+                             if (response != null) {
+                                 logRequests.clear();
+                             }
                              switch (response.getCode()) {
                              case OK:
                                  final PostAction[] actions = response.getActions();
@@ -1221,14 +1224,22 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                          }
                                      }
                                  }
-                                 break retry;
+                                 if (trackRequests.size() == 0) {
+                                     break retry;
+                                 }
+                                 break;
                              case FAILED:
-                                 break retry;
+                                 if (trackRequests.size() == 0) {
+                                     break retry;
+                                 }
+                                 break;
                              case KILL:
                                  return;
                              }
                          } else {
-                             break retry;
+                             if (trackRequests.size() == 0) {
+                                 break retry;
+                             }
                          }
                      } catch (Throwable e) {
                          logger.log(e);
