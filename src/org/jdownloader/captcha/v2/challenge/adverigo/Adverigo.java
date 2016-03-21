@@ -3,21 +3,22 @@ package org.jdownloader.captcha.v2.challenge.adverigo;
 import java.io.File;
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.StringUtils;
-
 /**
  *
  * supports adverigo based captchas. at this time they have text 4 letter within image... but url structure indicates that they would also
  * have video!
  *
+ * TODO: refresh image.
  *
- * @author raztoki TODO: refresh image.
+ * @author raztoki
  *
  */
 public class Adverigo {
@@ -151,6 +152,7 @@ public class Adverigo {
         }
         abr = br.cloneBrowser();
         abr.getHeaders().put("Accept", "*/*");
+        abr.getHeaders().put("User-Agent", userAgent);
         abr.getPage(SERVER + "/verify.json?sid=" + sid + "&hash=" + this.apiKey + "&answer=" + Encoding.urlEncode(response) + "&" + System.currentTimeMillis());
         final boolean success = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(abr, "status"));
         return success;
