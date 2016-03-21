@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:www\\.)?tube\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:tube|videos)\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class TubeRampantTv extends PluginForHost {
 
     public TubeRampantTv(PluginWrapper wrapper) {
@@ -87,7 +87,7 @@ public class TubeRampantTv extends PluginForHost {
                 downloadLink.setName(filename + default_Extension);
                 return AvailableStatus.TRUE;
             }
-            final String playerConfigUrl = br.getRegex("(https?://(www\\.)?tube\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.(mp4|flv))").getMatch(0);
+            final String playerConfigUrl = br.getRegex("(https?://[A-Za-z0-9]*?\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.(mp4|flv))").getMatch(0);
             if (playerConfigUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

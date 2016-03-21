@@ -44,6 +44,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 
 @HostPlugin(revision = "$Revision: $", interfaceVersion = 3, names = { "fufox.net" }, urls = { "https?://(?:www\\.)?fufox\\.(?:com|net)/dl/[A-Za-z0-9]{14}" }, flags = { 2 })
 /**
+ *2016-03-21: Website seems to be broken
  *
  *http://www.fufox.net/dl/55211A88983F42
  *http://www.fufox.net/dl/55211C0DBDB005

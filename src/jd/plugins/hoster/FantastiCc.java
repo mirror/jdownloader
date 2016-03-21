@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fantasti.cc" }, urls = { "http://(www\\.)?fantasti\\.cc/user/[^/]+/videos/upload/[^/]+/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fantasti.cc" }, urls = { "http://(?:www\\.)?fantasti\\.cc/user/[^/]+/videos/upload/[^/]+/\\d+/" }, flags = { 0 })
 public class FantastiCc extends PluginForHost {
 
     public FantastiCc(PluginWrapper wrapper) {

@@ -70,10 +70,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         this.br.getPage("http://pan.baidu.com");
         this.br.getPage(parameter);
         if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            dl.setContentUrl(parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dl);
             return decryptedLinks;

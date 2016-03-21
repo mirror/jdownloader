@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/videos/[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[^/]+" }, flags = { 0 })
 public class IwaraTv extends PluginForDecrypt {
 
     public IwaraTv(PluginWrapper wrapper) {
@@ -66,7 +66,7 @@ public class IwaraTv extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        final DownloadLink dl = createDownloadlink(parameter.replace("iwara.tv/", "iwaradecrypted.tv/"));
+        final DownloadLink dl = createDownloadlink(this.br.getURL().replace("iwara.tv/", "iwaradecrypted.tv/"));
         decryptedLinks.add(dl);
 
         return decryptedLinks;

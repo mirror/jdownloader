@@ -84,6 +84,7 @@ public class FlyFilesNet extends PluginForHost {
         br.setCookie(HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -108,6 +109,13 @@ public class FlyFilesNet extends PluginForHost {
         if (dllink == null) {
             requestFileInformation(downloadLink);
             String captchaurl = this.br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
+            final String waittime = this.br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
+            if (waittime != null) {
+                final long wait = Long.parseLong(waittime);
+                if (wait > 10) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+                }
+            }
             if (captchaurl != null) {
                 final String code = this.getCaptchaCode(captchaurl, downloadLink);
                 br.postPage(HOST + "/", "getDownLink=" + fid + "&captcha_value=" + Encoding.urlEncode(code));

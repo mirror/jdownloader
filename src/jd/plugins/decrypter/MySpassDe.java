@@ -56,7 +56,8 @@ public class MySpassDe extends PluginForDecrypt {
         String show = this.br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?) Videos\"").getMatch(0);
         if (show == null) {
             /* Fallback to url */
-            show = new Regex(parameter, ".+/myspass/shows/[^/]+/([a-z0-9\\-]+)/?$").getMatch(0).replace("-", " ");
+            show = new Regex(parameter, ".+/myspass/shows/[^/]+/([^/]+)/").getMatch(0);
+            show = show.replace("-", " ");
         }
         show = Encoding.htmlDecode(show).trim();
 
