@@ -17,21 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
-import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +32,21 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SmoozedTranslation;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
+import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }, flags = { 2 })
 public class SmoozedCom extends antiDDoSForHost {
@@ -511,6 +511,8 @@ public class SmoozedCom extends antiDDoSForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                } else if (StringUtils.equalsIgnoreCase(message, "Content not supported")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 'Content not supported'", 5 * 60 * 1000l);
                 }
             } else if ("retry".equals(state)) {
                 if (StringUtils.equalsIgnoreCase(message, "Premium needed") && link != null && account != null) {
