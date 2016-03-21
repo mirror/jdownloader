@@ -21,10 +21,14 @@ public class AccountUsageRule {
     }
 
     public void setEnabled(boolean enabled) {
-        if (this.enabled == enabled) return;
+        if (this.enabled == enabled) {
+            return;
+        }
         this.enabled = enabled;
-        HosterRuleController lowner = owner;
-        if (lowner != null) lowner.fireUpdate(this);
+        final HosterRuleController lowner = owner;
+        if (lowner != null) {
+            lowner.fireUpdate(this);
+        }
     }
 
     public boolean isEnabled() {
@@ -50,7 +54,9 @@ public class AccountUsageRule {
         }
         this.enabled = enabledState;
         this.accounts = new CopyOnWriteArrayList<AccountGroup>(list);
-        HosterRuleController lowner = owner;
-        if (lowner != null) lowner.fireUpdate(this);
+        final HosterRuleController lowner = owner;
+        if (lowner != null) {
+            lowner.fireUpdate(this);
+        }
     }
 }
