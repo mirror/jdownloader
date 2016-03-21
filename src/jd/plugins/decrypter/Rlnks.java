@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
 import jd.PluginWrapper;
@@ -39,12 +40,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }, flags = { 0 })
-public class Rlnks extends PluginForDecrypt {
+public class Rlnks extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
@@ -173,7 +173,7 @@ public class Rlnks extends PluginForDecrypt {
                 decryptLinks(decryptedLinks, param);
                 final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
                 for (final String link : more_links) {
-                    br.getPage(link);
+                    getPage(link);
                     decryptLinks(decryptedLinks, param);
                 }
             }
@@ -202,7 +202,7 @@ public class Rlnks extends PluginForDecrypt {
                 }
                 brc = br.cloneBrowser();
                 if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().matches(".*?" + domains + "/getfile.*?")) {
-                    brc.getPage(brc.getRedirectLocation());
+                    getPage(brc, brc.getRedirectLocation());
                 }
                 if (brc.getRedirectLocation() != null) {
                     final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation()));
@@ -227,7 +227,7 @@ public class Rlnks extends PluginForDecrypt {
     }
 
     private void handleCaptchaAndPassword(final String partLink, final CryptedLink param) throws Exception {
-        br.getPage(partLink);
+        getPage(partLink);
         allForm = br.getFormbyProperty("name", "form");
         boolean b = allForm == null ? true : false;
         // 20150120 - raztoki
@@ -235,7 +235,7 @@ public class Rlnks extends PluginForDecrypt {
             // pile of redirects happen here
             final String link = br.getRegex("class=\"timer\">\\d+</span>\\s*seconds</div>\\s*<a href=\"\\s*(https?://(\\w+\\.)?" + domains + "/.*?)\\s*\"").getMatch(0);
             if (link != null) {
-                br.getPage(link.trim());
+                getPage(link.trim());
                 allForm = br.getFormbyProperty("name", "form");
                 b = allForm == null ? true : false;
             } else {
@@ -255,20 +255,29 @@ public class Rlnks extends PluginForDecrypt {
                     allForm.put("password", passCode);
                 }
                 if (allForm.containsHTML("captcha")) {
-                    allForm.remove("button");
-                    final String captchaLink = allForm.getRegex("src=\"(.*?)\"").getMatch(0);
-                    if (captchaLink == null) {
-                        break;
+                    // fail over is circle, but they do randomly show antibotsystem captchas
+                    if (AntiBotSystem.containsAntiBotSystem(allForm)) {
+                        final AntiBotSystem abs = new AntiBotSystem(br, allForm);
+                        final File captchaimage = abs.downloadCaptcha(getLocalCaptchaFile());
+                        final String captchaCode = getCaptchaCode(captchaimage, param);
+                        abs.setResponse(captchaCode);
+                    } else {
+                        allForm.remove("button");
+                        final String captchaLink = allForm.getRegex("src=\"(.*?)\"").getMatch(0);
+                        if (captchaLink == null) {
+                            break;
+                        }
+                        final File captchaFile = this.getLocalCaptchaFile();
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/" + captchaLink));
+                        final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/5", null);
+                        allForm.put("button.x", String.valueOf(cp.getX()));
+                        allForm.put("button.y", String.valueOf(cp.getY()));
                     }
-                    final File captchaFile = this.getLocalCaptchaFile();
-                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/" + captchaLink));
-                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/5", null);
-                    allForm.put("button.x", String.valueOf(cp.getX()));
-                    allForm.put("button.y", String.valueOf(cp.getY()));
                 }
-                br.submitForm(allForm);
+                submitForm(allForm);
                 if (br.getURL().contains("error.php")) {
-                    br.getPage(partLink);
+                    getPage(partLink);
+                    allForm = br.getFormbyProperty("name", "form");
                     continue;
                 }
                 allForm = br.getFormbyProperty("name", "form");
