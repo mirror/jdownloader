@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.geetest.AbstractCaptchaHelperGeeTest;
+import org.jdownloader.captcha.v2.challenge.geetest.CaptchaHelperHostPluginGeeTest;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -33,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coladrive.com", "colayun.com", "colafile.com" }, urls = { "http://(www\\.)?(?:colafile|colayun|coladrive)\\.com/file/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424", "" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coladrive.com" }, urls = { "http://(www\\.)?(?:colafile|colayun|coladrive)\\.com/file/\\d+" }, flags = { 0 })
 public class ColaFileCom extends PluginForHost {
 
     public ColaFileCom(PluginWrapper wrapper) {
@@ -47,10 +49,8 @@ public class ColaFileCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("colafile.com".equals(getHost()) || "colayun.com".equals(getHost())) {
-            if (host == null || "colafile.com".equals(host) || "colayun.com".equals(host)) {
-                return "coladrive.com";
-            }
+        if (host == null || "coladrive.com".equals(host) || "colafile.com".equals(host) || "colayun.com".equals(host)) {
+            return "coladrive.com";
         }
         return super.rewriteHost(host);
     }
@@ -107,17 +107,33 @@ public class ColaFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "non working download method");
+        }
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             // br.getPage(br.getURL().replace("/file/", "/down/"));
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "*/*");
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             final String uid = br.getRegex("uid: \"(\\d+)\"").getMatch(0);
             if (uid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("/ajax.php?action=check_down&file_id=" + fid + "&_=" + System.currentTimeMillis());
+            ajax.postPage("/ajax.php", "action=file_views&file_id" + fid + "&uid=" + uid + "&ref=");
+            // now captcha.. geetest
+            if (AbstractCaptchaHelperGeeTest.containsGeeTest(br)) {
+                final CaptchaHelperHostPluginGeeTest geetest = new CaptchaHelperHostPluginGeeTest(this, br);
+                final String result = geetest.getToken();
+                final String challenge = null; // geetest.getChallengeID();
+                final Browser captcha = br.cloneBrowser();
+                captcha.getHeaders().put("Accept", "*/*");
+                captcha.postPage("/geeauth.php", "fileid=" + fid + "&geetest_challenge=" + challenge + "&geetest_validate=" + result + "&geetest_seccode=" + result + "%7Cjordan");
+            }
+
+            // br.getPage("/ajax.php?action=check_down&file_id=" + fid + "&_=" + System.currentTimeMillis());
             if (br.containsHTML("down_disabled\\(\\);")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
