@@ -112,7 +112,8 @@ public class FlyFilesNet extends PluginForHost {
             final String waittime = this.br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
             if (waittime != null) {
                 final long wait = Long.parseLong(waittime);
-                if (wait > 10) {
+                /* Usually if there is a waittime it is a long waittime (1-2 hours). */
+                if (wait > 0) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 }
             }

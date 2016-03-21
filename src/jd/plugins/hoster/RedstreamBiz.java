@@ -151,27 +151,31 @@ public class RedstreamBiz extends PluginForHost {
             this.postAPIForm(dlform);
             this.getAPISafe(DOMAIN + "/downloads");
 
-            /* Server returns HashMap with numbers instead of simply an ArrayList containing the needed information ... */
-            LinkedHashMap<String, Object> entries = (LinkedHashMap) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-            final String linkpart = new Regex(link.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0);
-            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
-            LinkedHashMap<String, Object> download = null;
-            String url_temp = null;
-            String url_final_temp = null;
-            while (it.hasNext()) {
-                download = (LinkedHashMap<String, Object>) it.next().getValue();
-                if (entries == null) {
-                    continue;
+            try {
+                /* Server returns HashMap with numbers instead of simply an ArrayList containing the needed information ... */
+                LinkedHashMap<String, Object> entries = (LinkedHashMap) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                final String linkpart = new Regex(link.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0);
+                final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+                LinkedHashMap<String, Object> download = null;
+                String url_temp = null;
+                String url_final_temp = null;
+                while (it.hasNext()) {
+                    download = (LinkedHashMap<String, Object>) it.next().getValue();
+                    if (entries == null) {
+                        continue;
+                    }
+                    url_temp = (String) download.get("link");
+                    url_final_temp = (String) download.get("url");
+                    if (inValidate(url_temp) || inValidate(url_final_temp)) {
+                        continue;
+                    }
+                    if (url_temp.contains(linkpart)) {
+                        dllink = url_final_temp;
+                        break;
+                    }
                 }
-                url_temp = (String) download.get("link");
-                url_final_temp = (String) download.get("url");
-                if (inValidate(url_temp) || inValidate(url_final_temp)) {
-                    continue;
-                }
-                if (url_temp.contains(linkpart)) {
-                    dllink = url_final_temp;
-                    break;
-                }
+            } catch (final Throwable e) {
+                logger.info("Something inside the json handling failed");
             }
 
             if (inValidate(dllink)) {
@@ -327,27 +331,31 @@ public class RedstreamBiz extends PluginForHost {
         this.getAPISafe(DOMAIN + "/hosters");
         ArrayList<String> supportedhostslist = new ArrayList();
         LinkedHashMap<String, Object> entries = null;
-        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        try {
+            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
 
-        for (final Object hostinfoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) hostinfoo;
-            final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("maxDowloads"), defaultMAXDOWNLOADS));
-            final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("maxChunks"), defaultMAXCHUNKS));
-            final String host = ((String) entries.get("host")).toLowerCase();
+            for (final Object hostinfoo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) hostinfoo;
+                final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("maxDowloads"), defaultMAXDOWNLOADS));
+                final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("maxChunks"), defaultMAXCHUNKS));
+                final String host = ((String) entries.get("host")).toLowerCase();
 
-            boolean resumable = defaultRESUME;
-            final Object resumableo = entries.get("resumable");
-            if (resumableo instanceof Boolean) {
-                resumable = ((Boolean) resumableo).booleanValue();
-            } else {
-                resumable = Boolean.parseBoolean((String) resumableo);
+                boolean resumable = defaultRESUME;
+                final Object resumableo = entries.get("resumable");
+                if (resumableo instanceof Boolean) {
+                    resumable = ((Boolean) resumableo).booleanValue();
+                } else {
+                    resumable = Boolean.parseBoolean((String) resumableo);
+                }
+
+                hostMaxchunksMap.put(host, maxchunks);
+                hostMaxdlsMap.put(host, maxdownloads);
+                hostResumeMap.put(host, resumable);
+                supportedhostslist.add(host);
             }
-
-            hostMaxchunksMap.put(host, maxchunks);
-            hostMaxdlsMap.put(host, maxdownloads);
-            hostResumeMap.put(host, resumable);
-            supportedhostslist.add(host);
+        } catch (final Throwable e) {
         }
+
         account.setValid(true);
         account.setConcurrentUsePossible(true);
 
@@ -511,8 +519,13 @@ public class RedstreamBiz extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 2:
+                /*
+                 * 2016-03-21: This API message is never valid --> Admin has been notified but did not do anything about it so we cannot
+                 * trust it!
+                 */
                 statusMessage = "File not found";
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_invalid_api_message_file_not_found", 30, 5 * 60 * 1000l);
             case 3:
                 statusMessage = "Traffic limit is exceeded";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);

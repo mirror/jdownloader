@@ -207,7 +207,13 @@ public class PremiumRapeitNet extends antiDDoSForHost {
         if (traffic_left != null && traffic_downloaded != null) {
             traffic_left = traffic_left.replace(",", ".");
             traffic_downloaded = traffic_downloaded.replace(",", ".");
-            final long trafficleft = SizeFormatter.getSize(traffic_left);
+            final long trafficleft;
+            if (traffic_left.contains("-")) {
+                /* Negative traffic --> Nothing left ;) */
+                trafficleft = 0;
+            } else {
+                trafficleft = SizeFormatter.getSize(traffic_left);
+            }
             final long trafficmax = trafficleft + SizeFormatter.getSize(traffic_downloaded);
             if (trafficleft == 0 && trafficmax == 0) {
                 account.setType(AccountType.FREE);
@@ -288,6 +294,7 @@ public class PremiumRapeitNet extends antiDDoSForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
         String dllink;
         final String url = Encoding.urlEncode(link.getDownloadURL());

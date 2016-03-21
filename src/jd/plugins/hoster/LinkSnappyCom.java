@@ -220,7 +220,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             /* Daily specific host downloadlimit reached --> Disable host for some time */
             logger.info("Daily limit reached for host: " + host);
             logger.info("--> Temporarily Disabling " + host);
-            tempUnavailableHoster(currentAcc, currentLink, 30 * 60 * 1000l);
+            tempUnavailableHoster(currentAcc, currentLink, 10 * 60 * 1000l);
         } else {
             /* Daily total downloadlimit for account is reached */
             final String lang = System.getProperty("user.language");
@@ -414,7 +414,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     if ("ERROR Code: 087".equalsIgnoreCase(err)) {
                         // "status":"FAILED","error":"ERROR Code: 087"
                         // I assume offline (webui says his host is offline, but not the api host list.
-                        tempUnavailableHoster(currentAcc, currentLink, 1 * 60 * 60 * 1000l);
+                        tempUnavailableHoster(currentAcc, currentLink, 10 * 60 * 1000l);
                     } else if (new Regex(err, "Invalid .*? link\\. Cannot find Filename\\.").matches()) {
                         logger.info("Error: Disabling current host");
                         tempUnavailableHoster(currentAcc, currentLink, 5 * 60 * 1000);
