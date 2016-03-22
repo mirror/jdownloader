@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -30,8 +31,10 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -44,6 +47,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -110,7 +114,7 @@ public class FileSharkPl extends PluginForHost {
         return 0l;
     }
 
-    private String getErrorMessage(int errorCode) {
+    private String getErrorMessage(String source, int errorCode) {
 
         if (errorCode > 0) {
             //
@@ -128,7 +132,7 @@ public class FileSharkPl extends PluginForHost {
             // 33 => 'Daily limit has been reached',
             // 34 => 'Max number of active downloads has been reached'
 
-            return getJson("errorMessage");
+            return PluginJSonUtils.getJson(source, "errorMessage");
         }
         return "Unknown error";
     }
@@ -200,14 +204,14 @@ public class FileSharkPl extends PluginForHost {
                 // isPremium: (bool) : Available only for Premium
                 // createdAt: (datetime) : added date
                 // contentType: (string) : file type
-
-                if ("true".equals(getJson("success"))) {
-                    fileName = getJson("fileName");
-                    fileSize = getJson("fileSize");
-                    String isDownloadable = getJson("isDownloadable");
-                    String isDeleted = getJson("isDeleted");
-                    String isDmcaRequested = getJson("isDmcaRequested");
-                    String isPremium = getJson("isPremium");
+                String response = br.toString();
+                if ("true".equals(PluginJSonUtils.getJson(response, "success"))) {
+                    fileName = PluginJSonUtils.getJson(response, "fileName");
+                    fileSize = PluginJSonUtils.getJson(response, "fileSize");
+                    String isDownloadable = PluginJSonUtils.getJson(response, "isDownloadable");
+                    String isDeleted = PluginJSonUtils.getJson(response, "isDeleted");
+                    String isDmcaRequested = PluginJSonUtils.getJson(response, "isDmcaRequested");
+                    String isPremium = PluginJSonUtils.getJson(response, "isPremium");
                     if ("false".equals(isDownloadable)) {
                         link.getLinkStatus().setStatusText(getPhrase("NOT_DOWNLOADABLE"));
                         return AvailableStatus.FALSE;
@@ -348,9 +352,10 @@ public class FileSharkPl extends PluginForHost {
             byte trials = 0;
             do {
                 useAPI = getAPICall(downloadLink, 2, null, null);
-                if ("false".equals(getJson("success"))) {
-                    int errorCode = Integer.parseInt(getJson("errorCode"));
-                    String errorMessage = getErrorMessage(errorCode);
+                String response = br.toString();
+                if ("false".equals(PluginJSonUtils.getJson(response, "success"))) {
+                    int errorCode = Integer.parseInt(PluginJSonUtils.getJson(response, "errorCode"));
+                    String errorMessage = getErrorMessage(response, errorCode);
                     if (errorCode == 32) {
                         sleep(65 * 1000l, downloadLink);
                         trials++;
@@ -367,7 +372,7 @@ public class FileSharkPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL, errorMessage);
                     }
                 } else {
-                    dllink = getJson("downloadLink");
+                    dllink = PluginJSonUtils.getJson(response, "downloadLink");
                     waitTimeDetected = false;
                 }
             } while (waitTimeDetected || trials > 1);
@@ -491,15 +496,15 @@ public class FileSharkPl extends PluginForHost {
             // userDayTrafficLeft: (int) : Daily traffic limit (bytes)
             // registrationDate: (datetime) : Registration date
             if (useAPI) {
-
-                final String success = getJson("success");
+                String response = br.toString();
+                final String success = PluginJSonUtils.getJson(response, "success");
                 if ("true".equals(success)) {
-                    final String isUserPremium = getJson("userPremium");
-                    dailyLimitLeftUsed = getJson("userDayTrafficLeft");
+                    final String isUserPremium = PluginJSonUtils.getJson(response, "userPremium");
+                    dailyLimitLeftUsed = PluginJSonUtils.getJson(response, "userDayTrafficLeft");
                     setTrafficLeft(ai, dailyLimitLeftUsed, true);
                     if ("true".equals(isUserPremium)) {
-                        String userPremiumDateEnd = getJsonNested(br.toString(), "userPremiumDateEnd");
-                        expire = getJson(userPremiumDateEnd, "date");
+                        String userPremiumDateEnd = PluginJSonUtils.getJsonNested(response, "userPremiumDateEnd");
+                        expire = PluginJSonUtils.getJson(userPremiumDateEnd, "date");
                         if (expire == null) {
                             ai.setExpired(true);
                             account.setValid(false);
@@ -628,32 +633,52 @@ public class FileSharkPl extends PluginForHost {
         if (useAPI) {
 
             // API CALL: POST fileshark.pl/api/file/getDownloadLink?id={id}&token={token}&username={username}&password={password}
-            useAPI = getAPICall(downloadLink, 2, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
-            if (useAPI) {
-                if ("true".equals(getJson("success"))) {
-                    // parameters
-                    // {id} - file id
-                    // {token} - file token
-                    // optional (for Premium)
-                    // {username} - user name
-                    // {password} - password
+            String generatedLink = checkDirectLink(downloadLink, "generatedLinkFileSharkPl");
 
-                    // Output = json
-                    // success: (bool)
-                    // data: (array)
-                    // downloadLink: (string) : download URL
-                    // fileId: (int) : file id
-                    // fileName: (string) : filename
-                    // linkValidTo: (datetime) : Link valid date
+            if (generatedLink == null) {
 
-                    dllink = getJson("downloadLink");
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                useAPI = getAPICall(downloadLink, 2, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                if (useAPI) {
+                    String response = br.toString();
+                    if ("true".equals(PluginJSonUtils.getJson(response, "success"))) {
+                        // parameters
+                        // {id} - file id
+                        // {token} - file token
+                        // optional (for Premium)
+                        // {username} - user name
+                        // {password} - password
+
+                        // Output = json
+                        // success: (bool)
+                        // data: (array)
+                        // downloadLink: (string) : download URL
+                        // fileId: (int) : file id
+                        // fileName: (string) : filename
+                        // linkValidTo: (datetime) : Link valid date
+
+                        dllink = PluginJSonUtils.getJson(response, "downloadLink");
+                        if (dllink == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        String linkValidTo = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(response, "linkValidTo"), "date");
+                        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
+                        long dateValid;
+                        try {
+                            dateValid = dateFormat.parse(linkValidTo).getTime();
+                        } catch (final Exception e) {
+                            logger.log(e);
+                            dateValid = System.currentTimeMillis();
+                        }
+
+                        downloadLink.setProperty("generatedLinkFileSharkPl", dllink);
+                        downloadLink.setProperty("generatedLinkFileSharkPlDate", dateValid);
+
+                    } else {
+                        useAPI = false;
                     }
-
-                } else {
-                    useAPI = false;
                 }
+            } else {
+                dllink = generatedLink;
             }
         }
         if (!useAPI) {
@@ -697,6 +722,9 @@ public class FileSharkPl extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        link.setProperty("generatedLinkFileSharkPl", Property.NULL);
+        link.setProperty("generatedLinkFileSharkPlDate", Property.NULL);
+
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -772,25 +800,35 @@ public class FileSharkPl extends PluginForHost {
         return this.getPluginConfig().getBooleanProperty("USE_API", true);
     }
 
-    /*
-     * *
-     * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            String dllValidDate = downloadLink.getStringProperty(property + "Date");
+            if (dllValidDate != null) {
+                if (System.currentTimeMillis() > Long.parseLong(dllValidDate.toString())) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    downloadLink.setProperty(property + "Date", Property.NULL);
+                    return null;
+                }
+            }
+
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    downloadLink.setProperty(property + "Date", Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                downloadLink.setProperty(property + "Date", Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    private String getJsonNested(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(source, key);
-    }
 }
