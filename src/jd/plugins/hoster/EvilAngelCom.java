@@ -48,10 +48,10 @@ public class EvilAngelCom extends PluginForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
-    private String              dllink           = null;
-    public static final long    trust_cookie_age = 300000l;
-    private static final String HTML_LOGGEDIN    = "id=\"headerLinkLogout\"";
-    public static final String  LOGIN_PAGE       = "http://members.evilangel.com/en";
+    private String              dllink                     = null;
+    public static final long    trust_cookie_age           = 300000l;
+    private static final String HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
+    public static final String  LOGIN_PAGE                 = "http://members.evilangel.com/en";
 
     private static final String URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[A-Za-z]{2}/[A-Za-z0-9\\-_]+/film/\\d+";
     private static final String URL_EVILANGELNETWORK_VIDEO = "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+";
@@ -150,8 +150,16 @@ public class EvilAngelCom extends PluginForHost {
     }
 
     @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account == null) {
+            return false;
+        } else {
+            return super.canHandle(downloadLink, account);
+        }
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
@@ -313,12 +321,13 @@ public class EvilAngelCom extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        loginEvilAngelNetwork(this.br, account, LOGIN_PAGE, HTML_LOGGEDIN);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
