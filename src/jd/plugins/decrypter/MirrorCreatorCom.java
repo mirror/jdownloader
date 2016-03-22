@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
@@ -38,8 +40,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         final String uid = new Regex(param.toString(), "([A-Z0-9]{8})$").getMatch(0);
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (userAgent == null) {
             userAgent = UserAgents.stringUserAgent();
         }
@@ -50,6 +53,24 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setFollowRedirects(false);
+        // set packagename
+        // because mirror creator is single file uploader. we want a single packagename for all these uploads vs one for each part!
+        String fpName = br.getRegex("<title>Download links for ([^<]+) - Mirrorcreator").getMatch(0);
+        if (fpName != null) {
+            // here we will strip extensions!
+            String ext;
+            do {
+                ext = getFileNameExtensionFromString(fpName);
+                if (ext != null) {
+                    fpName = fpName.replaceFirst(Pattern.quote(ext) + "$", "");
+                }
+            } while (ext != null);
+        }
+        final FilePackage fp = fpName != null ? FilePackage.getInstance() : null;
+        if (fp != null) {
+            fp.setName(fpName);
+            fp.setProperty("AllOW_MERGE", true);
+        }
         String continuelink = br.getRegex("\"(/mstat\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
         if (continuelink != null) {
             br.getPage(continuelink);
@@ -77,7 +98,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             Browser br2 = br.cloneBrowser();
             br2.getPage(link);
             // adware for some users!
-            String[] redirectLinks = br2.getRegex("(\"|')[^\"']*(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)").getColumn(1);
+            String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 // not redirects but final download link in html.
                 String finallink = br2.getRegex("<a href=([^ ]+) TARGET='_blank'").getMatch(0);
@@ -86,6 +107,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 }
                 if (finallink != null) {
                     final DownloadLink dl = createDownloadlink(finallink);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
                     distribute(dl);
                     decryptedLinks.add(dl);
                     continue;
@@ -121,6 +145,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                     continue;
                 }
                 final DownloadLink fina = createDownloadlink(dllink);
+                if (fp != null) {
+                    fp.add(fina);
+                }
                 distribute(fina);
                 decryptedLinks.add(fina);
             }
