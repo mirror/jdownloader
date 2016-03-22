@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -35,6 +36,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -58,6 +60,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 2;
     }
 
     /* must be static so all plugins share same lock */
@@ -291,9 +298,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String data = "{\"collection_token\":\"" + collection_token.replaceFirst(":4$", ":6") + "\",\"cursor\":\"" + cursor + "\",\"tab_key\":\"photos_albums\",\"profile_id\":" + profileID + ",\"overview\":false,\"ftid\":null,\"order\":null,\"sk\":\"photos\",\"importer_state\":null}";
                 final String loadLink = "/ajax/pagelet/generic.php/PhotoAlbumsAppCollectionPagelet?__pc=EXP1%3ADEFAULT&dpr=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__dyn=7AmajEzUGByEogDxyG9gigmzFEbEyGgyi8zQC-C26m6oKezob4q68K5UcU-8wwG3O7R88y8aGjzEZ7KuEjxC264EK14DyU9XxemFEW2PxO2i5o&__req=k&__a=" + (i - 1) + "&__rev=" + rev;
                 br.getHeaders().put("Accept", "*/*");
-                final String result = br.cloneBrowser().getPage(loadLink).toString().replace("\\", "");
-                // note this fucks up unicode!
-                br.getRequest().setHtmlCode(result);
+                try {
+                    final String result = br.cloneBrowser().getPage(loadLink).toString().replace("\\", "");
+
+                    // note this fucks up unicode!
+                    br.getRequest().setHtmlCode(result);
+                } catch (BrowserException b) {
+                    final String detailedCause = b.getCause() != null ? b.getCause().getMessage() : null;
+                    if ("500 Internal Server Error".equals(detailedCause)) {
+                        return;
+                    }
+                }
                 links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=(?:a|vb)\\.[0-9\\.]+)\\&amp;type=\\d+\"").getColumn(0);
                 currentMaxPicCount = 12;
                 dynamicLoadAlreadyDecrypted = true;
@@ -314,7 +329,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(link);
                 fp.add(dl);
                 decryptedLinks.add(dl);
-                // distribute(dl);
+                distribute(dl);
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount || profileID == null) {
@@ -647,13 +662,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
             if (!userProfile.startsWith(profileDisplayName)) {
                 userProfile = profileDisplayName + " - " + userProfile;
             }
+        } else if (userProfile != null && albumTitle != null && StringUtils.startsWithCaseInsensitive(albumTitle, userProfile)) {
+            // cleanup of 's of video urls, for video section... slightly different.
+            albumTitle = albumTitle.replaceFirst("^" + Pattern.quote(userProfile) + "'s\\s+", "");
         }
         String fpName = (userProfile != null && albumTitle != null && !userProfile.equals(albumTitle) ? userProfile + " - " + albumTitle : (albumTitle != null ? albumTitle : (userProfile != null ? userProfile : null)));
         String url_username = new Regex(parameter, "facebook\\.com/(?!media)([^<>\"\\?/]+)").getMatch(0);
         if (url_username == null) {
             // redirects happen... and it can become available.
             url_username = new Regex(br.getURL(), "facebook\\.com/(?!media)([^<>\"\\?/]+)").getMatch(0);
-
         }
         final String rev = getRev(this.br);
         final String user = getUser(this.br);
