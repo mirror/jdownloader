@@ -18,8 +18,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -85,6 +88,18 @@ public class GeTt extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
+        } catch (final BrowserException b) {
+            // typically there is a redirect link, and this will contain the filename.. but since request failed... it still as redirect
+            final String filename = extractFileNameFromURL(brc.getRedirectLocation());
+            if (filename != null) {
+                downloadLink.setName(filename);
+            }
+            final String cause = b.getCause().toString();
+            if (StringUtils.contains(cause, "java.net.UnknownHostException")) {
+                // dns issue on the redirect (very common!)
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "DNS Issue: Host file server could be offline!");
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connectivity Issue");
         } finally {
             try {
                 con.disconnect();
