@@ -16,6 +16,10 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,10 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitbox.tv" }, urls = { "https?://(?:www\\.)?hitbox\\.tv/video/(\\d+)" }, flags = { 0 })
 public class HitBoxTv extends PluginForHost {
@@ -58,10 +59,10 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getPage("https://www.hitbox.tv/api/media/video/" + vid + "?showHidden=true");
         // auth sig
-        final String auth = getJson(ajax, "media_file");
-        final String userId = getJson(ajax, "user_id");
-        final String userName = getJson(ajax, "user_name");
-        final String vidName = getJson(ajax, "media_title");
+        final String auth = PluginJSonUtils.getJson(ajax, "media_file");
+        final String userId = PluginJSonUtils.getJson(ajax, "user_id");
+        final String userName = PluginJSonUtils.getJson(ajax, "user_name");
+        final String vidName = PluginJSonUtils.getJson(ajax, "media_title");
 
         // not sure if this is needed, its done trying to get channel info, and then auths
         // Request URL:https://www.hitbox.tv/api/auth/media/video/88e235d7ffc3f79cf1de079646326890f8bcee4f-543bd5693d819
@@ -97,7 +98,7 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         final String crap = "{\"media_name\":\"" + auth + "\",\"media_type\":\"video\",\"authToken\":null}";
-        ajax.postPage("https://www.hitbox.tv/api/auth/media/video/" + auth, Encoding.urlEncode(crap));
+        ajax.postPageRaw("https://www.hitbox.tv/api/auth/media/video/" + auth, Encoding.urlEncode(crap));
 
         // Request URL:http://www.hitbox.tv/api/player/config/video/286169?redis=true&embed=false&qos=false&redis=true&showHidden=true
         // Request Method:GET
@@ -105,7 +106,7 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         ajax.getPage("http://www.hitbox.tv/api/player/config/video/" + vid + "?redis=true&embed=false&qos=false&redis=true&showHidden=true");
-        url = getJson(ajax, "url");
+        url = PluginJSonUtils.getJson(ajax, "url");
         if (url != null && !url.endsWith(".m3u8")) {
             // http dl
             // {"key":"#$54d46eaa112f0508979","play":null,"clip":{"autoPlay":true,"autoBuffering":true,"bufferLength":"2","eventCategory":"QueenBee\/video\/5900","baseUrl":"http:\/\/edge.vie.hitbox.tv\/static\/videos\/recordings","url":"queenbee-1394512729.flv.mp4","stopLiveOnPause":true,"live":false,"smoothing":true,"provider":"pseudo","scaling":"fit","bitrates":[{"url":"queenbee-1394512729.flv.mp4","bitrate":738,"label":"HD
@@ -113,8 +114,8 @@ public class HitBoxTv extends PluginForHost {
             // align=\"center\"><\/p>","width":"50%","height":30,"backgroundColor":"#1A1A1A","backgroundGradient":"none","opacity":"1","borderRadius":10,"borderColor":"#999999","border":0,"color":"#FFFFFF","bottom":60,"zIndex":"10","closeButton":true,"style":{"p":{"fontSize":16,"fontFamily":"verdana,arial,helvetica","fontWeight":"normal"}}},"gatracker":{"url":"flowplayer.analytics-3.2.9.1.swf","event":{"all":true},"debug":false,"accountId":"UA-42900118-2"},"ova":{"url":"flowplayer.liverail-3.2.7.4.swf","LR_PUBLISHER_ID":20341,"LR_SCHEMA":"vast2-vpaid","LR_ADUNIT":"in","LR_VIDEO_POSITION":0,"LR_AUTOPLAY":1,"LR_CONTENT":6,"LR_TITLE":"1d275b55e3d50ee88df280b1c2caa07704717dcb1_531f22770d2bf","LR_VIDEO_ID":"109880","LR_MUTED":0,"CACHEBUSTER":1422982983,"TIMESTAMP":1422982983,"LR_LAYOUT_SKIN_MESSAGE":"Advertisement:
             // Stream will resume in {COUNTDOWN}
             // seconds.","LR_LIVESTREAM":1,"LR_LAYOUT_SKIN_ID":2,"LR_LAYOUT_LINEAR_PAUSEONCLICKTHRU":0,"LR_BITRATE":"high","LR_VIDEO_URL":"http:\/\/www.hitbox.tv\/video\/109880","LR_DESCRIPTION":"1d275b55e3d50ee88df280b1c2caa07704717dcb1_531f22770d2bf","LR_IP":"203.161.76.166"}},"canvas":{"backgroundGradient":"none"},"log":{"level":"debug","filter":"org.osmf*"},"showErrors":false,"settings":{"media_id":"-1","max_buffer_count":"3","buffer_length":"2","max_roundtrips":"3","reset_timeout":"60000","play_timeout":"15000","start_timeout":"10000","ad_plugin":"liverail-off","default_br":null,"enabled":"1"},"playlist":[]}
-            final String server = getJson(ajax, "baseUrl");
-            final String label = getJson(ajax, "label");
+            final String server = PluginJSonUtils.getJson(ajax, "baseUrl");
+            final String label = PluginJSonUtils.getJson(ajax, "label");
             if (!"null".equalsIgnoreCase(server) && server != null) {
                 url = server + "/" + url;
             } else {
@@ -197,7 +198,7 @@ public class HitBoxTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (url.contains(".hls.vods.hitbox.tv/")) {
+        if (url.contains(".m3u8")) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             if (downloadLink.getBooleanProperty("encrypted")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
@@ -217,86 +218,9 @@ public class HitBoxTv extends PluginForHost {
         }
     }
 
-    private String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override
