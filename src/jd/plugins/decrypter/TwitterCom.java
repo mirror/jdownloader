@@ -141,12 +141,12 @@ public class TwitterCom extends PornEmbedParser {
                     logger.info("Decryption aborted at reload " + reloadNumber);
                     return decryptedLinks;
                 }
+                if (reloadNumber == 1) {// For testing only!
+                    // break;
+                }
                 logger.info("Decrypting reloadnumber " + reloadNumber + ", found " + decryptedLinks.size() + " links till now");
                 if (reloadNumber > 0) {
                     maxid = br.getRegex("\"min_position\":\"(\\d+)").getMatch(0);
-                }
-                if (reloadNumber == 1) {// For testing only!
-                    // break;
                 }
                 int addedlinks_all = 0;
                 final String[] tweetsources = this.br.getRegex("li class=\"js-stream-item stream-item stream-item expanding-stream-item(.*?)ProfileTweet\\-actionCount").getColumn(0);
@@ -156,6 +156,7 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 for (final String tweetsource : tweetsources) {
                     // logger.info("tweetsource: " + tweetsource);
+                    Boolean found = false;
                     tweet_id = new Regex(tweetsource, "id=\"stream\\-item\\-tweet\\-(\\d+)\"").getMatch(0);
                     if (tweet_id == null) {
                         logger.info("tweet_id == null, abend ");
@@ -164,7 +165,8 @@ public class TwitterCom extends PornEmbedParser {
                     final String[] embedurl_regexes = new String[] { "\"(https?://(?:www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://(?:www\\.)?vine\\.co/v/[A-Za-z0-9]+)\"" };
                     for (final String regex : embedurl_regexes) {
                         final String[] embed_links = new Regex(tweetsource, regex).getColumn(0);
-                        if (embed_links != null) {
+                        if (embed_links != null && embed_links.length > 0) {
+                            found = true;
                             for (final String single_embed_ink : embed_links) {
                                 final DownloadLink dl = createDownloadlink(single_embed_ink, tweet_id);
                                 if (fp != null) {
@@ -176,10 +178,11 @@ public class TwitterCom extends PornEmbedParser {
                             }
                         }
                     }
-                    final String[] directlink_regexes = new String[] { "data-image-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(?:jpg|png|gif))", "\"(https://amp\\.twimg\\.com/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap)\"", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "(?:data\\-img\\-src=|img src=)\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
+                    final String[] directlink_regexes = new String[] { "data-image-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(?:jpg|png|gif))", "\"(https://amp\\.twimg\\.com/[^<>\"]*?)\"", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "(?:data\\-img\\-src=|img src=)\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
                     for (final String regex : directlink_regexes) {
                         final String[] piclinks = new Regex(tweetsource, regex).getColumn(0);
-                        if (piclinks != null) {
+                        if (piclinks != null && piclinks.length > 0) {
+                            found = true;
                             for (String singleLink : piclinks) {
                                 final String remove = new Regex(singleLink, "(:[a-z0-9]+)").getMatch(0);
                                 if (remove != null) {
@@ -200,6 +203,7 @@ public class TwitterCom extends PornEmbedParser {
                     /* Video #1 */
                     final String stream_id = new Regex(tweetsource, "\"/i/cards/tfw/v1/(\\d+)\\?cardname=__entity_video").getMatch(0);
                     if (stream_id != null) {
+                        found = true;
                         /* Our post is a stream */
                         /* Usually stream_id == tweet_id */
                         final DownloadLink dl = createDownloadlink(createVideourl(stream_id), tweet_id);
@@ -216,6 +220,7 @@ public class TwitterCom extends PornEmbedParser {
                     final String vid = vinfo.getMatch(0);
                     final String vsrc = vinfo.getMatch(1);
                     if (vid != null && vsrc != null) {
+                        found = true;
                         final DownloadLink dl = createDownloadlink(vsrc, tweet_id);
                         if (fp != null) {
                             fp.add(dl);
@@ -226,8 +231,17 @@ public class TwitterCom extends PornEmbedParser {
                         dl.setAvailable(true);
                         distribute(dl);
                         decryptedLinks.add(dl);
+                        addedlinks_all++;
                     }
-                    addedlinks_all++;
+                    if (!found) {
+                        final DownloadLink dl = createDownloadlink(createVideourl(tweet_id), tweet_id);
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
+                        distribute(dl);
+                        decryptedLinks.add(dl);
+                        addedlinks_all++;
+                    }
                 }
                 if (addedlinks_all == 0 || maxid == null) {
                     break;
