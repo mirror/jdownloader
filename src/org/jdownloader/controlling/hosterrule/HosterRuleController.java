@@ -160,7 +160,7 @@ public class HosterRuleController implements AccountControllerListener {
         } else {
             final LazyHostPlugin lazy = plugin.getLazyP();
             final boolean isUpdateRequiredPlugin = "UpdateRequired".equalsIgnoreCase(lazy.getDisplayName());
-            final boolean isOfflinePlugin = !lazy.getClassName().endsWith("r.Offline");
+            final boolean isOfflinePlugin = lazy.getClassName().endsWith("r.Offline");
             if (!isUpdateRequiredPlugin && !isOfflinePlugin) {
                 final boolean changed = !StringUtils.equalsIgnoreCase(rule.getHoster(), lazy.getHost());
                 if (changed) {
