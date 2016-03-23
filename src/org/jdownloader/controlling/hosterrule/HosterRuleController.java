@@ -44,11 +44,6 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 public class HosterRuleController implements AccountControllerListener {
     private static final HosterRuleController INSTANCE = new HosterRuleController();
 
-    /**
-     * get the only existing instance of HosterRuleController. This is a singleton
-     *
-     * @return
-     */
     public static HosterRuleController getInstance() {
         return HosterRuleController.INSTANCE;
     }
