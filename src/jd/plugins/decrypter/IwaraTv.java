@@ -37,6 +37,7 @@ public class IwaraTv extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"cb_error\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -44,7 +45,7 @@ public class IwaraTv extends PluginForDecrypt {
         }
         String filename = this.br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(parameter, "/videos/(.+)").getMatch(0);
+            filename = new Regex(this.br.getURL(), "/videos/(.+)").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename).trim();
         String externID = this.br.getRegex("\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"").getMatch(0);

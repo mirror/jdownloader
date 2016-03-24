@@ -36,7 +36,7 @@ import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "https?://(?:www\\.)?prosieben\\.de/.+", "https?://(?:www\\.)?prosiebenmaxx\\.de/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.de/.+", "https?://(?:www\\.)?kabeleins\\.de/.+", "https?://(?:www\\.)?sat1\\.de/.+", "https?://(?:www\\.)?sat1gold\\.de/.+", "https?://(?:www\\.)?sixx\\.de.+", "https?://(?:www\\.)?7tv\\.de/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1.ch", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "https?://(?:www\\.)?prosieben\\.de/.+", "https?://(?:www\\.)?prosiebenmaxx\\.de/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.de/.+", "https?://(?:www\\.)?kabeleins\\.de/.+", "https?://(?:www\\.)?sat1\\.de/.+", "https?://(?:www\\.)?sat1\\.ch/.+", "https?://(?:www\\.)?sat1gold\\.de/.+", "https?://(?:www\\.)?sixx\\.de.+", "https?://(?:www\\.)?7tv\\.de/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class ProSevenDeDecrypter extends PluginForDecrypt {
 
     public ProSevenDeDecrypter(PluginWrapper wrapper) {
@@ -59,7 +59,7 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             /* Avoid serverside wrong date e.g. http://www.7tv.de/circus-halligalli/52-episode-2-staffel-5-ganze-folge */
             date = br.getRegex("property=\"og:modified_time\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
-        final String brand = new Regex(parameter, "https?://(?:www\\.)?([^<>\"/]*?)\\.de/").getMatch(0);
+        final String brand = new Regex(parameter, "https?://(?:www\\.)?([^<>\"/]*?)\\.(?:de|ch)/").getMatch(0);
         final String json = this.br.getRegex("var contentResources = (\\[.+\\]);").getMatch(0);
         String fpName = br.getRegex("itemprop=\"title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {

@@ -26,10 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,6 +45,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allvid.ch" }, urls = { "https?://(www\\.)?allvid\\.ch/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class AllvidCh extends PluginForHost {
@@ -122,7 +122,7 @@ public class AllvidCh extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.7.0.1
     // Tags: Script, template
-    // mods:
+    // mods: Modified VIDEOHOSTER_2 handling
     // limit-info:
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
@@ -384,14 +384,17 @@ public class AllvidCh extends PluginForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
-                getPage(embed_access);
-                dllink = getDllink();
-                if (dllink == null) {
-                    logger.info("Failed to get link via embed because: " + br.toString());
-                } else {
-                    logger.info("Successfully found link via embed");
-                }
+                String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                do {
+                    getPage(embed_access);
+                    dllink = getDllink();
+                    if (dllink == null) {
+                        logger.info("Failed to get link via embed because: " + br.toString());
+                    } else {
+                        logger.info("Successfully found link via embed");
+                    }
+                    embed_access = new Regex(correctedBR, "\"(https?://[^/]+/embed\\-[^<>\"]+)\"").getMatch(0);
+                } while (embed_access != null && dllink == null);
             } catch (final Throwable e) {
                 logger.info("Failed to get link via embed");
             }

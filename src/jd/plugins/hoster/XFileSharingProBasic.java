@@ -119,7 +119,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private final String                   TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private final String                   TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
 
-    /* Texts displaed to the user in some errorcases */
+    /* Texts displayed to the user in some errorcases */
     private final String                   USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
     private final String                   USERTEXT_MAINTENANCE               = "This server is under maintenance";
     private final String                   USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
