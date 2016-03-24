@@ -31,6 +31,22 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "http://((www\\.)?datafilehost\\.com/(download\\-[a-z0-9]+\\.html|d/[a-z0-9]+)|www\\d+\\.datafilehost\\.com/d/[a-z0-9]+)" }, flags = { 0 })
 public class DataFileHostCom extends PluginForHost {
+    private char[] FILENAMEREPLACES = new char[] { ' ', '_', '[', ']' };
+
+    @Override
+    public char[] getFilenameReplaceMap() {
+        return FILENAMEREPLACES;
+    }
+
+    @Override
+    public boolean isHosterManipulatesFilenames() {
+        return true;
+    }
+
+    @Override
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
+    }
 
     public DataFileHostCom(PluginWrapper wrapper) {
         super(wrapper);

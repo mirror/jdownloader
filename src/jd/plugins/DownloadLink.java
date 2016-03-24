@@ -1772,18 +1772,20 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (changed) {
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.HASHINFO, hashInfo));
-                switch (hashInfo.getType()) {
-                case MD5:
-                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.MD5, hashInfo.getHash()));
-                    break;
-                case SHA1:
-                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA1, hashInfo.getHash()));
-                    break;
-                case SHA256:
-                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA256, hashInfo.getHash()));
-                    break;
-                default:
-                    break;
+                if (hashInfo != null) {
+                    switch (hashInfo.getType()) {
+                    case MD5:
+                        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.MD5, hashInfo.getHash()));
+                        break;
+                    case SHA1:
+                        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA1, hashInfo.getHash()));
+                        break;
+                    case SHA256:
+                        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA256, hashInfo.getHash()));
+                        break;
+                    default:
+                        break;
+                    }
                 }
             }
         }
