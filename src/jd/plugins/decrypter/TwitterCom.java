@@ -54,7 +54,7 @@ public class TwitterCom extends PornEmbedParser {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://www.twitter.com/");
+        final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://twitter.com/");
         final String urlfilename = getUrlFname(parameter);
         final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
         final FilePackage fp;
@@ -92,6 +92,9 @@ public class TwitterCom extends PornEmbedParser {
         }
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            if (parameter.contains("/cards/")) {
+                return decryptedLinks;
+            }
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(urlfilename);
             decryptedLinks.add(offline);
@@ -238,7 +241,6 @@ public class TwitterCom extends PornEmbedParser {
                         if (fp != null) {
                             fp.add(dl);
                         }
-                        distribute(dl);
                         decryptedLinks.add(dl);
                         addedlinks_all++;
                     }
