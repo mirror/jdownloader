@@ -91,17 +91,25 @@ public class XFileSharingProBasic extends PluginForHost {
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
     private final boolean                  VIDEOHOSTER_2                      = false;
     private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
-    /* Enable this for imagehosts */
+    /*
+     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
+     * will check for videohoster "next" Download/Ad- Form.
+     */
     private final boolean                  IMAGEHOSTER                        = false;
 
     private final boolean                  SUPPORTS_HTTPS                     = false;
     private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
+    /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
     private final boolean                  ENABLE_RANDOM_UA                   = false;
+    /*
+     * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
+     * contains misleading information such as fake texts.
+     */
     private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = true;
 
-    /* Waittime stuff */
+    /* Pre-Download waittime stuff */
     private final boolean                  WAITFORCED                         = false;
     private final int                      WAITSECONDSMIN                     = 3;
     private final int                      WAITSECONDSMAX                     = 100;
@@ -135,7 +143,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.2.3<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.2.4<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -181,7 +189,6 @@ public class XFileSharingProBasic extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
-        this.br.setFollowRedirects(true);
         correctDownloadLink(link);
         prepBrowser(this.br);
         setFUID(link);
@@ -193,6 +200,7 @@ public class XFileSharingProBasic extends PluginForHost {
         altbr = this.br.cloneBrowser();
 
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+            /* In maintenance mode this sometimes is a way to find filenames! */
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
                 if (!inValidate(fileInfo[0])) {
@@ -203,6 +211,10 @@ public class XFileSharingProBasic extends PluginForHost {
             link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
         } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+            /*
+             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
+             * There are 2 alternative ways to get this information anyways!
+             */
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -219,7 +231,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!inValidate(fileInfo[0]) || !inValidate(fileInfo[1])) {
-                /* We know the link is online, set all information we got */
+                /* We know the link must be online, lets set all information we got */
                 link.setAvailable(true);
                 if (!inValidate(fileInfo[0])) {
                     link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
@@ -237,14 +249,16 @@ public class XFileSharingProBasic extends PluginForHost {
 
         scanInfo(fileInfo);
 
-        /* Filename abbreviated over x chars long */
+        /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
+
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
              * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
@@ -253,6 +267,10 @@ public class XFileSharingProBasic extends PluginForHost {
             fileInfo[0] = this.fuid + ".jpg";
         }
         if (inValidate(fileInfo[0]) || fileInfo[0].equals("")) {
+            /*
+             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin
+             * code needs to be updated in this case!
+             */
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -263,17 +281,20 @@ public class XFileSharingProBasic extends PluginForHost {
         if (!inValidate(fileInfo[2])) {
             link.setMD5Hash(fileInfo[2].trim());
         }
-        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        /* Remove some html tags - usually not necessary! */
+        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
         if (VIDEOHOSTER || VIDEOHOSTER_2 || VIDEOHOSTER_ENFORCE_VIDEO_FILENAME) {
+            /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
             fileInfo[0] = this.removeDoubleExtensions(fileInfo[0], "mp4");
         }
-        link.setName(fileInfo[0].trim());
+        /* Finally set the name but do not yet set the finalFilename! */
+        link.setName(fileInfo[0]);
         if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
-             * Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already know that the
-             * file must be online!
+             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already
+             * know that the file must be online!
              */
-            logger.info("Filesize not available, trying getFilesizeViaAvailablecheckAlt");
+            logger.info("Failed to find filesize --> Trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
         }
         if (!inValidate(fileInfo[1])) {
@@ -337,7 +358,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
         }
-        /* MD5 is only available in very rare cases! */
+        /* MD5 is only available in very very rare cases! */
         if (inValidate(fileInfo[2])) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
@@ -347,8 +368,8 @@ public class XFileSharingProBasic extends PluginForHost {
     /**
      * Get filename via abuse-URL.<br />
      * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
-     * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
-     * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ABUSE</b> is <b>true</b>!<br />
+     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ABUSE</u></b> is <b>true</b>!<br />
      *
      * @throws Exception
      */
@@ -360,8 +381,8 @@ public class XFileSharingProBasic extends PluginForHost {
     /**
      * Get filename via mass-linkchecker/alternative availablecheck.<br />
      * E.g. needed if officially only logged in users can see filesize or filesize is missing for whatever reason.<br />
-     * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
-     * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ALT</b> is <b>true</b>!<br />
+     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ALT</u></b> is <b>true</b>!<br />
      */
     @SuppressWarnings("deprecation")
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
@@ -374,23 +395,31 @@ public class XFileSharingProBasic extends PluginForHost {
         return filesize;
     }
 
+    /**
+     * Removes double extensions (of video hosts) to correct ugly filenames such as 'some_videoname.mkv.flv.mp4'.<br />
+     *
+     * @param filename
+     *            input filename whose extensions will be replaced by parameter defaultExtension.
+     * @param defaultExtension
+     *            Extension which is supposed to replace the (multiple) wrong extension(s).
+     */
     private String removeDoubleExtensions(String filename, final String defaultExtension) {
-        if (filename == null) {
+        if (filename == null || defaultExtension == null) {
             return filename;
         }
         String ext_temp = null;
         int index = 0;
         while (filename.contains(".")) {
-            /* First let's remove all video extensions */
+            /* First let's remove all common video extensions */
             index = filename.lastIndexOf(".");
             ext_temp = filename.substring(index);
-            if (ext_temp != null && ext_temp.matches("\\.(mp4|flv|mkv|avi)")) {
+            if (ext_temp != null && ext_temp.matches("\\.(avi|divx|flv|mkv|mov|mp4)")) {
                 filename = filename.substring(0, index);
                 continue;
             }
             break;
         }
-        /* Add wished default video extension */
+        /* Add desired video extension */
         if (!filename.endsWith("." + defaultExtension)) {
             filename += "." + defaultExtension;
         }
@@ -724,6 +753,7 @@ public class XFileSharingProBasic extends PluginForHost {
         /* define custom browser headers and language settings */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setFollowRedirects(true);
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
                 agent.set(UserAgents.stringUserAgent());
@@ -1234,11 +1264,13 @@ public class XFileSharingProBasic extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
+            /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(-1);
@@ -1252,16 +1284,15 @@ public class XFileSharingProBasic extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
+                this.br.setCookiesExclusive(true);
+                prepBrowser(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
+                final Form loginform = this.br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1274,7 +1305,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1283,7 +1314,7 @@ public class XFileSharingProBasic extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
+                if (!this.br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
@@ -1303,19 +1334,21 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
+        /* Perform linkcheck without logging in */
         requestFileInformation(downloadLink);
         login(account, false);
         if (account.getType() == AccountType.FREE) {
+            /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
-                br.setFollowRedirects(false);
+                this.br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
+                    final Form dlform = this.br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
@@ -1333,11 +1366,11 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                this.br.followConnection();
                 correctBR();
                 checkServerErrors();
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
