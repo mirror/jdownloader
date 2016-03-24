@@ -171,10 +171,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         if (ret == null) {
             ret = getRawDownloadFolder();
             if (ret != null && downloadFolderContainsTags) {
-                if (GENERALSETTINGS.getSubfolderThreshold() > getChildren().size()) {
-                    ret = PackagizerController.replaceDynamicTags(ret, null);
-                } else {
+                final int threshold = GENERALSETTINGS.getSubfolderThreshold();
+                if (threshold == 0 || threshold > getChildren().size()) {
                     ret = PackagizerController.replaceDynamicTags(ret, getName());
+                } else {
+                    ret = PackagizerController.replaceDynamicTags(ret, null);
                 }
             }
             compiledDownloadFolder = ret;
@@ -339,9 +340,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         if (n == null) {
             return;
         }
-        AbstractNode lsource = source;
-        if (lsource == null) {
+        final AbstractNode lsource;
+        if (source == null) {
             lsource = this;
+        } else {
+            lsource = source;
         }
         if (lsource instanceof AbstractPackageChildrenNode) {
             final CrawledPackageView lView = view;
