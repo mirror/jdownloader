@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:www\\.)?iwaradecrypted\\.tv/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" }, flags = { 0 })
 public class IwaraTv extends PluginForHost {
 
     public IwaraTv(PluginWrapper wrapper) {
@@ -50,6 +50,8 @@ public class IwaraTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
+
+    private final String         html_privatevideo = ">This video is only available for users that|>Private video<";
 
     private String               dllink            = null;
     private boolean              serverIssue       = false;
@@ -90,7 +92,18 @@ public class IwaraTv extends PluginForHost {
         if (filename == null) {
             filename = fid;
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("controls=\"controls\"")) {
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.trim();
+        filename = encodeUnicode(filename);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /* Offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML(html_privatevideo)) {
+            /* Private video */
+            downloadLink.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        } else if (!this.br.containsHTML("flowplayer\\.org/")) {
+            /* Not a video */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/").getMatch(0);
@@ -101,9 +114,6 @@ public class IwaraTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -141,7 +151,9 @@ public class IwaraTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (serverIssue) {
+        if (this.br.containsHTML(html_privatevideo)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (serverIssue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);

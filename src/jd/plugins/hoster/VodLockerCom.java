@@ -75,7 +75,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vodlocker.com" }, urls = { "https?://(www\\.)?vodlocker\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vodlocker.com", "vodlocker.city" }, urls = { "https?://(?:www\\.)?vodlocker\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(?:www\\.)?vodlocker\\.city/video/\\d+/[^/]+" }, flags = { 0, 0 })
 @SuppressWarnings("deprecation")
 public class VodLockerCom extends PluginForHost {
 
@@ -100,6 +100,8 @@ public class VodLockerCom extends PluginForHost {
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
 
+    private final String               TYPE_VODLOCKER_CITY          = "https?://(?:www\\.)?vodlocker\\.city/video/\\d+/[^/]+";
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -109,7 +111,7 @@ public class VodLockerCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods: getDllink
+    // mods: heavily modified, do NOT upgrade!
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -211,7 +213,11 @@ public class VodLockerCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
         correctDownloadLink(downloadLink);
-        fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        if (downloadLink.getDownloadURL().matches(TYPE_VODLOCKER_CITY)) {
+            fuid = new Regex(downloadLink.getDownloadURL(), "video/(\\d+)/").getMatch(0);
+        } else {
+            fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        }
         br.setFollowRedirects(true);
         prepBrowser(br);
 
@@ -275,9 +281,13 @@ public class VodLockerCom extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fileInfo[0] = Encoding.htmlDecode(fileInfo[0]).trim();
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
         fileInfo[0] = fileInfo[0].replaceAll("\\.(avi\\.flv|avi|flv|mkv)", "\\.mp4");
-        downloadLink.setName(fileInfo[0].trim());
+        if (!fileInfo[0].endsWith(".mp4")) {
+            fileInfo[0] += ".mp4";
+        }
+        downloadLink.setName(fileInfo[0]);
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
             downloadLink.setAvailable(true);
         }
@@ -312,6 +322,9 @@ public class VodLockerCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (inValidate(fileInfo[0]) && downloadLink.getDownloadURL().matches(TYPE_VODLOCKER_CITY)) {
+            fileInfo[0] = cbr.getRegex("<title>([^<>]+)</title>").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -359,7 +372,6 @@ public class VodLockerCom extends PluginForHost {
         return fileInfo;
     }
 
-    @SuppressWarnings("unused")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         if (account != null) {
             logger.info(account.getUser() + " @ " + acctype + " -> Free Download");
@@ -374,10 +386,18 @@ public class VodLockerCom extends PluginForHost {
         if (inValidate(dllink)) {
             getDllink();
         }
+        final Browser obr = br.cloneBrowser();
+        final Browser obrc = cbr.cloneBrowser();
+        if (downloadLink.getDownloadURL().matches(TYPE_VODLOCKER_CITY)) {
+            getPage("/video/embed/" + new Regex(this.br.getURL(), "vodlocker\\.city/video/(.+)").getMatch(0));
+            getDllink();
+            if (inValidate(dllink)) {
+                // this will set referrer info back
+                br = obr.cloneBrowser();
+            }
+        }
         // Third, do they provide video hosting?
         if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
-            final Browser obr = br.cloneBrowser();
-            final Browser obrc = cbr.cloneBrowser();
             if (useVidEmbed) {
                 getPage("/vidembed-" + fuid);
                 getDllink();
@@ -562,7 +582,7 @@ public class VodLockerCom extends PluginForHost {
                 }
             }
             if (inValidate(dllink)) {
-                dllink = cbr.getRegex("file: \"(https?://[^<>\"]*?)\"").getMatch(0);
+                dllink = cbr.getRegex("file:[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
             if (inValidate(dllink)) {
                 final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -744,6 +764,9 @@ public class VodLockerCom extends PluginForHost {
         }
         if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
+        if (this.br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
         }
     }
 
@@ -1121,9 +1144,10 @@ public class VodLockerCom extends PluginForHost {
         // strip video hosting url's to reduce possible duped links.
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/(vid)?embed-", "/"));
         // output the hostmask as we wish based on COOKIE_HOST url!
-        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
-        String importedHost = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)").getMatch(0);
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(importedHost, desiredHost));
+        /* DONT do this for this plugin! */
+        // String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
+        // String importedHost = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)").getMatch(0);
+        // downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
     @SuppressWarnings("unused")

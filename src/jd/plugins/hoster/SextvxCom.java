@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sextvx.com" }, urls = { "http://(www\\.)?sextvx\\.com/[a-z]{2}/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sextvx.com" }, urls = { "http://(www\\.)?sextvx\\.com/[a-z]{2}/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
 public class SextvxCom extends PluginForHost {
 
     public SextvxCom(PluginWrapper wrapper) {
@@ -88,9 +88,15 @@ public class SextvxCom extends PluginForHost {
         // if (filename == null) {
         // filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         // }
-        final Regex ajaxdataregex = br.getRegex("path=\"\\d+,(\\d+)\\.([^<>\"]*?)\"");
-        final String server = ajaxdataregex.getMatch(0);
+        final Regex ajaxdataregex = br.getRegex("path=\"(?:\\d+,)?(\\d+)\\.([^<>\"]*?)\"");
+        String server = ajaxdataregex.getMatch(0);
         String path = ajaxdataregex.getMatch(1);
+        if (server == null) {
+            server = this.br.getRegex("path=\"(\\d+)[0-9,\\.]*?(\\d+/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (path == null) {
+            path = this.br.getRegex("path=\"[0-9,\\.]+(\\d+/[^<>\"]*?)\"").getMatch(0);
+        }
         if (filename == null || server == null || path == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -120,7 +126,7 @@ public class SextvxCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = br.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -178,20 +184,6 @@ public class SextvxCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
