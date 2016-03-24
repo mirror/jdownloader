@@ -601,7 +601,7 @@ public class HugeFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
             }
         }
-        if (cbr.containsHTML(">The file have reached the download limit for guest users at the moment, Try again later") && (account.equals(null) || AccountType.FREE.equals(account.getType()))) {
+        if (cbr.containsHTML(">The file have reached the download limit for guest users at the moment, Try again later") && (account == null || AccountType.FREE.equals(account.getType()))) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free Download limit reached for this file, try again later");
         }
 
