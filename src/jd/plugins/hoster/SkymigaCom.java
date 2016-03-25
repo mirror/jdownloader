@@ -40,6 +40,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -118,7 +119,7 @@ public class SkymigaCom extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.8.6
     // Tags: Script, template
-    // mods:
+    // mods: login
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: recaptcha
@@ -1138,15 +1139,13 @@ public class SkymigaCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
+                Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    loginform = new Form();
+                    loginform.setMethod(MethodType.POST);
+                    loginform.put("op", "login");
+                    loginform.put("redirect", "");
+                    loginform.setAction("http://" + this.getHost() + "/");
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));

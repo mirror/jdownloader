@@ -109,7 +109,7 @@ public class SrBoxCom extends PluginForDecrypt {
         int iImage = (TabImage1 != null ? TabImage1.length : 0) + (TabImage2 != null ? TabImage2.length : 0);
 
         // Added Image
-        DownloadLink[] TabImageLink = new DownloadLink[iImage];
+        DownloadLink[] tabImageLink = new DownloadLink[iImage];
         int iImageFinal = 0;
         int iImageIndex = 0;
         if (TabImage1 != null) {
@@ -121,7 +121,12 @@ public class SrBoxCom extends PluginForDecrypt {
                     if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                         DownloadLink DLLink = createDownloadlink(strImageLink, false);
                         if (DLLink != null) {
-                            TabImageLink[iImageIndex++] = DLLink;
+                            iImageIndex++;
+                            /* Fail safe */
+                            if (iImageIndex > tabImageLink.length - 1) {
+                                break;
+                            }
+                            tabImageLink[iImageIndex] = DLLink;
                             iImageFinal++;
                         }
                         strImageLink = strImageLink.replace("thumbs/", "").replace("medium/", "");
@@ -129,7 +134,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
                     final DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
-                        TabImageLink[iImageIndex++] = DLLink;
+                        tabImageLink[iImageIndex++] = DLLink;
                         iImageFinal++;
                     }
                 }
@@ -144,7 +149,7 @@ public class SrBoxCom extends PluginForDecrypt {
                 if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
-                        TabImageLink[iImageIndex++] = DLLink;
+                        tabImageLink[iImageIndex++] = DLLink;
                         iImageFinal++;
                     }
                     strImageLink = strImageLink.replace("thumbs/", "");
@@ -153,16 +158,16 @@ public class SrBoxCom extends PluginForDecrypt {
 
                 DownloadLink DLLink = createDownloadlink(strImageLink, false);
                 if (DLLink != null) {
-                    TabImageLink[iImageIndex++] = DLLink;
+                    tabImageLink[iImageIndex++] = DLLink;
                     iImageFinal++;
 
                 }
             }
         }
 
-        if (TabImageLink != null) {
+        if (tabImageLink != null) {
             iImageIndex = 1;
-            for (DownloadLink DLLink : TabImageLink) {
+            for (DownloadLink DLLink : tabImageLink) {
                 if (DLLink != null) {
                     String strExtension = "";
                     int iIndex = DLLink.getPluginPatternMatcher().lastIndexOf('.');

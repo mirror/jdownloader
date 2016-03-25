@@ -60,11 +60,14 @@ public class DbrEe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"file-info")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"tab_file\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("data\\-filename=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("<li>(\\d{1,4}(?:\\.\\d{1,2})? (GB|MB|KB|B))</li>").getMatch(0);
+        String filename = br.getRegex("class=\"dd\\-file\\-name\">([^<>\"]+)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"dd\\-title\">([^<>\"]+)<").getMatch(0);
+        }
+        final String filesize = br.getRegex(">(\\d+(?:\\.\\d{1,2})? (?:GB|MB|KB|B))<").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

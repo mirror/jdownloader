@@ -412,11 +412,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("(foxytube\\.com/embedded/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www." + externID));
-            return decryptedLinks;
-        }
         externID = new Regex(br.toString(), Pattern.compile("(http://(?:www\\.)?moviesand\\.com/embedded/\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
@@ -595,10 +590,17 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
 
         }
 
-        // perm offline
+        /* RegExes for permanently offline websites go here */
+        /* 2016-03-25: xrabbit.com --> xpage.com */
         externID = br.getRegex("\"(http://(www\\.)?xrabbit\\.com/video/embed/[A-Za-z0-9=]+/?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        /* 2016-03-25: foxytube.com == offline */
+        externID = br.getRegex("(foxytube\\.com/embedded/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www." + externID));
             return decryptedLinks;
         }
         return decryptedLinks;
