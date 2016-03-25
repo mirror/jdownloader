@@ -49,7 +49,7 @@ public class TurkcealtyaziOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.turkcealtyazi.org/")) {
+        if (br.getURL().length() < 38) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"portalust\" id=\"altyazilar\"><h5>([^<>\"]*?)</h2>").getMatch(0);
@@ -61,11 +61,13 @@ public class TurkcealtyaziOrg extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "turkcealtyazi\\.org/sub/\\d+/([a-z0-9\\-]+)\\.html").getMatch(0);
         }
         String filesize = br.getRegex(">Boyut:</div>[\t\n\r ]+<div class=\"sub\\-right\\-container\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".rar");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".rar");
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -74,7 +76,7 @@ public class TurkcealtyaziOrg extends PluginForHost {
         requestFileInformation(downloadLink);
         final Form dlform = this.br.getFormbyAction("/down.php");
         if (dlform == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File not (yet) downloadable");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

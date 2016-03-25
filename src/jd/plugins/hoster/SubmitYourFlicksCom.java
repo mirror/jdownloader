@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourflicks.com" }, urls = { "http://(www\\.)?submityourflicks\\.com/(\\d+[a-z0-9\\-]+\\.html|embconfig/\\d+|embedded/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "submityourflicks.com" }, urls = { "http://(www\\.)?submityourflicks\\.com/(\\d+[a-z0-9\\-]+\\.html|embconfig/\\d+|embedded/\\d+)" }, flags = { 0 })
 public class SubmitYourFlicksCom extends PluginForHost {
 
     private String dllink = null;
@@ -63,6 +63,7 @@ public class SubmitYourFlicksCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -76,13 +77,16 @@ public class SubmitYourFlicksCom extends PluginForHost {
         dllink = br.getRegex("addVariable\\(\"file\", \"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("name=\"FlashVars\" value=\"file=(http.*?)http://(www\\.)?submityourflicks\\.com").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("contentUrl\" content=\"(http://videos\\.cdn\\.submityourflicks\\.com/[^\"]+)\"").getMatch(0);
-                if (dllink == null) {
-                    final String clip = PluginJSonUtils.getJsonNested(br.toString(), "clip");
-                    dllink = new Regex((clip != null ? clip : ""), "url\\s*:\\s*'(.*?)'").getMatch(0);
-                }
-            }
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("contentUrl\" content=\"(http://videos\\.cdn\\.submityourflicks\\.com/[^\"]+)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]+)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            final String clip = PluginJSonUtils.getJsonNested(br.toString(), "clip");
+            dllink = new Regex((clip != null ? clip : ""), "url\\s*:\\s*'(.*?)'").getMatch(0);
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -95,7 +99,7 @@ public class SubmitYourFlicksCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

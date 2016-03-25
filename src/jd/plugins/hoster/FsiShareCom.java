@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsishare.com" }, urls = { "http://(www\\.)?fsishare\\.com/videopage/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsishare.com" }, urls = { "http://(?:www\\.)?fsishare\\.com/videopage/.*?\\.html" }, flags = { 0 })
 public class FsiShareCom extends PluginForHost {
 
     public FsiShareCom(PluginWrapper wrapper) {
@@ -52,8 +52,12 @@ public class FsiShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("<div id=\"downloadbutton\" style=\"display: none;\">[\t\n\r ]+<p class=\"style7\" align=\"left\"><a[\t\n\r ]+href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?fsishare\\.com/mmsclips/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(www\\.)?fsishare\\.com/mmsclips/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Waittime can still be skipped
         // String waittime =
         // br.getRegex("link will appear in (\\d+) seconds").getMatch(0);
@@ -70,20 +74,29 @@ public class FsiShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         // Often slow servers
         br.setReadTimeout(60 * 1000);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 Not Found<|>Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>404 Not Found<|>Not Found<)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("Name :([^<>\"]+)</p>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>FSI Share \\-(.*?)</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>FSI Share \\-(.*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Filesize is now always displayed
         String fileSize = br.getRegex(">Video Size : (.*?)</p>").getMatch(0);
-        if (fileSize != null) link.setDownloadSize(SizeFormatter.getSize(fileSize));
+        if (fileSize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(fileSize));
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".3gp");
         return AvailableStatus.TRUE;
     }

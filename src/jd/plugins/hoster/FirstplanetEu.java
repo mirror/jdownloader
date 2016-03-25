@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -281,56 +283,85 @@ public class FirstplanetEu extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        String expire = null;
+        String hrValue = null;
         if (api_use_api_free || api_use_api_premium) {
             loginAPI(account, true);
             postPage(API_ENDPOINT, "{\"method\":\"user.getServices\",\"params\":{\"accessToken\":\"" + this.api_token + "\"}}");
-            final String kind = getJson("kind");
-            long trafficleft = 0;
-            final String trafficleft_str = getJson("numeric");
-            if (trafficleft_str != null) {
-                trafficleft = Long.parseLong(trafficleft_str);
+            String kind = null;
+            long numeric = 0;
+            try {
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList) entries.get("result");
+                entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+                kind = (String) entries.get("kind");
+                /*
+                 * Kind of information of 'hrValue' depends on account type (value of 'kind'). It can mean traffic left, remaining premium
+                 * days or remaining downloads. Same for 'numeric'.
+                 */
+                hrValue = (String) entries.get("hrValue");
+                numeric = DummyScriptEnginePlugin.toLong(entries.get("numeric"), 0);
+            } catch (final Throwable e) {
             }
-            expire = br.getRegex("(\\d{1,2}\\.\\d{1,2}\\.\\d{4})").getMatch(0);
-            if ("traffic".equals(kind) && trafficleft_str != null) {
-                /* Premium volume account */
-                ai.setTrafficLeft(trafficleft);
+            String status;
+            if ("traffic".equalsIgnoreCase(kind)) {
+                /* traffic / traffic --> Premium volume account */
+                ai.setTrafficLeft(numeric);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
-                ai.setStatus("Premium volume account");
-            } else if (expire != null) {
-                /* Premium time account */
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
-                if (trafficleft > 0) {
-                    /* Maybe time accounts can also have traffic?! */
-                    ai.setTrafficLeft(trafficleft);
-                }
+                status = "Premium volume account";
+            } else if ("tp".equalsIgnoreCase(kind)) {
+                /* timeperiod / timeperiod --> Premium time account */
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(hrValue, "dd.MM.yyyy", Locale.ENGLISH));
+                /* In this case the value inside 'trafficleft' is the number of days left. This account type has unlimited traffic! */
+                ai.setUnlimitedTraffic();
                 maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
-                ai.setStatus("Premium time account");
+                status = "Premium time account";
+            } else if ("tptraffic".equalsIgnoreCase(kind)) {
+                /* tptraffic / tptraffic --> Premium time & volume account */
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(hrValue, "dd.MM.yyyy", Locale.ENGLISH));
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+                status = "Premium time and volume account";
+            } else if ("single".equalsIgnoreCase(kind)) {
+                /* tptraffic / tptraffic --> Premium time & volume account */
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+                status = "Premium download-count-limited, traffic&time unlimited";
             } else {
-                /* Free account or unsupported account type. */
+                /*
+                 * Free account or unsupported account type. In this case API does not return any information about the account - we only
+                 * know that it is valid!
+                 */
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setType(AccountType.FREE);
                 /* free accounts can still have captcha */
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
+                status = "Registered (free) user";
             }
+            if (kind != null) {
+                status += " ('" + kind + "')";
+            }
+            ai.setStatus(status);
         } else {
             if (this.br.getURL() == null || !this.br.getURL().contains("/account/services")) {
                 this.br.getPage("http://firstplanet.eu/account/services");
             }
             ai.setUnlimitedTraffic();
-            expire = br.getRegex(">Neomezené stahování do</span>[\t\n\r ]*?<span class=\"right\">(\\d{1,2}\\.\\d{1,2}\\.\\d{4})</span>").getMatch(0);
-            if (expire == null) {
+            hrValue = br.getRegex(">Neomezené stahování do</span>[\t\n\r ]*?<span class=\"right\">(\\d{1,2}\\.\\d{1,2}\\.\\d{4})</span>").getMatch(0);
+            if (hrValue == null) {
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setType(AccountType.FREE);
                 /* free accounts can still have captcha */
@@ -338,7 +369,7 @@ public class FirstplanetEu extends PluginForHost {
                 account.setConcurrentUsePossible(false);
                 ai.setStatus("Registered (free) user");
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(hrValue, "dd.MM.yyyy", Locale.ENGLISH));
                 maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(maxPrem.get());
