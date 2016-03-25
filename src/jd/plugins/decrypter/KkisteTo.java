@@ -110,7 +110,8 @@ public class KkisteTo extends PluginForDecrypt {
                 dl.setProperty("decrypterfilename", decrypterfilename);
                 dl.setName(decrypterfilename + ecostream_default_extension);
                 dl._setFilePackage(fp);
-                dl.setAvailable(true);
+                /* Availibility is NOT known here - do NOT set it available! */
+                // dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 distribute(dl);
                 counter++;
