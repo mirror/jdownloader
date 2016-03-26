@@ -61,7 +61,7 @@ public class HeavyRCom extends PluginForHost {
         if (br.containsHTML("404 - Not Found")) {
             br.getPage(url);
         }
-        if (br.containsHTML("class=\"errorBox\"") || br.containsHTML("Video not found!")) {
+        if (br.containsHTML("Video not found!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("id=\"videotitle\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
