@@ -55,8 +55,12 @@ public class ImgSrcRu extends PluginForDecrypt {
     private boolean                 exaustedPassword = false;
     private boolean                 offline          = false;
     private PluginForHost           plugin           = null;
-    private static Object           ctrlLock         = new Object();
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 
     @Override
     public void init() {
@@ -76,100 +80,94 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        // prevent more than one thread starting across the different versions of JD
-        synchronized (ctrlLock) {
-            long startTime = System.currentTimeMillis();
-            parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
+        long startTime = System.currentTimeMillis();
+        parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
 
-            prepBrowser(br, false);
+        prepBrowser(br, false);
 
-            try {
-                // best to get the original parameter, as the page could contain blocks due to forward or password
+        try {
+            // best to get the original parameter, as the page could contain blocks due to forward or password
+            if (!getPage(parameter, param)) {
+                if (offline || exaustedPassword) {
+                    decryptedLinks.add(createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else {
+                    return null;
+                }
+            }
+
+            if (br.getURL().contains("http://imgsrc.ru/main/search.php")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+
+            username = br.getRegex(">more photos from (.*?)</a>").getMatch(0);
+            if (username == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+
+            String fpName = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<title>(.*?) @ iMGSRC.RU</title>").getMatch(0);
+                if (fpName == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+            }
+
+            uaid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
+            if (uaid == null) {
+                uaid = new Regex(parameter, "/a(\\d+)\\.html").getMatch(0);
+                // ask the user if they want to decrypt the single page or entire album????
+
+                // if they copy non album links we need to find the album id within html
+                uaid = br.getRegex("\\?ad=(\\d+)").getMatch(0);
+                if (uaid == null) {
+                    logger.warning("We could not find the UID, Please report this issue to JDownloader Development Team.");
+                    return null;
+                }
+            }
+
+            // We need to make sure we are on page 1 otherwise we could miss pages.
+            // but this also makes things look tidy, making all parameters the same format
+            parameter = "http://imgsrc.ru/" + username + "/a" + uaid + ".html";
+            param.setCryptedUrl(parameter);
+
+            if (!br.getURL().matches(parameter + ".*?")) {
                 if (!getPage(parameter, param)) {
                     if (offline || exaustedPassword) {
-                        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                        offline.setAvailable(false);
-                        offline.setProperty("offline", true);
-                        decryptedLinks.add(offline);
                         return decryptedLinks;
                     } else {
                         return null;
                     }
                 }
-
-                if (br.getURL().contains("http://imgsrc.ru/main/search.php")) {
-                    logger.info("Link offline: " + parameter);
-                    return decryptedLinks;
-                }
-
-                username = br.getRegex(">more photos from (.*?)</a>").getMatch(0);
-                if (username == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-
-                String fpName = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<title>(.*?) @ iMGSRC.RU</title>").getMatch(0);
-                    if (fpName == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                }
-
-                uaid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
-                if (uaid == null) {
-                    uaid = new Regex(parameter, "/a(\\d+)\\.html").getMatch(0);
-                    // ask the user if they want to decrypt the single page or entire album????
-
-                    // if they copy non album links we need to find the album id within html
-                    uaid = br.getRegex("\\?ad=(\\d+)").getMatch(0);
-                    if (uaid == null) {
-                        logger.warning("We could not find the UID, Please report this issue to JDownloader Development Team.");
-                        return null;
-                    }
-                }
-
-                // We need to make sure we are on page 1 otherwise we could miss pages.
-                // but this also makes things look tidy, making all parameters the same format
-                parameter = "http://imgsrc.ru/" + username + "/a" + uaid + ".html";
-                param.setCryptedUrl(parameter);
-
-                if (!br.getURL().matches(parameter + ".*?")) {
-                    if (!getPage(parameter, param)) {
-                        if (offline || exaustedPassword) {
-                            return decryptedLinks;
-                        } else {
-                            return null;
-                        }
-                    }
-                }
-
-                String name = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(fpName.trim());
-
-                FilePackage fp = FilePackage.getInstance();
-                fp.setProperty("ALLOW_MERGE", true);
-                fp.setName(Encoding.htmlDecode(name.replaceAll("\\.", " ").trim()));
-
-                parsePage(param);
-                parseNextPage(param);
-
-                fp.addLinks(decryptedLinks);
-
-                if (decryptedLinks.size() == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-
-            } catch (Exception e) {
-                if (!offline) {
-                    throw e;
-                } else {
-                    logger.info("Link offline: " + parameter);
-                }
-            } finally {
-                logger.info("Time to decrypt : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + decryptedLinks.size() + " DownloadLinks for " + parameter);
             }
+
+            String name = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(fpName.trim());
+
+            FilePackage fp = FilePackage.getInstance();
+            fp.setProperty("ALLOW_MERGE", true);
+            fp.setName(Encoding.htmlDecode(name.replaceAll("\\.", " ").trim()));
+
+            parsePage(param);
+            parseNextPage(param);
+
+            fp.addLinks(decryptedLinks);
+
+            if (decryptedLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+
+        } catch (Exception e) {
+            if (!offline) {
+                throw e;
+            } else {
+                logger.info("Link offline: " + parameter);
+            }
+        } finally {
+            logger.info("Time to decrypt : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + decryptedLinks.size() + " DownloadLinks for " + parameter);
         }
         return decryptedLinks;
 
@@ -270,7 +268,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
                 // needs to be before password
                 if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
-                    String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
+                    String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
                     if (newLink == null) {
                         /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
                         newLink = br.getRegex("href=(/[^<>\"]+\\?pwd=[^<>\"/]*?)><br><br>Continue to album >></a>").getMatch(0);
