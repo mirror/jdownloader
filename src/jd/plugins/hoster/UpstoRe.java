@@ -28,10 +28,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,7 +47,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
 public class UpstoRe extends antiDDoSForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
@@ -105,7 +105,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * defines custom browser requirements
-     *
+     * 
      * @author raztoki
      */
     @Override
@@ -380,7 +380,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * saves cookies to HashMap from provided browser
-     *
+     * 
      * @author raztoki
      * @param br
      * @return
@@ -398,7 +398,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * returns true if provided Cookie contains keyname is contained within getLoginCookies()
-     *
+     * 
      * @author raztoki
      * @param c
      * @return
@@ -466,7 +466,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * Method to determine if current cookie session is still valid.
-     *
+     * 
      * @author raztoki
      * @param account
      * @return
@@ -505,7 +505,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * Array containing all required premium cookies!
-     *
+     * 
      * @return
      */
     private String[] getLoginCookies() {
@@ -516,7 +516,7 @@ public class UpstoRe extends antiDDoSForHost {
      * If default browser contains ALL cookies within 'loginCookies' array, it will return true<br />
      * <br />
      * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
-     *
+     * 
      * @author raztoki
      */
     private boolean browserCookiesMatchLoginCookies(final Browser br) {
