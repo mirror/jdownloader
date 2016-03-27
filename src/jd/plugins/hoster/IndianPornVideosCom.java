@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com" }, urls = { "http://(www\\.)?indianpornvideos\\.com/video/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com" }, urls = { "https?://(www\\.)?indianpornvideos\\.com/(video/)?[A-Za-z0-9\\-_]+(\\.html)?" }, flags = { 0 })
 public class IndianPornVideosCom extends PluginForHost {
 
     public IndianPornVideosCom(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class IndianPornVideosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video does not exist") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This video does not exist|video id not found") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
