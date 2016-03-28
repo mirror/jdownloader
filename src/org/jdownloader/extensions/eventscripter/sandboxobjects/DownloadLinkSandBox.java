@@ -52,12 +52,13 @@ public class DownloadLinkSandBox {
      */
     public long getDownloadTime() {
         if (downloadLink != null) {
-            long time = downloadLink.getView().getDownloadTime();
+            final long ret = downloadLink.getView().getDownloadTime();
             final PluginProgress progress = downloadLink.getPluginProgress();
             if (progress instanceof DownloadPluginProgress) {
-                time = time + ((DownloadPluginProgress) progress).getDuration();
+                final long ret2 = ret + ((DownloadPluginProgress) progress).getDuration();
+                return ret2;
             }
-            return time;
+            return ret;
         }
         return -1;
     }

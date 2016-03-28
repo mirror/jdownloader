@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.ScriptThread;
@@ -13,6 +11,8 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
+
+import jd.plugins.DownloadLink;
 
 public class ArchiveSandbox {
 
@@ -43,8 +43,9 @@ public class ArchiveSandbox {
     public String getUsedPassword() {
         if (archive != null) {
             return archive.getFinalPassword();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public DownloadLinkSandBox[] getDownloadLinks() {
@@ -57,7 +58,9 @@ public class ArchiveSandbox {
                     }
                 }
             }
-            return ret.toArray(new DownloadLinkSandBox[] {});
+            if (ret.size() > 0) {
+                return ret.toArray(new DownloadLinkSandBox[] {});
+            }
         }
         return null;
     }
@@ -82,7 +85,9 @@ public class ArchiveSandbox {
             for (final File s : archive.getExtractedFiles()) {
                 lst.add(s.getAbsolutePath());
             }
-            return lst.toArray(new String[] {});
+            if (lst.size() > 0) {
+                return lst.toArray(new String[] {});
+            }
         }
         return null;
     }
@@ -90,14 +95,16 @@ public class ArchiveSandbox {
     public String getName() {
         if (archive != null) {
             return archive.getName();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getFolder() {
         if (archive != null) {
             return archive.getFolder().getAbsolutePath();
+        } else {
+            return null;
         }
-        return null;
     }
 }
