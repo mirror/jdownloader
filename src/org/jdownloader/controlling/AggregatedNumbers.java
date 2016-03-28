@@ -4,12 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.download.DownloadInterface;
-
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
@@ -19,6 +13,12 @@ import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
+
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.download.DownloadInterface;
 
 public class AggregatedNumbers {
 
@@ -99,6 +99,9 @@ public class AggregatedNumbers {
     public final int getConnections() {
         return connections;
     }
+
+    private final long enabledUnfinishedTotalBytes;
+    private final long enabledUnfinishedLoadedBytes;
 
     private final int  connections;
     private final long disabledTotalBytes;
@@ -219,6 +222,9 @@ public class AggregatedNumbers {
         int running = 0;
         int connections = 0;
 
+        long enabledUnfinishedTotalBytes = -1;
+        long enabledUnfinishedLoadedBytes = 0;
+
         for (PackageView<FilePackage, DownloadLink> packageView : packageViews) {
             final HashMap<String, AggregatedDownloadLink> linkInfos = new HashMap<String, AggregatedDownloadLink>();
             for (final DownloadLink link : packageView.getChildren()) {
@@ -246,9 +252,12 @@ public class AggregatedNumbers {
                     }
                 }
                 if (linkInfo.enabled) {
+                    boolean enabledUnfinished = false;
                     if (state == null) {
                         if (skipReason != null) {
                             downloadsSkipped++;
+                        } else {
+                            enabledUnfinished = true;
                         }
                     } else {
                         if (state.isFailed()) {
@@ -262,9 +271,18 @@ public class AggregatedNumbers {
                             totalBytes = 0;
                         }
                         totalBytes += linkInfo.bytesTotal;
+                        if (enabledUnfinished) {
+                            if (enabledUnfinishedTotalBytes == -1) {
+                                enabledUnfinishedTotalBytes = 0;
+                            }
+                            enabledUnfinishedTotalBytes += linkInfo.bytesTotal;
+                        }
                     }
                     if (linkInfo.bytesDone >= 0) {
                         loadedBytes += linkInfo.bytesDone;
+                        if (enabledUnfinished) {
+                            enabledUnfinishedLoadedBytes += linkInfo.bytesDone;
+                        }
                     }
                 } else {
                     if (state == null) {
@@ -315,8 +333,19 @@ public class AggregatedNumbers {
         this.totalBytes = totalBytes;
         this.loadedBytes = loadedBytes;
 
+        this.enabledUnfinishedLoadedBytes = enabledUnfinishedLoadedBytes;
+        this.enabledUnfinishedTotalBytes = enabledUnfinishedTotalBytes;
+
         this.linkCount = linkCount;
 
+    }
+
+    public long getEnabledUnfinishedTotalBytes() {
+        return enabledUnfinishedTotalBytes;
+    }
+
+    public long getEnabledUnfinishedLoadedBytes() {
+        return enabledUnfinishedLoadedBytes;
     }
 
     public final long getTotalBytes() {
