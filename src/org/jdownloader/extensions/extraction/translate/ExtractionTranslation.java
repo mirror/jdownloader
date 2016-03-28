@@ -96,7 +96,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "file(s)" })
     String files2();
 
-    @Default(lngs = { "en" }, values = { "Don't unpack files matching the following regular expressions (One per line)" })
+    @Default(lngs = { "en" }, values = { "Don't unpack files matching the following regular expressions (one per line, please note that path begins with / and is absolue!)" })
     String settings_blacklist_regex();
 
     @Default(lngs = { "en" }, values = { "Special settings (Only for rar, 7z and zip. Not for split files)" })
