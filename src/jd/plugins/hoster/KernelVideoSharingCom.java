@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -30,15 +29,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "hotamateurs.xxx", "theclassicporn.com", "faplust.com", "alotporn.com", "alphaporno.com", "updatetube.com", "thenewporn.com", "pinkrod.com", "hotshame.com", "tubewolf.com", "voyeurhit.com", "yourlust.com", "pornicom.com", "pervclips.com", "wankoz.com", "tubecup.com", "pornalized.com", "myxvids.com", "hellporno.com", "h2porn.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "hclips.com", "mylust.com", "pornfun.com", "pornoid.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "wetplace.com", "xbabe.com", "xfig.net", "hdzog.com", "sex3.com", "egbo.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net", "upornia.com", "xcafe.com",
         "txxx.com", "camvideos.org" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/", "http://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?faplust\\.com/watch/\\d+/", "http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "http://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+",
-        "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+",
-        "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/",
-        "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/embed/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
-public class KernelVideoSharingCom extends PluginForHost {
+                "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+",
+                "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/",
+                "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/embed/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+public class KernelVideoSharingCom extends antiDDoSForHost {
 
     public KernelVideoSharingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,7 +88,7 @@ public class KernelVideoSharingCom extends PluginForHost {
     private static final String  type_special_faplust_com     = "^https?://(?:www\\.)?faplust\\.com/watch/\\d+/$";
 
     private String               dllink                       = null;
-    private boolean              isDownload                   = false;                                                                                                                                          ;
+    private boolean              isDownload                   = false;;
 
     @Override
     public String getAGBLink() {
@@ -109,18 +107,18 @@ public class KernelVideoSharingCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         String filename = null;
         final String host = downloadLink.getHost();
         this.setBrowserExclusive();
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         /* Place for workarounds / special handling #1 */
         if (host.equals("camvideos.org")) {
             /* Without this Referer we cannot access their content plus they only have embed URLs! */
-            this.br.getHeaders().put("Referer", "http://www.camwhores.tv/");
+            br.getHeaders().put("Referer", "http://www.camwhores.tv/");
         }
-        this.br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         String filename_url = null;
         if (br.containsHTML("KernelTeamVideoSharingSystem\\.js|KernelTeamImageRotator_")) {
             /* <script src="/js/KernelTeamImageRotator_3.8.1.jsx?v=3"></script> */
@@ -131,24 +129,24 @@ public class KernelVideoSharingCom extends PluginForHost {
             if (downloadLink.getDownloadURL().matches(type_embedded)) {
                 /* Convert embed --> Normal */
                 final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
-                this.br.getPage("http://www.alotporn.com/" + fid + "/" + System.currentTimeMillis() + "/");
+                getPage("http://www.alotporn.com/" + fid + "/" + System.currentTimeMillis() + "/");
             }
-            filename_url = new Regex(this.br.getURL(), "([a-z0-9\\-]+)/?$").getMatch(0);
-            filename = this.br.getRegex("<div class=\"headline\">[\t\n\r ]*?<h1>([^<>\"]*?)</h1>").getMatch(0);
+            filename_url = new Regex(br.getURL(), "([a-z0-9\\-]+)/?$").getMatch(0);
+            filename = br.getRegex("<div class=\"headline\">[\t\n\r ]*?<h1>([^<>\"]*?)</h1>").getMatch(0);
             if (filename == null) {
                 filename = regexStandardTitleWithHost(host);
             }
         } else if (downloadLink.getDownloadURL().matches(type_special_faplust_com)) {
             filename_url = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?").getMatch(0);
-            filename = this.br.getRegex("<h1 class=\"heading__title\">([^<>\"]*?)</h1>").getMatch(0);
+            filename = br.getRegex("<h1 class=\"heading__title\">([^<>\"]*?)</h1>").getMatch(0);
         } else if (downloadLink.getDownloadURL().matches(type_special_hotamateurs_xxx)) {
-            filename_url = new Regex(this.br.getURL(), "/\\d+\\-([a-z0-9\\-]+)/$").getMatch(0);
+            filename_url = new Regex(br.getURL(), "/\\d+\\-([a-z0-9\\-]+)/$").getMatch(0);
         } else if (downloadLink.getDownloadURL().matches(type_only_numbers)) {
             filename_url = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?").getMatch(0);
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         } else if (downloadLink.getDownloadURL().matches(type_embedded)) {
             filename_url = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?").getMatch(0);
-            filename = this.br.getRegex("<title>([^<>\"]*?) / Embed Player</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) / Embed Player</title>").getMatch(0);
             if (filename == null) {
                 filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
             }
@@ -156,43 +154,43 @@ public class KernelVideoSharingCom extends PluginForHost {
             filename_url = new Regex(downloadLink.getDownloadURL(), "(?:videos|movies)/(?:\\d+/)?([a-z0-9\\-]+)(?:/?|\\.html)$").getMatch(0);
 
             /* Works e.g. for hdzog.com */
-            filename = this.br.getRegex("var video_title[\t\n\r ]*?=[\t\n\r ]*?\"([^<>]*?)\";").getMatch(0);
+            filename = br.getRegex("var video_title[\t\n\r ]*?=[\t\n\r ]*?\"([^<>]*?)\";").getMatch(0);
             if (filename == null) {
                 /* Newer KVS e.g. tubecup.com */
-                filename = this.br.getRegex("title[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
+                filename = br.getRegex("title[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
             }
             if (filename == null) {
-                filename = this.br.getRegex("<h\\d+ class=\"album_title\">([^<>]*?)<").getMatch(0);
+                filename = br.getRegex("<h\\d+ class=\"album_title\">([^<>]*?)<").getMatch(0);
             }
             if (filename == null) {
-                filename = this.br.getRegex("itemprop=\"name\">([^<>]*?)<").getMatch(0);
+                filename = br.getRegex("itemprop=\"name\">([^<>]*?)<").getMatch(0);
             }
             if (filename == null) {
-                filename = this.br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
             if (filename == null) {
                 /* Fails e.g. for alphaporno.com */
-                filename = this.br.getRegex("<h\\d+ class=\"title\">([^<>\"]*?)<").getMatch(0);
+                filename = br.getRegex("<h\\d+ class=\"title\">([^<>\"]*?)<").getMatch(0);
             }
             if (filename == null) {
                 /* Working e.g. for wankoz.com */
-                filename = this.br.getRegex("<h\\d+ class=\"block_header\" id=\"desc_button\">([^<>\"]*?)</h\\d+>").getMatch(0);
+                filename = br.getRegex("<h\\d+ class=\"block_header\" id=\"desc_button\">([^<>\"]*?)</h\\d+>").getMatch(0);
             }
             if (filename == null) {
                 /* Working e.g. for pervclips.com, pornicom.com */
-                filename = this.br.getRegex("class=\"heading video-heading\">[\t\n\r ]+<(h\\d+)>([^<>\"]*?)</h\\1>").getMatch(1);
+                filename = br.getRegex("class=\"heading video-heading\">[\t\n\r ]+<(h\\d+)>([^<>\"]*?)</h\\1>").getMatch(1);
             }
             if (filename == null) {
                 /* Working e.g. for voyeurhit.com */
-                filename = this.br.getRegex("<div class=\"info\\-player\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
+                filename = br.getRegex("<div class=\"info\\-player\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
             }
             // if (filename == null) {
             // /* This will e.g. fail for wankoz.com */
-            // filename = this.br.getRegex("<h\\d+ class=\"block_header\">([^<>]*?)<").getMatch(0);
+            // filename = br.getRegex("<h\\d+ class=\"block_header\">([^<>]*?)<").getMatch(0);
             // }
             // if (filename == null) {
             // /* This will e.g. fail for hdzog.com */
-            // filename = this.br.getRegex("class=\"block\\-title\">[\t\n\r ]*?<h\\d+>([^<>]*?)<").getMatch(0);
+            // filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]*?<h\\d+>([^<>]*?)<").getMatch(0);
             // }
             if (filename == null) {
                 /* Many websites in general use this format - title plus their own hostname as ending. */
@@ -216,7 +214,7 @@ public class KernelVideoSharingCom extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         downloadLink.setName(filename);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/404.php")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
             /* Definitly offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -227,38 +225,38 @@ public class KernelVideoSharingCom extends PluginForHost {
          *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
-        dllink = this.br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
+        dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
         if (dllink == null) {
             /* E.g. yourlust.com */
-            dllink = this.br.getRegex("flashvars\\.video_html5_url = \"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("flashvars\\.video_html5_url = \"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             /* RegEx for "older" KVS versions */
-            dllink = this.br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
+            dllink = br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
         }
         if (dllink == null && downloadLink.getDownloadURL().contains("xfig.net/")) {
             /* Small workaround - do not include the slash at the end. */
-            dllink = this.br.getRegex("var videoFile=\"(http[^<>\"]*?)/?\"").getMatch(0);
+            dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)/?\"").getMatch(0);
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|'|\")").getMatch(0);
+            dllink = br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|'|\")").getMatch(0);
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("'(?:file|video)'[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
+            dllink = br.getRegex("'(?:file|video)'[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"]*?)\\1").getMatch(1);
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"]*?)\\1").getMatch(1);
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\2").getMatch(0);
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\2").getMatch(0);
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
-            if (!this.br.containsHTML("license_code:") && !this.br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
+            if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
                 /* No licence key present in html and/or no player --> No video --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -313,9 +311,9 @@ public class KernelVideoSharingCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         isDownload = true;
         requestFileInformation(downloadLink);
-        if (this.br.getHttpConnection().getResponseCode() == 403) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-        } else if (this.br.getHttpConnection().getResponseCode() == 403) {
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
@@ -336,7 +334,7 @@ public class KernelVideoSharingCom extends PluginForHost {
     }
 
     private String regexStandardTitleWithHost(final String host) {
-        return this.br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + host + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        return br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + host + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
