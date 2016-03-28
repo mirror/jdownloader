@@ -7,17 +7,17 @@ import java.util.Date;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
-import jd.controlling.packagecontroller.AbstractNode;
-
 import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
+import jd.controlling.packagecontroller.AbstractNode;
+
 public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -8841119846403017974L;
 
@@ -65,17 +65,25 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
 
     protected String getDateFormatString() {
         String custom = CFG_GUI.CFG.getDateTimeFormatDownloadListFinishedDateColumn();
-        if (StringUtils.isNotEmpty(custom)) { return custom; }
+        if (StringUtils.isNotEmpty(custom)) {
+            return custom;
+        }
         DateFormat sd = SimpleDateFormat.getDateTimeInstance();
-        if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
+        if (sd instanceof SimpleDateFormat) {
+            return ((SimpleDateFormat) sd).toPattern();
+        }
         return _GUI.T.added_date_column_dateformat();
     }
 
     @Override
     protected Date getDate(AbstractNode node, Date date) {
-        if (node.getFinishedDate() <= 0) return null;
-        date.setTime(node.getFinishedDate());
-        return date;
+        final long finishedDate = node.getFinishedDate();
+        if (finishedDate <= 0) {
+            return null;
+        } else {
+            date.setTime(finishedDate);
+            return date;
+        }
     }
 
 }
