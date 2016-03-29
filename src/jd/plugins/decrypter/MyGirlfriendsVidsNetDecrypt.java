@@ -36,13 +36,18 @@ public class MyGirlfriendsVidsNetDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         final String parameter = param.toString();
-        br.getPage(parameter);
-        final String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
+        /* Sometimes it randomly fails ... this is a small workaround! */
+        int counter = 0;
+        do {
+            br.getPage(parameter);
+            final String tempID = br.getRedirectLocation();
+            if (tempID != null) {
+                DownloadLink dl = createDownloadlink(tempID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            counter++;
+        } while (this.br.containsHTML("Unable to read session") && counter <= 4);
         final DownloadLink dl = createDownloadlink(parameter.replace("mygirlfriendvids.net/", "mygirlfriendvidsdecrypted.net/"));
         decryptedLinks.add(dl);
         return decryptedLinks;

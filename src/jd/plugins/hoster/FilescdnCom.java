@@ -133,7 +133,7 @@ public class FilescdnCom extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.9<br />
-     * mods:<br />
+     * mods: requestFileInformation[Offline RegEx]<br />
      * limit-info: premium untested, set FREE account limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -183,7 +183,7 @@ public class FilescdnCom extends PluginForHost {
         prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|The file you are trying to download is no longer|The file has been removed because of)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 

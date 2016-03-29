@@ -49,17 +49,20 @@ public class FilesFmFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = null;
-        final String[] links = br.getRegex("<div class=\"hover_items\">(.*?)class=\"OrderID\"").getColumn(0);
+        String[] links = br.getRegex("<div class=\"hover_items\">(.*?)class=\"OrderID\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br.getRegex("class=\"file\\-icon\"(.*?)class=\"OrderID\"").getColumn(0);
+        }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String singleLink : links) {
-            String filename = new Regex(singleLink, "\\&n=([^<>\"]*?)\"").getMatch(0);
+            String filename = new Regex(singleLink, "\\&n=([^<>\"]*?)(?:\\')?\"").getMatch(0);
             if (filename == null) {
                 filename = new Regex(singleLink, "\\&n=([^<>\"]*?)\\'").getMatch(0);
             }
-            final String filesize = new Regex(singleLink, "class=\"file_size\">([^<>}\"]*?)</span>").getMatch(0);
+            final String filesize = new Regex(singleLink, "class=\"file_size\">([^<>}\"]*?)<").getMatch(0);
             final String fileid = new Regex(singleLink, "\\?i=([a-z0-9]+)").getMatch(0);
             if (filename == null || filesize == null || fileid == null) {
                 return null;

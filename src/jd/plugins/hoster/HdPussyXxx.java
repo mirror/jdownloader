@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdpussy.xxx" }, urls = { "http://(www\\.)?hdpussy\\.xxx/video/[a-z0-9]{32}/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdpussy.xxx" }, urls = { "http://(www\\.)?hdpussy\\.xxx/video/[a-z0-9]{32}/" }, flags = { 0 })
 public class HdPussyXxx extends PluginForHost {
 
     public HdPussyXxx(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class HdPussyXxx extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\| HD Pussy XXX</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);
+        DLLINK = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -71,7 +71,7 @@ public class HdPussyXxx extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

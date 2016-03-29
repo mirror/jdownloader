@@ -1,7 +1,5 @@
 package jd.plugins.hoster;
 
-import java.net.URLDecoder;
-
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
@@ -12,6 +10,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafedecrypted\\.com/watch/(sy\\-)?\\d+/.{1}" }, flags = { 0 })
 public class MetacafeCom extends PluginForHost {
@@ -35,13 +36,17 @@ public class MetacafeCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        // Offline links should also have nice filenames
-        link.setName(new Regex(link.getDownloadURL(), "(\\d+)/.{1}$").getMatch(0));
+        /* Offline links should also have nice filenames */
+        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)/.{1}$").getMatch(0);
+        link.setName(url_filename + ".mp4");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en-us,en;q=0.5");
+        /* Important! */
+        br.setCookie(this.getHost(), "user", "%7B%22ffilter%22%3Afalse%7D");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         try {
             br.getPage(link.getDownloadURL());
@@ -49,7 +54,7 @@ public class MetacafeCom extends PluginForHost {
             if (br.getRequest().getHttpConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw e;
         }
         if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/video-removed") || br.containsHTML(">This content is temporarily not available\\.<|>Page '.' is temporarily unavailable\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -61,28 +66,34 @@ public class MetacafeCom extends PluginForHost {
         if (fileName == null) {
             fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
         }
+        if (fileName == null) {
+            fileName = url_filename;
+        }
+        fileName = fileName.trim();
         if (fileName != null) {
-            link.setFinalFileName(fileName.trim() + ".mp4");
+            link.setFinalFileName(fileName + ".mp4");
         }
         if (!link.getDownloadURL().contains("metacafe.com/watch/sy-")) {
-            dlink = br.getRegex("mediaURL(.*?)&").getMatch(0);
+            dlink = br.getRegex("\"sources\":\\[\\{\"src\":\"(http[^<>\"]+)\"").getMatch(0);
             if (dlink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dlink = URLDecoder.decode(dlink, "utf-8");
+            // dlink = URLDecoder.decode(dlink, "utf-8");
             dlink = dlink.replace("\\", "");
-            dlink = new Regex(dlink, ":\"(.*?)\"").getMatch(0) + "?__gda__=" + new Regex(dlink, "key\":\"(.*?)\"").getMatch(0);
+            // dlink = new Regex(dlink, ":\"(.*?)\"").getMatch(0) + "?__gda__=" + new Regex(dlink, "key\":\"(.*?)\"").getMatch(0);
             if (dlink == null || dlink.contains("null")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                if (!br.openGetConnection(dlink).getContentType().contains("html")) {
-                    link.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                    br.getHttpConnection().disconnect();
-                }
-            } finally {
-                if (br.getHttpConnection() != null) {
-                    br.getHttpConnection().disconnect();
+            if (!dlink.contains(".m3u8")) {
+                try {
+                    if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+                        link.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                        br.getHttpConnection().disconnect();
+                    }
+                } finally {
+                    if (br.getHttpConnection() != null) {
+                        br.getHttpConnection().disconnect();
+                    }
                 }
             }
         }
@@ -95,12 +106,26 @@ public class MetacafeCom extends PluginForHost {
         if (dlink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlink.contains(".m3u8")) {
+            /* hls download */
+            this.br.getPage(dlink);
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url_hls = hlsbest.downloadurl;
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, url_hls);
+            dl.startDownload();
+        } else {
+            /* http download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

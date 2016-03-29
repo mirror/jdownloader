@@ -395,11 +395,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.freeviewmoviesdecrypted/video/" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
         /* keezmovies.com #1 */
         externID = br.getRegex("(https?://(?:www\\.)?keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)\"").getMatch(0);
         if (externID != null) {
@@ -591,6 +586,12 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
 
         /* RegExes for permanently offline websites go here */
+        /* 2016-03-29: gasxxx.com --> xvid6.com */
+        externID = br.getRegex("(http://(?:www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         /* 2016-03-25: xrabbit.com --> xpage.com */
         externID = br.getRegex("\"(http://(www\\.)?xrabbit\\.com/video/embed/[A-Za-z0-9=]+/?)\"").getMatch(0);
         if (externID != null) {
