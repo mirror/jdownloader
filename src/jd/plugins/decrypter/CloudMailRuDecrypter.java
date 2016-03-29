@@ -17,6 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -121,6 +124,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
         final String dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
         long totalSize = 0;
+        final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
         for (final String singleinfo : links) {
             if ("folder".equals(PluginJSonUtils.getJson(singleinfo, "kind"))) {
                 String folder_url = PluginJSonUtils.getJson(singleinfo, "weblink");
@@ -132,7 +136,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 folder_url = "https://cloud.mail.ru/public/" + folder_url;
                 decryptedLinks.add(createDownloadlink(folder_url));
             } else {
-                String browserurl;
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String weblink = new Regex(singleinfo, "\"weblink\":\"([^<>\"]*?)/[^<>\"/]+\"").getMatch(0);
                 final String filesize = PluginJSonUtils.getJson(singleinfo, "size");
@@ -165,18 +168,27 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 if (parameter.matches(TYPE_APIV2)) {
                     dl.setProperty("noapi", true);
                 }
-                browserurl = "https://cloud.mail.ru/public/" + unique_id;
+                final String browserurl = "https://cloud.mail.ru/public/" + unique_id;
                 dl.setProperty("browser_url", browserurl);
-                if (weblink != null) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(weblink);
-                    fp.setProperty("ALLOW_MERGE", true);
-                    dl._setFilePackage(fp);
+                List<DownloadLink> result = results.get(weblink);
+                if (result == null) {
+                    result = new ArrayList<DownloadLink>();
+                    results.put(weblink, result);
                 }
                 dl.setContentUrl(browserurl);
                 dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                result.add(dl);
             }
+        }
+        for (final Entry<String, List<DownloadLink>> entry : results.entrySet()) {
+            final List<DownloadLink> downloadLinks = entry.getValue();
+            if (downloadLinks.size() > 1 && entry.getKey() != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(entry.getKey());
+                fp.setProperty("ALLOW_MERGE", true);
+                fp.addLinks(new ArrayList<DownloadLink>(downloadLinks));
+            }
+            decryptedLinks.addAll(downloadLinks);
         }
 
         if (decryptedLinks.size() > 1 && totalSize <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
