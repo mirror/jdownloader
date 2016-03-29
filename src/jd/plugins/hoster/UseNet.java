@@ -371,7 +371,7 @@ public class UseNet extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.removeProperty(PRECHECK_DONE);
         }
