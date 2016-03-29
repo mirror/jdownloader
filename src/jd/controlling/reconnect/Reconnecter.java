@@ -94,7 +94,7 @@ public final class Reconnecter {
                         maxretries = 1;
                     }
                     for (int retry = 0; retry < maxretries; retry++) {
-                        logger.info("Starting " + plugin + " #" + (retry + 1) + "/" + maxretries);
+                        logger.info("Starting \"" + plugin + "\" #" + (retry + 1) + "/" + maxretries);
                         if (ReconnectPluginController.getInstance().doReconnect(plugin, logger)) {
                             result = ReconnectResult.SUCCESSFUL;
                             break;
@@ -129,7 +129,6 @@ public final class Reconnecter {
                     e.printStackTrace();
                 }
                 logger.info("Reconnect: " + result.name() + " with " + plugin);
-                logger.close();
                 this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.AFTER, plugin, result));
             }
         } finally {

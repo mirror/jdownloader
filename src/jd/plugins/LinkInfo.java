@@ -87,9 +87,9 @@ public class LinkInfo {
                 LinkInfo ret = null;
                 WeakReference<LinkInfo> linkInfo = CACHE.get(ID);
                 if (linkInfo == null || (ret = linkInfo.get()) == null) {
+                    final ExtensionsFilterInterface hint = CompiledFiletypeFilter.getExtensionsFilterInterface(mimeHint);
                     ExtensionsFilterInterface extension = CompiledFiletypeFilter.getExtensionsFilterInterface(fileNameExtension);
-                    if (extension == null) {
-                        final ExtensionsFilterInterface hint = CompiledFiletypeFilter.getExtensionsFilterInterface(mimeHint);
+                    if (extension == null || (hint != null && !hint.isSameExtensionGroup(extension))) {
                         extension = new ExtensionsFilterInterface() {
 
                             final String  extension;

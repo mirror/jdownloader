@@ -12,6 +12,22 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import jd.controlling.reconnect.ProcessCallBack;
+import jd.controlling.reconnect.ReconnectConfig;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.IPCheckProvider;
+import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
+import jd.controlling.reconnect.ipcheck.InvalidProviderException;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
+import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
@@ -32,22 +48,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
-
-import jd.controlling.reconnect.ProcessCallBack;
-import jd.controlling.reconnect.ReconnectConfig;
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.RouterPlugin;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.IPCheckProvider;
-import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
-import jd.controlling.reconnect.ipcheck.InvalidProviderException;
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
-import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
-import net.miginfocom.swing.MigLayout;
 
 public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
@@ -148,7 +148,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         String ipxml;
         LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
         try {
-            ipxml = UPNPReconnectInvoker.runCommand(logger, settings.getServiceType(), settings.getControlURL(), "GetExternalIPAddress");
+            ipxml = UPNPReconnectInvoker.sendRequest(logger, settings.getServiceType(), settings.getControlURL(), "GetExternalIPAddress");
             logger.clear();
         } catch (final Exception e) {
             this.setCanCheckIP(false);
