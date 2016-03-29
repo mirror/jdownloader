@@ -298,7 +298,7 @@ public class IFilezCom extends PluginForHost {
         } else {
             br.setFollowRedirects(true);
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours")) {
+            if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours")) {
                 logger.info("Daily limit reached, temp disabling premium");
                 final AccountInfo ai = account.getAccountInfo();
                 ai.setTrafficLeft(0);
