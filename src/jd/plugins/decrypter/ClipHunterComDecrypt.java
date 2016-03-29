@@ -67,8 +67,6 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setContentUrl(parameter);
             dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
-            dl.setAvailable(false);
-            dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -86,6 +84,12 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         if (foundQualities == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        } else if (foundQualities.isEmpty()) {
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            dl.setContentUrl(parameter);
+            dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
@@ -178,6 +182,10 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         final String jsUrl = br.getRegex("<script.*src=\"(http://.*?gexo.*?player[_a-z\\d]+\\.js)\"").getMatch(0);
         final String[] encryptedUrls = br.getRegex("\"url\":\"([^<>\"]*?)\"").getColumn(0);
         if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) {
+            if (!this.br.containsHTML("var flashVars")) {
+                /* Offline / Player missing */
+                return new LinkedHashMap<String, String>();
+            }
             return null;
         }
         final Browser br2 = br.cloneBrowser();

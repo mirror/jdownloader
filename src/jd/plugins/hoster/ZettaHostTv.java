@@ -40,13 +40,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zettahost.tv" }, urls = { "https?://(www\\.)?zettahost\\.tv/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class ZettaHostTv extends PluginForHost {
@@ -201,7 +201,6 @@ public class ZettaHostTv extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -213,6 +212,8 @@ public class ZettaHostTv extends PluginForHost {
         }
         /* Third, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
+            /* Do checkErrors as it will fail in maintenance mode (timeout) */
+            checkErrors(downloadLink, false);
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
@@ -228,6 +229,8 @@ public class ZettaHostTv extends PluginForHost {
             }
         }
         if (dllink == null && VIDEOHOSTER_2) {
+            /* Do checkErrors as it will fail in maintenance mode (timeout) */
+            checkErrors(downloadLink, false);
             try {
                 logger.info("Trying to get link via embed");
                 final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";

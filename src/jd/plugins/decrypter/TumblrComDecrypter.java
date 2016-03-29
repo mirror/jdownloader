@@ -24,8 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,6 +37,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?)" }, flags = { 0 })
 public class TumblrComDecrypter extends PluginForDecrypt {
@@ -163,19 +163,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         final String fpName = cleanupName(name);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Browser br = ibr.cloneBrowser();
-        String externID = new Regex(string, "(https?://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
-        if (externID != null) {
-            br.getPage(externID);
-            externID = new Regex(string, "<src>(https?://.+\\.flv)</src>").getMatch(0);
-            if (externID == null) {
-                throw new DecrypterException(PLUGIN_DEFECT);
-            }
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(fpName + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        externID = new Regex(string, "\"(https?://video\\.vulture\\.com/video/[^<>\"]*?)\"").getMatch(0);
+        String externID = new Regex(string, "\"(https?://video\\.vulture\\.com/video/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             br.getPage(Encoding.htmlDecode(externID));
             String cid = br.getRegex("\\&media_type=video\\&content=([A-Z0-9]+)\\&").getMatch(0);

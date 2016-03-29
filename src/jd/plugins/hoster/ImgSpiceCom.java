@@ -46,7 +46,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgspice.com" }, urls = { "https?://(www\\.)?imgspice\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgspice.com" }, urls = { "https?://(?:www\\.)?imgspice\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class ImgSpiceCom extends PluginForHost {
 
     private String               correctedBR                  = "";

@@ -48,7 +48,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "imgtube.net", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com" };
+        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com" };
     }
 
     /**
@@ -103,7 +103,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
     }
 
     public static void handleContinueStep(final Browser br) throws IOException {
-        /* general|imgtube.net */
+        /* general */
         if (br.containsHTML("imgContinue") || br.containsHTML("continue_to_image")) {
             br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
         }

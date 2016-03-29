@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veevr.com" }, urls = { "http://(www\\.)?veevr\\.com/(embed|videos)/[a-zA-Z0-9\\_\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veevr.com" }, urls = { "http://(www\\.)?veevr\\.com/(embed|videos)/[a-zA-Z0-9\\_\\-]+" }, flags = { 0 })
 public class VeevrCom extends PluginForHost {
 
     // raztoki embed video player template.
@@ -54,8 +54,10 @@ public class VeevrCom extends PluginForHost {
         return -1;
     }
 
-    private static final boolean HDS = false;
+    private final String         HTML_VIDEO_PENDING = "id=\"video_pending\"";
+    private static final boolean HDS                = false;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
@@ -68,7 +70,7 @@ public class VeevrCom extends PluginForHost {
             if (br.containsHTML(">This video has been removed for violating the terms of use\\.<|>Page not found|id=\"not_found_404_page\"|id=\"deleted\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (br.containsHTML(">This video is still being processed")) {
+            if (br.containsHTML(HTML_VIDEO_PENDING)) {
                 downloadLink.getLinkStatus().setStatusText("Can't download: This video is still being processed");
                 return AvailableStatus.TRUE;
             }
@@ -84,12 +86,32 @@ public class VeevrCom extends PluginForHost {
         if (br.containsHTML(">This video has been removed for violating the terms of use\\.<|id=\"deleted\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = br.getRegex("url: \\'(http[^<>\"\\']*?\\.mp4)\\'").getMatch(0);
+        /* Find best quality */
+        final String[] resolutions = { "1080", "720", "480", "360" };
+        for (final String resolution : resolutions) {
+            dllink = br.getRegex("src=\"(http[^<>\"]+)\" type=\\'video/mp4\\' label=\\'" + resolution + "p\\'").getMatch(0);
+            if (dllink != null) {
+                break;
+            }
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("src=\"(http[^<>\"]+)\" type=\\'video/mp4\\' label=\\'\\d+p\\'").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("url: \\'(http[^<>\"\\']*?\\.mp4)\\'").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("file: \"(http[^<>\"\\']*?\\.mp4)\"").getMatch(0);
         }
         final String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (dllink == null || filename == null) {
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (this.br.containsHTML(HTML_VIDEO_PENDING)) {
+            downloadLink.getLinkStatus().setStatusText("Can't download: This video is still being processed");
+            return AvailableStatus.TRUE;
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept-Charset", null);
@@ -101,7 +123,7 @@ public class VeevrCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br2.openHeadConnection(dllink);
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -125,7 +147,7 @@ public class VeevrCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">This video is still being processed")) {
+        if (br.containsHTML(HTML_VIDEO_PENDING)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can't download: This video is still being processed", 30 * 60 * 1000l);//
         }
         hdsCheck();
