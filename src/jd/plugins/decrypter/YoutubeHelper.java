@@ -1056,7 +1056,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
         if (StringUtils.isEmpty(vid.channel)) {
             String match = this.br.getRegex("<div class=\"yt-user-info\"><a [^>]*data-name[^>]*>(.*?)</a>").getMatch(0);
-            if (StringUtils.isEmpty(match) && StringUtils.isAllNotEmpty(vid.channelID)) {
+            if (StringUtils.isEmpty(match) && StringUtils.isNotEmpty(vid.channelID)) {
                 // content warning regex.
                 match = this.br.getRegex("<div class=\"yt-user-info\">\\s*<a [^>]+ data-ytid=\"" + Pattern.quote(vid.channelID) + "\"[^>]*>(.*?)</a>").getMatch(0);
             }
