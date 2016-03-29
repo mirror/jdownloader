@@ -135,11 +135,7 @@ public class File4GoCom extends PluginForHost {
                 this.sleep(wait * 1001l, downloadLink);
             }
             br.submitForm(getDownload);
-            // dllink = br.getRegex("\"(https?://[a-z0-9]+\\.sizedrive\\.com:\\d+/betafree/[^<>\"]*?)\"").getMatch(0);
-            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.file4go\\.net:\\d+/betafree/[^<>\"]*?)\"").getMatch(0); // Free only
-            if (dllink == null) {
-                dllink = getDllink();
-            }
+            dllink = getDllink();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -283,16 +279,17 @@ public class File4GoCom extends PluginForHost {
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm:ss", null));
         }
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium Account");
         return ai;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        br = new Browser();
         requestFileInformation(link);
+        br = new Browser();
         login(account, false);
-        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         final String dllink = getDllink();
         if (dllink == null) {
@@ -309,7 +306,7 @@ public class File4GoCom extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.file4go\\.com:\\d+/[^<>\"]+/dll/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.(?:file4go\\.com|sizedrive\\.com)(?::\\d+)?/(?:[^<>\"]+/dll/[^\"]+|beta(?:free)?/[^\"]+))\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<span id=\"boton_download\" ><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
