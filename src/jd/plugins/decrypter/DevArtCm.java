@@ -20,8 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -79,30 +78,26 @@ public class DevArtCm extends PluginForDecrypt {
 
     final ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
-    private String                PARAMETER        = null;
-    private boolean               FASTLINKCHECK    = false;
+    private String                parameter        = null;
+    private boolean               fastLinkCheck    = false;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         JDUtilities.getPluginForHost("deviantart.com");
         jd.plugins.hoster.DeviantArtCom.prepBR(this.br);
-        FASTLINKCHECK = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
-        synchronized (LOCK) {
-            // checkFeatureDialog();
-            checkFeatureDialog();
-        }
-        PARAMETER = param.toString();
+        fastLinkCheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
+        parameter = param.toString();
         /* Remove trash */
-        final String replace = new Regex(PARAMETER, "(#.+)").getMatch(0);
+        final String replace = new Regex(parameter, "(#.+)").getMatch(0);
         if (replace != null) {
-            PARAMETER = PARAMETER.replace(replace, "");
+            parameter = parameter.replace(replace, "");
         }
         /* Fix journallinks: http://xx.deviantart.com/journal/poll/xx/ */
-        PARAMETER = PARAMETER.replaceAll("/(poll|stats)/", "/");
-        if (PARAMETER.matches(LINKTYPE_JOURNAL)) {
-            final DownloadLink journal = createDownloadlink(PARAMETER.replace("deviantart.com/", "deviantartdecrypted.com/"));
-            journal.setName(new Regex(PARAMETER, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0));
-            if (FASTLINKCHECK) {
+        parameter = parameter.replaceAll("/(poll|stats)/", "/");
+        if (parameter.matches(LINKTYPE_JOURNAL)) {
+            final DownloadLink journal = createDownloadlink(parameter.replace("deviantart.com/", "deviantartdecrypted.com/"));
+            journal.setName(new Regex(parameter, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0));
+            if (fastLinkCheck) {
                 journal.setAvailable(true);
             }
             decryptedLinks.add(journal);
@@ -111,30 +106,30 @@ public class DevArtCm extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         try {
-            br.getPage(PARAMETER);
+            br.getPage(parameter);
         } catch (final BrowserException be) {
-            this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER));
+            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return decryptedLinks;
         }
         if (br.containsHTML("The page you were looking for doesn\\'t exist\\.") || br.getURL().matches("https?://([A-Za-z0-9]+\\.)?deviantart\\.com/browse/.+")) {
-            this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER));
+            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return decryptedLinks;
         }
 
-        if (PARAMETER.matches(TYPE_JOURNAL)) {
+        if (parameter.matches(TYPE_JOURNAL)) {
             decryptJournals();
-        } else if (new Regex(PARAMETER, Pattern.compile(TYPE_COLLECTIONS, Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (new Regex(parameter, Pattern.compile(TYPE_COLLECTIONS, Pattern.CASE_INSENSITIVE)).matches()) {
             decryptCollections();
-        } else if (PARAMETER.matches(TYPE_BLOG)) {
+        } else if (parameter.matches(TYPE_BLOG)) {
             decryptBlog();
-        } else if (PARAMETER.contains("/gallery/") || PARAMETER.contains("/favourites/")) {
+        } else if (parameter.contains("/gallery/") || parameter.contains("/favourites/")) {
             decryptStandard();
         } else {
-            logger.info("Link unsupported: " + PARAMETER);
+            logger.info("Link unsupported: " + parameter);
             return decryptedLinks;
         }
         if (decryptedLinks.size() == 0) {
-            logger.info("Link probably offline: " + PARAMETER);
+            logger.info("Link probably offline: " + parameter);
             return decryptedLinks;
         }
         return decryptedLinks;
@@ -142,7 +137,7 @@ public class DevArtCm extends PluginForDecrypt {
 
     private void decryptJournals() throws DecrypterException, IOException {
         if (br.containsHTML("class=\"empty\\-state journal\"")) {
-            this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
+            this.decryptedLinks.add(this.createOfflinelink(parameter));
             return;
         }
         String username = getSiteUsername();
@@ -150,14 +145,14 @@ public class DevArtCm extends PluginForDecrypt {
             username = getURLUsername();
         }
         String paramdecrypt;
-        if (PARAMETER.contains("catpath=/")) {
-            paramdecrypt = PARAMETER.replace("catpath=/", "catpath=%2F") + "&offset=";
+        if (parameter.contains("catpath=/")) {
+            paramdecrypt = parameter.replace("catpath=/", "catpath=%2F") + "&offset=";
         } else {
-            paramdecrypt = PARAMETER + "?offset=";
+            paramdecrypt = parameter + "?offset=";
         }
         if (username == null) {
-            logger.warning("Plugin broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            logger.warning("Plugin broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username + " - Journal");
@@ -168,7 +163,7 @@ public class DevArtCm extends PluginForDecrypt {
         final boolean stop_after_first_run = getOffsetFromURL() != null;
         do {
             if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + PARAMETER);
+                logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
             logger.info("Decrypting offset " + next);
@@ -183,12 +178,12 @@ public class DevArtCm extends PluginForDecrypt {
             }
             final String jinfo[] = br.getRegex("data\\-deviationid=\"\\d+\" href=\"(http://[\\w\\.\\-]*?\\.deviantart\\.com/journal/[\\w\\-]+)\"").getColumn(0);
             if (jinfo == null || jinfo.length == 0) {
-                throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             for (final String link : jinfo) {
                 final String urltitle = new Regex(link, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0);
                 final DownloadLink dl = createDownloadlink(link.replace("deviantart.com/", "deviantartdecrypted.com/"));
-                if (FASTLINKCHECK) {
+                if (fastLinkCheck) {
                     dl.setAvailable(true);
                 }
                 /* No reason to hide their single links */
@@ -211,12 +206,12 @@ public class DevArtCm extends PluginForDecrypt {
     private void decryptCollections() throws DecrypterException {
         final String[] links = br.getRegex("<a href=\"(http://[^<>\"/]+\\.deviantart\\.com/(art|journal)/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Plugin broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            logger.warning("Plugin broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         for (final String aLink : links) {
             final DownloadLink dl = createDownloadlink(aLink);
-            if (FASTLINKCHECK) {
+            if (fastLinkCheck) {
                 dl.setAvailable(true);
             }
             decryptedLinks.add(dl);
@@ -225,7 +220,7 @@ public class DevArtCm extends PluginForDecrypt {
 
     private void decryptBlog() throws DecrypterException, IOException {
         if (br.containsHTML(">Sorry\\! This blog entry cannot be displayed")) {
-            this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER));
+            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
         }
         String fpName = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?) on DeviantArt\"").getMatch(0);
@@ -233,7 +228,7 @@ public class DevArtCm extends PluginForDecrypt {
         int currentOffset = 0;
         do {
             if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + PARAMETER);
+                logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
             logger.info("Decrypting offset " + currentOffset);
@@ -242,12 +237,12 @@ public class DevArtCm extends PluginForDecrypt {
             }
             final String[] links = br.getRegex("<a href=\"(http://[^<>\"/]+\\.deviantart\\.com/journal/[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
-                logger.warning("Plugin broken for link: " + PARAMETER);
-                throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                logger.warning("Plugin broken for link: " + parameter);
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             for (final String aLink : links) {
                 final DownloadLink dl = createDownloadlink(aLink);
-                if (FASTLINKCHECK) {
+                if (fastLinkCheck) {
                     dl.setAvailable(true);
                 }
                 decryptedLinks.add(dl);
@@ -265,33 +260,33 @@ public class DevArtCm extends PluginForDecrypt {
 
     private void decryptStandard() throws DecrypterException, IOException {
         if (br.containsHTML("class=\"empty\\-state gallery\"|class=\"empty\\-state faves\"")) {
-            this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
+            this.decryptedLinks.add(this.createOfflinelink(parameter));
             return;
         }
         /* Correct input links */
-        if (PARAMETER.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
-            final Regex paramregex = new Regex(PARAMETER, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
-            PARAMETER = paramregex.getMatch(0) + "set=" + paramregex.getMatch(1);
+        if (parameter.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
+            final Regex paramregex = new Regex(parameter, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
+            parameter = paramregex.getMatch(0) + "set=" + paramregex.getMatch(1);
         }
         /* only non /art/ requires packagename */
         // find and set username
         String username = getSiteUsername();
-        if (username == null && !PARAMETER.contains("://www.")) {
-            username = new Regex(PARAMETER, "https?://([^<>\"]*?)\\.deviantart\\.com/").getMatch(0);
+        if (username == null && !parameter.contains("://www.")) {
+            username = new Regex(parameter, "https?://([^<>\"]*?)\\.deviantart\\.com/").getMatch(0);
         }
         if (username == null) {
-            logger.warning("Plugin broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            logger.warning("Plugin broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         // find and set page type
         String pagetype = "";
-        if (PARAMETER.matches(TYPE_CATPATH_2)) {
-            pagetype = new Regex(PARAMETER, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
+        if (parameter.matches(TYPE_CATPATH_2)) {
+            pagetype = new Regex(parameter, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
             /* First letter = capital letter */
             pagetype = pagetype.substring(0, 1).toUpperCase() + pagetype.substring(1, pagetype.length());
-        } else if (PARAMETER.contains("/favourites/")) {
+        } else if (parameter.contains("/favourites/")) {
             pagetype = "Favourites";
-        } else if (PARAMETER.contains("/gallery/")) {
+        } else if (parameter.contains("/gallery/")) {
             pagetype = "Gallery";
         } else {
             pagetype = "Unknown";
@@ -313,11 +308,11 @@ public class DevArtCm extends PluginForDecrypt {
         int maxOffset = 0;
         final int offsetIncrease = 24;
         int counter = 1;
-        if (PARAMETER.contains("offset=")) {
-            final int offsetLink = Integer.parseInt(new Regex(PARAMETER, "(\\d+)$").getMatch(0));
+        if (parameter.contains("offset=")) {
+            final int offsetLink = Integer.parseInt(new Regex(parameter, "(\\d+)$").getMatch(0));
             currentOffset = offsetLink;
             maxOffset = offsetLink;
-        } else if (!PARAMETER.matches(TYPE_CATPATH_1)) {
+        } else if (!parameter.matches(TYPE_CATPATH_1)) {
             final String[] offsets = br.getRegex("data\\-offset=\"(\\d+)\" name=\"gmi\\-GPageButton\"").getColumn(0);
             if (offsets != null && offsets.length != 0) {
                 for (final String offset : offsets) {
@@ -336,13 +331,13 @@ public class DevArtCm extends PluginForDecrypt {
         }
         do {
             if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + PARAMETER);
+                logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
             logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
-            if (PARAMETER.matches(TYPE_CATPATH_1) && !PARAMETER.contains("offset=")) {
+            if (parameter.matches(TYPE_CATPATH_1) && !parameter.contains("offset=")) {
                 if (counter > 1) {
-                    br.getPage(PARAMETER + "&offset=" + currentOffset);
+                    br.getPage(parameter + "&offset=" + currentOffset);
                 }
                 // catpath links have an unknown end-offset
                 final String nextOffset = br.getRegex("\\?catpath=[A-Za-z0-9%]+\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);
@@ -359,8 +354,8 @@ public class DevArtCm extends PluginForDecrypt {
                 final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
                 String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
                 if ((links == null || links.length == 0) && counter == 1) {
-                    logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + PARAMETER);
-                    throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                    logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + parameter);
+                    throw new DecrypterException("Decrypter broken for link: " + parameter);
                 } else if (links == null || links.length == 0) {
                     /* "deviation in storage" links are no links - that are empty items so there is no reason to stop. */
                     final String[] empty_links = br.getRegex("class=\"(instorage)\"").getColumn(0);
@@ -375,7 +370,7 @@ public class DevArtCm extends PluginForDecrypt {
                 if (links != null && links.length != 0) {
                     for (final String artlink : links) {
                         final DownloadLink fina = createDownloadlink(artlink);
-                        if (FASTLINKCHECK) {
+                        if (fastLinkCheck) {
                             fina.setAvailable(true);
                         }
                         /* No reason to hide their single links */
@@ -383,6 +378,7 @@ public class DevArtCm extends PluginForDecrypt {
                         if (fp != null) {
                             fp.add(fina);
                         }
+                        fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                         distribute(fina);
                         decryptedLinks.add(fina);
                     }
@@ -399,15 +395,15 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void accessOffset(final int offset) throws IOException {
-        if (PARAMETER.contains("?")) {
-            br.getPage(PARAMETER + "&offset=" + offset);
+        if (parameter.contains("?")) {
+            br.getPage(parameter + "&offset=" + offset);
         } else {
-            br.getPage(PARAMETER + "?offset=" + offset);
+            br.getPage(parameter + "?offset=" + offset);
         }
     }
 
     private String getOffsetFromURL() {
-        return new Regex(PARAMETER, "offset=(\\d+)").getMatch(0);
+        return new Regex(parameter, "offset=(\\d+)").getMatch(0);
     }
 
     private String getSiteUsername() {
@@ -415,65 +411,7 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private String getURLUsername() {
-        return new Regex(PARAMETER, "http://(?:www\\.)?([A-Za-z0-9\\-]+)\\.deviantart.com/.+").getMatch(0);
-    }
-
-    private void checkFeatureDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog_Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog_Shown2") == null) {
-                    showFeatureDialogAll();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFeatureDialogAll() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Deviantart.com Plugin";
-                        final String lang = System.getProperty("user.language");
-                        if ("de".equalsIgnoreCase(lang)) {
-                            message += "Für deviantArt.com wurde die schnelle Linküberprüfung aktiviert.\r\n";
-                            message += "Diese bewirkt, dass weder Dateiname noch -größe korrekt angezeigt\r\nund die Bilder somit erheblich schneller gesammelt werden.\r\n";
-                            message += "Du kannst dieses Verhalten jederzeit unter\r\n";
-                            message += "JD2 Beta: Einstellungen ->Plugins ->deviantArt.com\r\n";
-                            message += "JD 0.9.581: Einstellungen ->Anbieter ->deviantart.com ->Einstellungen\r\n";
-                            message += "deaktivieren.";
-                        } else {
-                            message += "For deviantArt.com the fast link check has been activated.\r\n";
-                            message += "This causes the loss of the correct filename and filesize but will ensure a much faster grabbing of pictures.\r\n";
-                            message += "You can deactivate this setting under\r\n";
-                            message += "JD2 Beta: Settings ->Plugins ->deviantArt.com\r\n";
-                            message += "JD 0.9.581: Settings ->Hoster ->deviantArt.com ->Settings\r\n";
-                            message += "at any time.";
-                        }
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
+        return new Regex(parameter, "http://(?:www\\.)?([A-Za-z0-9\\-]+)\\.deviantart.com/.+").getMatch(0);
     }
 
     /* NO OVERRIDE!! */
