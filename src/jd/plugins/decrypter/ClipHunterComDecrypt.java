@@ -16,20 +16,13 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -57,13 +50,8 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie("cliphunter.com", "qchange", "h");
-        boolean offline = false;
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            offline = true;
-        }
-        if (offline || br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)")) {
+        br.getPage(parameter);
+        if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)")) {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setContentUrl(parameter);
             dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
@@ -80,7 +68,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         }
         filename = Encoding.htmlDecode(filename.trim());
 
-        final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
+        final LinkedHashMap<String, String> foundQualities = jd.plugins.hoster.ClipHunterCom.findAvailableVideoQualities(this.br);
         if (foundQualities == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -170,69 +158,6 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         fp.setName(filename);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
-    }
-
-    /**
-     * Same function in hoster and decrypterplugin, sync it!!
-     *
-     * @throws IOException
-     */
-    private LinkedHashMap<String, String> findAvailableVideoQualities() throws IOException {
-        // parse decryptalgo
-        final String jsUrl = br.getRegex("<script.*src=\"(http://.*?gexo.*?player[_a-z\\d]+\\.js)\"").getMatch(0);
-        final String[] encryptedUrls = br.getRegex("\"url\":\"([^<>\"]*?)\"").getColumn(0);
-        if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) {
-            if (!this.br.containsHTML("var flashVars")) {
-                /* Offline / Player missing */
-                return new LinkedHashMap<String, String>();
-            }
-            return null;
-        }
-        final Browser br2 = br.cloneBrowser();
-        br2.getPage(jsUrl);
-        String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
-        if (decryptAlgo == null) {
-            return null;
-        }
-        // Find available links
-        final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-        decryptAlgo = "function decrypt" + decryptAlgo + ";";
-        String currentSr, tmpUrl;
-        for (final String s : encryptedUrls) {
-            tmpUrl = decryptUrl(decryptAlgo, s);
-            tmpUrl = tmpUrl.replace("\\k0026", ".");
-            tmpUrl = Encoding.unescape(tmpUrl);
-            currentSr = new Regex(tmpUrl, "sr=(\\d+)").getMatch(0);
-            if (currentSr == null) {
-                continue;
-            }
-            for (final String quality[] : qualities) {
-                if (quality.length == 3) {
-                    if (tmpUrl.contains(quality[1]) || tmpUrl.contains(quality[2])) {
-                        foundQualities.put(quality[0], tmpUrl);
-                        break;
-                    }
-                } else if (tmpUrl.contains(quality[1])) {
-                    foundQualities.put(quality[0], tmpUrl);
-                    break;
-                }
-            }
-        }
-        return foundQualities;
-    }
-
-    private String decryptUrl(final String fun, final String value) {
-        Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        final Invocable inv = (Invocable) engine;
-        try {
-            engine.eval(fun);
-            result = inv.invokeFunction("decrypt", value);
-        } catch (final Throwable e) {
-            return null;
-        }
-        return result != null ? result.toString() : null;
     }
 
 }

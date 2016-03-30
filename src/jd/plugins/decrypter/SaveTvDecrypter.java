@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -473,15 +472,28 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return true;
     }
 
-    /* Sync this with the decrypter */
     private void getPageSafe(final String url) throws Exception {
         // Limits made by me (pspzockerscene):
         // Max 6 logins possible
-        // Max 3 accesses of the link possible
-        // -> Max 9 total requests
+        // Max 15 accesses of the link possible
+        // -> Max 21 total requests
+        int failcounter_url = 0;
         for (int i = 0; i <= 2; i++) {
-            this.br.getPage(url);
-            if (br.getURL().contains(jd.plugins.hoster.SaveTv.URL_LOGGED_OUT)) {
+            boolean failed = true;
+            do {
+                try {
+                    this.br.getPage(url);
+                    failed = false;
+                } catch (final BrowserException e) {
+                    failed = true;
+                    failcounter_url++;
+                    if (failcounter_url > 4) {
+                        logger.info("Failed to avoid timeouts / server issues");
+                        throw e;
+                    }
+                }
+            } while (failed);
+            if (this.br.getURL().contains(jd.plugins.hoster.SaveTv.URL_LOGGED_OUT)) {
                 for (int i2 = 0; i2 <= 1; i2++) {
                     logger.info("Link redirected to login page, logging in again to retry this: " + url);
                     logger.info("Try " + i2 + " of 1");
@@ -500,21 +512,47 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    /* Avoid 503 server errors */
-    @SuppressWarnings("unused")
-    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException, InterruptedException {
-        for (int i = 1; i <= 3; i++) {
-            try {
-                br.postPage(url, postData);
-            } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
-                    final DownloadLink dummyLink = createDownloadlink("https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm");
-                    logger.info("503 BrowserException occured, retry " + i + " of 3");
-                    Thread.sleep(3000);
-                    continue;
+    @SuppressWarnings({ "deprecation" })
+    private void postPageSafe(final Browser br, final String url, final String postData) throws Exception {
+        // Limits made by me (pspzockerscene):
+        // Max 6 logins possible
+        // Max 15 accesses of the link possible
+        // -> Max 21 total requests
+
+        // Limits made by me (pspzockerscene):
+        // Max 6 logins possible
+        // Max 15 postPage possible
+        // -> Max 21 total requests
+        int failcounter_url = 0;
+        for (int i = 0; i <= 2; i++) {
+            boolean failed = true;
+            do {
+                try {
+                    br.postPage(url, postData);
+                    failed = false;
+                } catch (final BrowserException e) {
+                    failed = true;
+                    failcounter_url++;
+                    if (failcounter_url > 4) {
+                        logger.info("Failed to avoid timeouts / server issues");
+                        throw e;
+                    }
                 }
-                logger.info("Unhandled BrowserException occured...");
-                throw e;
+            } while (failed);
+            if (this.br.getURL().contains(jd.plugins.hoster.SaveTv.URL_LOGGED_OUT)) {
+                for (int i2 = 0; i2 <= 1; i2++) {
+                    logger.info("Link redirected to login page, logging in again to retry this: " + url);
+                    logger.info("Try " + i2 + " of 1");
+                    try {
+                        getUserLogin(true);
+                    } catch (final BrowserException e) {
+                        logger.info("Login " + i2 + "of 1 failed, re-trying...");
+                        continue;
+                    }
+                    logger.info("Re-Login " + i2 + "of 1 successful...");
+                    break;
+                }
+                continue;
             }
             break;
         }
