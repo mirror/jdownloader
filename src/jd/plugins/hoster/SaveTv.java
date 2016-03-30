@@ -338,7 +338,7 @@ public class SaveTv extends PluginForHost {
             final Object sTRRECORDORDER = entries.get("STRRECORDORDER");
             if (aRRALLOWDDOWNLOADFORMATS == null || sTRRECORDORDER == null) {
                 /*
-                 * Offline#1 - expired (download not possible anymore - if user tries to download something that has not been recorded yet,
+                 * Offline#2 - expired (download not possible anymore - if user tries to download something that has not been recorded yet,
                  * code will NOT jump into this as json will already contain some download information / these two important json objects)
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
