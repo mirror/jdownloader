@@ -26,6 +26,12 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,12 +55,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
@@ -523,9 +523,9 @@ public class HitFileNet extends PluginForHost {
         login(account);
         br.getPage(link.getDownloadURL());
 
-        String dllink = br.getRegex("<h1><a href='(http://.*?)'><b>").getMatch(0);
+        String dllink = br.getRegex("<h1><a href='(https?://.*?)'><b>").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("'(http://hitfile\\.net//download/redirect/[a-z0-9]+/[A-Za-z0-9]+)'").getMatch(0);
+            dllink = br.getRegex("('|\")(https?://hitfile\\.net//download/redirect/[a-z0-9]+/[A-Za-z0-9]+)\\1").getMatch(1);
         }
         if (dllink == null) {
             if (br.containsHTML("You have reached the.*? limit of premium downloads")) {
