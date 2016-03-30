@@ -694,7 +694,7 @@ public class RapidGatorNet extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
                     this.br.setFollowRedirects(true);
-                    this.br.getPage("http://rapidgator.net/");
+                    avoidBlock();
                     if (this.br.containsHTML("<a href=\"/auth/logout\"")) {
                         setAccountTypeWebsite(account, this.br);
                         return cookies;
@@ -703,6 +703,7 @@ public class RapidGatorNet extends PluginForHost {
                 this.br.setFollowRedirects(true);
                 /* Maybe cookies were used but are expired --> Clear them */
                 br.clearCookies("https://rapidgator.net/");
+                avoidBlock();
                 for (int i = 1; i <= 3; i++) {
                     logger.info("Site login attempt " + i + " of 3");
                     this.br.getPage("https://rapidgator.net/auth/login");
@@ -775,12 +776,30 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    private void avoidBlock() throws Exception {
+        final boolean isFollowRedirects = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            this.br.getPage("http://rapidgator.net");// required to prevent being blocked by firewall
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
+            final String reDirHash = this.handleJavaScriptRedirect();
+            if (reDirHash != null) {
+                this.logger.info("JSRedirect in requestFileInformation");
+                this.br.getPage("http://rapidgator.net/?" + reDirHash);
+            }
+        } finally {
+            br.setFollowRedirects(isFollowRedirects);
+        }
+    }
+
     private String login_api(final Account account) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (RapidGatorNet.LOCK) {
             try {
                 this.prepareBrowser_api(this.br);
-                this.br.getPage("http://rapidgator.net");// required to prevent being blocked by firewall
+                avoidBlock();
                 con = this.br.openGetConnection(this.apiURL + "user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 this.handleErrors_api(null, null, account, con);
                 if (con.getResponseCode() == 200) {

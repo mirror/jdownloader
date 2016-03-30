@@ -377,6 +377,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Unlimited" })
     String premiumaccounttablemodel_column_trafficleft_unlimited();
 
+    @Default(lngs = { "en" }, values = { "%s1 of %s2 left" })
+    String premiumaccounttablemodel_column_trafficleft_left_(String a, String b);
+
     @Default(lngs = { "en" }, values = { "Temp. disabled %s1" })
     String premiumaccounttablemodel_column_trafficleft_tempdisabled(String s);
 
