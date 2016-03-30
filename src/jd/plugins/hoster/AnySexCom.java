@@ -51,11 +51,17 @@ public class AnySexCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404 Not Found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"movie\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        DLLINK = br.getRegex("video_url\\s*:\\s*\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         final SimpleDateFormat formatter = new SimpleDateFormat("YYYYMMddhhmmss");
         final Date date = new Date();
@@ -66,7 +72,9 @@ public class AnySexCom extends PluginForHost {
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -77,15 +85,20 @@ public class AnySexCom extends PluginForHost {
             br2.setCookie("http://anysex.com", "kt_is_visited", "1");
             br2.getHeaders().put("Referer", "http://anysex.com/player/kt_player_3.3.3.swfx");
             con = br2.openGetConnection(DLLINK);
-            if (con.getLongContentLength() == 46241) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            if (con.getLongContentLength() == 46241 || !con.isOK()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             } catch (Throwable e) {
             }
         }
