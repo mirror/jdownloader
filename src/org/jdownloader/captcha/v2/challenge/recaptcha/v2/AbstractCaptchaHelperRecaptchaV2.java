@@ -123,7 +123,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             return null;
         }
         // lets look for default
-        final String[] divs = new Regex(source, "<div[^>]*>.*?</div>").getColumn(-1);
+        final String[] divs = new Regex(source, "<div(?:[^>]*>.*?</div>|[^>]*\\s*/\\s*>)").getColumn(-1);
         if (divs != null) {
             for (final String div : divs) {
                 if (new Regex(div, "class=('|\")g-recaptcha\\1").matches()) {
