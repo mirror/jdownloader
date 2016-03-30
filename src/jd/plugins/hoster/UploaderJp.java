@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -25,12 +25,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.jp" }, urls = { "http://(www\\.)?ux\\.getuploader\\.com/[a-z0-9\\-_]+/download/\\d+" }, flags = { 0 })
-public class UploaderJp extends PluginForHost {
+public class UploaderJp extends antiDDoSForHost {
 
     public UploaderJp(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,10 +40,10 @@ public class UploaderJp extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML("404 File Not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -73,12 +70,12 @@ public class UploaderJp extends PluginForHost {
         if (token == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage(br.getURL(), "token=" + token);
+        postPage(br.getURL(), "token=" + token);
         final String md5 = br.getRegex("MD5 \\| ([a-z0-9]+)").getMatch(0);
         if (md5 != null) {
             downloadLink.setMD5Hash(md5);
         }
-        String dllink = br.getRegex("\"(http://download\\d+\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://d(?:ownload|l)\\d+\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
