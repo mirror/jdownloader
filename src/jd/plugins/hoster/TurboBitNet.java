@@ -32,12 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,6 +58,12 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|dz-files\\.ru|file\\.grad\\.by|gdefile\\.ru|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
@@ -80,6 +80,12 @@ public class TurboBitNet extends PluginForHost {
      * When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
      *
      */
+
+    /* Settings */
+    private static final String SETTING_JAC                           = "SETTING_JAC";
+    private static final String SETTING_FREE_PARALLEL_DOWNLOADSTARTS  = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    private static final int    FREE_MAXDOWNLOADS_PLUGINSETTING       = 20;
+
     private static final String HTML_RECAPTCHAV1                      = "api\\.recaptcha\\.net";
     private final String        CAPTCHAREGEX                          = "\"(https?://(?:\\w+\\.)?turbobit\\.net/captcha/.*?)\"";
     private static final String MAINPAGE                              = "http://turbobit.net";
@@ -241,7 +247,11 @@ public class TurboBitNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        if (this.getPluginConfig().getBooleanProperty(SETTING_FREE_PARALLEL_DOWNLOADSTARTS, false)) {
+            return FREE_MAXDOWNLOADS_PLUGINSETTING;
+        } else {
+            return 1;
+        }
     }
 
     @Override
@@ -377,7 +387,7 @@ public class TurboBitNet extends PluginForHost {
             final int retry = 3;
             for (int i = 0; i < retry; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty("JAC", false) || i >= 1) {
+                if (!getPluginConfig().getBooleanProperty(SETTING_JAC, false) || i >= 1) {
                     captchaCode = getCaptchaCode("turbobit.net.disabled", captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
@@ -1071,7 +1081,17 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.turbobit.jac", "Enable JAC?")).setDefaultValue(true));
+        String lang_jac = null;
+        String lang_free_dlstarts = null;
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            lang_jac = "Aktiviere JAC Captchaerkennung?";
+            lang_free_dlstarts = "Aktiviere parallele Downloadstarts im free Download Modus?\r\n<html><p style=\"color:#F62817\"><b>Warnung: Diese Einstellung kann zu unnötig vielen nicht akzeptierten Captchaeingaben führen!</b></p></html>";
+        } else {
+            lang_jac = "Activate JAC captcha recognition?";
+            lang_free_dlstarts = "Activate parallel downloadstarts in free mode?\r\n<html><p style=\"color:#F62817\"><b>Warning: This setting can lead to a lot of non-accepted captcha popups!</b></p></html>";
+        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_JAC, JDL.L("plugins.hoster.turbobit.jac", lang_jac)).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_FREE_PARALLEL_DOWNLOADSTARTS, JDL.L("plugins.hoster.turbobit.simultan_Free_downloadstarts", lang_free_dlstarts)).setDefaultValue(false));
     }
 
     private String tb(final int i) {

@@ -31,10 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sextvx.com" }, urls = { "http://(?:www\\.)?sextvx\\.com/[a-z]{2}/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
-public class SextvxCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "http://(?:www\\.)?megabooru\\.com/post/view/\\d+" }, flags = { 0 })
+public class MegabooruCom extends PluginForHost {
 
-    public SextvxCom(PluginWrapper wrapper) {
+    public MegabooruCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,73 +44,51 @@ public class SextvxCom extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
-    /* Connection stuff - too many connections = server returns 404 on download attempt! */
+    private static final String  default_Extension = ".jpg";
+    /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = 5;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
 
     private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://sextvx.com/en/terms";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final Regex urlregex = new Regex(link.getDownloadURL(), "sextvx\\.com/[a-z]{2}/video/(\\d+)/(.+)");
-        final String fid = urlregex.getMatch(0);
-        link.setUrlDownload("http://sextvx.com/en/video/" + fid + "/" + urlregex.getMatch(1));
-        link.setLinkID(fid);
+        return "http://megabooru.com/contact";
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video is no longer available")) {
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) Hentai</title>").getMatch(0);
+        if (filename != null) {
+            filename = url_filename + "_" + url_filename;
+        } else {
+            filename = url_filename;
         }
-        if (filename == null) {
-            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
+        DLLINK = br.getRegex("name=\\'html_full-image\\'[\t\n\r ]*?value=\\'(?:\\&lt;img src=\\&quot;)?(http[^<>\"\\&]+)").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("name=\\'text_image-src\\'[\t\n\r ]*?value=\\'\\&lt;img src=\\&quot;(http[^<>\"\\&]+)").getMatch(0);
         }
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
-        }
-        // if (filename == null) {
-        // filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        // }
-        final Regex ajaxdataregex = br.getRegex("path=\"(?:\\d+,)?(\\d+)\\.([^<>\"]*?)\"");
-        String server = ajaxdataregex.getMatch(0);
-        String path = ajaxdataregex.getMatch(1);
-        if (server == null) {
-            server = this.br.getRegex("path=\"(\\d+)[0-9,\\.]*?(\\d+/[^<>\"]*?)\"").getMatch(0);
-        }
-        if (path == null) {
-            path = this.br.getRegex("path=\"[0-9,\\.]+(\\d+/[^<>\"]*?)\"").getMatch(0);
-        }
-        if (filename == null || server == null || path == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        path = path.replace(".", ",").replace("/", ",");
-        br.getPage("http://sextvx.com/flux?d=web.flv&s=" + server + "&p=" + path);
-        DLLINK = this.br.toString();
-        if (DLLINK == null || !DLLINK.startsWith("http") || DLLINK.length() > 500) {
+        if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = null;
+        if (DLLINK.contains(".")) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -118,24 +96,23 @@ public class SextvxCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Referer", "http://sextvx.com/static/player/player.swf");
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            link.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -165,15 +142,15 @@ public class SextvxCom extends PluginForHost {
         dl.startDownload();
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
+    /** Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
