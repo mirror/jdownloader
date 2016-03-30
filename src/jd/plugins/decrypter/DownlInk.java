@@ -26,13 +26,16 @@ import jd.controlling.ProgressController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.scripting.envjs.EnvJSBrowser;
 import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
 import org.jdownloader.scripting.envjs.PermissionFilter;
@@ -56,6 +59,7 @@ public class DownlInk extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br = new Browser();
+        br.setFollowRedirects(true);
         getPage(parameter);
         if ("Page not found".equalsIgnoreCase(brOut)) {
             return decryptedLinks;
@@ -108,8 +112,14 @@ public class DownlInk extends antiDDoSForDecrypt {
     }
 
     @Override
-    protected void runPostRequestTask(final Browser ibr) {
+    protected void runPostRequestTask(final Browser ibr) throws Exception {
         brOut = br.toString();
+        final Form captcha = ibr.getFormbyAction("");
+        if (captcha != null) {
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            submitForm(ibr, captcha);
+        }
         dothis(ibr);
     }
 
@@ -216,5 +226,4 @@ public class DownlInk extends antiDDoSForDecrypt {
             }
         };
     }
-
 }
