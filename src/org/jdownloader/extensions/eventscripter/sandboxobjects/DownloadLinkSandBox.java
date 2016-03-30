@@ -5,6 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.WeakHashMap;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginProgress;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storable;
@@ -21,11 +26,6 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginProgress;
 
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
@@ -64,8 +64,8 @@ public class DownloadLinkSandBox {
     }
 
     public long getFinishedDate() {
-        if (downloadLink != null) {
-            return downloadLink.getFinishedDate();
+        if (storable != null) {
+            return storable.getFinishedDate();
         }
         return -1;
     }

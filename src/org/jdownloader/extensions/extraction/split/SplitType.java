@@ -432,7 +432,7 @@ public enum SplitType {
             final Pattern pattern = splitType.buildArchivePattern(filePathParts);
             final List<ArchiveFile> foundArchiveFiles = link.createPartFileList(linkPath, pattern.pattern());
             if (foundArchiveFiles == null || foundArchiveFiles.size() == 0) {
-                throw new ArchiveException("Broken archive support: " + link.getFilePath());
+                throw new ArchiveException("Broken archive support:" + link.getFilePath() + "|Pattern:" + pattern.pattern());
             }
             final BitSet availableParts = new BitSet();
             int lowestPartNumber = Integer.MAX_VALUE;

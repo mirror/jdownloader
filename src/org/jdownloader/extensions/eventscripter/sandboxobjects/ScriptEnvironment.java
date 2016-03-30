@@ -38,6 +38,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.plugins.Account;
+import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
@@ -283,10 +284,8 @@ public class ScriptEnvironment {
     @ScriptAPI(description = "Delete a file or a directory", parameters = { "path", "recursive" }, example = "var myBooleanResult=deleteFile(JD_HOME+\"/mydirectory/\",false);")
     public static boolean deleteFile(String filepath, boolean recursive) throws EnvironmentException {
         askForPermission("delete a local fole or directory");
-
         try {
             if (recursive) {
-
                 Files.deleteRecursiv(new File(filepath), true);
             } else {
                 new File(filepath).delete();
@@ -312,7 +311,6 @@ public class ScriptEnvironment {
             env.ensureLibrary("js_beautifier.js");
             String parametername;
             ScriptableObject.putProperty(env.getScope(), parametername = "text_" + System.currentTimeMillis(), js);
-
             String ret = env.evalTrusted("js_beautify(" + parametername + ", {   });") + "";
             return ret;
         } catch (Throwable e) {
@@ -434,9 +432,12 @@ public class ScriptEnvironment {
     @ScriptAPI(description = "Get a DownloadList Link by it's uuid", parameters = { "uuid" })
     public static DownloadLinkSandBox getDownloadLinkByUUID(long uuid) throws EnvironmentException {
         try {
-
-            return new DownloadLinkSandBox(DownloadController.getInstance().getLinkByID(uuid));
-
+            final DownloadLink link = DownloadController.getInstance().getLinkByID(uuid);
+            if (link != null) {
+                return new DownloadLinkSandBox(link);
+            } else {
+                return null;
+            }
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
@@ -445,8 +446,12 @@ public class ScriptEnvironment {
     @ScriptAPI(description = "Get a DownloadList Package by it's uuid", parameters = { "uuid" })
     public static FilePackageSandBox getDownloadPackageByUUID(long uuid) throws EnvironmentException {
         try {
-
-            return new FilePackageSandBox(DownloadController.getInstance().getPackageByID(uuid));
+            final FilePackage pkg = DownloadController.getInstance().getPackageByID(uuid);
+            if (pkg != null) {
+                return new FilePackageSandBox(pkg);
+            } else {
+                return null;
+            }
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
@@ -454,16 +459,12 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Get a FilePath Object", parameters = { "Path to a file or folder" })
     public static FilePathSandbox getPath(String fileOrUrl) throws EnvironmentException {
-
         return new FilePathSandbox(fileOrUrl);
-
     }
 
     @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
     public static String getPage(String fileOrUrl) throws EnvironmentException {
-
         askForPermission("load resources from the internet");
-
         try {
             return new Browser().getPage(fileOrUrl);
         } catch (Throwable e) {
@@ -471,73 +472,55 @@ public class ScriptEnvironment {
         }
     }
 
-    //
-    // @ScriptAPI(description = "Get a Property. Set global to true if you want to access a global property", parameters = { "\"key\"",
-    // "global(boolean)" }, example = "var value=getProperty(\"myobject\", false);")
-    // public static Object getProperty(ConsString key, boolean global) throws EnvironmentException {
-    //
-    // return getProperty(key.toString(), global);
-    // }
-
     @ScriptAPI(description = "Get a Property. Set global to true if you want to access a global property", parameters = { "\"key\"", "global(boolean)" }, example = "var value=getProperty(\"myobject\", false);")
     public static Object getProperty(String key, boolean global) throws EnvironmentException {
         try {
             synchronized (GLOBAL_PROPERTIES) {
                 if (global) {
                     return GLOBAL_PROPERTIES.get(key);
-
                 } else {
-
                     HashMap<String, Object> store = SCRIPT_PROPERTIES.get(getScriptThread().getScript());
                     if (store == null) {
                         return null;
                     }
                     return store.get(key);
-
                 }
-
             }
-
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
     }
 
     public static Collection<Class<?>> getRequiredClasses() {
-        ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
+        final ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
         collectClasses(ScriptEnvironment.class, clazzes);
         return clazzes;
     }
 
     @ScriptAPI(description = "Get a list of all running downloadlinks")
     public static DownloadLinkSandBox[] getRunningDownloadLinks() {
-
-        Set<SingleDownloadController> list = DownloadWatchDog.getInstance().getRunningDownloadLinks();
-        DownloadLinkSandBox[] ret = new DownloadLinkSandBox[list.size()];
+        final Set<SingleDownloadController> list = DownloadWatchDog.getInstance().getRunningDownloadLinks();
+        final DownloadLinkSandBox[] ret = new DownloadLinkSandBox[list.size()];
         int i = 0;
-        for (SingleDownloadController dlc : list) {
+        for (final SingleDownloadController dlc : list) {
             ret[i++] = new DownloadLinkSandBox(dlc.getDownloadLink());
         }
         return ret;
-
     }
 
     @ScriptAPI(description = "Get a list of all running packages")
     public static FilePackageSandBox[] getRunningDownloadPackages() {
-
-        Set<FilePackage> list = DownloadWatchDog.getInstance().getRunningFilePackages();
-
-        FilePackageSandBox[] ret = new FilePackageSandBox[list.size()];
+        final Set<FilePackage> list = DownloadWatchDog.getInstance().getRunningFilePackages();
+        final FilePackageSandBox[] ret = new FilePackageSandBox[list.size()];
         int i = 0;
-        for (FilePackage dlc : list) {
+        for (final FilePackage dlc : list) {
             ret[i++] = new FilePackageSandBox(dlc);
         }
         return ret;
-
     }
 
     private static ScriptThread getScriptThread() {
-        Thread ct = Thread.currentThread();
+        final Thread ct = Thread.currentThread();
         if (ct instanceof ScriptThread) {
             return (ScriptThread) ct;
         } else if (ct instanceof ScriptReferenceThread) {
@@ -545,21 +528,16 @@ public class ScriptEnvironment {
         } else {
             throw new IllegalStateException();
         }
-
     }
 
     @ScriptAPI(description = "Get current total Download Speed in bytes/second")
     public static int getTotalSpeed() {
-
         return DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
-
     }
 
     @ScriptAPI(description = "Stop Downloads")
     public static void stopDownloads() {
-
         DownloadWatchDog.getInstance().stopDownloads();
-
     }
 
     @ScriptAPI(description = "Start Downloads")
@@ -594,12 +572,10 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Log to stderr and to JDownloader Log Files")
     public static void log(Object... objects) {
-
         if (objects != null && objects.length == 1) {
             if (Clazz.isPrimitiveWrapper(objects[0].getClass()) || Clazz.isString(objects[0].getClass())) {
                 LOGGER.info(objects[0] + "");
                 return;
-
             } else if (objects.length > 0) {
                 if (objects[0] != null && objects[0].getClass().getPackage().getName().equals(DownloadLinkSandBox.class.getPackage().getName())) {
                     LOGGER.info(objects[0].toString());
@@ -609,11 +585,9 @@ public class ScriptEnvironment {
                     try {
                         LOGGER.info(new JacksonMapper().objectToString(objects[0]));
                     } catch (Throwable e) {
-
                         LOGGER.info(format(toJson(objects[0])));
                     }
                 } catch (Throwable e) {
-
                     LOGGER.info(objects[0] + "");
                 }
                 return;
@@ -624,25 +598,12 @@ public class ScriptEnvironment {
                 LOGGER.info(new JacksonMapper().objectToString(objects));
             } catch (Throwable e) {
                 LOGGER.info(format(toJson(objects)));
-
             }
         } catch (Throwable e) {
             LOGGER.info(objects + "");
-
         }
         return;
     }
-
-    // @ScriptAPI(description = "Create a directory", parameters = { "path" }, example =
-    // "var myBooleanResult=mkdirs(JD_HOME+\"/mydirectory/\");")
-    // public static boolean mkdirs(String filepath) throws EnvironmentException {
-    // askForPermission("create a directory");
-    // try {
-    // return new File(filepath).mkdirs();
-    // } catch (Throwable e) {
-    // throw new EnvironmentException(e);
-    // }
-    // }
 
     @ScriptAPI(description = "Play a Wav Audio file", parameters = { "myFilePathOrUrl" }, example = "playWavAudio(JD_HOME+\"/themes/standard/org/jdownloader/sounds/captcha.wav\");")
     public static void playWavAudio(String fileOrUrl) throws EnvironmentException {
@@ -793,33 +754,13 @@ public class ScriptEnvironment {
         }
     }
 
-    // @GlobalField(description = "Get a Linkgrabber Link by it's uuid", parameters = { "uuid" })
-    // public static Object getGrabbedLinkByUUID(long uuid) throws EnvironmentException {
-    // try {
-    // CrawledLink ret = LinkCollector.getInstance().getLinkByID(uuid);
-    // return JSonStorage.convert(ret, TypeRef.HASHMAP);
-    // } catch (Throwable e) {
-    // throw new EnvironmentException(e);
-    // }
-    // }
-    // @GlobalField(description = "Get a Linkgrabber Package by it's uuid", parameters = { "uuid" })
-    // public static Object getGrabbedPackageByUUID(long uuid) throws EnvironmentException {
-    // try {
-    // CrawledPackage ret = LinkCollector.getInstance().getPackageByID(uuid);
-    // return JSonStorage.convert(ret, TypeRef.HASHMAP);
-    // } catch (Throwable e) {
-    // throw new EnvironmentException(e);
-    // }
-    // }
     @ScriptAPI(description = "Set a Property. This property will be available until JD-exit or a script overwrites it. if global is true, the property will be available for al scripts", parameters = { "\"key\"", "anyValue", "global(boolean)" }, example = "var oldValue=setProperty(\"myobject\", { \"name\": true}, false);")
     public static Object setProperty(String key, Object value, boolean global) throws EnvironmentException {
         try {
             synchronized (GLOBAL_PROPERTIES) {
                 if (global) {
                     return GLOBAL_PROPERTIES.put(key, value);
-
                 } else {
-
                     HashMap<String, Object> store = SCRIPT_PROPERTIES.get(getScriptThread().getScript());
                     if (store == null) {
                         store = new HashMap<String, Object>();
@@ -828,7 +769,6 @@ public class ScriptEnvironment {
                     return store.put(key, value);
                 }
             }
-
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
@@ -836,7 +776,6 @@ public class ScriptEnvironment {
 
     private static void showMessageDialog(String string) {
         final ScriptThread env = getScriptThread();
-
         UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T.T.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
             @Override
             protected int getPreferredWidth() {
@@ -863,16 +802,14 @@ public class ScriptEnvironment {
     public static Object toJSObject(Object ret) {
         final ScriptThread env = getScriptThread();
         // convert to javascript object
-        String js = "(function(){ return " + JSonStorage.serializeToJson(ret) + ";}());";
-
+        final String js = "(function(){ return " + JSonStorage.serializeToJson(ret) + ";}());";
         return env.evalTrusted(js);
     }
 
     public static String toJson(Object ret) {
         final ScriptThread env = getScriptThread();
         // convert to javascript object
-        String js = "(function(){ return JSON.stringify(" + JSonStorage.serializeToJson(ret) + ");}());";
-
+        final String js = "(function(){ return JSON.stringify(" + JSonStorage.serializeToJson(ret) + ");}());";
         return (String) env.evalTrusted(js);
     }
 

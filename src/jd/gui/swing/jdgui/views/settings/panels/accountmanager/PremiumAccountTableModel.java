@@ -555,7 +555,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     if (ai.isUnlimitedTraffic()) {
                         return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
                     } else {
-                        return Formatter.formatReadable(ai.getTrafficLeft()) + "/" + Formatter.formatReadable(ai.getTrafficMax());
+                        return _GUI.T.premiumaccounttablemodel_column_trafficleft_left_(Formatter.formatReadable(ai.getTrafficLeft()), Formatter.formatReadable(ai.getTrafficMax()));
 
                     }
                 }

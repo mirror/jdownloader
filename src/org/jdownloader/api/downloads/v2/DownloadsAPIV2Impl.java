@@ -157,22 +157,18 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         }
 
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
-
-            DownloadLink dl = links.get(i);
-            DownloadLinkAPIStorableV2 dls = toStorable(queryParams, dl, this);
-
+            final DownloadLink dl = links.get(i);
+            final DownloadLinkAPIStorableV2 dls = toStorable(queryParams, dl, this);
             result.add(dls);
         }
-
         return result;
     }
 
     public static FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, Object caller) {
-        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-        FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
-        FilePackageView fpView = new FilePackageView(fp);
+        final DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        final FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
+        final FilePackageView fpView = new FilePackageView(fp);
         fpView.aggregate();
-
         if (queryParams.isPriority()) {
             fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(fp.getPriorityEnum().name()));
         }
@@ -195,7 +191,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             }
             fps.setHosts(hosts);
         }
-
         if (queryParams.isSpeed()) {
             fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
         }
@@ -211,7 +206,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isBytesLoaded()) {
             fps.setBytesLoaded(fpView.getDone());
         }
-
         if (queryParams.isComment()) {
             fps.setComment(fp.getComment());
         }
@@ -225,8 +219,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     public static DownloadLinkAPIStorableV2 toStorable(LinkQueryStorable queryParams, DownloadLink dl, Object caller) {
-        DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2(dl);
-
+        final DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2(dl);
         if (queryParams.isPassword()) {
             dls.setDownloadPassword(dl.getDownloadPassword());
         }
@@ -239,7 +232,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isBytesTotal()) {
             dls.setBytesTotal(dl.getView().getBytesTotalEstimated());
         }
-
         if (queryParams.isStatus()) {
             setStatus(dls, dl, caller);
         }
@@ -260,7 +252,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isFinished()) {
             dls.setFinished((FinalLinkState.CheckFinished(dl.getFinalLinkState())));
         }
-
         if (queryParams.isRunning()) {
             dls.setRunning(dl.getDownloadLinkController() != null);
         }
@@ -282,7 +273,12 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isComment()) {
             dls.setComment(dl.getComment());
         }
-
+        if (queryParams.isAddedDate()) {
+            dls.setAddedDate(dl.getCreated());
+        }
+        if (queryParams.isFinishedDate()) {
+            dls.setFinishedDate(dl.getFinishedDate());
+        }
         dls.setPackageUUID(dl.getParentNode().getUniqueID().getID());
         return dls;
     }
@@ -453,10 +449,10 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public DownloadLinkAPIStorableV2 getStopMarkedLink() {
-        Object mark = DownloadWatchDog.getInstance().getSession().getStopMark();
+        final Object mark = DownloadWatchDog.getInstance().getSession().getStopMark();
         if (mark != null && mark != STOPMARK.NONE) {
             if (mark instanceof DownloadLink) {
-                DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2((DownloadLink) mark);
+                final DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2((DownloadLink) mark);
                 dls.setPackageUUID(((DownloadLink) mark).getParentNode().getUniqueID().getID());
                 return dls;
             }
@@ -555,12 +551,12 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         final List<DownloadLink> links = packageControllerUtils.getSelectionInfo(linkIds, packageIds).getChildren();
         List<DownloadLink> unskipLinks = new ArrayList<DownloadLink>();
         if (reason != null) {
-            final SkipReason checkReason=SkipReason.valueOf(reason.name());
+            final SkipReason checkReason = SkipReason.valueOf(reason.name());
             for (DownloadLink link : links) {
-                final SkipReason skipReason=link.getSkipReason();               
-                if (skipReason!=null && checkReason.equals(skipReason)) {
+                final SkipReason skipReason = link.getSkipReason();
+                if (skipReason != null && checkReason.equals(skipReason)) {
                     unskipLinks.add(link);
-                }                
+                }
             }
         } else {
             unskipLinks = links;
