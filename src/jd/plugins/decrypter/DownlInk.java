@@ -23,15 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storable;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.envjs.EnvJSBrowser;
-import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
-import org.jdownloader.scripting.envjs.PermissionFilter;
-import org.jdownloader.scripting.envjs.XHRResponse;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -43,6 +34,15 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.envjs.EnvJSBrowser;
+import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
+import org.jdownloader.scripting.envjs.PermissionFilter;
+import org.jdownloader.scripting.envjs.XHRResponse;
 
 /**
  * HAHAHAHA
@@ -130,7 +130,11 @@ public class DownlInk extends antiDDoSForDecrypt {
     @Override
     protected void runPostRequestTask(final Browser ibr) {
         brOut = br.toString();
-        dothis(ibr);
+        final Form captcha = ibr.getForm(0);
+        if (captcha == null || !captcha.containsHTML("class=(\"|')g-recaptcha\\1")) {
+            // recaptcha will fail here
+            dothis(ibr);
+        }
     }
 
     private LinkedHashSet<String> dupe  = new LinkedHashSet<String>();
