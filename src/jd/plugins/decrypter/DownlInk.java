@@ -16,10 +16,21 @@
 
 package jd.plugins.decrypter;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.envjs.EnvJSBrowser;
+import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
+import org.jdownloader.scripting.envjs.PermissionFilter;
+import org.jdownloader.scripting.envjs.XHRResponse;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,14 +43,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storable;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.envjs.EnvJSBrowser;
-import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
-import org.jdownloader.scripting.envjs.PermissionFilter;
-import org.jdownloader.scripting.envjs.XHRResponse;
 
 /**
  * HAHAHAHA
@@ -55,14 +58,27 @@ public class DownlInk extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    private String parameter = null;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        parameter = param.toString();
         br = new Browser();
+        // http can redirect to https
         br.setFollowRedirects(true);
         getPage(parameter);
         if ("Page not found".equalsIgnoreCase(brOut)) {
             return decryptedLinks;
+        }
+        // recaptchav2 can be here, they monitor based ip ? or maybe cloudflare cookie
+        final Form captcha = br.getForm(0);
+        if (captcha != null && captcha.containsHTML("class=(\"|')g-recaptcha\\1")) {
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            // no need for runPostRequestTask. usually cloudflare event is on FIRST request, so lets bypass.
+            br.submitForm(captcha);
+            // then another get here, here comes the JS we need
+            getPage(br.getURL());
         }
         // the single download link, returned in iframe
         final String[] iframes = envJs.getRegex("<\\s*iframe\\s+[^>]+>").getColumn(-1);
@@ -112,14 +128,8 @@ public class DownlInk extends antiDDoSForDecrypt {
     }
 
     @Override
-    protected void runPostRequestTask(final Browser ibr) throws Exception {
+    protected void runPostRequestTask(final Browser ibr) {
         brOut = br.toString();
-        final Form captcha = ibr.getFormbyAction("");
-        if (captcha != null) {
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            submitForm(ibr, captcha);
-        }
         dothis(ibr);
     }
 
@@ -170,27 +180,29 @@ public class DownlInk extends antiDDoSForDecrypt {
 
             @Override
             public Request onBeforeXHRRequest(Request request) {
+                // only load websites with the same domain.
+                try {
+                    if (StringUtils.equalsIgnoreCase(new URL(request.getUrl()).getHost(), new URL(parameter).getHost())) {
+                        return request;
+                    }
+                } catch (MalformedURLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 return null;
             }
 
             @Override
             public Request onBeforeLoadingExternalJavaScript(String type, String url, Request request) {
-                if (!request.getUrl().contains("downl.ink/")) {
+                if (!request.getUrl().contains(getHost() + "/")) {
                     return null;
                 }
                 try {
-
                     if (url.matches(".+/jquery-\\d+\\.\\d+\\.\\d+\\.min\\.js")) {
                         dupe.add(url);
                         return request;
                     }
-                    // if (url.endsWith("/js/jquery.corner.js")) {
-                    //
-                    // return request;
-                    // }
-
                     return null;
-
                 } catch (final Throwable e) {
                     throw new RuntimeException(e);
                 }
@@ -198,15 +210,12 @@ public class DownlInk extends antiDDoSForDecrypt {
 
             @Override
             public String onBeforeExecutingInlineJavaScript(String type, String js) {
-
                 String trimmed = js.trim();
-
-                int id = 0;
-                id = trimmed.split("[\\}\\{\\(\\)\\;\\+\\=\\\"]").length;
-
-                getLogger().info(" Script: (id:" + id + ")\r\n" + trimmed);
-
                 // filter javascript.
+                if (js.contains("liveinternet")) {
+                    // ads ... do not evaluate
+                    return "console.log('Blocked js')";
+                }
                 if (trimmed.startsWith("(function(i,s,o,g,r,a,m)")) {
                     return "console.log('Do not Excute');";
                 }
@@ -226,4 +235,5 @@ public class DownlInk extends antiDDoSForDecrypt {
             }
         };
     }
+
 }
