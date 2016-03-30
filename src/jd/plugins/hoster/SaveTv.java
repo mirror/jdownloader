@@ -329,10 +329,20 @@ public class SaveTv extends PluginForHost {
             login_site(this.br, aa, false);
             final String telecast_ID = getTelecastId(link);
             getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
-            if (!br.getURL().contains("/JSON/")) {
+            if (!br.getURL().contains("/JSON/") || this.br.getHttpConnection().getResponseCode() == 404) {
+                /* Offline#1 - offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final Object aRRALLOWDDOWNLOADFORMATS = entries.get("ARRALLOWDDOWNLOADFORMATS");
+            final Object sTRRECORDORDER = entries.get("STRRECORDORDER");
+            if (aRRALLOWDDOWNLOADFORMATS == null || sTRRECORDORDER == null) {
+                /*
+                 * Offline#1 - expired (download not possible anymore - if user tries to download something that has not been recorded yet,
+                 * code will NOT jump into this as json will already contain some download information / these two important json objects)
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final ArrayList<Object> sourcelist = jsonGetVideoSourcelist(entries);
             entries = (LinkedHashMap<String, Object>) entries.get("TELECASTDETAILS");
             parseFilenameInformation_site(link, entries);
@@ -668,13 +678,17 @@ public class SaveTv extends PluginForHost {
              * Content not yet recorded --> Show errormessage with waittime. Waittime = END of the content + 10 minutes! Most times Stv
              * needs between 10 and 60 minutes to get the downloads ready.
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Diese Sendung wurde noch nicht aufgenommen/ausgestrahlt! Bitte warten.", released_since * (-1) + 10 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Diese Sendung wurde noch nicht aufgenommen/ausgestrahlt!", released_since * (-1) + 10 * 60 * 60 * 1000l);
         }
 
         if (apiActive()) {
             /* Check if ads-free version is available */
             api_doSoapRequestSafe(this.br, account, "http://tempuri.org/IVideoArchive/GetAdFreeState", "<telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
             if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
+                /*
+                 * TODO: If a telecastID is expired (deleted/not downloadable anymore), this is what will happen. There does not seem to be
+                 * any possibility to get the correct status for this case via API.
+                 */
                 downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
             } else {
@@ -690,7 +704,7 @@ public class SaveTv extends PluginForHost {
             /* TODO: Check if the numbers are still correct */
             /* TODO: Enhance ad-free check - check if selected format is available and if it is available in ad-free */
             final String ad_Free_availability = getJson(br.toString(), "BADFREEAVAILABLE");
-            if (ad_Free_availability.equals("3") || ad_Free_availability.equalsIgnoreCase("false")) {
+            if (ad_Free_availability == null || ad_Free_availability.equals("3") || ad_Free_availability.equalsIgnoreCase("false")) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", USERTEXT_NOCUTAVAILABLE));
             } else if (ad_Free_availability.equals("1") || ad_Free_availability.equalsIgnoreCase("true")) {
                 downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);

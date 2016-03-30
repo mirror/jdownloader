@@ -21,10 +21,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,8 +39,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-rapid.cz", "file-share.top" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz|megarapid\\.cz)/(stahuj|soubor)/([0-9]+/.+|[a-z0-9]+)", "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2, 2 })
-public class ShareRapidCz extends PluginForHost {
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-share.top" }, urls = { "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2 })
+public class FileShareTop extends PluginForHost {
 
     private static final String  TYPE_CURRENT                 = "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+";
     private static final String  MAINPAGE                     = "http://file-share.top/";
@@ -61,7 +61,7 @@ public class ShareRapidCz extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
-    public ShareRapidCz(final PluginWrapper wrapper) {
+    public FileShareTop(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sharerapid.cz/dobiti/?zeme=1");
     }
@@ -204,6 +204,17 @@ public class ShareRapidCz extends PluginForHost {
             checkOffline();
             dllink = downloadLink.getDownloadURL().replace("/file/", "/file/download/");
         }
+        this.br.setFollowRedirects(false);
+        br.getPage(dllink);
+        dllink = this.br.getRedirectLocation();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Cookies not needed for the download process. */
+        this.br = new Browser();
+        // this.br.getHeaders().put("Referer", "http://stor.file-share.top/public/");
+        this.br.getHeaders().put("Accept-Encoding", "identity");
+        this.br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         logger.info("Final downloadlink = " + dllink);
         br.setFollowRedirects(true);
         try {
@@ -307,7 +318,7 @@ public class ShareRapidCz extends PluginForHost {
     }
 
     private void prepBr(final Browser br) throws IOException {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
         br.setCustomCharset("UTF-8");
         /* Set english language */
         br.getPage("http://file-share.top/lang/set/gb");
