@@ -128,7 +128,7 @@ public class DatasbitCom extends PluginForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia recaptcha<br />
+     * captchatype: null<br />
      * other:<br />
      */
 
@@ -222,10 +222,12 @@ public class DatasbitCom extends PluginForHost {
             logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-        
+
         // abbreviated over x chars long
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
 

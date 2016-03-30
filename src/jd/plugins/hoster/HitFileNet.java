@@ -26,12 +26,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,12 +50,19 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     /* Settings */
     private static final String  SETTING_JAC                          = "SETTING_JAC";
     private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING      = 20;
 
     private final String         UA                                   = RandomUserAgent.generate();
     private static final String  HTML_RECAPTCHATEXT                   = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
@@ -76,12 +77,11 @@ public class HitFileNet extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME                          = true;
     private static final int     FREE_MAXCHUNKS                       = 1;
-    private static final int     FREE_MAXDOWNLOADS                    = 20;
     private static final boolean ACCOUNT_PREMIUM_RESUME               = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS            = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS         = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS_PLUGINSETTING);
     /* don't touch the following! */
     private static AtomicInteger maxFree                              = new AtomicInteger(1);
 
@@ -215,7 +215,7 @@ public class HitFileNet extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         if (this.getPluginConfig().getBooleanProperty(SETTING_FREE_PARALLEL_DOWNLOADSTARTS, false)) {
-            return FREE_MAXDOWNLOADS;
+            return FREE_MAXDOWNLOADS_PLUGINSETTING;
         } else {
             return maxFree.get();
         }

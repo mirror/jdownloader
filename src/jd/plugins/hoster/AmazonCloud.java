@@ -57,7 +57,11 @@ public class AmazonCloud extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String mainlink = link.getStringProperty("mainlink", null);
-        final String url = (mainlink != null && mainlink.contains("/gp/drive/share") ? mainlink : "https://www.amazon.com/clouddrive/share?s=" + link.getStringProperty("plain_folder_id"));
+        final String plain_folder_id = link.getStringProperty("plain_folder_id");
+        if (mainlink == null && plain_folder_id == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String url = (mainlink != null && mainlink.contains("/gp/drive/share") ? mainlink : "https://www.amazon.com/clouddrive/share?s=" + plain_folder_id);
         br.getPage(url);
         if (br.containsHTML("=\"error_page\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
