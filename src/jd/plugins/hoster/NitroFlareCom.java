@@ -636,13 +636,15 @@ public class NitroFlareCom extends antiDDoSForHost {
                     if (StringUtils.equalsIgnoreCase(status, "Active")) {
                         // Active (green) = premium
                         account.setType(AccountType.PREMIUM);
+                        ai.setStatus("Premium Account");
                     } else {
                         // Expired (red) = free
                         account.setType(AccountType.FREE);
+                        ai.setStatus("Free Account");
                     }
                 }
                 // do we have traffic?
-                final String[] traffic = br.getRegex("<label>Daily Limit</label><strong>(\\d+(?:\\.\\d+)?(?:\\s*[KMGT]{0,1}B)?) / (\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B)</strong>").getRow(0);
+                final String[] traffic = br.getRegex("<label>[^>]*Daily Limit</label><strong>(\\d+(?:\\.\\d+)?(?:\\s*[KMGT]{0,1}B)?) / (\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B)</strong>").getRow(0);
                 if (traffic != null) {
                     // first value is traffic used, not remaining
                     ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
