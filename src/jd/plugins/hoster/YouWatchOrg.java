@@ -38,6 +38,12 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -68,12 +74,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youwatch.org" }, urls = { "https?://(www\\.)?youwatch\\.org/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -165,9 +165,9 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * @author raztoki
-     * 
+     *
      * @category 'Experimental', Mods written July 2012 - 2013
-     * */
+     */
     public YouWatchOrg(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -176,7 +176,7 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * defines custom browser requirements.
-     * */
+     */
     private Browser prepBrowser(final Browser prepBr) {
         HashMap<String, String> map = null;
         synchronized (cloudflareCookies) {
@@ -357,8 +357,8 @@ public class YouWatchOrg extends PluginForHost {
     /**
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
-     * 
-     * */
+     *
+     */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
@@ -422,13 +422,15 @@ public class YouWatchOrg extends PluginForHost {
                             break;
                         }
                         /* Do not grab the protocol here as they often hide it! */
-                        embed_url = cbr.getRegex("//([^/]+/embed\\-[^<>\"]*?\\.html(?:\\?\\d+)?)").getMatch(0);
+                        embed_url = cbr.getRegex("(//[^/]+/embed\\-[^<>\"]*?\\.html(?:\\?\\d+)?)").getMatch(0);
                         if (embed_url != null) {
                             embed_url = Encoding.htmlDecode(embed_url);
                             /* Remove linebreaks! */
                             embed_url = embed_url.replace("\n", "");
-                            getPage("http://" + embed_url);
+                            getPage(embed_url);
                             getDllink();
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         counter++;
                     } while (embed_url != null && counter <= 10 && dllink == null);
@@ -576,7 +578,7 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
-     * 
+     *
      * @throws Exception
      * @author raztoki
      */
@@ -1128,8 +1130,8 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * Rules to prevent new downloads from commencing
-     * 
-     * */
+     *
+     */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
             // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
@@ -1161,9 +1163,9 @@ public class YouWatchOrg extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     * 
+     *
      * @author raztoki
-     * */
+     */
     @SuppressWarnings("unused")
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
@@ -1237,7 +1239,7 @@ public class YouWatchOrg extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
@@ -1382,10 +1384,10 @@ public class YouWatchOrg extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -1468,9 +1470,9 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
-     * 
+     *
      * @author raztoki
-     * */
+     */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align")) {
@@ -1578,7 +1580,7 @@ public class YouWatchOrg extends PluginForHost {
      * @param source
      *            for the Regular Expression match against
      * @return String result
-     * */
+     */
     private String regexDllink(final String source) {
         if (inValidate(source)) {
             return null;
@@ -1607,7 +1609,7 @@ public class YouWatchOrg extends PluginForHost {
      * @param source
      *            String for decoder to process
      * @return String result
-     * */
+     */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
 
@@ -1638,16 +1640,16 @@ public class YouWatchOrg extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
@@ -1665,11 +1667,11 @@ public class YouWatchOrg extends PluginForHost {
     /**
      * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
      * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
-     * 
+     *
      * @param account
-     * 
+     *
      * @category 'Experimental', Mod written February 2013
-     * */
+     */
     private void controlSimHost(final Account account) {
         synchronized (CTRLLOCK) {
             if (usedHost == null) {
@@ -1704,14 +1706,14 @@ public class YouWatchOrg extends PluginForHost {
      * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
      * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
      * hosts/IP setup. This will help with those situations by allowing more connection when possible.
-     * 
+     *
      * @param Account
      *            Account that's been used, can be null
      * @param DownloadLink
      * @param action
      *            To add or remove slot, true == adds, false == removes
      * @throws Exception
-     * */
+     */
     private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
         synchronized (CTRLLOCK) {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
@@ -1809,12 +1811,12 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * Sets Key and Values to respective Account stored within hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
-     * */
+     */
     private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
         if (usedHost == null || x == null) {
             return;
@@ -1854,10 +1856,10 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * Returns String key from Account@usedHost from hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized String getHashedHashedKey(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1876,10 +1878,10 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * Returns integer value from Account@usedHost from hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized Integer getHashedHashedValue(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1898,12 +1900,12 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * Returns true if hostMap contains 'key'
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * @param key
      *            String of what ever you want to find
-     * */
+     */
     private synchronized boolean isHashedHashedKey(final Account account, final String key) {
         if (key == null) {
             return false;
@@ -1923,12 +1925,12 @@ public class YouWatchOrg extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -1940,14 +1942,14 @@ public class YouWatchOrg extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      *            name
      * @param value
      *            expected value
      * @param ibr
      *            import browser
-     * */
+     */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();
         if (workaround != null) {
@@ -1970,11 +1972,11 @@ public class YouWatchOrg extends PluginForHost {
     /**
      * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
      * InputField parse(final String data). Affects revision 19688 and earlier!
-     * 
+     *
      * TODO: remove after JD2 goes stable!
-     * 
+     *
      * @author raztoki
-     * */
+     */
     private Form cleanForm(Form form) {
         if (form == null) {
             return null;
@@ -2002,13 +2004,13 @@ public class YouWatchOrg extends PluginForHost {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     * 
+     *
      * @param ibr
      *            Import Browser
      * @param t
      *            Provided replacement string output browser
      * @author raztoki
-     * */
+     */
     private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
         String dMD5 = JDHash.getMD5(ibr.toString());
         // preserve valuable original request components.
