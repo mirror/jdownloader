@@ -6,7 +6,6 @@ import org.jdownloader.myjdownloader.client.bindings.downloadlist.DownloadLinkQu
 
 public class LinkQueryStorable extends DownloadLinkQuery implements Storable {
     public static void main(String[] args) {
-
         System.out.println(LinkQueryStorable.class.getSimpleName() + "= ");
         System.out.println(new JacksonMapper().objectToString(new LinkQueryStorable()));
     }
