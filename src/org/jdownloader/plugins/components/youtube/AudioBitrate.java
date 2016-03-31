@@ -1,4 +1,4 @@
-package jd.plugins.components.youtube;
+package org.jdownloader.plugins.components.youtube;
 
 public enum AudioBitrate implements MediaQualityInterface {
     KBIT_128(128, 1000),

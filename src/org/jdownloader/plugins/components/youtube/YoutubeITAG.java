@@ -1,16 +1,8 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.youtube;
 
 import java.util.Date;
 
 import jd.http.QueryInfo;
-import jd.plugins.components.youtube.AudioBitrate;
-import jd.plugins.components.youtube.AudioCodec;
-import jd.plugins.components.youtube.ImageQuality;
-import jd.plugins.components.youtube.MediaQualityInterface;
-import jd.plugins.components.youtube.MediaTagsVarious;
-import jd.plugins.components.youtube.VideoCodec;
-import jd.plugins.components.youtube.VideoContainer;
-import jd.plugins.components.youtube.VideoResolution;
 
 public enum YoutubeITAG {
     DASH_AUDIO_128K_AAC(140, null, null, "AAC", "128kbit", AudioCodec.AAC, AudioBitrate.KBIT_128),

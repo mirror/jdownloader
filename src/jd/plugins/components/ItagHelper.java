@@ -18,6 +18,9 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.ffmpeg.FFprobe;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.plugins.components.youtube.YoutubeClipData;
+import org.jdownloader.plugins.components.youtube.YoutubeITAG;
+import org.jdownloader.plugins.components.youtube.YoutubeVariant;
 
 import jd.http.Browser;
 import jd.http.QueryInfo;

@@ -52,6 +52,24 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.youtube.AudioBitrate;
+import org.jdownloader.plugins.components.youtube.AudioCodec;
+import org.jdownloader.plugins.components.youtube.MediaQualityInterface;
+import org.jdownloader.plugins.components.youtube.MediaTagsVarious;
+import org.jdownloader.plugins.components.youtube.VideoCodec;
+import org.jdownloader.plugins.components.youtube.VideoContainer;
+import org.jdownloader.plugins.components.youtube.VideoResolution;
+import org.jdownloader.plugins.components.youtube.YoutubeClipData;
+import org.jdownloader.plugins.components.youtube.YoutubeCustomConvertVariant;
+import org.jdownloader.plugins.components.youtube.YoutubeCustomVariantStorable;
+import org.jdownloader.plugins.components.youtube.YoutubeHelperInterface;
+import org.jdownloader.plugins.components.youtube.YoutubeITAG;
+import org.jdownloader.plugins.components.youtube.YoutubeReplacer;
+import org.jdownloader.plugins.components.youtube.YoutubeReplacer.DataSource;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.YoutubeSubtitleInfo;
+import org.jdownloader.plugins.components.youtube.YoutubeVariant;
+import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
@@ -87,24 +105,6 @@ import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
 import jd.plugins.components.GoogleHelper;
 import jd.plugins.components.ItagHelper;
-import jd.plugins.components.YoutubeClipData;
-import jd.plugins.components.YoutubeCustomConvertVariant;
-import jd.plugins.components.YoutubeCustomVariantStorable;
-import jd.plugins.components.YoutubeHelperInterface;
-import jd.plugins.components.YoutubeITAG;
-import jd.plugins.components.YoutubeReplacer;
-import jd.plugins.components.YoutubeReplacer.DataSource;
-import jd.plugins.components.YoutubeStreamData;
-import jd.plugins.components.YoutubeSubtitleInfo;
-import jd.plugins.components.YoutubeVariant;
-import jd.plugins.components.YoutubeVariantInterface;
-import jd.plugins.components.youtube.AudioBitrate;
-import jd.plugins.components.youtube.AudioCodec;
-import jd.plugins.components.youtube.MediaQualityInterface;
-import jd.plugins.components.youtube.MediaTagsVarious;
-import jd.plugins.components.youtube.VideoCodec;
-import jd.plugins.components.youtube.VideoContainer;
-import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
@@ -131,6 +131,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9.setRating(vp9);
         VideoCodec.VP9_BETTER_PROFILE_1.setRating(vp9 + 1);
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
+
     }
 
     public static final String PAID_VIDEO        = "Paid Video:";
@@ -211,6 +212,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_quality();
+            }
+
+            @Override
+            public String replace(String name, YoutubeHelperInterface helper, DownloadLink link) {
+                return super.replace(name, helper, link);
             }
 
             @Override
@@ -629,9 +635,21 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     public static final String  YT_DATE                          = "YT_DATE";
     public static final String  YT_VARIANTS                      = "YT_VARIANTS";
     public static final String  YT_VARIANT                       = "YT_VARIANT";
+    /**
+     * @deprecated use {@link #YT_VARIANT_INFO}
+     */
     public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    /**
+     * @deprecated use {@link #YT_VARIANT_INFO}
+     */
     public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    /**
+     * @deprecated use {@link #YT_VARIANT_INFO}
+     */
     public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    /**
+     * @deprecated use {@link #YT_VARIANT_INFO}
+     */
     public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
 
     private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
@@ -719,25 +737,56 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.variantsMap = Collections.unmodifiableMap(variantsMap);
     }
 
-    private HashMap<String, HashMap<String, String>> jsCache             = new HashMap<String, HashMap<String, String>>();
-    private HashSet<String>                          subtitleUrls;
-    private HashSet<String>                          fmtMaps;
+    public class StreamMap {
+        public StreamMap(String map, String src2) {
+            this.mapData = map;
+            this.src = src2;
+        }
 
-    private LinkedHashSet<String>                    mpdUrls;
+        @Override
+        public String toString() {
+            return src;
+        }
+
+        @Override
+        public int hashCode() {
+            return mapData.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof StreamMap)) {
+                return false;
+            }
+
+            return ((StreamMap) obj).mapData.equals(mapData);
+        }
+
+        private String mapData;
+        private String src;
+    }
+
+    private HashMap<String, HashMap<String, String>> jsCache              = new HashMap<String, HashMap<String, String>>();
+    private HashSet<String>                          subtitleUrls;
+    private HashSet<StreamMap>                       fmtMaps;
+
+    private LinkedHashSet<StreamMap>                 mpdUrls;
 
     private HashMap<String, String>                  videoInfo;
 
-    private boolean                                  hlsEnabled          = false;
+    private boolean                                  hlsEnabled           = true;
 
-    private boolean                                  dashMpdEnabled      = true;
+    private boolean                                  dashMpdEnabled       = true;
 
-    private boolean                                  adaptiveFmtsEnabled = true;
+    private boolean                                  adaptiveFmtsEnabled  = true;
 
-    private boolean                                  fmtMapEnabled       = true;
+    private boolean                                  fmtMapEnabled        = true;
 
     private String                                   html5PlayerJs;
 
     private YoutubeClipData                          vid;
+
+    public static final String                       YT_FULL_STREAM_INFOS = "YT_FULL_STREAM_INFOS";
 
     String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
         if (sig == null) {
@@ -1172,10 +1221,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     }
 
-    public Map<YoutubeITAG, YoutubeStreamData> loadVideo(final YoutubeClipData vid) throws Exception {
+    public void loadVideo(final YoutubeClipData vid) throws Exception {
 
         this.vid = vid;
-        final Map<YoutubeITAG, YoutubeStreamData> ret = new HashMap<YoutubeITAG, YoutubeStreamData>();
+        final Map<YoutubeITAG, List<YoutubeStreamData>> ret = new HashMap<YoutubeITAG, List<YoutubeStreamData>>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         boolean loggedIn = br.getCookie("https://youtube.com", "LOGIN_INFO") != null;
         this.br.setFollowRedirects(true);
@@ -1195,21 +1244,22 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             html5PlayerJs = "http:" + html5PlayerJs;
         }
         if (html5PlayerJs == null) {
-            html5PlayerJs = br.getMatch("src=\"//(.*?/base.js)\" name=\"player\\/base\"");
+            html5PlayerJs = br.getMatch("src=\"//([^\"<>]*?/base.js)\" name=\"player\\/base\"");
+
             if (html5PlayerJs != null) {
                 html5PlayerJs = "https://" + html5PlayerJs;
             }
         }
         String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
-        fmtMaps = new HashSet<String>();
+        fmtMaps = new HashSet<StreamMap>();
         subtitleUrls = new HashSet<String>();
-        mpdUrls = new LinkedHashSet<String>();
+        mpdUrls = new LinkedHashSet<StreamMap>();
         videoInfo = new HashMap<String, String>();
 
         vid.ageCheck = br.containsHTML("age-gate");
         this.handleContentWarning(br);
 
-        collectMapsFormHtmlSource(br.getRequest().getHtmlCode());
+        collectMapsFormHtmlSource(br.getRequest().getHtmlCode(), "base");
 
         Browser apiBrowser = null;
 
@@ -1218,7 +1268,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         apiBrowser = this.br.cloneBrowser();
         apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&el=info&ps=default&eurl=&gl=US&hl=en");
 
-        collectMapsFromVideoInfo(apiBrowser.toString());
+        collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
         if (apiRequired) {
             apiBrowser = this.br.cloneBrowser();
             apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
@@ -1232,8 +1282,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     // age protected
                     apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded&ps=default&eurl=&gl=US&hl=en");
                 }
-            }
 
+            }
+            collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
             if (apiBrowser.containsHTML("requires_purchase=1")) {
                 logger.warning("Download not possible: You have to pay to watch this video");
                 throw new Exception("Paid Video");
@@ -1275,7 +1326,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     logger.warning("Private Video");
                     logger.warning(unavailableReason + " :: " + subError);
                     vid.error = "This Video is Private";
-                    return null;
+                    return;
                 }
             } else if (unavailableReason.startsWith("This video has been removed")) {
                 // currently covering
@@ -1283,21 +1334,21 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 // This video has been removed because its content violated YouTube&#39;s Terms of Service. .:. 7RA4A-4QqHU
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
-                return null;
+                return;
             } else if (unavailableReason.contains("account associated with this video has been")) {
                 // currently covering
                 // This video is no longer available because the YouTube account associated with this video has been closed.
                 // id=wBVhciYW9Og, date=20141222, author=raztoki
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
-                return null;
+                return;
             } else if ("This live event has ended.".equalsIgnoreCase(unavailableReason)) {
                 // currently covering
                 // This live event has ended.
                 // id=qEJwOuvDf7I, date=20150412, author=raztoki
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
-                return null;
+                return;
             } else if (unavailableReason.contains(copyrightClaim)) {
                 // currently covering
                 // "One Monkey saves another Mo..."
@@ -1307,7 +1358,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 vid.title = new Regex(unavailableReason, "\"(.*?(?:\\.\\.\\.)?)\"\n").getMatch(0);
                 logger.warning(copyrightClaim);
                 vid.error = copyrightClaim;
-                return null;
+                return;
             } else if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
                 // be aware that this is always present, only when there is a non whitespace suberror is it valid.
                 // currently covering
@@ -1317,7 +1368,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     subError = subError.trim();
                     logger.warning(unavailableReason + " :: " + subError);
                     vid.error = unavailableReason;
-                    return null;
+                    return;
                 }
             }
         }
@@ -1343,18 +1394,27 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         // } else {
         // regular url testlink: http://www.youtube.com/watch?v=4om1rQKPijI
 
-        collectMapsFormHtmlSource(br.getRequest().getHtmlCode());
         // }
-        for (String fmt : fmtMaps) {
 
-            for (final String line : fmt.split(",")) {
+        fmtLoop: for (StreamMap fmt : fmtMaps) {
+
+            boolean fmtChecked = false;
+            for (final String line : fmt.mapData.split(",")) {
                 try {
                     final YoutubeStreamData match = this.parseLine(Request.parseQuery(line));
                     if (match != null) {
+
                         if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
                             continue;
                         }
-                        ret.put(match.getItag(), match);
+
+                        List<YoutubeStreamData> lst = ret.get(match.getItag());
+                        if (lst == null) {
+                            lst = new ArrayList<YoutubeStreamData>();
+                            ret.put(match.getItag(), lst);
+                        }
+                        lst.add(match);
+
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -1362,13 +1422,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
         }
         if (cfg.isExternMultimediaToolUsageEnabled()) {
-            mpd: for (String mpdUrl : mpdUrls) {
+            mpd: for (StreamMap mpdUrl : mpdUrls) {
                 try {
-                    if (StringUtils.isEmpty(mpdUrl)) {
+                    if (StringUtils.isEmpty(mpdUrl.mapData)) {
                         continue;
                     }
                     Browser clone = br.cloneBrowser();
-                    clone.getPage(mpdUrl);
+                    clone.getPage(mpdUrl.mapData);
                     String xml = clone.getRequest().getHtmlCode();
                     if (!clone.getHttpConnection().isOK()) {
                         logger.severe("Bad Request: ");
@@ -1399,8 +1459,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                             String fps = query.get("fps");
                             final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.width, c.height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
                             validateItag(query.get("size"), c.height, query.get("type"), itag);
-                            YoutubeStreamData vsd;
-                            ret.put(itag, vsd = new YoutubeStreamData(vid, c.downloadurl, itag));
+
+                            List<YoutubeStreamData> lst = ret.get(itag);
+                            if (lst == null) {
+                                lst = new ArrayList<YoutubeStreamData>();
+                                ret.put(itag, lst);
+                            }
+                            lst.add(new YoutubeStreamData(vid, c.downloadurl, itag));
 
                         }
                     } else {
@@ -1437,10 +1502,17 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
         }
         for (YoutubeStreamData sd : loadThumbnails()) {
-            ret.put(sd.getItag(), sd);
-        }
+            List<YoutubeStreamData> lst = ret.get(sd.getItag());
+            if (lst == null) {
+                lst = new ArrayList<YoutubeStreamData>();
+                ret.put(sd.getItag(), lst);
+            }
+            lst.add(sd);
 
-        return ret;
+        }
+        vid.streams = ret;
+        vid.subtitles = loadSubtitles();
+
     }
 
     private DocumentBuilder createXMLParser() throws ParserConfigurationException {
@@ -1476,7 +1548,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return docBuilder;
     }
 
-    private void collectFmtMap(String htmlCode, String regex) {
+    private void collectFmtMap(String htmlCode, String regex, String src) {
         String map = new Regex(htmlCode, regex).getMatch(0);
         if (map == null) {
             return;
@@ -1486,25 +1558,26 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (StringUtils.isNotEmpty(map)) {
             // map = Encoding.urlDecode(map, false);
             if (!fmtMaps.contains(map)) {
-                fmtMaps.add(map);
+                System.out.println("Add FMT Map html " + regex + "- " + map);
+                fmtMaps.add(new StreamMap(map, src));
             }
         }
     }
 
-    private void collectMapsFormHtmlSource(String html) {
+    private void collectMapsFormHtmlSource(String html, String src) {
 
         collectSubtitleUrls(html, "['\"]TTS_URL['\"]\\s*:\\s*(['\"][^'\"]+['\"])");
         if (fmtMapEnabled) {
-            collectFmtMap(html, REGEX_FMT_MAP_FROM_JSPLAYER_SETUP);
+            collectFmtMap(html, REGEX_FMT_MAP_FROM_JSPLAYER_SETUP, "fmtMapJSPlayer." + src);
         }
         if (adaptiveFmtsEnabled) {
-            collectFmtMap(html, REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP);
+            collectFmtMap(html, REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP, "adaptiveFmtsJSPlayer." + src);
         }
         if (dashMpdEnabled) {
-            collectMpdMap(html, REGEX_DASHMPD_FROM_JSPLAYER_SETUP);
+            collectMpdMap(html, REGEX_DASHMPD_FROM_JSPLAYER_SETUP, "dashMpdJSPlayer." + src);
         }
         if (hlsEnabled) {
-            collectMpdMap(html, REGEX_HLSMPD_FROM_JSPLAYER_SETUP);
+            collectMpdMap(html, REGEX_HLSMPD_FROM_JSPLAYER_SETUP, "hlsJSPlayer." + src);
         }
     }
 
@@ -1519,7 +1592,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
     }
 
-    private void collectMapsFromVideoInfo(String queryString) throws MalformedURLException {
+    private void collectMapsFromVideoInfo(String queryString, String src) throws MalformedURLException {
         QueryInfo map = Request.parseQuery(queryString);
         for (Entry<String, String> es : map.toMap().entrySet()) {
             videoInfo.put(es.getKey(), Encoding.urlDecode(es.getValue(), false));
@@ -1533,7 +1606,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             String adaptive_fmts = videoInfo.get("adaptive_fmts");
             if (StringUtils.isNotEmpty(adaptive_fmts)) {
                 // adaptive_fmts = Encoding.urlDecode(adaptive_fmts, false);
-                fmtMaps.add(adaptive_fmts);
+                System.out.println("Add adaptive_fmts VI - " + adaptive_fmts);
+                fmtMaps.add(new StreamMap(adaptive_fmts, "adaptive_fmts." + src));
 
             }
         }
@@ -1541,7 +1615,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             String url_encoded_fmt_stream_map = videoInfo.get("url_encoded_fmt_stream_map");
             if (StringUtils.isNotEmpty(url_encoded_fmt_stream_map)) {
                 // url_encoded_fmt_stream_map = Encoding.urlDecode(url_encoded_fmt_stream_map, false);
-                fmtMaps.add(url_encoded_fmt_stream_map);
+                System.out.println("Add url_encoded_fmt_stream_map VI - " + url_encoded_fmt_stream_map);
+                fmtMaps.add(new StreamMap(url_encoded_fmt_stream_map, "url_encoded_fmt_stream_map." + src));
             }
         }
         if (dashMpdEnabled) {
@@ -1549,7 +1624,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             if (StringUtils.isNotEmpty(dashmpd)) {
                 final String url = handleSignature(dashmpd);
                 if (url != null) {
-                    mpdUrls.add(url);
+                    mpdUrls.add(new StreamMap(url, "dashmpd." + src));
                 }
             }
         }
@@ -1558,13 +1633,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             if (StringUtils.isNotEmpty(hlsvp)) {
                 final String url = handleSignature(hlsvp);
                 if (url != null) {
-                    mpdUrls.add(url);
+                    mpdUrls.add(new StreamMap(url, "hlsvp." + src));
                 }
             }
         }
     }
 
-    private void collectMpdMap(String htmlCode, String regex) {
+    private void collectMpdMap(String htmlCode, String regex, String src) {
         String map = new Regex(htmlCode, regex).getMatch(0);
         if (map == null) {
             return;
@@ -1573,7 +1648,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (StringUtils.isNotEmpty(map)) {
             final String url = handleSignature(map);
             if (url != null) {
-                mpdUrls.add(url);
+                mpdUrls.add(new StreamMap(url, src));
             }
         }
     }
@@ -1597,7 +1672,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
      * @throws IOException
      * @throws PluginException
      */
-    private void handleQuery(Element representation, final Map<YoutubeITAG, YoutubeStreamData> ret, String url, final QueryInfo query) throws IOException, PluginException {
+    private void handleQuery(Element representation, final Map<YoutubeITAG, List<YoutubeStreamData>> ret, String url, final QueryInfo query) throws IOException, PluginException {
         String r = null;
 
         r = xmlNodeToString(representation);
@@ -1651,8 +1726,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (StringUtils.isNotEmpty(type)) {
             type = Encoding.urlDecode(type, false);
         }
-
-        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
+        int itagId = Integer.parseInt(query.get("itag"));
+        final YoutubeITAG itag = YoutubeITAG.get(itagId, width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
         validateItag(size, height, type, itag);
         logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
         NodeList segmentListNodes = representation.getElementsByTagName("SegmentList");
@@ -1687,7 +1762,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (url != null && itag != null) {
 
             YoutubeStreamData vsd;
-            ret.put(itag, vsd = new YoutubeStreamData(vid, url, itag));
+
+            List<YoutubeStreamData> lst = ret.get(itag);
+            if (lst == null) {
+                lst = new ArrayList<YoutubeStreamData>();
+                ret.put(itag, lst);
+            }
+            lst.add(vsd = new YoutubeStreamData(vid, url, itag));
             if (segmentsList.size() > 0) {
                 vsd.setSegments(segmentsList.toArray(new String[] {}));
             }
@@ -2070,7 +2151,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
     public static final String YT_STATIC_URL         = "YT_STATIC_URL";
-
+    /**
+     * @deprecated use {@link #YT_VARIANT_INFO}
+     */
     public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
     public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
     public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
@@ -2078,6 +2161,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
 
     public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
+
+    // public static final String YT_VARIANT_INFO = "YT_VARIANT_INFO";
+
+    public static final String YT_STREAM_DATA_VIDEO  = "YT_STREAM_DATA_VIDEO";
+    public static final String YT_STREAM_DATA_AUDIO  = "YT_STREAM_DATA_AUDIO";
+    public static final String YT_STREAM_DATA_DATA   = "YT_STREAM_DATA_DATA";
 
     public String createFilename(DownloadLink link) {
 
@@ -2175,6 +2264,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (StringUtils.isEmpty(signature) && query.get("s") != null) {
             // verified 7.1.213
             signature = this.descrambleSignature(query.get("s"), html5PlayerJs, vid.videoID);
+
         }
 
         if (url != null && !url.contains("sig")) {
@@ -2210,8 +2300,34 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             final String quality = Encoding.urlDecode(query.get("quality"), false);
             logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
             if (url != null && itag != null) {
-
                 YoutubeStreamData vsd;
+                // if (itag == YoutubeITAG.DASH_VIDEO_480P_H264) {
+
+                // QueryInfo qi = Request.parseQuery(url);
+                // ArrayList<KeyValueStringEntry> lst = new ArrayList<KeyValueStringEntry>(qi.list());
+                // Collections.sort(lst, new Comparator<KeyValueStringEntry>() {
+                //
+                // @Override
+                // public int compare(KeyValueStringEntry o1, KeyValueStringEntry o2) {
+                // return o1.getKey().compareTo(o2.getKey());
+                // }
+                //
+                // });
+                // qi = new QueryInfo();
+                // qi.addAll(lst);
+                // String cleanedUrl = new Regex(url, "(http.*?\\?)").getMatch(-1) + qi.toString();
+                // try {
+                // URLConnectionAdapter con = new Browser().openGetConnection(url);
+                // con.disconnect();
+                // if (!con.isOK()) {
+                // return null;
+                // }
+                //
+                // } catch (Throwable e) {
+                // e.printStackTrace();
+                // System.out.println(1);
+                // }
+                // }
                 vsd = new YoutubeStreamData(vid, url, itag);
 
                 return vsd;
@@ -2358,7 +2474,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.br.setProxy(this.br.getThreadProxy());
     }
 
-    public ArrayList<YoutubeSubtitleInfo> loadSubtitles() throws IOException, ParserConfigurationException, SAXException {
+    private ArrayList<YoutubeSubtitleInfo> loadSubtitles() throws IOException, ParserConfigurationException, SAXException {
         HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
 
         for (String ttsUrl : subtitleUrls) {

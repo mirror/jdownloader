@@ -35,18 +35,6 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -73,6 +61,18 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
@@ -116,7 +116,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                         PROPERTY_VERIFIEDFILESIZE           = "VERIFIEDFILESIZE";
     public static final String                          PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
     public static final String                          PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
-    public static final String                          PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND"; ;
+    public static final String                          PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND";;
     public static final String                          PROPERTY_DOWNLOADTIME               = "DOWNLOADTIME";
     public static final String                          PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
     public static final String                          PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
@@ -756,7 +756,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     @Deprecated
     /**
      *
-     * @deprecated   {@link #setPluginPattern(String)},{@link #setContentUrl(String)}, {@link #setReferrerUrl(String)} or {@link #setOriginUrl(String)} instead
+     * @deprecated {@link #setPluginPattern(String)},{@link #setContentUrl(String)}, {@link #setReferrerUrl(String)} or
+     *             {@link #setOriginUrl(String)} instead
      */
     public void setBrowserUrl(String url) {
         setOriginUrl(url);
@@ -2499,4 +2500,5 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return history.get(history.size() - 1);
         }
     }
+
 }

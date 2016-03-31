@@ -1,4 +1,4 @@
-package jd.plugins.components.youtube;
+package org.jdownloader.plugins.components.youtube;
 
 public enum VideoContainer implements MediaQualityInterface {
     THREEGP(4, 1),

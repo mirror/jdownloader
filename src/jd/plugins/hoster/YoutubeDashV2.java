@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JMenu;
@@ -57,6 +56,18 @@ import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.youtube.VariantInfo;
+import org.jdownloader.plugins.components.youtube.VideoResolution;
+import org.jdownloader.plugins.components.youtube.YoutubeClipData;
+import org.jdownloader.plugins.components.youtube.YoutubeCustomConvertVariant;
+import org.jdownloader.plugins.components.youtube.YoutubeCustomVariantStorable;
+import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
+import org.jdownloader.plugins.components.youtube.YoutubeITAG;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.YoutubeSubtitleInfo;
+import org.jdownloader.plugins.components.youtube.YoutubeVariant;
+import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
+import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -71,6 +82,7 @@ import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -95,36 +107,28 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.SubtitleVariant;
-import jd.plugins.components.YoutubeClipData;
-import jd.plugins.components.YoutubeCustomConvertVariant;
-import jd.plugins.components.YoutubeCustomVariantStorable;
-import jd.plugins.components.YoutubeITAG;
-import jd.plugins.components.YoutubeStreamData;
-import jd.plugins.components.YoutubeSubtitleInfo;
-import jd.plugins.components.YoutubeVariant;
-import jd.plugins.components.YoutubeVariantInterface;
-import jd.plugins.components.YoutubeVariantInterface.VariantGroup;
 import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
 
-    private static final String    DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
+    private static final String    YT_ALTERNATE_VARIANT = "YT_ALTERNATE_VARIANT";
 
-    private static final String    DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
+    private static final String    DASH_AUDIO_FINISHED  = "DASH_AUDIO_FINISHED";
 
-    private static final String    DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
+    private static final String    DASH_VIDEO_FINISHED  = "DASH_VIDEO_FINISHED";
 
-    private static final String    DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
+    private static final String    DASH_AUDIO_LOADED    = "DASH_AUDIO_LOADED";
 
-    private final String           DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
+    private static final String    DASH_VIDEO_LOADED    = "DASH_VIDEO_LOADED";
 
-    private final String           DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
+    private final String           DASH_AUDIO_CHUNKS    = "DASH_AUDIO_CHUNKS";
+
+    private final String           DASH_VIDEO_CHUNKS    = "DASH_VIDEO_CHUNKS";
 
     private YoutubeConfig          cfg;
     private YoutubeHelper          cachedHelper;
@@ -153,7 +157,7 @@ public class YoutubeDashV2 extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            YoutubeHelper helper = getCachedHelper();
+            YoutubeHelper helper = getCachedHelper(null);
             helper.setupProxy();
             helper.login(account, true, true);
 
@@ -162,7 +166,7 @@ public class YoutubeDashV2 extends PluginForHost {
             return ai;
         }
         //
-        ai.setStatus(JDL.L("plugins.hoster.youtube.accountok", "Account is OK."));
+        ai.setStatus(_GUI.T.lit_account_is_ok());
         ai.setValidUntil(-1);
         account.setValid(true);
         return ai;
@@ -286,8 +290,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
         void setProxy(HTTPProxyStorable address);
 
-        public static enum IfUrlisAVideoAndPlaylistAction
-                implements LabelInterface {
+        public static enum IfUrlisAVideoAndPlaylistAction implements LabelInterface {
 
             ASK {
                 @Override
@@ -316,8 +319,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
         }
 
-        public static enum IfUrlisAPlaylistAction
-                implements LabelInterface {
+        public static enum IfUrlisAPlaylistAction implements LabelInterface {
             ASK {
                 @Override
                 public String getLabel() {
@@ -366,8 +368,7 @@ public class YoutubeDashV2 extends PluginForHost {
         //
         // void setPreferHttpsEnabled(boolean b);
 
-        public static enum GroupLogic
-                implements LabelInterface {
+        public static enum GroupLogic implements LabelInterface {
             BY_MEDIA_TYPE {
                 @Override
                 public String getLabel() {
@@ -581,49 +582,11 @@ public class YoutubeDashV2 extends PluginForHost {
         return panel;
     }
 
-    public class UrlCollection {
-        private String   data;
-        private String[] videoUrlSegments;
-
-        public String[] getVideoUrlSegments() {
-            return videoUrlSegments;
-        }
-
-        public void setVideoUrlSegments(String[] videoUrlSegments) {
-            this.videoUrlSegments = videoUrlSegments;
-        }
-
-        public String[] getAudioUrlSegments() {
-            return audioUrlSegments;
-        }
-
-        public void setAudioUrlSegments(String[] audioUrlSegments) {
-            this.audioUrlSegments = audioUrlSegments;
-        }
-
-        private String[] audioUrlSegments;
-
-        public UrlCollection(String videoUrl, String audioUrl, String dataUrl, String[] videoUrlSegments, String[] audioUrlSegments) {
-            this.audio = audioUrl;
-            this.video = videoUrl;
-            this.data = dataUrl;
-            this.videoUrlSegments = videoUrlSegments;
-            this.audioUrlSegments = audioUrlSegments;
-        }
-
-        String video;
-        String audio;
-    }
-
     public String getMirrorID(DownloadLink link) {
         return "Youtube:" + link.getStringProperty(YoutubeHelper.YT_VARIANT) + link.getName() + "_" + link.getView().getBytesTotal();
     }
 
-    private boolean                             isDownloading = false;
-
-    private Map<YoutubeITAG, YoutubeStreamData> info;
-
-    private ArrayList<YoutubeSubtitleInfo>      subtitles;
+    private boolean isDownloading = false;
 
     protected void checkOldLink(DownloadLink downloadLink) throws PluginException {
         if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
@@ -650,51 +613,50 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         checkOldLink(downloadLink);
 
-        if (cfg.isFastLinkCheckEnabled() && !LinkChecker.isForcedLinkCheck(downloadLink)) {
+        if (cfg.isFastLinkCheckEnabled() && !LinkChecker.isForcedLinkCheck(downloadLink) && downloadLink.getDownloadLinkController() == null) {
 
             return AvailableStatus.UNCHECKED;
 
         }
 
-        YoutubeHelper helper = getCachedHelper();
+        YoutubeHelper helper = getCachedHelper(downloadLink);
 
         YoutubeVariantInterface variant = getVariant(downloadLink);
 
-        {
-            // update linkid
-            final String linkid = downloadLink.getLinkID();
-            if (linkid != null && !isDownloading) {
-                switch (variant.getType()) {
-                case SUBTITLES: {
-                    final String subtitleID = "youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
-                    if (!subtitleID.equals(linkid)) {
-                        // update it
-                        downloadLink.setLinkID(subtitleID);
-                        return AvailableStatus.TRUE;
-                    }
-                    break;
-                }
-                case VIDEO:
-                case DASH_AUDIO:
-                case DASH_VIDEO: {
-                    final String videoID = "youtubev2://" + variant._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID);
-                    if (!videoID.equals(linkid)) {
-                        // update it
-                        downloadLink.setLinkID(videoID);
-                        return AvailableStatus.TRUE;
-                    }
-                    break;
-                }
-                case IMAGE:
-                    break;
-                case DESCRIPTION:
-                    downloadLink.setDownloadSize(downloadLink.getStringProperty(YoutubeHelper.YT_DESCRIPTION).getBytes("UTF-8").length);
+        // update linkid
+        final String linkid = downloadLink.getLinkID();
+        if (linkid != null && !isDownloading) {
+            switch (variant.getType()) {
+            case SUBTITLES: {
+                final String subtitleID = "youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+                if (!subtitleID.equals(linkid)) {
+                    // update it
+                    downloadLink.setLinkID(subtitleID);
                     return AvailableStatus.TRUE;
-                default:
-                    break;
                 }
+                break;
+            }
+            case VIDEO:
+            case DASH_AUDIO:
+            case DASH_VIDEO: {
+                final String videoID = "youtubev2://" + variant._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID);
+                if (!videoID.equals(linkid)) {
+                    // update it
+                    downloadLink.setLinkID(videoID);
+                    return AvailableStatus.TRUE;
+                }
+                break;
+            }
+            case IMAGE:
+                break;
+            case DESCRIPTION:
+                downloadLink.setDownloadSize(downloadLink.getStringProperty(YoutubeHelper.YT_DESCRIPTION).getBytes("UTF-8").length);
+                return AvailableStatus.TRUE;
+            default:
+                break;
             }
         }
+
         URLConnectionAdapter con;
         boolean verifiedSize = true;
         long totalSize = -1;
@@ -703,15 +665,19 @@ public class YoutubeDashV2 extends PluginForHost {
         switch (variant.getType()) {
         case SUBTITLES:
             for (int i = 0; i < 2; i++) {
-                UrlCollection urls = getUrlPair(downloadLink);
-                if (StringUtils.isEmpty(urls.data)) {
+                VariantInfo urls = getAndUpdateVariantInfo(downloadLink);
+                if (urls == null || urls.getDataStreams() == null || urls.getDataStreams().size() == 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 String encoding = br.getHeaders().get("Accept-Encoding");
+                br.getHeaders().remove("Accept-Encoding");
                 try {
-                    br.getHeaders().put("Accept-Encoding", "");
-                    con = br.openGetConnection(urls.data);
-                    con.disconnect();
+                    GetRequest r = new GetRequest(urls.getDataStreams().get(0).getUrl());
+
+                    br.openRequestConnection(r).disconnect();
+
+                    con = r.getHttpConnection();
+
                 } finally {
                     br.getHeaders().put("Accept-Encoding", encoding);
                 }
@@ -732,11 +698,11 @@ public class YoutubeDashV2 extends PluginForHost {
             return AvailableStatus.TRUE;
         case IMAGE:
             for (int i = 0; i < 2; i++) {
-                UrlCollection urls = getUrlPair(downloadLink);
-                if (StringUtils.isEmpty(urls.data)) {
+                VariantInfo urls = getAndUpdateVariantInfo(downloadLink);
+                if (urls == null || urls.getDataStreams() == null || urls.getDataStreams().size() == 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                con = br.openGetConnection(urls.data);
+                con = br.openGetConnection(urls.getDataStreams().get(0).getUrl());
                 con.disconnect();
                 if (!con.getContentType().startsWith("image/jpeg") || con.getResponseCode() != 200) {
                     if (i == 0) {
@@ -757,112 +723,183 @@ public class YoutubeDashV2 extends PluginForHost {
 
             HashSet<LinkVariant> checkedAlternatives = new HashSet<LinkVariant>();
             YoutubeVariantInterface orgVariant = getVariant(downloadLink);
-            test: while (true) {
+            try {
+                test: while (true) {
 
-                checkedAlternatives.add(getVariant(downloadLink));
-                try {
+                    YoutubeVariantInterface vv;
+                    checkedAlternatives.add(vv = getVariant(downloadLink));
+                    try {
+                        // do no set variant, do this inloop
 
-                    for (int i = 0; i < 2; i++) {
                         totalSize = 0;
-                        UrlCollection urls = getUrlPair(downloadLink);
+                        VariantInfo urls = getAndUpdateVariantInfo(downloadLink);
+                        YoutubeFinalLinkResource workingVideoStream = null;
+                        YoutubeFinalLinkResource workingAudioStream = null;
+                        YoutubeFinalLinkResource workingDataStream = null;
 
-                        if (StringUtils.isNotEmpty(urls.video)) {
+                        if (urls != null && urls.getVideoStreams() != null) {
+                            PluginException firstException = null;
+                            for (YoutubeStreamData si : urls.getVideoStreams()) {
 
-                            if (urls.videoUrlSegments != null) {
-                                verifiedSize = false;
-                                long estimatedSize = guessTotalSize(urls.video, urls.videoUrlSegments);
-                                if (estimatedSize == -1) {
-                                    if (i == 0) {
-                                        resetStreamUrls(downloadLink);
+                                YoutubeFinalLinkResource cache = new YoutubeFinalLinkResource(si);
+
+                                if (cache.getSegments() != null) {
+                                    verifiedSize = false;
+                                    long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
+                                    if (estimatedSize == -1) {
+
+                                        if (firstException == null) {
+                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                        }
                                         continue;
                                     }
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                }
-                                totalSize += estimatedSize;
-                            } else {
-                                String url = urls.video;
-                                br.openRequestConnection(new HeadRequest(url)).disconnect();
-                                con = br.getHttpConnection();
-                                if (con.getResponseCode() == 200) {
-                                    downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, br.getRequest().getUrl());
-                                    totalSize += con.getLongContentLength();
-                                    data.setDashVideoSize(con.getLongContentLength());
-
+                                    workingVideoStream = cache;
+                                    // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
+                                    totalSize += estimatedSize;
+                                    firstException = null;
+                                    break;
                                 } else {
-
-                                    if (i == 0) {
-                                        resetStreamUrls(downloadLink);
-                                        continue;
+                                    String url = cache.getBaseUrl();
+                                    if (false && vv.getQualityRating() > VideoResolution.P_360.getRating()) {
+                                        url = url.replace("signature=", "signature=BAD");
                                     }
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                    br.openRequestConnection(new HeadRequest(url)).disconnect();
+                                    con = br.getHttpConnection();
+                                    if (con.getResponseCode() == 200) {
+                                        workingVideoStream = cache;
+                                        // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
+                                        totalSize += con.getLongContentLength();
+                                        data.setDashVideoSize(con.getLongContentLength());
+                                        firstException = null;
+                                        break;
+                                    } else {
 
+                                        // if (i == 0) {
+                                        // resetStreamUrls(downloadLink);
+                                        // continue;
+                                        // }
+                                        if (firstException == null) {
+                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                        }
+                                        continue;
+
+                                    }
                                 }
+                            }
+                            if (firstException != null) {
+                                throw firstException;
                             }
                         }
+                        if (urls != null && urls.getAudioStreams() != null) {
+                            PluginException firstException = null;
 
-                        if (StringUtils.isNotEmpty(urls.audio)) {
-
-                            if (urls.audioUrlSegments != null) {
-                                verifiedSize = false;
-                                long estimatedSize = guessTotalSize(urls.audio, urls.audioUrlSegments);
-                                if (estimatedSize == -1) {
-                                    if (i == 0) {
-                                        resetStreamUrls(downloadLink);
+                            for (YoutubeStreamData si : urls.getAudioStreams()) {
+                                YoutubeFinalLinkResource cache = new YoutubeFinalLinkResource(si);
+                                si = null;
+                                if (cache.getSegments() != null) {
+                                    verifiedSize = false;
+                                    long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
+                                    if (estimatedSize == -1) {
+                                        // if (i == 0) {
+                                        // resetStreamUrls(downloadLink);
+                                        // continue;
+                                        // }
+                                        if (firstException == null) {
+                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                        }
                                         continue;
                                     }
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                }
-                                totalSize += estimatedSize;
-
-                            } else {
-                                String url = urls.audio;
-                                br.openRequestConnection(new HeadRequest(url)).disconnect();
-                                con = br.getHttpConnection();
-                                if (con.getResponseCode() == 200) {
-                                    downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO, br.getRequest().getUrl());
-                                    totalSize += con.getLongContentLength();
-                                    data.setDashAudioSize(con.getLongContentLength());
-
+                                    totalSize += estimatedSize;
+                                    workingAudioStream = cache;
+                                    ;
+                                    // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, );
+                                    firstException = null;
+                                    break;
                                 } else {
+                                    String url = cache.getBaseUrl();
+                                    br.openRequestConnection(new HeadRequest(url)).disconnect();
+                                    con = br.getHttpConnection();
+                                    if (con.getResponseCode() == 200) {
+                                        workingAudioStream = cache;
+                                        // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, new YoutubeFinalLinkResource(si));
+                                        totalSize += con.getLongContentLength();
+                                        data.setDashAudioSize(con.getLongContentLength());
+                                        firstException = null;
+                                        break;
+                                    } else {
 
-                                    if (i == 0) {
-                                        resetStreamUrls(downloadLink);
+                                        // if (i == 0) {
+                                        // resetStreamUrls(downloadLink);
+                                        // continue;
+                                        // }
+                                        if (firstException == null) {
+                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                        }
                                         continue;
                                     }
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                                 }
                             }
+                            if (firstException != null) {
+                                throw firstException;
+                            }
+                        }
+                        downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, workingAudioStream);
+                        downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, workingVideoStream);
+                        downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_DATA, workingDataStream);
+                        if (totalSize <= 0) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                         break test;
-                    }
 
-                } catch (PluginException e) {
-
-                    if (e.getErrorMessage() != null) {
-
-                        if (StringUtils.equalsIgnoreCase(e.getErrorMessage(), "This video is private")) {
-                            throw e;
-                        }
-
-                        if (e.getErrorMessage().contains(_JDT.T.CountryIPBlockException_createCandidateResult())) {
-                            throw e;
-                        }
-                    }
-                    List<LinkVariant> alternatives = getVariantsByLink(downloadLink);
-                    if (alternatives != null) {
-                        for (LinkVariant v : alternatives) {
-
-                            if (!checkedAlternatives.contains(v)) {
-                                LinkCollector.getInstance().setActiveVariantForLink(downloadLink, v);
-
+                    } catch (PluginException e) {
+                        if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                            boolean hasCachedVideo = downloadLink.getProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO) != null;
+                            boolean hasCachedAudio = downloadLink.getProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO) != null;
+                            boolean hasCachedData = downloadLink.getProperty(YoutubeHelper.YT_STREAM_DATA_DATA) != null;
+                            if (hasCachedVideo || hasCachedAudio || hasCachedData) {
+                                // the url has been restored from older cached streamdata
+                                downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, Property.NULL);
+                                downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, Property.NULL);
+                                downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_DATA, Property.NULL);
                                 continue test;
-
                             }
                         }
-                    }
-                    LinkCollector.getInstance().setActiveVariantForLink(downloadLink, orgVariant);
+                        if (e.getErrorMessage() != null) {
 
-                    throw e;
+                            if (StringUtils.equalsIgnoreCase(e.getErrorMessage(), "This video is private")) {
+                                throw e;
+                            }
+
+                            if (e.getErrorMessage().contains(_JDT.T.CountryIPBlockException_createCandidateResult())) {
+                                throw e;
+                            }
+                        }
+
+                        List<LinkVariant> alternatives = getVariantsByLink(downloadLink);
+                        if (alternatives != null) {
+                            for (LinkVariant v : alternatives) {
+
+                                if (!checkedAlternatives.contains(v)) {
+                                    logger.info("Try next alternative variant: " + v);
+
+                                    downloadLink.getTempProperties().setProperty(YT_ALTERNATE_VARIANT, v);
+                                    continue test;
+
+                                }
+                            }
+                        }
+                        downloadLink.getTempProperties().removeProperty(YT_ALTERNATE_VARIANT);
+                        throw e;
+                    }
+
+                }
+            } finally {
+
+                YoutubeVariantInterface alternative = (YoutubeVariantInterface) downloadLink.getTempProperties().getProperty(YT_ALTERNATE_VARIANT);
+                downloadLink.getTempProperties().removeProperty(YT_ALTERNATE_VARIANT);
+                if (alternative != null) {
+                    LinkCollector.getInstance().setActiveVariantForLink(downloadLink, alternative);
+
                 }
 
             }
@@ -986,38 +1023,42 @@ public class YoutubeDashV2 extends PluginForHost {
 
     }
 
-    private UrlCollection getUrlPair(DownloadLink downloadLink) throws Exception {
-        String videoUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_VIDEO);
-        String audioUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_AUDIO);
-        String[] audioUrlSegments = getStringArrayFromDownloadlinkProperty(downloadLink, YoutubeHelper.YT_STREAMURL_AUDIO_SEGMENTS);
-        String[] videoUrlSegments = getStringArrayFromDownloadlinkProperty(downloadLink, YoutubeHelper.YT_STREAMURL_VIDEO_SEGMENTS);
+    private VariantInfo getAndUpdateVariantInfo(DownloadLink downloadLink) throws Exception {
+        // VariantInfo variantInfo = (VariantInfo) downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_VARIANT_INFO);
+        // if (variantInfo != null) {
+        //
+        // return variantInfo;
+        // }
 
-        String dataUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_DATA);
-        YoutubeVariantInterface variant = getVariant(downloadLink);
+        YoutubeFinalLinkResource video = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
+        YoutubeFinalLinkResource audio = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, YoutubeFinalLinkResource.TYPE_REF);
+        YoutubeFinalLinkResource data = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_DATA, YoutubeFinalLinkResource.TYPE_REF);
+        if (video != null || audio != null || data != null) {
+            // seems like we have cached final informations
+            ArrayList<YoutubeStreamData> lstAudio = null;
+            ArrayList<YoutubeStreamData> lstVideo = null;
+            ArrayList<YoutubeStreamData> lstData = null;
+            if (video != null) {
+                lstVideo = new ArrayList<YoutubeStreamData>();
+                lstVideo.add(video.toStreamDataObject());
+            }
 
-        if (StringUtils.isEmpty(dataUrl) && variant.getiTagData() != null) {
-            updateUrls(downloadLink);
-            videoUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_VIDEO);
-            audioUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_AUDIO);
-            dataUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_DATA);
+            if (audio != null) {
+                lstAudio = new ArrayList<YoutubeStreamData>();
+                lstAudio.add(audio.toStreamDataObject());
+            }
+            if (data != null) {
+                lstData = new ArrayList<YoutubeStreamData>();
+                lstData.add(data.toStreamDataObject());
+            }
+
+            return new VariantInfo(getVariant(downloadLink), lstAudio, lstVideo, lstData);
         }
-        if (StringUtils.isEmpty(videoUrl) && variant.getiTagVideo() != null) {
-            updateUrls(downloadLink);
-            videoUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_VIDEO);
-            audioUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_AUDIO);
-            dataUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_DATA);
-            audioUrlSegments = getStringArrayFromDownloadlinkProperty(downloadLink, YoutubeHelper.YT_STREAMURL_AUDIO_SEGMENTS);
-            videoUrlSegments = getStringArrayFromDownloadlinkProperty(downloadLink, YoutubeHelper.YT_STREAMURL_VIDEO_SEGMENTS);
-        }
-        if (StringUtils.isEmpty(audioUrl) && variant.getiTagAudio() != null) {
-            updateUrls(downloadLink);
-            videoUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_VIDEO);
-            audioUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_AUDIO);
-            dataUrl = downloadLink.getStringProperty(YoutubeHelper.YT_STREAMURL_DATA);
-            audioUrlSegments = getStringArrayFromDownloadlinkProperty(downloadLink, YoutubeHelper.YT_STREAMURL_AUDIO_SEGMENTS);
-            videoUrlSegments = getStringArrayFromDownloadlinkProperty(downloadLink, YoutubeHelper.YT_STREAMURL_VIDEO_SEGMENTS);
-        }
-        return new UrlCollection(videoUrl, audioUrl, dataUrl, videoUrlSegments, audioUrlSegments);
+
+        return updateUrls(downloadLink);
+        // variantInfo = (VariantInfo) downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_VARIANT_INFO);
+        //
+        // return variantInfo;
     }
 
     private String[] getStringArrayFromDownloadlinkProperty(DownloadLink downloadLink, String key) {
@@ -1029,9 +1070,12 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     protected YoutubeVariantInterface getVariant(DownloadLink downloadLink) throws PluginException {
-
+        YoutubeVariantInterface alternative = (YoutubeVariantInterface) downloadLink.getTempProperties().getProperty(YT_ALTERNATE_VARIANT);
+        if (alternative != null) {
+            return alternative;
+        }
         String var = downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT);
-        YoutubeVariantInterface ret = getCachedHelper().getVariantById(var);
+        YoutubeVariantInterface ret = getCachedHelper(downloadLink).getVariantById(var);
         if (ret == null) {
             getLogger().warning("Invalid Variant: " + var);
             throw new PluginException(LinkStatus.ERROR_FATAL, "INVALID VARIANT: " + downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
@@ -1041,75 +1085,55 @@ public class YoutubeDashV2 extends PluginForHost {
 
     }
 
-    private void updateUrls(DownloadLink downloadLink) throws Exception {
+    private VariantInfo updateUrls(DownloadLink downloadLink) throws Exception {
         YoutubeVariantInterface variant = getVariant(downloadLink);
         String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
-        YoutubeClipData vid = new YoutubeClipData(videoID);
-        YoutubeHelper helper = getCachedHelper();
-        if (info == null) {
-            info = helper.loadVideo(vid);
-            subtitles = helper.loadSubtitles();
-            if (info == null) {
 
-                if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.")
-                        || StringUtils.equalsIgnoreCase(vid.error, /*
-                                                                    * 15.12 .2014
-                                                                    */"This video is not available.")) {
+        YoutubeClipData clipData = (YoutubeClipData) downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_FULL_STREAM_INFOS);
+        if (clipData == null) {
+            clipData = new YoutubeClipData(videoID);
+
+            YoutubeHelper helper = getCachedHelper(downloadLink);
+
+            helper.loadVideo(clipData);
+
+            if (clipData.streams == null) {
+
+                if (StringUtils.equalsIgnoreCase(clipData.error, "This video is unavailable.")
+                        || StringUtils.equalsIgnoreCase(clipData.error, /*
+                                                                         * 15.12 .2014
+                                                                         */"This video is not available.")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, clipData.error);
             }
 
             // write properties in old links and update properties in all others
 
-            vid.copyToDownloadLink(downloadLink);
-        }
+            clipData.copyToDownloadLink(downloadLink);
 
+        }
         if (variant.getGroup() == YoutubeVariantInterface.VariantGroup.SUBTITLES) {
 
             String id = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, null);
 
-            for (YoutubeSubtitleInfo si : subtitles) {
+            for (YoutubeSubtitleInfo si : clipData.subtitles) {
 
                 if (si._getIdentifier().equals(id)) {
+                    ArrayList<YoutubeStreamData> l = new ArrayList<YoutubeStreamData>();
+                    l.add(new YoutubeStreamData(clipData, si._getUrl(clipData.videoID), null));
+                    VariantInfo vi = new org.jdownloader.plugins.components.youtube.VariantInfo(variant, null, null, l);
+                    // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, vi);
 
-                    downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_DATA, si._getUrl(vid.videoID));
-                    break;
+                    return vi;
                 }
 
             }
-            return;
+            return null;
         }
-
-        if (variant.getiTagData() != null) {
-            YoutubeStreamData data = info.get(variant.getiTagData());
-            if (data == null) {
-                getLogger().info(info + "");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagData() + ")");
-            }
-
-            downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_DATA, data.getUrl());
-        }
-        if (variant.getiTagAudio() != null) {
-            YoutubeStreamData audioStream = info.get(variant.getiTagAudio());
-            if (audioStream == null) {
-                getLogger().info(info + "");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagAudio() + ")");
-            }
-            downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO, audioStream.getUrl());
-            downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO_SEGMENTS, JSonStorage.serializeToJson(audioStream.getSegments()));
-        }
-
-        if (variant.getiTagVideo() != null) {
-            YoutubeStreamData videoStream = info.get(variant.getiTagVideo());
-            if (videoStream == null) {
-                getLogger().info(info + "");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagVideo() + ")");
-            }
-            downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, videoStream.getUrl());
-            downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO_SEGMENTS, JSonStorage.serializeToJson(videoStream.getSegments()));
-        }
-
+        VariantInfo vi = new org.jdownloader.plugins.components.youtube.VariantInfo(variant, clipData.streams.get(variant.getiTagAudio()), clipData.streams.get(variant.getiTagVideo()), clipData.streams.get(variant.getiTagData()));
+        // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, vi);
+        return vi;
     }
 
     public static interface YoutubeProperties extends DownloadLinkDatabindingInterface {
@@ -1157,7 +1181,7 @@ public class YoutubeDashV2 extends PluginForHost {
     private Boolean downloadDashStream(final DownloadLink downloadLink, final YoutubeProperties data, final boolean isVideoStream) throws Exception {
         final long totalSize = downloadLink.getDownloadSize();
 
-        UrlCollection urls = getUrlPair(downloadLink);
+        // VariantInfo urls = getUrlPair(downloadLink);
 
         final String dashName;
         final String dashChunksProperty;
@@ -1165,16 +1189,15 @@ public class YoutubeDashV2 extends PluginForHost {
         // final String dashLoadedProperty;
         // final String dashFinishedProperty;
         final long chunkOffset;
-        String baseUrl = null;
+        YoutubeFinalLinkResource streamData = null;
         if (isVideoStream) {
-            baseUrl = urls.video;
+            streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
 
             dashName = getDashVideoFileName(downloadLink);
             dashChunksProperty = DASH_VIDEO_CHUNKS;
             chunkOffset = 0;
         } else {
-            baseUrl = urls.audio;
-
+            streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, YoutubeFinalLinkResource.TYPE_REF);
             dashName = getDashAudioFileName(downloadLink);
             dashChunksProperty = DASH_AUDIO_CHUNKS;
             final YoutubeVariantInterface variant = getVariant(downloadLink);
@@ -1186,7 +1209,7 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         final String dashPath = new File(downloadLink.getDownloadDirectory(), dashName).getAbsolutePath();
-        final DownloadLink dashLink = new DownloadLink(this, dashName, getHost(), baseUrl, true) {
+        final DownloadLink dashLink = new DownloadLink(this, dashName, getHost(), streamData.getBaseUrl(), true) {
             @Override
             public SingleDownloadController getDownloadLinkController() {
                 return downloadLink.getDownloadLinkController();
@@ -1194,7 +1217,7 @@ public class YoutubeDashV2 extends PluginForHost {
         };
         dashLink.setLivePlugin(this);
         final LinkStatus videoLinkStatus = new LinkStatus(dashLink);
-        final String host = Browser.getHost(baseUrl);
+        final String host = Browser.getHost(streamData.getBaseUrl());
         Downloadable dashDownloadable = new DownloadLinkDownloadable(dashLink) {
 
             volatile long[] chunkProgress = null;
@@ -1422,19 +1445,9 @@ public class YoutubeDashV2 extends PluginForHost {
             }
 
         };
-        GetRequest request = null;
-        String[] segments = null;
-        if (isVideoStream) {
-            segments = urls.getVideoUrlSegments();
 
-            request = new GetRequest(urls.video);
-
-        } else {
-            segments = urls.getAudioUrlSegments();
-
-            request = new GetRequest(urls.audio);
-
-        }
+        GetRequest request = new GetRequest(streamData.getBaseUrl());
+        String[] segments = streamData.getSegments();
 
         if (segments != null) {
 
@@ -1446,6 +1459,7 @@ public class YoutubeDashV2 extends PluginForHost {
         request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
 
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());
+
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
             if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
@@ -1457,7 +1471,9 @@ public class YoutubeDashV2 extends PluginForHost {
         if (dl.externalDownloadStop()) {
             return null;
         }
+
         return ret;
+
     }
 
     @Override
@@ -1703,7 +1719,7 @@ public class YoutubeDashV2 extends PluginForHost {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
         checkOldLink(downloadLink);
-        YoutubeHelper helper = getCachedHelper();
+        YoutubeHelper helper = getCachedHelper(downloadLink);
         YoutubeVariantInterface variant = getVariant(downloadLink);
 
         if (account != null) {
@@ -1721,7 +1737,7 @@ public class YoutubeDashV2 extends PluginForHost {
             this.requestFileInformation(downloadLink);
             this.br.setDebug(true);
 
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).data, resume, 1);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getAndUpdateVariantInfo(downloadLink).getDataStreams().get(0).getUrl(), resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("image/")) {
                 if (dl.getConnection().getResponseCode() == 500) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
@@ -1742,7 +1758,7 @@ public class YoutubeDashV2 extends PluginForHost {
             this.requestFileInformation(downloadLink);
             this.br.setDebug(true);
 
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).data, resume, 1);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getAndUpdateVariantInfo(downloadLink).getDataStreams().get(0).getUrl(), resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("text/xml")) {
                 if (dl.getConnection().getResponseCode() == 500) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
@@ -1771,7 +1787,9 @@ public class YoutubeDashV2 extends PluginForHost {
             this.requestFileInformation(downloadLink);
             this.br.setDebug(true);
             // downloadLink.setInternalTmpFilenameAppend(fileName);
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).video, resume, getChunksPerStream());
+
+            YoutubeFinalLinkResource sd = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, sd.getBaseUrl(), resume, getChunksPerStream());
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
                 if (dl.getConnection().getResponseCode() == 500) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
@@ -1788,7 +1806,7 @@ public class YoutubeDashV2 extends PluginForHost {
         case HLS_VIDEO:
             checkFFmpeg(downloadLink, "HLS Download");
 
-            dl = new HLSDownloader(downloadLink, br, getUrlPair(downloadLink).video);
+            dl = new HLSDownloader(downloadLink, br, getAndUpdateVariantInfo(downloadLink).getVideoStreams().get(0).getUrl());
             ((HLSDownloader) dl).setAcceptDownloadStopAsValidEnd(true);
             if (!this.dl.startDownload()) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -1943,6 +1961,8 @@ public class YoutubeDashV2 extends PluginForHost {
         data.setDashVideoSize(-1);
         downloadLink.setProperty(DASH_VIDEO_CHUNKS, Property.NULL);
         downloadLink.setProperty(DASH_AUDIO_CHUNKS, Property.NULL);
+        downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_FULL_STREAM_INFOS, Property.NULL);
+        cachedHelper = null;
 
     }
 
@@ -2038,13 +2058,14 @@ public class YoutubeDashV2 extends PluginForHost {
         return ret;
     }
 
-    private YoutubeHelper getCachedHelper() {
+    private YoutubeHelper getCachedHelper(DownloadLink dlink) {
         YoutubeHelper ret = cachedHelper;
         if (ret == null || ret.getBr() != this.br) {
             ret = new YoutubeHelper(br, PluginJsonConfig.get(YoutubeConfig.class), getLogger());
 
         }
         ret.setupProxy();
+        cachedHelper = ret;
         return ret;
     }
 
@@ -2106,7 +2127,7 @@ public class YoutubeDashV2 extends PluginForHost {
         try {
             if (name != null) {
 
-                YoutubeVariantInterface v = getCachedHelper().getVariantById(name);
+                YoutubeVariantInterface v = getCachedHelper(downloadLink).getVariantById(name);
                 if (v == YoutubeVariant.SUBTITLES) {
                     SubtitleVariant var = new SubtitleVariant(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE));
                     downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, var);
@@ -2143,7 +2164,7 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setProperty(YoutubeHelper.YT_EXT, YoutubeVariant.SUBTITLES.getFileExtension());
             downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariant) variant)._getIdentifier());
             String filename;
-            downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
+            downloadLink.setFinalFileName(filename = getCachedHelper(downloadLink).createFilename(downloadLink));
             downloadLink.setPluginPatternMatcher("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
 
             // if (prefers) {
@@ -2167,7 +2188,7 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setProperty(YoutubeHelper.YT_VARIANT, v._getUniqueId());
             downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getFileExtension());
             String filename;
-            downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
+            downloadLink.setFinalFileName(filename = getCachedHelper(downloadLink).createFilename(downloadLink));
             downloadLink.setPluginPatternMatcher("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
             // if (prefers) {
             downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
@@ -2189,11 +2210,11 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     protected void resetStreamUrls(DownloadLink downloadLink) {
-        downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO_SEGMENTS, Property.NULL);
-        downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO_SEGMENTS, Property.NULL);
-        downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO, Property.NULL);
-        downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, Property.NULL);
-        downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_DATA, Property.NULL);
+        // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, Property.NULL);
+        downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, Property.NULL);
+        downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, Property.NULL);
+        downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_DATA, Property.NULL);
+
     }
 
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
@@ -2242,16 +2263,20 @@ public class YoutubeDashV2 extends PluginForHost {
         String idsString = downloadLink.getStringProperty(YoutubeHelper.YT_VARIANTS, "[]");
         ArrayList<String> ids = JSonStorage.restoreFromString(idsString, new TypeRef<ArrayList<String>>() {
         });
+
         List<LinkVariant> ret2 = new ArrayList<LinkVariant>();
-        for (String id : ids) {
+        for (String id : ids)
+
+        {
             try {
-                ret2.add(getCachedHelper().getVariantById(id));
+                ret2.add(getCachedHelper(downloadLink).getVariantById(id));
             } catch (Exception e) {
                 getLogger().log(e);
             }
         }
         downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANTS, ret2);
         return ret2;
+
     }
 
     @Override
@@ -2267,17 +2292,17 @@ public class YoutubeDashV2 extends PluginForHost {
         new Thread("Collect Variants") {
             public void run() {
                 HashMap<String, YoutubeVariantInterface> map = new HashMap<String, YoutubeVariantInterface>();
-                final HashMap<String, ArrayList<YoutubeVariantInterface>> list = new HashMap<String, ArrayList<YoutubeVariantInterface>>();
+                final HashMap<String, ArrayList<YoutubeVariantInterface>> listMap = new HashMap<String, ArrayList<YoutubeVariantInterface>>();
                 for (CrawledLink cl : pv.getChildren()) {
                     List<LinkVariant> v = getVariantsByLink(cl.getDownloadLink());
                     if (v != null) {
                         for (LinkVariant lv : v) {
                             if (lv instanceof YoutubeVariantInterface) {
                                 if (map.put(((YoutubeVariantInterface) lv).getTypeId(), (YoutubeVariantInterface) lv) == null) {
-                                    ArrayList<YoutubeVariantInterface> l = list.get(((YoutubeVariantInterface) lv).getGroup().name());
+                                    ArrayList<YoutubeVariantInterface> l = listMap.get(((YoutubeVariantInterface) lv).getGroup().name());
                                     if (l == null) {
                                         l = new ArrayList<YoutubeVariantInterface>();
-                                        list.put(((YoutubeVariantInterface) lv).getGroup().name(), l);
+                                        listMap.put(((YoutubeVariantInterface) lv).getGroup().name(), l);
                                     }
                                     l.add((YoutubeVariantInterface) lv);
                                 }
@@ -2291,19 +2316,20 @@ public class YoutubeDashV2 extends PluginForHost {
                     @Override
                     protected void runInEDT() {
 
-                        add(setVariants, addVariants, pv, list, VariantGroup.VIDEO);
-                        add(setVariants, addVariants, pv, list, VariantGroup.AUDIO);
+                        add(setVariants, addVariants, pv, listMap, VariantGroup.VIDEO);
+                        add(setVariants, addVariants, pv, listMap, VariantGroup.AUDIO);
 
-                        add(setVariants, addVariants, pv, list, VariantGroup.IMAGE);
+                        add(setVariants, addVariants, pv, listMap, VariantGroup.IMAGE);
 
-                        add(setVariants, addVariants, pv, list, VariantGroup.VIDEO_3D);
-                        add(setVariants, addVariants, pv, list, VariantGroup.SUBTITLES);
+                        add(setVariants, addVariants, pv, listMap, VariantGroup.VIDEO_3D);
+                        add(setVariants, addVariants, pv, listMap, VariantGroup.SUBTITLES);
 
                     }
 
-                    private void add(JMenu setVariants, JMenu addVariants, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, final VariantGroup group) {
-                        ArrayList<YoutubeVariantInterface> list = map.get(group.name());
+                    private void add(JMenu setVariants, JMenu addVariants, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> listMap, final VariantGroup group) {
+                        ArrayList<YoutubeVariantInterface> list = listMap.get(group.name());
                         if (list == null || list.size() == 0) {
+                            addVariants.add(new JMenuItem(_GUI.T.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add_best(group.getLabel())));
                             return;
                         }
                         final Comparator<YoutubeVariantInterface> comp;
@@ -2317,18 +2343,18 @@ public class YoutubeDashV2 extends PluginForHost {
                         setVariants.setEnabled(true);
                         addVariants.setEnabled(true);
 
-                        addToAddMenu(addVariants, pv, map, group, list, comp);
-                        addToSetMenu(setVariants, pv, map, group, list, comp);
+                        addToAddMenu(addVariants, pv, listMap, group, list, comp);
+                        addToSetMenu(setVariants, pv, listMap, group, list, comp);
 
                     }
 
-                    protected void addToAddMenu(JMenu addSubmenu, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, final VariantGroup group, ArrayList<YoutubeVariantInterface> list, final Comparator<YoutubeVariantInterface> comp) {
+                    protected void addToAddMenu(JMenu addSubmenu, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> listMap, final VariantGroup group, ArrayList<YoutubeVariantInterface> list, final Comparator<YoutubeVariantInterface> comp) {
                         JMenu groupMenu = new JScrollMenu(group.getLabel());
-                        if (map.size() == 1) {
-                            groupMenu = addSubmenu;
-                        } else {
-                            addSubmenu.add(groupMenu);
-                        }
+                        // if (listMap.size() == 1) {
+                        // groupMenu = addSubmenu;
+                        // } else {
+                        addSubmenu.add(groupMenu);
+                        // }
                         groupMenu.add(new JMenuItem(new BasicAction() {
                             {
                                 setName(_GUI.T.YoutubeDashV2_add_best(group.getLabel()));
@@ -2336,34 +2362,62 @@ public class YoutubeDashV2 extends PluginForHost {
 
                             @Override
                             public void actionPerformed(ActionEvent e) {
-                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                                new Thread("Add Additional YoutubeLinks") {
+                                    public void run() {
 
-                                for (CrawledLink cl : pv.getChildren()) {
-                                    List<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
-                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
-                                        if (v instanceof YoutubeVariantInterface) {
-                                            variants.add((YoutubeVariantInterface) v);
-                                        }
-                                    }
-                                    Collections.sort(variants, comp);
-                                    for (YoutubeVariantInterface variant : variants) {
-                                        if (variant.getGroup() == group) {
-                                            CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, variant);
+                                        java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
 
-                                            if (newLink != null) {
-                                                checkableLinks.add(newLink);
-                                            } else {
-                                                Toolkit.getDefaultToolkit().beep();
+                                        for (CrawledLink cl : pv.getChildren()) {
+                                            List<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
+                                            for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
+                                                if (v instanceof YoutubeVariantInterface) {
+                                                    variants.add((YoutubeVariantInterface) v);
+                                                }
                                             }
-                                            break;
+                                            Collections.sort(variants, comp);
+                                            boolean found = false;
+                                            for (YoutubeVariantInterface variant : variants) {
+                                                if (variant.getGroup() == group) {
+                                                    found = true;
+                                                    CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, variant);
+
+                                                    if (newLink != null) {
+                                                        checkableLinks.add(newLink);
+                                                    } else {
+                                                        Toolkit.getDefaultToolkit().beep();
+                                                    }
+                                                    break;
+                                                }
+
+                                            }
+                                            if (!found) {
+                                                String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + group.name();
+
+                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin());
+                                                job.setText(dummyUrl);
+                                                job.setCustomSourceUrl(cl.getOriginLink().getURL());
+                                                job.setDeepAnalyse(false);
+                                                // job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+                                                //
+                                                // @Override
+                                                // public void modifyCrawledLink(CrawledLink link) {
+                                                // pi=
+                                                // link.setDesiredPackageInfo(desiredPackageInfo);
+                                                // }
+                                                // });
+                                                LinkCollector.getInstance().addCrawlerJob(job);
+                                                // YoutubeHelper.YT_ID
+                                                // System.out.println(1);
+                                            }
+
                                         }
 
-                                    }
+                                        LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                        linkChecker.check(checkableLinks);
 
-                                }
+                                    };
+                                }.start();
 
-                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                linkChecker.check(checkableLinks);
                             }
 
                         }));
@@ -2573,7 +2627,6 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void reset() {
-        info = null;
-        subtitles = null;
+        cachedHelper = null;
     }
 }

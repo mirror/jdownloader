@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 
 /**
@@ -65,6 +67,21 @@ public class Property implements Serializable {
      */
     public Boolean getBooleanProperty(final String key) {
         return getBooleanProperty(key, false);
+    }
+
+    public <T> T getObjectProperty(String key, TypeRef<T> typeRef) {
+        Object ret = getProperty(key);
+        if (ret == null) {
+            return null;
+        }
+
+        if (typeRef.getType().equals(ret.getClass())) {
+            return (T) ret;
+        }
+        ret = JSonStorage.convert(ret, typeRef);
+
+        setProperty(key, ret);
+        return (T) ret;
     }
 
     public Boolean getBooleanProperty(final String key, final boolean def) {
@@ -113,7 +130,7 @@ public class Property implements Serializable {
      * DO not use in plugins for old 09581 Stable or try/catch
      *
      * @since JD2
-     * */
+     */
     public long getLongProperty(final String key, final long def) {
         try {
             Object r = getProperty(key, def);

@@ -18,6 +18,9 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.components.youtube.MediaQualityInterface;
+import org.jdownloader.plugins.components.youtube.VideoContainer;
+import org.jdownloader.plugins.components.youtube.YoutubeVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -28,9 +31,6 @@ import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
 import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.components.YoutubeVariant;
-import jd.plugins.components.youtube.MediaQualityInterface;
-import jd.plugins.components.youtube.VideoContainer;
 import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
@@ -281,7 +281,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         addHeader(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
-        for (jd.plugins.components.YoutubeReplacer r : YoutubeHelper.REPLACER) {
+        for (org.jdownloader.plugins.components.youtube.YoutubeReplacer r : YoutubeHelper.REPLACER) {
 
             StringBuilder sb = new StringBuilder();
             for (String s : r.getTags()) {

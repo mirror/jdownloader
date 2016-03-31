@@ -1,4 +1,4 @@
-package jd.plugins.components.youtube;
+package org.jdownloader.plugins.components.youtube;
 
 public enum AudioCodec implements MediaQualityInterface {
     AAC(4, 10000),

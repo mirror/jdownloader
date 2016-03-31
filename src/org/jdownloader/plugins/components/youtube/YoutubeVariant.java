@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.youtube;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,8 +14,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.youtube.AudioBitrate;
-import jd.plugins.components.youtube.AudioCodec;
 
 public enum YoutubeVariant implements YoutubeVariantInterface {
     AAC_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
@@ -1124,7 +1122,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return AudioCodec.AAC_M4A.getRating() + AudioBitrate.KBIT_48.getRating();
         }
     },
-    MP3_1("MP3_64KBit", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "mp3", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, jd.plugins.components.YoutubeFlvToMp3Audio.getInstance()) {
+    MP3_1("MP3_64KBit", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "mp3", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, org.jdownloader.plugins.components.youtube.YoutubeFlvToMp3Audio.getInstance()) {
         @Override
         public String _getName() {
             return _GUI.T.YoutubeVariant_name_MP3_1();
@@ -1153,7 +1151,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return ret;
         }
     },
-    MP3_2("MP3_64KBit", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "mp3", YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, null, jd.plugins.components.YoutubeFlvToMp3Audio.getInstance()) {
+    MP3_2("MP3_64KBit", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "mp3", YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, null, org.jdownloader.plugins.components.youtube.YoutubeFlvToMp3Audio.getInstance()) {
         @Override
         public String _getName() {
             return _GUI.T.YoutubeVariant_name_MP3_2();

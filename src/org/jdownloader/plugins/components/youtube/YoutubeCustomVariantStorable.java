@@ -1,9 +1,8 @@
-package jd.plugins.components;
-
-import jd.plugins.components.YoutubeVariantInterface.VariantGroup;
+package org.jdownloader.plugins.components.youtube;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface.VariantGroup;
 
 public class YoutubeCustomVariantStorable implements Storable {
 
