@@ -31,10 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "http://(?:www\\.)?megabooru\\.com/post/view/\\d+" }, flags = { 0 })
-public class MegabooruCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "http://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" }, flags = { 0 })
+public class GelbooruCom extends PluginForHost {
 
-    public MegabooruCom(PluginWrapper wrapper) {
+    public GelbooruCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -54,7 +54,7 @@ public class MegabooruCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://megabooru.com/contact";
+        return "http://gelbooru.com/tos.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -67,16 +67,16 @@ public class MegabooruCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) Hentai</title>").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "id=(\\d+)$").getMatch(0);
+        String filename = br.getRegex("<title>Gelbooru\\- Image View \\- ([^<>\"]+) \\| \\d+</title>").getMatch(0);
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
             filename = url_filename;
         }
-        DLLINK = br.getRegex("name=\\'html_full-image\\'[\t\n\r ]*?value=\\'(?:\\&lt;img src=\\&quot;)?(http[^<>\"\\&]+)").getMatch(0);
+        DLLINK = br.getRegex("\"(http[^<>\"]+)\" id=\"image\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("name=\\'text_image-src\\'[\t\n\r ]*?value=\\'\\&lt;img src=\\&quot;(http[^<>\"\\&]+)").getMatch(0);
+            DLLINK = br.getRegex("\"(https?://img\\.gelbooru\\.com//images/\\d+/[^<>\"]+)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

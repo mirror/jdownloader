@@ -63,6 +63,7 @@ public class WdrDeMediathek extends PluginForHost {
     public static final String  FAST_LINKCHECK  = "FAST_LINKCHECK";
     private static final String Q_LOW           = "Q_LOW";
     private static final String Q_MEDIUM        = "Q_MEDIUM";
+    private static final String Q_HIGH          = "Q_HIGH";
     private static final String Q_BEST          = "Q_BEST";
     private static final String Q_SUBTITLES     = "Q_SUBTITLES";
 
@@ -380,8 +381,9 @@ public class WdrDeMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.wdrdemediathek.best", "Load best version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.wdrdemediathek.loadlow", "Load 512x288 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.wdrdemediathek.loadmedium", "Load 960x544 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.wdrdemediathek.loadlow", "Load 512x280 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.wdrdemediathek.loadmedium", "Load 640x360 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.wdrdemediathek.loadhigh", "Load 960x544 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.wdr.fastlinkcheck", "Schnellen Linkcheck aktivieren?\r\n<html><b>WICHTIG: Dadurch erscheinen die Links schneller im Linkgrabber, aber die Dateigröße wird erst beim Downloadstart (oder manuellem Linkcheck) angezeigt.</b></html>")).setDefaultValue(defaultFAST_LINKCHECK));
     }
 
