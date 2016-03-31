@@ -29,7 +29,7 @@ public class LinkQueryStorable extends DownloadLinkQuery implements Storable {
         FULL.setUrl(true);
         FULL.setPassword(true);
         FULL.setAddedDate(true);
-        FULL.setFinished(true);
+        FULL.setFinishedDate(true);
     }
 
     public LinkQueryStorable() {
