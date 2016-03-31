@@ -731,6 +731,10 @@ public class NitroFlareCom extends antiDDoSForHost {
             dl.startDownload();
             return;
         }
+        if (br.containsHTML(">This download exceeds the daily download limit\\. You can purchase")) {
+            // not enough traffic to download file, doesn't mean 0 traffic left.
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You do not have enough traffic left to start this download.");
+        }
         // not directlink
         randomHash(downloadLink);
         ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
