@@ -6141,4 +6141,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Router IP" })
     String lit_router_ip();
 
+    @Default(lngs = { "en" }, values = { "Account is OK." })
+
+    String lit_account_is_ok();
+
+    @Default(lngs = { "en" }, values = { "Best %s1" })
+    String YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add_best(String label);
+
 }

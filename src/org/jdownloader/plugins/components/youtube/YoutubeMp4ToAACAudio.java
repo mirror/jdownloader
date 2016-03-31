@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.youtube;
 
 import java.io.File;
 import java.util.List;
@@ -22,16 +22,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
-    private static final YoutubeMp4ToM4aAudio INSTANCE = new YoutubeMp4ToM4aAudio();
+public class YoutubeMp4ToAACAudio implements YoutubeConverter {
+    private static final YoutubeMp4ToAACAudio INSTANCE = new YoutubeMp4ToAACAudio();
 
     /**
      * get the only existing instance of YoutubeMp4ToM4aAudio. This is a singleton
      *
      * @return
      */
-    public static YoutubeMp4ToM4aAudio getInstance() {
-        return YoutubeMp4ToM4aAudio.INSTANCE;
+    public static YoutubeMp4ToAACAudio getInstance() {
+        return YoutubeMp4ToAACAudio.INSTANCE;
     }
 
     private LogSource logger;
@@ -40,8 +40,8 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
      * Create a new instance of YoutubeMp4ToM4aAudio. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
-    private YoutubeMp4ToM4aAudio() {
-        logger = LogController.getInstance().getLogger(YoutubeMp4ToM4aAudio.class.getName());
+    private YoutubeMp4ToAACAudio() {
+        logger = LogController.getInstance().getLogger(YoutubeMp4ToAACAudio.class.getName());
     }
 
     @Override
@@ -51,7 +51,6 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
             downloadLink.addPluginProgress(set);
             File file = new File(downloadLink.getFileOutput());
 
-            // String[] commands = new String[] { "-i", "%input", "-acodec", "mp3", "-ac", "2", "-f", "mp3", "-ab", "128", "%output" };
             FFmpeg ffmpeg = new FFmpeg();
             synchronized (DownloadWatchDog.getInstance()) {
 
@@ -87,11 +86,12 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
             }
 
             File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
-            if (!ffmpeg.demuxM4a(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
+            if (!ffmpeg.demuxAAC(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
             }
 
             file.delete();
+
             downloadLink.setVerifiedFileSize(finalFile.length());
             downloadLink.setDownloadCurrent(finalFile.length());
             try {

@@ -1,4 +1,8 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.youtube;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.decrypter.YoutubeHelper;
@@ -9,22 +13,24 @@ public class YoutubeClipData {
      *
      */
 
-    public String      user;
-    public String      channel;
-    public long        date;
-    public String      error;
-    public boolean     ageCheck;
-    public String      title;
-    public String      videoID;
-    public int         playlistEntryNumber;
-    public int         length;
-    public String      category;
-    public int         duration;
-    public String      channelID;
-    public long        dateUpdated;
-    public String      userGooglePlusID;
-    public YoutubeITAG bestVideoItag;
-    public String      description;
+    public String                                    user;
+    public String                                    channel;
+    public long                                      date;
+    public String                                    error;
+    public boolean                                   ageCheck;
+    public String                                    title;
+    public String                                    videoID;
+    public int                                       playlistEntryNumber;
+    public int                                       length;
+    public String                                    category;
+    public int                                       duration;
+    public String                                    channelID;
+    public long                                      dateUpdated;
+    public String                                    userGooglePlusID;
+    public YoutubeITAG                               bestVideoItag;
+    public String                                    description;
+    public Map<YoutubeITAG, List<YoutubeStreamData>> streams;
+    public ArrayList<YoutubeSubtitleInfo>            subtitles;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);
@@ -55,6 +61,8 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, channelID);
         thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
         thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
+
+        thislink.getTempProperties().setProperty(YoutubeHelper.YT_FULL_STREAM_INFOS, this);
     }
 
 }

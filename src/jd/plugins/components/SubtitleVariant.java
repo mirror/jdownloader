@@ -11,6 +11,8 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.youtube.YoutubeITAG;
+import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
 
 import jd.http.QueryInfo;
 import jd.http.Request;

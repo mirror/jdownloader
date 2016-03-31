@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.youtube;
 
 public class YoutubeStreamData {
 
