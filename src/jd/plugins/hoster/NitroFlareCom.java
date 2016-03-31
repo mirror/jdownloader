@@ -643,12 +643,19 @@ public class NitroFlareCom extends antiDDoSForHost {
                         ai.setStatus("Free Account");
                     }
                 }
+                // extra traffic in webmode isn't added to daily traffic, so we need to do it manually. (api mode is has been added to
+                // traffic left/max)
+                final String extraTraffic = br.getRegex("<label>Your Extra Bandwidth</label><strong>(.*?)</strong>").getMatch(0);
                 // do we have traffic?
                 final String[] traffic = br.getRegex("<label>[^>]*Daily Limit</label><strong>(\\d+(?:\\.\\d+)?(?:\\s*[KMGT]{0,1}B)?) / (\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B)</strong>").getRow(0);
                 if (traffic != null) {
+                    final long extratraffic = !inValidate(extraTraffic) ? SizeFormatter.getSize(extraTraffic) : 0;
+                    final long trafficmax = SizeFormatter.getSize(traffic[1]);
+                    // they show traffic used, not traffic left. we need to convert it.
+                    final long trafficleft = trafficmax - SizeFormatter.getSize(traffic[0]);
                     // first value is traffic used, not remaining
-                    ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
-                    ai.setTrafficMax(traffic[1]);
+                    ai.setTrafficLeft(trafficleft + extratraffic);
+                    ai.setTrafficMax(trafficmax + extratraffic);
                 }
                 // expire time
                 final String expire = br.getRegex("<label>Time Left</label><strong>(.*?)</strong>").getMatch(0);
