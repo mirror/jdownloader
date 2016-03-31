@@ -245,7 +245,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                     /* If we got 3 (basic) qualities, get all */
                     single_quality_string_correct = qualities[counter];
                     resolution = getVideoresolutionBasedOnIdPosition(counter);
-                    // resolution = "960x544";
                     quality_name = getQualitynameBasedOnIdPosition(counter);
                 } else if (counter == 0) {
                     /* If we got 4 qualities, pick the best 2 only */
