@@ -51,8 +51,9 @@ public class TididoCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String name_playlist_url = null;
+        String playlist_mood = null;
         String name_playlist = null;
+        String name_album = null;
 
         String fpName = null;
 
@@ -72,7 +73,7 @@ public class TididoCom extends PluginForDecrypt {
             artist_id = new Regex(parameter, "a([a-z0-9]+)").getMatch(0);
         } else if (parameter.matches(TYPE_PLAYLIST)) {
             playlist_areaname = new Regex(parameter, TYPE_PLAYLIST).getMatch(0);
-            name_playlist_url = new Regex(parameter, TYPE_PLAYLIST).getMatch(1);
+            playlist_mood = new Regex(parameter, TYPE_PLAYLIST).getMatch(1);
             playlist_id = new Regex(parameter, TYPE_PLAYLIST).getMatch(2);
         } else {
             /* Unsupported linktype */
@@ -85,7 +86,7 @@ public class TididoCom extends PluginForDecrypt {
         ArrayList<Object> ressourcelist = null;
         ArrayList<Object> song_array = null;
         if (parameter.matches(TYPE_PLAYLIST)) {
-            this.br.getPage("http://tidido.com/api/music/mood/" + name_playlist_url + "?areaname=" + playlist_areaname + "&playlists=true");
+            this.br.getPage("http://tidido.com/api/music/mood/" + playlist_mood + "?areaname=" + playlist_areaname + "&playlists=true");
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "playlists_data/playlists");
             /* Find song_ids of our playlist ... */
@@ -101,7 +102,6 @@ public class TididoCom extends PluginForDecrypt {
                     break;
                 }
             }
-            fpName = name_playlist;
             /* Collect song_ids to access all via URL */
             String song_ids_url = "/api/music/song?sids=";
             ressourcelist = (ArrayList) entries2.get("sids");
@@ -111,11 +111,14 @@ public class TididoCom extends PluginForDecrypt {
             this.br.getPage(song_ids_url);
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             song_array = (ArrayList) entries.get("songs");
+            /* Set packagename */
+            fpName = playlist_mood + " - " + name_playlist;
         } else {
             if (album_id != null) {
                 this.br.getPage("http://tidido.com/api/music/album/" + album_id);
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 song_array = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "songs/songs");
+                name_album = (String) DummyScriptEnginePlugin.walkJson(entries, "songs/albums/{0}/name");
             } else {
                 this.br.getPage("http://tidido.com/api/gene/artist/" + artist_id + "?section=topSongs&limit=1000");
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -133,7 +136,11 @@ public class TididoCom extends PluginForDecrypt {
             }
             if (fpName == null) {
                 /* TODO: Maybe improve packagename in the future */
-                fpName = artistname;
+                if (name_album != null) {
+                    fpName = artistname + " - " + name_album;
+                } else {
+                    fpName = artistname;
+                }
             }
             artist_info.put(artistid, artistname);
         }
@@ -145,7 +152,12 @@ public class TididoCom extends PluginForDecrypt {
             final String songname = (String) entries2.get("name");
             final String directlink = (String) entries2.get("url");
             final long bitrate = DummyScriptEnginePlugin.toLong(entries2.get("bitrate"), 0);
-            if (songid == null || songname == null || bitrate == 0) {
+            String albumID_this_song = (String) entries2.get("albumId");
+            if (albumID_this_song == null) {
+                /* Small fallback attempt */
+                albumID_this_song = album_id;
+            }
+            if (albumID_this_song == null || songid == null || songname == null || bitrate == 0) {
                 continue;
             }
             String filename_temp = null;
@@ -161,8 +173,8 @@ public class TididoCom extends PluginForDecrypt {
             filename_temp = filename + "_" + bitrate + ".mp3";
             filename += ".mp3";
 
-            final String content_url = "http://tidido.com/a" + artistid + "/al" + album_id + "/t" + songid;
-            final String content_url_decrypted = "http://tididodecrypted.com/a" + artistid + "/al" + album_id + "/t" + songid;
+            final String content_url = "http://tidido.com/a" + artistid + "/al" + albumID_this_song + "/t" + songid;
+            final String content_url_decrypted = "http://tididodecrypted.com/a" + artistid + "/al" + albumID_this_song + "/t" + songid;
             final DownloadLink dl = createDownloadlink(content_url_decrypted);
             dl.setContentUrl(content_url);
             dl.setAvailable(true);
@@ -170,7 +182,7 @@ public class TididoCom extends PluginForDecrypt {
             dl.setProperty("decryptedfilename", filename);
             dl.setProperty("directlink", directlink);
             if (target_song_id != null && songid.equals(target_song_id)) {
-                /* We were looking for one specified track only - remove previously added data! */
+                /* We were looking for one specified track only - remove previously added data and step out of the loop. */
                 decryptedLinks.clear();
                 decryptedLinks.add(dl);
                 break;

@@ -189,7 +189,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     param_2 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(3);
                 }
                 decrypterurl = "decrypted://tivi.de/content/" + param_1 + param_2 + "&quality=%s";
-                br.getPage("/tiviVideos/beitrag/" + param_1 + "/" + param_2 + "?view=flashXml");
+                br.getPage("http://www.tivi.de/tiviVideos/beitrag/" + param_1 + "/" + param_2 + "?view=flashXml");
             } else {
                 /*
                  * When browsing the ZDFMediathek, the url will get longer and longer and can contain multiple video-IDs. However, the
