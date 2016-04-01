@@ -24,6 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,22 +50,23 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "https?://(?:www\\.)?flashx\\.(?:tv|pw)/(?:(?:vid)?embed\\-|dl\\?)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flash-x.tv" }, urls = { "https?://(?:www\\.)?(?:flashx\\.(?:tv|pw)|flash-x\\.tv)/(?:(?:vid)?embed\\-|dl\\?)?[a-z0-9]{12}" }, flags = { 2 })
 public class FlashxTv extends antiDDoSForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "flashx.tv", "flash-x.tv", "flashx.pw" };
+    }
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://www.flashx.tv";
+    private static final String            COOKIE_HOST                  = "http://www.flash-x.tv";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(flashx\\.(?:tv|pw))";
+    private static final String            DOMAINS                      = "(flashx\\.(?:tv|pw)|flash-x\\.tv)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode|>No data will be lost";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -107,12 +112,20 @@ public class FlashxTv extends antiDDoSForHost {
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         String lnk = link.getDownloadURL();
         if (!SUPPORTSHTTPS) {
-            lnk = "http://www.flashx.tv/" + fid;
+            lnk = "http://www.flash-x.tv/" + fid;
         } else if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
-            lnk = "https://www.flashx.tv/" + fid;
+            lnk = "https://www.flash-x.tv/" + fid;
         }
         lnk = lnk.replaceAll("/((vid)?embed\\-)", "/");
         link.setUrlDownload(lnk);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "flash-x.tv".equals(host) || "flashx.tv".equals(host) || "flashx.pw".equals(host)) {
+            return "flash-x.tv";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -259,6 +272,11 @@ public class FlashxTv extends antiDDoSForHost {
                         // redirection can happen here its not a download link!
                         getPage(br.getRedirectLocation());
                     }
+                    // could be other crap here
+                    final String playthis = br.getRegex("/playthis-" + fuid + "\\.html").getMatch(-1);
+                    if (playthis != null) {
+                        getPage(playthis);
+                    }
                     stream_dllink = getDllink();
 
                     if (stream_dllink == null) {
@@ -311,15 +329,15 @@ public class FlashxTv extends antiDDoSForHost {
                     /* Only try to get the file link if there is a chance that it is available --> Usually only via account. */
                     if (!correctedBR.contains("Please <a href=\"/?op=registration\">register</a>")) {
                         try {
-                            getPage("http://www.flashx.tv/dl?op=get_vid_versions&file_code=" + fuid);
+                            getPage("/dl?op=get_vid_versions&file_code=" + fuid);
                             final Regex params = br.getRegex("download_video\\(\\'[a-z0-9]{12}\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
                             final String mode = params.getMatch(0);
                             final String hash = params.getMatch(1);
                             if (mode == null || hash == null) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
-                            getPage("http://www.flashx.tv/dl?op=download_orig&id=" + fuid + "&mode=" + mode + "&hash=" + hash);
-                            file_dllink = new Regex(correctedBR, "\"(https?://[A-Za-z0-9\\-\\.]+\\.flashx\\.tv/[a-z0-9]{20,}/[^<>\"/]*?)\"").getMatch(0);
+                            getPage("/dl?op=download_orig&id=" + fuid + "&mode=" + mode + "&hash=" + hash);
+                            file_dllink = new Regex(correctedBR, "\"(https?://[A-Za-z0-9\\-\\.]+\\." + DOMAINS + "/[a-z0-9]{20,}/[^<>\"/]*?)\"").getMatch(0);
                         } catch (final Throwable e) {
                             logger.warning("Failed to find file_dllink");
                         }
