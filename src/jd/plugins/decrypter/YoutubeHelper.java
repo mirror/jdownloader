@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,6 +49,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
@@ -364,7 +366,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("date") {
+        REPLACER.add(new YoutubeReplacer("date", "date_time") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_date();
@@ -385,45 +387,48 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     }
                 }
                 long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
+                if (timestamp > 0) {
+                    Log.info(" Youtube Replace Date " + mod + " - " + timestamp + " > " + formatter.format(timestamp));
+                }
                 return timestamp > 0 ? formatter.format(timestamp) : "";
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("date_time") {
-            @Override
-            public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_date_accurate();
-            }
-
-            public DataSource getDataSource() {
-                return DataSource.API_VIDEOS;
-            }
-
-            @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                // date
-
-                DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
-
-                if (StringUtils.isNotEmpty(mod)) {
-                    try {
-                        formatter = new SimpleDateFormat(mod);
-                    } catch (Throwable e) {
-                        LOGGER.log(e);
-
-                    }
-                }
-                long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
-                String ret = timestamp > 0 ? formatter.format(timestamp) : "";
-
-                return ret;
-            }
-
-        });
+        // REPLACER.add(new YoutubeReplacer("date_time") {
+        // @Override
+        // public String getDescription() {
+        // return _GUI.T.YoutubeHelper_getDescription_date_accurate();
+        // }
+        //
+        // public DataSource getDataSource() {
+        // return DataSource.API_VIDEOS;
+        // }
+        //
+        // @Override
+        // protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+        // // date
+        //
+        // DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
+        //
+        // if (StringUtils.isNotEmpty(mod)) {
+        // try {
+        // formatter = new SimpleDateFormat(mod);
+        // } catch (Throwable e) {
+        // LOGGER.log(e);
+        //
+        // }
+        // }
+        // long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
+        // String ret = timestamp > 0 ? formatter.format(timestamp) : "";
+        //
+        // return ret;
+        // }
+        //
+        // });
         REPLACER.add(new YoutubeReplacer("date_update") {
             @Override
             public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_date_accurate();
+                return _GUI.T.YoutubeHelper_getDescription_date();
             }
 
             public DataSource getDataSource() {
@@ -1062,16 +1067,21 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 formatter = new SimpleDateFormat("MMM dd, yyyy", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<strong[^>]*>Published on ([A-Za-z]{3} \\d{1,2}, \\d{4})</strong>").getMatch(0);
+                logger.info("Formatter " + "MMM dd, yyyy " + locale + " on " + date);
             }
             // yyyy-MM-dd (20150508)
             if (date == null) {
                 formatter = new SimpleDateFormat("yyyy-MM-dd", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d{4}-\\d{2}-\\d{2})\">").getMatch(0);
+
+                logger.info("Formatter " + "yyyy-MM-dd " + locale + " on " + date);
             }
             if (date != null) {
                 try {
                     vid.date = formatter.parse(date).getTime();
+
+                    logger.info("Date result " + vid.date + " " + new Date(vid.date));
                 } catch (final Exception e) {
                     final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
                     log.log(e);
@@ -1236,6 +1246,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         getAbsolute(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999", null, br);
 
+        String[][] keyWordsGrid = br.getRegex("<meta\\s+property=\"([^\"]*)\"\\s+content=\"yt3d\\:([^\"]+)=([^\"]+)\">").getMatches();
+        vid.keywords3D = new HashMap<String, String>();
+        if (keyWordsGrid != null) {
+            for (String[] keyValue : keyWordsGrid) {
+                vid.keywords3D.put(keyValue[1], keyValue[2]);
+            }
+        }
         handleRentalVideos();
 
         html5PlayerJs = this.br.getMatch("\"js\"\\s*:\\s*\"(.+?)\"");

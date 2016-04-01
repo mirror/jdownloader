@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.components.youtube;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ public class YoutubeClipData {
     public String                                    description;
     public Map<YoutubeITAG, List<YoutubeStreamData>> streams;
     public ArrayList<YoutubeSubtitleInfo>            subtitles;
+    public HashMap<String, String>                   keywords3D;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);

@@ -30,6 +30,7 @@ import jd.parser.Regex;
 public class ItagHelper {
     public static void main(String[] args) throws DialogClosedException, DialogCanceledException {
         Application.setApplication(".jd_home");
+
         List<YoutubeITAG> dashVideos = new ArrayList<YoutubeITAG>();
         List<YoutubeITAG> dashAudios = new ArrayList<YoutubeITAG>();
         List<YoutubeITAG> nonDash = new ArrayList<YoutubeITAG>();
@@ -51,6 +52,7 @@ public class ItagHelper {
                 nonDash.add(tag);
             }
         }
+
         StringBuilder sb = new StringBuilder();
         HashSet<String> dupes = new HashSet<String>();
         audioLoop: for (YoutubeITAG dashAudio : dashAudios) {
