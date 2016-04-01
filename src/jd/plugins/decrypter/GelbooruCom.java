@@ -27,6 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "https?://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9]+" }, flags = { 0 })
 public class GelbooruCom extends PluginForDecrypt {
@@ -85,6 +86,11 @@ public class GelbooruCom extends PluginForDecrypt {
         } while (entries_per_page_current >= max_entries_per_page);
 
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Danbooru;
     }
 
 }
