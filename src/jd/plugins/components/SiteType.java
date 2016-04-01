@@ -17,7 +17,8 @@ public class SiteType {
         ArlesImageWebPageCreator,
 
         /**
-         * image board. <a href="https://github.com/r888888888/danbooru">danbooru github project</a>
+         * Open source image board: <a href="https://github.com/r888888888/danbooru">danbooru github project</a><br />
+         * example: <a href="http://danbooru.donmai.us/">danbooru.donmai.us</a>
          */
         Danbooru,
 

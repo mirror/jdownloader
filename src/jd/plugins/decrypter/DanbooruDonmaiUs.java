@@ -29,10 +29,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "https?://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9]+" }, flags = { 0 })
-public class XbooruCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "http://(?:www\\.)?danbooru\\.donmai\\.us/posts\\?tags=[^<>\"\\&=\\?/]+" }, flags = { 0 })
+public class DanbooruDonmaiUs extends PluginForDecrypt {
 
-    public XbooruCom(PluginWrapper wrapper) {
+    public DanbooruDonmaiUs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,14 +44,14 @@ public class XbooruCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = new Regex(parameter, "tags=([A-Za-z0-9]+)").getMatch(0);
+        final String fpName = new Regex(parameter, "tags=(.+)$").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
 
         final String url_part = parameter;
         int page_counter = 1;
         int offset = 0;
-        final int max_entries_per_page = 42;
+        final int min_entries_per_page = 15;
         int entries_per_page_current = 0;
         do {
             if (this.isAbort()) {
@@ -59,28 +59,28 @@ public class XbooruCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (page_counter > 1) {
-                this.br.getPage(url_part + "&pid=" + offset);
+                this.br.getPage(url_part + "&page=" + page_counter);
             }
             logger.info("Decrypting: " + this.br.getURL());
-            final String[] linkids = br.getRegex("id=\"s(\\d+)\"").getColumn(0);
+            final String[] linkids = br.getRegex("id=\"post_(\\d+)\"").getColumn(0);
             if (linkids == null || linkids.length == 0) {
                 logger.warning("Decrypter might be broken for link: " + parameter);
                 break;
             }
             entries_per_page_current = linkids.length;
             for (final String linkid : linkids) {
-                final String link = "http://" + this.getHost() + "/index.php?page=post&s=view&id=" + linkid;
+                final String link = "http://" + this.getHost() + "/posts/" + linkid;
                 final DownloadLink dl = createDownloadlink(link);
                 dl.setLinkID(linkid);
                 dl.setAvailable(true);
-                dl.setName(linkid + ".jpeg");
+                dl.setName(linkid + ".jpg");
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);
                 offset++;
             }
             page_counter++;
-        } while (entries_per_page_current >= max_entries_per_page);
+        } while (entries_per_page_current >= min_entries_per_page);
 
         return decryptedLinks;
     }

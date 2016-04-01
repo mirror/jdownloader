@@ -32,10 +32,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "http://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" }, flags = { 0 })
-public class GelbooruCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts/\\d+" }, flags = { 0 })
+public class DanbooruDonmaiUs extends PluginForHost {
 
-    public GelbooruCom(PluginWrapper wrapper) {
+    public DanbooruDonmaiUs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -55,7 +55,7 @@ public class GelbooruCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://gelbooru.com/tos.php";
+        return "http://danbooru.donmai.us/static/terms_of_service";
     }
 
     @SuppressWarnings("deprecation")
@@ -68,16 +68,16 @@ public class GelbooruCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "id=(\\d+)$").getMatch(0);
-        String filename = br.getRegex("<title>Gelbooru\\- Image View \\- ([^<>\"]+) \\| \\d+</title>").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+)\\- Danbooru[\t\n\r ]*?</title>").getMatch(0);
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
             filename = url_filename;
         }
-        DLLINK = br.getRegex("\"(http[^<>\"]+)\" id=\"image\"").getMatch(0);
+        DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]+)\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://img\\.gelbooru\\.com//images/\\d+/[^<>\"]+)\"").getMatch(0);
+            DLLINK = br.getRegex("\"(https?://danbooru\\.donmai\\.us/data/[^<>\"]+)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

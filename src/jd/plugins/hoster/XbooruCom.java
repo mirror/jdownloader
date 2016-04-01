@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "http://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" }, flags = { 0 })
 public class XbooruCom extends PluginForHost {
@@ -156,6 +157,11 @@ public class XbooruCom extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Danbooru;
     }
 
     @Override
