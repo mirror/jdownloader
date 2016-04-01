@@ -380,7 +380,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
                 if (StringUtils.isNotEmpty(mod)) {
                     try {
-                        formatter = new SimpleDateFormat(mod);
+                        formatter = new SimpleDateFormat(mod, TranslationFactory.getDesiredLocale());
                     } catch (Throwable e) {
                         LOGGER.log(e);
 
