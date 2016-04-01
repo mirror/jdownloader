@@ -4330,9 +4330,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Publishing Date(Year,month,day). *date* or e.g. *date[yyyy/MM/dd]*" })
     String YoutubeHelper_getDescription_date();
 
-    @Default(lngs = { "en" }, values = { "Accurate publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[yyyy/MM/dd hh:mm]*" })
-    String YoutubeHelper_getDescription_date_accurate();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = {
     // "Accurate updated publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[yyyy/MM/dd hh:mm]*" })

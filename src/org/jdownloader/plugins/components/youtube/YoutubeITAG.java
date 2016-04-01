@@ -237,6 +237,7 @@ public enum YoutubeITAG {
         if (query == null) {
             query = new QueryInfo();
         }
+
         switch (itag) {
         case 132:
             // https://www.youtube.com/watch?v=KF47Za1lfjM
