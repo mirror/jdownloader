@@ -40,9 +40,11 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.PublicSuffixList;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -292,10 +294,10 @@ public class FavIcons {
      * Creates a dummyHosterIcon
      */
     private static BufferedImage createDefaultFavIcon(String host) {
-        int w = 16;
-        int h = 16;
+        final int w = 16;
+        final int h = 16;
         int size = 9;
-        Color fg = Color.BLACK;
+        final Color fg = Color.BLACK;
         Color bg = Color.WHITE;
         LOGGER.info("Create Favicon: " + host);
         try {
@@ -303,56 +305,63 @@ public class FavIcons {
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-
-        // GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        // GraphicsDevice gd = ge.getDefaultScreenDevice();
-
-        // GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        // final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
         final BufferedImage image = new BufferedImage(w, h, Transparency.TRANSLUCENT);
         final Graphics2D g = image.createGraphics();
-        String tld = Files.getExtension(host);
-        if (tld != null) {
-            tld = tld.toLowerCase(Locale.ENGLISH);
-        }
-        String dummy = host.toUpperCase();
-
-        // remove tld
         try {
-            dummy = dummy.substring(0, dummy.lastIndexOf("."));
-        } catch (Throwable t) {
-
+            try {
+                g.setFont(new Font("Arial", Font.BOLD, size));
+                g.getFontMetrics(); // check for missing fonts/headless java
+                String tld = Files.getExtension(host);
+                if (tld != null) {
+                    tld = tld.toLowerCase(Locale.ENGLISH);
+                }
+                String dummy = host.toUpperCase();
+                // remove tld
+                try {
+                    dummy = dummy.substring(0, dummy.lastIndexOf("."));
+                } catch (Throwable t) {
+                }
+                // clean up
+                dummy = dummy.replaceAll("[\\d\\WEIOAJU]", "");
+                try {
+                    dummy = "" + dummy.charAt(0) + dummy.charAt(dummy.length() / 2);
+                } catch (Throwable t) {
+                }
+                if (dummy.length() <= 0 || dummy.length() > 2) {
+                    dummy = host.substring(0, Math.min(host.length(), 2));
+                }
+                // paint
+                // Graphics2D g = image.createGraphics();
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g.setFont(new Font("Arial", Font.BOLD, size));
+                RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
+                g.setColor(bg);
+                g.fill(roundedRectangle);
+                g.setColor(bg.darker());
+                g.draw(roundedRectangle);
+                g.setColor(fg);
+                Rectangle2D bounds = g.getFontMetrics().getStringBounds(dummy, g);
+                g.drawString(dummy, (int) (w - bounds.getWidth()) / 2, (int) (-bounds.getY() + (h - bounds.getHeight()) / 2) - (tld == null ? 0 : 1));
+                if (tld != null) {
+                    g.setFont(new Font("Arial", 0, 6));
+                    bounds = g.getFontMetrics().getStringBounds("." + tld, g);
+                    g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (h) - 2);
+                }
+                return image;
+            } catch (NullPointerException e) {
+                // java.lang.NullPointerException
+                // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
+                // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
+                // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
+                if (Application.isHeadless()) {
+                    return IconIO.toBufferedImage(new AbstractIcon(IconKey.ICON_ERROR, 16));
+                } else {
+                    throw e;
+                }
+            }
+        } finally {
+            g.dispose();
         }
-
-        // clean up
-        dummy = dummy.replaceAll("[\\d\\WEIOAJU]", "");
-
-        try {
-            dummy = "" + dummy.charAt(0) + dummy.charAt(dummy.length() / 2);
-        } catch (Throwable t) {
-        }
-        if (dummy.length() <= 0 || dummy.length() > 2) {
-            dummy = host.substring(0, Math.min(host.length(), 2));
-        }
-        // paint
-        // Graphics2D g = image.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setFont(new Font("Arial", Font.BOLD, size));
-        RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
-        g.setColor(bg);
-        g.fill(roundedRectangle);
-        g.setColor(bg.darker());
-        g.draw(roundedRectangle);
-        g.setColor(fg);
-        Rectangle2D bounds = g.getFontMetrics().getStringBounds(dummy, g);
-        g.drawString(dummy, (int) (w - bounds.getWidth()) / 2, (int) (-bounds.getY() + (h - bounds.getHeight()) / 2) - (tld == null ? 0 : 1));
-        if (tld != null) {
-            g.setFont(new Font("Arial", 0, 6));
-            bounds = g.getFontMetrics().getStringBounds("." + tld, g);
-            g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (h) - 2);
-        }
-        g.dispose();
-        return image;
     }
 
     private static BufferedImage download_FavIconIco(String host, LogSource logger) throws IOException {

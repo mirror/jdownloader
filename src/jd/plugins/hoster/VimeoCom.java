@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
 
     private static final String MAINPAGE           = "http://vimeo.com";
@@ -360,7 +360,7 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public final String getXsrft(Browser br) throws PluginException {
+    public static final String getXsrft(Browser br) throws PluginException {
         String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-z0-9\\.]{32,})\\1").getMatch(1);
         if (xsrft == null) {
             xsrft = br.getRegex("\"xsrft\"\\s*:\\s*\"([a-z0-9\\.]{32,})\"").getMatch(0);

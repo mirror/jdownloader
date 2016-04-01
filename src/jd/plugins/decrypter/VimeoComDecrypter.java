@@ -24,12 +24,14 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -42,10 +44,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos)|https?://player\\.vimeo.com/(video|external)/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+)|https?://player\\.vimeo.com/(video|external)/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?" }, flags = { 0 })
 public class VimeoComDecrypter extends PluginForDecrypt {
 
     private static final String type_player_private_external = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
@@ -158,7 +161,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String date = null;
             String channelName = null;
             String title = null;
-            final String cleanVimeoURL = "http://vimeo.com/" + ID;
+            final String cleanVimeoURL;
+            if (ID != null && !StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                cleanVimeoURL = "http://vimeo.com/" + ID;
+            } else {
+                cleanVimeoURL = parameter;
+            }
             /*
              * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only be
              * accessed via their 'player'-link with a specified Referer - if the referer is not given in such a case the site will say that
@@ -182,8 +190,30 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             } else {
                 // maybe required
                 // br.setCookie(this.getHost(), "player", "");
-
                 parameter = cleanVimeoURL;
+                if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                    final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
+                    if (accs != null) {
+                        // not optimized
+                        final Account account = accs.get(0);
+                        br.getPage("https://www.vimeo.com/log_in");
+                        final String xsrft = getXsrft(br);
+                        // static post are bad idea, always use form.
+                        final Form login = br.getFormbyProperty("id", "login_form");
+                        if (login == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        login.put("token", Encoding.urlEncode(xsrft));
+                        login.put("email", Encoding.urlEncode(account.getUser()));
+                        login.put("password", Encoding.urlEncode(account.getPass()));
+                        br.submitForm(login);
+                        if (br.getCookie("http://vimeo.com", "vimeo") == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    } else {
+                        return decryptedLinks;
+                    }
+                }
                 try {
                     br.getPage(parameter);
                 } catch (final BrowserException e) {
