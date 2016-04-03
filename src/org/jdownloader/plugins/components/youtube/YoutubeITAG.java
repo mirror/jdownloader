@@ -324,16 +324,16 @@ public enum YoutubeITAG {
         return null;
     }
 
-    private String                  codecAudio;
-    private String                  codecVideo;
-    private final int               itag;
-    private String                  qualityAudio;
+    private String codecAudio;
+    private String codecVideo;
+    private final int itag;
+    private String qualityAudio;
 
-    private String                  qualityVideo;
+    private String qualityVideo;
 
     private MediaQualityInterface[] qualityTags;
 
-    private double                  qualityRating = -1;
+    private double qualityRating = -1;
 
     private YoutubeITAG(final int itag, String codecTagVideo, String qualityTagVideo, String codecTagAudio, String qualityTagAudio, MediaTagsVarious various) {
         this(itag, codecTagVideo, qualityTagVideo, codecTagAudio, qualityTagAudio);
