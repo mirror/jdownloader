@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "https?://(?:www\\.)?megabooru\\.com/post/list/female/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "https?://(?:www\\.)?megabooru\\.com/post/list/[^/]+/\\d+" }, flags = { 0 })
 public class MegabooruCom extends PluginForDecrypt {
 
     public MegabooruCom(PluginWrapper wrapper) {
