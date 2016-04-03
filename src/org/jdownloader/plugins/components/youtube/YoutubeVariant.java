@@ -2,6 +2,7 @@ package org.jdownloader.plugins.components.youtube;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -2241,19 +2242,877 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         public String getQualityExtension() {
             return _GUI.T.YoutubeVariant_nametag_generic_video("72p");
         }
+    },
+    FLV_H264_360P_30FPS_AAC_128KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.FLV_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "Mp4");
+        }
+    },
+    FLV_H264_360P_3D_30FPS_AAC_128KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.FLV_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "Mp4");
+        }
+    },
+    FLV_H264_480P_30FPS_AAC_128KBIT("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+    },
+    FLV_H264_480P_3D_30FPS_AAC_128KBIT("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p 3D", "Mp4");
+        }
+    },
+    FLV_H263_270P_30FPS_MP3_64KBIT("270P_Flv", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("270p", "Flv");
+        }
+    },
+    FLV_H263_270P_3D_30FPS_MP3_64KBIT("270P_Flv", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("270p 3D", "Flv");
+        }
+    },
+    FLV_H263_240P_30FPS_MP3_64KBIT("240P_Flv", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p", "Flv");
+        }
+    },
+    FLV_H263_240P_3D_30FPS_MP3_64KBIT("240P_Flv", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p 3D", "Flv");
+        }
+    },
+    THREEGP_H263_144P_15FPS_AMRNB_12KBIT("144P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP4_ITAG13_H263_144P_15FPS_AMRNB_12KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("144p", "3gp");
+        }
+    },
+    THREEGP_H263_144P_3D_15FPS_AMRNB_12KBIT("144P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP4_ITAG13_H263_144P_15FPS_AMRNB_12KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("144p 3D", "3gp");
+        }
+    },
+    MP4_H264_1080P_30FPS_AAC_192KBIT("1080P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p", "Mp4");
+        }
+    },
+    MP4_H264_1080P_3D_30FPS_AAC_192KBIT("1080P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p 3D", "Mp4");
+        }
+    },
+    MP4_H264_1080P_30FPS_AAC_192KBIT_2("1080P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_180P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p", "Mp4");
+        }
+    },
+    MP4_H264_1080P_3D_30FPS_AAC_192KBIT_2("1080P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_180P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p 3D", "Mp4");
+        }
+    },
+    MP4_H264_240P_30FPS_AAC_96KBIT("240P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p", "Mp4");
+        }
+    },
+    MP4_H264_240P_3D_30FPS_AAC_96KBIT("240P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p 3D", "Mp4");
+        }
+    },
+    MP4_H264_360P_30FPS_AAC_128KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "Mp4");
+        }
+    },
+    MP4_H264_360P_3D_30FPS_AAC_128KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "Mp4");
+        }
+    },
+    MP4_H264_360P_30FPS_AAC_128KBIT_2("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "Mp4");
+        }
+    },
+    MP4_H264_360P_3D_30FPS_AAC_128KBIT_2("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "Mp4");
+        }
+    },
+    MP4_H264_360P_30FPS_AAC_96KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "Mp4");
+        }
+    },
+    MP4_H264_360P_3D_30FPS_AAC_96KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "Mp4");
+        }
+    },
+    MP4_H264_360P_30FPS_AAC_96KBIT_2("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "Mp4");
+        }
+    },
+    MP4_H264_360P_3D_30FPS_AAC_96KBIT_2("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "Mp4");
+        }
+    },
+    MP4_H264_720P_30FPS_AAC_192KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    MP4_H264_720P_3D_30FPS_AAC_192KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    MP4_H264_720P_30FPS_AAC_192KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    MP4_H264_720P_3D_30FPS_AAC_192KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    MP4_H264_720P_30FPS_AAC_128KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    MP4_H264_720P_3D_30FPS_AAC_128KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    MP4_H264_720P_30FPS_AAC_152KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    MP4_H264_720P_3D_30FPS_AAC_152KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    MP4_H264_720P_30FPS_AAC_128KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    MP4_H264_720P_3D_30FPS_AAC_128KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    MP4_H264_720P_30FPS_AAC_152KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    MP4_H264_720P_3D_30FPS_AAC_152KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    MP4_H264_2206P_30FPS_AAC_192KBIT("2206P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_AUDIO_ORIGINAL, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("2206p", "Mp4");
+        }
+    },
+    MP4_H264_2206P_3D_30FPS_AAC_192KBIT("2206P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_AUDIO_ORIGINAL, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("2206p 3D", "Mp4");
+        }
+    },
+    THREEGP_MPEG4_144P_30FPS_AAC_24KBIT("144P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("144p", "3gp");
+        }
+    },
+    THREEGP_MPEG4_144P_3D_30FPS_AAC_24KBIT("144P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("144p 3D", "3gp");
+        }
+    },
+    THREEGP_MPEG4_180P_30FPS_AAC_32KBIT("180P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_240P_H263_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("180p", "3gp");
+        }
+    },
+    THREEGP_MPEG4_180P_3D_30FPS_AAC_32KBIT("180P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_240P_H263_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("180p 3D", "3gp");
+        }
+    },
+    THREEGP_MPEG4_180P_30FPS_AAC_32KBIT_2("180P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_240P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("180p", "3gp");
+        }
+    },
+    THREEGP_MPEG4_180P_3D_30FPS_AAC_32KBIT_2("180P_3gp", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_240P_H264_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("180p 3D", "3gp");
+        }
+    },
+    WEBM_VP8_1080P_30FPS_VORBIS_192KBIT("1080P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p", "WebM");
+        }
+    },
+    WEBM_VP8_1080P_3D_30FPS_VORBIS_192KBIT("1080P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p 3D", "WebM");
+        }
+    },
+    WEBM_VP8_360P_30FPS_VORBIS_128KBIT("360P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "WebM");
+        }
+    },
+    WEBM_VP8_360P_3D_30FPS_VORBIS_128KBIT("360P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "WebM");
+        }
+    },
+    WEBM_VP8_360P_30FPS_VORBIS_192KBIT("360P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "WebM");
+        }
+    },
+    WEBM_VP8_360P_3D_30FPS_VORBIS_192KBIT("360P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "WebM");
+        }
+    },
+    WEBM_VP8_360P_30FPS_VORBIS_128KBIT_2("360P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "WebM");
+        }
+    },
+    WEBM_VP8_360P_3D_30FPS_VORBIS_128KBIT_2("360P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "WebM");
+        }
+    },
+    WEBM_VP8_480P_30FPS_VORBIS_128KBIT("480P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p", "WebM");
+        }
+    },
+    WEBM_VP8_480P_3D_30FPS_VORBIS_128KBIT("480P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p 3D", "WebM");
+        }
+    },
+    WEBM_VP8_720P_30FPS_VORBIS_192KBIT("720P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "WebM");
+        }
+    },
+    WEBM_VP8_720P_3D_30FPS_VORBIS_192KBIT("720P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "WebM");
+        }
+    },
+    MP4_H264_480P_24FPS_AAC_128KBIT("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_ITAG59_H264_480P_24FPS_AAC_128KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+    },
+    MP4_H264_480P_3D_24FPS_AAC_128KBIT("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_ITAG59_H264_480P_24FPS_AAC_128KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p 3D", "Mp4");
+        }
+    },
+    MP4_H264_480P_24FPS_AAC_128KBIT_2("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_ITAG78_H264_480P_24FPS_AAC_128KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+    },
+    MP4_H264_480P_3D_24FPS_AAC_128KBIT_2("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_ITAG78_H264_480P_24FPS_AAC_128KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p 3D", "Mp4");
+        }
+    },
+    WEBM_VP8_720P_30FPS_VORBIS_192KBIT_2("720P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "WebM");
+        }
+    },
+    WEBM_VP8_720P_3D_30FPS_VORBIS_192KBIT_2("720P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "WebM");
+        }
+    },
+    HLS_MP4_H264_72P_6FPS_AAC_24KBIT("72P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_72P_6FPS_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("72p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_72P_3D_6FPS_AAC_24KBIT("72P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_72P_6FPS_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("72p 3D", "Mp4");
+        }
+    },
+    HLS_MP4_H264_240P_15FPS_AAC_48KBIT("240P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_240P_15FPS_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_240P_3D_15FPS_AAC_48KBIT("240P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_240P_15FPS_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p 3D", "Mp4");
+        }
+    },
+    HLS_MP4_H264_240P_30FPS_AAC_48KBIT("240P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_240P_AUDIO_AAC_2, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_240P_3D_30FPS_AAC_48KBIT("240P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_240P_AUDIO_AAC_2, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("240p 3D", "Mp4");
+        }
+    },
+    HLS_MP4_H264_360P_30FPS_AAC_128KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_360P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_360P_3D_30FPS_AAC_128KBIT("360P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_360P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("360p 3D", "Mp4");
+        }
+    },
+    HLS_MP4_H264_480P_30FPS_AAC_128KBIT("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_480P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_480P_3D_30FPS_AAC_128KBIT("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_480P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("480p 3D", "Mp4");
+        }
+    },
+    HLS_MP4_H264_720P_30FPS_AAC_256KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_720P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_720P_3D_30FPS_AAC_256KBIT("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_720P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    HLS_MP4_H264_720P_30FPS_AAC_256KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_720P_AUDIO_AAC_300, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_720P_3D_30FPS_AAC_256KBIT_2("720P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_720P_AUDIO_AAC_300, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("720p 3D", "Mp4");
+        }
+    },
+    HLS_MP4_H264_1080P_30FPS_AAC_256KBIT("1080P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_1080P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p", "Mp4");
+        }
+    },
+    HLS_MP4_H264_1080P_3D_30FPS_AAC_256KBIT("1080P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_1080P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_name_generic_video("1080p 3D", "Mp4");
+        }
     };
 
-    private YoutubeConverter                           converter;
-    final private String                               fileExtension;
-    private YoutubeFilenameModifier                    filenameModifier;
+    private YoutubeConverter converter;
+    final private String fileExtension;
+    private YoutubeFilenameModifier filenameModifier;
     final private YoutubeVariantInterface.VariantGroup group;
-    final private String                               id;
+    final private String id;
 
-    final private YoutubeITAG                          iTagAudio;
+    final private YoutubeITAG iTagAudio;
 
-    final private YoutubeITAG                          iTagData;
-    final private YoutubeITAG                          iTagVideo;
-    private final double                               qualityRating;
+    final private YoutubeITAG iTagData;
+    final private YoutubeITAG iTagVideo;
+    private final double qualityRating;
     final private YoutubeVariantInterface.DownloadType type;
 
     private YoutubeVariant(final String id, final YoutubeVariantInterface.VariantGroup group, final YoutubeVariantInterface.DownloadType type, final String fileExtension, final YoutubeITAG video, final YoutubeITAG audio, YoutubeITAG data, YoutubeFilenameModifier filenameModifier, YoutubeConverter converter) {
@@ -2271,6 +3130,44 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         this.iTagData = data;
         this.converter = converter;
         this.filenameModifier = filenameModifier;
+    }
+
+    public static HashMap<String, YoutubeVariant> COMPATIBILITY_MAP = new HashMap<String, YoutubeVariant>();
+
+    static {
+        COMPATIBILITY_MAP.put("FLV_360", FLV_H264_360P_30FPS_AAC_128KBIT);
+        COMPATIBILITY_MAP.put("FLV_480", FLV_H264_480P_30FPS_AAC_128KBIT);
+        COMPATIBILITY_MAP.put("FLV_270_HIGH", FLV_H263_270P_30FPS_MP3_64KBIT);
+        COMPATIBILITY_MAP.put("FLV_240_LOW", FLV_H263_240P_30FPS_MP3_64KBIT);
+        COMPATIBILITY_MAP.put("MP4_1080", MP4_H264_1080P_30FPS_AAC_192KBIT);
+        COMPATIBILITY_MAP.put("MP4_3D_1080", MP4_H264_1080P_3D_30FPS_AAC_192KBIT_2);
+        COMPATIBILITY_MAP.put("MP4_3D_240", MP4_H264_240P_3D_30FPS_AAC_96KBIT);
+        COMPATIBILITY_MAP.put("MP4_360", MP4_H264_360P_30FPS_AAC_128KBIT);
+        COMPATIBILITY_MAP.put("MP4_3D_360", MP4_H264_360P_3D_30FPS_AAC_128KBIT_2);
+        COMPATIBILITY_MAP.put("MP4_360_AAC96", MP4_H264_360P_30FPS_AAC_96KBIT_2);
+        COMPATIBILITY_MAP.put("MP4_720", MP4_H264_720P_30FPS_AAC_192KBIT);
+        COMPATIBILITY_MAP.put("MP4_3D_720", MP4_H264_720P_3D_30FPS_AAC_192KBIT_2);
+        COMPATIBILITY_MAP.put("MP4_720_128AAC", MP4_H264_720P_30FPS_AAC_128KBIT_2);
+        COMPATIBILITY_MAP.put("MP4_720_152AAC", MP4_H264_720P_30FPS_AAC_152KBIT_2);
+        COMPATIBILITY_MAP.put("MP4_ORIGINAL", MP4_H264_2206P_30FPS_AAC_192KBIT);
+        COMPATIBILITY_MAP.put("THREEGP_144", THREEGP_MPEG4_144P_30FPS_AAC_24KBIT);
+        COMPATIBILITY_MAP.put("THREEGP_240_LOW", THREEGP_MPEG4_180P_30FPS_AAC_32KBIT);
+        COMPATIBILITY_MAP.put("THREEGP_240_HIGH", THREEGP_MPEG4_180P_30FPS_AAC_32KBIT_2);
+        COMPATIBILITY_MAP.put("WEBM_1080", WEBM_VP8_1080P_30FPS_VORBIS_192KBIT);
+        COMPATIBILITY_MAP.put("WEBM_3D_360_128", WEBM_VP8_360P_3D_30FPS_VORBIS_128KBIT);
+        COMPATIBILITY_MAP.put("WEBM_3D_360_192", WEBM_VP8_360P_3D_30FPS_VORBIS_192KBIT);
+        COMPATIBILITY_MAP.put("WEBM_360", WEBM_VP8_360P_30FPS_VORBIS_128KBIT_2);
+        COMPATIBILITY_MAP.put("WEBM_480", WEBM_VP8_480P_30FPS_VORBIS_128KBIT);
+        COMPATIBILITY_MAP.put("WEBM_3D_720", WEBM_VP8_720P_3D_30FPS_VORBIS_192KBIT);
+        COMPATIBILITY_MAP.put("H264_480P_24FPS_AAC_128KBIT", MP4_H264_480P_24FPS_AAC_128KBIT);
+        COMPATIBILITY_MAP.put("H264_480P_24FPS_AAC_128KBIT_2", MP4_H264_480P_24FPS_AAC_128KBIT_2);
+        COMPATIBILITY_MAP.put("WEBM_720", WEBM_VP8_720P_30FPS_VORBIS_192KBIT_2);
+        COMPATIBILITY_MAP.put("HLS_MP4_72", HLS_MP4_H264_72P_6FPS_AAC_24KBIT);
+        COMPATIBILITY_MAP.put("HLS_MP4_240", HLS_MP4_H264_240P_15FPS_AAC_48KBIT);
+        COMPATIBILITY_MAP.put("HLS_MP4_240_2", HLS_MP4_H264_240P_30FPS_AAC_48KBIT);
+        COMPATIBILITY_MAP.put("HLS_MP4_360", HLS_MP4_H264_360P_30FPS_AAC_128KBIT);
+        COMPATIBILITY_MAP.put("HLS_MP4_480", HLS_MP4_H264_480P_30FPS_AAC_128KBIT);
+        COMPATIBILITY_MAP.put("HLS_MP4_720", HLS_MP4_H264_720P_30FPS_AAC_256KBIT);
     }
 
     @Override
@@ -2308,7 +3205,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
     private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
     private static final Icon IMAGE = new AbstractIcon(IconKey.ICON_IMAGE, 16);
-    private static final Icon TEXT  = new AbstractIcon(IconKey.ICON_TEXT, 16);
+    private static final Icon TEXT = new AbstractIcon(IconKey.ICON_TEXT, 16);
 
     public Icon _getIcon() {
         final VariantGroup lGroup = getGroup();
