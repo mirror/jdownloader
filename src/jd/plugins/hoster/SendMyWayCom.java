@@ -595,11 +595,12 @@ public class SendMyWayCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:(</td>.*?<td>)?(<b>)? ?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(3);
             if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
+                logger.info("Expire regex fails");
+                // ai.setExpired(true);
+                // account.setValid(false);
+                // return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
@@ -774,7 +775,7 @@ public class SendMyWayCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     *
+     * 
      * @param key
      * @param value
      * @return
