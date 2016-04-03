@@ -25,6 +25,8 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,8 +52,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
 public class XHamsterCom extends PluginForHost {
@@ -105,6 +105,8 @@ public class XHamsterCom extends PluginForHost {
     private static final String TYPE_MOBILE = "^https?://(?:www\\.)?m\\.xhamster\\.com/preview/\\d+$";
     private static final String TYPE_EMBED  = "^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
     private static final String NORESUME    = "NORESUME";
+    private static Object       ctrlLock    = new Object();
+    private final String        recaptchav2 = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
     private String              DLLINK      = null;
     private String              vq          = null;
 
@@ -256,79 +258,96 @@ public class XHamsterCom extends PluginForHost {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String fid = getFID(downloadLink);
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        prepBr();
-        // quick fix to force old player
-        br.setCookie(MAINPAGE, "playerVer", "old");
-        String filename = null;
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            login(aa, false);
-        }
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 410) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw e;
-        }
-        // embeded correction --> Usually not needed
-        if (downloadLink.getDownloadURL().contains(".com/xembed.php")) {
-            String realpage = br.getRegex("main_url=(http[^\\&]+)").getMatch(0);
-            if (realpage != null) {
-                downloadLink.setUrlDownload(Encoding.htmlDecode(realpage));
-                br.getPage(downloadLink.getDownloadURL());
-            }
-        }
-        if (br.containsHTML("(403 Forbidden|>This video was deleted<)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        return requestFileInformation(downloadLink, false);
+    }
 
-        filename = getSiteTitle();
-
-        final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
-        if (onlyfor != null) {
-            downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
-            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".mp4");
-            return AvailableStatus.TRUE;
-        } else if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
-            downloadLink.getLinkStatus().setStatusText("This video is password protected");
-            return AvailableStatus.TRUE;
-        } else if (br.containsHTML(HTML_PAID_VIDEO)) {
-            downloadLink.getLinkStatus().setStatusText("To download, you have to buy this video");
-            if (filename != null) {
-                downloadLink.setName(fid + "_" + filename + ".mp4");
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final boolean isDownload) throws Exception {
+        synchronized (ctrlLock) {
+            final String fid = getFID(downloadLink);
+            br.setFollowRedirects(true);
+            prepBr();
+            // quick fix to force old player
+            br.setCookie(MAINPAGE, "playerVer", "old");
+            String filename = null;
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa != null) {
+                login(aa, false);
             }
-            return AvailableStatus.TRUE;
-        }
-        if (downloadLink.getFinalFileName() == null || DLLINK == null) {
-            filename = getFilename();
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setFinalFileName(fid + "_" + filename);
-        }
-        if (downloadLink.getDownloadSize() <= 0) {
-            URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(DLLINK);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                br.getPage(downloadLink.getDownloadURL());
+            } catch (final BrowserException e) {
+                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 410) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
+                throw e;
+            }
+            // embeded correction --> Usually not needed
+            if (downloadLink.getDownloadURL().contains(".com/xembed.php")) {
+                String realpage = br.getRegex("main_url=(http[^\\&]+)").getMatch(0);
+                if (realpage != null) {
+                    downloadLink.setUrlDownload(Encoding.htmlDecode(realpage));
+                    br.getPage(downloadLink.getDownloadURL());
                 }
             }
+            // recaptchav2 here, don't trigger captcha until download....
+            if (br.containsHTML(recaptchav2)) {
+                if (!isDownload) {
+                    return AvailableStatus.UNCHECKABLE;
+                } else {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    final Browser captcha = br.cloneBrowser();
+                    captcha.getHeaders().put("Accept", "*/*");
+                    captcha.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    captcha.getPage("/captcha?g-recaptcha-response=" + recaptchaV2Response);
+                    br.getPage(br.getURL());
+                }
+            }
+
+            if (br.containsHTML("(403 Forbidden|>This video was deleted<)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+
+            filename = getSiteTitle();
+
+            final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
+            if (onlyfor != null) {
+                downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
+                downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".mp4");
+                return AvailableStatus.TRUE;
+            } else if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
+                downloadLink.getLinkStatus().setStatusText("This video is password protected");
+                return AvailableStatus.TRUE;
+            } else if (br.containsHTML(HTML_PAID_VIDEO)) {
+                downloadLink.getLinkStatus().setStatusText("To download, you have to buy this video");
+                if (filename != null) {
+                    downloadLink.setName(fid + "_" + filename + ".mp4");
+                }
+                return AvailableStatus.TRUE;
+            }
+            if (downloadLink.getFinalFileName() == null || DLLINK == null) {
+                filename = getFilename();
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setFinalFileName(fid + "_" + filename);
+            }
+            if (downloadLink.getDownloadSize() <= 0) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openHeadConnection(DLLINK);
+                    if (!con.getContentType().contains("html")) {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     private String getSiteTitle() {
@@ -367,7 +386,7 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink, true);
         doFree(downloadLink);
     }
 
@@ -579,7 +598,7 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         login(account, false);
         doFree(link);
     }
