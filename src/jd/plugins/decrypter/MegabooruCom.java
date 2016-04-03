@@ -47,7 +47,7 @@ public class MegabooruCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
 
-        final String url_part = new Regex(parameter, "(https?://(?:www\\.)?megabooru\\.com/post/list/female/)\\d+").getMatch(0);
+        final String url_part = new Regex(parameter, "(https?://(?:www\\.)?megabooru\\.com/post/list/[^/]+/)\\d+").getMatch(0);
         int counter = 1;
         final int max_entries_per_page = 40;
         int entries_per_page_current = 0;
