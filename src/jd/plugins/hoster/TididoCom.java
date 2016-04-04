@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,12 +31,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "http://tididodecrypted\\.com/a[a-f0-9]+/al[a-f0-9]+/t[a-f0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "http://tididodecrypted\\.com/a[a-f0-9]+/al[a-f0-9]+/t[a-f0-9]+" }, flags = { 2 })
 public class TididoCom extends PluginForHost {
+
+    public static final String  FAST_LINKCHECK        = "FAST_LINKCHECK";
+    public final static boolean defaultFAST_LINKCHECK = true;
 
     public TididoCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     /* DEV NOTES */
@@ -138,6 +145,10 @@ public class TididoCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.tidido.fastlinkcheck", "Activate fast linkcheck?")).setDefaultValue(defaultFAST_LINKCHECK));
     }
 
     @Override

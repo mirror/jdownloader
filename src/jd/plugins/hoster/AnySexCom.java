@@ -21,8 +21,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -46,6 +44,7 @@ public class AnySexCom extends PluginForHost {
         return "http://yourlust.com/terms.php";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -59,54 +58,62 @@ public class AnySexCom extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
         DLLINK = br.getRegex("video_url\\s*:\\s*\\'(https?://[^<>\"]*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        filename = Encoding.htmlDecode(filename).trim();
 
-        final SimpleDateFormat formatter = new SimpleDateFormat("YYYYMMddhhmmss");
-        final Date date = new Date();
-        final String formattedDate = formatter.format(date);
-        final String ahv = ahv(formattedDate);
-        DLLINK += "?time=" + formattedDate + "&ahv=" + ahv;
+        String ext = null;
+        if (DLLINK != null) {
+            final SimpleDateFormat formatter = new SimpleDateFormat("YYYYMMddhhmmss");
+            final Date date = new Date();
+            final String formattedDate = formatter.format(date);
+            final String ahv = ahv(formattedDate);
+            DLLINK += "?time=" + formattedDate + "&ahv=" + ahv;
 
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            DLLINK = Encoding.htmlDecode(DLLINK);
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            br2.setCookie("http://anysex.com", "kt_tcookie", "1");
-            br2.setCookie("http://anysex.com", "kt_is_visited", "1");
-            br2.getHeaders().put("Referer", "http://anysex.com/player/kt_player_3.3.3.swfx");
-            con = br2.openGetConnection(DLLINK);
-            if (con.getLongContentLength() == 46241 || !con.isOK()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                if (con != null) {
-                    con.disconnect();
-                }
-            } catch (Throwable e) {
-            }
-        }
+        downloadLink.setFinalFileName(filename + ext);
+        return AvailableStatus.TRUE;
+        /* Filesize check disabled as it will cause 404 --> Offline for some users */
+        // final Browser br2 = br.cloneBrowser();
+        // // In case the link redirects to the finallink
+        // br2.setFollowRedirects(true);
+        // URLConnectionAdapter con = null;
+        // try {
+        // br2.setCookie("http://anysex.com", "kt_tcookie", "1");
+        // br2.setCookie("http://anysex.com", "kt_is_visited", "1");
+        // br2.getHeaders().put("Referer", "http://anysex.com/player/kt_player_3.3.3.swfx");
+        // con = br2.openGetConnection(DLLINK);
+        // if (con.getLongContentLength() == 46241 || !con.isOK()) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // if (!con.getContentType().contains("html")) {
+        // downloadLink.setDownloadSize(con.getLongContentLength());
+        // } else {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // return AvailableStatus.TRUE;
+        // } finally {
+        // try {
+        // if (con != null) {
+        // con.disconnect();
+        // }
+        // } catch (Throwable e) {
+        // }
+        // }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

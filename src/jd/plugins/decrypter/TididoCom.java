@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,19 +31,21 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "https?://(?:www\\.)?tidido\\.com/((?:[a-z]{2}/)?a[a-f0-9]+(?:/al[a-f0-9]+)?(?:/t[a-f0-9]+)?|[A-Za-z]{2}/moods/[^/]+/[a-f0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "https?://(?:www\\.)?tidido\\.com/((?:[a-z]{2}/)?a[a-f0-9]+(?:/al[a-f0-9]+)?(?:/t[a-f0-9]+)?|[A-Za-z]{2}/moods/[^/]+/[a-f0-9]+|[A-Za-z]{2}/u[a-z0-9]+/playlists/[a-z0-9]+)" }, flags = { 0 })
 public class TididoCom extends PluginForDecrypt {
 
     public TididoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String TYPE_ALBUM    = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+/al[a-z0-9]+";
-    private final String TYPE_PLAYLIST = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/moods/([^/]+)/([a-z0-9]+)";
-    private final String TYPE_SONG     = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+/al[a-z0-9]+/t[a-z0-9]+";
-    private final String TYPE_ARTIST   = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+";
+    private final String TYPE_ALBUM         = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+/al[a-z0-9]+";
+    private final String TYPE_PLAYLIST      = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/(?:u[a-z0-9]+/playlists/[a-z0-9]+|moods/([^/]+)/([a-z0-9]+))";
+    private final String TYPE_PLAYLIST_MOOD = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/moods/([^/]+)/([a-z0-9]+)";
+    private final String TYPE_PLAYLIST_USER = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/u([a-z0-9]+)/playlists/([a-z0-9]+)";
+    private final String TYPE_SONG          = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+/al[a-z0-9]+/t[a-z0-9]+";
+    private final String TYPE_ARTIST        = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+";
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -51,17 +54,20 @@ public class TididoCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String playlist_mood = null;
+        final boolean fast_linkcheck = SubConfiguration.getConfig("tidido.com").getBooleanProperty(jd.plugins.hoster.TididoCom.FAST_LINKCHECK, jd.plugins.hoster.TididoCom.defaultFAST_LINKCHECK);
         String name_playlist = null;
         String name_album = null;
+        String target_song_id = null;
 
         String fpName = null;
 
-        String target_song_id = null;
         String album_id = null;
         String artist_id = null;
-        String playlist_id = null;
+        String user_id = null;
         String playlist_areaname = null;
+        String playlist_id = null;
+        String playlist_mood = null;
+
         if (parameter.matches(TYPE_SONG)) {
             album_id = new Regex(parameter, "al([a-z0-9]+)").getMatch(0);
             artist_id = new Regex(parameter, "a([a-z0-9]+)").getMatch(0);
@@ -71,10 +77,13 @@ public class TididoCom extends PluginForDecrypt {
             artist_id = new Regex(parameter, "a([a-z0-9]+)").getMatch(0);
         } else if (parameter.matches(TYPE_ARTIST)) {
             artist_id = new Regex(parameter, "a([a-z0-9]+)").getMatch(0);
-        } else if (parameter.matches(TYPE_PLAYLIST)) {
-            playlist_areaname = new Regex(parameter, TYPE_PLAYLIST).getMatch(0);
-            playlist_mood = new Regex(parameter, TYPE_PLAYLIST).getMatch(1);
-            playlist_id = new Regex(parameter, TYPE_PLAYLIST).getMatch(2);
+        } else if (parameter.matches(TYPE_PLAYLIST_MOOD)) {
+            playlist_areaname = new Regex(parameter, TYPE_PLAYLIST_MOOD).getMatch(0);
+            playlist_mood = new Regex(parameter, TYPE_PLAYLIST_MOOD).getMatch(1);
+            playlist_id = new Regex(parameter, TYPE_PLAYLIST_MOOD).getMatch(2);
+        } else if (parameter.matches(TYPE_PLAYLIST_USER)) {
+            user_id = new Regex(parameter, TYPE_PLAYLIST_USER).getMatch(1);
+            playlist_id = new Regex(parameter, TYPE_PLAYLIST_USER).getMatch(2);
         } else {
             /* Unsupported linktype */
             return decryptedLinks;
@@ -86,9 +95,15 @@ public class TididoCom extends PluginForDecrypt {
         ArrayList<Object> ressourcelist = null;
         ArrayList<Object> song_array = null;
         if (parameter.matches(TYPE_PLAYLIST)) {
-            this.br.getPage("http://tidido.com/api/music/mood/" + playlist_mood + "?areaname=" + playlist_areaname + "&playlists=true");
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "playlists_data/playlists");
+            if (parameter.matches(TYPE_PLAYLIST_MOOD)) {
+                this.br.getPage("http://tidido.com/api/music/mood/" + playlist_mood + "?areaname=" + playlist_areaname + "&playlists=true");
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "playlists_data/playlists");
+            } else {
+                this.br.getPage("http://tidido.com/api/music/playlist?action=userPlaylists&u=" + user_id);
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                ressourcelist = (ArrayList) entries.get("playlists");
+            }
             /* Find song_ids of our playlist ... */
             for (final Object playlisto : ressourcelist) {
                 entries2 = (LinkedHashMap<String, Object>) playlisto;
@@ -111,8 +126,13 @@ public class TididoCom extends PluginForDecrypt {
             this.br.getPage(song_ids_url);
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             song_array = (ArrayList) entries.get("songs");
+            ressourcelist = (ArrayList) entries.get("artists");
             /* Set packagename */
-            fpName = playlist_mood + " - " + name_playlist;
+            if (playlist_mood != null) {
+                fpName = playlist_mood + " - " + name_playlist;
+            } else {
+                fpName = name_playlist;
+            }
         } else {
             if (album_id != null) {
                 this.br.getPage("http://tidido.com/api/music/album/" + album_id);
@@ -124,9 +144,9 @@ public class TididoCom extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 song_array = (ArrayList) entries.get("songs");
             }
+            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "songs/artists");
         }
         /* First fill artist_info */
-        ressourcelist = (ArrayList) entries.get("artists");
         for (final Object artisto : ressourcelist) {
             entries2 = (LinkedHashMap<String, Object>) artisto;
             final String artistid = (String) entries2.get("id");
@@ -177,17 +197,23 @@ public class TididoCom extends PluginForDecrypt {
             final String content_url_decrypted = "http://tididodecrypted.com/a" + artistid + "/al" + albumID_this_song + "/t" + songid;
             final DownloadLink dl = createDownloadlink(content_url_decrypted);
             dl.setContentUrl(content_url);
-            dl.setAvailable(true);
             dl.setName(filename_temp);
             dl.setProperty("decryptedfilename", filename);
             dl.setProperty("directlink", directlink);
             if (target_song_id != null && songid.equals(target_song_id)) {
                 /* We were looking for one specified track only - remove previously added data and step out of the loop. */
+                /*
+                 * Do not set availibiity as used only added a single URL --> Does not take much time to check and it makes sense to show
+                 * the filesize.
+                 */
                 decryptedLinks.clear();
                 decryptedLinks.add(dl);
                 break;
             } else {
-                /* Simply add track */
+                /* Simply add track - set availibility on user choice to speed up decryption of many links. */
+                if (fast_linkcheck) {
+                    dl.setAvailable(true);
+                }
                 decryptedLinks.add(dl);
             }
 
