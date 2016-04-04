@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +26,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -36,10 +36,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com", "hardsextube.com" }, urls = { "http://(www\\.)?hardsextube\\.com/(video|embed)/\\d+|https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
-public class HardSexTubeCom extends PluginForHost {
+public class HardSexTubeCom extends antiDDoSForHost {
 
     public HardSexTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -91,16 +90,18 @@ public class HardSexTubeCom extends PluginForHost {
     // "&start=0");
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         /* Make sure to correct old urls! */
         correctDownloadLink(downloadLink);
         dllink = null;
         final String vid = getVID(downloadLink);
         String ext = null;
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0));
+        if (!downloadLink.isNameSet()) {
+            downloadLink.setName(vid);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("video-player-wrap") || !br.getURL().contains("/video/") || br.getRedirectLocation() != null || br.getHttpConnection().getResponseCode() == 302 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -124,7 +125,7 @@ public class HardSexTubeCom extends PluginForHost {
             this.br.setFollowRedirects(true);
             this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
             this.br.setCookie("http://hardsextube.com/", "video_quality", "hq");
-            br.getPage("http://m.hardsextube.com/play/" + vid);
+            getPage("http://m.hardsextube.com/play/" + vid);
             dllink = br.getRegex("\"(https?://[a-z0-9\\-\\.]+\\.hardsextube\\.com/[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
         }
         if (enable_embed && dllink == null) {
@@ -132,7 +133,7 @@ public class HardSexTubeCom extends PluginForHost {
              * Via the embedded video stuff we can sometimes get the final link without having to decrypt anything
              */
             br.setFollowRedirects(false);
-            br.getPage("http://www.hardsextube.com/embed/" + vid + "/");
+            getPage("http://www.hardsextube.com/embed/" + vid + "/");
             final String redirect = br.getRedirectLocation();
             if (redirect == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -146,7 +147,7 @@ public class HardSexTubeCom extends PluginForHost {
         }
         if (enable_embed_2 && dllink == null) {
             /* Second embed way to find downloadlinks */
-            br.getPage("http://www.hardsextube.com/video/" + vid + "/embedframe");
+            getPage("http://www.hardsextube.com/video/" + vid + "/embedframe");
             dllink = br.getRegex("\"(http://[a-z0-9\\.]+\\.hardsextube\\.com/flvcontent/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 /* This will produce an invalid downloadlink */
@@ -168,8 +169,9 @@ public class HardSexTubeCom extends PluginForHost {
         downloadLink.setFinalFileName(filename + ext);
 
         URLConnectionAdapter con = null;
+        dllink = HTMLEntities.unhtmlentities(dllink);
         try {
-            con = br.openGetConnection(dllink);
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(dllink));
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -338,18 +340,18 @@ public class HardSexTubeCom extends PluginForHost {
     }
 
     private String getVID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)/$").getMatch(0);
+        return new Regex(dl.getDownloadURL(), "(\\d+)/?$").getMatch(0);
     }
 
     private String getEXT(final String finallink) {
         String ext = null;
         if (finallink != null) {
-            ext = new Regex(finallink, ".+(\\..*?)$").getMatch(0);
-            if (ext == null || !ext.matches("\\.[A-Za-z]{2,5}")) {
+            ext = getFileNameExtensionFromString(finallink);
+            if (ext == null) {
                 ext = ".mp4";
-            } else if (ext.contains(".flv")) {
+            } else if (ext.contains(".flv") && !ext.matches("\\.[A-Za-z0-9]{2,5}")) {
                 ext = ".flv";
-            } else if (ext.contains(".mp4")) {
+            } else if (ext.contains(".mp4") && !ext.matches("\\.[A-Za-z0-9]{2,5}")) {
                 ext = ".mp4";
             }
         } else {
