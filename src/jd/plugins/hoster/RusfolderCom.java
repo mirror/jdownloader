@@ -195,10 +195,10 @@ public class RusfolderCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // captcha!
-                if (newCaptcha) {
+                final String adVerigoApiKey = br.getRegex("adVerigo\\.init\\('([a-f0-9]+)'\\);").getMatch(0);
+                if (newCaptcha && adVerigoApiKey != null) {
                     br.setCookie(this.getHost(), "_cpathca", result);
-                    final String apiKey = br.getRegex("adVerigo\\.init\\('([a-f0-9]+)'\\);").getMatch(0);
-                    final Adverigo adv = new Adverigo(br, apiKey);
+                    final Adverigo adv = new Adverigo(br, adVerigoApiKey);
                     final File captchaimage = adv.downloadCaptcha(getLocalCaptchaFile(".png"));
                     captchacode = getCaptchaCode(captchaimage, downloadLink);
                     // dont' submit back to hoster
