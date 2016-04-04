@@ -14,17 +14,23 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.IO.SYNC;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.ide.IDEUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.ffmpeg.FFprobe;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.plugins.components.youtube.AudioCodec;
 import org.jdownloader.plugins.components.youtube.MediaQualityInterface;
+import org.jdownloader.plugins.components.youtube.MediaTagsVarious;
 import org.jdownloader.plugins.components.youtube.VideoContainer;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.YoutubeVariant;
+import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
 import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface.DownloadType;
 import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface.VariantGroup;
 
@@ -34,9 +40,15 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 
 public class ItagHelper {
-    public static void main(String[] args) throws DialogClosedException, DialogCanceledException {
-        Application.setApplication(".jd_home");
+    private static HashSet<String> dupes;
+    private static HashSet<String> EXCLUDES;
 
+    public static void main(String[] args) throws DialogClosedException, DialogCanceledException, IOException {
+        Application.setApplication(".jd_home");
+        EXCLUDES = new HashSet<String>();
+        EXCLUDES.add("DEMUX_AMRNB_.*");
+        EXCLUDES.add("DEMUX_.*_THREEGP.*");
+        EXCLUDES.add("DEMUX_VORBIS_.*");
         List<YoutubeITAG> dashVideos = new ArrayList<YoutubeITAG>();
         List<YoutubeITAG> dashAudios = new ArrayList<YoutubeITAG>();
         List<YoutubeITAG> nonDash = new ArrayList<YoutubeITAG>();
@@ -59,158 +71,172 @@ public class ItagHelper {
             }
         }
 
-        HashSet<String> dupes = new HashSet<String>();
+        dupes = new HashSet<String>();
         for (YoutubeVariant v : YoutubeVariant.values()) {
             dupes.add(v.name());
         }
 
-        StringBuilder sb = new StringBuilder();
         for (YoutubeITAG itag : nonDash) {
-            handleItag(dupes, sb, itag);
+            handleItag(itag);
 
         }
-        if (false) {
-            audioLoop: for (YoutubeITAG dashAudio : dashAudios) {
-                for (YoutubeVariant v : YoutubeVariant.values()) {
-                    if (v.getiTagAudio() == dashAudio && v.getiTagVideo() == null) {
-                        break audioLoop;
-                    }
-                }
 
-                String bitrate = new Regex(dashAudio.getQualityAudio(), "(\\d+)k").getMatch(0);
-
-                String audioCodec = dashAudio.getCodecAudio();
-                // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
-                String name = "DASH_AUDIO_" + audioCodec + "_" + bitrate + "KBIT";
-                // AAC_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null,
-                // YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
-                // @Override
-                // public String _getName() {
-                // return _GUI.T.YoutubeVariant_name_AAC_128();
-                // }
-                //
-                // @Override
-                // public String getQualityExtension() {
-                // return _GUI.T.YoutubeVariant_filenametag_AAC_128();
-                // }
-                // },
-                name = name.toUpperCase(Locale.ENGLISH);
-                String orgname = name;
-                int i = 2;
-                while (!dupes.add(name)) {
-                    name = orgname + "_" + (i++);
-                }
-                sb.append(name).append("(");
-                sb.append("null");
-                sb.append(", ");
-                sb.append("YoutubeVariantInterface.VariantGroup.AUDIO");
-                sb.append(", ");
-                sb.append("YoutubeVariantInterface.DownloadType.DASH_AUDIO");
-                sb.append(", ");
-                sb.append("\"").append(getExtension(dashAudio, true).toString().toLowerCase(Locale.ENGLISH)).append("\"");
-                sb.append(", ");
-                sb.append("null");
-                sb.append(", ");
-                sb.append("YoutubeITAG." + dashAudio);
-                sb.append(", ");
-                sb.append("null");
-                sb.append(", ");
-                sb.append("null");
-                sb.append(", ");
-                sb.append("null");
-                sb.append(")");
-                sb.append("{\r\n");
-                sb.append("@Override\r\n");
-                sb.append("public String _getName() {\r\n");
-                sb.append("    return _GUI.T.YoutubeVariant_name_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio, true) + "\");\r\n");
-                sb.append("}\r\n\r\n");
-                sb.append("@Override\r\n");
-                sb.append("public String getQualityExtension() {\r\n");
-                sb.append("   return _GUI.T.YoutubeVariant_nametag_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio, true) + "\");\r\n");
-                sb.append("}\r\n");
-                sb.append("},\r\n");
-            }
-        }
-        if (false) {
+        audioLoop: for (YoutubeITAG dashAudio : dashAudios) {
             videoLoop: for (YoutubeITAG dashVideo : dashVideos) {
-                audioLoop: for (YoutubeITAG dashAudio : dashAudios) {
-                    for (YoutubeVariant v : YoutubeVariant.values()) {
-                        if (v.getiTagAudio() == dashAudio && v.getiTagVideo() == dashVideo) {
-                            break audioLoop;
-                        }
-                    }
-                    // unknown variant
-                    // DASH_VP9_2160P_30FPS_OPUS_64KBIT("_VP9_2160P_30FPS", YoutubeVariantInterface.VariantGroup.VIDEO,
-                    // YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_2160P_30FPS,
-                    // YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null) {
-                    // @Override
-                    // public String _getName() {
-                    //
-                    // return _GUI.T.YoutubeVariant_name_generic_video("720p","WebM");
-                    // }
-                    //
-                    // @Override
-                    // public String getQualityExtension() {
-                    // return _GUI.T.YoutubeVariant_name_generic_video("720p","WebM");
-                    // }
-                    // },
-                    String fps = new Regex(dashVideo.name(), "(\\d+fps)").getMatch(0);
-                    if (fps == null) {
-                        fps = "30FPS";
-                    }
-                    String resolution = new Regex(dashVideo.getQualityVideo(), "(\\d+)p").getMatch(0);
-                    if (resolution == null) {
-                        resolution = "" + (int) dashVideo.getQualityRating();
-                    }
-                    String bitrate = new Regex(dashAudio.getQualityAudio(), "(\\d+)k").getMatch(0);
-                    String videoCodec = dashVideo.getCodecVideo();
-                    // String videoCodec = new Regex(dashVideo.name(), "(h264|vp9)").getMatch(0);
-                    String audioCodec = dashAudio.getCodecAudio();
-                    if (!validCombination(videoCodec, audioCodec)) {
-                        continue;
-                    }
-                    // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
-                    String name = "DASH_" + videoCodec + "_" + resolution + "P_" + fps + "_" + audioCodec + "_" + bitrate + "KBIT";
-                    name = name.toUpperCase(Locale.ENGLISH);
-                    String orgname = name;
-                    int i = 2;
-                    while (!dupes.add(name)) {
-                        name = orgname + "_" + (i++);
-                    }
-                    sb.append(name).append("(");
-                    sb.append("\"").append(resolution + "P_" + getExtension(dashVideo, false)).append("\"");
-                    sb.append(", ");
-                    sb.append("YoutubeVariantInterface.VariantGroup.VIDEO");
-                    sb.append(", ");
-                    sb.append("YoutubeVariantInterface.DownloadType.DASH_VIDEO");
-                    sb.append(", ");
-                    sb.append("\"").append(getExtension(dashVideo, false).toString().toLowerCase(Locale.ENGLISH)).append("\"");
-                    sb.append(", ");
-                    sb.append("YoutubeITAG." + dashVideo);
-                    sb.append(", ");
-                    sb.append("YoutubeITAG." + dashAudio);
-                    sb.append(", ");
-                    sb.append("null");
-                    sb.append(", ");
-                    sb.append("null");
-                    sb.append(", ");
-                    sb.append("null");
-                    sb.append(")");
-                    sb.append("{\r\n");
-                    sb.append("@Override\r\n");
-                    sb.append("public String _getName() {\r\n");
-                    sb.append("    return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo, false) + "\");\r\n");
-                    sb.append("}\r\n\r\n");
-                    sb.append("@Override\r\n");
-                    sb.append("public String getQualityExtension() {\r\n");
-                    sb.append("   return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo, false) + "\");\r\n");
-                    sb.append("}\r\n");
-                    sb.append("},\r\n");
 
+                String videoCodec = dashVideo.getCodecVideo();
+                String audioCodec = dashAudio.getCodecAudio();
+                if (!validCombination(videoCodec, audioCodec)) {
+                    continue;
                 }
+                handleDashCombination(dashVideo, dashAudio);
+
             }
 
         }
+        // if (false) {
+        // audioLoop: for (YoutubeITAG dashAudio : dashAudios) {
+        // for (YoutubeVariant v : YoutubeVariant.values()) {
+        // if (v.getiTagAudio() == dashAudio && v.getiTagVideo() == null) {
+        // break audioLoop;
+        // }
+        // }
+        //
+        // getBitrateByItag(dashAudio);
+        //
+        // String audioCodec = dashAudio.getCodecAudio();
+        // // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
+        // String name = "DASH_AUDIO_" + audioCodec + "_" + bitrate + "KBIT";
+        // // AAC_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null,
+        // // YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
+        // // @Override
+        // // public String _getName() {
+        // // return _GUI.T.YoutubeVariant_name_AAC_128();
+        // // }
+        // //
+        // // @Override
+        // // public String getQualityExtension() {
+        // // return _GUI.T.YoutubeVariant_filenametag_AAC_128();
+        // // }
+        // // },
+        // name = name.toUpperCase(Locale.ENGLISH);
+        // String orgname = name;
+        // int i = 2;
+        // while (!dupes.add(name)) {
+        // name = orgname + "_" + (i++);
+        // }
+        // sb.append(name).append("(");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.VariantGroup.AUDIO");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.DownloadType.DASH_AUDIO");
+        // sb.append(", ");
+        // sb.append("\"").append(getExtension(dashAudio, true).toString().toLowerCase(Locale.ENGLISH)).append("\"");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("YoutubeITAG." + dashAudio);
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(")");
+        // sb.append("{\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String _getName() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_name_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio, true) +
+        // "\");\r\n");
+        // sb.append("}\r\n\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String getQualityExtension() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_nametag_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio, true) +
+        // "\");\r\n");
+        // sb.append("}\r\n");
+        // sb.append("},\r\n");
+        // }
+        // }
+        // if (false) {
+        // videoLoop: for (YoutubeITAG dashVideo : dashVideos) {
+        // audioLoop: for (YoutubeITAG dashAudio : dashAudios) {
+        // for (YoutubeVariant v : YoutubeVariant.values()) {
+        // if (v.getiTagAudio() == dashAudio && v.getiTagVideo() == dashVideo) {
+        // break audioLoop;
+        // }
+        // }
+        // // unknown variant
+        // // DASH_VP9_2160P_30FPS_OPUS_64KBIT("_VP9_2160P_30FPS", YoutubeVariantInterface.VariantGroup.VIDEO,
+        // // YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_2160P_30FPS,
+        // // YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null) {
+        // // @Override
+        // // public String _getName() {
+        // //
+        // // return _GUI.T.YoutubeVariant_name_generic_video("720p","WebM");
+        // // }
+        // //
+        // // @Override
+        // // public String getQualityExtension() {
+        // // return _GUI.T.YoutubeVariant_name_generic_video("720p","WebM");
+        // // }
+        // // },
+        // String fps = new Regex(dashVideo.name(), "(\\d+fps)").getMatch(0);
+        // if (fps == null) {
+        // fps = "30FPS";
+        // }
+        // String resolution = getResolutionByItag(dashVideo);
+        // getBitrateByItag(dashAudio);
+        // String videoCodec = dashVideo.getCodecVideo();
+        // // String videoCodec = new Regex(dashVideo.name(), "(h264|vp9)").getMatch(0);
+        // String audioCodec = dashAudio.getCodecAudio();
+        // if (!validCombination(videoCodec, audioCodec)) {
+        // continue;
+        // }
+        // // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
+        // String name = "DASH_" + videoCodec + "_" + resolution + "P_" + fps + "_" + audioCodec + "_" + bitrate + "KBIT";
+        // name = name.toUpperCase(Locale.ENGLISH);
+        // String orgname = name;
+        // int i = 2;
+        // while (!dupes.add(name)) {
+        // name = orgname + "_" + (i++);
+        // }
+        // sb.append(name).append("(");
+        // sb.append("\"").append(resolution + "P_" + getExtension(dashVideo, false)).append("\"");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.VariantGroup.VIDEO");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.DownloadType.DASH_VIDEO");
+        // sb.append(", ");
+        // sb.append("\"").append(getExtension(dashVideo, false).toString().toLowerCase(Locale.ENGLISH)).append("\"");
+        // sb.append(", ");
+        // sb.append("YoutubeITAG." + dashVideo);
+        // sb.append(", ");
+        // sb.append("YoutubeITAG." + dashAudio);
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(")");
+        // sb.append("{\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String _getName() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo, false) +
+        // "\");\r\n");
+        // sb.append("}\r\n\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String getQualityExtension() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo, false) +
+        // "\");\r\n");
+        // sb.append("}\r\n");
+        // sb.append("},\r\n");
+        //
+        // }
+        // }
+        //
+        // }
         // videoLoop: for (YoutubeITAG dashVideo : nonDash) {
         //
         // for (YoutubeVariant v : YoutubeVariant.values()) {
@@ -287,36 +313,496 @@ public class ItagHelper {
         //
         // }
 
-        if (sb.length() > 0) {
-            System.out.println("Missing Variant Found:");
-            System.out.println("New Youtube Variant Found! Add to " + YoutubeVariant.class);
+    }
 
-            System.out.println(sb.toString());
+    private static void handleDashCombination(YoutubeITAG dashVideo, YoutubeITAG dashAudio) throws IOException {
+        if (dashVideo.name().contains("HLS")) {
+            throw new WTFException("DASH HLS");
 
-            try {
-                Dialog.getInstance().showInputDialog(0, "New Youtube Variant Found! Add to " + YoutubeVariant.class, sb.toString());
-            } catch (DialogClosedException e) {
-                e.printStackTrace();
-            } catch (DialogCanceledException e) {
-                e.printStackTrace();
+        }
+
+        if (dashAudio.name().contains("HLS")) {
+            throw new WTFException("DASH HLS");
+
+        }
+        String resolution = getResolutionByItag(dashVideo);
+        String bitrate = getBitrateByItag(dashAudio);
+
+        VideoContainer container = getVideoContainerByITag(dashVideo);
+        String audioContainer = getAudioContainerByITag(dashAudio);
+        boolean is3DItag = dashVideo.name().contains("3D");
+
+        String fps = fpsByItag(dashVideo);
+
+        String videoCodec = dashVideo.getCodecVideo();
+        String audioCodec = dashAudio.getCodecAudio();
+        String videoExtension = getExtension(dashVideo, false);
+
+        String name = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT" + "_DASH";
+        name = name.toUpperCase(Locale.ENGLISH);
+
+        VariantInfo vi = new VariantInfo(name);
+        vi.id = resolution + "P_" + videoExtension;
+        vi.group = YoutubeVariantInterface.VariantGroup.VIDEO;
+        vi.downloadType = DownloadType.DASH_VIDEO;
+        vi.fileExtension = videoExtension.toLowerCase(Locale.ENGLISH);
+
+        vi.videoItag = dashVideo;
+        vi.audioItag = dashAudio;
+        vi.dataItag = null;
+        vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec())";
+        vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_video(\"" + resolution + "p\")";
+        if (!is3DItag) {
+            addVi(vi);
+        }
+
+        name = container + "_" + codecToName(videoCodec) + "_3D_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT_DASH";
+        name = name.toUpperCase(Locale.ENGLISH);
+
+        vi.baseName = name;
+        vi.group = VariantGroup.VIDEO_3D;
+        vi.id = resolution + "P_" + videoExtension + "_3D";
+        vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_video(\"" + resolution + "p 3D\")";
+        if (is3DItag || container != VideoContainer.MP4) {
+            addVi(vi);
+        }
+        // audio
+        if (!dupes.add(dashAudio.name())) {
+            return;
+        }
+        if (StringUtils.equalsIgnoreCase(audioContainer, codecToName(audioCodec))) {
+            name = audioContainer + "_" + bitrate + "KBIT" + "_DASH";
+        } else {
+            name = audioContainer + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT" + "_DASH";
+        }
+
+        name = name.toUpperCase(Locale.ENGLISH);
+        vi.id = codecToName(audioCodec).toUpperCase(Locale.ENGLISH) + "_" + bitrate;
+        vi.baseName = name;
+        vi.group = VariantGroup.AUDIO;
+        vi.downloadType = DownloadType.DASH_AUDIO;
+        vi.fileExtension = audioContainer.toLowerCase(Locale.ENGLISH);
+        vi.videoItag = null;
+        vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_audio(getAudioQuality())";
+        vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), getAudioCodec())";
+
+        addVi(vi);
+        if (StringUtils.equalsIgnoreCase("aac", vi.fileExtension)) {
+            audioContainer = "M4A";
+            if (StringUtils.equalsIgnoreCase(audioContainer, codecToName(audioCodec))) {
+                name = audioContainer + "_" + bitrate + "KBIT" + "_DASH";
+            } else {
+                name = audioContainer + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT" + "_DASH";
             }
+            name = name.toUpperCase(Locale.ENGLISH);
+            vi.baseName = name;
+            vi.fileExtension = audioContainer.toLowerCase(Locale.ENGLISH);
+
+            vi.id = "M4A_" + bitrate;
+            vi.extender = generateMethod("@Override", "double getQualityRating()", "", "AudioCodec.AAC_M4A.getRating() + AudioBitrate.KBIT_" + bitrate + ".getRating()");
+
+            vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), \"M4A\")";
+            addVi(vi);
+
+        }
+
+        // if ("AAC".equals(audioCodec)) {
+        // name = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate
+        // + "KBIT";
+        // name = name.toUpperCase(Locale.ENGLISH);
+        // if (itag.name().contains("HLS")) {
+        // name = "HLS_" + name;
+        // }
+        // name = "DEMUX_AAC_" + name;
+        // vi.fileExtension = "aac";
+        // vi.baseName = name;
+        // vi.group = VariantGroup.AUDIO;
+        // vi.id = "AAC_" + bitrate;
+        // vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_audio(getAudioQuality())";
+        // vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), getAudioCodec())";
+        // vi.converter = "YoutubeMp4ToAACAudio.getInstance()";
+        // vi.extender = generateMethod("@Override", "double getQualityRating()", "", "AudioCodec.AAC.getRating() + AudioBitrate.KBIT_" +
+        // bitrate + ".getRating() - 0.00000" + resolution);
+        //
+        // // sb.append("@Override\r\n");
+        // // sb.append("public String getQualityExtension() {\r\n");
+        // // sb.append(" return " + getQualityExtensionMethod + ";\r\n");
+        // // sb.append("}\r\n");
+        // addVi(vi);
+        // name = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate
+        // + "KBIT";
+        // name = name.toUpperCase(Locale.ENGLISH);
+        // if (itag.name().contains("HLS")) {
+        // name = "HLS_" + name;
+        // }
+        // name = "DEMUX_M4A_" + name;
+        // vi.converter = "YoutubeMp4ToM4aAudio.getInstance()";
+        // vi.extender = generateMethod("@Override", "double getQualityRating()", "", "AudioCodec.AAC_M4A.getRating() + AudioBitrate.KBIT_"
+        // + bitrate + ".getRating() - 0.00000" + resolution);
+        // vi.fileExtension = "m4a";
+        // vi.baseName = name;
+        // vi.id = "M4A_" + bitrate;
+        // vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), \"M4A\")";
+        // addVi(vi);
+        // }
+        //
+        System.out.println(1);
+    }
+
+    private static String getAudioContainerByITag(YoutubeITAG dashAudio) {
+        for (MediaQualityInterface t : dashAudio.getQualityTags()) {
+
+            if (t instanceof AudioCodec) {
+                switch ((AudioCodec) t) {
+                case AAC:
+                    return "AAC";
+                case AAC_M4A:
+                    return "M4A";
+                case AMRNB:
+                    return "AMR";
+                case MP3:
+                    return "MP3";
+                case OPUS:
+                    return "OPUS";
+                case VORBIS:
+                    return "Ogg";
+
+                }
+            }
+        }
+        throw new WTFException("Unknown AUdio Codec");
+    }
+
+    private static String getBitrateByItag(YoutubeITAG dashAudio) {
+        return new Regex(dashAudio.getQualityAudio(), "(\\d+)k").getMatch(0);
+    }
+
+    private static String fpsByItag(YoutubeITAG dashVideo) {
+
+        for (MediaQualityInterface t : dashVideo.getQualityTags()) {
+            if (t == MediaTagsVarious.VIDEO_FPS_15) {
+                return "15FPS";
+            }
+            if (t == MediaTagsVarious.VIDEO_FPS_6) {
+                return "6FPS";
+            }
+            if (t == MediaTagsVarious.VIDEO_FPS_60) {
+                return "60FPS";
+            }
+        }
+        String fps = new Regex(dashVideo.name(), "(\\d+fps)").getMatch(0);
+        if (fps == null) {
+            fps = new Regex(dashVideo.name(), "fps(\\d+)").getMatch(0);
+            if (fps == null) {
+                fps = "30FPS";
+            } else {
+                fps = fps + "FPS";
+            }
+        }
+        return fps;
+    }
+
+    private static class VariantInfo {
+
+        private String      baseName;
+        public String       id;
+        public VariantGroup group;
+        public DownloadType downloadType;
+        public String       fileExtension;
+        public YoutubeITAG  videoItag;
+        public YoutubeITAG  audioItag;
+        public YoutubeITAG  dataItag;
+        public String       getNameMethod;
+        public String       getQualityExtensionMethod;
+        public String       converter;
+        public String       extender;
+
+        public VariantInfo(String name) {
+            this.baseName = name;
+        }
+
+        public String generateVariantSource(HashSet<String> dupes) {
+
+            String name = createName();
+            int i = 2;
+            while (dupes.contains(name)) {
+                name = createName() + "_" + (i++);
+            }
+            dupes.add(name);
+            StringBuilder sb = new StringBuilder();
+            sb.append(",\r\n");
+            sb.append(name).append("(");
+            sb.append("\"").append(id.toUpperCase(Locale.ENGLISH)).append("\"");
+            sb.append(", ");
+            sb.append("YoutubeVariantInterface.VariantGroup." + group.name());
+            sb.append(", ");
+            sb.append("YoutubeVariantInterface.DownloadType." + downloadType.name());
+            sb.append(", ");
+            sb.append("\"").append(fileExtension).append("\"");
+            sb.append(", ");
+
+            sb.append(videoItag == null ? "null" : ("YoutubeITAG." + videoItag));
+            sb.append(", ");
+            sb.append(audioItag == null ? "null" : ("YoutubeITAG." + audioItag));
+            sb.append(", ");
+            sb.append(dataItag == null ? "null" : ("YoutubeITAG." + dataItag));
+            sb.append(", ");
+            sb.append("null");
+            sb.append(", ");
+            sb.append(converter);
+            sb.append(")");
+            sb.append("{\r\n");
+            sb.append("@Override\r\n");
+            sb.append("public String _getName() {\r\n");
+            sb.append(" return " + getNameMethod + ";\r\n");
+
+            sb.append("}\r\n\r\n");
+            sb.append("@Override\r\n");
+            sb.append("public String getQualityExtension() {\r\n");
+            sb.append(" return " + getQualityExtensionMethod + ";\r\n");
+            sb.append("}\r\n");
+            if (extender != null) {
+                sb.append(extender);
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+
+        private String createName() {
+            return baseName;
         }
 
     }
 
-    private static void handleItag(HashSet<String> dupes, StringBuilder sb, YoutubeITAG itag) {
-        String fps = new Regex(itag.name(), "(\\d+fps)").getMatch(0);
-        if (fps == null) {
-            fps = "30FPS";
+    private static void handleItag(YoutubeITAG itag) throws IOException {
+        String fps = fpsByItag(itag);
+
+        String resolution = getResolutionByItag(itag);
+        String bitrate = getBitrateByItag(itag);
+        String videoCodec = itag.getCodecVideo();
+        VideoContainer container = getVideoContainerByITag(itag);
+        String audioCodec = itag.getCodecAudio();
+        String audioContainer = getAudioContainerByITag(itag);
+
+        boolean is3DItag = itag.name().contains("3D");
+        // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
+        String name = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT";
+        name = name.toUpperCase(Locale.ENGLISH);
+        if (itag.name().contains("HLS")) {
+            name = "HLS_" + name;
         }
+        VariantInfo vi = new VariantInfo(name);
+        vi.id = resolution + "P_" + getExtension(itag, false);
+        vi.group = YoutubeVariantInterface.VariantGroup.VIDEO;
+        vi.downloadType = DownloadType.VIDEO;
+        vi.fileExtension = getExtension(itag, false).toString().toLowerCase(Locale.ENGLISH);
+        if (itag.name().contains("HLS")) {
+            vi.downloadType = DownloadType.HLS_VIDEO;
+
+        }
+        vi.videoItag = itag;
+        vi.audioItag = null;
+        vi.dataItag = null;
+        vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec())";
+        vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_video(\"" + resolution + "p\")";
+        if (!is3DItag) {
+            addVi(vi);
+        }
+
+        name = container + "_" + codecToName(videoCodec) + "_3D_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT";
+        name = name.toUpperCase(Locale.ENGLISH);
+        if (itag.name().contains("HLS")) {
+            name = "HLS_" + name;
+        }
+        vi.baseName = name;
+        vi.group = VariantGroup.VIDEO_3D;
+        vi.id = resolution + "P_" + getExtension(itag, false) + "_3D";
+        vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_video(\"" + resolution + "p 3D\")";
+        if (is3DItag || container != VideoContainer.MP4) {
+            addVi(vi);
+        }
+        name = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT";
+        name = name.toUpperCase(Locale.ENGLISH);
+        if (itag.name().contains("HLS")) {
+            name = "HLS_" + name;
+        }
+        name = "DEMUX_" + codecToName(audioCodec).toUpperCase(Locale.ENGLISH) + "_" + name;
+        vi.fileExtension = codecToName(audioCodec).toLowerCase(Locale.ENGLISH);
+        vi.baseName = name;
+        vi.group = VariantGroup.AUDIO;
+        vi.id = codecToName(audioCodec).toUpperCase(Locale.ENGLISH) + "_" + bitrate;
+        vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_audio(getAudioQuality())";
+        vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), getAudioCodec())";
+        vi.converter = "Youtube" + container + "To" + audioContainer + "Audio.getInstance()";
+        vi.extender = generateMethod("@Override", "double getQualityRating()", "", "AudioCodec." + codecToName(audioCodec).toUpperCase(Locale.ENGLISH) + ".getRating() + AudioBitrate.KBIT_" + bitrate + ".getRating() - 0.00000" + resolution);
+
+        // sb.append("@Override\r\n");
+        // sb.append("public String getQualityExtension() {\r\n");
+        // sb.append(" return " + getQualityExtensionMethod + ";\r\n");
+        // sb.append("}\r\n");
+        addVi(vi);
+        if ("AAC".equals(audioCodec)) {
+
+            name = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT";
+            name = name.toUpperCase(Locale.ENGLISH);
+            if (itag.name().contains("HLS")) {
+                name = "HLS_" + name;
+            }
+            name = "DEMUX_M4A_" + name;
+            vi.converter = "Youtube" + container + "To" + "M4A" + "Audio.getInstance()";
+            vi.extender = generateMethod("@Override", "double getQualityRating()", "", "AudioCodec.AAC_M4A.getRating() + AudioBitrate.KBIT_" + bitrate + ".getRating() - 0.00000" + resolution);
+            vi.fileExtension = "m4a";
+            vi.baseName = name;
+            vi.id = "M4A_" + bitrate;
+            vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), \"M4A\")";
+            addVi(vi);
+        }
+
+        System.out.println(1);
+        // // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
+        // String name3D = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + "3D_" + fps + "_" + codecToName(audioCodec)
+        // + "_" + bitrate + "KBIT";
+        //
+        // String nameDemux = "DEMUX_"+container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + "3D_" + fps + "_" +
+        // codecToName(audioCodec) + "_" + bitrate + "KBIT";
+        //
+        //
+        //
+        // if (itag.name().contains("HLS")) {
+        // download = DownloadType.HLS_VIDEO;
+        // name3D = "HLS_" + name3D;
+        // name = "HLS_" + name;
+        // }
+        // name3D = name3D.toUpperCase(Locale.ENGLISH);
+        // String orgname = name;
+        // int i = 2;
+        // while (dupes.contains(name)) {
+        // name = orgname + "_" + (i++);
+        // }
+        // String orgname3D = name3D;
+        // i = 2;
+        // while (dupes.contains(name3D)) {
+        // name3D = orgname3D + "_" + (i++);
+        // }
+        // // System.out.println("Create Dupe unique: " + name);
+        //
+        // for (YoutubeVariant v : YoutubeVariant.values()) {
+        // if (itag == v.getiTagVideo() && v.getiTagData() == null && v.getiTagAudio() == null) {
+        // if (v.getGroup() == VariantGroup.VIDEO) {
+        //
+        // if (!v.name().matches(Pattern.quote(orgname) + "(_\\d)?")) {
+        //// if (!YoutubeVariant.COMPATIBILITY_MAP.containsKey(v.name())) {
+        //// System.out.println("COMPATIBILITY_MAP.put(\"" + v.name() + "\"," + name + ");");
+        //// // Dialog.I().showMessageDialog("Replace " + v.name());
+        //// }
+        //
+        // } else {
+        // typeNormal = true;
+        // }
+        // }
+        // if (v.getGroup() == VariantGroup.VIDEO_3D) {
+        // if (!v.name().matches(Pattern.quote(orgname3D) + "(_\\d)?")) {
+        //// if (!YoutubeVariant.COMPATIBILITY_MAP.containsKey(v.name())) {
+        //// System.out.println("COMPATIBILITY_MAP.put(\"" + v.name() + "\"," + name3D + ");");
+        //// // Dialog.I().showMessageDialog("Replace " + v.name());
+        //// }
+        //
+        // } else {
+        // type3D = true;
+        // }
+        // }
+        // }
+        // if (type3D && typeNormal) {
+        // break;
+        // }
+        // }
+        //
+        // if (!typeNormal) {
+        // // System.out.println("Add dupe: " + name);
+        // dupes.add(name);
+        //
+        // sb.append(name).append("(");
+        // sb.append("\"").append(resolution + "P_" + getExtension(itag, false)).append("\"");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.VariantGroup.VIDEO");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.DownloadType." + download.name());
+        // sb.append(", ");
+        // sb.append("\"").append(getExtension(itag, false).toString().toLowerCase(Locale.ENGLISH)).append("\"");
+        // sb.append(", ");
+        // sb.append("YoutubeITAG." + itag);
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(")");
+        // sb.append("{\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String _getName() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(),
+        // getAudioCodec());\r\n");
+        //
+        // sb.append("}\r\n\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String getQualityExtension() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(itag, false) +
+        // "\");\r\n");
+        // sb.append("}\r\n");
+        // sb.append("},\r\n");
+        //
+        // }
+        // if (!type3D) {
+        // dupes.add(name3D);
+        //
+        // sb.append(name3D).append("(");
+        // sb.append("\"").append(resolution + "P_" + getExtension(itag, false)).append("\"");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.VariantGroup.VIDEO_3D");
+        // sb.append(", ");
+        // sb.append("YoutubeVariantInterface.DownloadType." + download.name());
+        // sb.append(", ");
+        // sb.append("\"").append(getExtension(itag, false).toString().toLowerCase(Locale.ENGLISH)).append("\"");
+        // sb.append(", ");
+        // sb.append("YoutubeITAG." + itag);
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(", ");
+        // sb.append("null");
+        // sb.append(")");
+        // sb.append("{\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String _getName() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(),
+        // getAudioCodec());\r\n");
+        // sb.append("}\r\n\r\n");
+        // sb.append("@Override\r\n");
+        // sb.append("public String getQualityExtension() {\r\n");
+        // sb.append(" return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p 3D\",\"" + getExtension(itag, false) +
+        // "\");\r\n");
+        // sb.append("}\r\n");
+        // sb.append("},\r\n");
+        // }
+    }
+
+    private static String getResolutionByItag(YoutubeITAG itag) {
         String resolution = new Regex(itag.getQualityVideo(), "(\\d+)p").getMatch(0);
         if (resolution == null) {
             resolution = "" + (int) itag.getQualityRating();
         }
-        String bitrate = new Regex(itag.getQualityAudio(), "(\\d+)k").getMatch(0);
-        String videoCodec = itag.getCodecVideo();
+        return resolution;
+    }
+
+    private static VideoContainer getVideoContainerByITag(YoutubeITAG itag) {
         VideoContainer container = null;
-        DownloadType download = DownloadType.VIDEO;
+
         for (MediaQualityInterface qt : itag.getQualityTags()) {
             if (qt instanceof VideoContainer) {
                 container = (VideoContainer) qt;
@@ -326,134 +812,88 @@ public class ItagHelper {
         if (container == null) {
             throw new WTFException("VideoContainer missing for " + itag);
         }
-        // String videoCodec = new Regex(dashVideo.name(), "(h264|vp9)").getMatch(0);
-        String audioCodec = itag.getCodecAudio();
+        return container;
+    }
 
-        // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
-        String name = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT";
-        name = name.toUpperCase(Locale.ENGLISH);
+    private static String generateMethod(String annotation, String header, String extra, String ret) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(annotation);
+        sb.append("\r\n");
+        sb.append("public " + header + " {\r\n");
+        if (extra != null) {
+            sb.append("\r\n").append(extra).append("\r\n");
+        }
+        sb.append(" return " + ret + ";\r\n");
+        sb.append("}\r\n");
+        return sb.toString();
+    }
 
-        // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
-        String name3D = container + "_" + codecToName(videoCodec) + "_" + resolution + "P_" + "3D_" + fps + "_" + codecToName(audioCodec) + "_" + bitrate + "KBIT";
-        if (itag.name().contains("HLS")) {
-            download = DownloadType.HLS_VIDEO;
-            name3D = "HLS_" + name3D;
-            name = "HLS_" + name;
+    private static void addVi(VariantInfo vi) throws IOException {
+        for (String regex : EXCLUDES) {
+            if (vi.baseName.matches(regex)) {
+                System.out.println("Ignore " + vi + "(" + regex + ")");
+                return;
+            }
         }
-        name3D = name3D.toUpperCase(Locale.ENGLISH);
-        String orgname = name;
-        int i = 2;
-        while (dupes.contains(name)) {
-            name = orgname + "_" + (i++);
+
+        YoutubeVariant existingVariant = getExistingVariant(vi);
+        if (existingVariant == null) {
+
+            appendToSrc(vi.generateVariantSource(dupes), "// ###APPEND###");
+        } else {
+            String existingBaseName = existingVariant.name().replaceAll("_\\d+$", "");
+            if (StringUtils.equals(existingBaseName, vi.baseName)) {
+                // ok
+            } else {
+                appendToSrc(vi.generateVariantSource(dupes), "// ###APPEND###");
+                removeFromSrc("\r\n\\s*" + existingVariant.name() + "\\(.*?\\}\\s*[,;]", "");
+                appendToSrc("COMPATIBILITY_MAP.put(\"" + existingVariant.name() + "\"," + vi.createName() + ");", "// ###APPEND_COMPATIBILITY_MAP###");
+            }
         }
-        String orgname3D = name3D;
-        i = 2;
-        while (dupes.contains(name3D)) {
-            name3D = orgname3D + "_" + (i++);
-        }
-        // System.out.println("Create Dupe unique: " + name);
-        boolean type3D = false;
-        boolean typeNormal = false;
+    }
+
+    private static void removeFromSrc(String search, String replace) throws IOException {
+        File project = IDEUtils.getProjectFolder(YoutubeVariant.class);
+        File variantSourceFile = new File(new File(project, "src"), YoutubeVariant.class.getName().replace(".", "/") + ".java");
+
+        String src = IO.readFileToString(variantSourceFile);
+        // String found = new Regex(src, search).getMatch(-1);
+        src = Pattern.compile(search, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(src).replaceAll(replace);
+
+        variantSourceFile.delete();
+        IO.writeStringToFile(variantSourceFile, src, false, SYNC.META_AND_DATA);
+    }
+
+    private static void appendToSrc(String newSrc, String tag) throws IOException {
+        File project = IDEUtils.getProjectFolder(YoutubeVariant.class);
+        File variantSourceFile = new File(new File(project, "src"), YoutubeVariant.class.getName().replace(".", "/") + ".java");
+
+        String src = IO.readFileToString(variantSourceFile);
+
+        src = src.replace(tag, newSrc + "\r\n" + tag);
+        variantSourceFile.delete();
+        IO.writeStringToFile(variantSourceFile, src, false, SYNC.META_AND_DATA);
+    }
+
+    private static YoutubeVariant getExistingVariant(VariantInfo vi) {
+        // YoutubeVariant[] values = YoutubeVariant.values();
         for (YoutubeVariant v : YoutubeVariant.values()) {
-            if (itag == v.getiTagVideo() && v.getiTagData() == null && v.getiTagAudio() == null) {
-                if (v.getGroup() == VariantGroup.VIDEO) {
-
-                    if (!v.name().matches(Pattern.quote(orgname) + "(_\\d)?")) {
-                        if (!YoutubeVariant.COMPATIBILITY_MAP.containsKey(v.name())) {
-                            System.out.println("COMPATIBILITY_MAP.put(\"" + v.name() + "\"," + name + ");");
-                            // Dialog.I().showMessageDialog("Replace " + v.name());
-                        }
-
-                    } else {
-                        typeNormal = true;
-                    }
-                }
-                if (v.getGroup() == VariantGroup.VIDEO_3D) {
-                    if (!v.name().matches(Pattern.quote(orgname3D) + "(_\\d)?")) {
-                        if (!YoutubeVariant.COMPATIBILITY_MAP.containsKey(v.name())) {
-                            System.out.println("COMPATIBILITY_MAP.put(\"" + v.name() + "\"," + name3D + ");");
-                            // Dialog.I().showMessageDialog("Replace " + v.name());
-                        }
-
-                    } else {
-                        type3D = true;
-                    }
+            if (vi.group == v.getGroup() && vi.videoItag == v.getiTagVideo() && vi.audioItag == v.getiTagAudio() && vi.dataItag == v.getiTagData()) {
+                String baseName = v.name().replaceAll("_\\d+$", "");
+                if (StringUtils.equals(baseName, vi.baseName)) {
+                    return v;
                 }
             }
-            if (type3D && typeNormal) {
-                break;
+
+        }
+
+        for (YoutubeVariant v : YoutubeVariant.values()) {
+            if (vi.group == v.getGroup() && vi.videoItag == v.getiTagVideo() && vi.audioItag == v.getiTagAudio() && vi.dataItag == v.getiTagData()) {
+                return v;
             }
-        }
-
-        if (!typeNormal) {
-            // System.out.println("Add dupe: " + name);
-            dupes.add(name);
-
-            sb.append(name).append("(");
-            sb.append("\"").append(resolution + "P_" + getExtension(itag, false)).append("\"");
-            sb.append(", ");
-            sb.append("YoutubeVariantInterface.VariantGroup.VIDEO");
-            sb.append(", ");
-            sb.append("YoutubeVariantInterface.DownloadType." + download.name());
-            sb.append(", ");
-            sb.append("\"").append(getExtension(itag, false).toString().toLowerCase(Locale.ENGLISH)).append("\"");
-            sb.append(", ");
-            sb.append("YoutubeITAG." + itag);
-            sb.append(", ");
-            sb.append("null");
-            sb.append(", ");
-            sb.append("null");
-            sb.append(", ");
-            sb.append("null");
-            sb.append(", ");
-            sb.append("null");
-            sb.append(")");
-            sb.append("{\r\n");
-            sb.append("@Override\r\n");
-            sb.append("public String _getName() {\r\n");
-            sb.append("    return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());\r\n");
-
-            sb.append("}\r\n\r\n");
-            sb.append("@Override\r\n");
-            sb.append("public String getQualityExtension() {\r\n");
-            sb.append("   return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(itag, false) + "\");\r\n");
-            sb.append("}\r\n");
-            sb.append("},\r\n");
 
         }
-        if (!type3D) {
-            dupes.add(name3D);
-
-            sb.append(name3D).append("(");
-            sb.append("\"").append(resolution + "P_" + getExtension(itag, false)).append("\"");
-            sb.append(", ");
-            sb.append("YoutubeVariantInterface.VariantGroup.VIDEO_3D");
-            sb.append(", ");
-            sb.append("YoutubeVariantInterface.DownloadType." + download.name());
-            sb.append(", ");
-            sb.append("\"").append(getExtension(itag, false).toString().toLowerCase(Locale.ENGLISH)).append("\"");
-            sb.append(", ");
-            sb.append("YoutubeITAG." + itag);
-            sb.append(", ");
-            sb.append("null");
-            sb.append(", ");
-            sb.append("null");
-            sb.append(", ");
-            sb.append("null");
-            sb.append(", ");
-            sb.append("null");
-            sb.append(")");
-            sb.append("{\r\n");
-            sb.append("@Override\r\n");
-            sb.append("public String _getName() {\r\n");
-            sb.append("    return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());\r\n");
-            sb.append("}\r\n\r\n");
-            sb.append("@Override\r\n");
-            sb.append("public String getQualityExtension() {\r\n");
-            sb.append("   return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p 3D\",\"" + getExtension(itag, false) + "\");\r\n");
-            sb.append("}\r\n");
-            sb.append("},\r\n");
-        }
+        return null;
     }
 
     private static String codecToName(String codec) {
@@ -516,13 +956,30 @@ public class ItagHelper {
         return false;
     }
 
-    private static Object getExtension(YoutubeITAG dashVideo, boolean audio) {
+    private static String getExtension(YoutubeITAG dashVideo, boolean audio) {
         if (audio) {
             if ("Opus".equalsIgnoreCase(dashVideo.getCodecAudio())) {
                 return "Ogg";
             }
 
         } else {
+
+            VideoContainer container = null;
+
+            for (MediaQualityInterface qt : dashVideo.getQualityTags()) {
+                if (qt instanceof VideoContainer) {
+                    container = (VideoContainer) qt;
+
+                }
+            }
+            if (container != null) {
+                switch (container) {
+                case THREEGP:
+                    return "3gp";
+                default:
+                    return container.name().toLowerCase(Locale.ENGLISH);
+                }
+            }
             if ("vp9".equalsIgnoreCase(dashVideo.getCodecVideo())) {
                 return "WebM";
             }
