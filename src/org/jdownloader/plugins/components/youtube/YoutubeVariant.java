@@ -8,6 +8,7 @@ import java.util.Locale;
 
 import javax.swing.Icon;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -17,16 +18,29 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 public enum YoutubeVariant implements YoutubeVariantInterface {
-    OLD(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
+    SUBTITLES(null, YoutubeVariantInterface.VariantGroup.SUBTITLES, YoutubeVariantInterface.DownloadType.SUBTITLES, "srt", null, null, YoutubeITAG.SUBTITLE, YoutubeSubtitleNamer.getInstance(), YoutubeSRTConverter.getInstance()) {
         @Override
         public String _getName() {
-            return _GUI.T.YoutubeVariant_name_AAC_128();
+            return _GUI.T.YoutubeVariant_name_SUBTITLES();
         }
 
         @Override
         public String getQualityExtension() {
-            return _GUI.T.YoutubeVariant_filenametag_AAC_128();
+            return _GUI.T.YoutubeVariant_filenametag_SUBTITLES();
         }
+
+    },
+    DESCRIPTION(null, YoutubeVariantInterface.VariantGroup.DESCRIPTION, YoutubeVariantInterface.DownloadType.DESCRIPTION, "txt", null, null, YoutubeITAG.DESCRIPTION, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_DESCRIPTION();
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_filenametag_DESCRIPTION();
+        }
+
     }
     // ###APPEND###
     ;
@@ -59,6 +73,29 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         this.iTagData = data;
         this.converter = converter;
         this.filenameModifier = filenameModifier;
+    }
+
+    public boolean isValidFor(YoutubeClipData vid) {
+        switch (getGroup()) {
+        case VIDEO:
+            // && !StringUtils.equalsIgnoreCase("mp4", getFileExtension())
+            if (vid.is3D()) {
+                return false;
+            }
+            break;
+        case VIDEO_3D:
+            if (!vid.is3D()) {
+                return false;
+            }
+            break;
+        case SUBTITLES:
+            return vid.subtitles != null && vid.subtitles.size() > 0;
+        case DESCRIPTION:
+            return StringUtils.isNotEmpty(vid.description);
+        default:
+        }
+
+        return true;
     }
 
     public static HashMap<String, YoutubeVariant> COMPATIBILITY_MAP = new HashMap<String, YoutubeVariant>();
