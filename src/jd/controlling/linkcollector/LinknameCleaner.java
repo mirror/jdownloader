@@ -144,7 +144,7 @@ public class LinknameCleaner {
                 if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
                     /* make sure to cut off only known extensions */
                     name = name.substring(0, lastPoint);
-                } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings)) {
+                } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
                     /* make sure to cut off only known extensions */
                     name = name.substring(0, lastPoint);
                 }
