@@ -57,7 +57,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         final DownloadLink link = getPlugin().getDownloadLink();
 
         if (siteKey == null) {
-            getSiteKey();
+            siteKey = getSiteKey();
             if (siteKey == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RecaptchaV2 API Key can not be found");
             }
