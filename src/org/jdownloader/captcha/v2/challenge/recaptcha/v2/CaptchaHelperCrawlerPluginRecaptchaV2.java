@@ -43,7 +43,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }
         if (siteKey == null) {
-            getSiteKey();
+            siteKey = getSiteKey();
             if (siteKey == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RecaptchaV2 API Key can not be found");
             }
