@@ -517,7 +517,7 @@ public class LinkCrawler {
                     final boolean ret = super.add(e);
                     if (ret && (!e.contains("...") && !e.equals(getBaseURL()))) {
                         fastResults.add(e);
-                        final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toString());
+                        final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toURL());
                         crawledLink.setCrawlDeep(allowDeep);
                         final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
                         crawledLinks.add(crawledLink);
@@ -540,7 +540,7 @@ public class LinkCrawler {
                                     }
                                 }
                             }
-                            ret.add(result.toString());
+                            ret.add(result.toURL());
                         }
                     }
                     return ret;
