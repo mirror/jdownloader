@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,8 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twojlimit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class TwojLimitPl extends PluginForHost {
@@ -55,13 +56,7 @@ public class TwojLimitPl extends PluginForHost {
         br.getPage(adres);
         adres = br.getRedirectLocation();
         br.getPage(adres);
-        if (br.containsHTML("0=Nieprawidlowa nazwa uzytkownika/haslo")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        handleErrors(br);
         if (this.br.containsHTML("balance")) {
             Info = br.toString();
         }
@@ -78,9 +73,25 @@ public class TwojLimitPl extends PluginForHost {
 
     }
 
+    private void handleErrors(Browser br) throws PluginException {
+        if (br.containsHTML("0=Nieprawidlowa nazwa uzytkownika/haslo")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        if (br.toString().trim().equals("80=Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany")) {
+            // Too many login attempts - access has been temporarily blocked
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access has been temporarily blocked.", 30 * 60 * 1000l);
+
+        }
+    }
+
     /* function returns transfer left */
     private long GetTrasferLeft(String wynik) {
-        String[] temp = wynik.split(" ");
+        final String cleanup = wynik.trim();
+        String[] temp = cleanup.split(" ");
         String[] tab = temp[0].split("=");
         long rozmiar = Long.parseLong(tab[1]);
         rozmiar *= 1024;
@@ -215,7 +226,7 @@ public class TwojLimitPl extends PluginForHost {
          * is offline
          */
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-            // error
+        // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {
