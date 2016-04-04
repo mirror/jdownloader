@@ -19,9 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdpussy.xxx" }, urls = { "http://(www\\.)?hdpussy\\.xxx/video/[a-z0-9]{32}/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdpussy.xxx" }, urls = { "http://(www\\.)?hdpussy\\.xxx/video/[a-f0-9]{32}/" }, flags = { 0 })
 public class HdPussyXxx extends PluginForHost {
 
     public HdPussyXxx(PluginWrapper wrapper) {
@@ -43,6 +42,7 @@ public class HdPussyXxx extends PluginForHost {
         return "http://hdpussy.xxx/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -55,40 +55,38 @@ public class HdPussyXxx extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\| HD Pussy XXX</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        if (filename == null) {
+            /* Fallback to URL-filename */
+            filename = new Regex(downloadLink.getDownloadURL(), "([a-f0-9]{32})/$").getMatch(0);
+        }
+        DLLINK = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = null;
+        if (DLLINK != null) {
+            DLLINK = Encoding.htmlDecode(DLLINK);
+            if (!DLLINK.startsWith("http")) {
+                /* E.g. missing videosource, player will show error 'No playable sources found' --> Offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        filename = Encoding.htmlDecode(filename).trim();
+        downloadLink.setFinalFileName(filename + ext);
+        /* Do NOT check for filesize as their directurls often time out which would make this process really really slow! */
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
