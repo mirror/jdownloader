@@ -231,7 +231,7 @@ public class FileSharkPl extends PluginForHost {
                     }
 
                 } else
-                    // try without API
+                // try without API
                 {
                     useAPI = false;
                 }
@@ -375,7 +375,7 @@ public class FileSharkPl extends PluginForHost {
                     dllink = PluginJSonUtils.getJson(response, "downloadLink");
                     waitTimeDetected = false;
                 }
-            } while (waitTimeDetected || trials > 1);
+            } while (waitTimeDetected && (trials < 2));
 
         }
         if (!useAPI) {
@@ -761,40 +761,40 @@ public class FileSharkPl extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("USE_API", "Use API (recommended!)");
-            put("PREMIUM_USER", "Premium User");
-            put("REGISTERED_USER", "Registered User");
-            put("POLAND_ONLY", "This service is only available in Poland");
-            put("NOT_DOWNLOADABLE", "File is unavailable for download");
-            put("DMCA_REQUEST", "File requested by DMCA");
-            put("FILE_DELETED", "File deleted");
-            put("OTHER_FILE_DOWNLOAD", "Other file is downloading!");
-            put("PREMIUM_ONLY", "This file can only be downloaded by premium users");
-            put("WRONG_CAPTCHA", "Wrong Captcha!");
-            put("LOGIN_FAILED", "Login failed");
-            put("VERIFY_LOGIN", "Please check your Username and Password!");
-            put("LOGIN_ERROR", "Login Error");
-        }
-    };
+                                                  {
+                                                      put("USE_API", "Use API (recommended!)");
+                                                      put("PREMIUM_USER", "Premium User");
+                                                      put("REGISTERED_USER", "Registered User");
+                                                      put("POLAND_ONLY", "This service is only available in Poland");
+                                                      put("NOT_DOWNLOADABLE", "File is unavailable for download");
+                                                      put("DMCA_REQUEST", "File requested by DMCA");
+                                                      put("FILE_DELETED", "File deleted");
+                                                      put("OTHER_FILE_DOWNLOAD", "Other file is downloading!");
+                                                      put("PREMIUM_ONLY", "This file can only be downloaded by premium users");
+                                                      put("WRONG_CAPTCHA", "Wrong Captcha!");
+                                                      put("LOGIN_FAILED", "Login failed");
+                                                      put("VERIFY_LOGIN", "Please check your Username and Password!");
+                                                      put("LOGIN_ERROR", "Login Error");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("USE_API", "Używaj API (zalecane!)");
-            put("PREMIUM_USER", "Użytkownik Premium");
-            put("REGISTERED_USER", "Uzytkownik zarejestrowany");
-            put("POLAND_ONLY", "Dostęp do serwisu wyłącznie dla adresów z terenu Polski");
-            put("NOT_DOWNLOADABLE", "Plik niedostępny do pobrania");
-            put("DMCA_REQUEST", "Plik zgłoszony przez DMCA");
-            put("FILE_DELETED", "Plik usunięty");
-            put("OTHER_FILE_DOWNLOAD", "Inny plik jest pobierany!");
-            put("PREMIUM_ONLY", "Plik możliwy do pobierania wyłącznie dla użytkowników Premium");
-            put("WRONG_CAPTCHA", "Błędny kod Captcha!");
-            put("LOGIN_FAILED", "Błędny login/hasło");
-            put("VERIFY_LOGIN", "Proszę zweryfikuj swoją nazwę użytkownika i hasło!");
-            put("LOGIN_ERROR", "Błąd logowania");
-        }
-    };
+                                                  {
+                                                      put("USE_API", "Używaj API (zalecane!)");
+                                                      put("PREMIUM_USER", "Użytkownik Premium");
+                                                      put("REGISTERED_USER", "Uzytkownik zarejestrowany");
+                                                      put("POLAND_ONLY", "Dostęp do serwisu wyłącznie dla adresów z terenu Polski");
+                                                      put("NOT_DOWNLOADABLE", "Plik niedostępny do pobrania");
+                                                      put("DMCA_REQUEST", "Plik zgłoszony przez DMCA");
+                                                      put("FILE_DELETED", "Plik usunięty");
+                                                      put("OTHER_FILE_DOWNLOAD", "Inny plik jest pobierany!");
+                                                      put("PREMIUM_ONLY", "Plik możliwy do pobierania wyłącznie dla użytkowników Premium");
+                                                      put("WRONG_CAPTCHA", "Błędny kod Captcha!");
+                                                      put("LOGIN_FAILED", "Błędny login/hasło");
+                                                      put("VERIFY_LOGIN", "Proszę zweryfikuj swoją nazwę użytkownika i hasło!");
+                                                      put("LOGIN_ERROR", "Błąd logowania");
+                                                  }
+                                              };
 
     private boolean getUseAPI() {
         return this.getPluginConfig().getBooleanProperty("USE_API", true);
