@@ -66,7 +66,7 @@ public class PinterestCom extends PluginForHost {
     }
 
     /* Site constants */
-    public static final String x_app_version     = "072ce1e";
+    public static final String x_app_version     = "6cedd5c";
     public static final String default_extension = ".jpg";
 
     /* don't touch the following! */
