@@ -95,4 +95,6 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
     List<File> listProcessFiles(DownloadLink link);
 
+    boolean isValidFor(YoutubeClipData vid);
+
 }

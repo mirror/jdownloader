@@ -185,6 +185,10 @@ public class FFmpeg extends AbstractFFmpegBinary {
         return mux(progress, out, videoIn, audioIn, config.getMuxToWebmCommand());
     }
 
+    public boolean generateOpusAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
+        return demux(progress, out, audioIn, config.getDash2OpusAudioCommand());
+    }
+
     public boolean generateOggAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
         return demux(progress, out, audioIn, config.getDash2OggAudioCommand());
     }

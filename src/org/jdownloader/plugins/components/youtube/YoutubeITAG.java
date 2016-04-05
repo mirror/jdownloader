@@ -16,19 +16,19 @@ public enum YoutubeITAG {
     DASH_AUDIO_OPUS_160KBIT(251, null, null, "Opus", "160kbit", AudioCodec.OPUS, AudioBitrate.KBIT_160) {
         @Override
         public String getCustomQualityExtension(Object caller) {
-            return super.getCustomQualityExtension(caller) + " Opus";
+            return getQualityAudio() + " Opus";
         }
     },
     DASH_AUDIO_OPUS_48KBIT(249, null, null, "Opus", "48kbit", AudioCodec.OPUS, AudioBitrate.KBIT_48) {
         @Override
         public String getCustomQualityExtension(Object caller) {
-            return super.getCustomQualityExtension(caller) + " Opus";
+            return getQualityAudio() + " Opus";
         }
     },
     DASH_AUDIO_OPUS_64KBIT(250, null, null, "Opus", "64kbit", AudioCodec.OPUS, AudioBitrate.KBIT_64) {
         @Override
         public String getCustomQualityExtension(Object caller) {
-            return super.getCustomQualityExtension(caller) + " Opus";
+            return getQualityAudio() + " Opus";
         }
     },
     DASH_VIDEO_1080_H264_FPS60(299, "H264", "1080p 60fps", null, null, VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264, MediaTagsVarious.VIDEO_FPS_60),
@@ -367,12 +367,10 @@ public enum YoutubeITAG {
             }
 
         case 266:
-            switch (fps) {
-            case 24:
+            if (fps < 50) {
                 return DASH_VIDEO_2160_H264;
-            default:
-                return DASH_VIDEO_2160_H264_FPS_60;
             }
+            return DASH_VIDEO_2160_H264_FPS_60;
         case 18:
             if (version == null) {
                 version = YoutubeITAGVersion.getByDate(uploadDate);

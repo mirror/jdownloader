@@ -11,6 +11,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
 
@@ -186,6 +187,11 @@ public class SubtitleVariant implements YoutubeVariantInterface {
 
     public String _getIdentifier() {
         return identifier;
+    }
+
+    @Override
+    public boolean isValidFor(YoutubeClipData vid) {
+        return vid.subtitles != null && vid.subtitles.size() > 0;
     }
 
 }

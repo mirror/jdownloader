@@ -48,6 +48,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeVariant;
 import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
 import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -471,6 +472,10 @@ public class TbCmV2 extends PluginForDecrypt {
 
                     continue;
                 }
+                if (!v.isValidFor(vid)) {
+                    logger.info("Invalid Variant for Video: " + v);
+                    continue;
+                }
                 // System.out.println("test for " + v);
                 String groupID = getGroupID(v);
 
@@ -512,27 +517,28 @@ public class TbCmV2 extends PluginForDecrypt {
                     } else {
                         // if we have several variants with the same id, use the one with the highest rating.
                         // example: mp3 conversion can be done from a high and lower video. audio is the same. we should prefer the lq video
-                        VariantInfo mapped = idMap.get(v.getTypeId());
+                        if (!CFG_GUI.CFG.isExtendedVariantNamesEnabled()) {
+                            VariantInfo mapped = idMap.get(v.getTypeId());
 
-                        if (mapped == null || v.getQualityRating() > mapped.getVariant().getQualityRating()) {
-                            idMap.put(v.getTypeId(), vi);
-                            // remove old mapping
-                            if (mapped != null) {
-                                getLogger().info("Removed Type Dupe: " + mapped);
-                                String mappedGroupID = getGroupID(mapped.getVariant());
-                                List<VariantInfo> list = groups.get(mappedGroupID);
-                                if (list != null) {
-                                    list.remove(mapped);
+                            if (mapped == null || v.getQualityRating() > mapped.getVariant().getQualityRating()) {
+                                idMap.put(v.getTypeId(), vi);
+                                // remove old mapping
+                                if (mapped != null) {
+                                    getLogger().info("Removed Type Dupe: " + mapped);
+                                    String mappedGroupID = getGroupID(mapped.getVariant());
+                                    List<VariantInfo> list = groups.get(mappedGroupID);
+                                    if (list != null) {
+                                        list.remove(mapped);
+                                    }
+
+                                    allVariants.remove(mapped.getVariant());
                                 }
 
-                                allVariants.remove(mapped.getVariant());
+                            } else {
+                                // we already have a better quality of this variant id
+                                continue;
                             }
-
-                        } else {
-                            // we already have a better quality of this variant id
-                            continue;
                         }
-
                         List<VariantInfo> list = groups.get(groupID);
                         if (list == null) {
                             list = new ArrayList<VariantInfo>();

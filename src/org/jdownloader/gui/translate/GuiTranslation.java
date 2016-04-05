@@ -4782,6 +4782,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "96kbit/s AAC-Audio" })
     String YoutubeVariant_name_AAC_96();
 
+    @Default(lngs = { "en" }, values = { "%s1kbit/s %s2-Audio" })
+    String YoutubeVariant_name_generic_audio(int kbit, String type);
+
     @Default(lngs = { "en" }, values = { "96kbit" })
     String YoutubeVariant_filenametag_AAC_96();
 
