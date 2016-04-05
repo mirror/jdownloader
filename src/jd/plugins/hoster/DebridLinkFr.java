@@ -28,7 +28,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -557,12 +556,6 @@ public class DebridLinkFr extends PluginForHost {
             }
         }
         return true;
-    }
-
-    private String[] getHostItems(final String source) {
-        final String jsonarrayplaintext = new Regex(source, "\"hosters\":\\[(.*?)\\],\"ts\"").getMatch(0);
-        final String[] hostitems = jsonarrayplaintext.split("\\},\\{");
-        return hostitems;
     }
 
     private void showMessage(DownloadLink link, String message) {
