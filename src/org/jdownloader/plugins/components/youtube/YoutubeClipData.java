@@ -2,8 +2,11 @@ package org.jdownloader.plugins.components.youtube;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.decrypter.YoutubeHelper;
@@ -33,9 +36,36 @@ public class YoutubeClipData {
     public Map<YoutubeITAG, List<YoutubeStreamData>> streams;
     public ArrayList<YoutubeSubtitleInfo>            subtitles;
     public HashMap<String, String>                   keywords3D;
+    public HashSet<String>                           keywords;
+    public String                                    approxThreedLayout;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);
+    }
+
+    public boolean is3D() {
+        // from yt player js
+        if ("1".equals(approxThreedLayout)) {
+            return true;
+        }
+        if (keywords != null) {
+            if (keywords.contains("3D")) {
+                return true;
+            }
+
+        }
+        if (keywords3D != null) {
+            if (StringUtils.equals(keywords3D.get("enable"), "true")) {
+                return true;
+            }
+            if (StringUtils.equals(keywords3D.get("enable"), "LR")) {
+                return true;
+            }
+            if (StringUtils.equals(keywords3D.get("enable"), "RL")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

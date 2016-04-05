@@ -22,16 +22,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class YoutubeMp4ToAACAudio implements YoutubeConverter {
-    private static final YoutubeMp4ToAACAudio INSTANCE = new YoutubeMp4ToAACAudio();
+public class YoutubeConverterMP4ToAACAudio implements YoutubeConverter {
+    private static final YoutubeConverterMP4ToAACAudio INSTANCE = new YoutubeConverterMP4ToAACAudio();
 
     /**
      * get the only existing instance of YoutubeMp4ToM4aAudio. This is a singleton
      *
      * @return
      */
-    public static YoutubeMp4ToAACAudio getInstance() {
-        return YoutubeMp4ToAACAudio.INSTANCE;
+    public static YoutubeConverterMP4ToAACAudio getInstance() {
+        return YoutubeConverterMP4ToAACAudio.INSTANCE;
     }
 
     private LogSource logger;
@@ -40,8 +40,8 @@ public class YoutubeMp4ToAACAudio implements YoutubeConverter {
      * Create a new instance of YoutubeMp4ToM4aAudio. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
-    private YoutubeMp4ToAACAudio() {
-        logger = LogController.getInstance().getLogger(YoutubeMp4ToAACAudio.class.getName());
+    private YoutubeConverterMP4ToAACAudio() {
+        logger = LogController.getInstance().getLogger(YoutubeConverterMP4ToAACAudio.class.getName());
     }
 
     @Override

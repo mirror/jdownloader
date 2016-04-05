@@ -168,12 +168,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     private Map<String, YoutubeVariantInterface> variantsMap;
 
-    public Map<String, YoutubeVariantInterface> getVariantsMap() {
-        return variantsMap;
-    }
+    // public Map<String, YoutubeVariantInterface> getVariantsMap() {
+    // return variantsMap;
+    // }
 
-    public static LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static LogSource                      LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<YoutubeReplacer>          REPLACER = new ArrayList<YoutubeReplacer>();
 
     static {
         REPLACER.add(new YoutubeReplacer("group") {
@@ -194,6 +194,41 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_group();
+            }
+
+        });
+
+        REPLACER.add(new YoutubeReplacer("itagaudio") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+                try {
+                    return "" + YoutubeVariant.valueOf(link.getStringProperty(YoutubeHelper.YT_VARIANT, "")).getiTagAudio().getITAG();
+                } catch (Throwable e) {
+                }
+                return "";
+            }
+
+            @Override
+            public String getDescription() {
+                return "Itag Audio";
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("itagvideo") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+                try {
+                    return "" + YoutubeVariant.valueOf(link.getStringProperty(YoutubeHelper.YT_VARIANT, "")).getiTagVideo().getITAG();
+                } catch (Throwable e) {
+                }
+                return "";
+            }
+
+            @Override
+            public String getDescription() {
+                return "Itag Video";
             }
 
         });
@@ -1246,12 +1281,22 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         getAbsolute(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999", null, br);
 
+        vid.approxThreedLayout = br.getRegex("\"approx_threed_layout\"\\s*\\:\\s*\"([^\"]*)").getMatch(0);
         String[][] keyWordsGrid = br.getRegex("<meta\\s+property=\"([^\"]*)\"\\s+content=\"yt3d\\:([^\"]+)=([^\"]+)\">").getMatches();
         vid.keywords3D = new HashMap<String, String>();
         if (keyWordsGrid != null) {
             for (String[] keyValue : keyWordsGrid) {
                 vid.keywords3D.put(keyValue[1], keyValue[2]);
             }
+        }
+
+        String keywords = br.getRegex("<meta name=\"keywords\" content=\"([^\"]*)").getMatch(0);
+        vid.keywords = new HashSet<String>();
+        if (keywords != null) {
+            for (String s : keywords.split("[,]+")) {
+                vid.keywords.add(s);
+            }
+
         }
         handleRentalVideos();
 
@@ -2587,7 +2632,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     public YoutubeVariantInterface getVariantById(String ytv) {
-        return variantsMap.get(ytv);
+        YoutubeVariantInterface ret = variantsMap.get(ytv);
+        if (ret == null) {
+            return YoutubeVariant.COMPATIBILITY_MAP.get(ytv);
+        }
+        return ret;
     }
 
     public List<YoutubeVariantInterface> getVariantByIds(String... extra) {

@@ -1686,8 +1686,6 @@ public class YoutubeDashV2 extends PluginForHost {
                                     downloadLink.removePluginProgress(progress);
                                 }
 
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
 
                         } else {
@@ -1697,6 +1695,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
                 }
             } catch (final FileIsLockedException e) {
+                logger.log(e);
                 throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             } finally {
 
@@ -2087,7 +2086,7 @@ public class YoutubeDashV2 extends PluginForHost {
             return null;
         }
         // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
-        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getiTagVideo() + "_" + var.getiTagAudio() + ".dashAudio";
+        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var._getUniqueId() + ".dashAudio";
     }
 
     public String getVideoStreamPath(DownloadLink link) throws PluginException {
@@ -2108,7 +2107,7 @@ public class YoutubeDashV2 extends PluginForHost {
             return null;
         }
         // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
-        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getiTagVideo() + "_" + var.getiTagAudio() + ".dashVideo";
+        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var._getUniqueId() + ".dashVideo";
     }
 
     @Override

@@ -164,4 +164,9 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
         return name;
     }
 
+    @Override
+    public boolean isValidFor(YoutubeClipData vid) {
+        return source.isValidFor(vid);
+    }
+
 }

@@ -80,6 +80,12 @@ public interface FFmpegSetup extends ConfigInterface {
     void setMuxToWebmCommand(String[] command);
 
     @AboutConfig
+    @DefaultStringArrayValue({ "-i", "%audio", "-f", "opus", "-c:a", "copy", "%out", "-y" })
+    String[] getDash2OpusAudioCommand();
+
+    void setDash2OpusAudioCommand(String[] command);
+
+    @AboutConfig
     @DefaultStringArrayValue({ "-i", "%audio", "-f", "ogg", "-c:a", "copy", "%out", "-y" })
     String[] getDash2OggAudioCommand();
 

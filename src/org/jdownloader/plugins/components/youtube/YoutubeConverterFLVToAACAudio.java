@@ -3,12 +3,6 @@ package org.jdownloader.plugins.components.youtube;
 import java.io.File;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
@@ -22,16 +16,22 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.updatev2.UpdateController;
 
-public class YoutubeFlvToMp3Audio implements YoutubeConverter {
-    private static final YoutubeFlvToMp3Audio INSTANCE = new YoutubeFlvToMp3Audio();
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
+public class YoutubeConverterFLVToAACAudio implements YoutubeConverter, ExternalToolRequired {
+    private static final YoutubeConverterFLVToAACAudio INSTANCE = new YoutubeConverterFLVToAACAudio();
 
     /**
      * get the only existing instance of YoutubeMp4ToM4aAudio. This is a singleton
-     * 
+     *
      * @return
      */
-    public static YoutubeFlvToMp3Audio getInstance() {
-        return YoutubeFlvToMp3Audio.INSTANCE;
+    public static YoutubeConverterFLVToAACAudio getInstance() {
+        return YoutubeConverterFLVToAACAudio.INSTANCE;
     }
 
     private LogSource logger;
@@ -40,8 +40,8 @@ public class YoutubeFlvToMp3Audio implements YoutubeConverter {
      * Create a new instance of YoutubeMp4ToM4aAudio. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
-    private YoutubeFlvToMp3Audio() {
-        logger = LogController.getInstance().getLogger(YoutubeFlvToMp3Audio.class.getName());
+    private YoutubeConverterFLVToAACAudio() {
+        logger = LogController.getInstance().getLogger(YoutubeConverterFLVToAACAudio.class.getName());
     }
 
     @Override
@@ -86,7 +86,7 @@ public class YoutubeFlvToMp3Audio implements YoutubeConverter {
             }
 
             File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
-            if (!ffmpeg.demuxMp3(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
+            if (!ffmpeg.demuxAAC(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
             }
 
