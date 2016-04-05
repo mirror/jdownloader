@@ -50,10 +50,11 @@ public class StageVuCom extends PluginForHost {
         // convert embed links back into standard links
         if (link.getDownloadURL().contains(".com/embed?")) {
             String uid = new Regex(link.getDownloadURL(), "uid=([a-z]{12})").getMatch(0);
-            if (uid != null)
+            if (uid != null) {
                 link.setUrlDownload("http://stagevu.com/video/" + uid);
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
     }
 
@@ -62,9 +63,21 @@ public class StageVuCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         // Invalid link
-        if (br.containsHTML(">Error: No video with the provided information exists</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Error: No video with the provided information exists</div>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Offline link
-        if (br.containsHTML("The video you are attempting to view has been removed<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The video you are attempting to view has been removed<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // Offline link
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // Offline link
+        if (br.toString().length() < 2000) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?)- Stagevu: Your View</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div id=\"vidbox\">[\n\r\t ]+<h1>(.*?)</h1>").getMatch(0);
@@ -72,7 +85,9 @@ public class StageVuCom extends PluginForHost {
                 filename = br.getRegex("<param name=\"movieTitle\" value=\"(.*?)\"").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".avi");
         if (br.containsHTML(">Restricted Content<")) {
             link.getLinkStatus().setStatusText("Only downloadable for registered users!");
@@ -88,7 +103,9 @@ public class StageVuCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users!");
         }
@@ -99,12 +116,16 @@ public class StageVuCom extends PluginForHost {
                 dllink = br.getRegex("\"(http://n\\d+\\.stagevu\\.com/v/[a-z0-9]+/[a-z0-9]{12}\\.avi)\"").getMatch(0);
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /** Sometimes 2 connections are possible but not always... */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">404 \\- Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">404 \\- Not Found<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

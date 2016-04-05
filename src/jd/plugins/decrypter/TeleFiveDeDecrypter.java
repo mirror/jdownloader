@@ -154,12 +154,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.TeleFiveDe.formats;
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final Throwable e) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
+        br.getPage(parameter);
 
         String fpName = br.getRegex("class=\"grid_10\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {
@@ -171,8 +166,13 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        final ArrayList<String> titleArray = new ArrayList<String>();
+        final String firstTitle = this.br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
+        if (firstTitle != null && !firstTitle.isEmpty()) {
+            titleArray.add(firstTitle);
+        }
         final String[] youtubeurls = br.getRegex("\"(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getColumn(0);
-        String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\(\\{(.*?)</script>").getColumn(0);
+        String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\((\\{.*?\\})\\);[\t\n\r ]*?</script>").getColumn(0);
         if (videosinfo == null || videosinfo.length == 0) {
             /* Trailers are available via embed urls */
             videosinfo = br.getRegex("\"(https?://api\\.medianac\\.com/p/\\d+/sp/\\d+/embedIframeJs/uiconf_id/\\d+/partner_id/[^<>\"/]*?)\"").getColumn(0);
@@ -186,8 +186,13 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         }
 
         if (videosinfo != null && videosinfo.length > 0) {
+            int counter = 0;
             for (final String videosource : videosinfo) {
-                HashMap<String, DownloadLink> foundLinks = getURLsFromMedianac(br, decryptedhost, videosource, formats);
+                String thistitle = null;
+                if (counter <= titleArray.size() - 1) {
+                    thistitle = titleArray.get(counter);
+                }
+                HashMap<String, DownloadLink> foundLinks = getUrlsWithoutFlash(br, videosource, formats, "http://tele5.dedecrypted", null, "102", "10200", thistitle);
 
                 if (foundLinks.isEmpty()) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
@@ -204,6 +209,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                     }
                 }
+                counter++;
             }
         }
 
@@ -236,6 +242,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
      *            (Stringarray) containing information about the supported videoformats
      *
      * @throws IOException
+     *
+     *             2016-04-04: This code uses swf decompression. In the future this will not be needed anymore as there are enough ways
+     *             around. Currently still used by the "weltderwunder.de" plugin but not by the "tele5.de" plugin anymore.
      */
     public HashMap<String, DownloadLink> getURLsFromMedianac(final Browser br, final String decryptedhost, final String video_source, final HashMap<String, String[]> formats) throws IOException {
         final String service_name = new Regex(br.getURL(), "https?://(?:www\\.)([A-Za-z0-9\\-\\.]+)\\.[A-Za-z]+/").getMatch(0);
@@ -460,6 +469,118 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 }
                 dl.setProperty("directRTMPURL", baseUrl + "@" + vidlink);
             }
+            foundLinks.put(qualityInfo, dl);
+        }
+        return foundLinks;
+    }
+
+    @SuppressWarnings("unchecked")
+    public HashMap<String, DownloadLink> getUrlsWithoutFlash(final Browser br, final String source, final HashMap<String, String[]> formats, final String decryptedhost, final String entryid_fallback, final String partnerid_fallback, final String sp_fallback, final String title) throws Exception {
+        final Browser br2 = br.cloneBrowser();
+        HashMap<String, DownloadLink> foundLinks = new HashMap<String, DownloadLink>();
+        /* Always access rtmp urls as this way we get all qualities/formats --> Then build http urls out of them --> :) */
+        // boolean isRtmp = false;
+        String entryid = null;
+        String partnerid = null;
+        String sp = null;
+        if (source.contains("{")) {
+            /* Parse json */
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(source);
+            entryid = (String) entries.get("entry_id");
+            partnerid = (String) entries.get("wid");
+            sp = (String) entries.get("sp");
+        }
+        if (entryid == null) {
+            entryid = entryid_fallback;
+        }
+        if (partnerid == null) {
+            partnerid = partnerid_fallback;
+        }
+        if (sp == null) {
+            sp = sp_fallback;
+        }
+        if (entryid == null || partnerid == null || sp == null) {
+            return null;
+        }
+        partnerid = partnerid.replace("_", "");
+        final String vidlink = "http://api.medianac.com/p/" + partnerid + "/sp/" + sp + "/playManifest/entryId/" + entryid + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
+        br2.getPage(vidlink);
+
+        final String rtmp_base_server = br2.getRegex("<baseURL>rtmp://rtmp\\.(mnac\\-p\\-\\d+)\\.c\\.nmdn\\.net/.+</baseURL>").getMatch(0);
+        /* Needed for rtmp --> http */
+        if (rtmp_base_server == null) {
+            return null;
+        }
+        final String[] videolinks = br2.getRegex("<media(.*?)/>").getColumn(0);
+        for (final String videoinfo : videolinks) {
+            final String linkpart = new Regex(videoinfo, "mp4:([^\"]+)").getMatch(0);
+            int videoBitrateInt = 0;
+            String videoBitrate = new Regex(videoinfo, "bitrate=\"(\\d+)\"").getMatch(0);
+            final String videoWidth = new Regex(videoinfo, "width=\"(\\d+)\"").getMatch(0);
+            final String videoHeight = new Regex(videoinfo, "height=\"(\\d+)\"").getMatch(0);
+            if (linkpart == null || videoBitrate == null || videoWidth == null || videoHeight == null) {
+                continue;
+            }
+            videoBitrateInt = Integer.parseInt(videoBitrate);
+            if (videoBitrateInt < 500) {
+                videoBitrate = "400";
+            } else if (videoBitrateInt >= 500 && videoBitrateInt < 800) {
+                videoBitrate = "600";
+            } else if (videoBitrateInt >= 800 && videoBitrateInt < 1000) {
+                videoBitrate = "900";
+            } else {
+                /* Do not correct videoBitrate */
+            }
+            String formatString = "";
+            final String videoResolution = videoWidth + "x" + videoHeight;
+            final String qualityInfo = videoBitrate.substring(0, 1) + "_" + videoWidth.substring(0, 1) + "_" + videoHeight.substring(0, 1);
+            String[] formatinfo = null;
+            String audioCodec = null;
+            String audioBitrate = null;
+            String videoCodec = null;
+            /* Dirty "workaround": Force unknown formats */
+            if (formats != null && formats.containsKey(qualityInfo)) {
+                formatinfo = formats.get(qualityInfo);
+                audioCodec = formatinfo[3];
+                audioBitrate = formatinfo[4];
+                videoCodec = formatinfo[0];
+            }
+            if (videoCodec != null) {
+                formatString += videoCodec + "_";
+            }
+            if (videoResolution != null) {
+                formatString += videoResolution + "_";
+            }
+            if (videoBitrate != null) {
+                formatString += videoBitrate + "_";
+            }
+            if (audioCodec != null) {
+                formatString += audioCodec + "_";
+            }
+            if (audioBitrate != null) {
+                formatString += audioBitrate;
+            }
+            if (formatString.endsWith("_")) {
+                formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+            }
+
+            final String service_name = new Regex(br.getURL(), "https?://(?:www\\.)?([A-Za-z0-9]+)\\.").getMatch(0);
+            final String filename;
+            if (title != null) {
+                filename = service_name + "_" + title + "_" + formatString + ".mp4";
+            } else {
+                filename = service_name + "_" + partnerid + "_" + entryid + "_" + formatString + ".mp4";
+            }
+
+            /* make dllink */
+            final String dllink = "http://dl." + rtmp_base_server + ".c.nmdn.net/" + rtmp_base_server + "/" + linkpart + ".mp4";
+            final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+            dl.setAvailable(true);
+            dl.setFinalFileName(filename);
+            dl.setLinkID(filename);
+            dl.setContentUrl(br.getURL());
+            // dl.setProperty("streamerType", v.get("streamerType"));
+            dl.setProperty("directURL", dllink);
             foundLinks.put(qualityInfo, dl);
         }
         return foundLinks;

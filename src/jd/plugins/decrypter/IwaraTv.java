@@ -19,13 +19,17 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[^/]+" }, flags = { 0 })
 public class IwaraTv extends PluginForDecrypt {
@@ -38,6 +42,14 @@ public class IwaraTv extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("iwara.tv");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa != null) {
+            try {
+                jd.plugins.hoster.IwaraTv.login(this.br, aa, false);
+            } catch (final Throwable e) {
+            }
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"cb_error\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));

@@ -70,6 +70,7 @@ public class ZdfDeMediathek extends PluginForHost {
 
     public static Browser prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", "Opera/9.80 (Linux armv7l; HbbTV/1.1.1 (; Sony; KDL32W650A; PKG3.211EUA; 2013;); ) Presto/2.12.362 Version/12.11");
+        br.setFollowRedirects(true);
         return br;
     }
 
