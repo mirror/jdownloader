@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -47,7 +48,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // https and www. is required!
-        final String parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
+        String parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
+        if (!parameter.endsWith("/")) {
+            /* Add slash to the end to prevent 302 redirect to speed up the crawl process a tiny bit. */
+            parameter += "/";
+        }
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
         boolean logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
@@ -65,7 +70,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String username_url = parameter.substring(parameter.lastIndexOf("/") + 1);
+        final String username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
         final String json = br.getRegex(">window\\._sharedData = (\\{.*?);</script>").getMatch(0);
         final String id_owner = br.getRegex("\"owner\":\\{\"id\":\"(\\d+)\"\\}").getMatch(0);
         if (json == null) {

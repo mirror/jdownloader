@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -40,6 +38,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" }, flags = { 2 })
 public class InstaGramCom extends PluginForHost {
@@ -97,7 +97,12 @@ public class InstaGramCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Login required to download this content");
             return AvailableStatus.UNCHECKABLE;
         }
-        br.getPage(downloadLink.getDownloadURL());
+        String getlink = downloadLink.getDownloadURL();
+        if (!getlink.endsWith("/")) {
+            /* Add slash to the end to prevent 302 redirect to speed up the download process a tiny bit. */
+            getlink += "/";
+        }
+        br.getPage(getlink);
         if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             /* This will also happen if a user tries to access private urls without being logged in! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
