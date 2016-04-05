@@ -34,11 +34,11 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagi\\.(?:com|id)/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[^\\s]+)?" }, flags = { 0 })
-public class KumpulbagiCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://kumpulbagi\\.(?:com|id)/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[^\\s]+)?" }, flags = { 0 })
+public class KumpulbagiId extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
-    public KumpulbagiCom(PluginWrapper wrapper) {
+    public KumpulbagiId(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -110,6 +110,9 @@ public class KumpulbagiCom extends PluginForDecrypt {
                 logger.info("Decrypting page " + currentPage + " of ??");
                 String[] linkinfo = br.getRegex("(<div class=\"list_row\".*?class=\"desc\")").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
+                    linkinfo = br.getRegex("(<li data\\-file\\-id=\"\\d+\".*?</div>[\t\n\r ]*?</li>)").getColumn(0);
+                }
+                if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -118,7 +121,9 @@ public class KumpulbagiCom extends PluginForDecrypt {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 final Browser org = br.cloneBrowser();
                 for (final String lnkinfo : linkinfo) {
-                    String content_url = new Regex(lnkinfo, "class=\"name\">[\t\n\r ]*?<a href=\"(/[^<>\"]*?)\"").getMatch(0);
+                    String filename = null;
+                    String filename_url = null;
+                    String content_url = new Regex(lnkinfo, "class=\"name\">[\t\n\r ]*?<a href=\"(/[^<>\"]+)\"").getMatch(0);
                     if (content_url != null) {
                         content_url = Request.getLocation(content_url, br.getRequest());
                     } else {
@@ -143,9 +148,19 @@ public class KumpulbagiCom extends PluginForDecrypt {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
+                    filename_url = new Regex(content_url, "/([^/]+)$").getMatch(0);
+                    if (filename_url != null) {
+                        final String trash = new Regex(filename_url, "(," + fid + ",gallery,\\d+,\\d+)\\.[A-Za-z0-9]{2,5}$").getMatch(0);
+                        if (trash != null) {
+                            filename_url = filename_url.replace(trash, "");
+                        }
+                    }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     // String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
-                    String filename = new Regex(lnkinfo, "\"preview\">([^<>]+)</a>").getMatch(0);
+                    filename = new Regex(lnkinfo, "\"preview\">([^<>]+)</a>").getMatch(0);
+                    if (filename != null && filename_url != null && filename_url.length() > filename.length()) {
+                        filename = filename_url;
+                    }
                     logger.info("lnkinfo: " + lnkinfo);
                     if (filename != null) {
                         filename = Encoding.htmlDecode(filename);

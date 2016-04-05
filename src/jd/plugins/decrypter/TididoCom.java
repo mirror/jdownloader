@@ -203,8 +203,8 @@ public class TididoCom extends PluginForDecrypt {
             if (target_song_id != null && songid.equals(target_song_id)) {
                 /* We were looking for one specified track only - remove previously added data and step out of the loop. */
                 /*
-                 * Do not set availibiity as used only added a single URL --> Does not take much time to check and it makes sense to show
-                 * the filesize.
+                 * Do not set availibiity as used only added a single URL --> Does not take much time to check and it makes sense to always
+                 * show the filesize.
                  */
                 decryptedLinks.clear();
                 decryptedLinks.add(dl);

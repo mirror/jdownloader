@@ -19,11 +19,17 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,11 +37,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" }, flags = { 2 })
 public class IwaraTv extends PluginForHost {
 
     public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.iwara.tv/user/register");
     }
 
     /* DEV NOTES */
@@ -52,6 +59,7 @@ public class IwaraTv extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private final String         html_privatevideo = ">This video is only available for users that|>Private video<";
+    public static final String   html_loggedin     = "/user/logout";
 
     private String               dllink            = null;
     private boolean              serverIssue       = false;
@@ -78,15 +86,27 @@ public class IwaraTv extends PluginForHost {
         return super.rewriteHost(host);
     }
 
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        br.setCustomCharset("UTF-8");
+        return br;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         serverIssue = false;
         this.setBrowserExclusive();
-        this.br.setFollowRedirects(true);
-        this.br.setCustomCharset("UTF-8");
+        prepBR(this.br);
         final String fid = getFID(downloadLink.getDownloadURL());
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            try {
+                login(this.br, aa, false);
+            } catch (final Throwable e) {
+            }
+        }
         this.br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
@@ -151,6 +171,10 @@ public class IwaraTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         if (this.br.containsHTML(html_privatevideo)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (serverIssue) {
@@ -195,6 +219,81 @@ public class IwaraTv extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return free_maxdownloads;
+    }
+
+    private static Object LOCK = new Object();
+
+    public static void login(Browser br, final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                br.setCookiesExclusive(true);
+                prepBR(br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(account.getHoster(), cookies);
+                    if (br.containsHTML(html_loggedin)) {
+                        return;
+                    }
+                    br = prepBR(new Browser());
+                }
+                br.getPage("http://www.iwara.tv/user/login?destination=front");
+                Form loginform = br.getFormbyProperty("id", "user-login");
+                if (loginform == null) {
+                    loginform = br.getForm(0);
+                }
+                if (loginform == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                loginform.put("name", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (!br.containsHTML(html_loggedin)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(br.getCookies(account.getHoster()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(this.br, account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        /* No need to log in as we are already logged in */
+        doFree(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return free_maxdownloads;
     }
 

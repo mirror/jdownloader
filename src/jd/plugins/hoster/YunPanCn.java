@@ -32,7 +32,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://(www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+|yunpan\\.cn/[a-zA-Z0-9]{13})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+|yunpan\\.cn/[a-zA-Z0-9]{13})" }, flags = { 0 })
 public class YunPanCn extends PluginForHost {
 
     private final String preDownloadPassword = "<input class=\"pwd-input\" type=\"";
@@ -46,6 +46,7 @@ public class YunPanCn extends PluginForHost {
         return "http://yunpan.360.cn/resource/html/agreement.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -79,6 +80,7 @@ public class YunPanCn extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -107,17 +109,22 @@ public class YunPanCn extends PluginForHost {
             br.getPage(br.getURL());
             fileCheck(downloadLink);
         }
-        final Regex urlRegex = new Regex(br.getURL(), "http://(www\\.)?([a-z0-9]+\\.[a-z0-9]+)\\.yunpan\\.cn/lk/(.+)");
+        final Regex urlRegex = new Regex(br.getURL(), "https?://(?:www\\.)?([a-z0-9]+\\.[a-z0-9]+)\\.yunpan\\.cn/lk/(.+)");
         final String nid = br.getRegex("nid : \\'(\\d+)\\',").getMatch(0);
-        final String domainPart = urlRegex.getMatch(1);
-        final String shortUrl = urlRegex.getMatch(2);
+        final String domainPart = urlRegex.getMatch(0);
+        final String shortUrl = urlRegex.getMatch(1);
+        final String download_permit_token = this.br.getRegex("download_permit_token[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
         if (nid == null || domainPart == null || shortUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://" + domainPart + ".yunpan.cn/share/downloadfile/", "shorturl=" + shortUrl + "&nid=" + nid);
-        String dllink = br.getRegex("\"downloadurl\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        String postdata = "shorturl=" + shortUrl + "&nid=" + nid;
+        if (download_permit_token != null) {
+            postdata += "&download_permit_token=" + Encoding.urlEncode(download_permit_token);
+        }
+        br.postPage("https://" + domainPart + ".yunpan.cn/share/downloadfile/", postdata);
+        String dllink = br.getRegex("\"downloadurl\":\"(https?[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

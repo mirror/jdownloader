@@ -55,12 +55,7 @@ public class WeltderwunderDeDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.WeltderwunderDe.formats;
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final Throwable e) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
+        br.getPage(parameter);
 
         String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
 
