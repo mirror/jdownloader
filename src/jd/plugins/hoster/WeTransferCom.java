@@ -18,8 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,16 +29,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" }, flags = { 0 })
 public class WeTransferCom extends PluginForHost {
 
-    private String HASH   = null;
-    private String CODE   = null;
-    private String DLLINK = null;
+    private String hash   = null;
+    private String code   = null;
+    private String dllink = null;
 
     public WeTransferCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +49,7 @@ public class WeTransferCom extends PluginForHost {
     }
 
     private String getAMFRequest() {
-        final String data = "0A000000020200" + getHexLength(CODE) + JDHexUtils.getHexString(CODE) + "0200" + getHexLength(HASH) + JDHexUtils.getHexString(HASH);
+        final String data = "0A000000020200" + getHexLength(code) + JDHexUtils.getHexString(code) + "0200" + getHexLength(hash) + JDHexUtils.getHexString(hash);
         return JDHexUtils.toString("000000000001002177657472616E736665722E446F776E6C6F61642E636865636B446F776E6C6F616400022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
     }
 
@@ -67,7 +67,7 @@ public class WeTransferCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
-        if (dlink.matches("http://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
+        if (dlink.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
             br.setFollowRedirects(false);
             br.getPage(dlink);
             dlink = br.getRedirectLocation();
@@ -78,49 +78,48 @@ public class WeTransferCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        HASH = new Regex(dlink, "([0-9a-f]+)$").getMatch(0);
-        CODE = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
-        if (HASH == null || CODE == null) {
+        hash = new Regex(dlink, "([0-9a-f]+)$").getMatch(0);
+        code = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
+        if (hash == null || code == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         // Allow redirects for change to https
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        String recepientID = br.getRegex("data\\-recipient=\"([a-z0-9]+)\"").getMatch(0);
+        br.getPage(dlink);
+        String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0);
         if (recepientID == null) {
             recepientID = "";
         }
         String filesize = br.getRegex("class='filename'>.*?</span>.*?([0-9,\\.]+\\s*(K|M|G)B)").getMatch(0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
-        br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=" + recepientID + "&security_hash=" + HASH + "&password=&ie=false&ts=" + System.currentTimeMillis());
+        br.getPage(mainpage + "/api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         if (br.containsHTML("\"error\":\"invalid_transfer\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = getJson("direct_link");
-        if (DLLINK == null) {
+        dllink = PluginJSonUtils.getJson(br, "direct_link");
+        if (dllink == null) {
             final String callback = br.getRegex("\"callback\":\"(\\{.*?)\"\\}\\}$").getMatch(0);
-            String action = getJson("action");
+            String action = PluginJSonUtils.getJson(br, "action");
             if (action == null || callback == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             action += "?";
             final String[] values = { "unique", "profile", "filename", "expiration", "escaped", "signature" };
             for (final String value : values) {
-                final String result = getJson(value);
+                final String result = PluginJSonUtils.getJson(br, value);
                 if (result == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 action += value + "=" + Encoding.urlEncode(result) + "&";
             }
             action += "callback=" + Encoding.urlEncode(callback);
-            DLLINK = action;
+            dllink = action;
         }
-        if (DLLINK != null) {
-            String filename = new Regex(Encoding.htmlDecode(DLLINK), "filename=([^<>\"]*)").getMatch(0);
+        if (dllink != null) {
+            String filename = new Regex(Encoding.htmlDecode(dllink), "filename=([^<>\"]*)").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("\"filename\":\"([^<>\"]*?)\"").getMatch(0);
+                filename = PluginJSonUtils.getJson(br, "filename");
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,9 +165,9 @@ public class WeTransferCom extends PluginForHost {
             if (filesize == null) {
                 filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
             }
-            DLLINK = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
+            dllink = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
 
-            if (filename == null || filesize == null || DLLINK == null) {
+            if (filename == null || filesize == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
@@ -200,9 +199,9 @@ public class WeTransferCom extends PluginForHost {
                 }
                 counter++;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, postString, true, -2);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, postString, true, -2);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -212,68 +211,6 @@ public class WeTransferCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override
