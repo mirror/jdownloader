@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -37,8 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridLinkFr extends PluginForHost {
@@ -46,13 +47,13 @@ public class DebridLinkFr extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Map<Account, Map<String, String>>       accountInfo        = new HashMap<Account, Map<String, String>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
-    private static final String                            apiHost            = "https://api.debrid-link.fr/1.1/";
+    private static final String                            apiHost            = "https://debrid-link.fr/api";
     private static final String                            publicApiKey       = "kMREtSnp61OgLvG8";
     private long                                           ts                 = 0;
 
     /**
      * @author raztoki
-     * */
+     */
     public DebridLinkFr(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://debrid-link.fr/?page=premium");
@@ -85,9 +86,9 @@ public class DebridLinkFr extends PluginForHost {
         }
 
         // account stats
-        getPage(account, null, "infoMember", true, null);
-        final String accountType = getJson("accountType");
-        final String premiumLeft = getJson("premiumLeft");
+        getPage(account, null, "/account/infos", true, null);
+        final String accountType = PluginJSonUtils.getJson(br, "accountType");
+        final String premiumLeft = PluginJSonUtils.getJson(br, "premiumLeft");
         boolean isFree = false;
         if ("0".equals(accountType)) {
             // free account
@@ -111,13 +112,13 @@ public class DebridLinkFr extends PluginForHost {
         // end of account stats
 
         // multihoster array
-        getPage(account, null, "statusDownloader", false, null);
+        getPage(account, null, "/downloader/status", false, null);
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] hostitems = getHostItems(this.br.toString());
+        final String[] hostitems = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "hosters"));
         for (final String hostitem : hostitems) {
             // final String name = getJson(hostitem, "name");
-            final boolean isFreeHost = Boolean.parseBoolean(this.getJson(hostitem, "free_host"));
-            final String status = getJson(hostitem, "status");
+            final boolean isFreeHost = Boolean.parseBoolean(PluginJSonUtils.getJson(hostitem, "free_host"));
+            final String status = PluginJSonUtils.getJson(hostitem, "status");
             /* Don't add hosts if they are down or disabled, */
             if ("-1".equals(status) || "0".equals(status)) {
                 // logger.info("NOT adding host " + name + " to host array because it is down or disabled");
@@ -128,28 +129,29 @@ public class DebridLinkFr extends PluginForHost {
                 continue;
             } else {
                 // logger.info("ADDING host " + name + " to host array");
-                final String jsonarray = this.getJsonArray(hostitem, "hosts");
-                final String[] domains = this.getJsonResultsFromArray(jsonarray);
+                final String jsonarray = PluginJSonUtils.getJsonArray(hostitem, "hosts");
+                final String[] domains = PluginJSonUtils.getJsonResultsFromArray(jsonarray);
                 for (final String domain : domains) {
                     supportedHosts.add(domain);
                 }
             }
         }
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setProperty("plain_hostinfo", this.br.toString());
+        ac.setProperty("plain_hostinfo", br.toString());
         // end of multihoster array
         return ac;
     }
 
     private void login(final Account account) throws Exception {
-        getPage(account, null, "getToken", false, "publickey=" + publicApiKey);
+        // new token and key
+        getPage(account, null, "/token/" + publicApiKey + "/new", false, null);
         updateSession(account);
         if (true) {
             try {
                 Browser br2 = new Browser();
                 prepBrowser(br2);
                 br2.setFollowRedirects(true);
-                final String validateToken = getJson("validTokenUrl");
+                final String validateToken = PluginJSonUtils.getJson(br, "validTokenUrl");
                 if (validateToken == null) {
                     logger.warning("Can't find validateToken!");
                     dump(account);
@@ -224,17 +226,17 @@ public class DebridLinkFr extends PluginForHost {
     private void updateSession(final Account account) {
         synchronized (accountInfo) {
             HashMap<String, String> accInfo = new HashMap<String, String>();
-            final String token = getJson("token");
+            final String token = PluginJSonUtils.getJson(br, "token");
             if (token != null) {
                 accInfo.put("token", token);
             }
-            final String key = getJson("key");
+            final String key = PluginJSonUtils.getJson(br, "key");
             if (key != null) {
                 accInfo.put("key", key);
             }
             final String loginTime = String.valueOf(System.currentTimeMillis());
             accInfo.put("loginTime", loginTime);
-            final String timestamp = getJson("ts");
+            final String timestamp = PluginJSonUtils.getJson(br, "ts");
             if (timestamp != null) {
                 // some simple math find the offset between user and server time, so we can use server time later. cheat way of synch time !
                 // server time is in seconds not milliseconds
@@ -263,10 +265,35 @@ public class DebridLinkFr extends PluginForHost {
     private void getPage(final Account account, final DownloadLink downloadLink, final String r, final boolean sign, final String other) throws Exception {
         synchronized (accountInfo) {
             if (account != null && r != null) {
-                final String getThis = apiHost + "?r=" + r + (sign ? "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) + "&ts=" + ts : "") + (other != null ? (!other.startsWith("&") ? "&" : "") + other : "");
+                final String getThis = apiHost + r;
                 br = new Browser();
                 prepBrowser(br);
+                if (sign) {
+                    br.getHeaders().put("X-DL-TOKEN", getValue(account, "token"));
+                    br.getHeaders().put("X-DL-SIGN", getSign(account, r));
+                    br.getHeaders().put("X-DL-TS", ts + "");
+                }
                 br.getPage(getThis);
+                if (errChk()) {
+                    errHandling(account, downloadLink, false);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+    }
+
+    private void postPage(final Account account, final DownloadLink downloadLink, final String r, final boolean sign, final String other) throws Exception {
+        synchronized (accountInfo) {
+            if (account != null && r != null) {
+                br = new Browser();
+                prepBrowser(br);
+                if (sign) {
+                    br.getHeaders().put("X-DL-TOKEN", getValue(account, "token"));
+                    br.getHeaders().put("X-DL-SIGN", getSign(account, r));
+                    br.getHeaders().put("X-DL-TS", ts + "");
+                }
+                br.postPage(apiHost + r, other);
                 if (errChk()) {
                     errHandling(account, downloadLink, false);
                 }
@@ -297,7 +324,7 @@ public class DebridLinkFr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         } else {
-            final String error = getJson("ERR");
+            final String error = PluginJSonUtils.getJson(br, "ERR");
 
             if (error != null) {
                 // generic errors not specific to download routine!
@@ -390,7 +417,8 @@ public class DebridLinkFr extends PluginForHost {
 
         // reflect time to server time
         ts = (System.currentTimeMillis() / 1000) - Long.parseLong(to);
-        return JDHash.getSHA1(ts + r + key);
+        final String output = ts + r + key;
+        return JDHash.getSHA1(output);
     }
 
     private void dump(final Account account) {
@@ -425,68 +453,6 @@ public class DebridLinkFr extends PluginForHost {
         }
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
@@ -518,13 +484,13 @@ public class DebridLinkFr extends PluginForHost {
         }
 
         showMessage(link, "Phase 1/2: Generating link");
-        getPage(account, link, "addLink", true, "link=" + Encoding.urlEncode(link.getDownloadURL()));
+        postPage(account, link, "/downloader/add", true, "link=" + Encoding.urlEncode(link.getDownloadURL()));
 
         int maxChunks = 0;
         boolean resumes = true;
 
-        final String chunk = getJson("chunk");
-        final String resume = getJson("resume");
+        final String chunk = PluginJSonUtils.getJson(br, "chunk");
+        final String resume = PluginJSonUtils.getJson(br, "resume");
         if (chunk != null && !"0".equals(chunk)) {
             maxChunks = -Integer.parseInt(chunk);
         }
@@ -532,7 +498,7 @@ public class DebridLinkFr extends PluginForHost {
             resumes = Boolean.parseBoolean(resume);
         }
 
-        String dllink = getJson("downloadLink");
+        String dllink = PluginJSonUtils.getJson(br, "downloadLink");
         if (dllink == null) {
             logger.warning("Unhandled download error on debrid-link,fr:");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -579,10 +545,10 @@ public class DebridLinkFr extends PluginForHost {
         final String currenthost = downloadLink.getHost();
         final String plain_hostinfo = account.getAccountInfo().getStringProperty("plain_hostinfo", null);
         if (account.getType() == AccountType.FREE && plain_hostinfo != null) {
-            final String[] hostinfo = getHostItems(plain_hostinfo);
+            final String[] hostinfo = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(plain_hostinfo, "hosters"));
             if (hostinfo != null) {
                 for (final String singlehostinfo : hostinfo) {
-                    final boolean free_host = Boolean.parseBoolean(this.getJson(singlehostinfo, "free_host"));
+                    final boolean free_host = Boolean.parseBoolean(PluginJSonUtils.getJson(singlehostinfo, "free_host"));
                     if (singlehostinfo.contains(currenthost) && !free_host) {
                         return false;
                     }

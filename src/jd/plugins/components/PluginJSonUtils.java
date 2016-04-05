@@ -141,7 +141,7 @@ public class PluginJSonUtils {
         if (result == null) {
             result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
             if (result != null) {
-                // some rudimentary detection if we have braked at the wrong place.
+                // some rudimentary detection if we have break'd at the wrong place.
                 while (result.endsWith("\\")) {
                     String xtraResult = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]*\"?)\"").getMatch(0);
                     if (xtraResult != null) {
@@ -158,7 +158,7 @@ public class PluginJSonUtils {
             if (result == null) {
                 result = new Regex(source, "[^a-zA-Z0-9_\\-]+" + Pattern.quote(key) + "[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
                 if (result != null) {
-                    // some rudimentary detection if we have braked at the wrong place.
+                    // some rudimentary detection if we have break'd at the wrong place.
                     while (result.endsWith("\\")) {
                         String xtraResult = new Regex(source, "[^a-zA-Z0-9_\\-]+" + Pattern.quote(key) + "[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]*\"?)\"").getMatch(0);
                         if (xtraResult != null) {
@@ -176,7 +176,7 @@ public class PluginJSonUtils {
                 if (result == null) {
                     result = new Regex(source, "'" + Pattern.quote(key) + "'[ \t]*:[ \t]*'([^']*)'").getMatch(0);
                     if (result != null) {
-                        // some rudimentary detection if we have braked at the wrong place.
+                        // some rudimentary detection if we have break'd at the wrong place.
                         while (result.endsWith("'")) {
                             String xtraResult = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*'(" + Pattern.quote(result) + "'[^']*'?)'").getMatch(0);
                             if (xtraResult != null) {
@@ -257,6 +257,12 @@ public class PluginJSonUtils {
             result = new Regex(source, "\\s*(?:\\[|,)\\s*(\\{.*?\\})\\s*").getColumn(0);
         } else {
             result = new Regex(source, "\\s*(?:\\[|,)\\s*\"([^\"]+)\"\\s*").getColumn(0);
+        }
+        if (result != null) {
+            // some rudimentary detection if we have break'd at the wrong place.
+            for (int i = 0; i < result.length; i++) {
+                result[i] = validateResultForArrays(source, result[i]);
+            }
         }
         return result;
     }
