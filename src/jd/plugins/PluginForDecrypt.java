@@ -260,6 +260,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         ArrayList<DownloadLink> tmpLinks = null;
         Throwable throwable = null;
+        boolean linkstatusOffline = false;
         boolean pwfailed = false;
         boolean captchafailed = false;
         try {
@@ -282,6 +283,8 @@ public abstract class PluginForDecrypt extends Plugin {
                 /* User entered wrong captcha (too many times) */
                 throwable = null;
                 captchafailed = true;
+            } else if (DecrypterException.PLUGIN_DEFECT.equals(e.getMessage())) {
+                // leave alone.
             } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
                 /* User entered password captcha (too many times) */
                 throwable = null;
@@ -290,6 +293,16 @@ public abstract class PluginForDecrypt extends Plugin {
                 throwable = null;
             } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                 throwable = null;
+            } else if (e instanceof PluginException) {
+                // offline file linkstatus exception, this should not be treated as crawler error..
+                if (((PluginException) e).getLinkStatus() == 32) {
+                    throwable = null;
+                    linkstatusOffline = true;
+                    if (tmpLinks == null && LinkCrawler.getConfig().isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber()) {
+                        tmpLinks = new ArrayList<DownloadLink>();
+                        tmpLinks.add(createOfflinelink(link.getURL()));
+                    }
+                }
             }
             if (throwable == null && logger instanceof LogSource) {
                 if (logger instanceof LogSource) {
@@ -304,7 +317,7 @@ public abstract class PluginForDecrypt extends Plugin {
             clean();
             challenges = null;
         }
-        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed) {
+        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed && !linkstatusOffline) {
             /*
              * null as return value? something must have happened, do not clear log
              */
@@ -378,13 +391,20 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws Exception {
+        return getCaptchaCode(br, method, captchaAddress, param);
+    }
+
+    protected String getCaptchaCode(final Browser br, final String method, final String captchaAddress, final CryptedLink param) throws Exception {
         if (captchaAddress == null) {
-            logger.severe("Captcha Adresse nicht definiert");
+            logger.severe("Captcha address is not defined!");
             new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final File captchaFile = this.getLocalCaptchaFile();
         try {
             final Browser brc = br.cloneBrowser();
+            // most captcha are images?
+            brc.getHeaders().put("Accept", "image/webp,image/*,*/*;q=0.8");
+            brc.getHeaders().put("Cache-Control", null);
             brc.getDownload(captchaFile, captchaAddress);
             // erst im Nachhinein das der Bilddownload nicht gestört wird
             final String captchaCode = getCaptchaCode(method, captchaFile, param);

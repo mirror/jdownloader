@@ -69,6 +69,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wrong password" })
     String decrypter_wrongpassword();
 
+    @Default(lngs = { "en" }, values = { "Plugin Defect" })
+    String decrypter_plugindefect();
+
     @Default(lngs = { "en" }, values = { "Could not delete existing part file" })
     String system_download_errors_couldnotdelete();
 

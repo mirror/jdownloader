@@ -25,6 +25,7 @@ public class DecrypterException extends Exception {
     public static String      CAPTCHA          = _JDT.T.decrypter_wrongcaptcha();
     public static String      PASSWORD         = _JDT.T.decrypter_wrongpassword();
     public static String      ACCOUNT          = _JDT.T.decrypter_invalidaccount();
+    public static String      PLUGIN_DEFECT    = _JDT.T.decrypter_plugindefect();
 
     public DecrypterException() {
         super(_JDT.T.decrypter_unknownerror());
