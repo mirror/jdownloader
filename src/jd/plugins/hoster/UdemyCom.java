@@ -203,7 +203,6 @@ public class UdemyCom extends PluginForHost {
     }
 
     public void handleDownload(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
         /*
          * Remove old cookies and headers from Browser as they are not needed for their downloadurls in fact using them get you server
          * response 400.
