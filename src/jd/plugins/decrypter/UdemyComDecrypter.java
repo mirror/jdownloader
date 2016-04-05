@@ -37,7 +37,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String decrypter_domain = "udemydecrypted.com/";
+    private static final String decrypter_domain = "udemydecrypted.com";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -45,7 +45,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         if (parameter.matches(jd.plugins.hoster.UdemyCom.TYPE_SINGLE_PREMIUM)) {
             /* Single links --> Host plugin */
-            decryptedLinks.add(this.createDownloadlink(parameter.replace(this.getHost() + "/", decrypter_domain)));
+            decryptedLinks.add(this.createDownloadlink(parameter.replace(this.getHost() + "/", decrypter_domain + "/")));
             return decryptedLinks;
         }
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("udemy.com"));
