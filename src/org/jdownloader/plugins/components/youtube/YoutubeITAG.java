@@ -2,6 +2,8 @@ package org.jdownloader.plugins.components.youtube;
 
 import java.util.Date;
 
+import org.jdownloader.gui.translate._GUI;
+
 import jd.http.QueryInfo;
 
 public enum YoutubeITAG {
@@ -11,9 +13,24 @@ public enum YoutubeITAG {
     DASH_AUDIO_192K_WEBM(172, null, null, "Vorbis", "192kbit", AudioCodec.VORBIS, AudioBitrate.KBIT_192),
     DASH_AUDIO_256K_AAC(141, null, null, "AAC", "256kbit", AudioCodec.AAC, AudioBitrate.KBIT_256),
     DASH_AUDIO_48K_AAC(139, null, null, "AAC", "48kbit", AudioCodec.AAC, AudioBitrate.KBIT_48),
-    DASH_AUDIO_OPUS_160KBIT(251, null, null, "Opus", "160kbit", AudioCodec.OPUS, AudioBitrate.KBIT_160),
-    DASH_AUDIO_OPUS_48KBIT(249, null, null, "Opus", "48kbit", AudioCodec.OPUS, AudioBitrate.KBIT_48),
-    DASH_AUDIO_OPUS_64KBIT(250, null, null, "Opus", "64kbit", AudioCodec.OPUS, AudioBitrate.KBIT_64),
+    DASH_AUDIO_OPUS_160KBIT(251, null, null, "Opus", "160kbit", AudioCodec.OPUS, AudioBitrate.KBIT_160) {
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return super.getCustomQualityExtension(caller) + " Opus";
+        }
+    },
+    DASH_AUDIO_OPUS_48KBIT(249, null, null, "Opus", "48kbit", AudioCodec.OPUS, AudioBitrate.KBIT_48) {
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return super.getCustomQualityExtension(caller) + " Opus";
+        }
+    },
+    DASH_AUDIO_OPUS_64KBIT(250, null, null, "Opus", "64kbit", AudioCodec.OPUS, AudioBitrate.KBIT_64) {
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return super.getCustomQualityExtension(caller) + " Opus";
+        }
+    },
     DASH_VIDEO_1080_H264_FPS60(299, "H264", "1080p 60fps", null, null, VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264, MediaTagsVarious.VIDEO_FPS_60),
     DASH_VIDEO_1080P_H264(137, "H264", "1080p", null, null, VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264),
     // http://www.youtube.com/watch?v=gBabKoHSErI
@@ -57,31 +74,84 @@ public enum YoutubeITAG {
     DASH_WEBM_VIDEO_240P_VP9(242, "VP9", "240p", null, null, VideoResolution.P_240, VideoContainer.WEBM, VideoCodec.VP9),
     DASH_WEBM_VIDEO_360P_VP9(243, "VP9", "360p", null, null, VideoResolution.P_360, VideoContainer.WEBM, VideoCodec.VP9),
     DASH_WEBM_VIDEO_480P_VP9(244, "VP9", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9),
-    DESCRIPTION(10002, "txt", null, null, null, MediaTagsVarious.DESCRIPTION),
+    DESCRIPTION(10002, "txt", null, null, null, MediaTagsVarious.DESCRIPTION) {
+        @Override
+        public String getCustomName(Object caller) {
+            return _GUI.T.YoutubeVariant_name_DESCRIPTION();
+        }
+
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return _GUI.T.YoutubeVariant_filenametag_DESCRIPTION();
+        }
+
+    },
     DASH_WEBM_VIDEO_480P_VP9_2(245, "vp9 High Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_1),
     DASH_WEBM_VIDEO_480P_VP9_3(246, "vp9 Higher Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_2),
     DASH_WEBM_VIDEO_720P_VP9(247, "VP9", "720p", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9),
     // https://www.youtube.com/watch?v=T3ny9zIckP0
     DASH_WEBM_VIDEO_720P_VP9_60FPS(302, "VP9", "720p 60fps", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
-    FLV_VIDEO_360P_H264_AUDIO_AAC(34, "H264", "360p", "AAC", "128kbit", VideoResolution.P_360, VideoContainer.FLV, VideoCodec.H264),
-    FLV_VIDEO_480P_H264_AUDIO_AAC(35, "H264", "480p", "AAC", "128kbit", VideoResolution.P_480, VideoContainer.FLV, VideoCodec.H264),
+    FLV_VIDEO_360P_H264_AUDIO_AAC(34, "H264", "360p", "AAC", "128kbit", VideoResolution.P_360, VideoContainer.FLV, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_128),
+    FLV_VIDEO_480P_H264_AUDIO_AAC(35, "H264", "480p", "AAC", "128kbit", VideoResolution.P_480, VideoContainer.FLV, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_128),
     FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3(6, "Sorenson H.263", "270p", "MP3", "64kbit", VideoResolution.P_270, VideoContainer.FLV, VideoCodec.H263, AudioCodec.MP3, AudioBitrate.KBIT_64),
     FLV_VIDEO_LOW_240P_H263_AUDIO_MP3(5, "Sorenson H.263", "240p", "MP3", "64kbit", VideoResolution.P_240, VideoContainer.FLV, VideoCodec.H263, AudioCodec.MP3, AudioBitrate.KBIT_64),
     // we do not need such a bad itag. Ignore the variants
-    THREEGP4_ITAG13_H263_144P_15FPS_AMRNB_12KBIT(13, "h263", "144p", "AMRNB", "12kbit", VideoResolution.P_144, VideoContainer.THREEGP, VideoCodec.H263, AudioCodec.AMRNB, AudioBitrate.KBIT_12),
+
+    THREEGP4_ITAG13_H263_144P_15FPS_AMRNB_12KBIT(13, "h263", "144p", "AMRNB", "12kbit", VideoResolution.P_144, VideoContainer.THREEGP, VideoCodec.H263, AudioCodec.AMRNB, AudioBitrate.KBIT_12, MediaTagsVarious.VIDEO_FPS_15),
     // fake id
-    IMAGE_HQ(10002, "jpg", "480x360", null, null, ImageQuality.HIGH),
+    IMAGE_HQ(10002, "jpg", "480x360", null, null, ImageQuality.HIGH) {
+        @Override
+        public String getCustomName(Object caller) {
+            return _GUI.T.YoutubeVariant_name_IMAGE_HQ();
+        }
+
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return _GUI.T.YoutubeVariant_filenametag_IMAGE_HQ();
+        }
+    },
     // fake id
-    IMAGE_LQ(10004, "jpg", "120x90", null, null, ImageQuality.LOW),
+    IMAGE_LQ(10004, "jpg", "120x90", null, null, ImageQuality.LOW) {
+        @Override
+        public String getCustomName(Object caller) {
+            return _GUI.T.YoutubeVariant_name_IMAGE_LQ();
+        }
+
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return _GUI.T.YoutubeVariant_filenametag_IMAGE_LQ();
+        }
+    },
 
     // fake id
-    IMAGE_MAX(10001, "jpg", "1400x1080", null, null, ImageQuality.HIGHEST),
+    IMAGE_MAX(10001, "jpg", "1400x1080", null, null, ImageQuality.HIGHEST) {
+        @Override
+        public String getCustomName(Object caller) {
+            return _GUI.T.YoutubeVariant_name_IMAGE_MAX();
+        }
+
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return _GUI.T.YoutubeVariant_filenametag_IMAGE_MAX();
+        }
+    },
 
     // fake id
-    IMAGE_MQ(10003, "jpg", "320x180", null, null, ImageQuality.NORMAL),
+    IMAGE_MQ(10003, "jpg", "320x180", null, null, ImageQuality.NORMAL) {
+        @Override
+        public String getCustomName(Object caller) {
+            return _GUI.T.YoutubeVariant_name_IMAGE_MQ();
+        }
+
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return _GUI.T.YoutubeVariant_filenametag_IMAGE_MQ();
+        }
+    },
+
     // 192 kbits aac
     MP4_VIDEO_1080P_H264_AUDIO_AAC(37, "H264", "1080p", "AAC", "192kbit", VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_192),
-    MP4_VIDEO_180P_H264_AUDIO_AAC_3D(85, "H264", "1080p", "AAC", "192kbit", VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_192),
+    MP4_VIDEO_1080P_H264_AUDIO_AAC_3D(85, "H264", "1080p", "AAC", "192kbit", VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_192),
     // not sure
     MP4_VIDEO_240P_H264_AUDIO_AAC_3D(83, "H264", "240p", "AAC", "96kbit", VideoResolution.P_240, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_96),
 
@@ -99,16 +169,57 @@ public enum YoutubeITAG {
     // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
     MP4_VIDEO_AUDIO_ORIGINAL(38, "H264", "Original", "AAC", "192kbit", VideoResolution.P_2160, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_192),
     // fake id
-    SUBTITLE(10002, "srt", null, null, null, MediaTagsVarious.SUBTITLE),
+    SUBTITLE(10002, "srt", null, null, null, MediaTagsVarious.SUBTITLE) {
+
+        public String getCustomName(Object caller) {
+            return _GUI.T.YoutubeVariant_name_SUBTITLES();
+        }
+
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            return _GUI.T.YoutubeVariant_filenametag_SUBTITLES();
+        }
+
+    },
 
     // very different audio bitrates!!!
     THREEGP_VIDEO_144P_H264_AUDIO_AAC(17, "MPEG-4 Visual", "144p", "AAC", "24kbit", VideoResolution.P_144, VideoContainer.THREEGP, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_32_ESTIMATED),
 
     // LIve stream?
     // I tested several streams, and this itag contains 180p and 32kbit audio
-    THREEGP_VIDEO_240P_H263_AUDIO_AAC(132, "MPEG-4 Visual", "180p", "AAC", "32kbit", VideoResolution.P_240, VideoContainer.THREEGP, VideoCodec.H263, AudioCodec.AAC, AudioBitrate.KBIT_32),
+    THREEGP_VIDEO_240P_H263_AUDIO_AAC(132, "MPEG-4 Visual", "180p", "AAC", "32kbit", VideoResolution.P_240, VideoContainer.THREEGP, VideoCodec.H263, AudioCodec.AAC, AudioBitrate.KBIT_32) {
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            if (caller != null && caller instanceof YoutubeVariant) {
+                switch (((YoutubeVariant) caller).getGroup()) {
+                case VIDEO:
+                case VIDEO_3D:
+                    return getQualityVideo() + " [LQ]";
+                default:
+                    return null;
+                }
 
-    THREEGP_VIDEO_240P_H264_AUDIO_AAC(36, "MPEG-4 Visual", "180p", "AAC", "32kbit", VideoResolution.P_240, VideoContainer.THREEGP, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_32),
+            }
+            return null;
+        }
+    },
+
+    THREEGP_VIDEO_240P_H264_AUDIO_AAC(36, "MPEG-4 Visual", "180p", "AAC", "32kbit", VideoResolution.P_240, VideoContainer.THREEGP, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_32) {
+        @Override
+        public String getCustomQualityExtension(Object caller) {
+            if (caller != null && caller instanceof YoutubeVariant) {
+                switch (((YoutubeVariant) caller).getGroup()) {
+                case VIDEO:
+                case VIDEO_3D:
+                    return getQualityVideo() + " [HQ]";
+                default:
+                    return null;
+                }
+
+            }
+            return null;
+        }
+    },
     // not sure - did not find testvideos
     WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS(46, "VP8", "1080p", "Vorbis", "192kbit", VideoResolution.P_1080, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
 
@@ -324,16 +435,16 @@ public enum YoutubeITAG {
         return null;
     }
 
-    private String codecAudio;
-    private String codecVideo;
-    private final int itag;
-    private String qualityAudio;
+    private String                  codecAudio;
+    private String                  codecVideo;
+    private final int               itag;
+    private String                  qualityAudio;
 
-    private String qualityVideo;
+    private String                  qualityVideo;
 
     private MediaQualityInterface[] qualityTags;
 
-    private double qualityRating = -1;
+    private double                  qualityRating = -1;
 
     private YoutubeITAG(final int itag, String codecTagVideo, String qualityTagVideo, String codecTagAudio, String qualityTagAudio, MediaTagsVarious various) {
         this(itag, codecTagVideo, qualityTagVideo, codecTagAudio, qualityTagAudio);
@@ -384,6 +495,15 @@ public enum YoutubeITAG {
 
     }
 
+    public boolean containsTag(MediaQualityInterface tag) {
+        for (MediaQualityInterface s : qualityTags) {
+            if (s == tag) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public MediaQualityInterface[] getQualityTags() {
         return qualityTags;
     }
@@ -416,6 +536,14 @@ public enum YoutubeITAG {
         return codecVideo;
     }
 
+    public String getDisplayName() {
+        return null;
+    }
+
+    public String getQualityExtension() {
+        return null;
+    }
+
     public int getITAG() {
         return this.itag;
     }
@@ -439,6 +567,14 @@ public enum YoutubeITAG {
 
     public String getQualityVideo() {
         return qualityVideo;
+    }
+
+    public String getCustomName(Object caller) {
+        return null;
+    }
+
+    public String getCustomQualityExtension(Object caller) {
+        return null;
     }
 
 }
