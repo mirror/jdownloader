@@ -58,7 +58,7 @@ public class UdemyCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS       = 0;
     private static final int     FREE_MAXDOWNLOADS    = 20;
 
-    private String               DLLINK               = null;
+    private String               dllink               = null;
 
     private static final String  TYPE_SINGLE_FREE_OLD = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
     public static final String   TYPE_SINGLE_PREMIUM  = "https?://(?:www\\.)?udemy\\.com/.+/#/lecture/\\d+";
@@ -76,7 +76,7 @@ public class UdemyCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
@@ -98,7 +98,9 @@ public class UdemyCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
             /* Prepare the API-Headers to get the videourl */
-            downloadLink.setName(fid_accountneeded);
+            if (!downloadLink.isNameSet()) {
+                downloadLink.setName(fid_accountneeded);
+            }
             this.br.getPage(downloadLink.getDownloadURL());
             final String courseid = getCourseID(this.br);
             if (courseid == null) {
@@ -124,8 +126,8 @@ public class UdemyCom extends PluginForHost {
             final String json_download_path = "download_urls/" + asset_type;
             filename = (String) entries.get("title");
             final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, json_download_path);
-            DLLINK = (String) DummyScriptEnginePlugin.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
-            if (DLLINK != null) {
+            dllink = (String) DummyScriptEnginePlugin.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
+            if (dllink != null) {
                 if (filename == null) {
                     filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
                     if (filename == null) {
@@ -150,20 +152,16 @@ public class UdemyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.getPage(url_embed);
-            DLLINK = br.getRegex("\"file\":\"(http[^<>\"]*?)\",\"label\":\"720p").getMatch(0);
+            dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\",\"label\":\"720p").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
         if (ext == null) {
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        }
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+            ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -175,7 +173,7 @@ public class UdemyCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -184,7 +182,7 @@ public class UdemyCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -211,7 +209,7 @@ public class UdemyCom extends PluginForHost {
          * response 400.
          */
         this.br = new Browser();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -310,7 +308,10 @@ public class UdemyCom extends PluginForHost {
     }
 
     public static String getCourseID(final Browser br) {
-        final String courseid = br.getRegex("data\\-course\\-id=\"(\\d+)\"").getMatch(0);
+        String courseid = br.getRegex("data\\-course\\-id=\"(\\d+)\"").getMatch(0);
+        if (courseid == null) {
+            courseid = br.getRegex("&quot;id&quot;:\\s*(\\d+)").getMatch(0);
+        }
         return courseid;
     }
 
