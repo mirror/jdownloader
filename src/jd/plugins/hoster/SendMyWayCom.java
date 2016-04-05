@@ -25,6 +25,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,11 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendmyway.com" }, urls = { "https?://(www\\.)?sendmyway\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class SendMyWayCom extends PluginForHost {
@@ -564,20 +564,9 @@ public class SendMyWayCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String space = br.getRegex(Pattern.compile("<td[^>]*>Used space:</td>.*?<td.*?>\\s*([0-9\\.]+\\s*(?:Mb|GB))\\s*", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) {
-            ai.setUsedSpace(space.trim() + " Mb");
-        }
-        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            /**
-             * Who needs half points ? If we have a dot in the points, just remove it
-             */
-            if (points.contains(".")) {
-                String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
-                points = points.replace(dot, "");
-            }
-            ai.setPremiumPoints(Long.parseLong(points.trim()));
+            ai.setUsedSpace(space.trim());
         }
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
@@ -595,7 +584,7 @@ public class SendMyWayCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:(</td>.*?<td>)?(<b>)? ?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(3);
+            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium-?Account expires?:\\s*(\\d{1,2} [A-Za-z]+ \\d{4})</td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (expire == null) {
                 logger.info("Expire regex fails");
                 // ai.setExpired(true);
@@ -707,7 +696,7 @@ public class SendMyWayCom extends PluginForHost {
             if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            br.getPage("http://www.sendmyway.com/?op=my_account");
+            br.getPage("/?op=my_account");
             correctBR();
             if (new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
                 account.setProperty("nopremium", false);
@@ -775,7 +764,7 @@ public class SendMyWayCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
