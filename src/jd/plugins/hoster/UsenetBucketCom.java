@@ -99,21 +99,21 @@ public class UsenetBucketCom extends UseNet {
                 br.getPage("https://www.usenetbucket.com/en/controlpanel/");
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String userName = br.getRegex("<td>Username</td>.*?<td>(.*?)</td>").getMatch(0);
-            final String passWord = br.getRegex("<td>Password</td>.*?<td>(.*?)</td>").getMatch(0);
+            final String userName = br.getRegex("<td>Username</td>.*?<td.*?>(.*?)</td>").getMatch(0);
+            final String passWord = br.getRegex("<td>Password</td>.*?<td.*?>(.*?)</td>").getMatch(0);
             if (userName == null || passWord == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, userName);
                 account.setProperty(USENET_PASSWORD, passWord);
             }
-            final String connections = br.getRegex("<td>\\s*Connections</td>.*?<td>(\\d+)</td>").getMatch(0);
+            final String connections = br.getRegex("<td>\\s*Connections</td>.*?<td.*?>(\\d+)</td>").getMatch(0);
             if (connections != null) {
                 account.setMaxSimultanDownloads(Integer.parseInt(connections));
             } else {
                 account.setMaxSimultanDownloads(25);
             }
-            final String validUntil = br.getRegex("<td>Valid until</td>.*?<td>(.*?)</td>").getMatch(0);
+            final String validUntil = br.getRegex("<td>Valid until</td>.*?<td.*?>(.*?)</td>").getMatch(0);
             final String bucketType = br.getRegex("<h3>((Basic|Comfort|Ultimate|Free) Bucket)</h3>").getMatch(0);
             if (bucketType != null) {
                 ai.setStatus(bucketType);

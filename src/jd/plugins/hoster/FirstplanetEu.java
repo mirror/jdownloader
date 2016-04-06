@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -76,8 +75,6 @@ public class FirstplanetEu extends PluginForHost {
 
     private static final String  API_ENDPOINT                 = "http://firstplanet.eu/api/";
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private String               fid                          = null;
     private String               slug                         = null;
 
@@ -311,7 +308,7 @@ public class FirstplanetEu extends PluginForHost {
                 /* traffic / traffic --> Premium volume account */
                 ai.setTrafficLeft(numeric);
                 account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
                 status = "Premium volume account";
             } else if ("tp".equalsIgnoreCase(kind)) {
@@ -319,24 +316,21 @@ public class FirstplanetEu extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(hrValue, "dd.MM.yyyy", Locale.ENGLISH));
                 /* In this case the value inside 'trafficleft' is the number of days left. This account type has unlimited traffic! */
                 ai.setUnlimitedTraffic();
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
                 status = "Premium time account";
             } else if ("tptraffic".equalsIgnoreCase(kind)) {
                 /* tptraffic / tptraffic --> Premium time & volume account */
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(hrValue, "dd.MM.yyyy", Locale.ENGLISH));
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
                 status = "Premium time and volume account";
             } else if ("single".equalsIgnoreCase(kind)) {
                 /* tptraffic / tptraffic --> Premium time & volume account */
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
                 status = "Premium download-count-limited, traffic&time unlimited";
             } else {
@@ -344,10 +338,9 @@ public class FirstplanetEu extends PluginForHost {
                  * Free account or unsupported account type. In this case API does not return any information about the account - we only
                  * know that it is valid!
                  */
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setType(AccountType.FREE);
                 /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(false);
                 status = "Registered (free) user";
             }
@@ -362,17 +355,15 @@ public class FirstplanetEu extends PluginForHost {
             ai.setUnlimitedTraffic();
             hrValue = br.getRegex(">Neomezené stahování do</span>[\t\n\r ]*?<span class=\"right\">(\\d{1,2}\\.\\d{1,2}\\.\\d{4})</span>").getMatch(0);
             if (hrValue == null) {
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setType(AccountType.FREE);
                 /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(false);
                 ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(hrValue, "dd.MM.yyyy", Locale.ENGLISH));
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
                 ai.setStatus("Premium account");
             }
@@ -497,12 +488,6 @@ public class FirstplanetEu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
