@@ -164,6 +164,18 @@ public class UseNet extends PluginForHost {
     private final AtomicReference<SimpleUseNet> client        = new AtomicReference<SimpleUseNet>(null);
     private final String                        PRECHECK_DONE = "PRECHECK_DONE";
 
+    protected UsenetServer getUsenetServer(Account account) {
+        final UsenetConfigInterface config = getUsenetConfig();
+        UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
+        if (server == null || !getAvailableUsenetServer().contains(server)) {
+            server = getAvailableUsenetServer().get(0);
+            config.setHost(server.getHost());
+            config.setPort(server.getPort());
+            config.setSSLEnabled(server.isSSL());
+        }
+        return server;
+    }
+
     @Override
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         final UsenetFile usenetFile = UsenetFile._read(downloadLink);
@@ -174,14 +186,7 @@ public class UseNet extends PluginForHost {
         }
         final String username = getUsername(account);
         final String password = getPassword(account);
-        final UsenetConfigInterface config = getUsenetConfig();
-        UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
-        if (server == null || !getAvailableUsenetServer().contains(server)) {
-            server = getAvailableUsenetServer().get(0);
-            config.setHost(server.getHost());
-            config.setPort(server.getPort());
-            config.setSSLEnabled(server.isSSL());
-        }
+        final UsenetServer server = getUsenetServer(account);
         final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);
