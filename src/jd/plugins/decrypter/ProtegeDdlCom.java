@@ -23,15 +23,15 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protege-ddl.com" }, urls = { "http://(www\\.)?protege\\-ddl\\.com/(check\\.[a-z]{10}|[a-z]{10}\\-.+)\\.html" }, flags = { 0 })
 public class ProtegeDdlCom extends PluginForDecrypt {
@@ -43,19 +43,15 @@ public class ProtegeDdlCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String ua = RandomUserAgent.generate();
-
-    @SuppressWarnings("static-access")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setCookie("http://www.protege-ddl", "lang", "english");
-        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
         // error clauses
-        if (br.containsHTML("(?i)>Not Found</h1>")) {
+        if (br.containsHTML(">Not Found</h1>")) {
             logger.info("Invalid URL: " + parameter);
             return decryptedLinks;
         }
@@ -81,27 +77,24 @@ public class ProtegeDdlCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
-
         // find tables
-        String table = br.getRegex("<table(.*?)</table>").getMatch(0);
-        // find links
-        String[] links = new Regex(table, "(?i)<a href=(.*?)[\r\n\t ]+").getColumn(0);
-        if (links == null || links.length == 0) {
-            links = new Regex(table, "(?i)blank>(.*?)</a>").getColumn(0);
-            if (links == null || links.length == 0) {
-                if (br.containsHTML("<h4>Password:</h4>")) {
-                    logger.info("Password protected links are not supported yet: " + parameter);
-                    return decryptedLinks;
-                }
-                logger.warning("ProtectUp: Either invalid URL or the plugin broken : " + parameter);
-                logger.warning("ProtectUp: Please confirm via browser, and report any bugs to developement team.");
-                return null;
-            }
+        final String table = br.getRegex("<table(.*?)</table>").getMatch(0);
+        if (table == null) {
+            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
-        if (links != null && links.length > 0) {
-            for (String link : links) {
-                decryptedLinks.add(createDownloadlink(link));
+        // find links
+        final String[] links = HTMLParser.getHttpLinks(table, null);
+        if (links == null || links.length == 0) {
+            if (br.containsHTML("<h4>Password:</h4>")) {
+                logger.info("Password protected links are not supported yet: " + parameter);
+                return decryptedLinks;
             }
+            logger.warning("Either invalid URL or the plugin broken : " + parameter);
+            logger.warning("Please confirm via browser, and report any bugs to developement team.");
+            return null;
+        }
+        for (String link : links) {
+            decryptedLinks.add(createDownloadlink(link));
         }
         return decryptedLinks;
     }

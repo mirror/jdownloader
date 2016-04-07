@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.Form;
+import jd.http.Request;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -29,13 +29,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectup.com" }, urls = { "http://(www\\.)?protectup\\.com/(check\\.[a-z]{10}|[a-z]{10}\\-.+)\\.html" }, flags = { 0 })
-public class PrtUpCm extends PluginForDecrypt {
+/**
+ *
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision: 23331 $", interfaceVersion = 2, names = { "ddlprotect.com" }, urls = { "http://(www\\.)?ddlprotect\\.com/ml/[a-zA-Z]{5}" }, flags = { 0 })
+public class DdlPrtCm extends PluginForDecrypt {
 
     // DEV NOTES
     // - No https
 
-    public PrtUpCm(PluginWrapper wrapper) {
+    public DdlPrtCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -46,33 +51,28 @@ public class PrtUpCm extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // error clauses
-        if (br.containsHTML(">Not Found</h1>")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Invalid URL: " + parameter);
             return decryptedLinks;
         }
-        // find correct forum, post form
-        final Form getform = br.getFormbyProperty("name", "linkprotect");
-        if (getform != null) {
-            br.submitForm(getform);
-        }
-        // find tables
-        final String table = br.getRegex("<table(.*?)</table>").getMatch(0);
-        if (table == null) {
+        // find tables, they have Téléchargement(en:Download), and Streaming(en:Streaming) tables.
+        final String[] tables = br.getRegex("<table(.*?)</table>").getColumn(0);
+        if (tables == null) {
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
-        // find links
-        final String[] links = HTMLParser.getHttpLinks(table, null);
-        if (links == null || links.length == 0) {
-            if (br.containsHTML("<h4>Password:</h4>")) {
-                logger.info("Password protected links are not supported yet: " + parameter);
-                return decryptedLinks;
+        for (final String table : tables) {
+            // find links
+            final String[] links = HTMLParser.getHttpLinks(table, null);
+            if (links == null || links.length == 0) {
+                logger.warning("Possible plugin issue: " + parameter);
+                continue;
             }
-            logger.warning("Either invalid URL or the plugin broken : " + parameter);
-            logger.warning("Please confirm via browser, and report any bugs to developement team.");
-            return null;
-        }
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
+            for (final String link : links) {
+                final String corrected = Request.getLocation(link, br.getRequest());
+                if (!corrected.contains("ddlprotect.com/")) {
+                    decryptedLinks.add(createDownloadlink(corrected));
+                }
+            }
         }
         return decryptedLinks;
     }
