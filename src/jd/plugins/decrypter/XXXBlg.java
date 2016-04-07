@@ -20,43 +20,47 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
-public class XXXBlg extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)/(?:[^/]+/){2})" }, flags = { 0 })
+public class XXXBlg extends antiDDoSForDecrypt {
 
     public XXXBlg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS   = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/|tag/|blog/|search/).*?";
-    private static final String INVALIDLINKS_2 = "http://(www\\.)?xxx\\-blog\\.to/(typ|dmca|wp\\-admin|poppen)/$";
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+        }
+        return prepBr;
+    }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        ArrayList<String> pwList = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        final ArrayList<String> pwList = new ArrayList<String>();
         pwList.add("xxx-blog.dl.am");
         pwList.add("xxx-blog.org");
         pwList.add("xxx-blog.to");
-        parameter = parameter.substring(parameter.lastIndexOf("http://"));
-        if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS_2)) {
-            logger.info("Link invalid: " + parameter);
-            return decryptedLinks;
-        }
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(new Regex(parameter, "xxx\\-blog\\.to/(.+)").getMatch(0));
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "xxx-blog\\.to/(.+)").getMatch(0), null));
             return decryptedLinks;
         }
 
@@ -70,7 +74,7 @@ public class XXXBlg extends PluginForDecrypt {
                     return null;
                 }
                 dLink = createDownloadlink(form.getAction(null));
-                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/)")) {
+                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)/(?:[^/]+/){2}))")) {
                     decryptedLinks.add(createDownloadlink(parameter));
                 }
             }
@@ -83,22 +87,22 @@ public class XXXBlg extends PluginForDecrypt {
             if (fpname == null) {
                 fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
             }
-            String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
+            String pagepiece = br.getRegex("<div class=\"entry\">(.*?)</article>").getMatch(0);
             if (pagepiece == null) {
                 pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
-            }
-            if (pagepiece == null) {
-                pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
-            }
-            if (pagepiece == null) {
-                pagepiece = br.getRegex("class=\\'easySpoilerTitleA\\'(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
-            }
-            if (pagepiece == null) {
-                pagepiece = this.br.getRegex("<div class=\"entry\">(.*?)</article>").getMatch(0);
-            }
-            if (pagepiece == null) {
-                logger.warning("pagepiece is null, using full html code!");
-                pagepiece = br.toString();
+                if (pagepiece == null) {
+                    pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class='easySpoilerConclude'").getMatch(0);
+                    if (pagepiece == null) {
+                        pagepiece = br.getRegex("class='easySpoilerTitleA'(.*?)class='easySpoilerConclude'").getMatch(0);
+                        if (pagepiece == null) {
+                            pagepiece = this.br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
+                            if (pagepiece == null) {
+                                logger.warning("pagepiece is null, using full html code!");
+                                pagepiece = br.toString();
+                            }
+                        }
+                    }
+                }
             }
             final String[] regexes = { "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"", "<a href=\"(http[^<>\"]*?)\" target=\"_blank\"" };
             for (final String currentRegex : regexes) {
@@ -107,7 +111,7 @@ public class XXXBlg extends PluginForDecrypt {
                     continue;
                 }
                 for (final String link : links) {
-                    if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) {
+                    if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)(?:[^/]+/){2})")) {
                         continue;
                     }
                     final DownloadLink dlink = createDownloadlink(link);
@@ -127,8 +131,6 @@ public class XXXBlg extends PluginForDecrypt {
             }
 
         }
-        // if (parameter.contains("/blog/") || parameter.contains("/typ/"))
-
         return decryptedLinks;
     }
 
