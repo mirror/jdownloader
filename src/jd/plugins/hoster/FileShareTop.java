@@ -36,6 +36,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter2.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -227,7 +228,7 @@ public class FileShareTop extends PluginForHost {
         br2.setCookie(dllink, "arp_scroll_position", "0");
         br2.getHeaders().put("Referer", br.getHeaders().get("Referer"));
         logger.info("Final downloadlink = " + dllink);
-        dl = new jd.plugins.BrowserAdapter2.BrowserAdapter() {
+        final BrowserAdapter brAd = new jd.plugins.BrowserAdapter2.BrowserAdapter() {
 
             @Override
             public void handleBlockedRedirect(final String redirect) throws PluginException {
@@ -240,7 +241,8 @@ public class FileShareTop extends PluginForHost {
                 super.handleBlockedRedirect(redirect);
             };
 
-        }.openDownload(br2, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        };
+        dl = brAd.openDownload(br2, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
@@ -256,6 +258,7 @@ public class FileShareTop extends PluginForHost {
                 logger.info("Traffic empty / Not enough traffic to download this file");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNot enough traffic available!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
+            brAd.handleBlockedContent(br2);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
