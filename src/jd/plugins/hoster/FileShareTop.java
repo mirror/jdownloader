@@ -22,9 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,7 +33,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter2.BrowserAdapter;
+import jd.plugins.BrowserDownloadInterface;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,6 +41,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-share.top" }, urls = { "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2 })
 public class FileShareTop extends PluginForHost {
@@ -228,7 +228,7 @@ public class FileShareTop extends PluginForHost {
         br2.setCookie(dllink, "arp_scroll_position", "0");
         br2.getHeaders().put("Referer", br.getHeaders().get("Referer"));
         logger.info("Final downloadlink = " + dllink);
-        final BrowserAdapter brAd = new jd.plugins.BrowserAdapter2.BrowserAdapter() {
+        final BrowserDownloadInterface brAd = new BrowserDownloadInterface() {
 
             @Override
             public void handleBlockedRedirect(final String redirect) throws PluginException {
