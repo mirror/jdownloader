@@ -76,7 +76,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     public SimpleUseNetDownloadInterface(final SimpleUseNet client, final DownloadLink downloadLink, final UsenetFile usenetFile) {
         connectionHandler = new ManagedThrottledConnectionHandler();
         this.usenetFile = usenetFile;
-        final boolean resumeable = usenetFile.getNumSegments() > 1;
+        final boolean resumeable = usenetFile.getNumSegments() > 1 || usenetFile.getSegments().size() > 1;
         final String host = SocketConnection.getHostName(client.getSocket().getRemoteSocketAddress());
         this.downloadLink = downloadLink;
         downloadable = new DownloadLinkDownloadable(downloadLink) {
@@ -247,6 +247,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 }
             }
             connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+            final byte[] buffer = new byte[32767];
             segmentLoop: for (final UsenetFileSegment segment : segments) {
                 if (abort.get()) {
                     break segmentLoop;
@@ -268,7 +269,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                         meteredThrottledInputStream.setInputStream(new CheckedInputStream(bodyInputStream, new CRC32()));
                     }
                     int bytesRead = 0;
-                    final byte[] buffer = new byte[32767];
                     while ((bytesRead = meteredThrottledInputStream.read(buffer)) != -1) {
                         if (abort.get()) {
                             // so we can quit normally
