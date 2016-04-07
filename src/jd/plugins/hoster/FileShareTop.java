@@ -22,6 +22,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,9 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-share.top" }, urls = { "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2 })
 public class FileShareTop extends PluginForHost {
@@ -219,8 +219,10 @@ public class FileShareTop extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // we need to CORRECT THIS LINK!
-            dllink = dllink.replace("file-share.top?", "file-share.top/?");
+            if (dllink.endsWith("/login")) {
+                dumpSession(account);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Expired Session");
+            }
         }
         /* Cookies not needed for the download process. */
         final Browser br2 = new Browser();
@@ -263,6 +265,14 @@ public class FileShareTop extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private void dumpSession(final Account account) throws PluginException {
+        if (account == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        account.setProperty("cookies", Property.NULL);
+
     }
 
     @SuppressWarnings("unchecked")
@@ -328,7 +338,7 @@ public class FileShareTop extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                dumpSession(account);
                 throw e;
             } finally {
                 br.setFollowRedirects(ifr);
