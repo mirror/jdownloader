@@ -4,14 +4,14 @@ import java.awt.event.MouseEvent;
 import java.util.Iterator;
 import java.util.Locale;
 
-import jd.controlling.ClipboardMonitoring;
-
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.controlling.ClipboardMonitoring;
 
 public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
@@ -23,58 +23,57 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
     }
 
     private boolean containsKeyword(final AdvancedConfigEntry configEntry, final String[] finds) {
-        final String[] keywords = configEntry.getKeywords();
-        if (keywords != null && keywords.length > 0) {
-            boolean result = false;
-            if (finds != null) {
-                for (final String find : finds) {
-                    if (configEntry != null && StringUtils.isNotEmpty(find)) {
-                        for (final String keyword : keywords) {
-                            if (result) {
-                                if (StringUtils.containsIgnoreCase(keyword, find)) {
-                                    continue;
-                                } else {
-                                    return false;
-                                }
-                            } else {
-                                if (StringUtils.containsIgnoreCase(keyword, find)) {
-                                    result = true;
-                                } else {
-                                    return false;
-                                }
-                            }
-
-                        }
+        final String[] keywords = configEntry != null ? configEntry.getKeywords() : null;
+        if (keywords == null || finds == null) {
+            return false;
+        }
+        boolean result = false;
+        for (final String find : finds) {
+            if ("".equals(find)) {
+                // ignore empty
+                continue;
+            }
+            for (final String keyword : keywords) {
+                if (result) {
+                    if (StringUtils.containsIgnoreCase(keyword, find)) {
+                        continue;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    if (StringUtils.containsIgnoreCase(keyword, find)) {
+                        result = true;
+                    } else {
+                        return false;
                     }
                 }
             }
-            return result;
         }
-        return false;
+        return result;
     }
 
     private boolean containsInternalKey(final AdvancedConfigEntry configEntry, final String[] finds) {
+        final String internalKey = configEntry != null ? configEntry.getInternalKey() : null;
+        if (StringUtils.isEmpty(internalKey) || finds == null) {
+            return false;
+        }
         boolean result = false;
-        if (finds != null && configEntry != null) {
-            final String internalKey = configEntry.getInternalKey();
-            if (StringUtils.isEmpty(internalKey)) {
-                return false;
+        for (final String find : finds) {
+            if ("".equals(find)) {
+                // ignore empty
+                continue;
             }
-            for (final String find : finds) {
-                if (StringUtils.isNotEmpty(find)) {
-                    if (result) {
-                        if (StringUtils.containsIgnoreCase(internalKey, find)) {
-                            continue;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        if (StringUtils.containsIgnoreCase(internalKey, find)) {
-                            result = true;
-                        } else {
-                            return false;
-                        }
-                    }
+            if (result) {
+                if (StringUtils.containsIgnoreCase(internalKey, find)) {
+                    continue;
+                } else {
+                    return false;
+                }
+            } else {
+                if (StringUtils.containsIgnoreCase(internalKey, find)) {
+                    result = true;
+                } else {
+                    return false;
                 }
             }
         }
@@ -82,27 +81,27 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
     }
 
     private boolean containsDescription(final AdvancedConfigEntry configEntry, final String[] finds) {
+        final String description = configEntry != null ? configEntry.getDescription() : null;
+        if (StringUtils.isEmpty(description) || finds == null) {
+            return false;
+        }
         boolean result = false;
-        if (finds != null && configEntry != null) {
-            final String description = configEntry.getDescription();
-            if (StringUtils.isEmpty(description)) {
-                return false;
+        for (final String find : finds) {
+            if ("".equals(find)) {
+                // ignore empty
+                continue;
             }
-            for (final String find : finds) {
-                if (StringUtils.isNotEmpty(find)) {
-                    if (result) {
-                        if (StringUtils.containsIgnoreCase(description, find)) {
-                            continue;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        if (StringUtils.containsIgnoreCase(description, find)) {
-                            result = true;
-                        } else {
-                            return false;
-                        }
-                    }
+            if (result) {
+                if (StringUtils.containsIgnoreCase(description, find)) {
+                    continue;
+                } else {
+                    return false;
+                }
+            } else {
+                if (StringUtils.containsIgnoreCase(description, find)) {
+                    result = true;
+                } else {
+                    return false;
                 }
             }
         }
@@ -110,27 +109,27 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
     }
 
     private boolean containsKeyText(final AdvancedConfigEntry configEntry, final String[] finds) {
+        final String keyText = configEntry != null ? configEntry.getKeyText() : null;
+        if (StringUtils.isEmpty(keyText) || finds == null) {
+            return false;
+        }
         boolean result = false;
-        if (finds != null) {
-            final String keyText = configEntry.getKeyText();
-            if (StringUtils.isEmpty(keyText)) {
-                return false;
+        for (final String find : finds) {
+            if ("".equals(find)) {
+                // ignore empty
+                continue;
             }
-            for (final String find : finds) {
-                if (configEntry != null && StringUtils.isNotEmpty(find)) {
-                    if (result) {
-                        if (StringUtils.containsIgnoreCase(keyText, find)) {
-                            continue;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        if (StringUtils.containsIgnoreCase(keyText, find)) {
-                            result = true;
-                        } else {
-                            return false;
-                        }
-                    }
+            if (result) {
+                if (StringUtils.containsIgnoreCase(keyText, find)) {
+                    continue;
+                } else {
+                    return false;
+                }
+            } else {
+                if (StringUtils.containsIgnoreCase(keyText, find)) {
+                    result = true;
+                } else {
+                    return false;
                 }
             }
         }
