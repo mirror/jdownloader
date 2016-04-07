@@ -73,6 +73,9 @@ public class UseNetEwekaNl extends UseNet {
                 br.getPage("https://www.eweka.nl/myeweka/?lang=en");
             }
             account.saveCookies(br.getCookies(getHost()), "");
+            final String server = br.getRegex("<td><b>Server</b></td>.*?<td.*?>(.*?)</td>").getMatch(0);
+            final String port = br.getRegex("<td><b>Port</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
+            // TODO: use these infos for available servers
             final String connections = br.getRegex("<td><b>Connections</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
             if (connections != null) {
                 account.setMaxSimultanDownloads(Integer.parseInt(connections));
@@ -105,8 +108,9 @@ public class UseNetEwekaNl extends UseNet {
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("newsreader124.eweka.nl", false, 119));
-        ret.addAll(UsenetServer.createServerList("sslreader.eweka.nl", true, 563, 443));
+        ret.addAll(UsenetServer.createServerList("newsreader.eweka.nl", false, 119));// resolves to 3 IP
+        // ret.addAll(UsenetServer.createServerList("newsreader124.eweka.nl", false, 119));//resolves to 1 IP
+        ret.addAll(UsenetServer.createServerList("sslreader.eweka.nl", true, 563, 443));// resolves to 3 IP
         return ret;
     }
 
