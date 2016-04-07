@@ -149,6 +149,9 @@ public class FreeDiscPl extends PluginForHost {
                 }
                 br.getPage(dllink);
                 dllink = br.getRegex("data\\-video\\-url=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("player\\.swf\\?file=(http://[^<>\"]*?)\"").getMatch(0);
+                }
                 String ext = null;
                 final String currentFname = downloadLink.getName();
                 if (currentFname.contains(".")) {
@@ -183,7 +186,7 @@ public class FreeDiscPl extends PluginForHost {
                 }
                 String downloadUrlJson = getJsonNested(br.toString(), "download_data");
                 dllink = getJson(downloadUrlJson, "download_url") + getJson(downloadUrlJson, "item_id") + "/" + getJson(downloadUrlJson, "time");
-                // dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);               
+                // dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -390,7 +393,7 @@ public class FreeDiscPl extends PluginForHost {
     /*
      * *
      * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      */
     private String getJson(final String key) {
