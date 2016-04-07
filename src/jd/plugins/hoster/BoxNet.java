@@ -30,17 +30,17 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com", "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=f_\\d+\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/shared/[a-z0-9]+|https?://www\\.boxdecrypted\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
 public class BoxNet extends antiDDoSForHost {
-    private static final String TOS_LINK = "https://www.box.net/static/html/terms.html";
+    private static final String TOS_LINK                = "https://www.box.net/static/html/terms.html";
 
-    private static final String OUT_OF_BANDWITH_MSG    = "error_message_bandwidth";
-    private static final String REDIRECT_DOWNLOAD_LINK = "https?://[a-z0-9\\-_]+\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&file_id=f_[a-z0-9]+\\&shared_name=\\w+";
-    private static final String DLLINKREGEX            = "href=\"(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
-    private static final String SLINK                  = "https?://www\\.box\\.com/shared/[a-z0-9]+";
-    private static final String DECRYPTEDFOLDERLINK    = "https?://www\\.box\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+";
+    private static final String OUT_OF_BANDWITH_MSG     = "error_message_bandwidth";
+    private static final String REDIRECT_DOWNLOAD_LINK  = "https?://[a-z0-9\\-_]+\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&file_id=f_[a-z0-9]+\\&shared_name=\\w+";
+    private static final String DLLINKREGEX             = "href=\"(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
+    private static final String SLINK                   = "https?://www\\.box\\.com/shared/[a-z0-9]+";
+    private static final String DECRYPTEDFOLDERLINK     = "https?://www\\.box\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+";
 
-    private String  dllink                  = null;
-    private boolean force_http_download     = false;
-    private boolean error_message_bandwidth = false;
+    private String              dllink                  = null;
+    private boolean             force_http_download     = false;
+    private boolean             error_message_bandwidth = false;
 
     public BoxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -214,21 +214,14 @@ public class BoxNet extends antiDDoSForHost {
         // setup referer and cookies for single file downloads
         requestFileInformation(link);
         if (error_message_bandwidth) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The uploader of this file doesn't have enough bandwidth left!", 3 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The uploader of this file doesn't have enough bandwidth left!", 20 * 60 * 1000l);
         }
         // site has many redirects, it could be set off from
         // requestFileInformation...
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(SLINK) && dllink == null) {
             if (br.getURL().contains("box.com/login")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (br.containsHTML("id=\"shared_password\"")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not supported yet");
             }
