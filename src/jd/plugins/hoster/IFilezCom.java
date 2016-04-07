@@ -20,11 +20,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -132,7 +134,7 @@ public class IFilezCom extends PluginForHost {
             logger.warning("Captchatext not found or verifycode null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String code = getCaptchaCode("http://depfile.com/includes/vvc.php?vvcid=" + verifycode, downloadLink);
+        String code = getCaptchaCode("/includes/vvc.php?vvcid=" + verifycode, downloadLink);
         br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&FREE=Download+for+free");
         if (br.getURL().endsWith("/premium")) {
             // no reason why
@@ -289,21 +291,39 @@ public class IFilezCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        br = new Browser();
+        requestFileInformation(downloadLink);
         login(account, false);
         if (AccountType.FREE.equals(account.getType())) {
-            br.getPage(link.getDownloadURL());
-            doFree(link);
+            br.getPage(downloadLink.getDownloadURL());
+            doFree(downloadLink);
         } else {
             br.setFollowRedirects(true);
-            br.getPage(link.getDownloadURL());
+            br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours")) {
                 logger.info("Daily limit reached, temp disabling premium");
                 final AccountInfo ai = account.getAccountInfo();
                 ai.setTrafficLeft(0);
                 account.setAccountInfo(ai);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            {
+                // they now have captcha for premium users, nice hey?
+                int count = -1;
+                String verifycode = getVerifyCode();
+                if (verifycode != null) {
+                    do {
+                        if (++count > 5) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        final String code = getCaptchaCode("/includes/vvc.php?vvcid=" + verifycode, downloadLink);
+                        if (StringUtils.isEmpty(code)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&prem_plus=Next");
+                    } while ((verifycode = getVerifyCode()) != null);
+                }
             }
             String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) {
@@ -313,7 +333,7 @@ public class IFilezCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
             }
@@ -324,6 +344,14 @@ public class IFilezCom extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private String getVerifyCode() {
+        String verifyCode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
+        if (verifyCode == null) {
+            verifyCode = br.getRegex("\\?vvcid=(\\d+)").getMatch(0);
+        }
+        return verifyCode;
     }
 
     private boolean isOffline() {
