@@ -18,6 +18,9 @@ package jd.plugins;
 
 import java.nio.charset.CharacterCodingException;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
+
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.Request;
@@ -27,9 +30,7 @@ import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
-
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.settings.GeneralSettings;
+import jd.plugins.download.raf.OldRAFDownload;
 
 /**
  * heavily modified download interface by raztoki
