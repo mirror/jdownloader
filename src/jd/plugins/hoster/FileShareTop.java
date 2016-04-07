@@ -20,6 +20,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,10 +42,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-share.top" }, urls = { "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2 })
 public class FileShareTop extends PluginForHost {
@@ -63,7 +64,7 @@ public class FileShareTop extends PluginForHost {
 
     public FileShareTop(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://sharerapid.cz/dobiti/?zeme=1");
+        this.enablePremium(MAINPAGE + "dobiti/?zeme=1");
     }
 
     @Override
@@ -88,10 +89,12 @@ public class FileShareTop extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setBrowserExclusive();
-        prepBr(this.br);
+        prepBr(br);
         br.getPage(link.getDownloadURL());
-        checkOffline();
+        /* Set english language, auto redirects back! */
         br.setFollowRedirects(true);
+        br.getPage("/lang/set/gb");
+        checkOffline();
         String filename = br.getRegex("class=\"fa fa-file-o\"></i>([^<>\"]*?)<small>").getMatch(0);
         final String filesize = br.getRegex("<strong>Velikost:</strong>([^<>\"]*?)</p>").getMatch(0);
         if (filename == null) {
@@ -132,11 +135,11 @@ public class FileShareTop extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireUnlimited, "dd.MM.yy - HH:mm", Locale.ENGLISH));
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account with unlimited traffic");
+            ai.setStatus("Premium Account - Unlimited Traffic");
             account.setValid(true);
             return ai;
         } else {
-            trafficleft = br.getMatch("class=\"fa fa\\-database\"></i>([^<>\"]*?)</a>");
+            trafficleft = br.getMatch("class=\"fa fa\\-database\"></i>\\s*([^<>\"]*?)\\s*</a>");
             if (trafficleft != null) {
                 logger.info("Available traffic equals: " + trafficleft);
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
@@ -144,7 +147,7 @@ public class FileShareTop extends PluginForHost {
             } else {
                 ai.setUnlimitedTraffic();
             }
-            final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
+            final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>\\s*([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4}\\s*-\\s*[0-9]{1,2}:[0-9]{1,2})\\s*</strong>");
             if (expires != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", Locale.ENGLISH));
             }
@@ -153,9 +156,9 @@ public class FileShareTop extends PluginForHost {
             /**
              * Max simultan downloads (higher than 1) only works if you got any
              */
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
-            final String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
+            final String maxSimultanDownloads = br.getRegex("<td>Max\\.\\s*počet paralelních stahování:\\s*</td><td>\\s*(\\d+)\\s*<a href").getMatch(0);
             if (maxSimultanDownloads != null) {
                 account.setMaxSimultanDownloads(Integer.parseInt(maxSimultanDownloads));
             } else {
@@ -163,7 +166,7 @@ public class FileShareTop extends PluginForHost {
             }
             account.setConcurrentUsePossible(true);
         } else {
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
@@ -197,53 +200,59 @@ public class FileShareTop extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        String dllink = checkDirectLink(downloadLink, "directlink_new");
         if (dllink == null) {
+            requestFileInformation(downloadLink);
+            br = new Browser();
             login(account, false);
+            br.setCookie(getHost(), "arp_scroll_position", "0");
             br.getPage(downloadLink.getDownloadURL());
-            checkOffline();
             dllink = downloadLink.getDownloadURL().replace("/file/", "/file/download/");
-        }
-        this.br.setFollowRedirects(false);
-        br.getPage(dllink);
-        dllink = this.br.getRedirectLocation();
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /*
+             * this site is stupid, here you request > get fileserver via redirect > then it might redirect into error code which then
+             * infinite redirect loops! Since redirects are off, lets do a request and get the SERVER, if error, parse the error code, do
+             * not follow!
+             */
+            br.getPage(dllink);
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // we need to CORRECT THIS LINK!
+            dllink = dllink.replace("file-share.top?", "file-share.top/?");
         }
         /* Cookies not needed for the download process. */
-        this.br = new Browser();
-        // this.br.getHeaders().put("Referer", "http://stor.file-share.top/public/");
-        this.br.getHeaders().put("Accept-Encoding", "identity");
-        this.br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        final Browser br2 = new Browser();
+        prepBr(br2);
+        br2.setCookie(dllink, "arp_scroll_position", "0");
+        br2.getHeaders().put("Referer", br.getHeaders().get("Referer"));
         logger.info("Final downloadlink = " + dllink);
-        br.setFollowRedirects(true);
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        } catch (final PluginException e) {
-            // Link; 6150801113541.log; 388414; jdlog://6150801113541
-            // they have redirection issues which are infinite loops... this is the best way to address
-            if (StringUtils.endsWithCaseInsensitive(e.getErrorMessage(), "Redirectloop")) {
-                final String redirect = br.getRedirectLocation();
+        dl = new jd.plugins.BrowserAdapter2.BrowserAdapter() {
+
+            @Override
+            public void handleBlockedRedirect(final String redirect) throws PluginException {
                 if (redirect.matches(".+/\\?error=2$")) {
                     // unknown error message type...
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error Handling, Pleae report issues");
+                } else if (redirect.matches(".+/\\?error=\\d+$")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error Handling, Please report issue!");
                 }
-            }
-        }
+                super.handleBlockedRedirect(redirect);
+            };
+
+        }.openDownload(br2, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
             }
-            br.followConnection();
-            if (br.containsHTML("(was not found on this server|No htmlCode read)")) {
+            br2.followConnection();
+            if (br2.containsHTML("(was not found on this server|No htmlCode read)")) {
                 /** Show other errormessage if free account was used */
                 if (account.getType() == AccountType.FREE) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Maybe this file cannot be downloaded as a freeuser: Buy traffic or try again later", 60 * 60 * 1000);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
-            } else if (this.br.getURL().contains("/panel/credit")) {
+            } else if (br2.getURL().contains("/panel/credit")) {
                 logger.info("Traffic empty / Not enough traffic to download this file");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNot enough traffic available!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
@@ -256,13 +265,12 @@ public class FileShareTop extends PluginForHost {
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifr = br.isFollowingRedirects();
             try {
                 /** Load cookies */
-                br.setCookiesExclusive(true);
-                setBrowserExclusive();
                 br.setFollowRedirects(false);
                 br.setDebug(true);
-                prepBr(this.br);
+                prepBr(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -274,13 +282,17 @@ public class FileShareTop extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            if (!key.matches("RMT|RMU")) {
+                                br.setCookie(MAINPAGE, key, value);
+                            }
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE + "login");
+                /* Set english language, auto redirects back! */
+                br.getPage("/lang/set/gb");
                 final String lang = System.getProperty("user.language");
                 final Form form = this.br.getFormbyKey("password");
                 if (form == null) {
@@ -303,9 +315,11 @@ public class FileShareTop extends PluginForHost {
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                    if (!c.getKey().matches("RMT|RMU")) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
@@ -313,15 +327,22 @@ public class FileShareTop extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(ifr);
             }
         }
     }
 
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+
     private void prepBr(final Browser br) throws IOException {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
+        while (agent.get() == null || !agent.get().contains(" Chrome/")) {
+            agent.set(UserAgents.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", agent.get());
+        br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         br.setCustomCharset("UTF-8");
-        /* Set english language */
-        br.getPage("http://file-share.top/lang/set/gb");
+        // DO NOT SET LANGUAGE HERE, its stored within COOKIE!
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
