@@ -21,6 +21,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.plugins.AddonPanel;
+import jd.utils.JDUtilities;
+
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
@@ -56,11 +61,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
@@ -108,42 +108,39 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* force shutdown */
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.log(e);
                 }
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.log(e);
                 }
             } else {
                 /* normal shutdown */
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.log(e);
                 }
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.log(e);
                 }
             }
             if (CrossSystem.OS == OperatingSystem.WINDOWS_2000 || CrossSystem.OS == OperatingSystem.WINDOWS_NT) {
                 /* also try extra methods for windows2000 and nt */
                 try {
-
-                    File f = Application.getTempResource("shutdown.vbs");
+                    final File f = Application.getTempResource("shutdown.vbs");
                     f.deleteOnExit();
                     IO.writeStringToFile(f, "set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
-
                     try {
                         JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", f.getAbsolutePath() }, null, 0);
-
                     } finally {
                         FileCreationManager.getInstance().delete(f, null);
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                 }
             }
             break;
@@ -151,12 +148,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             /* older windows versions */
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.log(e);
             }
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.log(e);
             }
             break;
@@ -166,23 +163,19 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* force shutdown */
                 try {
                     System.out.println(JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0));
-                } catch (Exception e) {
-
+                } catch (Throwable e) {
                     logger.log(e);
-
                 }
                 try {
                     System.out.println(JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0));
-                } catch (Exception e) {
-
+                } catch (Throwable e) {
                     logger.log(e);
-
                 }
             } else {
                 /* normal shutdown */
                 try {
                     JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.log(e);
                 }
             }
@@ -191,22 +184,28 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             /* linux and others */
             try {
                 dbusPowerState("Shutdown");
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.log(e);
             }
             try {
                 JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.log(e);
             }
             try {
                 JDUtilities.runCommand("poweroff", new String[] {}, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.log(e);
             }
             try {
                 JDUtilities.runCommand("sudo", new String[] { "shutdown", "-P", "now" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                logger.log(e);
+            }
+            try {
+                // shutdown: -H and -P flags can only be used along with -h flag.
+                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-Ph", "now" }, null, 0);
+            } catch (Throwable e) {
                 logger.log(e);
             }
         }
@@ -237,18 +236,18 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             prepareHibernateOrStandby();
             try {
                 JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate on" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate on" }, null, 0);
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                 }
             }
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                 }
             }
             break;
@@ -268,18 +267,17 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             prepareHibernateOrStandby();
             try {
                 dbusPowerState("Hibernate");
-            } catch (Exception e) {
+            } catch (Throwable e) {
             }
             break;
         }
     }
 
     public static Response execute(String[] command) throws IOException, UnsupportedEncodingException, InterruptedException {
-        ProcessBuilder probuilder = ProcessBuilderFactory.create(command);
-
-        Process process = probuilder.start();
+        final ProcessBuilder probuilder = ProcessBuilderFactory.create(command);
+        final Process process = probuilder.start();
         System.out.println(Arrays.toString(command));
-        Response ret = new Response();
+        final Response ret = new Response();
         ret.setStd(IO.readInputStreamToString(process.getInputStream()));
         ret.setErr(IO.readInputStreamToString(process.getErrorStream()));
         ret.setExit(process.waitFor());
@@ -301,18 +299,18 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             prepareHibernateOrStandby();
             try {
                 JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate off" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate off" }, null, 0);
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                 }
             }
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                 }
             }
             break;
@@ -326,7 +324,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             prepareHibernateOrStandby();
             try {
                 JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "tell application \"Finder\" to sleep" }, null, 0);
-            } catch (Exception e) {
+            } catch (Throwable e) {
             }
             break;
         default:
@@ -334,7 +332,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             prepareHibernateOrStandby();
             try {
                 dbusPowerState("Suspend");
-            } catch (Exception e) {
+            } catch (Throwable e) {
             }
             break;
         }
