@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
@@ -90,12 +91,13 @@ public class FileCryptCc extends PluginForDecrypt {
         int counter = -1;
         final int retry = 10;
 
-        ArrayList<String> tries = new ArrayList<String>();
+        final ArrayList<String> toTry = new ArrayList<String>();
+        final LinkedHashSet<String> tried = new LinkedHashSet<String>();
         if (StringUtils.isNotEmpty(LAST_USED_PASSWORD.get())) {
-            tries.add(LAST_USED_PASSWORD.get());
+            toTry.add(LAST_USED_PASSWORD.get());
         }
-        if (!StringUtils.equals(LAST_USED_PASSWORD.get(), param.getDecrypterPassword()) && !StringUtils.isNotEmpty(param.getDecrypterPassword())) {
-            tries.add(param.getDecrypterPassword());
+        if (StringUtils.isNotEmpty(param.getDecrypterPassword())) {
+            toTry.add(param.getDecrypterPassword());
         }
         String usedPassword = null;
         while (counter++ < retry && containsPassword()) {
@@ -113,14 +115,20 @@ public class FileCryptCc extends PluginForDecrypt {
             if (passwordForm != null) {
 
                 String passCode = null;
-                if (tries.size() > 0) {
-                    passCode = tries.remove(0);
+                if (!toTry.isEmpty()) {
+                    passCode = toTry.remove(0);
+                    if (!tried.add(passCode)) {
+                        continue;
+                    }
                 }
 
                 // when previous provided password has failed, or not provided we should ask
                 if (passCode == null) {
                     passCode = getUserInput("Password?", param);
-
+                    if (!tried.add(passCode)) {
+                        // no need to submit password that has already been tried!
+                        continue;
+                    }
                 }
                 usedPassword = passCode;
                 passwordForm.put("password", Encoding.urlEncode(passCode));
@@ -162,7 +170,6 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("solvemedia\\.com/papi/")) {
-
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
                 try {
@@ -189,11 +196,9 @@ public class FileCryptCc extends PluginForDecrypt {
                 Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this);
                 try {
                     final String result = handleCaptchaChallenge(challenge);
-
                     if (challenge.isRefreshTrigger(result)) {
                         continue;
                     }
-
                     if (StringUtils.isEmpty(result)) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -234,7 +239,7 @@ public class FileCryptCc extends PluginForDecrypt {
         if (counter == retry && containsCaptcha()) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
+        final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
 
         // mirrors - note: containers no longer have uid within path! -raztoki20160117
         String[] mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+\\.html\\?mirror=\\d+)\"").getColumn(0);
@@ -254,6 +259,11 @@ public class FileCryptCc extends PluginForDecrypt {
             handleCnl2(tdl, parameter);
             if (!tdl.isEmpty()) {
                 decryptedLinks.addAll(tdl);
+                if (fpName != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(fpName.trim()));
+                    fp.addLinks(decryptedLinks);
+                }
                 continue;
             }
             /* Second try DLC, then single links */
@@ -282,7 +292,7 @@ public class FileCryptCc extends PluginForDecrypt {
         br.setFollowRedirects(false);
         for (final String singleLink : links) {
             final Browser br2 = br.cloneBrowser();
-            br2.getPage("http://filecrypt.cc/Link/" + singleLink + ".html");
+            br2.getPage("/Link/" + singleLink + ".html");
             if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.cc/usenet\\.html") || br2.containsHTML("share-online\\.biz/affiliate")) {
                 /* Advertising */
                 continue;
@@ -367,10 +377,10 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     private final boolean containsPassword() {
-        return new Regex(cleanHTML, "class=\"passw\"").matches();
+        return new Regex(cleanHTML, "<h2>Passwort erforderlich</h2>").matches();
     }
 
-    private final String containsCaptcha = "class=\"safety\">(Sicherheitsabfrage|Security prompt)<";
+    private final String containsCaptcha = "<h2>Sicherheitsüberprüfung</h2>";
 
     private String       cleanHTML       = null;
 
