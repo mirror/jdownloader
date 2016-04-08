@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 
@@ -31,18 +32,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?\\&dir.+)?|https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?dir.+)?|https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static boolean      pluginloaded                          = false;
-    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(?:.*?&dir=.+|#dir/path=%2F.+)";
+    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(?:.*?&dir=.+|#dir/path=%.+)";
     private static final String TYPE_FOLDER_GENERAL                   = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#dir/path=%2F.+))";
     private static final String TYPE_FOLDER_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
@@ -54,6 +54,7 @@ public class PanBaiduCom extends PluginForDecrypt {
     private String              shareid                               = null;
     private String              uk                                    = null;
 
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
@@ -106,31 +107,33 @@ public class PanBaiduCom extends PluginForDecrypt {
             br.getHeaders().remove("X-Requested-With");
             br.getPage(parameter);
             if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
-                logger.info("Link offline: " + parameter);
-                final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                try {
-                    dl.setContentUrl(parameter);
-                } catch (Throwable e) {
-                }
-                dl.setProperty("offline", true);
+                final DownloadLink dl = this.createOfflinelink(parameter);
                 dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
         }
 
+        if (uk == null || shareid == null) {
+            /* Probably user added invalid url */
+            return decryptedLinks;
+        }
+
         String singleFolder = new Regex(parameter, "#dir/path=(.*?)$").getMatch(0);
         if (singleFolder == null) {
             singleFolder = new Regex(parameter, "&dir=([^&\\?]+)").getMatch(0);
         }
-        String correctedBR = br.toString().replaceAll("\\\\\\\\", "\\\\").replaceAll("\\\\\"", "\"");// save unicode backslash
         String dir = null;
+        String dirName = null;
+        boolean is_subfolder = false;
         // Jump into folder or get content of the main link
         if (parameter.matches(TYPE_FOLDER_SUBFOLDER)) {
-            final String dirName = new Regex(parameter, "(?:dir/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
+            dirName = new Regex(parameter, "(?:dir/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
             dir = "%2F" + dirName;
-            getDownloadLinks(decryptedLinks, parameter, dirName, dir);
+            is_subfolder = true;
         } else if (br.containsHTML("class=\"size\"|class=\"video\\-save\\-btn\"")) {
+            /* Special case: video */
+            /* 2016-04-08: Added new json handling - check if this else if is still needed! */
             final String fsid = br.getRegex("yunData\\.FS_ID = \"(\\d+)\"").getMatch(0);
             if (fsid == null || uk == null || shareid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -151,123 +154,119 @@ public class PanBaiduCom extends PluginForDecrypt {
             fina.setProperty("important_fsid", fsid);
             fina.setProperty("origurl_uk", uk);
             fina.setProperty("origurl_shareid", shareid);
-            fina.setFinalFileName(Encoding.htmlDecode(unescape(filename)));
+            fina.setFinalFileName(Encoding.htmlDecode(Encoding.unescape(filename)));
             fina.setProperty("server_filename", filename);
             fina.setDownloadSize(Long.parseLong(filesize));
             fina.setProperty("size", filesize);
             fina.setAvailable(true);
             decryptedLinks.add(fina);
-        } else {
-            /* create HashMap with json key/value pair */
-            final String json = new Regex(correctedBR, "\"list\":\\[(\\{.*?\\})\\]\\},").getMatch(0);
-            // cleanup, poor mans method to remove entries that breaks the important 'dlink'
-            if (json == null) {
-                logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
-                return null;
+            return decryptedLinks;
+        }
+        br.getHeaders().put("Accept", "Accept");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(Encoding.unescape(dirName)));
+        int currentpage = 1;
+        long errno = 0;
+        final int maxpages = 10;
+        final int maxlinksperpage = 100;
+        int currentlinksnum = 0;
+        LinkedHashMap<String, Object> entries = null;
+        ArrayList<Object> ressourcelist = null;
+
+        do {
+            if (currentpage > 1 || is_subfolder) {
+                br.getPage(getFolder(parameter, dir, currentpage));
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                errno = DummyScriptEnginePlugin.toLong(entries.get("errno"), 0);
+                if (errno == 2) {
+                    /* Empty folder */
+                    final DownloadLink dl = this.createOfflinelink(parameter);
+                    dl.setFinalFileName(Encoding.htmlDecode(dirName));
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+                ressourcelist = (ArrayList) entries.get("list");
+            } else {
+                final String json = this.br.getRegex("var[\t\n\r ]*?_context[\t\n\r ]*?=[\t\n\r ]*?(\\{.+);").getMatch(0);
+                if (json == null) {
+                    logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
+                    return null;
+                }
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "file_list/list");
             }
 
-            HashMap<String, String> ret = new HashMap<String, String>();
-            for (String[] values : new Regex((json == null ? "" : json), "\\{([^\\}]+)").getMatches()) {
+            DownloadLink dl = null;
 
-                for (String[] value : new Regex(values[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
-                    ret.put(value[0], value[1]);
-                }
-
-                if (!(ret.containsKey("headurl") || ret.containsKey("parent_path"))) {
+            for (final Object fileo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) fileo;
+                final String server_filename = (String) entries.get("server_filename");
+                if (server_filename == null) {
                     continue;
                 }
-                if (ret.get("isdir") != null && ret.get("isdir").equals("1")) {
-                    // subfolder in imported root
-                    getDownloadLinks(decryptedLinks, parameter, ret.get("path"), Encoding.urlEncode(unescape(ret.get("path"))));
+                final String fsid = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("fs_id"), 0));
+                final long size = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
+                final long isdelete = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
+                final long isdir = DummyScriptEnginePlugin.toLong(entries.get("isdir"), 0);
+                if (isdir == 1) {
+                    /* Subfolder --> Goes back into decrypter */
+                    final String subdir_name = Encoding.urlEncode(server_filename);
+                    String subdir_link = null;
+                    if (parameter.matches(TYPE_FOLDER_SUBFOLDER)) {
+                        subdir_link = parameter + "%2F" + subdir_name;
+                    } else {
+                        subdir_link = parameter + "#dir/path=%2F" + subdir_name;
+                    }
+                    dl = createDownloadlink(subdir_link);
                 } else {
-                    dir = (new Regex(ret.get("headurl"), "filename=(.*?)$").getMatch(0));
-
-                    if (dir == null) {
-                        dir = (ret.get("server_filename"));
+                    if (fsid.equals("0") || server_filename == null) {
+                        continue;
                     }
-                    dir = unescape(dir);
-                    // why do this exactly ?? for folder code down lower it fked this up seriously. I'm of the opinion that you should never
-                    // nuke original ret storables.
-                    // ret.put("path", dir);
-                    // dir = ret.get("parent_path") + "%2F" + dir;
+                    final String md5 = (String) entries.get("md5");
+                    dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                    dl.setProperty("server_filename", server_filename);
 
-                    dir = ret.get("parent_path") + "%2F" + dir;
-                    if (singleFolder != null && !singleFolder.equals(dir)) {
-                        continue;// only selected folder
+                    dl.setFinalFileName(server_filename);
+                    if (size > 0) {
+                        dl.setDownloadSize(size);
                     }
-                    if (ret.containsKey("md5") && !"".equals(ret.get("md5"))) {// file in root
-                        final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, values[0]);
-                        decryptedLinks.add(dl);
+                    dl.setProperty("mainLink", getPlainLink(parameter));
+                    dl.setProperty("dirName", dir);
+                    dl.setProperty("important_link_password", link_password);
+                    dl.setProperty("important_link_password_cookie", link_password_cookie);
+                    dl.setProperty("important_fsid", fsid);
+
+                    dl.setContentUrl(parameter + "&fid=" + fsid);
+                    dl.setProperty("origurl_uk", uk);
+                    dl.setProperty("origurl_shareid", shareid);
+                    if (isdelete == 1) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                    }
+                    if (md5 != null) {
+                        dl.setMD5Hash(md5);
                     }
                 }
+                decryptedLinks.add(dl);
             }
-            if (decryptedLinks.size() == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
+        } while (currentlinksnum >= maxlinksperpage && currentpage <= maxpages);
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
 
         return decryptedLinks;
     }
 
-    private void getDownloadLinks(final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String dirName, final String dir) throws Exception {
-        if (dirName == null || dir == null) {
-            return;
-        }
-        br.getHeaders().put("Accept", "Accept");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(unescape(dirName)));
-        int currentpage = 1;
-        final int maxpages = 10;
-        final int maxlinksperpage = 100;
-        int currentlinksnum = 0;
-        do {
-            br.getPage(getFolder(parameter, dir, currentpage));
-            // Folder empty
-            if (br.containsHTML("\"errno\":2")) {
-                final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                dl.setContentUrl(parameter);
-                dl.setProperty("offline", true);
-                dl.setFinalFileName(Encoding.htmlDecode(dirName));
-                decryptedLinks.add(dl);
-                return;
-            }
-            HashMap<String, String> ret = null;
-            String list = br.getRegex("\"list\":\\[(\\{.*?\\})\\]").getMatch(0);
-            final String[][] linkInfo = new Regex((list == null ? "" : list), "\\{(.*?)\\}").getMatches();
-            if (linkInfo != null && linkInfo.length != 0) {
-                currentlinksnum = linkInfo.length;
-                for (final String[] links : linkInfo) {
-                    ret = new HashMap<String, String>();
-                    for (String[] link : new Regex(links[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
-                        ret.put(link[0], link[1]);
-                    }
-                    // nested folder.. we should really return back into itself to make this process threaded.
-                    if (ret.get("isdir") != null && ret.get("isdir").equals("1")) {
-                        getDownloadLinks(decryptedLinks, parameter, ret.get("path"), Encoding.urlEncode(unescape(ret.get("path"))));
-                    }
-                    if (links[0].contains("\"md5\"")) {
-                        final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, null);
-                        dl.setContainerUrl(parameter);
-                        fp.add(dl);
-                        distribute(dl);
-                        decryptedLinks.add(dl);
-                    }
-                }
-            }
-            currentpage++;
-        } while (currentlinksnum >= maxlinksperpage && currentpage <= maxpages);
-
-    }
-
     private String getFolder(final String parameter, String dir, final int page) {
-        String unicode_stuff = new Regex(dir, "_(.+)$").getMatch(0);
-        if (unicode_stuff != null) {
-            dir = dir.replace(unicode_stuff, "");
-            unicode_stuff = unescape(unicode_stuff);
-            dir += Encoding.urlEncode(unicode_stuff);
-        }
+        // String unicode_stuff = new Regex(dir, "_(.+)$").getMatch(0);
+        // if (unicode_stuff != null) {
+        // dir = dir.replace(unicode_stuff, "");
+        // unicode_stuff = unescape(unicode_stuff);
+        // dir += Encoding.urlEncode(unicode_stuff);
+        // }
         if (shareid == null) {
             shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
         }
@@ -286,18 +285,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         return "http://pan.baidu.com/share/list?uk=" + (uk != null ? uk : "") + "&shareid=" + (shareid != null ? shareid : "") + "&page=" + page + "&num=100&dir=" + dir + "&order=time&desc=1&_=" + System.currentTimeMillis() + "&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID;
     }
 
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
+    /* 2016-04-06: TODO: Remove this! It should not be needed enymore in future revisions! */
     /** @description: Differ between subfolders & downloadlinks and add them */
     private DownloadLink generateDownloadLink(final HashMap<String, String> ret, final String parameter, final String dir, String fsid, final String json) {
         DownloadLink dl = null;
@@ -307,7 +295,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         }
         if ("1".equals(isdir)) {
             String subdir_name = ret.get("server_filename");
-            subdir_name = Encoding.urlEncode(unescape(subdir_name));
+            subdir_name = Encoding.urlEncode(Encoding.unescape(subdir_name));
             String subdir_link = null;
             if (parameter.matches(TYPE_FOLDER_SUBFOLDER)) {
                 subdir_link = parameter + "%2F" + subdir_name;
@@ -336,11 +324,11 @@ public class PanBaiduCom extends PluginForDecrypt {
             if (filename == null) {
                 filename = dl.getStringProperty("server_filename");
             }
-            filename = Encoding.htmlDecode(unescape(filename));
+            filename = Encoding.htmlDecode(Encoding.unescape(filename));
             dl.setProperty("server_filename", filename);
 
             if (dl.getStringProperty("server_filename") != null) {
-                dl.setFinalFileName(Encoding.htmlDecode(unescape(dl.getStringProperty("server_filename"))));
+                dl.setFinalFileName(Encoding.htmlDecode(Encoding.unescape(dl.getStringProperty("server_filename"))));
             }
             if (dl.getStringProperty("size") != null) {
                 dl.setDownloadSize(Long.parseLong(dl.getStringProperty("size")));
