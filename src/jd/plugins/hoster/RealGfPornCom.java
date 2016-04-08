@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "http://(www\\.)?realgfporndecrypted\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "http://(?:www\\.)?realgfporn\\.com/videos/[a-z0-9\\-_]+\\d+\\.html" }, flags = { 0 })
 public class RealGfPornCom extends PluginForHost {
 
     public RealGfPornCom(PluginWrapper wrapper) {
@@ -43,11 +43,6 @@ public class RealGfPornCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.realgfporn.com/DMCA.html";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        // Links are added through a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("realgfporndecrypted.com/", "realgfporn.com/"));
     }
 
     @SuppressWarnings("deprecation")

@@ -155,6 +155,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         String date = null;
         String date_formatted = null;
         String id = null;
+        String id_filename = null;
         String title = null;
         String show = null;
         String subtitleURL = null;
@@ -176,6 +177,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
                     return decryptedLinks;
                 }
+                id_filename = id;
                 decrypterurl = "decrypted://phoenix.de/content/" + id + "&quality=%s";
                 br.getPage("/php/zdfplayer-v1.3/data/beitragsDetails.php?ak=web&id=" + id);
             } else if (this.PARAMETER_ORIGINAL.matches(TYPE_TIVI)) {
@@ -188,6 +190,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     param_1 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(2);
                     param_2 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(3);
                 }
+                id_filename = param_1 + "_" + param_2;
                 decrypterurl = "decrypted://tivi.de/content/" + param_1 + param_2 + "&quality=%s";
                 br.getPage("http://www.tivi.de/tiviVideos/beitrag/" + param_1 + "/" + param_2 + "?view=flashXml");
             } else {
@@ -220,6 +223,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                     return decryptedLinks;
                 }
+                id_filename = id;
                 decrypterurl = "decrypted://www.zdf.de/ZDFmediathek/beitrag/video/" + id + "&quality=%s";
                 br.getPage("/ZDFmediathek/xmlservice/web/beitragsDetails?id=" + id + "&ak=web");
                 /* Make sure link is decrypter-compatible */
@@ -322,7 +326,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
 
                     final String fmtUPPR = fmt.toUpperCase(Locale.ENGLISH);
-                    final String name = date_formatted + "_zdf_" + show + " - " + title + "@" + fmtUPPR + extension;
+                    final String name = date_formatted + "_zdf_" + show + " - " + title + "_" + id_filename + "@" + fmtUPPR + extension;
                     final DownloadLink link = createDownloadlink(String.format(decrypterurl, fmt));
                     if (this.fastlinkcheck) {
                         link.setAvailable(true);
@@ -377,7 +381,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (grabSubtitles && subtitleURL != null) {
                 final String dlfmt = dl.getStringProperty("directfmt", null);
                 final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
-                final String name = date_formatted + "_zdf_" + show + " - " + title + "@" + dlfmt + ".xml";
+                final String name = date_formatted + "_zdf_" + show + " - " + title + "_" + id_filename + "@" + dlfmt + ".xml";
                 final DownloadLink subtitle = createDownloadlink(String.format(decrypterurl, dlfmt + "subtitle"));
                 subtitle.setAvailable(true);
                 subtitle.setFinalFileName(name);

@@ -35,9 +35,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.download.DownloadInterface;
 
 import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -57,6 +59,18 @@ public class DeredactieBe extends PluginForHost {
     public String getAGBLink() {
         return "http://deredactie.be/";
     }
+
+    private Browser ajax     = null;
+    private String  finalurl = null;
+
+    private static enum protocol {
+        HTTP,
+        RTMP,
+        HDS,
+        HLS;
+    }
+
+    private protocol ptcrl = null;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -91,14 +105,15 @@ public class DeredactieBe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (finalurl.contains("youtube")) {
-
+            /* Therefore a decrypter would be needed! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String ext = finalurl.substring(finalurl.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
+        if (ext == null || ext.length() > 5 || ext.equals(".m3u8")) {
             ext = ".mp4";
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()).replaceAll("\"", "").replace("/", "-") + ext);
-        if (finalurl.contains("vod.stream.vrt.be")) {
+        if (finalurl.contains("vod.stream.vrt.be") && finalurl.endsWith(".m3u8")) {
             // <div class="video"
             // data-video-id="2138237_1155250086"
             // data-video-type="video"
@@ -144,43 +159,34 @@ public class DeredactieBe extends PluginForHost {
                 t.printStackTrace();
             }
         }
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(finalurl);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                ptcrl = protocol.HTTP;
-            } else {
-                br2.followConnection();
-                finalurl = mediaValue.get("rtmp-server");
-                finalurl = finalurl != null && mediaValue.get("rtmp-path") != null ? finalurl + "@" + mediaValue.get("rtmp-path") : null;
-                if (finalurl == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                ptcrl = protocol.RTMP;
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (finalurl.endsWith(".m3u8")) {
+            ptcrl = protocol.HLS;
+        } else {
+            final Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br2.openGetConnection(finalurl);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    ptcrl = protocol.HTTP;
+                } else {
+                    br2.followConnection();
+                    finalurl = mediaValue.get("rtmp-server");
+                    finalurl = finalurl != null && mediaValue.get("rtmp-path") != null ? finalurl + "@" + mediaValue.get("rtmp-path") : null;
+                    if (finalurl == null) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    ptcrl = protocol.RTMP;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
-
-    private Browser ajax     = null;
-    private String  finalurl = null;
-
-    private static enum protocol {
-        HTTP,
-        RTMP,
-        HDS;
-    }
-
-    private protocol ptcrl = null;
 
     private void ajaxGetPage(final String url) throws Exception {
         ajax = br.cloneBrowser();
@@ -206,6 +212,22 @@ public class DeredactieBe extends PluginForHost {
         requestFileInformation(downloadLink);
         if (protocol.HDS.equals(ptcrl)) {
             dl = new HDSDownloader(downloadLink, br, finalurl);
+            dl.startDownload();
+            return;
+        } else if (protocol.HLS.equals(ptcrl)) {
+            this.br.getPage(finalurl);
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This content is GEO-blocked in your country");
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url_hls = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
             return;
         } else if (protocol.RTMP.equals(ptcrl)) {

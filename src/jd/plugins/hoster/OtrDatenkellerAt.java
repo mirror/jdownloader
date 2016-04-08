@@ -39,11 +39,13 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.net" }, urls = { "https?://otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" }, flags = { 2 })
 public class OtrDatenkellerAt extends PluginForHost {
 
-    public static String agent             = RandomUserAgent.generate();
-    private final String DOWNLOADAVAILABLE = "onclick=\"startCount";
-    private final String MAINPAGE          = "http://otr.datenkeller.net";
+    public static String        agent             = RandomUserAgent.generate();
+    private final String        DOWNLOADAVAILABLE = "onclick=\"startCount";
+    private final String        MAINPAGE          = "http://otr.datenkeller.net";
+    private final String        API_BASE_URL      = "https://otr.datenkeller.net/api.php";
+    private static final String APIVERSION        = "1";
 
-    private String       api_waitaws_url   = null;
+    private String              api_waitaws_url   = null;
 
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,9 +74,6 @@ public class OtrDatenkellerAt extends PluginForHost {
         }
         return super.rewriteHost(host);
     }
-
-    /* API was implemented AFTER rev 26273 */
-    private static final String APIVERSION = "1";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -118,7 +117,7 @@ public class OtrDatenkellerAt extends PluginForHost {
                     sb.append(Encoding.urlEncode(getFname(dl)));
                     sb.append("%2C");
                 }
-                br.postPage("https://otr.datenkeller.net/api.php", sb.toString());
+                br.postPage(API_BASE_URL, sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String current_filename = getFname(dllink);
                     final String online_source = br.getRegex("(\\{\"filesize\":\"\\d+\",\"filename\":\"" + current_filename + "\"\\})").getMatch(0);
@@ -334,8 +333,8 @@ public class OtrDatenkellerAt extends PluginForHost {
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     private void login(Account account, boolean force) throws Exception {
-        final String lang = System.getProperty("user.language");
         br.setCookiesExclusive(true);
         api_prepBrowser();
         String apikey = getAPIKEY(account);
@@ -344,20 +343,15 @@ public class OtrDatenkellerAt extends PluginForHost {
             acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
         }
         if (acmatch && !force && apikey != null) {
+            /* Re-use existing apikey */
             return;
         }
         br.setFollowRedirects(false);
-        br.postPage("https://otr.datenkeller.net/api.php", "api_version=" + APIVERSION + "&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("\"status\":\"fail\"")) {
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        handleErrors();
         apikey = getJson(br.toString(), "apikey");
         if (apikey == null) {
-            if ("de".equalsIgnoreCase(lang)) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -374,9 +368,9 @@ public class OtrDatenkellerAt extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         account.setValid(true);
         final String expires = getJson(br.toString(), "expires");
@@ -390,13 +384,15 @@ public class OtrDatenkellerAt extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.postPage("https://otr.datenkeller.net/api.php", "api_version=" + APIVERSION + "&action=getpremlink&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&apikey=" + getAPIKEY(account) + "&filename=" + getFname(link));
+        br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=getpremlink&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&apikey=" + Encoding.urlEncode(getAPIKEY(account)) + "&filename=" + getFname(link));
         String dllink = getJson(br.toString(), "dllink");
         if (dllink == null) {
+            handleErrors();
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -415,6 +411,27 @@ public class OtrDatenkellerAt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
+    }
+
+    /* Handles API errors */
+    private void handleErrors() throws PluginException {
+        final String status = getJson("status");
+        final String message = getJson("message");
+        if ("fail".equals(status) && message != null) {
+            /* TODO: Add support for more failure cases here */
+            if (message.equalsIgnoreCase("failed to login due to wrong credentials, missing or wrong apikey")) {
+                /* This should never happen. */
+                /* Temp disable --> We will get a new apikey next full login --> Maybe that will help */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (message.equalsIgnoreCase("failed to login due to wrong credentials or expired account")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            logger.warning("Unknown API errorstate");
+        }
     }
 
     private void api_prepBrowser() {
@@ -441,7 +458,11 @@ public class OtrDatenkellerAt extends PluginForHost {
     }
 
     private String getAPIKEY(final Account acc) {
-        return acc.getStringProperty("apikey", null);
+        String apikey = acc.getStringProperty("apikey", null);
+        if (apikey != null) {
+            apikey = apikey.replace("\\", "");
+        }
+        return apikey;
     }
 
     private String getJson(final String source, final String parameter) {
@@ -450,6 +471,10 @@ public class OtrDatenkellerAt extends PluginForHost {
             result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
         }
         return result;
+    }
+
+    private String getJson(final String parameter) {
+        return getJson(this.br.toString(), parameter);
     }
 
     private void getPage(final Browser br, final String url) throws IOException {
