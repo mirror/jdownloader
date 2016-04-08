@@ -85,7 +85,7 @@ public class FileSharkPl extends PluginForHost {
 
     private long checkForErrors() throws PluginException {
         if (br.containsHTML("Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("MAX_DOWNLOAD"), 60 * 60 * 1000l);
         }
         if (br.containsHTML("Plik nie został odnaleziony w bazie danych.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -284,7 +284,7 @@ public class FileSharkPl extends PluginForHost {
             if (fileName == null || fileSize == null) {
                 long waitTime = checkForErrors();
                 if (waitTime != 0) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, waitTime);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
                 }
 
             }
@@ -357,14 +357,16 @@ public class FileSharkPl extends PluginForHost {
                     int errorCode = Integer.parseInt(PluginJSonUtils.getJson(response, "errorCode"));
                     String errorMessage = getErrorMessage(response, errorCode);
                     if (errorCode == 32) {
-                        sleep(65 * 1000l, downloadLink);
+                        if (trials < 1) {
+                            sleep(60 * 1000l, downloadLink);
+                        }
                         trials++;
                         // useAPI = getAPICall(downloadLink, 1, null, null);
                         if (trials > 1) {
                             useAPI = false;
                         }
                     } else if (errorCode == 34) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMessage, 10 * 60 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMessage, 60 * 60 * 1000l);
                     } else if (errorCode == 31) {
                         // Free download available only for countries: countryName
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -393,9 +395,13 @@ public class FileSharkPl extends PluginForHost {
             String fileId = new Regex(downloadURL, "http://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
 
             br.getPage(MAINPAGE + "pobierz/normal/" + fileId);
+            String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                br.getPage(redirect);
+            }
             long waitTime = checkForErrors();
             if (waitTime != 0) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, waitTime);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
             }
 
             Form dlForm = new Form();
@@ -420,7 +426,7 @@ public class FileSharkPl extends PluginForHost {
                 }
                 waitTime = checkForErrors();
                 if (waitTime != 0) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, waitTime);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
                 }
                 break;
             }
@@ -526,14 +532,20 @@ public class FileSharkPl extends PluginForHost {
             dailyLimitLeftUsed = br.getRegex("<p>Pobrano dzisiaj</p>[\r\t\n ]+<p><strong>(.*)</strong> z " + DAILY_LIMIT + "</p>").getMatch(0);
             setTrafficLeft(ai, dailyLimitLeftUsed, false);
 
-            expire = br.getRegex(">Rodzaj konta <strong>Premium <span title=\"(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})\">\\(do").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
+            String accountType = br.getRegex("<p class=\"type-account\">Rodzaj konta <strong>([A-Za-z]+)</strong></p>").getMatch(0);
+            if ("Standardowe".equals(accountType)) {
+                isPremium = false;
+            } else {
+
+                expire = br.getRegex(">Rodzaj konta <strong>Premium <span title=\"(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})\">\\(do").getMatch(0);
+                if (expire == null) {
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                }
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+                isPremium = true;
             }
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
-            isPremium = true;
 
         }
 
@@ -551,6 +563,8 @@ public class FileSharkPl extends PluginForHost {
         } else {
             ai.setStatus(getPhrase("REGISTERED_USER"));
             account.setProperty("PREMIUM", "FALSE");
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
         }
         return ai;
     }
@@ -624,7 +638,9 @@ public class FileSharkPl extends PluginForHost {
         }
         setCurrentAccount(account);
         if ("FALSE".equals(account.getProperty("PREMIUM"))) {
+            account.setMaxSimultanDownloads(1);
             handleFree(downloadLink);
+            return;
         }
         requestFileInformation(downloadLink);
         String downloadURL = downloadLink.getDownloadURL();
@@ -775,6 +791,8 @@ public class FileSharkPl extends PluginForHost {
                                                       put("LOGIN_FAILED", "Login failed");
                                                       put("VERIFY_LOGIN", "Please check your Username and Password!");
                                                       put("LOGIN_ERROR", "Login Error");
+                                                      put("WAITTIME", "You must wait for new download");
+                                                      put("MAX_DOWNLOAD", "Reached max number of simultaneously downloaded files.");
                                                   }
                                               };
 
@@ -793,6 +811,8 @@ public class FileSharkPl extends PluginForHost {
                                                       put("LOGIN_FAILED", "Błędny login/hasło");
                                                       put("VERIFY_LOGIN", "Proszę zweryfikuj swoją nazwę użytkownika i hasło!");
                                                       put("LOGIN_ERROR", "Błąd logowania");
+                                                      put("WAITTIME", "Musisz odczekać do kolejnego pobierania");
+                                                      put("MAX_DOWNLOAD", "Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.");
                                                   }
                                               };
 
