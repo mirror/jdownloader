@@ -12,21 +12,6 @@ import java.util.Set;
 
 import javax.swing.Icon;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -54,6 +39,21 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInter
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.plugins.DownloadLink;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -263,10 +263,10 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                                     s.setId(v._getUniqueId());
                                 }
                                 if (queryParams.isVariantName()) {
-                                    s.setName(v._getName());
+                                    s.setName(v._getName(cl));
                                 }
                                 if (queryParams.isVariantIcon()) {
-                                    Icon icon = v._getIcon();
+                                    Icon icon = v._getIcon(cl);
                                     if (icon != null) {
                                         s.setIconKey(contentAPI.getIconKey(icon));
                                     }
@@ -530,7 +530,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (children.size() > 0) {
             final CrawledLink cl = children.get(0);
             for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-                ret.add(new LinkVariantStorableV2(lv._getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv._getExtendedName() : lv._getName()));
+                ret.add(new LinkVariantStorableV2(lv._getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv._getExtendedName(cl) : lv._getName(cl)));
             }
         }
         return ret;

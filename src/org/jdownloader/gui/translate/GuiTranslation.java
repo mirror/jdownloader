@@ -6148,4 +6148,21 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Best %s1" })
     String YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add_best(String label);
 
+    @Default(lngs = { "en" }, values = { "Video resolution height in pixel" })
+    String YoutubeHelper_getDescription_height();
+
+    @Default(lngs = { "en" }, values = { "Video resolution width in pixel" })
+    String YoutubeHelper_getDescription_width();
+
+    @Default(lngs = { "en" }, values = { "The Video Framerate" })
+
+    String YoutubeHelper_getDescription_fps();
+
+    @Default(lngs = { "en" }, values = { "3D if the video is in Side-By-Side or Half-Over-Under" })
+
+    String YoutubeHelper_getDescription_3d();
+
+    @Default(lngs = { "en" }, values = { "%s1 %s2 %s3-Audio" })
+
+    String YoutubeVariant_name_generic_video3(String res, String fps, String audio);
 }

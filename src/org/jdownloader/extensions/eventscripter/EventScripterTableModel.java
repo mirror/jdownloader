@@ -13,8 +13,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jsyntaxpane.syntaxkits.JavaScriptSyntaxKit;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -36,6 +34,8 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jsyntaxpane.syntaxkits.JavaScriptSyntaxKit;
 
 public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implements GenericConfigEventListener<Object> {
 
@@ -153,7 +153,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
         });
         this.addColumn(new ExtComboColumn<ScriptEntry, EventTrigger>(T.T.event_trigger(), new DefaultComboBoxModel<EventTrigger>(EventTrigger.values())) {
             @Override
-            protected String modelItemToString(EventTrigger selectedItem) {
+            protected String modelItemToString(EventTrigger selectedItem, ScriptEntry value) {
                 return selectedItem.getLabel();
             }
 

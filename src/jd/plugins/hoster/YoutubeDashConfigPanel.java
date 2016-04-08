@@ -18,7 +18,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.components.youtube.MediaQualityInterface;
 import org.jdownloader.plugins.components.youtube.VideoContainer;
 import org.jdownloader.plugins.components.youtube.YoutubeVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -83,10 +82,10 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         //
         @Override
         protected String getLabel(int i, YoutubeVariant sc) {
-            String name = sc._getName();
+            String name = sc._getName(YoutubeDashConfigPanel.this);
 
             if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
-                name = sc._getExtendedName();
+                name = sc._getExtendedName(YoutubeDashConfigPanel.this);
             }
             if (i == 0) {
                 return _GUI.T.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI.T.YoutubeDashConfigPanel_getLabel_best() + ")";
@@ -99,7 +98,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         @Override
         protected String getLabel(YoutubeVariant sc) {
-            return sc._getName();
+            return sc._getName(YoutubeDashConfigPanel.this);
         }
 
         @Override
@@ -117,7 +116,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                     }
                 }
 
-                sb.append(list.get(i).getQualityExtension());
+                sb.append(list.get(i).getQualityExtension(YoutubeDashConfigPanel.this));
 
             }
 
@@ -186,6 +185,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             if (!dupe.add(ytv.getTypeId())) {
                 continue;
             }
+
             switch (ytv.getGroup()) {
             case AUDIO:
                 audio.add(ytv);
@@ -194,19 +194,15 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 image.add(ytv);
                 break;
             case VIDEO:
-                VideoContainer videoTag = null;
-                for (MediaQualityInterface tag : ytv.getiTagVideo().getQualityTags()) {
-                    if (tag instanceof VideoContainer) {
-                        videoTag = (VideoContainer) tag;
-                        break;
-                    }
-                }
+                VideoContainer videoTag = ytv.getiTagVideo().getVideoContainer(YoutubeDashConfigPanel.this);
+
                 if (videoTag != null) {
                     switch (videoTag) {
                     case FLV:
                         videoFLV.add(ytv);
                         break;
                     case MP4:
+                        System.out.println("add " + ytv + " " + ytv.getTypeId());
                         videoMP4.add(ytv);
                         break;
                     case THREEGP:
@@ -456,7 +452,8 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             if (blacklist != null) {
                 for (String b : blacklist) {
 
-                    blacklistSet.add(b);
+                    blacklistSet.add(YoutubeVariant.getCompatibleTypeID(b));
+
                 }
             }
 
@@ -472,7 +469,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             if (extra != null) {
                 for (String b : extra) {
 
-                    extraSet.add(b);
+                    extraSet.add(YoutubeVariant.getCompatibleTypeID(b));
                 }
             }
 
@@ -513,6 +510,8 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         for (YoutubeVariant v : list.getValues()) {
             if (!blacklistSet.contains(v.getTypeId())) {
                 vList.add(v);
+            } else {
+                System.out.println("Blacklisted");
             }
 
         }

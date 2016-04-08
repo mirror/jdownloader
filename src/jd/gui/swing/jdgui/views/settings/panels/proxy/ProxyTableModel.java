@@ -15,14 +15,6 @@ import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.ConnectionBan;
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.proxy.PacProxySelectorImpl;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
@@ -45,6 +37,14 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.FilterList;
+
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.ConnectionBan;
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
 
 public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
@@ -190,7 +190,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
 
             @Override
-            protected String modelItemToString(AbstractProxySelectorImpl.Type selectedItem) {
+            protected String modelItemToString(AbstractProxySelectorImpl.Type selectedItem, AbstractProxySelectorImpl value) {
                 switch (selectedItem) {
                 case DIRECT:
                     return _GUI.T.gui_column_proxytype_direct();

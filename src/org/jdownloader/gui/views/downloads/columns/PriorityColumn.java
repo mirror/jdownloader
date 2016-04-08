@@ -15,13 +15,6 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
@@ -37,6 +30,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
 
@@ -138,11 +138,11 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         return 35;
     }
 
-    protected AbstractButton getPopupElement(final Priority o, final boolean selected) {
+    protected AbstractButton getPopupElement(final Priority o, final boolean selected, AbstractNode value) {
         return new JMenuItem(new BasicAction(o.toString()) {
             {
 
-                setName(modelItemToString(o));
+                setName(modelItemToString(o, value));
                 Icon ico = getIconByPriority(o);
 
                 if (selected) {

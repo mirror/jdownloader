@@ -87,7 +87,7 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
     void convert(DownloadLink downloadLink, PluginForHost plugin) throws Exception;
 
-    String getQualityExtension();
+    String getQualityExtension(Object caller);
 
     String modifyFileName(String formattedFilename, DownloadLink link);
 

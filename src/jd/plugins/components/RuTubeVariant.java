@@ -23,8 +23,8 @@ public class RuTubeVariant implements LinkVariant, Storable {
     }
 
     @Override
-    public String _getTooltipDescription() {
-        return _getExtendedName();
+    public String _getTooltipDescription(Object caller) {
+        return _getExtendedName(caller);
     }
 
     public void setWidth(String width) {
@@ -78,17 +78,17 @@ public class RuTubeVariant implements LinkVariant, Storable {
     }
 
     @Override
-    public String _getName() {
+    public String _getName(Object caller) {
         return height + "p";
     }
 
     @Override
-    public Icon _getIcon() {
+    public Icon _getIcon(Object caller) {
         return icon;
     }
 
     @Override
-    public String _getExtendedName() {
+    public String _getExtendedName(Object caller) {
         return height + "p (" + bitrate + "bps)";
     }
 }

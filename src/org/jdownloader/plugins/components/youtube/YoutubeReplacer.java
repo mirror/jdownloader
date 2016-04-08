@@ -4,18 +4,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Application;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 
 public abstract class YoutubeReplacer {
-    public static void main(String[] args) {
-        Application.setApplication(".jd_home");
-        for (YoutubeVariant v : YoutubeVariant.values()) {
-            System.out.println(v.getMediaTypeID() + "\t" + v + " - " + v._getExtendedName());
-        }
-    }
 
     public static enum TagTasks {
         TO_UPPERCASE,

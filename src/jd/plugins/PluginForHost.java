@@ -1729,7 +1729,7 @@ public abstract class PluginForHost extends Plugin {
 
                                 setVariants.add(new JMenuItem(new BasicAction() {
                                     {
-                                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? gv._getExtendedName() : gv._getName());
+                                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? gv._getExtendedName(link) : gv._getName(link));
                                     }
 
                                     @Override
@@ -1752,7 +1752,7 @@ public abstract class PluginForHost extends Plugin {
 
                                 addVariants.add(new JMenuItem(new BasicAction() {
                                     {
-                                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? gv._getExtendedName() : gv._getName());
+                                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? gv._getExtendedName(link) : gv._getName(link));
                                     }
 
                                     @Override

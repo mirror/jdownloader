@@ -66,7 +66,7 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
     }
 
     @Override
-    public String _getName() {
+    public String _getName(Object caller) {
         if (StringUtils.equals("fullhd", shortType)) {
             return "FullHD 1080p Video";
         }
@@ -92,17 +92,17 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
     }
 
     @Override
-    public Icon _getIcon() {
+    public Icon _getIcon(Object caller) {
         return null;
     }
 
     @Override
-    public String _getExtendedName() {
+    public String _getExtendedName(Object caller) {
         return shortType;
     }
 
     @Override
-    public String _getTooltipDescription() {
+    public String _getTooltipDescription(Object caller) {
         return shortType;
     }
 

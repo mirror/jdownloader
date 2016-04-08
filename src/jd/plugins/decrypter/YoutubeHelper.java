@@ -45,6 +45,7 @@ import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
@@ -54,16 +55,15 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.youtube.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.AudioCodec;
-import org.jdownloader.plugins.components.youtube.MediaQualityInterface;
-import org.jdownloader.plugins.components.youtube.MediaTagsVarious;
+import org.jdownloader.plugins.components.youtube.ItagHelper;
 import org.jdownloader.plugins.components.youtube.VideoCodec;
 import org.jdownloader.plugins.components.youtube.VideoContainer;
-import org.jdownloader.plugins.components.youtube.VideoResolution;
+import org.jdownloader.plugins.components.youtube.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeCustomConvertVariant;
 import org.jdownloader.plugins.components.youtube.YoutubeCustomVariantStorable;
+import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
 import org.jdownloader.plugins.components.youtube.YoutubeHelperInterface;
 import org.jdownloader.plugins.components.youtube.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.YoutubeReplacer;
@@ -72,6 +72,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.YoutubeSubtitleInfo;
 import org.jdownloader.plugins.components.youtube.YoutubeVariant;
 import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
+import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
@@ -97,7 +98,6 @@ import jd.http.QueryInfo;
 import jd.http.Request;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -106,7 +106,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
 import jd.plugins.components.GoogleHelper;
-import jd.plugins.components.ItagHelper;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
@@ -119,11 +118,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        MediaTagsVarious.VIDEO_FPS_60.setRating(cfg.getRating60Fps() / 100d);
+        VideoFrameRate.FPS_60.setRating(cfg.getRating60Fps() / 100d);
         VideoContainer.MP4.setRating(cfg.getRatingContainerMP4() / 10d);
         VideoContainer.WEBM.setRating(cfg.getRatingContainerWEBM() / 10d);
         AudioCodec.AAC.setRating(cfg.getRatingContainerAAC() / 10000d);
-        AudioCodec.AAC_M4A.setRating(cfg.getRatingContainerM4A() / 10000d);
+        AudioCodec.M4A.setRating(cfg.getRatingContainerM4A() / 10000d);
         AudioCodec.MP3.setRating(cfg.getRatingContainerMP3() / 10000d);
         VideoCodec.VP8.setRating(cfg.getRatingCodecVP8());
         final int vp9 = cfg.getRatingCodecVP9();
@@ -261,7 +260,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
                 YoutubeVariantInterface variant = helper.getVariantById(var);
                 try {
-                    return variant.getQualityExtension();
+                    return variant.getQualityExtension(link);
                 } catch (Throwable e) {
                     // old variant
                     LOGGER.log(e);
@@ -279,6 +278,79 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_ID, "");
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("width") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_width();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+                YoutubeFinalLinkResource r = link.getObjectProperty(YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
+                if (r != null && r.getWidth() > 0) {
+                    return r.getWidth() + "";
+                }
+                return "";
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("threeD") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_3d();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+                YoutubeVariantInterface variant = helper.getVariantById(link.getStringProperty(YT_VARIANT));
+                if (variant != null) {
+                    if (variant.getGroup() == VariantGroup.VIDEO_3D) {
+                        return "3D";
+                    }
+                }
+
+                return "";
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("fps") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_fps();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+                YoutubeVariantInterface variant = helper.getVariantById(link.getStringProperty(YT_VARIANT));
+                if (variant != null) {
+
+                    VideoFrameRate fps = ((YoutubeVariant) variant).getFrameRate(link);
+                    if (fps != null) {
+                        return fps.getLabel(link);
+                    }
+
+                }
+
+                return "";
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("height") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_height();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+                YoutubeFinalLinkResource r = link.getObjectProperty(YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
+                if (r != null && r.getHeight() > 0) {
+                    return r.getHeight() + "";
+                }
+                return "";
             }
 
         });
@@ -334,6 +406,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
+
         REPLACER.add(new YoutubeReplacer("googleplus_id") {
 
             @Override
@@ -508,7 +581,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 try {
 
                     if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getVideoCodec();
+                        return ((YoutubeVariant) variant).getiTagVideo().getVideoCodec(link).getLabel(link);
                     }
                     return "";
                 } catch (Throwable e) {
@@ -538,7 +611,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 try {
 
                     if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getResolution();
+                        return ((YoutubeVariant) variant).getiTagVideo().getVideoResolution(link).getLabel(link);
                     }
                     return "";
                 } catch (Throwable e) {
@@ -565,7 +638,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 String var = link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO, "");
 
                 try {
-                    return YoutubeITAG.valueOf(var).getQualityVideo();
+                    return YoutubeITAG.valueOf(var).getVideoResolution(link).getLabel(link);
 
                 } catch (Throwable e) {
                     // old variant
@@ -594,7 +667,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 try {
 
                     if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getAudioCodec();
+                        return ((YoutubeVariant) variant).getAudioCodecLabel(link);
                     }
                     return "";
                 } catch (Throwable e) {
@@ -625,7 +698,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 try {
 
                     if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getAudioQuality();
+                        return ((YoutubeVariant) variant).getAudioBitrateLabel(link);
                     }
                     return "";
                 } catch (Throwable e) {
@@ -1520,14 +1593,27 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                             }
                             String fps = query.get("fps");
                             final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.width, c.height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
-                            validateItag(query.get("size"), c.height, query.get("type"), itag);
 
                             List<YoutubeStreamData> lst = ret.get(itag);
                             if (lst == null) {
                                 lst = new ArrayList<YoutubeStreamData>();
                                 ret.put(itag, lst);
                             }
-                            lst.add(new YoutubeStreamData(vid, c.downloadurl, itag));
+                            YoutubeStreamData vsd;
+                            lst.add(vsd = new YoutubeStreamData(vid, c.downloadurl, itag));
+
+                            try {
+                                vsd.setHeight(Integer.parseInt(query.get("height")));
+                            } catch (Throwable e) {
+                            }
+                            try {
+                                vsd.setWidth(Integer.parseInt(query.get("width")));
+                            } catch (Throwable e) {
+                            }
+                            try {
+                                vsd.setFps(query.get("fps"));
+                            } catch (Throwable e) {
+                            }
 
                         }
                     } else {
@@ -1790,7 +1876,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
         int itagId = Integer.parseInt(query.get("itag"));
         final YoutubeITAG itag = YoutubeITAG.get(itagId, width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
-        validateItag(size, height, type, itag);
+
         logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
         NodeList segmentListNodes = representation.getElementsByTagName("SegmentList");
         ArrayList<String> segmentsList = new ArrayList<String>();
@@ -1831,6 +1917,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 ret.put(itag, lst);
             }
             lst.add(vsd = new YoutubeStreamData(vid, url, itag));
+            vsd.setHeight(height);
+            vsd.setWidth(width);
+            vsd.setFps(fps);
             if (segmentsList.size() > 0) {
                 vsd.setSegments(segmentsList.toArray(new String[] {}));
             }
@@ -2238,7 +2327,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
         YoutubeVariantInterface v = getVariantById(var);
-        if (v instanceof jd.plugins.components.SubtitleVariant) {
+        if (v instanceof org.jdownloader.plugins.components.youtube.SubtitleVariant) {
             formattedFilename = cfg.getSubtitleFilenamePattern();
         } else if (v instanceof YoutubeVariant) {
             switch (((YoutubeVariant) v).getGroup()) {
@@ -2358,7 +2447,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         try {
             final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
 
-            validateItag(size, height, type, itag);
             final String quality = Encoding.urlDecode(query.get("quality"), false);
             logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
             if (url != null && itag != null) {
@@ -2391,7 +2479,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 // }
                 // }
                 vsd = new YoutubeStreamData(vid, url, itag);
-
+                vsd.setHeight(height);
+                vsd.setWidth(width);
+                vsd.setFps(fps);
                 return vsd;
             } else {
                 this.logger.info("Unknown Line: " + query);
@@ -2410,88 +2500,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         } catch (NumberFormatException e) {
             e.printStackTrace();
             throw e;
-        }
-    }
-
-    protected void validateItag(String size, int height, String type, final YoutubeITAG itag) {
-        if (itag != null && !Application.isJared(null)) {
-            // validate
-            // if (height > 0) {
-            MediaQualityInterface[] tags = itag.getQualityTags();
-            if (type != null) {
-                type = type.replace("3gp", "3gp threegp");
-            }
-            for (MediaQualityInterface tag : tags) {
-                if (tag instanceof VideoResolution) {
-                    if (height > 0 && tag.getRating() != height) {
-                        itagWarning(itag, "Resolution", size);
-
-                    }
-                } else if (tag instanceof VideoContainer) {
-                    if (!StringUtils.containsIgnoreCase(type, ((VideoContainer) tag).name())) {
-                        itagWarning(itag, "Container", type);
-
-                    }
-
-                } else if (tag instanceof VideoCodec) {
-                    switch ((VideoCodec) tag) {
-                    case H263:
-                        if (!StringUtils.containsIgnoreCase(type, "x-flv") && !StringUtils.containsIgnoreCase(type, "3gp")) {
-                            itagWarning(itag, "Codec", type);
-                        }
-                        break;
-
-                    case H264:
-                        if (!StringUtils.containsIgnoreCase(type, "mp4v") && !StringUtils.containsIgnoreCase(type, "avc")) {
-                            itagWarning(itag, "Codec", type);
-
-                        }
-                        break;
-
-                    case VP8:
-                    case VP9:
-                        if (!StringUtils.containsIgnoreCase(type, ((VideoCodec) tag).name())) {
-                            itagWarning(itag, "Codec", type);
-                        }
-                        break;
-
-                    case VP9_BETTER_PROFILE_1:
-                    case VP9_BETTER_PROFILE_2:
-                        System.out.println(1);
-
-                    }
-                } else if (tag instanceof AudioCodec) {
-                    switch ((AudioCodec) tag) {
-                    case AAC:
-                    case AAC_M4A:
-
-                        if (!StringUtils.containsIgnoreCase(type, "mp4a") && !StringUtils.containsIgnoreCase(type, "avc")) {
-                            itagWarning(itag, "Codec", type);
-
-                        }
-                        break;
-
-                    case MP3:
-                        if (!StringUtils.containsIgnoreCase(type, "x-flv")) {
-                            itagWarning(itag, "Codec", type);
-                        }
-                        break;
-                    case OPUS:
-                    case VORBIS:
-                        if (!StringUtils.containsIgnoreCase(type, ((AudioCodec) tag).name())) {
-                            itagWarning(itag, "Codec", type);
-                        }
-                        break;
-                    }
-
-                } else if (tag instanceof AudioBitrate) {
-                    System.out.println(1);
-                } else if (tag instanceof MediaTagsVarious) {
-                    System.out.println(1);
-                }
-
-            }
-            // }
         }
     }
 

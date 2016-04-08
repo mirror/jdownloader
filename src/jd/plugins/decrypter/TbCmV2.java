@@ -455,7 +455,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
             YoutubeITAG bestVideoResolution = null;
             for (Entry<YoutubeITAG, List<YoutubeStreamData>> es : vid.streams.entrySet()) {
-                if (es.getKey().getQualityVideo() != null) {
+                if (es.getKey().getVideoResolution(this) != null) {
                     if (bestVideoResolution == null || bestVideoResolution.getQualityRating() < es.getKey().getQualityRating()) {
                         bestVideoResolution = es.getKey();
                     }
@@ -602,7 +602,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                             @Override
                             public int compareTo(VariantInfo o) {
-                                return this.getVariant()._getName().compareToIgnoreCase(o.getVariant()._getName());
+                                return this.getVariant()._getName(null).compareToIgnoreCase(o.getVariant()._getName(null));
 
                             }
                         };
@@ -675,7 +675,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                             @Override
                             public int compareTo(VariantInfo o) {
-                                return this.getVariant()._getName().compareToIgnoreCase(o.getVariant()._getName());
+                                return this.getVariant()._getName(null).compareToIgnoreCase(o.getVariant()._getName(null));
 
                             }
                         });

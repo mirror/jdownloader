@@ -1,6 +1,7 @@
 package jd.controlling.reconnect.pluginsinc.speedporthybrid;
 
 import java.awt.Component;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
@@ -11,15 +12,22 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.extmanager.Log;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.SwingUtils;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESFastEngine;
@@ -47,31 +55,34 @@ import net.miginfocom.swing.MigLayout;
  */
 public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
-    public static final String ID = "SpeedPortHybrid";
+    public static final String             ID = "SpeedPortHybrid";
 
-    private Icon icon;
+    private Icon                           icon;
 
-    private ReconnectInvoker invoker;
+    private ReconnectInvoker               invoker;
 
-    private ExtPasswordField txtPassword;
+    private ExtPasswordField               txtPassword;
 
     private SpeedPortHybridReconnectConfig config;
 
-    private ExtTextField txtIP;
+    private ExtTextField                   txtIP;
 
-    private Browser br;
+    private Browser                        br;
 
-    private String derivedk;
+    private String                         derivedk;
 
-    private String csrf;
+    private String                         csrf;
 
-    private String challengev;
+    private String                         challengev;
 
-    private String onlineStatus;
-
-    private String session;
-
-    private String externalIP;
+    public static void main(String[] args) throws StorageException, IOException {
+        File file = new File("C:\\Users\\Thomas\\Desktop\\interfaces.json");
+        Application.setApplication(".appwork");
+        JSonStorage.setMapper(new JacksonMapper());
+        // 'IPv4_address':'87.162.215.207',
+        String[] lte_tunnel = new Regex(IO.readFileToString(file), "\\'IPv4_address\\'\\s*\\:\\s*\\'([^']*)").getColumn(0);
+        System.out.println(lte_tunnel);
+    }
 
     private String PBKDF2Key(String password, String salt) throws Exception {
         final PBEKeySpec spec = new PBEKeySpec(Hash.getSHA256(password).toCharArray(), salt.getBytes("UTF-8"), 1000, 16 * 8);
@@ -141,7 +152,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         return HexFormatter.byteArrayToHex(tmp);
     }
 
-    public String decryptAndHandle(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException {
+    public String decrypt(String hex) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException {
         if (hex == null) {
             return null;
         }
@@ -167,31 +178,20 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             ret = new String(tmp, 0, len, "UTF-8");
             Log.info(ret);
         }
-        if (isLoggedIn()) {
-            updateCSRF(ret);
-            if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
-                br = null;
-                throw new SessionInvalidException("Invalid ResponseCode");
-            }
-            String loginstate = extractVariable(ret, "loginstate");
-            if ("0".equals(loginstate)) {
-                br = null;
-                throw new SessionInvalidException("LoginState=0");
-            }
-        }
+
         return ret;
     }
 
-    private String getTimeParams() {
-        return "_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000));
-    }
+    // private String getTimeParams() {
+    // return "_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000));
+    // }
 
-    @Override
+    // @Override
     public int getIpCheckInterval() {
         return 1000;
     }
 
-    @Override
+    // @Override
     public IP getExternalIP() throws IPCheckException {
         synchronized (SpeedPortHybrid.this) {
             try {
@@ -211,13 +211,11 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
 
     private IP getExternalIPOnce() throws Exception, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException, IPCheckException {
         ensureSession();
-        String crypted = decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/INetIP.json?" + getTimeParams() + "&" + getTimeParams()));
-        onlineStatus = extractVariable(crypted, "onlinestatus");
-        externalIP = extractVariable(crypted, "public_ip_v4");
-        Log.info("Online Status: " + onlineStatus);
-        Log.info("IP: " + externalIP);
-        if (externalIP != null) {
-            return IP.getInstance(externalIP);
+        updateBonding();
+
+        Log.info("IP: " + ipv4);
+        if (ipv4 != null) {
+            return IP.getInstance(ipv4);
         } else {
             throw new IPCheckException("Offline");
         }
@@ -227,11 +225,17 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
         return new Regex(crypted, "\"varid\"\\s*:\\s*\"" + key + "\",\\s*\"varvalue\"\\s*:\\s*\"([^\"]+)").getMatch(0);
     }
 
+    private String lte_tunnel;
+    private String dsl_tunnel;
+    private String bonding;
+    private String ipv4;
+    // private String ipv4Dsl;
+
     public SpeedPortHybrid() {
         super();
         config = JsonConfig.create(SpeedPortHybridReconnectConfig.class);
         icon = new AbstractIcon(IconKey.ICON_RECONNECT, 16);
-        setIPCheckProvider(this);
+        // setIPCheckProvider(this);
         invoker = new ReconnectInvoker(this) {
 
             @Override
@@ -243,12 +247,24 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             public void run() throws ReconnectException {
                 synchronized (SpeedPortHybrid.this) {
                     try {
+                        // for (int i = 0; i < 5; i++) {
                         try {
                             runOnce();
                         } catch (SessionInvalidException e) {
                             Log.info("Try again");
                             runOnce();
                         }
+                        Log.info("dsl_tunnel " + dsl_tunnel);
+                        Log.info("lte_tunnel " + lte_tunnel);
+                        Log.info("bonding " + bonding);
+                        // if (StringUtils.equalsIgnoreCase("Up", dsl_tunnel) && StringUtils.equalsIgnoreCase("Up", lte_tunnel) &&
+                        // StringUtils.equalsIgnoreCase("Up", bonding)) {
+                        // Log.info("Done");
+                        // break;
+                        // } else {
+                        // Log.info("retry. any tunnel down");
+                        // }
+                        // }
                     } catch (Throwable e) {
                         throw new ReconnectException(e);
                     }
@@ -256,96 +272,285 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             }
 
             private void runOnce() throws Exception, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException, InterruptedException {
+                // if (System.getProperty("") != null) {
                 ensureSession();
-                // http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de
-                Log.info("CurrentStatus " + onlineStatus);
-                boolean changeConnectionOnline = false;
-                if (StringUtils.isEmpty(onlineStatus) || "disabled".equalsIgnoreCase(onlineStatus)) {
-                    changeConnectionOnline = true;
-                }
-                if (changeConnectionOnline) {
-                    // "req_connect=online&csrf_token=j2WMeJ%2BjJv4WlwLdwKuWoWxpNY6JXyC"
-                    decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=online&csrf_token=" + csrf)));
-                    waitForConnection();
-                }
-                // "req_connect=disabled&csrf_token=j2WMeJ%2BjJv4WlwLdwKuWoWxpNY6JXyC"
-                decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=disabled&csrf_token=" + csrf)));
-                // req_connect=online
-                // req_connect=disabled
-                // lte_reconn=1
-                // "lte_reconn=1&csrf_token=j2WMeJ%2BjJv4WlwLdwKuWoWxpNY6JXyC"
-                decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/modules.json?lang=de", encrypt("lte_reconn=1&csrf_token=" + csrf)));
-                waitForConnection();
-                decryptAndHandle(br.postPageRaw("http://" + config.getRouterIP() + "/data/Connect.json?lang=de", encrypt("req_connect=online&csrf_token=" + csrf)));
-                /*
-                 * var challengev = getCookie('challengev'); var iv = challengev.substr(16, 16); var adata = challengev.substr(32, 16);
-                 *
-                 * var derivedk = getCookie("derivedk"); var c = new sjcl.cipher.aes(sjcl.codec.hex.toBits(derivedk));
-                 *
-                 * var pt = sjcl.mode.ccm.decrypt(c, sjcl.codec.hex.toBits(data), sjcl.codec.hex.toBits(iv), sjcl.codec.hex.toBits(adata));
-                 * pt = sjcl.codec.utf8String.fromBits(pt); return pt;
-                 */
+                loadFrame("/html/content/config/problem_handling.html?lang=de");
+                getXHR("/data/Reboot.json", 2);
+                Thread.sleep(2000);
+                postXHR("/data/Reboot.json", "reboot_device=true&csrf_token=" + csrf, true);
+
+                Thread.sleep(60000);
+                // }else{
+                // for (int i = 0; i < 5; i++) {
+                //
+                // ensureSession();
+                //
+                //
+                //
+                // // http://" + config.getRouterIP() + "/html/content/internet/connection.html?lang=de
+                // setStatusString("Update Bonding");
+                // updateBonding();
+                // String ipBefore = ipv4;
+                // if (!StringUtils.equalsIgnoreCase("Up", dsl_tunnel) || !StringUtils.equalsIgnoreCase("Up", bonding)) {
+                // setStatusString("Connect");
+                // // "req_connect=online&csrf_token=j2WMeJ%2BjJv4WlwLdwKuWoWxpNY6JXyC"
+                // logger.info("We are not online. Estabilish Connection");
+                // estabilishConnection();
+                // }
+                // Thread.sleep(2000);
+                // setStatusString("req_connect=disabled");
+                // postXHR("/data/Connect.json?lang=de", "req_connect=disabled&csrf_token=" + csrf, true);
+                // setStatusString("lte_reconn=1");
+                // // loadFrame("/html/content/internet/connection.html?lang=de");
+                // postXHR("/data/modules.json?lang=de", "lte_reconn=1&csrf_token=" + csrf, true);
+                // setStatusString("Wait 10 Secs");
+                // logger.info("Wait 10000");
+                // Thread.sleep(10000);
+                // setStatusString("Connect");
+                // estabilishConnection();
+                //
+                // if (!StringUtils.equals(ipBefore, ipv4)) {
+                // logger.info("Done");
+                // break;
+                // } else {
+                // br = null;
+                // logger.info("IP Did not change. retry");
+                // }
+                // }
+                // }
             }
 
-            private void waitForConnection() throws InterruptedException, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException {
-                for (int i = 0; i < 60 * 5; i++) {
-                    Thread.sleep(1000);
-                    String crypted = decryptAndHandle(br.getPage("http://" + config.getRouterIP() + "/data/Connect.json?_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000))));
-                    if (!"establishing".equalsIgnoreCase(extractVariable(crypted, "onlinestatus"))) {
-                        break;
+            private void estabilishConnection() throws Exception {
+                logger.info("Estabilish Connection");
+                for (int i = 0; i < 5; i++) {
+                    logger.info("Estabilish Connection Try " + i);
+                    postXHR("/data/Connect.json?lang=de", "req_connect=online&csrf_token=" + csrf, true);
+                    Thread.sleep(10000);
+                    long started = System.currentTimeMillis();
+                    while (System.currentTimeMillis() - started < 1 * 60 * 1000l) {
+                        logger.info("Wait for onlinestatus==online");
+
+                        String crypted = getXHR("/data/Connect.json", 1);
+                        String onlineStatus = extractVariable(crypted, "onlinestatus");
+
+                        if ("online".equalsIgnoreCase(onlineStatus)) {
+                            setStatusString("Connect #" + i + " os " + onlineStatus + " bonding_ok");
+                            logger.info("We are online");
+                            updateBonding();
+                            if (StringUtils.equalsIgnoreCase("Up", dsl_tunnel) && StringUtils.equalsIgnoreCase("Up", bonding)) {
+
+                                return;
+                            } else {
+                                logger.info("Wait for Bonding");
+                            }
+                        } else {
+                            setStatusString("Connect #" + i + " os " + onlineStatus);
+                            logger.info("Not online yet");
+                        }
+                        Thread.sleep(6000);
+                        continue;
                     }
                 }
             }
+
         };
     }
 
-    private void updateCSRF(String crypted) {
-        String newCsrf = extractVariable(crypted, "csrf_token");
-        if (StringUtils.isNotEmpty(newCsrf)) {
-            Log.info("New CSRF: " + newCsrf);
-            csrf = newCsrf;
-        } else {
-            Log.info("No new CSRF");
+    protected String getXHR(String rel, int timeext) throws Exception {
+        for (int ii = 0; ii < 2; ii++) {
+            ensureSession();
+            String url = createAbsoluteUrl(rel, timeext);
+            Browser clone = br.cloneBrowser();
+            String json = decrypt(clone.getPage(url));
+
+            String newCsrf = extractVariable(json, "csrf_token");
+            if (StringUtils.isNotEmpty(newCsrf) && !StringUtils.equals(csrf, newCsrf)) {
+                Log.info("New CSRF: " + newCsrf);
+                csrf = newCsrf;
+            }
+            try {
+                checkXHRError(clone, json);
+            } catch (SessionInvalidException e) {
+
+                if (ii > 0) {
+                    throw e;
+                } else {
+                    continue;
+                }
+            }
+            return json;
         }
-        String newcsrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
-        if (StringUtils.isNotEmpty(newcsrf)) {
-            Log.info("New CSRF: " + newcsrf);
-            csrf = newcsrf;
-        } else {
-            Log.info("No new CSRF");
+        throw new WTFException();
+    }
+
+    private String createAbsoluteUrl(String rel, int timeext) {
+        String url = "http://" + config.getRouterIP() + rel;
+
+        for (int i = 0; i < timeext; i++) {
+            if (i > 0) {
+                if (timeext > 0) {
+                    url += "&";
+                }
+            } else {
+                if (timeext > 0) {
+                    url += "?";
+                }
+            }
+            url += "_time=" + System.currentTimeMillis() + "&_rand=" + ((int) (Math.random() * 1000));
+
+        }
+        return url;
+    }
+
+    private void checkXHRError(Browser clone, String json) throws SessionInvalidException {
+        if (clone.getRequest().getHttpConnection().getResponseCode() == 302) {
+            br = null;
+            throw new SessionInvalidException("Invalid ResponseCode");
+        }
+        String loginstate = extractVariable(json, "loginstate");
+        if (loginstate != null && !"1".equals(loginstate)) {
+            br = null;
+            throw new SessionInvalidException("LoginState=" + loginstate);
         }
     }
 
-    protected void ensureSession() throws Exception {
+    private String postXHR(String rel, String postData, boolean encrypt) throws Exception {
+
+        for (int ii = 0; ii < 2; ii++) {
+            ensureSession();
+            String url = "http://" + config.getRouterIP() + rel;
+
+            Browser clone = br.cloneBrowser();
+            String json = decrypt(clone.postPageRaw(url, encrypt ? encrypt(postData) : postData));
+
+            String newCsrf = extractVariable(json, "csrf_token");
+            if (StringUtils.isNotEmpty(newCsrf) && !StringUtils.equals(csrf, newCsrf)) {
+                Log.info("New CSRF: " + newCsrf);
+                csrf = newCsrf;
+            }
+
+            try {
+                checkXHRError(clone, json);
+            } catch (SessionInvalidException e) {
+
+                if (ii > 0) {
+                    throw e;
+                } else {
+                    continue;
+                }
+            }
+
+            String status = extractVariable(json, "status");
+            if ("fail".equals(status) && ii == 0) {
+                br = null;
+                continue;
+            }
+            return json;
+        }
+        throw new WTFException();
+
+    }
+
+    private void updateBonding() throws Exception {
+        Log.info("bonding_tunnel.json");
+
+        String json = getXHR("/data/bonding_tunnel.json", 0);
+        // Log.info(br + "");
+        lte_tunnel = new Regex(json, "\\'lte_tunnel\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
+        dsl_tunnel = new Regex(json, "\\'dsl_tunnel\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
+        bonding = new Regex(json, "\\'bonding\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
+        ipv4 = new Regex(json, "\\'ipv4\\'\\s*\\:\\s*\\'([^']*)").getMatch(0);
+
+        Log.info("Public IP: " + ipv4);
+        Log.info("LTE: " + lte_tunnel);
+        Log.info("DSL: " + dsl_tunnel);
+        Log.info("Bonding: " + bonding);
+
+    }
+
+    protected synchronized void ensureSession() throws Exception {
         if (isLoggedIn()) {
+
             return;
         }
-        br = new Browser();
-        br.setCookiesExclusive(true);
+
+        try {
+            br = new Browser();
+
+            br.setVerbose(true);
+            br.setDebug(true);
+            br.setProxySelector(new NoProxySelector());
+            if (System.getProperty("fiddler") != null) {
+                br.setProxy(new HTTPProxy(HTTPProxy.TYPE.HTTP, "localhost", 8888));
+            }
+            // logout: logout=byby&csrf_token=eZQe%2B3%2F%2BRBOPOAHa5x4fEtlnevO9PMp
+            String json = null;
+            for (int i = 5; i > 0; i--) {
+                QueryInfo query = new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true);
+
+                json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), query);
+
+                if ("2".equals(extractVariable(json, "loginstate"))) {
+
+                    br.getPage(createAbsoluteUrl("/data/Login.json", 2));
+                    json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), query);
+
+                }
+                challengev = extractVariable(json, "challengev");
+                if (StringUtils.isEmpty(challengev)) {
+                    Thread.sleep(15000);
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            if (StringUtils.isEmpty(challengev)) {
+                UIOManager.I().showErrorMessage("Login to Speedport Failed (Challenge Missing)!");
+                br = null;
+                throw new SessionInvalidException("Login Failed (Challenge Missing)");
+            }
+            // br.setCookie("http://" + config.getRouterIP(), "challengev", challengev);
+            Log.info("Challenge: " + challengev);
+            long start = System.currentTimeMillis();
+            do {
+
+                json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
+
+                Thread.sleep(15000);
+            } while ("69".equals(extractVariable(json, "login")) && (System.currentTimeMillis() - start) < 2 * 60 * 1000l);
+            String session = br.getCookie("http://" + config.getRouterIP(), "SessionID_R3");
+            if (StringUtils.isEmpty(session)) {
+                UIOManager.I().showErrorMessage("Login to Speedport Failed!");
+                br = null;
+                throw new SessionInvalidException("Login Failed");
+            }
+            br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
+            br.setCookie("http://" + config.getRouterIP(), "challengev", challengev);
+
+            loadFrame("/html/content/internet/connection.html?lang=de");
+        } finally {
+
+        }
+    }
+
+    private void loadFrame(String string) throws IllegalStateException, InvalidCipherTextException, UnsupportedEncodingException, SessionInvalidException, IOException {
+        br.setVerbose(false);
+        br.setDebug(false);
+        br.getPage("http://" + config.getRouterIP() + string);
+        String newcsrf = br.getRegex("csrf_token\\s*=\\s*\"([^\"]+)").getMatch(0);
+        if (StringUtils.isNotEmpty(newcsrf) && !StringUtils.equals(csrf, newcsrf)) {
+            Log.info("New CSRF: " + newcsrf);
+            csrf = newcsrf;
+        } else {
+            // Log.info("No new CSRF");
+        }
         br.setVerbose(true);
         br.setDebug(true);
-        br.setProxySelector(new NoProxySelector());
-        br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true));
-        challengev = br.getRegex("\"challengev\",.*?\"varvalue\":\"(.*?)\"").getMatch(0);
-        // br.setCookie("http://" + config.getRouterIP(), "challengev", challengev);
-        Log.info("Challenge: " + challengev);
-        decryptAndHandle(br.postPage("http://" + config.getRouterIP() + "/data/Login.json?lang=de", new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true)));
-        session = br.getCookie("http://" + config.getRouterIP(), "SessionID_R3");
-        if (StringUtils.isEmpty(session)) {
-            UIOManager.I().showErrorMessage("Login to Speedport Failed!");
-            br = null;
-            throw new SessionInvalidException("Login Failed");
-        }
-        br.setCookie("http://" + config.getRouterIP(), "derivedk", derivedk = PBKDF2Key(config.getPassword(), challengev.substring(0, 16)));
-        getPage("/html/content/internet/connection.html?lang=de");
+        Log.info(br.getRequest().getHttpConnection() + "");
     }
 
     private boolean isLoggedIn() {
         return br != null && br.getCookie("http://" + config.getRouterIP(), "SessionID_R3") != null;
-    }
-
-    private void getPage(String string) throws IOException, IllegalStateException, InvalidCipherTextException, SessionInvalidException {
-        decryptAndHandle(br.getPage("http://" + config.getRouterIP() + string));
     }
 
     @Override
