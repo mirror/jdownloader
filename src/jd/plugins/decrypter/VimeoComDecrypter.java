@@ -177,7 +177,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (vimeo_forced_referer != null) {
                     br.getHeaders().put("Referer", vimeo_forced_referer);
                 }
-                br.getPage(orgParam);
+                /* We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only receive 403/404! */
+                br.getPage("https://player.vimeo.com/video/" + ID);
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(getJson("message"))) {
                     decryptedLinks.add(createOfflinelink(orgParam, ID, null));
                     return decryptedLinks;
@@ -554,6 +555,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 break;
             }
         }
+    }
+
+    public static String createPrivateVideoUrlWithReferer(final String vimeo_video_id, final String referer_url) {
+        final String private_vimeo_url = "https://player.vimeo.com/video/" + vimeo_video_id + "&forced_referer=" + Encoding.Base64Encode(referer_url);
+        return private_vimeo_url;
     }
 
     /* NO OVERRIDE!! */
