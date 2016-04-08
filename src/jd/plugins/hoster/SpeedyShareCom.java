@@ -338,6 +338,7 @@ public class SpeedyShareCom extends PluginForHost {
         requestFileInformation(link);
         // there are redirects on the main url going to mainurl + "/filename.exe".login can ruin current br.getURL() if used further down
         final String currentBrURL = br.getURL();
+        br = new Browser();
         login(account, false);
         String finallink = null;
         if (link.getDownloadURL().matches(REMOTELINK)) {
