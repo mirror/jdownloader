@@ -133,25 +133,38 @@ public class TnaFlixCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        final String download = br.getRegex("<div class=\"playlist_listing\" data-loaded=\"true\">(.*?)</div>").getMatch(0);
         String configLink = br.getRegex("addVariable\\(\\'config\\', \\'(http.*?)\\'").getMatch(0);
         if (configLink == null) {
             configLink = br.getRegex("flashvars.config.*?escape\\(.*?(cdn.*?)\"").getMatch(0);
         }
-        if (configLink == null) {
+        if (configLink == null && download == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(Encoding.htmlDecode("http://" + configLink));
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Config file is not correct'", 30 * 60 * 1000l);
-        }
         String dllink = null;
-        final String[] qualities = { "720p", "480p", "360p", "240p", "144p" };
-        for (final String quality : qualities) {
-            dllink = br.getRegex("" + quality + "</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
-            if (dllink != null) {
-                break;
+        if (configLink != null) {
+            br.getPage(Encoding.htmlDecode("http://" + configLink));
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Config file is not correct'", 30 * 60 * 1000l);
+            }
+            final String[] qualities = { "720p", "480p", "360p", "240p", "144p" };
+            for (final String quality : qualities) {
+                dllink = br.getRegex("" + quality + "</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
+                if (dllink != null) {
+                    break;
+                }
+            }
+        } else {
+            // download support
+            final String[] qualities = { "720", "480", "360", "240", "144" };
+            for (final String quality : qualities) {
+                dllink = new Regex(download, "href=(\"|')((?:https?:)?//.*?)\\1>Download in " + quality).getMatch(1);
+                if (dllink != null) {
+                    break;
+                }
             }
         }
+
         if (dllink == null) {
             dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         }
