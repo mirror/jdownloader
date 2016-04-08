@@ -82,6 +82,7 @@ public class UdemyCom extends PluginForHost {
         String filename = null;
         String url_embed = null;
         boolean loggedin = false;
+        String description = null;
         final String fid_accountneeded = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -107,13 +108,21 @@ public class UdemyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             prepBRAPI(this.br);
-            this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + fid_accountneeded + "?video_only=&auto_play=&fields%5Blecture%5D=asset%2Cembed_url&fields%5Basset%5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False");
+            /*
+             * 2016-04-08: Changed parameters - parameters before:
+             * ?video_only=&auto_play=&fields%5Blecture%5D=asset%2Cembed_url&fields%5Basset
+             * %5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False
+             */
+            this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + fid_accountneeded + "?fields%5Basset%5D=@min,download_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=@default,view_html,course&page_config=ct_v4");
             // this.br.getPage("https://www.udemy.com/api-2.0/lectures/" + fid_accountneeded +
             // "/content?videoOnly=0&instructorPreviewMode=False");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            final String title_cleaned = (String) entries.get("title_cleaned");
+            description = (String) entries.get("description");
+            String json_view_html = (String) entries.get("view_html");
             entries = (LinkedHashMap<String, Object>) entries.get("asset");
             String asset_type = (String) entries.get("asset_type");
             if (asset_type == null) {
@@ -124,16 +133,47 @@ public class UdemyCom extends PluginForHost {
                 }
             }
             final String json_download_path = "download_urls/" + asset_type;
-            filename = (String) entries.get("title");
-            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, json_download_path);
-            dllink = (String) DummyScriptEnginePlugin.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
-            if (dllink != null) {
-                if (filename == null) {
-                    filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+            final Object download_urls_o = entries.get("download_urls");
+            if (download_urls_o != null) {
+                filename = (String) entries.get("title");
+                final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, json_download_path);
+                dllink = (String) DummyScriptEnginePlugin.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
+                if (dllink != null) {
                     if (filename == null) {
-                        filename = fid_accountneeded;
+                        filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+                        if (filename == null) {
+                            filename = fid_accountneeded;
+                        } else {
+                            filename = fid_accountneeded + "_" + filename;
+                        }
+                    }
+                }
+            } else {
+                /* json handling did not work or officially there are no downloadlinks --> Grab links from html inside json */
+                if (json_view_html == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                json_view_html = json_view_html.replace("\\", "");
+                final String[] possibleQualities = { "1080", "720", "480", "360", "240" };
+                for (final String possibleQuality : possibleQualities) {
+                    dllink = new Regex(json_view_html, "<source src=\"(http[^<>\"]+)\"[^>]+data\\-res=\"" + possibleQuality + "\" />").getMatch(0);
+                    if (dllink != null) {
+                        break;
+                    }
+                }
+                if (dllink == null) {
+                    /* Last chance -see if we can find ANY video-url */
+                    dllink = new Regex(json_view_html, "\"(https?://udemy\\-assets\\-on\\-demand\\.udemy\\.com/[^<>\"]+\\.mp4[^<>\"]+)\"").getMatch(0);
+                }
+                if (dllink != null) {
+                    /* Important! */
+                    dllink = Encoding.htmlDecode(dllink);
+                }
+                if (filename == null) {
+                    if (title_cleaned != null) {
+                        filename = fid_accountneeded + "_" + title_cleaned;
                     } else {
-                        filename = fid_accountneeded + "_" + filename;
+                        filename = fid_accountneeded;
                     }
                 }
             }
@@ -167,6 +207,9 @@ public class UdemyCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
+        if (description != null && downloadLink.getComment() == null) {
+            downloadLink.setComment(description);
+        }
         final Browser br2 = new Browser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
