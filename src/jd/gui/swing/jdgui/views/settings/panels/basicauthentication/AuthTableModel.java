@@ -9,8 +9,6 @@ import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.gui.swing.jdgui.GUIUtils;
-
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -26,6 +24,8 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.gui.swing.jdgui.GUIUtils;
 
 public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements ChangeListener {
     private static final long serialVersionUID = 1L;
@@ -97,7 +97,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
             private ComboBoxModel<AuthenticationInfo.Type> typeModel = new DefaultComboBoxModel<AuthenticationInfo.Type>(new AuthenticationInfo.Type[] { AuthenticationInfo.Type.FTP, AuthenticationInfo.Type.HTTP });
 
             @Override
-            protected String modelItemToString(Type selectedItem) {
+            protected String modelItemToString(Type selectedItem, AuthenticationInfo value) {
                 switch (selectedItem) {
                 case FTP:
                     return _GUI.T.authtablemodel_column_type_ftp();

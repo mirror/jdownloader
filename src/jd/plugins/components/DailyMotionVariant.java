@@ -116,12 +116,12 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     }
 
     @Override
-    public String _getName() {
+    public String _getName(Object caller) {
         return getDisplayName();
     }
 
     @Override
-    public Icon _getIcon() {
+    public Icon _getIcon(Object caller) {
         if ("m4a".equals(getConvertTo()) || "aac".equals(getConvertTo())) {
             return AUDIO;
         }
@@ -129,13 +129,13 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     }
 
     @Override
-    public String _getExtendedName() {
+    public String _getExtendedName(Object caller) {
         return getDisplayName() + "[" + orgQName + "-" + qrate + "]";
     }
 
     @Override
-    public String _getTooltipDescription() {
-        return _getExtendedName();
+    public String _getTooltipDescription(Object caller) {
+        return _getExtendedName(link);
     }
 
 }

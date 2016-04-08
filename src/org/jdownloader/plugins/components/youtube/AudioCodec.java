@@ -1,17 +1,19 @@
 package org.jdownloader.plugins.components.youtube;
 
-public enum AudioCodec implements MediaQualityInterface {
-    AAC(4, 10000),
-    MP3(2, 10000),
-    OPUS(1, 10000),
-    VORBIS(3, 10000),
-    AAC_M4A(5, 10000),
-    AMRNB(1, 10001);
+public enum AudioCodec {
+    AAC("AAC", 4, 10000),
+    MP3("MP3", 2, 10000),
+    OPUS("Opus", 1, 10000),
+    VORBIS("Vorbis", 3, 10000),
+    M4A("M4A", 5, 10000),
+    AMR("ARM", 1, 10001);
 
     private double rating = -1;
+    private String label;
 
-    private AudioCodec(double rating, double modifier) {
+    private AudioCodec(String label, double rating, double modifier) {
         this.rating = rating / modifier;
+        this.label = label;
     }
 
     public double getRating() {
@@ -20,6 +22,10 @@ public enum AudioCodec implements MediaQualityInterface {
 
     public void setRating(double rating) {
         this.rating = rating;
+    }
+
+    public String getLabel(Object caller) {
+        return label;
     }
 
 }

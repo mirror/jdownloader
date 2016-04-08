@@ -41,6 +41,34 @@ public class YoutubeStreamData {
     }
 
     YoutubeITAG itag;
+    private int height;
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public String getFps() {
+        return fps;
+    }
+
+    public void setFps(String fps) {
+        this.fps = fps;
+    }
+
+    private int    width;
+    private String fps;
 
     public YoutubeStreamData(final YoutubeClipData vid, String url, YoutubeITAG itag) {
         this.clip = vid;

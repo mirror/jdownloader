@@ -20,6 +20,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.logging.LogController;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,12 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.TwentyOneMembersVariantInfo;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.logging.LogController;
 
 @HostPlugin(revision = "$Revision: 28758 $", interfaceVersion = 3, names = { "21members.com" }, urls = { "http://21members\\.com/dummy/file/\\d+" }, flags = { 0 })
 public class TwentyOneMembersCom extends PluginForHost {
@@ -242,7 +242,7 @@ public class TwentyOneMembersCom extends PluginForHost {
      * @return
      */
     private static String formatFileName(final DownloadLink downloadLink, final TwentyOneMembersVariantInfo variant) {
-        return downloadLink.getStringProperty("title") + "-" + variant._getName() + "." + variant._getExtension();
+        return downloadLink.getStringProperty("title") + "-" + variant._getName(downloadLink) + "." + variant._getExtension();
     }
 
     @Override

@@ -78,7 +78,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     }
 
     @Override
-    protected JComponent getPopupElement(LinkVariant object, boolean selected) {
+    protected JComponent getPopupElement(LinkVariant object, boolean selected, AbstractNode value) {
         JComponent ret = null;
         if (object instanceof CrawledLink) {
             if (((CrawledLink) object).hasVariantSupport()) {
@@ -93,7 +93,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         if (ret != null) {
             return ret;
         }
-        return super.getPopupElement(object, selected);
+        return super.getPopupElement(object, selected, value);
     }
 
     @Override
@@ -129,8 +129,8 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                         dllink.setProperties(link.getDownloadLink().getProperties());
                         dllink.setProperty("DUMMY", true);
                         cl = new CrawledLink(dllink);
-                        setSmallIcon(o._getIcon());
-                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? o._getExtendedName() : o._getName());
+                        setSmallIcon(o._getIcon(link));
+                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? o._getExtendedName(link) : o._getName(link));
 
                         cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
 
@@ -198,11 +198,11 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     }
 
     @Override
-    protected String modelItemToString(LinkVariant selectedItem) {
+    protected String modelItemToString(LinkVariant selectedItem, AbstractNode value) {
         if (selectedItem == null) {
             return null;
         }
-        return CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? selectedItem._getExtendedName() : selectedItem._getName();
+        return CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? selectedItem._getExtendedName(value) : selectedItem._getName(value);
     }
 
     @Override
@@ -211,15 +211,15 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         if (variant == null) {
             return null;
         }
-        return variant._getTooltipDescription();
+        return variant._getTooltipDescription(obj);
 
     }
 
-    protected Icon modelItemToIcon(LinkVariant selectedItem) {
+    protected Icon modelItemToIcon(LinkVariant selectedItem, AbstractNode value) {
         if (selectedItem == null) {
             return null;
         }
-        return selectedItem._getIcon();
+        return selectedItem._getIcon(value);
     }
 
     @Override

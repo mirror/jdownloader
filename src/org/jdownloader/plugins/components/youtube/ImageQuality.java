@@ -1,6 +1,6 @@
 package org.jdownloader.plugins.components.youtube;
 
-public enum ImageQuality implements MediaQualityInterface {
+public enum ImageQuality {
     HIGH(3, 10),
     LOW(1, 10),
     HIGHEST(4, 10),

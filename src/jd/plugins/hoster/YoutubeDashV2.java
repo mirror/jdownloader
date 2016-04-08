@@ -56,7 +56,9 @@ import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.youtube.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.VariantInfo;
+import org.jdownloader.plugins.components.youtube.VideoCodec;
 import org.jdownloader.plugins.components.youtube.VideoResolution;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeCustomConvertVariant;
@@ -83,6 +85,8 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
@@ -106,7 +110,6 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
-import jd.plugins.components.SubtitleVariant;
 import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
@@ -846,6 +849,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, workingAudioStream);
                         downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, workingVideoStream);
                         downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_DATA, workingDataStream);
+
                         if (totalSize <= 0) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
@@ -1482,17 +1486,6 @@ public class YoutubeDashV2 extends PluginForHost {
 
     }
 
-    public static void main(String[] args) {
-        for (YoutubeVariant v : YoutubeVariant.values()) {
-
-            // @Default(lngs = { "en" }, values = { "240p MP4-Video" })
-            // String YoutubeVariant_name_MP4_DASH_240_AAC128();
-            System.out.println("@Default(lngs = { \"en\" }, values = { \"" + v.getQualityExtension() + "\" })");
-            ;
-            System.out.println("String YoutubeVariant_qualityExtension_" + v.name() + "();");
-        }
-    }
-
     private int getChunksPerStream() {
         YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         if (!cfg.isCustomChunkValueEnabled()) {
@@ -1605,8 +1598,13 @@ public class YoutubeDashV2 extends PluginForHost {
                         progress.setProgressSource(this);
                         try {
                             downloadLink.addPluginProgress(progress);
-                            String codec = variant.getiTagVideo().getCodecVideo();
-                            if (codec.toLowerCase(Locale.ENGLISH).contains("vp9") || codec.toLowerCase(Locale.ENGLISH).contains("vp9") || variant.toString().startsWith("WEBM")) {
+                            VideoCodec codec = variant.getiTagVideo().getVideoCodec(downloadLink);
+                            switch (codec) {
+                            case VP8:
+                            case VP9:
+                            case VP9_BETTER_PROFILE_1:
+                            case VP9_BETTER_PROFILE_2:
+                            case VP9_WORSE_PROFILE_1:
                                 if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                     new File(videoStreamPath).delete();
@@ -1615,7 +1613,8 @@ public class YoutubeDashV2 extends PluginForHost {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
 
                                 }
-                            } else {
+                                break;
+                            default:
                                 if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                     new File(videoStreamPath).delete();
@@ -1625,6 +1624,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                                 }
                             }
+
                         } finally {
                             downloadLink.removePluginProgress(progress);
                         }
@@ -2221,7 +2221,7 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     @Override
-    public List<LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
+    public List<LinkVariant> getVariantsByLink(final DownloadLink downloadLink) {
         if (hasVariantToChooseFrom(downloadLink) == false) {
             return null;
         }
@@ -2251,7 +2251,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     if (ret != 0) {
                         return ret;
                     }
-                    return o1._getName().compareToIgnoreCase(o2._getName());
+                    return o1._getName(downloadLink).compareToIgnoreCase(o2._getName(downloadLink));
 
                 }
 
@@ -2344,7 +2344,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                                                 String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(group.name());
 
-                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin());
+                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
                                                 job.setText(dummyUrl);
                                                 job.setCustomSourceUrl(cl.getOriginLink().getURL());
                                                 job.setDeepAnalyse(false);
@@ -2437,7 +2437,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                                 // best group
                                                 String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(group.name());
 
-                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin());
+                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
                                                 job.setText(dummyUrl);
                                                 job.setCustomSourceUrl(cl.getOriginLink().getURL());
                                                 job.setDeepAnalyse(false);
@@ -2461,8 +2461,8 @@ public class YoutubeDashV2 extends PluginForHost {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
                                     // CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v._getExtendedName() :
-                                    setName(v._getName());
-                                    setTooltipText(v._getExtendedName());
+                                    setName(v._getName(pv));
+                                    setTooltipText(v._getExtendedName(pv));
                                 }
 
                                 //
@@ -2489,7 +2489,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                         if (!found) {
                                             String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(v.getTypeId());
 
-                                            LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin());
+                                            LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
                                             job.setText(dummyUrl);
                                             job.setCustomSourceUrl(cl.getOriginLink().getURL());
                                             job.setDeepAnalyse(false);
@@ -2545,7 +2545,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                         // worse group
                                         String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(group.name());
 
-                                        LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin());
+                                        LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
                                         job.setText(dummyUrl);
                                         job.setCustomSourceUrl(cl.getOriginLink().getURL());
                                         job.setDeepAnalyse(false);
@@ -2606,8 +2606,8 @@ public class YoutubeDashV2 extends PluginForHost {
                         for (final YoutubeVariantInterface v : list) {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
-                                    setName(v._getName());
-                                    setTooltipText(v._getExtendedName());
+                                    setName(v._getName(pv));
+                                    setTooltipText(v._getExtendedName(pv));
                                 }
 
                                 @Override

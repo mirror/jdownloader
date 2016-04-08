@@ -2,17 +2,18 @@ package jd.controlling.reconnect;
 
 import java.util.ArrayList;
 
-import jd.controlling.reconnect.ipcheck.IPController;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 
+import jd.controlling.reconnect.ipcheck.IPController;
+
 public abstract class ReconnectInvoker {
     private static final long OFFLINE_TIMEOUT = 30000;
     private RouterPlugin      routerPlugin;
     protected LogSource       logger          = LogController.TRASH;
+    private String            statusString;
 
     public LogSource getLogger() {
         return logger;
@@ -170,5 +171,13 @@ public abstract class ReconnectInvoker {
 
     public String getName() {
         return "Reconnect";
+    }
+
+    public String getStatusString() {
+        return statusString;
+    }
+
+    public void setStatusString(String statusString) {
+        this.statusString = statusString;
     }
 }

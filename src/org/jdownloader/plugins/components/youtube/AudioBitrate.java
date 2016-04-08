@@ -1,6 +1,8 @@
 package org.jdownloader.plugins.components.youtube;
 
-public enum AudioBitrate implements MediaQualityInterface {
+import org.jdownloader.gui.settings.AbstractConfigPanel;
+
+public enum AudioBitrate {
     KBIT_128(128, 1000),
     KBIT_152(152, 1000),
     KBIT_160(160, 1000),
@@ -16,9 +18,15 @@ public enum AudioBitrate implements MediaQualityInterface {
     KBIT_12(12, 1000),
     KBIT_24(24, 1000);
     private double rating = -1;
+    private int    kbit;
 
-    private AudioBitrate(double rating, double modifier) {
-        this.rating = rating / modifier;
+    private AudioBitrate(int kbit, double modifier) {
+        this.rating = kbit / modifier;
+        this.kbit = kbit;
+    }
+
+    public int getKbit() {
+        return kbit;
     }
 
     public double getRating() {
@@ -27,6 +35,13 @@ public enum AudioBitrate implements MediaQualityInterface {
 
     public void setRating(double rating) {
         this.rating = rating;
+    }
+
+    public String getLabel(Object caller) {
+        if (caller != null && caller instanceof AbstractConfigPanel) {
+            return kbit + " kbit";
+        }
+        return kbit + " kbit/s";
     }
 
 }

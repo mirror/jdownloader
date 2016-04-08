@@ -23,8 +23,8 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     private YoutubeVariant          source;
 
     @Override
-    public String _getTooltipDescription() {
-        return _getExtendedName();
+    public String _getTooltipDescription(Object link) {
+        return _getExtendedName(link);
     }
 
     public static YoutubeVariantInterface parse(YoutubeCustomVariantStorable storable) {
@@ -70,12 +70,12 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String _getName() {
+    public String _getName(Object caller) {
         return name;
     }
 
     @Override
-    public Icon _getIcon() {
+    public Icon _getIcon(Object caller) {
         return null;
     }
 
@@ -141,7 +141,7 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String getQualityExtension() {
+    public String getQualityExtension(Object caller) {
         return tag;
     }
 
@@ -160,7 +160,7 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String _getExtendedName() {
+    public String _getExtendedName(Object caller) {
         return name;
     }
 

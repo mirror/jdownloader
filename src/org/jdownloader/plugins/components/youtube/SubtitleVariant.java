@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.youtube;
 
 import java.io.File;
 import java.util.List;
@@ -11,9 +11,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.youtube.YoutubeClipData;
-import org.jdownloader.plugins.components.youtube.YoutubeITAG;
-import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
 
 import jd.http.QueryInfo;
 import jd.http.Request;
@@ -56,8 +53,8 @@ public class SubtitleVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String _getTooltipDescription() {
-        return _getExtendedName();
+    public String _getTooltipDescription(Object caller) {
+        return _getExtendedName(caller);
     }
 
     @Override
@@ -73,7 +70,7 @@ public class SubtitleVariant implements YoutubeVariantInterface {
         return code.hashCode();
     }
 
-    public String _getName() {
+    public String _getName(Object caller) {
         StringBuilder sb = new StringBuilder();
         if (_isTranslated()) {
             sb.append(_GUI.T.lit_translated());
@@ -97,7 +94,7 @@ public class SubtitleVariant implements YoutubeVariantInterface {
         return "asr".equalsIgnoreCase(kind);
     }
 
-    public Icon _getIcon() {
+    public Icon _getIcon(Object caller) {
         return TEXT;
     }
 
@@ -156,7 +153,7 @@ public class SubtitleVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String getQualityExtension() {
+    public String getQualityExtension(Object caller) {
         return code;
     }
 
@@ -176,7 +173,7 @@ public class SubtitleVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String _getExtendedName() {
+    public String _getExtendedName(Object caller) {
         return _GUI.T.YoutubeDash_getName_subtitles_(locale.getDisplayName());
     }
 

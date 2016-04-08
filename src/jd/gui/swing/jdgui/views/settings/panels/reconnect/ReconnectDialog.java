@@ -266,7 +266,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
     }
 
     protected boolean startReconnectAndWait(LogSource logger) throws ReconnectException, InterruptedException {
-        ReconnectInvoker plg = getInvoker();
+        final ReconnectInvoker plg = getInvoker();
         if (plg == null) {
             throw new ReconnectException(_GUI.T.ReconnectDialog_run_failed_not_setup_());
         }
@@ -286,7 +286,33 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         // };
         // return;
         // }
-        result = plg.validate();
+
+        Timer time = new Timer(1000, new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    private String oldStatus;
+
+                    @Override
+                    protected void runInEDT() {
+                        String status = plg.getStatusString();
+
+                        if (status != null && !StringUtils.equals(status, oldStatus)) {
+                            state.setText(status);
+                        }
+                        oldStatus = status;
+                    }
+                };
+            }
+        });
+        time.start();
+        try {
+            result = plg.validate();
+        } finally {
+            time.stop();
+        }
         return result.isSuccess();
     }
 

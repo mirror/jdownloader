@@ -44,6 +44,25 @@ public class YoutubeFinalLinkResource implements Storable {
     }
 
     private String baseUrl;
+    private int    height;
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    private int width;
 
     public YoutubeFinalLinkResource(/* Storable */) {
     }
@@ -53,11 +72,16 @@ public class YoutubeFinalLinkResource implements Storable {
         videoID = si.getClip().videoID;
         segments = si.getSegments();
         baseUrl = si.getUrl();
+        height = si.getHeight();
+        width = si.getWidth();
 
     }
 
     public YoutubeStreamData toStreamDataObject() {
         YoutubeStreamData ret = new YoutubeStreamData(new YoutubeClipData(videoID), baseUrl, itag);
+        ret.setHeight(height);
+        ret.setWidth(width);
+
         ret.setSegments(segments);
         return ret;
     }

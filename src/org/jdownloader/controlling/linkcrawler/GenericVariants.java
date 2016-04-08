@@ -5,14 +5,6 @@ import java.util.List;
 
 import javax.swing.Icon;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.Files;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
@@ -21,11 +13,19 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 public enum GenericVariants implements LinkVariant {
     ORIGINAL(null, new AbstractIcon(IconKey.ICON_VIDEO, 16)) {
 
         @Override
-        public String _getName() {
+        public String _getName(Object caller) {
             return _JDT.T.GenericVariants_ORIGINAL();
         }
 
@@ -40,7 +40,7 @@ public enum GenericVariants implements LinkVariant {
     },
     DEMUX_MP3("mp3", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String _getName() {
+        public String _getName(Object caller) {
             return _JDT.T.GenericVariants_FLV_TO_MP3_();
         }
 
@@ -57,7 +57,7 @@ public enum GenericVariants implements LinkVariant {
 
     DEMUX_AAC("acc", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String _getName() {
+        public String _getName(Object caller) {
             return _JDT.T.GenericVariants_DEMUX_AAC();
         }
 
@@ -73,7 +73,7 @@ public enum GenericVariants implements LinkVariant {
     },
     DEMUX_M4A("m4a", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String _getName() {
+        public String _getName(Object caller) {
             return _JDT.T.GenericVariants_DEMUX_M4A();
         }
 
@@ -89,7 +89,7 @@ public enum GenericVariants implements LinkVariant {
     },
     DEMUX_GENERIC_AUDIO("audio", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String _getName() {
+        public String _getName(Object caller) {
             return _JDT.T.GenericVariants_DEMUX_GENERIC_AUDIO();
         }
 
@@ -173,16 +173,16 @@ public enum GenericVariants implements LinkVariant {
     }
 
     @Override
-    public abstract String _getName();
+    public abstract String _getName(Object caller);
 
     @Override
-    public Icon _getIcon() {
+    public Icon _getIcon(Object caller) {
         return icon;
     }
 
     @Override
-    public String _getExtendedName() {
-        return _getName() + " [" + _getUniqueId() + "]";
+    public String _getExtendedName(Object caller) {
+        return _getName(caller) + " [" + _getUniqueId() + "]";
     }
 
     public String getExtension() {
@@ -220,8 +220,8 @@ public enum GenericVariants implements LinkVariant {
     }
 
     @Override
-    public String _getTooltipDescription() {
-        return _getExtendedName();
+    public String _getTooltipDescription(Object caller) {
+        return _getExtendedName(caller);
     }
 
     protected boolean ffmpeg(DownloadLink link, File file, FFMpegProgress set, FFmpeg ffmpeg, File finalFile) throws Exception {
