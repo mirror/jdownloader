@@ -35,9 +35,9 @@ public class JD2Import extends PluginsC {
     @Override
     public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
         final LinkOriginDetails origin = source.getOrigin();
-        if (origin!=null && LinkOrigin.CLIPBOARD.equals(origin.getOrigin()){
+        if (origin != null && LinkOrigin.CLIPBOARD.equals(origin.getOrigin())) {
             return null;
-        }else{
+        } else {
             return super.decryptContainer(source);
         }
     }
