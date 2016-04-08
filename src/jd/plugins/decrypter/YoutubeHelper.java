@@ -325,11 +325,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
                 YoutubeVariantInterface variant = helper.getVariantById(link.getStringProperty(YT_VARIANT));
-                if (variant != null) {
+                if (variant != null && variant instanceof YoutubeVariant) {
 
                     VideoFrameRate fps = ((YoutubeVariant) variant).getFrameRate(link);
                     if (fps != null) {
-                        return fps.getLabel(link);
+                        return fps.getLabel(link, (YoutubeVariant) variant);
                     }
 
                 }
@@ -611,7 +611,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 try {
 
                     if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getiTagVideo().getVideoResolution(link).getLabel(link);
+                        return ((YoutubeVariant) variant).getiTagVideo().getVideoResolution(link).getLabel(link, (YoutubeVariant) variant);
                     }
                     return "";
                 } catch (Throwable e) {
@@ -638,7 +638,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 String var = link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO, "");
 
                 try {
-                    return YoutubeITAG.valueOf(var).getVideoResolution(link).getLabel(link);
+                    return YoutubeITAG.valueOf(var).getVideoResolution(link).getLabel(link, null);
 
                 } catch (Throwable e) {
                     // old variant

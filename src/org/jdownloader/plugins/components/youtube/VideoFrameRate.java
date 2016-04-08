@@ -1,5 +1,9 @@
 package org.jdownloader.plugins.components.youtube;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.decrypter.YoutubeHelper;
+
 public enum VideoFrameRate {
     FPS_60(60, 5, 100),
     FPS_30(30, 3, 100),
@@ -28,7 +32,37 @@ public enum VideoFrameRate {
         this.rating = rating;
     }
 
-    public String getLabel(Object caller) {
+    public String getLabel(Object caller, YoutubeVariant callingVariant) {
+        if (caller != null && callingVariant != null) {
+            // return the correct resolution of possible
+            // the youtube plugin onlinecheck writes the currently selected stream as property. So we can show the actuall height for this
+            // variant
+            DownloadLink link = null;
+            if (caller instanceof CrawledLink) {
+                link = ((CrawledLink) caller).getDownloadLink();
+            } else if (caller instanceof DownloadLink) {
+                link = (DownloadLink) caller;
+            }
+            if (link != null) {
+                YoutubeFinalLinkResource r = link.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
+                try {
+                    double rFps = Double.parseDouble(r.getFps());
+                    if (r != null && rFps > 3) {
+
+                        if (callingVariant.getiTagVideo() == r.getItag() && rFps != fps) {
+
+                            return (int) Math.ceil(rFps) + "fps";
+
+                        }
+
+                    }
+                } catch (Throwable e) {
+
+                }
+
+            }
+        }
+
         return (int) Math.ceil(getFps()) + "fps";
     }
 }

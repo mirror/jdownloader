@@ -673,7 +673,46 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     WEBM_VP9_720P_30FPS_OPUS_64KBIT_DASH("WEBM_720P_30FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
     WEBM_VP9_720P_30FPS_OPUS_64KBIT_DASH_3D("WEBM_720P_30FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
     WEBM_VP9_720P_60FPS_OPUS_64KBIT_DASH("WEBM_720P_60FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
-    WEBM_VP9_720P_60FPS_OPUS_64KBIT_DASH_3D("WEBM_720P_60FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null)
+    WEBM_VP9_720P_60FPS_OPUS_64KBIT_DASH_3D("WEBM_720P_60FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_720P_VP9_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
+    WEBM_VP9_4320P_30FPS_VORBIS_128KBIT_DASH("WEBM_4320P_30FPS_VORBIS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_128K_WEBM, null, null, null),
+    WEBM_VP9_4320P_30FPS_VORBIS_128KBIT_DASH_3D("WEBM_4320P_30FPS_VORBIS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_128K_WEBM, null, null, null),
+    WEBM_VP9_4320P_30FPS_VORBIS_192KBIT_DASH("WEBM_4320P_30FPS_VORBIS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_192K_WEBM, null, null, null),
+    WEBM_VP9_4320P_30FPS_VORBIS_192KBIT_DASH_3D("WEBM_4320P_30FPS_VORBIS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_192K_WEBM, null, null, null),
+    WEBM_VP9_4320P_30FPS_OPUS_160KBIT_DASH("WEBM_4320P_30FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_160KBIT, null, null, null),
+    WEBM_VP9_4320P_30FPS_OPUS_160KBIT_DASH_3D("WEBM_4320P_30FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_160KBIT, null, null, null),
+    WEBM_VP9_4320P_30FPS_OPUS_48KBIT_DASH("WEBM_4320P_30FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_48KBIT, null, null, null),
+    WEBM_VP9_4320P_30FPS_OPUS_48KBIT_DASH_3D("WEBM_4320P_30FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_48KBIT, null, null, null),
+    WEBM_VP9_4320P_30FPS_OPUS_64KBIT_DASH("WEBM_4320P_30FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
+    WEBM_VP9_4320P_30FPS_OPUS_64KBIT_DASH_3D("WEBM_4320P_30FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_WEBM_VIDEO_4320P_VP9, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
+    MP4_H264_1920P_60FPS_AAC_128KBIT_DASH("MP4_1920P_60FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1920_H264_FPS_60, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_VORBIS_128KBIT_DASH("WEBM_1920P_30FPS_VORBIS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_128K_WEBM, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_VORBIS_128KBIT_DASH_3D("WEBM_1920P_30FPS_VORBIS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_128K_WEBM, null, null, null),
+    WEBM_VP9_1920P_60FPS_VORBIS_128KBIT_DASH("WEBM_1920P_60FPS_VORBIS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_128K_WEBM, null, null, null),
+    WEBM_VP9_1920P_60FPS_VORBIS_128KBIT_DASH_3D("WEBM_1920P_60FPS_VORBIS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_128K_WEBM, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_VORBIS_192KBIT_DASH("WEBM_1920P_30FPS_VORBIS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_192K_WEBM, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_VORBIS_192KBIT_DASH_3D("WEBM_1920P_30FPS_VORBIS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_192K_WEBM, null, null, null),
+    WEBM_VP9_1920P_60FPS_VORBIS_192KBIT_DASH("WEBM_1920P_60FPS_VORBIS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_192K_WEBM, null, null, null),
+    WEBM_VP9_1920P_60FPS_VORBIS_192KBIT_DASH_3D("WEBM_1920P_60FPS_VORBIS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_192K_WEBM, null, null, null),
+    MP4_H264_1920P_60FPS_AAC_256KBIT_DASH("MP4_1920P_60FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1920_H264_FPS_60, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
+    MP4_H264_1920P_60FPS_AAC_48KBIT_DASH("MP4_1920P_60FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1920_H264_FPS_60, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_OPUS_160KBIT_DASH("WEBM_1920P_30FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_OPUS_160KBIT, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_OPUS_160KBIT_DASH_3D("WEBM_1920P_30FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_OPUS_160KBIT, null, null, null),
+    WEBM_VP9_1920P_60FPS_OPUS_160KBIT_DASH("WEBM_1920P_60FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_160KBIT, null, null, null),
+    WEBM_VP9_1920P_60FPS_OPUS_160KBIT_DASH_3D("WEBM_1920P_60FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_160KBIT, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_OPUS_48KBIT_DASH("WEBM_1920P_30FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_OPUS_48KBIT, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_OPUS_48KBIT_DASH_3D("WEBM_1920P_30FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_OPUS_48KBIT, null, null, null),
+    WEBM_VP9_1920P_60FPS_OPUS_48KBIT_DASH("WEBM_1920P_60FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_48KBIT, null, null, null),
+    WEBM_VP9_1920P_60FPS_OPUS_48KBIT_DASH_3D("WEBM_1920P_60FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_48KBIT, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_OPUS_64KBIT_DASH("WEBM_1920P_30FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
+    WEBM_VP9_WORSE_PROFILE_1_1920P_30FPS_OPUS_64KBIT_DASH_3D("WEBM_1920P_30FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_1920P_30FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
+    WEBM_VP9_1920P_60FPS_OPUS_64KBIT_DASH("WEBM_1920P_60FPS_OPUS", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
+    WEBM_VP9_1920P_60FPS_OPUS_64KBIT_DASH_3D("WEBM_1920P_60FPS_OPUS_3D", YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG315_VP9_1920P_60FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null),
+    MP4_H264_1920P_30FPS_AAC_128KBIT_DASH("MP4_1920P_30FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1920_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
+    MP4_H264_1920P_30FPS_AAC_256KBIT_DASH("MP4_1920P_30FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1920_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
+    MP4_H264_1920P_30FPS_AAC_48KBIT_DASH("MP4_1920P_30FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1920_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
+    MP4_H264_144P_15FPS_AAC_128KBIT_DASH("MP4_144P_15FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_144P_H264_FPS15, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
+    MP4_H264_144P_15FPS_AAC_256KBIT_DASH("MP4_144P_15FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_144P_H264_FPS15, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
+    MP4_H264_144P_15FPS_AAC_48KBIT_DASH("MP4_144P_15FPS_AAC", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_144P_H264_FPS15, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null)
     // ###APPEND###
     ;
 
@@ -1053,8 +1092,8 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
                     return cust;
                 }
 
-                String res = iTagVideo.getVideoResolution(caller).getLabel(caller);
-                String fps = iTagVideo.getVideoFrameRate(caller).getLabel(caller);
+                String res = iTagVideo.getVideoResolution(caller).getLabel(caller, this);
+                String fps = iTagVideo.getVideoFrameRate(caller).getLabel(caller, this);
                 String audio = getAudioCodecLabel(caller);
                 return _GUI.T.YoutubeVariant_name_generic_video3(res, fps, audio);
 
@@ -1177,10 +1216,11 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             if (StringUtils.isNotEmpty(cust)) {
                 return cust;
             }
-            String ret = iTagVideo.getVideoResolution(caller).getLabel(caller);
+
+            String ret = iTagVideo.getVideoResolution(caller).getLabel(caller, this);
             VideoFrameRate fps = iTagVideo.getVideoFrameRate(caller);
             if (fps != null) {
-                ret += " " + fps.getLabel(caller);
+                ret += " " + fps.getLabel(caller, this);
             }
             return ret;
         case VIDEO_3D:
@@ -1189,10 +1229,10 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
                 return cust;
             }
 
-            ret = iTagVideo.getVideoResolution(caller).getLabel(caller);
+            ret = iTagVideo.getVideoResolution(caller).getLabel(caller, this);
             fps = iTagVideo.getVideoFrameRate(caller);
             if (fps != null) {
-                ret += " " + fps.getLabel(caller);
+                ret += " " + fps.getLabel(caller, this);
             }
 
             ret += " 3D";
@@ -1290,6 +1330,14 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return filenameModifier.run(formattedFilename, link);
         }
         return formattedFilename;
+    }
+
+    public static String getCompatibleVariantName(String variantName) {
+        YoutubeVariant ret = COMPATIBILITY_MAP.get(variantName);
+        if (ret != null) {
+            return ret.name();
+        }
+        return variantName;
     }
 
 }

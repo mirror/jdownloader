@@ -2395,10 +2395,10 @@ public enum YoutubeVariantOld implements YoutubeVariantInterface {
         String ret = null;
         if (getiTagData() != null) {
 
-            ret = getiTagData().getVideoResolution(null).getLabel(null);
+            ret = getiTagData().getVideoResolution(null).getLabel(null, null);
         }
         if (getiTagVideo() != null) {
-            ret = getiTagVideo().getVideoResolution(null).getLabel(null);
+            ret = getiTagVideo().getVideoResolution(null).getLabel(null, null);
         }
         return ret;
     }

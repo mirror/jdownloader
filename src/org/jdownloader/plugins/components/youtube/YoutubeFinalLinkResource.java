@@ -62,7 +62,8 @@ public class YoutubeFinalLinkResource implements Storable {
         this.width = width;
     }
 
-    private int width;
+    private int    width;
+    private String fps;
 
     public YoutubeFinalLinkResource(/* Storable */) {
     }
@@ -74,7 +75,16 @@ public class YoutubeFinalLinkResource implements Storable {
         baseUrl = si.getUrl();
         height = si.getHeight();
         width = si.getWidth();
+        fps = si.getFps();
 
+    }
+
+    public String getFps() {
+        return fps;
+    }
+
+    public void setFps(String fps) {
+        this.fps = fps;
     }
 
     public YoutubeStreamData toStreamDataObject() {
