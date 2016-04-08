@@ -1,7 +1,11 @@
 package org.jdownloader.plugins.components.youtube;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
+import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.gui.translate._GUI;
 
 import jd.http.QueryInfo;
@@ -37,8 +41,13 @@ public enum YoutubeITAG {
     DASH_VIDEO_1440P_H264(264, VideoResolution.P_1440, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_144P_H264(160, VideoResolution.P_144, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30),
 
+    DASH_VIDEO_144P_H264_FPS15(160, VideoResolution.P_144, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_15),
+    // Mobile/Portrait Format https://www.youtube.com/watch?v=kiZse2vZXfw
+    DASH_VIDEO_1920_H264_FPS_60(266, VideoResolution.P_1920, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_60),
+
     DASH_VIDEO_2160_H264_FPS_60(266, VideoResolution.P_2160, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_2160_H264(266, VideoResolution.P_2160, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30),
+    DASH_VIDEO_1920_H264(266, VideoResolution.P_1920, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30),
 
     DASH_VIDEO_240P_H264(133, VideoResolution.P_240, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30),
 
@@ -48,7 +57,11 @@ public enum YoutubeITAG {
 
     DASH_VIDEO_720P_H264(136, VideoResolution.P_720, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, VideoResolution.P_1440, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_60),
+    // https://www.youtube.com/watch?v=kiZse2vZXfw&nohtml5=False
+    DASH_VIDEO_ITAG313_VP9_1920P_30FPS(313, VideoResolution.P_1920, VideoContainer.WEBM, VideoCodec.VP9_WORSE_PROFILE_1, VideoFrameRate.FPS_30),
     DASH_VIDEO_ITAG313_VP9_2160P_30FPS(313, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9_WORSE_PROFILE_1, VideoFrameRate.FPS_30),
+    // Handy/Portrait Format https://www.youtube.com/watch?v=kiZse2vZXfw
+    DASH_VIDEO_ITAG315_VP9_1920P_60FPS(315, VideoResolution.P_1920, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_60),
     DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_60),
     // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
     DASH_VIDEO_ORIGINAL_H264_GENERIC_4K(138, VideoResolution.P_2160_ESTIMATED, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30),
@@ -71,7 +84,10 @@ public enum YoutubeITAG {
     DASH_WEBM_VIDEO_144P_VP9(278, VideoResolution.P_144, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_30),
     // DASH_WEBM_VIDEO_720P_VP9(247, "VP9",null, null, VideoResolution.VIDEO_RESOLUTION_720P,
     // VideoContainer.WEBM, VideoCodec.VIDEO_CODEC_VP9),
-    // https://www.youtube.com/watch?v=kdKgvII-pAg
+    // itag 272 videos are either 3840x2160 (e.g. RtoitU2A-3E) or 7680x4320 (sLprVF6d7Ug)
+    // https://www.youtube.com/watch?v=RtoitU2A-3E 2160p
+    // https://www.youtube.com/watch?v=sLprVF6d7Ug 4320p
+    DASH_WEBM_VIDEO_4320P_VP9(272, VideoResolution.P_4320, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_30),
     DASH_WEBM_VIDEO_2160P_VP9(272, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_30),
     DASH_WEBM_VIDEO_240P_VP9(242, VideoResolution.P_240, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_30),
     DASH_WEBM_VIDEO_360P_VP9(243, VideoResolution.P_360, VideoContainer.WEBM, VideoCodec.VP9, VideoFrameRate.FPS_30),
@@ -252,6 +268,19 @@ public enum YoutubeITAG {
     HLS_VIDEO_MP4_720P_AUDIO_AAC_300(300, VideoResolution.P_720, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
 
     HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256);
+    private static HashMap<Integer, List<YoutubeITAG>> TAG_MAP = new HashMap<Integer, List<YoutubeITAG>>();
+
+    static {
+        for (YoutubeITAG tag : values()) {
+            List<YoutubeITAG> lst = TAG_MAP.get(tag.getITAG());
+            if (lst == null) {
+                lst = new ArrayList<YoutubeITAG>();
+                TAG_MAP.put(tag.getITAG(), lst);
+            }
+            lst.add(tag);
+        }
+
+    }
 
     public static enum YoutubeITAGVersion {
         // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
@@ -360,22 +389,6 @@ public enum YoutubeITAG {
                 return THREEGP_VIDEO_240P_H263_AUDIO_AAC;
             }
 
-        case 138:
-
-            YoutubeITAG[] options = new YoutubeITAG[] { DASH_VIDEO_ORIGINAL_H264_GENERIC_8K, DASH_VIDEO_ORIGINAL_H264_GENERIC_4K, DASH_VIDEO_ORIGINAL_H264_GENERIC_1080P };
-            YoutubeITAG best = null;
-            for (YoutubeITAG tag : options) {
-                if (best == null || Math.abs(height - best.getVideoResolution(null).getHeight()) > Math.abs(height - tag.getVideoResolution(null).getHeight())) {
-                    best = tag;
-                }
-            }
-            return best;
-
-        case 266:
-            if (fps < 50) {
-                return DASH_VIDEO_2160_H264;
-            }
-            return DASH_VIDEO_2160_H264_FPS_60;
         case 18:
             if (version == null) {
                 version = YoutubeITAGVersion.getByDate(uploadDate);
@@ -409,6 +422,7 @@ public enum YoutubeITAG {
             default:
                 return MP4_VIDEO_360P_H264_AUDIO_AAC_3D;
             }
+
         case 84:
             if (version == null) {
                 version = YoutubeITAGVersion.getByDate(uploadDate);
@@ -424,14 +438,35 @@ public enum YoutubeITAG {
             }
         }
 
-        for (final YoutubeITAG tag : YoutubeITAG.values()) {
-            if (tag.getITAG() == itag) {
+        List<YoutubeITAG> options = TAG_MAP.get(itag);
+        if (options == null) {
+            return null;
+        }
 
-                return tag;
+        YoutubeITAG best = null;
+        double bestValue = Double.MAX_VALUE;
+        for (final YoutubeITAG tag : options) {
+            double value = 0d;
 
+            if (tag.getVideoResolution(null) != null) {
+                value += Math.abs(height - tag.getVideoResolution(null).getHeight());
+                value += Math.abs(fps - tag.getVideoFrameRate(null).getFps());
+            }
+
+            if (best == null || bestValue > value) {
+                bestValue = value;
+                best = tag;
+                if (value == 0d) {
+                    break;
+                }
             }
         }
-        return null;
+        if (bestValue != 0d && height > 0 && fps > 3) {
+            System.out.println("Height missmatch");
+            Log.warning("Youtube ITag Mismatch: lookup fps" + fps + " height" + height + " -> " + best);
+        }
+        return best;
+
     }
 
     public VideoResolution getVideoResolution(Object caller) {

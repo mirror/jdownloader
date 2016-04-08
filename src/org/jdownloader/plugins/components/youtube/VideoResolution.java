@@ -16,7 +16,8 @@ public enum VideoResolution {
     P_480(480, 480, 1),
     P_720(720, 720, 1),
     P_4320(4320, 4320, 1),
-    P_72(72, 72, 1);
+    P_72(72, 72, 1),
+    P_1920(1920, 1920, 1);
     private double rating = -1;
     private int    height;
 
@@ -37,8 +38,11 @@ public enum VideoResolution {
         this.rating = rating;
     }
 
-    public String getLabel(Object caller) {
-        if (caller != null) {
+    public String getLabel(Object caller, YoutubeVariant callingVariant) {
+        if (caller != null && callingVariant != null) {
+            // return the correct resolution of possible
+            // the youtube plugin onlinecheck writes the currently selected stream as property. So we can show the actuall height for this
+            // variant
             DownloadLink link = null;
             if (caller instanceof CrawledLink) {
                 link = ((CrawledLink) caller).getDownloadLink();
@@ -48,11 +52,15 @@ public enum VideoResolution {
             if (link != null) {
                 YoutubeFinalLinkResource r = link.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
                 if (r != null && r.getHeight() > 0) {
-                    if (r.getItag().getVideoResolution(caller) == this && r.getHeight() != height) {
-                        System.out.println(this + " - " + r.getItag());
+
+                    if (callingVariant.getiTagVideo() == r.getItag() && r.getHeight() != height) {
+
                         return r.getHeight() + "p";
+
                     }
+
                 }
+
             }
         }
         return height + "p";
