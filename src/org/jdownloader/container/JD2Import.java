@@ -47,32 +47,25 @@ public class JD2Import extends PluginsC {
         cls = new ArrayList<CrawledLink>();
         try {
             if (importFile.getName().matches("downloadList(\\d+)?\\.zip")) {
-                try {
-                    final LinkedList<FilePackage> packages = DownloadController.getInstance().loadFile(importFile);
-                    int links = 0;
-                    for (final FilePackage p : packages) {
-                        p.getUniqueID().refresh();
-                        for (final DownloadLink downloadLink : p.getChildren()) {
-                            downloadLink.getUniqueID().refresh();
-                        }
-                        links += p.size();
+                final LinkedList<FilePackage> packages = DownloadController.getInstance().loadFile(importFile);
+                int links = 0;
+                for (final FilePackage p : packages) {
+                    p.getUniqueID().refresh();
+                    for (final DownloadLink downloadLink : p.getChildren()) {
+                        downloadLink.getUniqueID().refresh();
                     }
-                    final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd2_import_title(), _GUI.T.jd2_import_message(packages.size(), links, _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_title()), new AbstractIcon(IconKey.ICON_QUESTION, 16), null, null) {
-                        @Override
-                        public ModalityType getModalityType() {
-                            return ModalityType.MODELESS;
-                        }
-                    };
-                    UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
-                    DownloadController.getInstance().importList(packages);
-                    cs.setStatus(ContainerStatus.STATUS_FINISHED);
-                    return cs;
-                } catch (final DialogNoAnswerException e) {
-                    if (e.isCausedbyESC() || e.isCausedByTimeout()) {
-                        cs.setStatus(ContainerStatus.STATUS_FINISHED);
-                        return cs;
-                    }
+                    links += p.size();
                 }
+                final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd2_import_title(), _GUI.T.jd2_import_message(packages.size(), links, _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_title()), new AbstractIcon(IconKey.ICON_QUESTION, 16), null, null) {
+                    @Override
+                    public ModalityType getModalityType() {
+                        return ModalityType.MODELESS;
+                    }
+                };
+                UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+                DownloadController.getInstance().importList(packages);
+                cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                return cs;
             } else if (importFile.getName().matches("linkcollector(\\d+)?\\.zip")) {
                 final HashMap<CrawledPackage, CrawledPackageStorable> restoreMap = new HashMap<CrawledPackage, CrawledPackageStorable>();
                 final LinkedList<CrawledPackage> packages = LinkCollector.getInstance().loadFile(importFile, restoreMap);
@@ -98,6 +91,7 @@ public class JD2Import extends PluginsC {
                 cs.setStatus(ContainerStatus.STATUS_FAILED);
                 return cs;
             }
+        } catch (DialogNoAnswerException e) {
             cs.setStatus(ContainerStatus.STATUS_FINISHED);
             return cs;
         } catch (Throwable e) {
