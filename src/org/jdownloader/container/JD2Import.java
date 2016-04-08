@@ -9,6 +9,8 @@ import java.util.LinkedList;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.CrawledPackageStorable;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.ContainerStatus;
@@ -28,6 +30,16 @@ public class JD2Import extends PluginsC {
 
     public JD2Import() {
         super("JD2 Import", "file:/.+(downloadList|linkcollector)(\\d+)?(\\.zip$)", "$Revision: 21176 $");
+    }
+
+    @Override
+    public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
+        final LinkOriginDetails origin = source.getOrigin();
+        if (origin!=null && LinkOrigin.CLIPBOARD.equals(origin.getOrigin()){
+            return null;
+        }else{
+            return super.decryptContainer(source);
+        }
     }
 
     public ContainerStatus callDecryption(File importFile) {
