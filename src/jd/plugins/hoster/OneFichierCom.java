@@ -125,6 +125,7 @@ public class OneFichierCom extends PluginForHost {
         }
         try {
             final Browser br = new Browser();
+            br.setAllowedResponseCodes(503);
             br.getHeaders().put("User-Agent", "");
             br.getHeaders().put("Accept", "");
             br.getHeaders().put("Accept-Language", "");
@@ -155,6 +156,7 @@ public class OneFichierCom extends PluginForHost {
                 // remove last &
                 sb.deleteCharAt(sb.length() - 1);
                 br.postPageRaw(correctProtocol("http://1fichier.com/check_links.pl"), sb.toString());
+                checkConnection(br);
                 for (final DownloadLink dllink : links) {
                     // final String addedLink = dllink.getDownloadURL();
                     final String addedlink_id = this.getFID(dllink);
@@ -198,9 +200,8 @@ public class OneFichierCom extends PluginForHost {
         /* Offline links should also get nice filenames. */
         link.setName(this.getFID(link));
         correctDownloadLink(link);
-        prepareBrowser(br);
-        br.setFollowRedirects(false);
         checkLinks(new DownloadLink[] { link });
+        prepareBrowser(br);
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
         }
@@ -279,6 +280,7 @@ public class OneFichierCom extends PluginForHost {
         // not hotlinkable.. standard free link...
         // html yo!
         br.followConnection();
+        checkConnection(br);
         dllink = null;
         br.setFollowRedirects(false);
         // use the English page, less support required
@@ -443,6 +445,7 @@ public class OneFichierCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.setAllowedResponseCodes(503);
         // API login workaround for slow servers
         for (int i = 1; i <= 3; i++) {
             logger.info("1fichier.com: API login try 1 / " + i);
@@ -458,6 +461,7 @@ public class OneFichierCom extends PluginForHost {
                 continue;
             }
         }
+        checkConnection(br);
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         // Use site login/site download if either API is not working or API says that there are no credits available
@@ -514,6 +518,12 @@ public class OneFichierCom extends PluginForHost {
             account.setMaxSimultanDownloads(maxdownloads_account_premium);
             account.setConcurrentUsePossible(true);
             return ai;
+        }
+    }
+
+    private void checkConnection(final Browser br) throws PluginException {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.containsHTML(">\\s*Our services are in maintenance\\. Please come back after")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster is in maintenance mode!");
         }
     }
 
@@ -860,6 +870,7 @@ public class OneFichierCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         // we want ENGLISH!
         br.setCookie(this.getHost(), "LG", "en");
+        br.setAllowedResponseCodes(503);
     }
 
     @Override
