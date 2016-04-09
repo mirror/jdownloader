@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javmon.com" }, urls = { "http://(www\\.)?javmon\\.com/online\\-\\d+/video\\-\\d+/[a-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javmon.com" }, urls = { "https?://(www\\.)?(javmon|jamo)\\.(com|tv)/(online\\-\\d+/)?(video|movie|clip)\\-\\d+(/|\\-)[a-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class JavMonCom extends PluginForDecrypt {
 
     public JavMonCom(PluginWrapper wrapper) {
@@ -35,12 +35,22 @@ public class JavMonCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("javmon.com", "jamo.tv");
         br.getPage(parameter);
-        String externID = br.getRegex("flashx\\.php\\?url=(http://flashx\\.tv/video/[^<>\"]*?)\"").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("(http%3A%2F%2Fsexvidx\\.com%2Fembed%2F\\d+\\-sexvidx\\.com\\.html)").getMatch(0);
+        if (br.containsHTML("fastpic.ru/big/2014/0907/ae")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
+        String filename = br.getRegex("top-title\">(JAV Movie Uncensored )?(.*?)<").getMatch(1);
+        if (parameter.contains("/movie")) {
+            String video = br.getRegex("(https?://jamo.tv/online.*?)\"").getMatch(0);
+            br.getPage(video);
+        }
+        if (br.containsHTML("jamo.tv/embed/")) {
+            String embed = br.getRegex("(https?://jamo.tv/embed/.*?)(\"|\')").getMatch(0);
+            br.getPage(embed);
+        }
+        String externID = br.getRegex("<iframe.*? src=(\"|\')(https?.*?)(\"|\')").getMatch(1);
         if (externID == null) {
             if (!br.containsHTML("s1\\.addParam\\(\\'flashvars\\'")) {
                 logger.info("Link offline: " + parameter);
@@ -49,9 +59,15 @@ public class JavMonCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        if (externID.contains("cloudtime.to/embed/")) {
+            String vid = br.getRegex("https?://(www.)?cloudtime.to/embed/\\?v=(.*)").getMatch(1);
+            externID = "http://www.cloudtime.to/video/" + vid;
+        }
+        logger.info("externID: " + externID);
         externID = Encoding.htmlDecode(externID);
-        decryptedLinks.add(createDownloadlink(externID));
-
+        DownloadLink dl = createDownloadlink(externID);
+        dl.setFinalFileName(filename + ".mp4");
+        decryptedLinks.add(dl);
         return decryptedLinks;
     }
 
