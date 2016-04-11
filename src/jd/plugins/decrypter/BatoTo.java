@@ -114,7 +114,7 @@ public class BatoTo extends PluginForDecrypt {
             // http://www.batoto.net/read/_/249050/useful-good-for-nothing_ch1_by_suras-place
             // pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
             // Temporary fix:
-            String imglist = br.getRegex("(<div style=\"text-align:center\\;\"><img.*?<div)").getMatch(0);
+            String imglist = br.getRegex("(<div style=\"text-align:center\\;\">.*?<img.*?<div)").getMatch(0);
             if (imglist != null) {
                 logger.info("imglist: " + imglist);
                 String[] imgs = br.getRegex("<img src='(.*?)'").getColumn(0);
