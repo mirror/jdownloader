@@ -20,7 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://(www\\.)?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" }, flags = { 0 })
 public class DlFreeFr extends PluginForHost {
@@ -213,7 +212,7 @@ public class DlFreeFr extends PluginForHost {
                 if (file == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.postPage("http://dl.free.fr/getfile.pl", "submit=Valider+et+t%C3%A9l%C3%A9charger+le+fichier&file=" + Encoding.urlEncode(file));
+                br.postPage("/getfile.pl", "file=" + Encoding.urlEncode(file));
                 dlLink = br.getRedirectLocation();
                 if (dlLink != null) {
                     break;
@@ -268,8 +267,8 @@ public class DlFreeFr extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        final String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        final String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String filename = br.getRegex("Fichier</span>\\s*(.*?)\\s*<").getMatch(0);
+        final String filesize = br.getRegex("Taille</span>\\s*(.*?)\\s*<").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
