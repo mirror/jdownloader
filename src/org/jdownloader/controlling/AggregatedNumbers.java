@@ -4,6 +4,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.download.DownloadInterface;
+
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
@@ -13,12 +19,6 @@ import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
-
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.download.DownloadInterface;
 
 public class AggregatedNumbers {
 
@@ -115,11 +115,12 @@ public class AggregatedNumbers {
     private final long disabledDownloadsSkipped;
 
     private final static class AggregatedDownloadLink {
-        private long         bytesTotal = -1;
-        private long         bytesDone  = -1;
-        private long         speed      = -1;
-        private boolean      enabled    = true;
-        private DownloadLink link       = null;
+        private long         bytesTotal  = -1;
+        private long         bytesDone   = -1;
+        private long         speed       = -1;
+        private int          connections = 0;
+        private boolean      enabled     = true;
+        private DownloadLink link        = null;
     }
 
     private void aggregrate(DownloadLink link, Map<String, AggregatedDownloadLink> linkInfos) {
@@ -146,6 +147,13 @@ public class AggregatedNumbers {
                         } else {
                             linkInfo.speed = downloadView.getSpeedBps();
                         }
+                        if (downloadInterface != null) {
+                            final ManagedThrottledConnectionHandler handlerP = downloadInterface.getManagedConnetionHandler();
+                            if (handlerP != null) {
+                                linkInfo.connections = Math.max(linkInfo.connections, handlerP.size());
+                            }
+                        }
+
                     }
                     linkInfos.put(displayName, linkInfo);
                 }
@@ -166,6 +174,12 @@ public class AggregatedNumbers {
                         linkInfo.speed = 0;
                     } else {
                         linkInfo.speed = view.getSpeedBps();
+                    }
+                    if (downloadInterface != null) {
+                        final ManagedThrottledConnectionHandler handlerP = downloadInterface.getManagedConnetionHandler();
+                        if (handlerP != null) {
+                            linkInfo.connections = Math.max(linkInfo.connections, handlerP.size());
+                        }
                     }
                 } else {
                     if (linkInfo.speed < 0) {
@@ -233,6 +247,7 @@ public class AggregatedNumbers {
             linkCount += linkInfos.size();
             for (final AggregatedDownloadLink linkInfo : linkInfos.values()) {
                 final FinalLinkState state = linkInfo.link.getFinalLinkState();
+                connections += linkInfo.connections;
                 final SkipReason skipReason = linkInfo.link.getSkipReason();
                 if (linkInfo.speed >= 0) {
                     if (downloadSpeed == -1) {
@@ -240,16 +255,6 @@ public class AggregatedNumbers {
                     }
                     downloadSpeed += linkInfo.speed;
                     running++;
-                    final SingleDownloadController controller = linkInfo.link.getDownloadLinkController();
-                    if (controller != null) {
-                        final DownloadInterface downloadInterface = controller.getDownloadInstance();
-                        if (downloadInterface != null) {
-                            final ManagedThrottledConnectionHandler handlerP = downloadInterface.getManagedConnetionHandler();
-                            if (handlerP != null) {
-                                connections += handlerP.size();
-                            }
-                        }
-                    }
                 }
                 if (linkInfo.enabled) {
                     boolean enabledUnfinished = false;
