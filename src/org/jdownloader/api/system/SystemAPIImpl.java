@@ -97,6 +97,20 @@ public class SystemAPIImpl implements SystemAPI {
         ret.setJavaVersion(Application.getJavaVersion());
         ret.setJavaVersionString(Application.getJVMVersion());
         ret.setJvm64Bit(Application.is64BitJvm());
+        String javaVendor = System.getProperty("java.vm.vendor");
+        if (javaVendor == null) {
+            javaVendor = System.getProperty("java.vendor");
+            if (javaVendor == null) {
+                javaVendor = System.getProperty("java.specification.vendor");
+            }
+        }
+        ret.setJavaVendor(javaVendor);
+
+        String javaName = System.getProperty("java.vm.name");
+        if (javaName == null) {
+            javaName = System.getProperty("java.runtime.name");
+        }
+        ret.setJavaName(javaName);
 
         ret.setHeadless(Application.isHeadless());
 

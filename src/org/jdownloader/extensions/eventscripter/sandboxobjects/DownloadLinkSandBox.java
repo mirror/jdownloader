@@ -13,6 +13,7 @@ import jd.plugins.PluginProgress;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storable;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
@@ -212,7 +213,12 @@ public class DownloadLinkSandBox {
 
     public String getDownloadPath() {
         if (downloadLink == null) {
-            return "c:/I am a dummy folder/";
+            switch (CrossSystem.getOSFamily()) {
+            case WINDOWS:
+                return "c:\\I am a dummy folder\\Test.txt";
+            default:
+                return "/mnt/Text.txt";
+            }
         }
         return downloadLink.getFileOutput();
     }
@@ -247,7 +253,7 @@ public class DownloadLinkSandBox {
 
     public String getName() {
         if (downloadLink == null) {
-            return "ExampleDownloadLink.rar";
+            return "Test.txt";
         }
         return downloadLink.getName();
     }
