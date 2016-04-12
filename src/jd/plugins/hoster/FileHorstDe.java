@@ -50,7 +50,7 @@ public class FileHorstDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Fehler: Die angegebene Datei wurde nicht gefunden")) {
+        if (br.containsHTML("Fehler: Die angegebene Datei wurde nicht gefunden") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<td>Dateiname:</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
