@@ -41,8 +41,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
-public class RDMdthk extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
+public class Ardmediathek extends PluginForDecrypt {
 
     /* Settings */
     private static final String                 Q_LOW                          = "Q_LOW";
@@ -81,7 +81,7 @@ public class RDMdthk extends PluginForDecrypt {
     private long                                existingQualityNum             = 0;
     private long                                selectedAndAvailableQualityNum = 0;
 
-    public RDMdthk(final PluginWrapper wrapper) {
+    public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -417,13 +417,13 @@ public class RDMdthk extends PluginForDecrypt {
     /* Converts asset-type Strings from daserste.de video to the same Integer values used for their Mediathek * */
     private int convertASSETTYPEtoQuality(final String assettype) {
         int quality;
-        if (assettype.equals("1.65 Web S VOD adaptive streaming")) {
+        if (assettype.equals("1.65 Web S VOD adaptive streaming") || assettype.contains("Prog 320x180")) {
             quality = 0;
-        } else if (assettype.equals("1.63 Web M VOD adaptive streaming") || assettype.equals("1.24 Web M VOD")) {
+        } else if (assettype.equals("1.63 Web M VOD adaptive streaming") || assettype.equals("1.24 Web M VOD") || assettype.equals("1.2.3.11.1 Web L")) {
             quality = 1;
-        } else if (assettype.equals("1.71 ADS 4 VOD adaptive streaming")) {
+        } else if (assettype.equals("1.71 ADS 4 VOD adaptive streaming") || assettype.equals("1.2.3.12.1 HbbTV 720x576")) {
             quality = 2;
-        } else if (assettype.equals("1.69 Web L VOD adative streaming")) {
+        } else if (assettype.equals("1.69 Web L VOD adative streaming") || assettype.equals("1.2.3.12.2 Web L")) {
             quality = 3;
         } else {
             quality = -1;
