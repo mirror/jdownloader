@@ -24,9 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,6 +47,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }, flags = { 2 })
@@ -245,7 +245,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            // Check if login is required to check/download
+            /* Check if login is required to check/download */
             final boolean noLogin = checkNoLoginNeeded(link);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (!noLogin && aa == null) {
@@ -485,23 +485,6 @@ public class VKontakteRuHoster extends PluginForHost {
         return -1;
     }
 
-    /* Handle all kinds of stuff that disturbs the downloadflow */
-    private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
-        this.br.getPage(page);
-        if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
-            this.logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
-            // Force login
-            login(this.br, acc);
-            this.br.getPage(page);
-        } else if (acc != null && this.br.toString().length() < 100 && this.br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
-            this.logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
-            // Force login
-            login(this.br, acc);
-            this.br.getPage(page);
-        }
-        this.generalErrorhandling();
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -719,6 +702,23 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
+    /* Handle all kinds of stuff that disturbs the downloadflow */
+    private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
+        this.br.getPage(page);
+        if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
+            this.logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            // Force login
+            login(this.br, acc);
+            this.br.getPage(page);
+        } else if (acc != null && this.br.toString().length() < 100 && this.br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+|\\d+<!><\\!>.+/login\\.php\\?act=security_check.+")) {
+            this.logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
+            // Force login
+            login(this.br, acc);
+            this.br.getPage(page);
+        }
+        this.generalErrorhandling();
+    }
+
     private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
         this.br.postPage(page, postData);
         if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
@@ -726,7 +726,7 @@ public class VKontakteRuHoster extends PluginForHost {
             // Force login
             login(this.br, acc);
             this.br.postPage(page, postData);
-        } else if (acc != null && this.br.toString().length() < 100 && this.br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
+        } else if (acc != null && this.br.toString().length() < 100 && this.br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+|\\d+<!><\\!>.+/login\\.php\\?act=security_check.+")) {
             this.logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
             // TODO: Change/remove this - should not be needed anymore!
             // Force login

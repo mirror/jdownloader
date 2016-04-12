@@ -31,12 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "pornktube.com", "hotamateurs.xxx", "theclassicporn.com", "faplust.com", "alotporn.com", "alphaporno.com", "updatetube.com", "thenewporn.com", "pinkrod.com", "hotshame.com", "tubewolf.com", "voyeurhit.com", "yourlust.com", "pornicom.com", "pervclips.com", "wankoz.com", "tubecup.com", "pornalized.com", "myxvids.com", "hellporno.com", "h2porn.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "hclips.com", "mylust.com", "pornfun.com", "pornoid.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "wetplace.com", "xbabe.com", "xfig.net", "hdzog.com", "sex3.com", "egbo.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net", "upornia.com",
-        "xcafe.com", "txxx.com", "camvideos.org" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?pornktube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/", "http://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?faplust\\.com/watch/\\d+/", "http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+",
-        "http://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/",
-        "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/",
-        "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/embed/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "cartoontube.xxx", "pornktube.com", "hotamateurs.xxx", "theclassicporn.com", "faplust.com", "alotporn.com", "alphaporno.com", "updatetube.com", "thenewporn.com", "pinkrod.com", "hotshame.com", "tubewolf.com", "voyeurhit.com", "yourlust.com", "pornicom.com", "pervclips.com", "wankoz.com", "tubecup.com", "pornalized.com", "myxvids.com", "hellporno.com", "h2porn.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "hclips.com", "mylust.com", "pornfun.com", "pornoid.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "wetplace.com", "xbabe.com", "xfig.net", "hdzog.com", "sex3.com", "egbo.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net",
+        "upornia.com", "xcafe.com", "txxx.com", "camvideos.org" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?cartoontube\\.xxx/video\\d+/[a-z0-9\\-]+/?", "http://(?:www\\.)?pornktube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/", "http://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?faplust\\.com/watch/\\d+/", "http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+/",
+        "http://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "http://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/",
+        "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/",
+        "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/embed/\\d+" }, flags = { 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class KernelVideoSharingCom extends antiDDoSForHost {
 
     public KernelVideoSharingCom(PluginWrapper wrapper) {
@@ -71,25 +71,23 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      */
 
     /* Connection stuff */
-    private static final boolean free_resume                  = true;
-    private static final int     free_maxchunks               = 0;
-    private static final int     free_maxdownloads            = -1;
+    private static final boolean free_resume               = true;
+    private static final int     free_maxchunks            = 0;
+    private static final int     free_maxdownloads         = -1;
 
     /* E.g. normal kernel-video-sharing.com video urls */
-    private static final String  type_normal                  = "^https?://.+/(videos/)?(?:\\d+/)?[a-z0-9\\-]+(/?|\\.html)$";
-    private static final String  type_mobile                  = "^https?://m\\.[^/]+/\\d+/[a-z0-9\\-]+/$";
+    private static final String  type_normal               = "^https?://.+/(videos/)?(?:\\d+/)?[a-z0-9\\-]+(/?|\\.html)$";
+    private static final String  type_mobile               = "^https?://m\\.[^/]+/\\d+/[a-z0-9\\-]+/$";
     /* E.g. sex3.com, egbo.com */
-    private static final String  type_only_numbers            = "^https?://[^/]+/(?:video/)?\\d+/$";
+    private static final String  type_only_numbers         = "^https?://[^/]+/(?:video/)?\\d+/$";
     /* E.g. myxvids.com */
-    private static final String  type_embedded                = "^https?://(?:www\\.)?[^/]+/embed/\\d+/?$";
+    private static final String  type_embedded             = "^https?://(?:www\\.)?[^/]+/embed/\\d+/?$";
 
     /* Special types */
-    private static final String  type_special_hotamateurs_xxx = "^https?://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/$";
-    private static final String  type_special_alotporn_com    = "^http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/";
-    private static final String  type_special_faplust_com     = "^https?://(?:www\\.)?faplust\\.com/watch/\\d+/$";
+    private static final String  type_special_alotporn_com = "^http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/";
 
-    private String               dllink                       = null;
-    private boolean              isDownload                   = false;                                                                                                                                          ;
+    private String               dllink                    = null;
+    private boolean              isDownload                = false;                                                                                                                                          ;
 
     @Override
     public String getAGBLink() {
@@ -137,11 +135,6 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             if (filename == null) {
                 filename = regexStandardTitleWithHost(host);
             }
-        } else if (downloadLink.getDownloadURL().matches(type_special_faplust_com)) {
-            filename_url = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?").getMatch(0);
-            filename = br.getRegex("<h1 class=\"heading__title\">([^<>\"]*?)</h1>").getMatch(0);
-        } else if (downloadLink.getDownloadURL().matches(type_special_hotamateurs_xxx)) {
-            filename_url = new Regex(br.getURL(), "/\\d+\\-([a-z0-9\\-]+)/$").getMatch(0);
         } else if (downloadLink.getDownloadURL().matches(type_only_numbers)) {
             filename_url = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?").getMatch(0);
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -197,6 +190,14 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 /* Many websites in general use this format - title plus their own hostname as ending. */
                 filename = regexStandardTitleWithHost(host);
             }
+            if (filename_url == null) {
+                /* Last chance fallback: auto-url-filename */
+                String url_part = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0);
+                url_part = url_part.replace(".html", "");
+                url_part = url_part.replace(".htm", "");
+                url_part = url_part.replace("/", "_");
+                filename_url = url_part;
+            }
 
         }
         /* Make the url-filenames look a bit better by using spaces instead of '-'. */
@@ -222,8 +223,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         * 
-         * 
+         *
+         *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);

@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
@@ -81,6 +83,13 @@ public class PbsOrg extends PluginForHost {
                         /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
                         vid = br.getRegex("startVideo\\(\\'(\\d+)\\'").getMatch(0);
                     }
+                    if (vid == null) {
+                        /*
+                         * 2016-04-12: Example url for this case:
+                         * http://www.pbs.org/wnet/gperf/tony-bennett-lady-gaga-cheek-cheek-live-full-episode/3574/
+                         */
+                        vid = br.getRegex("class=\"wnetvid_videoid\">(\\d+)<").getMatch(0);
+                    }
                 }
                 if (vid != null) {
                     /* Single video */
@@ -121,7 +130,7 @@ public class PbsOrg extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else {
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getDownloadURL().replace("directhttp://", ""));
             vid = br.getRegex("mediaid:\\s*?\\'(\\d+)\\'").getMatch(0);
             if (vid == null) {
                 /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
@@ -144,25 +153,15 @@ public class PbsOrg extends PluginForHost {
         /* These Headers are not necessarily needed! */
         br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Referer", "http://video.pbs.org/video/" + vid + "/");
-        br.getPage("http://video.pbs.org/videoInfo/" + vid + "/?callback=video_info&format=jsonp&type=portal&_=" + System.currentTimeMillis());
+        br.getPage("http://player.pbs.org/viralplayer/" + vid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("^video_info\\((.+)\\)$").getMatch(0);
-        if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-        final String description = (String) entries.get("description");
-        final String title = (String) entries.get("title");
+        String title = br.getRegex("\\'title\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        if (description != null && link.getComment() == null) {
-            link.setComment(description);
-        }
+        title = Encoding.unescape(title);
         link.setName(title + ".mp4");
         return AvailableStatus.TRUE;
     }
@@ -170,37 +169,61 @@ public class PbsOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "recommended_encoding/url");
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage(dllink);
-        if (this.br.getHttpConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is unavailable in your region");
-        }
-        final String[] qualities = br.getRegex("([^/\n]*?\\-hls\\-\\d+k\\.m3u8)").getColumn(0);
-        if (qualities == null || qualities.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = br.getURL();
-        /* Find the highest bitrate & download */
-        String final_downloadlink = null;
-        long bitrate_max = 0;
-        for (final String hls_url_part : qualities) {
-            final String bitrate_str = new Regex(hls_url_part, "hls\\-(\\d+)k").getMatch(0);
-            final long bitrate_tmp = Long.parseLong(bitrate_str);
-            if (bitrate_tmp > bitrate_max) {
-                bitrate_max = bitrate_tmp;
-                final_downloadlink = dllink.substring(0, dllink.lastIndexOf("/")) + "/" + hls_url_part;
+        this.br.setFollowRedirects(false);
+        String url_http = null;
+        String url_hls_base = null;
+        final String[] urls = this.br.getRegex("\\'url\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(https?://urs\\.pbs\\.org/redirect/[^<>\"\\']+)\\'").getColumn(0);
+        if (urls != null) {
+            for (final String url : urls) {
+                try {
+                    this.br.getPage(url);
+                    final String redirect = this.br.getRedirectLocation();
+                    if (redirect == null) {
+                        continue;
+                    }
+                    if (redirect.contains(".m3u8") && url_hls_base == null) {
+                        url_hls_base = redirect;
+                    } else if (url_http == null) {
+                        url_http = redirect;
+                    }
+
+                } catch (final Throwable e) {
+                }
             }
         }
-        if (final_downloadlink == null) {
-            /* This is nearly impossible */
+        if (url_http == null && url_hls_base == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, final_downloadlink);
-        dl.startDownload();
+        this.br.setFollowRedirects(true);
+        /* TODO: Check which of both versions has the higher quality and prefer that. */
+        /* TODO: Make sure that the errorhandling for GEO-blocked content is working fine! */
+        if (url_http != null && !true) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            br.getPage(url_hls_base);
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url_hls = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl.startDownload();
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

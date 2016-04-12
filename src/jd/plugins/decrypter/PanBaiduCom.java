@@ -35,14 +35,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?dir.+)?|https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(?:.*?&dir=.+|#dir/path=%.+)";
+    // http://pan.baidu.com/share/link?shareid=995082325&uk=3711793720#dir/path=%2FLove+Live%21_CDs&linkpassword=eus6
+    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/.+(.+\\&dir=.+|#dir/path=%.+)";
     private static final String TYPE_FOLDER_GENERAL                   = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#dir/path=%2F.+))";
     private static final String TYPE_FOLDER_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
@@ -58,6 +59,11 @@ public class PanBaiduCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
+        /* Extract password from url in case the url came from this decrypter before. */
+        link_password = new Regex(parameter, "\\&linkpassword=([^<>\"\\&=]+)").getMatch(0);
+        if (link_password != null) {
+            link_password = Encoding.htmlDecode(link_password);
+        }
         if (!parameter.matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED) && !parameter.matches(TYPE_FOLDER_SHORT)) {
             /* Correct invalid "view" linktypes - we need one general linkformat! */
             final String replace_part = new Regex(parameter, "(baidu\\.com/share/[a-z]+)").getMatch(0);
@@ -92,9 +98,12 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
             final String linkpart = new Regex(parameter, "(pan\\.baidu\\.com/.+)").getMatch(0);
             for (int i = 1; i <= 3; i++) {
-                link_password = getUserInput("Password for " + linkpart + "?", param);
-                br.postPage("http://pan.baidu.com/share/verify?" + "channel=chunlei&clienttype=0&web=1&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "vcode=&pwd=" + Encoding.urlEncode(link_password));
+                if (link_password == null) {
+                    link_password = getUserInput("Password for " + linkpart + "?", param);
+                }
+                br.postPage("http://pan.baidu.com/share/verify?" + "channel=chunlei&clienttype=0&web=1&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + Encoding.urlEncode(link_password));
                 if (!br.containsHTML("\"errno\":0")) {
+                    link_password = null;
                     continue;
                 }
                 break;
@@ -127,7 +136,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         String dirName = null;
         boolean is_subfolder = false;
         // Jump into folder or get content of the main link
-        if (parameter.matches(TYPE_FOLDER_SUBFOLDER)) {
+        if (param.toString().matches(TYPE_FOLDER_SUBFOLDER)) {
             dirName = new Regex(parameter, "(?:dir/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
             dir = "%2F" + dirName;
             is_subfolder = true;
@@ -217,6 +226,13 @@ public class PanBaiduCom extends PluginForDecrypt {
                         subdir_link = parameter + "%2F" + subdir_name;
                     } else {
                         subdir_link = parameter + "#dir/path=%2F" + subdir_name;
+                    }
+                    if (link_password != null) {
+                        /*
+                         * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password
+                         * again for each subfolder :)
+                         */
+                        subdir_link += "&linkpassword=" + Encoding.urlEncode(link_password);
                     }
                     dl = createDownloadlink(subdir_link);
                 } else {

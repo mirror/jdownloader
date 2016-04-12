@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //All links come from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidudecrypted\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" }, flags = { 0 })
 public class PanBaiduCom extends PluginForHost {
 
     public PanBaiduCom(PluginWrapper wrapper) {
