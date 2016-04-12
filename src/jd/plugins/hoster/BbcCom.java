@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -77,7 +78,7 @@ public class BbcCom extends PluginForHost {
         for (final String mediasingle : media) {
             final String[] connections = new Regex(mediasingle, "(<connection.*?)/>").getColumn(0);
             if (connections == null || connections.length == 0) {
-                /* Ehatever - skip such a case */
+                /* Whatever - skip such a case */
                 continue;
             }
             /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
@@ -146,8 +147,12 @@ public class BbcCom extends PluginForHost {
             }
             String rtmpurl = "rtmp://" + this.rtmp_host + "/" + this.rtmp_app;
             /* authString is needed in some cases */
-            if (rtmp_authString != null) {
+            if (this.rtmp_authString != null) {
+                this.rtmp_authString = Encoding.htmlDecode(this.rtmp_authString);
                 rtmpurl += "?" + this.rtmp_authString;
+                if (rtmp_app.equals("ondemand")) {
+                    rtmp_app += "?auth=" + this.rtmp_authString;
+                }
             }
             try {
                 dl = new RTMPDownload(this, downloadLink, rtmpurl);

@@ -103,9 +103,18 @@ public class TwitterCom extends PluginForHost {
             dllink = link.getDownloadURL();
             if (dllink.contains("jpg") || dllink.contains("png")) {
                 try {
-                    con = br.openHeadConnection(dllink.replace(":large", "") + ":orig");
+                    final String dllink_temp;
+                    if (dllink.contains(":large")) {
+                        dllink_temp = dllink.replace(":large", "") + ":orig";
+                    } else if (dllink.lastIndexOf(":") < 8 && dllink.matches(".+\\.(jpg|jpeg|png)$")) {
+                        /* Append this to get the highest quality possible */
+                        dllink_temp = dllink + ":orig";
+                    } else {
+                        dllink_temp = dllink;
+                    }
+                    con = br.openHeadConnection(dllink_temp);
                     if (!con.getContentType().contains("html")) {
-                        dllink = dllink.replace(":large", "") + ":orig";
+                        dllink = dllink_temp;
                     }
                 } finally {
                     con.disconnect();
