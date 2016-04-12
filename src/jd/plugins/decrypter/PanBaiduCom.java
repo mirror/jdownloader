@@ -42,7 +42,6 @@ public class PanBaiduCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // http://pan.baidu.com/share/link?shareid=995082325&uk=3711793720#dir/path=%2FLove+Live%21_CDs&linkpassword=eus6
     private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/.+(.+\\&dir=.+|#dir/path=%.+)";
     private static final String TYPE_FOLDER_GENERAL                   = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#dir/path=%2F.+))";
     private static final String TYPE_FOLDER_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
