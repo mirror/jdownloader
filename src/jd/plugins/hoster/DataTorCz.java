@@ -153,11 +153,11 @@ public class DataTorCz extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private AvailableStatus requestFileInformationWeb(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
+        prepBRWebsite(this.br);
         br.getPage(downloadLink.getDownloadURL());
-        // offline
-        if (br.getURL().endsWith("datator.cz/404.html")) {
+        if (br.getURL().endsWith("datator.cz/404.html") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
@@ -174,6 +174,12 @@ public class DataTorCz extends PluginForHost {
         }
         // In case the link redirects to the finallink
         return AvailableStatus.TRUE;
+    }
+
+    private Browser prepBRWebsite(final Browser br) {
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(410);
+        return br;
     }
 
     private final String getHash(final Account account) throws Exception {
