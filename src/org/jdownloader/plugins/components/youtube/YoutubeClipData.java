@@ -7,9 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
+import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.decrypter.YoutubeHelper;
 
 public class YoutubeClipData {
 
@@ -34,7 +35,7 @@ public class YoutubeClipData {
     public YoutubeITAG                               bestVideoItag;
     public String                                    description;
     public Map<YoutubeITAG, List<YoutubeStreamData>> streams;
-    public ArrayList<YoutubeSubtitleInfo>            subtitles;
+    public ArrayList<YoutubeSubtitleStorable>        subtitles;
     public HashMap<String, String>                   keywords3D;
     public HashSet<String>                           keywords;
     public String                                    approxThreedLayout;
@@ -93,7 +94,7 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, channelID);
         thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
         thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
-
+        thislink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
         thislink.getTempProperties().setProperty(YoutubeHelper.YT_FULL_STREAM_INFOS, this);
     }
 

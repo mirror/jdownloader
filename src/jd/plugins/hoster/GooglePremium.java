@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import org.appwork.exceptions.WTFException;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -10,8 +11,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
-//import jd.plugins.components.GoogleHelper;
-import jd.plugins.components.GoogleHelper;
 
 @HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "google.com (Recaptcha)" }, urls = { "google://.+" }, flags = { 2 })
 public class GooglePremium extends PluginForHost {

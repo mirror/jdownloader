@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.google;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -30,6 +30,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
 
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;

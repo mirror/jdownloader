@@ -4182,8 +4182,20 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Explanation of the available tags:" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags();
 
-    @Default(lngs = { "en" }, values = { "Customized Filename" })
-    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern();
+    @Default(lngs = { "en" }, values = { "Filename for Video files" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video();
+
+    @Default(lngs = { "en" }, values = { "Filename for 3D-Video files" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video3D();
+
+    @Default(lngs = { "en" }, values = { "Filename for Audio files" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_audio();
+
+    @Default(lngs = { "en" }, values = { "Filename for Image files" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_image();
+
+    @Default(lngs = { "en" }, values = { "Filename for Subtitle files" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_subtitle();
 
     @Default(lngs = { "en" }, values = { "Filename & Packagename" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header();
@@ -4297,8 +4309,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Media Type: Video,3DVideo,Audio,Subtitles,..." })
     String YoutubeHelper_getDescription_group();
 
-    @Default(lngs = { "en" }, values = { "VariantID. e.g. 'mp4_128kbit_aac'" })
-    String YoutubeHelper_getDescription_variantid();
+    @Default(lngs = { "en" }, values = { "Variant. e.g. *v[name]->'480p 30fps Mp4 Video' v[id]->'DEMUX_AAC_HLS_MP4_H264_360P_30FPS_AAC_128KBIT' " })
+    String YoutubeHelper_getDescription_variantid2();
 
     @Default(lngs = { "en" }, values = { "Variant tag. e.g. '1080p'" })
     String YoutubeHelper_getDescription_quality();
@@ -4342,19 +4354,19 @@ public interface GuiTranslation extends TranslateInterface {
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern();
 
     @Default(lngs = { "en" }, values = { "Audio" })
-    String YoutubeVariantInterface_getLabel_audio();
+    String YoutubeBasicVariant_getLabel_audio();
 
     @Default(lngs = { "en" }, values = { "Video" })
-    String YoutubeVariantInterface_getLabel_video();
+    String YoutubeBasicVariant_getLabel_video();
 
     @Default(lngs = { "en" }, values = { "3D-Video" })
-    String YoutubeVariantInterface_getLabel_video3d();
+    String YoutubeBasicVariant_getLabel_video3d();
 
     @Default(lngs = { "en" }, values = { "Images" })
-    String YoutubeVariantInterface_getLabel_image();
+    String YoutubeBasicVariant_getLabel_image();
 
     @Default(lngs = { "en" }, values = { "Subtitles" })
-    String YoutubeVariantInterface_getLabel_subtitles();
+    String YoutubeBasicVariant_getLabel_subtitles();
 
     @Default(lngs = { "en" }, values = { "Add additional Variant" })
     String YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add();
@@ -5953,7 +5965,7 @@ public interface GuiTranslation extends TranslateInterface {
     String action_myjdownloader_menu();
 
     @Default(lngs = { "en" }, values = { "Video Description" })
-    String YoutubeVariantInterface_getLabel_description();
+    String YoutubeBasicVariant_getLabel_description();
 
     @Default(lngs = { "en" }, values = { "Please add as much information as possible. If you want us to answer, please add your email address as well." })
     String DonateFeedback_reportFailed_title_message_email();
@@ -6161,4 +6173,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "%s1 %s2 %s3-Audio" })
     String YoutubeVariant_name_generic_video3(String res, String fps, String audio);
+
+    @Default(lngs = { "en" }, values = { "Subtitle language. *lng*->EN *lng[display]* -> English" })
+    String YoutubeHelper_getDescription_language();
+
+    @Default(lngs = { "en" }, values = { "Stream name/id *itag[audio]*->DASH_AUDIO_128K_AAC *itag[audioid]*->140" })
+    String YoutubeHelper_getDescription_itag();
 }

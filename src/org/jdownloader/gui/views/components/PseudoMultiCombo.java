@@ -6,6 +6,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -32,7 +33,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
     private List<Type>      values        = new ArrayList<Type>();
     private boolean         popDown       = true;
 
-    public PseudoMultiCombo(Type[] values) {
+    public PseudoMultiCombo(List<Type> values) {
         super();
         this.addActionListener(new ActionListener() {
 
@@ -53,18 +54,24 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
     }
 
-    public void setValues(Type[] values) {
+    public PseudoMultiCombo(Type[] values) {
+        this(Arrays.asList(values));
+
+    }
+
+    public void setValues(List<Type> values) {
         this.values.clear();
 
-        // int width = 0;
         for (Type v : values) {
             this.values.add(v);
-            // setText(getLabel(v));
-            // setIcon(getIcon(v));
-            // width = Math.max(width, getPreferredSize().width);
+
         }
-        // setPreferredSize(new Dimension(width, 24));
+
         updateLabel();
+    }
+
+    public void setValues(Type[] values) {
+        setValues(Arrays.asList(values));
     }
 
     public List<Type> getValues() {

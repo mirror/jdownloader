@@ -1,5 +1,7 @@
 package org.jdownloader.plugins.components.youtube;
 
+import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
+
 public class YoutubeStreamData {
 
     private YoutubeClipData clip;

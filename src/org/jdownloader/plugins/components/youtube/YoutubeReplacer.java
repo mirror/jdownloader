@@ -27,9 +27,12 @@ public abstract class YoutubeReplacer {
         this.tags = tags;
     }
 
-    public String replace(String name, YoutubeHelperInterface helper, DownloadLink link) {
+    public String replace(String name, YoutubeHelper helper, DownloadLink link) {
         for (final String tag : tags) {
-            String usedTag = new Regex(name, "\\*" + tag + "[^\\*]*\\*").getMatch(-1);
+            String usedTag = new Regex(name, "\\*" + tag + "\\*").getMatch(-1);
+            if (usedTag == null) {
+                usedTag = new Regex(name, "\\*" + tag + "\\[[^\\]]*\\]" + "\\*").getMatch(-1);
+            }
             if (usedTag == null) {
                 continue;
             }
@@ -79,7 +82,7 @@ public abstract class YoutubeReplacer {
         return name;
     }
 
-    abstract protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod);
+    abstract protected String getValue(DownloadLink link, YoutubeHelper helper, String mod);
 
     public boolean isExtendedRequired() {
         return false;

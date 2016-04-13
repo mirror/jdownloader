@@ -1,4 +1,4 @@
-package jd.plugins.decrypter;
+package org.jdownloader.plugins.components.youtube;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +40,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
@@ -55,25 +55,24 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.youtube.AudioCodec;
-import org.jdownloader.plugins.components.youtube.ItagHelper;
-import org.jdownloader.plugins.components.youtube.VideoCodec;
-import org.jdownloader.plugins.components.youtube.VideoContainer;
-import org.jdownloader.plugins.components.youtube.VideoFrameRate;
-import org.jdownloader.plugins.components.youtube.YoutubeClipData;
-import org.jdownloader.plugins.components.youtube.YoutubeCustomConvertVariant;
-import org.jdownloader.plugins.components.youtube.YoutubeCustomVariantStorable;
-import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
-import org.jdownloader.plugins.components.youtube.YoutubeHelperInterface;
-import org.jdownloader.plugins.components.youtube.YoutubeITAG;
-import org.jdownloader.plugins.components.youtube.YoutubeReplacer;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.components.youtube.YoutubeReplacer.DataSource;
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
-import org.jdownloader.plugins.components.youtube.YoutubeSubtitleInfo;
-import org.jdownloader.plugins.components.youtube.YoutubeVariant;
-import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface;
-import org.jdownloader.plugins.components.youtube.YoutubeVariantInterface.VariantGroup;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
+import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
+import org.jdownloader.plugins.components.youtube.itag.VideoContainer;
+import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
+import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
+import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
+import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
+import org.jdownloader.plugins.components.youtube.variants.VariantBase;
+import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
+import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
+import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
+import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.w3c.dom.Attr;
@@ -105,19 +104,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
-import jd.plugins.components.GoogleHelper;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
-import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
-public class YoutubeHelper implements YoutubeHelperInterface {
-    private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
-
-    private static final String REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
-
-    private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP       = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
-
+public class YoutubeHelper {
     static {
-        final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        final YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
         VideoFrameRate.FPS_60.setRating(cfg.getRating60Fps() / 100d);
         VideoContainer.MP4.setRating(cfg.getRatingContainerMP4() / 10d);
         VideoContainer.WEBM.setRating(cfg.getRatingContainerWEBM() / 10d);
@@ -132,20 +122,34 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9.setRating(vp9);
         VideoCodec.VP9_BETTER_PROFILE_1.setRating(vp9 + 1);
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
+        String filepattern = cfg.getFilenamePattern();
+        if (filepattern != null && !"*videoname* (*quality*).*ext*".equals(filepattern)) {
+            // convert old format
+            cfg.setVideoFilenamePattern(filepattern);
+            cfg.setAudioFilenamePattern(filepattern);
+            cfg.setVideo3DFilenamePattern(filepattern);
+            cfg.setFilenamePattern(null);
+        }
 
     }
 
-    public static final String PAID_VIDEO        = "Paid Video:";
+    private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP       = "\"dashmpd\"\\s*:\\s*(\".*?\")";
 
-    public static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
+    private static final String REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
 
-    public static final String YT_DURATION       = "YT_DURATION";
+    private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP       = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
 
-    public static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
+    public static final String  PAID_VIDEO                              = "Paid Video:";
 
-    public static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
+    public static final String  YT_CHANNEL_ID                           = "YT_CHANNEL_ID";
 
-    private Browser            br;
+    public static final String  YT_DURATION                             = "YT_DURATION";
+
+    public static final String  YT_DATE_UPDATE                          = "YT_DATE_UPDATE";
+
+    public static final String  YT_GOOGLE_PLUS_ID                       = "YT_GOOGLE_PLUS_ID";
+
+    private Browser             br;
 
     public Browser getBr() {
         return br;
@@ -155,32 +159,32 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.br = br;
     }
 
-    private final YoutubeConfig           cfg;
+    private final YoutubeConfig         cfg;
 
-    private final LogInterface            logger;
-    private String                        base;
-    private List<YoutubeVariantInterface> variants;
+    private final LogInterface          logger;
+    private String                      base;
+                                        // private List<YoutubeBasicVariant> variants;
 
-    public List<YoutubeVariantInterface> getVariants() {
-        return variants;
-    }
+    // public List<YoutubeBasicVariant> getVariants() {
+    // return variants;
+    // }
 
-    private Map<String, YoutubeVariantInterface> variantsMap;
+    // private Map<String, YoutubeBasicVariant> variantsMap;
 
-    // public Map<String, YoutubeVariantInterface> getVariantsMap() {
+    // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
 
-    public static LogSource                      LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static List<YoutubeReplacer>          REPLACER = new ArrayList<YoutubeReplacer>();
+    public static LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
 
     static {
-        REPLACER.add(new YoutubeReplacer("group") {
+        REPLACER.add(new YoutubeReplacer("GROUP") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-                YoutubeVariantInterface variant = helper.getVariantById(var);
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+
+                AbstractVariant variant = AbstractVariant.get(link);
                 try {
                     return variant.getGroup().getLabel();
                 } catch (Throwable e) {
@@ -197,12 +201,24 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         });
 
-        REPLACER.add(new YoutubeReplacer("itagaudio") {
+        REPLACER.add(new YoutubeReplacer("ITAG") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+
                 try {
-                    return "" + YoutubeVariant.valueOf(link.getStringProperty(YoutubeHelper.YT_VARIANT, "")).getiTagAudio().getITAG();
+                    if ("audio".equalsIgnoreCase(mod)) {
+
+                        return variant.getiTagAudio().name();
+                    } else if ("audioID".equalsIgnoreCase(mod)) {
+                        return variant.getiTagAudio().getITAG() + "";
+                    } else if ("video".equalsIgnoreCase(mod)) {
+                        return variant.getiTagVideo().name();
+                    } else if ("videoID".equalsIgnoreCase(mod)) {
+                        return variant.getiTagVideo().getITAG() + "";
+                    }
+
                 } catch (Throwable e) {
                 }
                 return "";
@@ -210,57 +226,45 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return "Itag Audio";
+                return _GUI.T.YoutubeHelper_getDescription_itag();
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("itagvideo") {
+
+        REPLACER.add(new YoutubeReplacer("VARIANT", "V") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                try {
-                    return "" + YoutubeVariant.valueOf(link.getStringProperty(YoutubeHelper.YT_VARIANT, "")).getiTagVideo().getITAG();
-                } catch (Throwable e) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                if ("name".equalsIgnoreCase(mod)) {
+                    return AbstractVariant.get(link)._getName(link);
+                } else {
+                    return AbstractVariant.get(link)._getUniqueId();
                 }
-                return "";
+
             }
 
             @Override
             public String getDescription() {
-                return "Itag Video";
+                return _GUI.T.YoutubeHelper_getDescription_variantid2();
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("variant") {
-
-            @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                return link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-            }
-
-            @Override
-            public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_variantid();
-            }
-
-        });
-        REPLACER.add(new YoutubeReplacer("quality") {
+        REPLACER.add(new YoutubeReplacer("QUALITY") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_quality();
             }
 
             @Override
-            public String replace(String name, YoutubeHelperInterface helper, DownloadLink link) {
+            public String replace(String name, YoutubeHelper helper, DownloadLink link) {
                 return super.replace(name, helper, link);
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-                YoutubeVariantInterface variant = helper.getVariantById(var);
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
                 try {
-                    return variant.getQualityExtension(link);
+                    return variant.getFileNameQualityTag();
                 } catch (Throwable e) {
                     // old variant
                     LOGGER.log(e);
@@ -269,43 +273,28 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("videoid", "id") {
+        REPLACER.add(new YoutubeReplacer("VIDEOID", "ID") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_id();
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_ID, "");
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("width") {
-            @Override
-            public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_width();
-            }
 
-            @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                YoutubeFinalLinkResource r = link.getObjectProperty(YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-                if (r != null && r.getWidth() > 0) {
-                    return r.getWidth() + "";
-                }
-                return "";
-            }
-
-        });
-        REPLACER.add(new YoutubeReplacer("threeD") {
+        REPLACER.add(new YoutubeReplacer("THREED", "3D") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_3d();
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                YoutubeVariantInterface variant = helper.getVariantById(link.getStringProperty(YT_VARIANT));
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
                 if (variant != null) {
                     if (variant.getGroup() == VariantGroup.VIDEO_3D) {
                         return "3D";
@@ -316,20 +305,20 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("fps") {
+        REPLACER.add(new YoutubeReplacer("FPS") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_fps();
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                YoutubeVariantInterface variant = helper.getVariantById(link.getStringProperty(YT_VARIANT));
-                if (variant != null && variant instanceof YoutubeVariant) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+                if (variant != null && variant instanceof VideoVariant) {
 
-                    VideoFrameRate fps = ((YoutubeVariant) variant).getFrameRate(link);
-                    if (fps != null) {
-                        return fps.getLabel(link, (YoutubeVariant) variant);
+                    int fps = ((VideoInterface) variant).getVideoFrameRate();
+                    if (fps > 0) {
+                        return fps + "";
                     }
 
                 }
@@ -338,52 +327,57 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("height") {
-            @Override
-            public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_height();
-            }
 
-            @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                YoutubeFinalLinkResource r = link.getObjectProperty(YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-                if (r != null && r.getHeight() > 0) {
-                    return r.getHeight() + "";
-                }
-                return "";
-            }
-
-        });
-        REPLACER.add(new YoutubeReplacer("ext", "extension") {
+        REPLACER.add(new YoutubeReplacer("EXT", "EXTENSION") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_extension();
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_EXT, "unknown");
             }
 
         });
 
-        REPLACER.add(new YoutubeReplacer("agegate", "age") {
-
+        REPLACER.add(new YoutubeReplacer("HEIGHT", "H") {
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                return link.getBooleanProperty(YoutubeHelper.YT_AGE_GATE, false) + "";
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_height();
             }
 
             @Override
-            public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_age();
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+                if (variant != null && variant instanceof VideoVariant) {
+                    return ((VideoInterface) variant).getVideoHeight() + "";
+                }
+                return "";
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("username", "user") {
+        REPLACER.add(new YoutubeReplacer("WIDTH", "W") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_width();
+            }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+                if (variant != null && variant instanceof VideoVariant) {
+                    return ((VideoInterface) variant).getVideoWidth() + "";
+                }
+                return "";
+            }
+
+        });
+
+        REPLACER.add(new YoutubeReplacer("USERNAME", "USER") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_USER, "");
             }
 
@@ -393,10 +387,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("channel_id") {
+        REPLACER.add(new YoutubeReplacer("CHANNEL_ID") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_CHANNEL_ID, "");
             }
 
@@ -407,10 +401,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         });
 
-        REPLACER.add(new YoutubeReplacer("googleplus_id") {
+        REPLACER.add(new YoutubeReplacer("GOOGLEPLUS_ID") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, "");
             }
 
@@ -424,10 +418,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("duration") {
+        REPLACER.add(new YoutubeReplacer("DURATION") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 int ms = link.getIntegerProperty(YoutubeHelper.YT_DURATION, -1);
                 if (ms <= 0) {
                     return "";
@@ -447,10 +441,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("channel", "channelname") {
+        REPLACER.add(new YoutubeReplacer("CHANNEL", "CHANNELNAME") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_CHANNEL, "");
             }
 
@@ -461,10 +455,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         });
 
-        REPLACER.add(new YoutubeReplacer("videoname", "title") {
+        REPLACER.add(new YoutubeReplacer("VIDEONAME", "VIDEO_NAME", "TITLE") {
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_TITLE, "");
             }
 
@@ -474,14 +468,14 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("date", "date_time") {
+        REPLACER.add(new YoutubeReplacer("DATE", "DATE_TIME") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_date();
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 // date
 
                 DateFormat formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
@@ -502,38 +496,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        // REPLACER.add(new YoutubeReplacer("date_time") {
-        // @Override
-        // public String getDescription() {
-        // return _GUI.T.YoutubeHelper_getDescription_date_accurate();
-        // }
-        //
-        // public DataSource getDataSource() {
-        // return DataSource.API_VIDEOS;
-        // }
-        //
-        // @Override
-        // protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-        // // date
-        //
-        // DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
-        //
-        // if (StringUtils.isNotEmpty(mod)) {
-        // try {
-        // formatter = new SimpleDateFormat(mod);
-        // } catch (Throwable e) {
-        // LOGGER.log(e);
-        //
-        // }
-        // }
-        // long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
-        // String ret = timestamp > 0 ? formatter.format(timestamp) : "";
-        //
-        // return ret;
-        // }
-        //
-        // });
-        REPLACER.add(new YoutubeReplacer("date_update") {
+
+        REPLACER.add(new YoutubeReplacer("DATE_UDPATE") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_date();
@@ -544,7 +508,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 // date
 
                 DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
@@ -562,7 +526,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("videoCodec") {
+        REPLACER.add(new YoutubeReplacer("VIDEO_CODEC") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_videoCodec();
@@ -573,26 +537,20 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                // date
-                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-                YoutubeVariantInterface variant = helper.getVariantById(var);
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
 
-                try {
-
-                    if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getiTagVideo().getVideoCodec(link).getLabel(link);
+                AbstractVariant variant = AbstractVariant.get(link);
+                if (variant != null && variant instanceof VideoVariant) {
+                    VideoCodec v = ((VideoInterface) variant).getVideoCodec();
+                    if (v != null) {
+                        return v.getLabel(link);
                     }
-                    return "";
-                } catch (Throwable e) {
-                    // old variant
-                    LOGGER.log(e);
-                    return "[INVALID LINK!]";
                 }
+                return "";
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("resolution") {
+        REPLACER.add(new YoutubeReplacer("RESOLUTION") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_resolution();
@@ -603,26 +561,19 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                // date
-                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-                YoutubeVariantInterface variant = helper.getVariantById(var);
-
-                try {
-
-                    if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getiTagVideo().getVideoResolution(link).getLabel(link, (YoutubeVariant) variant);
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+                if (variant != null && variant instanceof VideoVariant) {
+                    VideoResolution v = ((VideoInterface) variant).getVideoResolution();
+                    if (v != null) {
+                        return v.getLabel();
                     }
-                    return "";
-                } catch (Throwable e) {
-                    // old variant
-                    LOGGER.log(e);
-                    return "[INVALID LINK!]";
                 }
+                return "";
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("bestResolution") {
+        REPLACER.add(new YoutubeReplacer("BESTRESOLUTION") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_resolution_best();
@@ -633,12 +584,14 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 // date
                 String var = link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO, "");
-
+                if (var == null) {
+                    return "";
+                }
                 try {
-                    return YoutubeITAG.valueOf(var).getVideoResolution(link).getLabel(link, null);
+                    return YoutubeITAG.valueOf(var).getVideoResolution().getLabel();
 
                 } catch (Throwable e) {
                     // old variant
@@ -648,7 +601,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
         });
-        REPLACER.add(new YoutubeReplacer("audioCodec") {
+        REPLACER.add(new YoutubeReplacer("AUDIO_CODEC") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_audioCodec();
@@ -659,27 +612,53 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                // date
-                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-                YoutubeVariantInterface variant = helper.getVariantById(var);
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
 
-                try {
+                AbstractVariant variant = AbstractVariant.get(link);
 
-                    if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getAudioCodecLabel(link);
+                if (variant != null) {
+                    if (variant instanceof AudioInterface) {
+                        return ((AudioInterface) variant).getAudioCodec().getLabel();
                     }
-                    return "";
-                } catch (Throwable e) {
-                    // old variant
-                    LOGGER.log(e);
-                    return "[INVALID LINK!]";
+
                 }
+
+                return "";
+
             }
 
         });
+        REPLACER.add(new YoutubeReplacer("LNG") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_language();
+            }
 
-        REPLACER.add(new YoutubeReplacer("audioQuality") {
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+
+                if (variant != null) {
+                    if (variant instanceof SubtitleVariant) {
+                        if ("display".equalsIgnoreCase(mod)) {
+                            return ((SubtitleVariant) variant).getGenericInfo()._getLocale().getDisplayLanguage();
+                        } else {
+                            return ((SubtitleVariant) variant).getGenericInfo().getLanguage();
+                        }
+
+                    }
+
+                }
+
+                return "";
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("AUDIO_BITRATE") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_audioQuality();
@@ -690,34 +669,29 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
-                // date
-                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-                YoutubeVariantInterface variant = helper.getVariantById(var);
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
 
-                try {
-
-                    if (variant instanceof YoutubeVariant) {
-                        return ((YoutubeVariant) variant).getAudioBitrateLabel(link);
+                if (variant != null) {
+                    if (variant instanceof AudioInterface) {
+                        return ((AudioInterface) variant).getAudioBitrate().getKbit() + "";
                     }
-                    return "";
-                } catch (Throwable e) {
-                    // old variant
-                    LOGGER.log(e);
-                    return "[INVALID LINK!]";
+
                 }
+
+                return "";
             }
 
         });
 
-        REPLACER.add(new YoutubeReplacer("videonumber") {
+        REPLACER.add(new YoutubeReplacer("VIDEONUMBER") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_videonumber();
             }
 
             @Override
-            protected String getValue(DownloadLink link, YoutubeHelperInterface helper, String mod) {
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
 
                 // playlistnumber
 
@@ -820,34 +794,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         this.cfg = cfg;
 
-        // if (cfg.isPreferHttpsEnabled()) {
         this.base = "https://www.youtube.com";
-        // } else {
-        // this.base = "http://www.youtube.com";
-        // }
-        ArrayList<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
-        HashMap<String, YoutubeVariantInterface> variantsMap = new HashMap<String, YoutubeVariantInterface>();
-        for (YoutubeVariant v : YoutubeVariant.values()) {
-            variants.add(v);
 
-        }
-        ArrayList<YoutubeCustomVariantStorable> list = cfg.getCustomVariants();
-        if (list != null) {
-            for (YoutubeCustomVariantStorable v : list) {
-                try {
-                    variants.add(YoutubeCustomConvertVariant.parse(v));
-                } catch (Throwable e) {
-                    e.printStackTrace();
-
-                }
-            }
-        }
-        // create map
-        for (YoutubeVariantInterface v : variants) {
-            variantsMap.put(v._getUniqueId(), v);
-        }
-        this.variants = Collections.unmodifiableList(variants);
-        this.variantsMap = Collections.unmodifiableMap(variantsMap);
     }
 
     public class StreamMap {
@@ -947,7 +895,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
         while (true) {
             try {
-                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
                 if (result != null) {
@@ -1060,7 +1008,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
         while (true) {
             try {
-                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
                 if (result != null) {
@@ -1343,7 +1291,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         this.vid = vid;
         final Map<YoutubeITAG, List<YoutubeStreamData>> ret = new HashMap<YoutubeITAG, List<YoutubeStreamData>>();
-        final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        final YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
         boolean loggedIn = br.getCookie("https://youtube.com", "LOGIN_INFO") != null;
         this.br.setFollowRedirects(true);
 
@@ -1571,7 +1519,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                         continue;
                     }
                     if (xml.trim().startsWith("#EXTM3U")) {
-                        ArrayList<HlsContainer> containers = GenericM3u8Decrypter.getHlsQualities(clone);
+                        ArrayList<HlsContainer> containers = HlsContainer.getHlsQualities(clone);
                         for (HlsContainer c : containers) {
                             System.out.println(1);
                             String[][] params = new Regex(c.downloadurl, "/([^/]+)/([^/]+)").getMatches();
@@ -1989,7 +1937,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     private void doUserAPIScan() throws IOException {
-        String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern();
+        String checkName = cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getVideo3DFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern() + cfg.getDescriptionFilenamePattern();
 
         boolean extended = false;
         // only load extra page, if we need the properties
@@ -2020,7 +1968,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     public static void main(String[] args) {
-        for (YoutubeVariant tag : YoutubeVariant.values()) {
+        for (VariantBase tag : VariantBase.values()) {
             System.out.println("<li>" + tag.getType() + " : " + tag.name() + "</li>");
         }
     }
@@ -2300,60 +2248,38 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return;
     }
 
-    public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
-    public static final String YT_STATIC_URL         = "YT_STATIC_URL";
+    public static final String  YT_LENGTH_SECONDS      = "YT_LENGTH_SECONDS";
+    public static final String  YT_STATIC_URL          = "YT_STATIC_URL";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
-    public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
-    public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
+    public static final String  YT_STREAMURL_DATA      = "YT_STREAMURL_DATA";
+    public static final String  YT_SUBTITLE_CODE       = "YT_SUBTITLE_CODE";                                // Update YoutubeSubtitleName
+    public static final String  YT_SUBTITLE_CODE_LIST  = "YT_SUBTITLE_CODE_LIST";
 
-    public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
+    public static final String  YT_BEST_VIDEO          = "YT_BEST_VIDEO";
 
-    public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
+    public static final String  YT_DESCRIPTION         = "YT_DESCRIPTION";
 
     // public static final String YT_VARIANT_INFO = "YT_VARIANT_INFO";
 
-    public static final String YT_STREAM_DATA_VIDEO  = "YT_STREAM_DATA_VIDEO";
-    public static final String YT_STREAM_DATA_AUDIO  = "YT_STREAM_DATA_AUDIO";
-    public static final String YT_STREAM_DATA_DATA   = "YT_STREAM_DATA_DATA";
+    public static final String  YT_STREAM_DATA_VIDEO   = "YT_STREAM_DATA_VIDEO";
+    public static final String  YT_STREAM_DATA_AUDIO   = "YT_STREAM_DATA_AUDIO";
+    public static final String  YT_STREAM_DATA_DATA    = "YT_STREAM_DATA_DATA";
+
+    public static final boolean USE_EXTENDED_VARIABLES = CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled();
 
     public String createFilename(DownloadLink link) {
 
-        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        AbstractVariant variant = AbstractVariant.get(link);
 
-        String formattedFilename = null;
-
-        String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-        YoutubeVariantInterface v = getVariantById(var);
-        if (v instanceof org.jdownloader.plugins.components.youtube.SubtitleVariant) {
-            formattedFilename = cfg.getSubtitleFilenamePattern();
-        } else if (v instanceof YoutubeVariant) {
-            switch (((YoutubeVariant) v).getGroup()) {
-            case AUDIO:
-                formattedFilename = cfg.getAudioFilenamePattern();
-                break;
-            case IMAGE:
-                formattedFilename = cfg.getImageFilenamePattern();
-                break;
-            case SUBTITLES:
-                formattedFilename = cfg.getSubtitleFilenamePattern();
-                break;
-            case VIDEO:
-            case VIDEO_3D:
-                formattedFilename = cfg.getVideoFilenamePattern();
-            }
-        }
-        if (StringUtils.isEmpty(formattedFilename)) {
-            formattedFilename = cfg.getFilenamePattern();
-        }
+        String formattedFilename = variant.getFileNamePattern();
         // validate the pattern
-        if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) {
+        if (!formattedFilename.toLowerCase(Locale.ENGLISH).contains("*ext*")) {
             formattedFilename = null;
         }
         if (formattedFilename == null || formattedFilename.equals("")) {
-            formattedFilename = "*videoname**quality**ext*";
+            formattedFilename = "*videoname* (*quality*) *ext*";
         }
 
         formattedFilename = replaceVariables(link, formattedFilename);
@@ -2361,9 +2287,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     public String replaceVariables(DownloadLink link, String formattedFilename) {
-        LogSource logger = LogController.getInstance().getLogger(TbCmV2.class.getName());
-        String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-        YoutubeVariantInterface variant = getVariantById(var);
+        LogInterface logger = LogController.getInstance().getPreviousThreadLogSource();
+        if (logger == null) {
+            logger = Log.DF;
+        }
+        AbstractVariant variant = AbstractVariant.get(link);
         try {
             formattedFilename = variant.modifyFileName(formattedFilename, link);
         } catch (Throwable e) {
@@ -2544,8 +2472,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.br.setProxy(this.br.getThreadProxy());
     }
 
-    private ArrayList<YoutubeSubtitleInfo> loadSubtitles() throws IOException, ParserConfigurationException, SAXException {
-        HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
+    private ArrayList<YoutubeSubtitleStorable> loadSubtitles() throws IOException, ParserConfigurationException, SAXException {
+        HashMap<String, YoutubeSubtitleStorable> urls = new HashMap<String, YoutubeSubtitleStorable>();
 
         for (String ttsUrl : subtitleUrls) {
             String xml = getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);
@@ -2556,7 +2484,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             Document doc = docBuilder.parse(is);
 
             NodeList tracks = doc.getElementsByTagName("track");
-            YoutubeSubtitleInfo defaultLanguage = null;
+            YoutubeSubtitleStorable defaultLanguage = null;
             for (int trackIndex = 0; trackIndex < tracks.getLength(); trackIndex++) {
                 Element track = (Element) tracks.item(trackIndex);
 
@@ -2580,7 +2508,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
                     langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
                 }
-                YoutubeSubtitleInfo old = urls.get(lang);
+                YoutubeSubtitleStorable old = urls.get(lang);
                 if (old != null) {
                     // speech recognition
                     // if ("asr".equalsIgnoreCase(old.getKind())) {
@@ -2589,8 +2517,14 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     // }
                     continue;
                 }
-                YoutubeSubtitleInfo info;
-                urls.put(lang, info = new YoutubeSubtitleInfo(ttsUrl, lang, null, kind));
+                YoutubeSubtitleStorable info;
+                info = new YoutubeSubtitleStorable(ttsUrl, lang, null, kind);
+                if (info._getLocale() == null) {
+                    // unknown language
+                    logger.info("Unknown Subtitle Language: " + JSonStorage.serializeToJson(info));
+                    continue;
+                }
+                urls.put(lang, info);
                 if ("true".equalsIgnoreCase(track.getAttribute("lang_default"))) {
                     defaultLanguage = info;
                 }
@@ -2622,7 +2556,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
                         langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
                     }
-                    YoutubeSubtitleInfo old = urls.get(lang);
+                    YoutubeSubtitleStorable old = urls.get(lang);
                     if (old != null) {
                         // speech recognition
                         // if ("asr".equalsIgnoreCase(old.getKind())) {
@@ -2631,37 +2565,94 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                         // }
                         continue;
                     }
-                    urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, defaultLanguage.getLanguage(), defaultLanguage.getKind()));
+
+                    YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(ttsUrl, lang, defaultLanguage.getLanguage(), defaultLanguage.getKind());
+                    if (info._getLocale() == null) {
+                        // unknown language
+                        logger.info("Unknown Subtitle Language: " + JSonStorage.serializeToJson(info));
+                        continue;
+                    }
+                    urls.put(lang, info);
                     // System.out.println("->" + lang);
                 }
             }
         }
-        return new ArrayList<YoutubeSubtitleInfo>(urls.values());
+        return new ArrayList<YoutubeSubtitleStorable>(urls.values());
     }
 
-    public YoutubeVariantInterface getVariantById(String ytv) {
-        YoutubeVariantInterface ret = variantsMap.get(ytv);
-        if (ret == null) {
-            return YoutubeVariant.COMPATIBILITY_MAP.get(ytv);
-        }
-        return ret;
-    }
-
-    public List<YoutubeVariantInterface> getVariantByIds(String... extra) {
-        ArrayList<YoutubeVariantInterface> ret = new ArrayList<YoutubeVariantInterface>();
-        if (extra != null) {
-            for (String s : extra) {
-                YoutubeVariantInterface v = getVariantById(s);
-                if (v != null) {
-                    ret.add(v);
-                }
-            }
-        }
-        return ret;
-    }
+    // public List<YoutubeBasicVariant> getVariantByIds(String... extra) {
+    // ArrayList<YoutubeBasicVariant> ret = new ArrayList<YoutubeBasicVariant>();
+    // if (extra != null) {
+    // for (String s : extra) {
+    // YoutubeBasicVariant v = getVariantById(s);
+    // if (v != null) {
+    // ret.add(v);
+    // }
+    // }
+    // }
+    // return ret;
+    // }
 
     public YoutubeConfig getConfig() {
         return cfg;
+    }
+
+    public static List<BlackOrWhitelistEntry> readExtraList() {
+        YoutubeConfig cf = JsonConfig.create(YoutubeConfig.class);
+        List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
+        List<BlackOrWhitelistEntry> configList = USE_EXTENDED_VARIABLES ? cf.getExtraExtendedVariants() : cf.getExtra();
+        if (configList != null) {
+            for (BlackOrWhitelistEntry obj : configList) {
+                if (obj != null) {
+                    list.add(obj);
+                }
+            }
+        }
+        String[] strList = cf.getExtraVariants();
+        if (strList != null) {
+            for (String b : strList) {
+
+                list.add(new BlackOrWhitelistEntry(b));
+            }
+            cf.setExtra(list);
+            cf.setExtraVariants(null);
+        }
+
+        return list;
+    }
+
+    public static List<BlackOrWhitelistEntry> readBlacklist() {
+        YoutubeConfig cf = JsonConfig.create(YoutubeConfig.class);
+        List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
+        List<BlackOrWhitelistEntry> configList = USE_EXTENDED_VARIABLES ? cf.getBlacklistedExtendedVariants() : cf.getBlacklisted();
+        if (configList != null) {
+            for (BlackOrWhitelistEntry obj : configList) {
+                if (obj != null) {
+                    list.add(obj);
+                }
+            }
+        }
+        String[] strList = cf.getBlacklistedVariants();
+        if (strList != null) {
+            for (String b : strList) {
+
+                list.add(new BlackOrWhitelistEntry(b));
+            }
+            cf.setBlacklisted(list);
+            cf.setBlacklistedVariants(null);
+        }
+
+        return list;
+    }
+
+    public static String createLinkID(String videoID, AbstractVariant variant) {
+        return "youtubev2://" + videoID + "/" + Encoding.urlEncode(variant._getUniqueId());
+    }
+
+    public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {
+        downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, v);
+        downloadLink.setProperty(YoutubeHelper.YT_VARIANT, v.getStorableString());
+        downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getFileExtension());
     }
 
 }

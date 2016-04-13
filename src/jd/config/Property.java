@@ -78,8 +78,11 @@ public class Property implements Serializable {
         if (typeRef.getType().equals(ret.getClass())) {
             return (T) ret;
         }
+        // if (ret instanceof String) {
+        // ret = JSonStorage.restoreFromString((String) ret, typeRef);
+        // } else {
         ret = JSonStorage.convert(ret, typeRef);
-
+        // }
         setProperty(key, ret);
         return (T) ret;
     }
