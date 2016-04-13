@@ -2,6 +2,7 @@ package org.jdownloader.plugins.components.youtube;
 
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
 public class YoutubeFinalLinkResource implements Storable {
     public final static TypeRef<YoutubeFinalLinkResource> TYPE_REF = new TypeRef<YoutubeFinalLinkResource>() {

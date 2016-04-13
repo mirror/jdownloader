@@ -14,17 +14,6 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
-import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
-import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
-import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
-import jd.controlling.reconnect.pluginsinc.speedporthybrid.SpeedPortHybrid;
-import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
-import jd.nutils.io.JDFileFilter;
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
@@ -41,6 +30,18 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
+
+import jd.config.Configuration;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
+import jd.controlling.reconnect.pluginsinc.easybox804.EasyBox804;
+import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
+import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.pluginsinc.speedporthybrid.SpeedPortHybrid;
+import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
+import jd.nutils.io.JDFileFilter;
+import jd.utils.JDUtilities;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
@@ -311,6 +312,7 @@ public class ReconnectPluginController {
             plugins.add(new UPNPRouterPlugin());
             plugins.add(new LiveHeaderReconnect());
             plugins.add(new SpeedPortHybrid());
+            plugins.add(new EasyBox804());
             final java.util.List<URL> urls = new ArrayList<URL>();
             if (files != null) {
                 final int length = files.length;

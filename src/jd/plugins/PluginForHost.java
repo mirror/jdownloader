@@ -43,33 +43,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -136,12 +110,40 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.SleepPluginProgress;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
+
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
@@ -153,14 +155,13 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[] PATTERNS       = new Pattern[] {
 
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+            /**
+             * these patterns should split filename and fileextension (extension must include the point)
+             */
+            // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin         lazyP          = null;
     /**
@@ -239,6 +240,11 @@ public abstract class PluginForHost extends Plugin {
     @Deprecated
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
+        final ClassLoader cl = getClass().getClassLoader();
+        if (!(cl instanceof PluginClassLoaderChild)) {
+            //
+            throw new WTFException(this + " got loaded by non PluginClassLoaderChild!");
+        }
         /* defaultPlugin does not need any Browser instance */
         br = null;
         dl = null;

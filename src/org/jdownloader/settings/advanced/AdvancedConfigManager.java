@@ -138,7 +138,11 @@ public class AdvancedConfigManager {
             final String ifName = hplg.getConfigInterface();
             if (StringUtils.isNotEmpty(ifName)) {
                 try {
-                    final ConfigInterface cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
+
+                    Class<ConfigInterface> configInterface = (Class<ConfigInterface>) pluginClassLoader.loadClass(ifName);
+                    final ClassLoader cl = configInterface.getClassLoader();
+                    final ConfigInterface cf = cl instanceof PluginClassLoaderChild ? PluginJsonConfig.get(configInterface) : JsonConfig.create(configInterface);
+
                     HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
                     for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
                         if (map.containsKey(m)) {

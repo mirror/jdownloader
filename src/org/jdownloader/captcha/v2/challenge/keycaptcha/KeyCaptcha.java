@@ -24,7 +24,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.ThrowingRunnable;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.utils.JDUtilities;
 
 import org.appwork.exceptions.WTFException;
@@ -375,14 +375,14 @@ public class KeyCaptcha {
             final ScriptEngine engine = manager.getEngineByName("javascript");
             return engine;
         } catch (Throwable e) {
-            throw new WTFException("Could not load DummyScriptEnginePlugin", e);
+            throw new WTFException("Could not load org.jdownloader.scripting.JavaScriptEngineFactory", e);
         }
     }
 
     private String evalGHS(String arg0, String arg1) throws Exception {
         try {
             final ScriptEngine engine = getScriptEngine();
-            DummyScriptEnginePlugin.runTrusted(new ThrowingRunnable<ScriptException>() {
+            JavaScriptEngineFactory.runTrusted(new ThrowingRunnable<ScriptException>() {
 
                 @Override
                 public void run() throws ScriptException {

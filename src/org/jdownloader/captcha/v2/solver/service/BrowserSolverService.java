@@ -18,7 +18,6 @@ import javax.swing.JLabel;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.plugins.components.GoogleHelper;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -44,6 +43,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 
 public class BrowserSolverService extends AbstractSolverService {
 
