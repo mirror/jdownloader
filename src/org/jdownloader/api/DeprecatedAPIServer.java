@@ -256,7 +256,9 @@ public class DeprecatedAPIServer extends HttpServer {
                 final X509Certificate cert = certGen.generate(keyPair.getPrivate());
                 apiCert = new APICert(keyPair, cert, subjects);
                 for (final String subject : subjects) {
-                    APICERTS.put(subject, apiCert);
+                    if (!APICERTS.containsKey(subject)) {
+                        APICERTS.put(subject, apiCert);
+                    }
                 }
                 final List<CertStorable> certStorables = new ArrayList<CertStorable>();
                 for (final APICert toStorable : new HashSet<APICert>(APICERTS.values())) {

@@ -840,6 +840,9 @@ public class Uploadedto extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             postPage(br, baseURL + "io/ticket/slot/" + getID(downloadLink), "");
             if (!br.containsHTML("\\{succ:true\\}")) {
+                if (br.containsHTML("File not found")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
