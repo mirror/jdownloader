@@ -17,9 +17,10 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,7 +34,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://(www\\.)?(video\\.pbs\\.org/video/\\d+|pbs\\.org/.+)" }, flags = { 3 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://video\\.pbs\\.org/video/\\d+|https?://(?:www\\.)?pbs\\.org/.+|https?://player\\.pbs\\.org/[a-z]+/\\d+" }, flags = { 3 })
 public class PbsOrg extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -46,16 +47,17 @@ public class PbsOrg extends PluginForHost {
         return "http://www.pbs.org/about/policies/terms-of-use/";
     }
 
-    private static final String           TYPE_VIDEO = "https?://(www\\.)?video\\.pbs\\.org/video/\\d+";
-    private static final String           TYPE_OTHER = "https?://(www\\.)?pbs\\.org/.+";
-
-    private LinkedHashMap<String, Object> entries    = null;
+    /* Thx to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/pbs.py */
+    /* According to the youtube-dl plugin they have a lof of other TV stations / websites - consider adding them in the future .... */
+    private final String TYPE_VIDEO = "https?://video\\.pbs\\.org/video/\\d+.*?|https?://player\\.pbs\\.org/[a-z]+/\\d+.*?|https?://(?:www\\.)?pbs\\.org/video/\\d+.*?";
+    private final String TYPE_OTHER = "https?://(www\\.)?pbs\\.org/.+";
 
     /* Decrypter */
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
         ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        prepBR(this.br);
         try {
             if (ret != null && ret.size() > 0) {
                 /*
@@ -64,7 +66,7 @@ public class PbsOrg extends PluginForHost {
                 String vid = null;
                 final DownloadLink link = ret.get(0);
                 if (link.getDownloadURL().matches(TYPE_VIDEO)) {
-                    vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+                    vid = new Regex(link.getDownloadURL(), "^.+/(\\d+)").getMatch(0);
                 } else {
                     br.getPage(link.getDownloadURL());
                     vid = br.getRegex("mediaid:\\s*?\\'(\\d+)\\'").getMatch(0);
@@ -73,11 +75,6 @@ public class PbsOrg extends PluginForHost {
                         vid = br.getRegex("class=\"watch\\-full\\-now\" onclick=\"startVideo\\(\\'(\\d+)'").getMatch(0);
                     }
                     if (vid == null) {
-                        /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
-                        vid = br.getRegex("class=\"vid\\-link\" onclick=\"startVideo\\(\\'(\\d+)\\'").getMatch(0);
-                    }
-                    if (vid == null) {
-                        /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
                         vid = br.getRegex("startVideo\\(\\'(\\d+)\\'").getMatch(0);
                     }
                     if (vid == null) {
@@ -90,7 +87,7 @@ public class PbsOrg extends PluginForHost {
                 }
                 if (vid != null) {
                     /* Single video */
-                    final String videourl = "http://video.pbs.org/video/" + vid;
+                    final String videourl = "http://www.pbs.org/video/" + vid;
                     final DownloadLink fina = new DownloadLink(this, null, getHost(), videourl, true);
                     ret.add(fina);
                     return ret;
@@ -99,17 +96,13 @@ public class PbsOrg extends PluginForHost {
                 final String[] videoids = br.getRegex("data\\-mediaid=\"(\\d+)\"").getColumn(0);
                 if (videoids != null && videoids.length > 0) {
                     for (final String videoid : videoids) {
-                        final String videourl = "http://video.pbs.org/video/" + videoid;
+                        final String videourl = "http://www.pbs.org/video/" + videoid;
                         final DownloadLink fina = new DownloadLink(this, null, getHost(), videourl, true);
                         fina.setContentUrl(videourl);
                         ret.add(fina);
                     }
                 } else {
-                    /* Whatever the user added - it doesn't seem to be a video --> Offline */
-                    final DownloadLink offline = new DownloadLink(this, null, getHost(), "directhttp://" + link.getDownloadURL(), true);
-                    offline.setAvailable(false);
-                    offline.setProperty("OFFLINE", true);
-                    ret.add(offline);
+                    /* Whatever the user added - it doesn't seem to be a video or contain a video --> Don't add it */
                 }
             }
         } catch (final Throwable e) {
@@ -118,11 +111,23 @@ public class PbsOrg extends PluginForHost {
         return ret;
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    private Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 101, 404, 410 });
+        /* This cookie is needed for some videos */
+        br.setCookie("player.pbs.org", "pbsol.station", "WMPN");
+        // br.setCookie("player.pbs.org", "pbsol.common.name", "MPB");
+        // br.setCookie("player.pbs.org", "pbskids.localized", "WMPN");
+        /* E.g. full string 'z%3D39232%23t%3Db%23s%3D%5B%22WMPN%22%2C%22WRLK%22%5D%23st%3DMS%23co%3DUS' */
+        // br.setCookie("player.pbs.org", "pbsol.sta_extended", "%23co%3DUS");
+        return br;
+    }
+
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        prepBR(this.br);
         String vid;
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -147,16 +152,16 @@ public class PbsOrg extends PluginForHost {
             }
         }
         link.setLinkID(vid);
-        /* These Headers are not necessarily needed! */
-        br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://player.pbs.org/viralplayer/" + vid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("\\'title\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
-        if (title == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            title = vid + "_" + title;
+        } else {
+            /* Fallback to url-filename */
+            title = vid;
         }
         title = Encoding.unescape(title);
         link.setName(title + ".mp4");
@@ -167,6 +172,9 @@ public class PbsOrg extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         this.br.setFollowRedirects(false);
+        /* Might come handy in the future */
+        // final String embedType = this.br.getRegex("embedType[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
+        /* Find available streaming formats/protocols */
         String url_http = null;
         String url_hls_base = null;
         final String[] urls = this.br.getRegex("\\'url\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(https?://urs\\.pbs\\.org/redirect/[^<>\"\\']+)\\'").getColumn(0);
@@ -196,6 +204,7 @@ public class PbsOrg extends PluginForHost {
         if (url_hls_base != null) {
             /* Prefer hls as video- and audio bitrate is higher and also the resolution. */
             br.getPage(url_hls_base);
+            handleResponsecodeErrors(this.br.getHttpConnection());
             final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -207,11 +216,7 @@ public class PbsOrg extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url_http, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
+                handleResponsecodeErrors(dl.getConnection());
                 br.followConnection();
                 try {
                     dl.getConnection().disconnect();
@@ -220,6 +225,31 @@ public class PbsOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
+        }
+    }
+
+    private void handleResponsecodeErrors(final URLConnectionAdapter con) throws PluginException {
+        if (con == null) {
+            return;
+        }
+        final int responsecode = con.getResponseCode();
+        switch (responsecode) {
+        case 101:
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error 101 We're sorry, but this video is not yet available.'", 1 * 60 * 60 * 1000l);
+        case 403:
+            /* 'We're sorry, but this video is not available in your region due to right restrictions.' */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This content is GEO-blocked in your country", 3 * 60 * 60 * 1000l);
+        case 404:
+            /*
+             * 'We are experiencing technical difficulties that are preventing us from playing the video at this time. Please check back
+             * again soon.'
+             */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error 404 'We are experiencing technical difficulties that are preventing us from playing the video at this time. Please check back again soon.'", 30 * 60 * 1000l);
+        case 410:
+            /* 'This video has expired and is no longer available for online streaming.' */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        default:
+            break;
         }
     }
 
