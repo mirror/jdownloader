@@ -2,6 +2,7 @@ package org.jdownloader.container;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -25,17 +26,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.updatev2.UpdateController;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
 import jd.config.SubConfiguration;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -55,10 +45,21 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.UpdateController;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 public class D extends PluginsC {
 
-    private byte[] b3;
-    private byte[] d;
+    private byte[]                  b3;
+    private byte[]                  d;
 
     private HashMap<String, String> header;
 
@@ -83,7 +84,13 @@ public class D extends PluginsC {
         ContainerStatus cs = new ContainerStatus(d);
         cs.setStatus(ContainerStatus.STATUS_FAILED);
 
-        String a = b(d).trim();
+        String a = null;
+        try {
+            a = b(d).trim();
+        } catch (final IOException e) {
+            logger.log(e);
+            return cs;
+        }
         // try {
         // if (a.trim().startsWith("<dlc>")) return e(d);
         // } catch (Exception e) {
@@ -356,23 +363,28 @@ public class D extends PluginsC {
         return "JD-DLC-Team";
     }
 
-    private String b(File fu) {
-        BufferedReader f;
-        StringBuffer bf = new StringBuffer();
+    private String b(File fu) throws IOException {
+        FileReader fr = null;
         try {
-            f = new BufferedReader(new FileReader(fu));
-
-            String line;
-
+            if (!fu.exists()) {
+                throw new FileNotFoundException(fu.getPath());
+            } else if (fu.length() == 0) {
+                throw new IOException("Empty file: " + fu.getPath());
+            }
+            fr = new FileReader(fu);
+            final BufferedReader f = new BufferedReader(fr);
+            final StringBuffer bf = new StringBuffer();
+            String line = null;
             while ((line = f.readLine()) != null) {
                 bf.append(line + "\r\n");
             }
             f.close();
             return bf.toString();
-        } catch (IOException e) {
-            logger.log(e);
+        } finally {
+            if (fr != null) {
+                fr.close();
+            }
         }
-        return "";
     }
 
     private String cs(URL s9, String bin) throws Exception {
