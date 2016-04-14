@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,6 +42,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/([a-z]{1,2}[_-][a-f0-9]{16}.*|go\\-[a-f0-9]{128}/)", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
@@ -455,52 +459,68 @@ public class Srnnks extends PluginForDecrypt {
                             forms = this.br.getForms();
                             // suche die downloadlinks
                             final ArrayList<String> actions = new ArrayList<String>();
+                            Form cnlForm = null;
                             for (final Form frm : forms) {
                                 if (frm.getAction().contains("download.serienjunkies.org") && !frm.getAction().contains("firstload") && !frm.getAction().equals("http://mirror.serienjunkies.org")) {
                                     actions.add(frm.getAction());
                                 }
-                            }
-                            // es wurden keine Links gefunden also wurde das Captcha falsch eingegeben
-                            if (actions.size() == 0) {
-                                progress.setStatus(10);
-                                // progress.setStatusText("Captcha code falsch");
-                                try {
-                                    invalidateLastChallengeResponse();
-                                } catch (final Throwable e) {
+                                if (frm.getAction().contains("addcrypted2")) {
+                                    cnlForm = frm;
                                 }
-                                continue;
+                            }
+                            if (cnlForm != null && cnlForm.hasInputFieldByName("crypted") && cnlForm.hasInputFieldByName("jk")) {
+                                final HashMap<String, String> infos = new HashMap<String, String>();
+                                infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
+                                infos.put("jk", Encoding.urlDecode(cnlForm.getInputField("jk").getValue(), false));
+                                final String source = cnlForm.getInputField("source").getValue();
+                                if (StringUtils.isEmpty(source)) {
+                                    infos.put("source", parameter.toString());
+                                } else {
+                                    infos.put("source", source);
+                                }
+                                final String json = JSonStorage.toString(infos);
+                                final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                                ret.add(dl);
                             } else {
-                                try {
-                                    validateLastChallengeResponse();
-                                } catch (final Throwable e) {
-                                }
-                            }
-                            // we need the 300 ms gap between two requests..
-                            progress.setRange(10 + actions.size());
-                            progress.setStatus(10);
-                            synchronized (Srnnks.GLOBAL_LOCK) {
-                                for (int d = 0; d < actions.size(); d++) {
+                                // es wurden keine Links gefunden also wurde das Captcha falsch eingegeben
+                                if (actions.size() == 0) {
+                                    progress.setStatus(10);
+                                    // progress.setStatusText("Captcha code falsch");
                                     try {
-                                        if (isAbort()) {
-                                            return new ArrayList<DownloadLink>(ret);
-                                        }
+                                        invalidateLastChallengeResponse();
                                     } catch (final Throwable e) {
-                                        /* not available in old 09581 stable */
                                     }
-                                    this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).run();
-                                    progress.increase(1);
+                                    continue;
+                                } else {
+                                    try {
+                                        validateLastChallengeResponse();
+                                    } catch (final Throwable e) {
+                                    }
+                                }
+                                // we need the 300 ms gap between two requests..
+                                progress.setRange(10 + actions.size());
+                                progress.setStatus(10);
+                                synchronized (Srnnks.GLOBAL_LOCK) {
+                                    for (int d = 0; d < actions.size(); d++) {
+                                        try {
+                                            if (isAbort()) {
+                                                return new ArrayList<DownloadLink>(ret);
+                                            }
+                                        } catch (final Throwable e) {
+                                            /* not available in old 09581 stable */
+                                        }
+                                        this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).run();
+                                        progress.increase(1);
+                                    }
                                 }
                             }
-
                             // wenn keine links drinnen sind ist bestimmt was mit dem captcha schief gegangen einfach nochmal versuchen
                             if (ret.size() != 0) {
                                 return ret;
                             }
                         }
-
                     }
                     return new ArrayList<DownloadLink>(ret);
-
                 } catch (final Exception e) {
                     throw e;
                 } finally {
