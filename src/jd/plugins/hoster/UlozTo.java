@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[a-zA-Z0-9]+/.+", "http://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[a-zA-Z0-9]+/(?!\\s+).+", "http://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
 
     private boolean              passwordProtected            = false;
@@ -67,12 +67,12 @@ public class UlozTo extends PluginForHost {
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
-        this.enablePremium("http://www.ulozto.net/kredit");
+        this.enablePremium("http://www.uloz.to/kredit");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
         // ulozto.net = the english version of the site
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz)", "ulozto.net"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
     }
 
     @Override
@@ -298,7 +298,12 @@ public class UlozTo extends PluginForHost {
                         if (br2.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
                             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
                         }
-                        br.clearCookies("http://www.ulozto.net/");
+                        if (br2.containsHTML("\"errors\":\\[\"Chyba při ověření uživatele, zkus to znovu")) {
+                            // Error in user authentication, try again
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+                        br.clearCookies("//ulozto.net/");
+                        br.clearCookies("//uloz.to/");
                         handleDownloadUrl(downloadLink);
                         continue;
                     }
