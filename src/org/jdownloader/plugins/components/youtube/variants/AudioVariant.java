@@ -41,7 +41,7 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         if (StringUtils.equalsIgnoreCase(getBaseVariant().getFileExtension(), "m4a")) {
             return AudioCodec.M4A;
         }
-        return getiTagAudio().getAudioCodec();
+        return getiTagAudioOrVideoItagEquivalent().getAudioCodec();
     }
 
     private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
@@ -67,12 +67,12 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     @Override
     public AudioCodec getAudioCodec() {
-        return getiTagAudio().getAudioCodec();
+        return getiTagAudioOrVideoItagEquivalent().getAudioCodec();
     }
 
     @Override
     public AudioBitrate getAudioBitrate() {
-        return getiTagAudio().getAudioBitrate();
+        return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
     }
 
     @Override

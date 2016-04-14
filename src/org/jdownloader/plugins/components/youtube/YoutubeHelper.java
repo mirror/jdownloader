@@ -210,9 +210,9 @@ public class YoutubeHelper {
                 try {
                     if ("audio".equalsIgnoreCase(mod)) {
 
-                        return variant.getiTagAudio().name();
+                        return variant.getiTagAudioOrVideoItagEquivalent().name();
                     } else if ("audioID".equalsIgnoreCase(mod)) {
-                        return variant.getiTagAudio().getITAG() + "";
+                        return variant.getiTagAudioOrVideoItagEquivalent().getITAG() + "";
                     } else if ("video".equalsIgnoreCase(mod)) {
                         return variant.getiTagVideo().name();
                     } else if ("videoID".equalsIgnoreCase(mod)) {

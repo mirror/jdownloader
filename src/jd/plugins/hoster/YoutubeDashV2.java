@@ -415,7 +415,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                 throw firstException;
                             }
                         }
-                        if (urls != null && urls.getAudioStreams() != null) {
+                        if (variant.getiTagAudioOrVideoItagEquivalent() != variant.getiTagVideo() && urls != null && urls.getAudioStreams() != null) {
                             PluginException firstException = null;
 
                             for (YoutubeStreamData si : urls.getAudioStreams()) {
@@ -699,7 +699,8 @@ public class YoutubeDashV2 extends PluginForHost {
             }
             return null;
         }
-        VariantInfo vi = new VariantInfo(variant, clipData.streams.get(variant.getiTagAudio()), clipData.streams.get(variant.getiTagVideo()), clipData.streams.get(variant.getiTagData()));
+
+        VariantInfo vi = new VariantInfo(variant, clipData.streams.get(variant.getBaseVariant().getiTagAudio()), clipData.streams.get(variant.getiTagVideo()), clipData.streams.get(variant.getiTagData()));
         // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, vi);
         return vi;
     }

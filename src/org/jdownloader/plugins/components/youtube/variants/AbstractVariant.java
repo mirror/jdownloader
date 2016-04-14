@@ -139,7 +139,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         return baseVariant.getiTagVideo();
     }
 
-    public YoutubeITAG getiTagAudio() {
+    public YoutubeITAG getiTagAudioOrVideoItagEquivalent() {
         if (baseVariant.getiTagAudio() != null) {
             return baseVariant.getiTagAudio();
         }

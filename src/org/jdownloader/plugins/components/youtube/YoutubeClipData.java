@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
@@ -44,6 +45,49 @@ public class YoutubeClipData {
         this(videoID, -1);
     }
 
+    /**
+     * Checks the keywords and guesses if this is a sbs or hou 3d video, but not declared as 3d by youtube
+     *
+     * @return
+     */
+    public boolean guessSBSorHOU3D() {
+        if (keywords != null) {
+
+            StringBuilder sb = new StringBuilder();
+            for (String s : keywords) {
+                sb.append(" ").append(s.toLowerCase(Locale.ENGLISH));
+
+            }
+            if (title != null) {
+                sb.append(" ").append(title.toLowerCase(Locale.ENGLISH));
+            }
+            if (description != null) {
+                sb.append(" ").append(description.toLowerCase(Locale.ENGLISH));
+            }
+
+            String str = sb.toString();
+            if (str.contains("3d")) {
+                if (str.contains("sbs")) {
+                    return true;
+                }
+                if (str.contains("side") && str.contains("by")) {
+                    return true;
+                }
+                if (str.contains(" ou")) {
+                    return true;
+                }
+                if (str.contains("hou")) {
+                    return true;
+                }
+                if (str.contains("cardboard")) {
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
+
     public boolean is3D() {
         // from yt player js
         if ("1".equals(approxThreedLayout)) {
@@ -52,6 +96,26 @@ public class YoutubeClipData {
         if (keywords != null) {
             if (keywords.contains("3D")) {
                 return true;
+            }
+            StringBuilder sb = new StringBuilder();
+            for (String s : keywords) {
+                sb.append(" ").append(s.toLowerCase(Locale.ENGLISH));
+
+            }
+            String str = sb.toString();
+            if (str.contains("3d")) {
+                if (str.contains("sbs")) {
+                    return true;
+                }
+                if (str.contains("side") && str.contains("by")) {
+                    return true;
+                }
+                if (str.contains(" ou")) {
+                    return true;
+                }
+                if (str.contains("hou")) {
+                    return true;
+                }
             }
 
         }

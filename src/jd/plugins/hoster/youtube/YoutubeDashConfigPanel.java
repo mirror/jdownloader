@@ -92,7 +92,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             if (YoutubeHelper.USE_EXTENDED_VARIABLES && popup) {
                 return sc._getExtendedName(this);
             }
-            return sc.getiTagAudio().getAudioBitrate().getKbit() + "kbit/s " + sc.getAudioContainer().getLabel();
+            return sc.getiTagAudioOrVideoItagEquivalent().getAudioBitrate().getKbit() + "kbit/s " + sc.getAudioContainer().getLabel();
         }
     }
 

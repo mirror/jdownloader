@@ -1,10 +1,10 @@
 package jd.plugins.components;
 
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
-public interface UsenetConfigInterface extends ConfigInterface {
+public interface UsenetConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Usenet Server address NOTE: host port and ssl must be a valid combination")
     String getHost();

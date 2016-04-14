@@ -20,6 +20,7 @@ import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.jdserv.stats.StatsManagerConfigV2;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -139,9 +140,7 @@ public class AdvancedConfigManager {
             if (StringUtils.isNotEmpty(ifName)) {
                 try {
 
-                    Class<ConfigInterface> configInterface = (Class<ConfigInterface>) pluginClassLoader.loadClass(ifName);
-                    final ClassLoader cl = configInterface.getClassLoader();
-                    final ConfigInterface cf = cl instanceof PluginClassLoaderChild ? PluginJsonConfig.get(configInterface) : JsonConfig.create(configInterface);
+                    final PluginConfigInterface cf = PluginJsonConfig.get((Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
 
                     HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
                     for (KeyHandler m : cf._getStorageHandler().getMap().values()) {

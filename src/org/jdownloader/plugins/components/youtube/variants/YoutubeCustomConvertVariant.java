@@ -108,7 +108,7 @@ public class YoutubeCustomConvertVariant extends AbstractVariant<GenericCustomVa
     }
 
     @Override
-    public YoutubeITAG getiTagAudio() {
+    public YoutubeITAG getiTagAudioOrVideoItagEquivalent() {
         return source.getiTagAudio();
     }
 

@@ -64,7 +64,7 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         if (StringUtils.equalsIgnoreCase(getBaseVariant().getFileExtension(), "m4a")) {
             return AudioCodec.M4A;
         }
-        return getiTagAudio().getAudioCodec();
+        return getiTagAudioOrVideoItagEquivalent().getAudioCodec();
     }
 
     @Override
@@ -79,6 +79,12 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         }
         if (getBaseVariant().name().contains("_3D")) {
             getGenericInfo().setThreeD(true);
+        }
+        if (!getGenericInfo().isThreeD()) {
+            if (vid.guessSBSorHOU3D()) {
+                // not declared as 3d by google, but guessed from keywords
+                getGenericInfo().setThreeD(true);
+            }
         }
 
         if (video != null) {
@@ -172,11 +178,11 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     }
 
     public AudioCodec getAudioCodec() {
-        return getiTagAudio().getAudioCodec();
+        return getiTagAudioOrVideoItagEquivalent().getAudioCodec();
     }
 
     public AudioBitrate getAudioBitrate() {
-        return getiTagAudio().getAudioBitrate();
+        return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
     }
 
     @Override

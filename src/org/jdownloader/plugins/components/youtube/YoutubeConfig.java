@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.CustomStorageName;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
@@ -13,10 +14,14 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.jdownloader.plugins.components.youtube.keepForCompatibilitye.YoutubeCompatibility;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeCustomVariantStorable;
 import org.jdownloader.translate._JDT;
 
+@CustomStorageName("youtube/Youtube")
 public interface YoutubeConfig extends ConfigInterface {
+    static Object NOTHING = YoutubeCompatibility.moveJSonFiles("youtube/Youtube");
+
     @DefaultBooleanValue(false)
     @AboutConfig
     boolean isAndroidSupportEnabled();

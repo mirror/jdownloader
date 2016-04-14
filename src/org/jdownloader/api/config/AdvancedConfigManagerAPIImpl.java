@@ -32,6 +32,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable.AbstractType;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -314,7 +315,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                     if (StringUtils.equals(ifName, interfaceName)) {
                         ConfigInterface cf;
                         try {
-                            cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
+                            cf = PluginJsonConfig.get((Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
                             storageHandler = cf._getStorageHandler();
                             break;
 
