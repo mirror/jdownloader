@@ -114,6 +114,10 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
     }
 
     public String _getUniqueId() {
+        if (language == null) {
+            return null;
+        }
+
         String ret = "&lng=" + encode(language);
         if (StringUtils.isNotEmpty(sourceLanguage)) {
             ret += "&src=" + encode(sourceLanguage);
