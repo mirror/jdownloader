@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
@@ -167,7 +168,8 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof AbstractVariant) {
-            return _getUniqueId().equals(((AbstractVariant) obj)._getUniqueId());
+
+            return StringUtils.equals(_getUniqueId(), ((AbstractVariant) obj)._getUniqueId());
         }
         return false;
     }
@@ -230,6 +232,8 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                     ((SubtitleVariant) ret).getGenericInfo().setSourceLanguage(q.get("src"));
                     ((SubtitleVariant) ret).getGenericInfo().setKind(q.get("kind"));
                     downloadLink.removeProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+                    YoutubeHelper.writeVariantToDownloadLink(downloadLink, ret);
+
                 } catch (Throwable e) {
                     Log.log(e);
                 }

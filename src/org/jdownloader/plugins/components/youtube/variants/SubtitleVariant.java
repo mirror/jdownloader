@@ -93,9 +93,9 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
         }
 
         if (sb.length() == 0) {
-            return _GUI.T.YoutubeDash_getName_subtitles_(getGenericInfo()._getLocale().getDisplayName());
+            return _GUI.T.YoutubeDash_getName_subtitles_(getGenericInfo()._getLocale() == null ? getGenericInfo().getLanguage() : getGenericInfo()._getLocale().getDisplayName());
         } else {
-            return _GUI.T.YoutubeDash_getName_subtitles_annotated(getGenericInfo()._getLocale().getDisplayName(), sb.toString());
+            return _GUI.T.YoutubeDash_getName_subtitles_annotated(getGenericInfo()._getLocale() == null ? getGenericInfo().getLanguage() : getGenericInfo()._getLocale().getDisplayName(), sb.toString());
         }
     }
 
