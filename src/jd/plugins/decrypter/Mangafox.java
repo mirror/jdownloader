@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -42,8 +43,6 @@ public class Mangafox extends PluginForDecrypt {
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
-        // Access chapter one
-        url = url.replaceAll("(c00\\d+)$", "c001");
         br.getPage(url + "/1.html");
 
         if (br.containsHTML("cannot be found|not available yet")) {
@@ -62,21 +61,16 @@ public class Mangafox extends PluginForDecrypt {
         }
         title = Encoding.htmlDecode(title.trim());
 
-        // We get the number of pages in the chapter
-        String format = "%02d";
         int numberOfPages = Integer.parseInt(br.getRegex("of (\\d+)").getMatch(0));
-        if (numberOfPages > 0) {
-            format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
-        }
+        final DecimalFormat df_page = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         // We load each page and retrieve the URL of the picture
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         int skippedPics = 0;
         for (int i = 1; i <= numberOfPages; i++) {
             if (i != 1) {
-                br.getPage(url + "/" + i + ".html");
+                br.getPage(i + ".html");
             }
-            String pageNumber = String.format(format, i);
             final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(http://[^\"]+(\\.[a-z]+))\"").getRow(0);
             if (unformattedSource == null || unformattedSource.length == 0) {
                 skippedPics++;
@@ -89,7 +83,7 @@ public class Mangafox extends PluginForDecrypt {
             String source = unformattedSource[0];
             String extension = unformattedSource[1];
             final DownloadLink link = createDownloadlink("directhttp://" + source);
-            link.setFinalFileName(title + " – page " + pageNumber + extension);
+            link.setFinalFileName(title + " – page " + df_page.format(i) + extension);
             fp.add(link);
             distribute(link);
             decryptedLinks.add(link);
