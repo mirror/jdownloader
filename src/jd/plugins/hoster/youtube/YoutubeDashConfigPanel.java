@@ -9,7 +9,6 @@ import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
@@ -31,6 +30,7 @@ import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
@@ -206,7 +206,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     }
 
     public YoutubeDashConfigPanel(String description) {
-        cf = JsonConfig.create(YoutubeConfig.class);
+        cf = PluginJsonConfig.get(YoutubeConfig.class);
 
         addStartDescription(description);
 

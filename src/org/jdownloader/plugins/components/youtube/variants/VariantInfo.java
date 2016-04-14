@@ -30,6 +30,31 @@ public class VariantInfo implements Comparable<VariantInfo> {
         return variant.toString();
     }
 
+    public boolean isValid() {
+        if (variant == null) {
+            return false;
+        }
+        if (variant.getBaseVariant() == null) {
+            return false;
+        }
+        if (variant.getBaseVariant().getiTagAudio() != null) {
+            if (audioStream == null || audioStream.size() == 0) {
+                return false;
+            }
+        }
+        if (variant.getBaseVariant().getiTagVideo() != null) {
+            if (videoStream == null || videoStream.size() == 0) {
+                return false;
+            }
+        }
+        if (variant.getBaseVariant().getiTagData() != null) {
+            if (dataStreams == null || dataStreams.size() == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public VariantInfo(AbstractVariant v, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
         this.variant = v;
         this.audioStream = audio;

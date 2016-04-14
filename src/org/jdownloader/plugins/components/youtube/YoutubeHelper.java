@@ -40,7 +40,6 @@ import javax.xml.transform.stream.StreamResult;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
@@ -72,6 +71,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
@@ -107,7 +107,7 @@ import jd.plugins.PluginException;
 
 public class YoutubeHelper {
     static {
-        final YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
+        final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         VideoFrameRate.FPS_60.setRating(cfg.getRating60Fps() / 100d);
         VideoContainer.MP4.setRating(cfg.getRatingContainerMP4() / 10d);
         VideoContainer.WEBM.setRating(cfg.getRatingContainerWEBM() / 10d);
@@ -716,7 +716,7 @@ public class YoutubeHelper {
     public static final String  YT_TITLE                         = "YT_TITLE";
     public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
     public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_AGE_GATE                      = "YT_AGE_GATE";
+
     public static final String  YT_CHANNEL                       = "YT_CHANNEL";
     public static final String  YT_USER                          = "YT_USER";
     public static final String  YT_DATE                          = "YT_DATE";
@@ -1291,7 +1291,7 @@ public class YoutubeHelper {
 
         this.vid = vid;
         final Map<YoutubeITAG, List<YoutubeStreamData>> ret = new HashMap<YoutubeITAG, List<YoutubeStreamData>>();
-        final YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
+        final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         boolean loggedIn = br.getCookie("https://youtube.com", "LOGIN_INFO") != null;
         this.br.setFollowRedirects(true);
 
@@ -2249,12 +2249,14 @@ public class YoutubeHelper {
     }
 
     public static final String  YT_LENGTH_SECONDS      = "YT_LENGTH_SECONDS";
-    public static final String  YT_STATIC_URL          = "YT_STATIC_URL";
+
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
     public static final String  YT_STREAMURL_DATA      = "YT_STREAMURL_DATA";
+    @Deprecated
     public static final String  YT_SUBTITLE_CODE       = "YT_SUBTITLE_CODE";                                // Update YoutubeSubtitleName
+    @Deprecated
     public static final String  YT_SUBTITLE_CODE_LIST  = "YT_SUBTITLE_CODE_LIST";
 
     public static final String  YT_BEST_VIDEO          = "YT_BEST_VIDEO";
@@ -2598,7 +2600,7 @@ public class YoutubeHelper {
     }
 
     public static List<BlackOrWhitelistEntry> readExtraList() {
-        YoutubeConfig cf = JsonConfig.create(YoutubeConfig.class);
+        YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
         List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
         List<BlackOrWhitelistEntry> configList = USE_EXTENDED_VARIABLES ? cf.getExtraExtendedVariants() : cf.getExtra();
         if (configList != null) {
@@ -2622,7 +2624,7 @@ public class YoutubeHelper {
     }
 
     public static List<BlackOrWhitelistEntry> readBlacklist() {
-        YoutubeConfig cf = JsonConfig.create(YoutubeConfig.class);
+        YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
         List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
         List<BlackOrWhitelistEntry> configList = USE_EXTENDED_VARIABLES ? cf.getBlacklistedExtendedVariants() : cf.getBlacklisted();
         if (configList != null) {

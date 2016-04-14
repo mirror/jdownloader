@@ -130,7 +130,7 @@ public class YoutubeClipData {
                 return true;
             }
         }
-        return false;
+        return guessSBSorHOU3D();
     }
 
     @Override
@@ -148,7 +148,6 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_TITLE, title);
         thislink.setProperty(YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
 
-        thislink.setProperty(YoutubeHelper.YT_AGE_GATE, ageCheck);
         thislink.setProperty(YoutubeHelper.YT_CHANNEL, channel);
         thislink.setProperty(YoutubeHelper.YT_USER, user);
         thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.name());
@@ -160,6 +159,26 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
         thislink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
         thislink.getTempProperties().setProperty(YoutubeHelper.YT_FULL_STREAM_INFOS, this);
+    }
+
+    public List<YoutubeStreamData> getStreams(YoutubeITAG itag) {
+        if (itag == null) {
+            return null;
+        }
+        List<YoutubeStreamData> ret = streams.get(itag);
+        if (ret == null) {
+            // check alternatives
+            List<YoutubeITAG> alternatives = YoutubeITAG.getTagList(itag.getITAG());
+            if (alternatives != null) {
+                for (YoutubeITAG tag : alternatives) {
+                    ret = streams.get(tag);
+                    if (ret != null) {
+                        break;
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
 }

@@ -6,7 +6,6 @@ import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -17,6 +16,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericAudioInfo;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements AudioInterface {
 
@@ -77,7 +77,7 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     @Override
     public String getFileNamePattern() {
-        return JsonConfig.create(YoutubeConfig.class).getAudioFilenamePattern();
+        return PluginJsonConfig.get(YoutubeConfig.class).getAudioFilenamePattern();
     }
 
 }

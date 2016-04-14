@@ -6,7 +6,6 @@ import java.util.List;
 
 import javax.swing.Icon;
 
-import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
@@ -14,6 +13,7 @@ import org.jdownloader.plugins.components.youtube.converter.YoutubeConverter;
 import org.jdownloader.plugins.components.youtube.converter.YoutubeExternConverter;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericCustomVariantInfo;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -181,7 +181,7 @@ public class YoutubeCustomConvertVariant extends AbstractVariant<GenericCustomVa
 
     @Override
     public String getFileNamePattern() {
-        return JsonConfig.create(YoutubeConfig.class).getAudioFilenamePattern();
+        return PluginJsonConfig.get(YoutubeConfig.class).getAudioFilenamePattern();
     }
 
 }

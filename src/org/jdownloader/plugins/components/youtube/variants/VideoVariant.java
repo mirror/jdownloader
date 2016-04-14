@@ -6,7 +6,6 @@ import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
@@ -22,6 +21,7 @@ import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoContainer;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericVideoInfo;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements VideoInterface, AudioInterface {
     public VideoVariant(VariantBase base) {
@@ -71,20 +71,12 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
 
         if (vid != null && vid.is3D()) {
-            if (getiTagVideo().getVideoContainer() != VideoContainer.MP4) {
-                // youtube does not use mp4 3d videos right now.
-                getGenericInfo().setThreeD(true);
-            }
+            //
+            getGenericInfo().setThreeD(true);
 
         }
         if (getBaseVariant().name().contains("_3D")) {
             getGenericInfo().setThreeD(true);
-        }
-        if (!getGenericInfo().isThreeD()) {
-            if (vid.guessSBSorHOU3D()) {
-                // not declared as 3d by google, but guessed from keywords
-                getGenericInfo().setThreeD(true);
-            }
         }
 
         if (video != null) {
@@ -158,9 +150,9 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     @Override
     public String getFileNamePattern() {
         if (getGroup() == VariantGroup.VIDEO_3D) {
-            return JsonConfig.create(YoutubeConfig.class).getVideo3DFilenamePattern();
+            return PluginJsonConfig.get(YoutubeConfig.class).getVideo3DFilenamePattern();
         }
-        return JsonConfig.create(YoutubeConfig.class).getVideoFilenamePattern();
+        return PluginJsonConfig.get(YoutubeConfig.class).getVideoFilenamePattern();
     }
 
     @Override

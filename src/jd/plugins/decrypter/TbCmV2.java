@@ -30,7 +30,6 @@ import java.util.Map.Entry;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -60,6 +59,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -93,14 +93,7 @@ public class TbCmV2 extends PluginForDecrypt {
      */
     static String getBase() {
 
-        // YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
-        // boolean prefers = cfg.isPreferHttpsEnabled();
-        //
-        // if (prefers) {
         return "https://www.youtube.com";
-        // } else {
-        // return "http://www.youtube.com";
-        // }
 
     }
 
@@ -147,7 +140,8 @@ public class TbCmV2 extends PluginForDecrypt {
     private AbstractVariant requestedVariant;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        cfg = JsonConfig.create(YoutubeConfig.class);
+
+        cfg = PluginJsonConfig.get(YoutubeConfig.class);
         String cryptedLink = param.getCryptedUrl();
         if (StringUtils.containsIgnoreCase(cryptedLink, "yt.not.allowed")) {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -1060,7 +1054,7 @@ public class TbCmV2 extends PluginForDecrypt {
     private YoutubeHelper getCachedHelper() {
         YoutubeHelper ret = cachedHelper;
         if (ret == null || ret.getBr() != this.br) {
-            ret = new YoutubeHelper(br, JsonConfig.create(YoutubeConfig.class), getLogger());
+            ret = new YoutubeHelper(br, PluginJsonConfig.get(YoutubeConfig.class), getLogger());
 
         }
         ret.setupProxy();

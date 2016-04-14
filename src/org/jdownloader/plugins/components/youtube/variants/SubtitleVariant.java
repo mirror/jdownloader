@@ -1,17 +1,19 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     // public String getCustomName(Object caller) {
@@ -39,6 +41,18 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     }
 
     @Override
+    public String _getExtendedName(Object caller) {
+        String ret = "SUBTITLE " + (getGenericInfo()._getLocale() == null ? getGenericInfo().getLanguage() : getGenericInfo()._getLocale().getDisplayName(Locale.ENGLISH));
+        if (StringUtils.isNotEmpty(getGenericInfo().getKind())) {
+            ret += ", Kind " + getGenericInfo().getKind();
+        }
+        if (StringUtils.isNotEmpty(getGenericInfo().getSourceLanguage())) {
+            ret += ", Source " + getGenericInfo().getSourceLanguage();
+        }
+        return ret;
+    }
+
+    @Override
     public void setJson(String jsonString) {
         setGenericInfo(JSonStorage.restoreFromString(jsonString, YoutubeSubtitleStorable.TYPE));
     }
@@ -61,7 +75,7 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
 
     @Override
     public String getFileNamePattern() {
-        return JsonConfig.create(YoutubeConfig.class).getSubtitleFilenamePattern();
+        return PluginJsonConfig.get(YoutubeConfig.class).getSubtitleFilenamePattern();
     }
 
     @Override
