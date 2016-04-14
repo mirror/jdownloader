@@ -255,6 +255,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private void api_decrypt_All() throws Exception {
         final ArrayList<String> temp_telecastIDs = new ArrayList<String>();
         int offset = 0;
+        /* API does not tell us the total number of telecastIDs so let's find that out first! */
         while (true) {
             if (this.isAbort()) {
                 decryptAborted = true;
@@ -273,15 +274,18 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
         }
 
-        /* Save on account to display information in account information. */
+        /* Save number of telecastIDs on account to display information in account information. */
         totalLinksNum = temp_telecastIDs.size();
         acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, Integer.toString(totalLinksNum));
         final BigDecimal bd = new BigDecimal((double) totalLinksNum / API_ENTRIES_PER_REQUEST);
         requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
-
+        /* Reset offset as we re-use that variable. */
         offset = 0;
+        /* Finally crawl telecastIDs. */
         int request_num = 1;
+        int added_entries;
         while (true) {
+            added_entries = 0;
             if (this.isAbort()) {
                 decryptAborted = true;
                 throw new DecrypterException("Decrypt aborted!");
@@ -294,7 +298,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 telecastid_post_data += "<a:int>" + temp_telecastIDs.get(offset) + "</a:int>";
                 offset++;
             }
-            logger.info("save.tv: Decrypting request " + request_num + " of " + requestCount);
+            logger.info("Decrypting request " + request_num + " of " + requestCount);
             /* Wait some time or the server migh return response 500 */
             Thread.sleep(waittime_between_crawl_page_requests);
             jd.plugins.hoster.SaveTv.api_doSoapRequestSafe(this.br, acc, "http://tempuri.org/ITelecast/GetTelecastDetail", "<telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\">" + telecastid_post_data + "</telecastIds><detailLevel>2</detailLevel>");
@@ -306,6 +310,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             for (final String entry : entries) {
                 addID_api(entry);
                 foundLinksNum++;
+                added_entries++;
+            }
+            logger.info("Found " + added_entries + " entries in request " + request_num + " of " + requestCount);
+            if (added_entries == 0) {
+                logger.info("Can't find any entries, stopping at request: " + request_num + " of " + requestCount);
+                break;
             }
             if (offset >= totalLinksNum) {
                 logger.info("Seems like decryption is complete --> Stopping!");
@@ -315,7 +325,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     private void site_decrypt_All() throws Exception {
         boolean is_groups_enabled = false;
         boolean groups_enabled_by_user = false;
@@ -335,16 +345,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final BigDecimal bd = new BigDecimal((double) totalLinksNum / SITE_ENTRIES_PER_REQUEST);
         requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
-        int added_entries = 0;
+        int added_entries;
 
         try {
-            for (int i = 1; i <= requestCount; i++) {
+            for (int request_num = 1; request_num <= requestCount; request_num++) {
+                added_entries = 0;
                 if (this.isAbort()) {
                     decryptAborted = true;
                     throw new DecrypterException("Decrypt aborted!");
                 }
 
-                logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
+                logger.info("Decrypting request " + request_num + " of " + requestCount);
 
                 if (is_groups_enabled) {
                     /* Disable stupid groups setting to crawl faster and to make it work anyways */
@@ -352,12 +363,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
                     is_groups_enabled = false;
                 }
-                // getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST +
-                // "&iCurrentPage=" + i);
-                // Thread.sleep(8000l);
-                this.postPageSafe(this.br, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + i + "&iFilterType=1&sSearchString=&iTextSearchType=2&iChannelId=0&iTvCategoryId=0&iTvSubCategoryId=0&bShowNoFollower=false&iRecordingState=1&sSortOrder=StartDateDESC&iTvStationGroupId=0&iRecordAge=0&iDaytime=0");
+                this.postPageSafe(this.br, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&iFilterType=1&sSearchString=&iTextSearchType=2&iChannelId=0&iTvCategoryId=0&iTvSubCategoryId=0&bShowNoFollower=false&iRecordingState=1&sSortOrder=StartDateDESC&iTvStationGroupId=0&iRecordAge=0&iDaytime=0");
 
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
                 final ArrayList<Object> resource_data_list = (ArrayList) entries.get("ARRVIDEOARCHIVEENTRIES");
 
                 for (final Object singleid_information : resource_data_list) {
@@ -366,12 +374,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     foundLinksNum++;
                 }
 
+                logger.info("Found " + added_entries + " entries in request " + request_num + " of " + requestCount);
                 if (added_entries == 0) {
-                    logger.info("save.tv. Can't find entries, stopping at request: " + i + " of " + requestCount);
+                    logger.info("Can't find any entries, stopping at request: " + request_num + " of " + requestCount);
                     break;
                 }
-                logger.info("Found " + added_entries + " entries in request " + i + " of " + requestCount);
-                continue;
             }
         } finally {
             try {

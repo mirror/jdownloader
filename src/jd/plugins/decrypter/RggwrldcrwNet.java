@@ -45,11 +45,19 @@ public class RggwrldcrwNet extends PluginForDecrypt {
         final String parameter = param.toString();
 
         ReggaeWorldCrewNet.login(this.br);
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
+
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
+        /* Needed for decryption */
+        br.setFollowRedirects(false);
 
         // String befoire = br.toString();
         final String title = Encoding.htmlDecode(br.getRegex("<title>(.*?)</title>").getMatch(0));
-        br.setFollowRedirects(false);
         final String keywords = br.getRegex("<meta\\s+name=\"keywords\"\\s+content=\"([^\"]+)").getMatch(0);
         for (String link : keywords.split("\\s*,\\s*")) {
             if (link.startsWith("http") && !link.contains(getHost())) {

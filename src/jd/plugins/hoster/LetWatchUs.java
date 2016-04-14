@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movyo.to", "letwatch.us" }, urls = { "https?://(www\\.)?(?:movyo\\.to)/(embed\\-|video/)[a-z0-9]{12}", "https?://(www\\.)?(?:letwatch\\.us(\\.com)?)/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movyo.to", "letwatch.us" }, urls = { "https?://(?:www\\.)?(?:movyo\\.to)/(embed\\-|video/)[a-z0-9]{12}", "https?://(www\\.)?(?:letwatch\\.us(?:\\.com)?|letwatch\\.to)/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class LetWatchUs extends antiDDoSForHost {
 
     private String                         correctedBR                  = "";
@@ -62,7 +62,7 @@ public class LetWatchUs extends antiDDoSForHost {
     private final String                   NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
     private static final String            DOMAINS                      = "(letwatch\\.us|letwatch\\.us\\.com|movyo\\.to)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode|>Video version not available";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -95,23 +95,34 @@ public class LetWatchUs extends antiDDoSForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
-    // mods: getDllink[Added a new RegEx], file name and size
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("movyo.to".equals(getHost())) {
+            if (host == null || "movyo.to".equals(host)) {
+                return "letwatch.us";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/").replace("letwatch.us.com/", "letwatch.us/"));
-        /* link cleanup, but respect users protocol choosing or forced protocol */
-        if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
-        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+        final String protocol;
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
         }
+        link.setUrlDownload("http://" + NICE_HOST + "/" + fid);
     }
 
     @Override
@@ -190,7 +201,13 @@ public class LetWatchUs extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
+        if (inValidate(fileInfo[0])) {
+            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
+            logger.info("Failed to find filename, trying getFnameViaAbuseLink");
+            /* Be aware that this filename could be truncated! */
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        }
+        if (inValidate(fileInfo[0])) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -203,8 +220,8 @@ public class LetWatchUs extends antiDDoSForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         fileInfo[0] = fileInfo[0].trim();
-        if (!fileInfo[0].endsWith(".mp4")) {
-            fileInfo[0] += ".mp4";
+        if (!fileInfo[0].endsWith(".flv")) {
+            fileInfo[0] += ".flv";
         }
         link.setName(fileInfo[0]);
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
@@ -247,6 +264,12 @@ public class LetWatchUs extends antiDDoSForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "id=\"file_title\">([^<>\"]+)<").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<title>Watch([^<>\"]+)</title>").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
