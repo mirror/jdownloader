@@ -141,7 +141,13 @@ public class EHentaiOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String ext = getFileNameExtensionFromString(dllink, ".jpg");
-        downloadLink.setFinalFileName(namepart + ext);
+        // package customiser altered, or user altered value, we need to update this value.
+        if (downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
+            downloadLink.setForcedFileName(namepart + ext);
+        } else {
+            // decrypter doesn't set file extension.
+            downloadLink.setFinalFileName(namepart + ext);
+        }
 
         if (dllink_fullsize != null) {
             dllink_fullsize = Encoding.htmlDecode(dllink_fullsize);
@@ -315,13 +321,9 @@ public class EHentaiOrg extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        try {
-            account.setType(AccountType.PREMIUM);
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
-        ai.setStatus("Premium account");
+        account.setType(AccountType.PREMIUM);
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Premium Account");
         account.setValid(true);
         return ai;
     }
@@ -343,6 +345,11 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     private String getNamePart(DownloadLink downloadLink) throws PluginException {
+        // package customiser sets filename to this value
+        final String userFilename = downloadLink.getForcedFileName();
+        if (userFilename != null) {
+            return userFilename;
+        }
         final String namelink = downloadLink.getStringProperty("namepart", null);
         if (namelink != null) {
             // return what's from decrypter as gospel.
