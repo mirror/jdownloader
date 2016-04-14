@@ -3,6 +3,13 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.regex.Pattern;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.nutils.io.JDFileFilter;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -13,12 +20,6 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.nutils.io.JDFileFilter;
 
 public class AddContainerAction extends CustomizableAppAction {
     /**
@@ -43,11 +44,11 @@ public class AddContainerAction extends CustomizableAppAction {
     public void actionPerformed(ActionEvent e) {
 
         try {
-            final String exts = ContainerPluginController.getInstance().getContainerExtensions(null);
+            final Pattern exts = ContainerPluginController.getInstance().getContainerExtensions(null);
 
             ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.AddContainerAction_actionPerformed_(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
-            d.setFileFilter(new JDFileFilter(_GUI.T.AddContainerAction_actionPerformed_extensions(exts), exts, true));
+            d.setFileFilter(new JDFileFilter(_GUI.T.AddContainerAction_actionPerformed_extensions(exts.pattern()), exts, true));
             d.setType(FileChooserType.OPEN_DIALOG);
             d.setMultiSelection(true);
             Dialog.I().showDialog(d);

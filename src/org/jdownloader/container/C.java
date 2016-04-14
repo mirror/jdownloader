@@ -42,7 +42,7 @@ import org.seamless.util.io.IO;
 public class C extends PluginsC {
 
     public C() {
-        super("CFF", "file:/.+\\.ccf", "$Revision$");
+        super("CFF", "file:/.+\\.ccf$", "$Revision$");
     }
 
     private String decryptCCF5(InputStream inputStream) throws Exception {
