@@ -241,7 +241,7 @@ public abstract class PluginsC {
                 // workaround for authorities in file uris
                 final String currentURI = sourceURL.replaceFirst("file:///?", "file:///");
                 final File file = new File(new URI(currentURI));
-                if (file != null && file.exists()) {
+                if (file != null && file.exists() && file.isFile()) {
                     final CrawledLink origin = source.getOriginLink();
                     if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {
                         askFileDeletion = false;

@@ -34,7 +34,7 @@ import jd.plugins.PluginsC;
 
 public class R extends PluginsC {
     public R() {
-        super("RSDF", "file:/.+\\.rsdf", "$Revision$");
+        super("RSDF", "file:/.+\\.rsdf$", "$Revision$");
         // TODO Auto-generated constructor stub
     }
 
@@ -62,20 +62,20 @@ public class R extends PluginsC {
     public ContainerStatus callDecryption(File lc) {
         ContainerStatus cs = new ContainerStatus(lc);
         // byte[] k = getKey();
-        //       org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(asHex(getKey()));
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(asHex(getKey()));
         // for( int i=0; i<k.length;i++){
         // k[i]+=i;
         // }
-        //       org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(asHex(k));
-        //       org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Parse file: "+lc.getAbsolutePath());
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(asHex(k));
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Parse file: "+lc.getAbsolutePath());
 
         try {
             cls = new ArrayList<CrawledLink>();
             String fileContent[] = loadFileContent(lc.getAbsolutePath());
-            //       org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(fileContent.length+" links found");
+            // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(fileContent.length+" links found");
             if (fileContent != null) {
                 for (String element : fileContent) {
-                    //       org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(i+" - "+fileContent[i]);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(i+" - "+fileContent[i]);
                     if (element != null && element.length() > 0) {
                         cls.add(new CrawledLink(element));
                     }
@@ -132,7 +132,7 @@ public class R extends PluginsC {
     // cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
     //
     // byte[] original = cipher.doFinal(k);
-    //       org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(asHex(original));
+    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(asHex(original));
     // return original;
     // }
     // catch (Exception e) {
@@ -213,7 +213,7 @@ public class R extends PluginsC {
         logger.info("RSDF length: " + rsdf.length() + "   ");
         String ret = "";
         for (int i = 0; i < rsdf.length(); i++) {
-            //       org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(new String(new char[] { rsdf.charAt(i) }));
+            // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(new String(new char[] { rsdf.charAt(i) }));
             switch (rsdf.charAt(i)) {
             case '0':
             case '1':

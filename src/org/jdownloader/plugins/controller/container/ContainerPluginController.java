@@ -3,6 +3,7 @@ package org.jdownloader.plugins.controller.container;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.plugins.PluginsC;
 
@@ -106,25 +107,22 @@ public class ContainerPluginController {
         return null;
     }
 
-    public String getContainerExtensions(final String filter) {
+    public Pattern getContainerExtensions(final String filter) {
         lazyInit();
-        StringBuilder sb = new StringBuilder("");
+        final StringBuilder sb = new StringBuilder(".*(");
         for (final PluginsC act : list) {
             if (filter != null && !new Regex(act.getName(), filter).matches()) {
                 continue;
             }
-            String exs[] = new Regex(act.getSupportedLinks().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
-            if (exs.length == 0) {
-                final String exts = new Regex(act.getSupportedLinks().pattern(), "\\.\\((.+)\\)$").getMatch(0);
-                exs = new Regex(exts, "([a-zA-Z0-9]+)").getColumn(0);
-            }
-            for (String ex : exs) {
-                if (sb.length() > 0) {
+            final String regex = new Regex(act.getSupportedLinks().pattern(), "file:/\\.\\+(.+?)\\$").getMatch(0);
+            if (regex != null) {
+                if (sb.length() > 3) {
                     sb.append("|");
                 }
-                sb.append(".").append(ex);
+                sb.append(regex);
             }
         }
-        return sb.toString();
+        sb.append(")$");
+        return Pattern.compile(sb.toString());
     }
 }

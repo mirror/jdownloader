@@ -39,7 +39,7 @@ import org.jdownloader.images.AbstractIcon;
 public class JD1Import extends PluginsC {
 
     public JD1Import() {
-        super("JD1 Import", "file:/.+(\\.jdc$|database\\.script$)", "$Revision: 21176 $");
+        super("JD1 Import", "file:/.+(\\.jdc|database\\.script)$", "$Revision: 21176 $");
     }
 
     @SuppressWarnings("unchecked")

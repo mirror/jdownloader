@@ -17,35 +17,37 @@ package jd.nutils.io;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.regex.Pattern;
 
 /**
- * Mit dieser Klasse kann man, sowohl bestimmte Dateien aus einem Verzeichnis
- * auflisten, als auch einen FileFilter in einem JDFileChooser nutzen
- * 
+ * Mit dieser Klasse kann man, sowohl bestimmte Dateien aus einem Verzeichnis auflisten, als auch einen FileFilter in einem JDFileChooser
+ * nutzen
+ *
  * @author astaldo
  */
 public class JDFileFilter extends javax.swing.filechooser.FileFilter implements FileFilter {
     /**
      * Sollen Verzeichnisse akzeptiert werden?
      */
-    private boolean acceptDirectories = true;
+    private final boolean  acceptDirectories;
 
     /**
      * Beschreibung vom FileFilter
      */
-    private String description;
+    private final String   description;
 
     /**
      * Zu akzeptierende Dateiendung (mit Punkt)
      */
-    private String[] extension = null;
+    private final String[] extension;
+
+    private final Pattern  pattern;
 
     /**
      * Erstellt einen neuen JDFileFilter
-     * 
+     *
      * @param description
-     *            Beschreibung vom FileFilter oder null, wenn der Defaultname
-     *            (Containerfiles) genommen werden soll
+     *            Beschreibung vom FileFilter oder null, wenn der Defaultname (Containerfiles) genommen werden soll
      * @param extension
      *            Zu akzeptierende Dateiendungen (mit Punkt und mit | getrennt)
      * @param acceptDirectories
@@ -58,22 +60,44 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
             this.description = "Container files";
         }
         this.extension = extension.split("\\|");
+        this.pattern = null;
         this.acceptDirectories = acceptDirectories;
     }
 
-    //@Override
-    public boolean accept(File f) {
-        if (f.isDirectory()) return acceptDirectories;
-        for (String element : extension) {
-            if (f.getName().toLowerCase().endsWith(element.toLowerCase())) return true;
+    public JDFileFilter(String description, Pattern pattern, boolean acceptDirectories) {
+        if (description != null) {
+            this.description = description;
+        } else {
+            this.description = "Container files";
         }
-        return false;
+        this.pattern = pattern;
+        extension = null;
+        this.acceptDirectories = acceptDirectories;
+    }
+
+    // @Override
+    public boolean accept(File f) {
+        if (f.isDirectory()) {
+            return acceptDirectories;
+        } else {
+            if (pattern != null) {
+                return pattern.matcher(f.getName()).matches();
+            } else {
+                final String check = f.getName().toLowerCase();
+                for (String element : extension) {
+                    if (check.endsWith(element)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
     }
 
     /**
      * Gibt die Filefilter Beschreibung zurück
      */
-    //@Override
+    // @Override
     public String getDescription() {
         return this.description;
     }
