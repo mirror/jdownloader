@@ -2,12 +2,12 @@ package jd.plugins.components;
 
 import javax.swing.Icon;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
+
+import jd.plugins.DownloadLink;
 
 public class DailyMotionVariant implements Storable, LinkVariant {
 
@@ -129,13 +129,8 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     }
 
     @Override
-    public String _getExtendedName(Object caller) {
-        return getDisplayName() + "[" + orgQName + "-" + qrate + "]";
-    }
-
-    @Override
     public String _getTooltipDescription(Object caller) {
-        return _getExtendedName(link);
+        return _getName(caller);
     }
 
 }

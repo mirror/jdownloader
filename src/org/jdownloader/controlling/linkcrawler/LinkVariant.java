@@ -10,8 +10,6 @@ public interface LinkVariant {
 
     Icon _getIcon(Object caller);
 
-    String _getExtendedName(Object caller);
-
     String _getTooltipDescription(Object caller);
 
 }

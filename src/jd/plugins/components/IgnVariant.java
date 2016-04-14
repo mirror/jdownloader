@@ -28,7 +28,7 @@ public class IgnVariant implements LinkVariant, Storable {
 
     @Override
     public String _getTooltipDescription(Object caller) {
-        return _getExtendedName(caller);
+        return height + "p (" + bitrate + "bps)";
     }
 
     public String getBitrate() {
@@ -85,11 +85,6 @@ public class IgnVariant implements LinkVariant, Storable {
     @Override
     public Icon _getIcon(Object caller) {
         return icon;
-    }
-
-    @Override
-    public String _getExtendedName(Object caller) {
-        return height + "p (" + bitrate + "bps)";
     }
 
 }

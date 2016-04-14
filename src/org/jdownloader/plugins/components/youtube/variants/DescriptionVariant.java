@@ -64,4 +64,10 @@ public class DescriptionVariant extends AbstractVariant<DescriptionGenericInfo> 
         return PluginJsonConfig.get(YoutubeConfig.class).getDescriptionFilenamePattern();
     }
 
+    @Override
+    public String getTypeId() {
+        return getBaseVariant().name();
+
+    }
+
 }

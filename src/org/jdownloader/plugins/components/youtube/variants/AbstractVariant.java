@@ -71,7 +71,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
 
         } catch (Throwable e) {
             try {
-                base = VariantBase.COMPATIBILITY_MAP.get(base.getId());
+                base = VariantBase.COMPATIBILITY_MAP.get(storable.getId());
                 ;
 
             } catch (Throwable e2) {
@@ -126,18 +126,18 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         return baseVariant.name();
     }
 
-    @Override
-    public String _getExtendedName(Object caller) {
+    public String createAdvancedName() {
         return getBaseVariant().name().replace("_DASH", "").replace("_HLS", "").replace("HLS_", "").replace("_3D", "").replaceAll("_\\d+$", "").replace("_", ", ");
     }
 
     @Override
     public String _getTooltipDescription(Object caller) {
-        return _getExtendedName(caller);
+        return createAdvancedName();
     }
 
-    public String getFileExtension() {
-        return baseVariant.getFileExtension();
+    public FileContainer getContainer() {
+
+        return getBaseVariant().getContainer();
     }
 
     public YoutubeITAG getiTagVideo() {
@@ -178,9 +178,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         return baseVariant.getQualityRating();
     }
 
-    public String getTypeId() {
-        return baseVariant.getTypeId();
-    }
+    public abstract String getTypeId();
 
     public DownloadType getType() {
         return baseVariant.getType();

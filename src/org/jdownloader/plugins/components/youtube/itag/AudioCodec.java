@@ -5,7 +5,6 @@ public enum AudioCodec {
     MP3("MP3", 2, 10000),
     OPUS("Opus", 1, 10000),
     VORBIS("Vorbis", 3, 10000),
-    M4A("M4A", 5, 10000),
     AMR("ARM", 1, 10001);
 
     private double rating = -1;

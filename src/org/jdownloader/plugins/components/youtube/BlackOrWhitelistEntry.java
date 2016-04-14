@@ -2,12 +2,12 @@ package org.jdownloader.plugins.components.youtube;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.youtube.keepForCompatibilitye.YoutubeCompatibility;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericAudioInfo;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class BlackOrWhitelistEntry implements Storable {
     private String base;
@@ -42,29 +42,26 @@ public class BlackOrWhitelistEntry implements Storable {
 
     @Override
     public int hashCode() {
-        if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
-            return (group + "." + base).hashCode();
-        } else {
-            return (group + "." + createVariant().getTypeId()).hashCode();
-        }
+
+        return (group + "." + createVariant().getTypeId()).hashCode();
+
     }
 
     @Override
     public String toString() {
-        if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
-            return group + "." + base;
-        }
+
         return group + "." + createVariant().getTypeId();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof BlackOrWhitelistEntry) {
-            if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
-                return StringUtils.equals(base, ((BlackOrWhitelistEntry) obj).base) && StringUtils.equals(group, ((BlackOrWhitelistEntry) obj).group);
-            } else {
-                return StringUtils.equals(createVariant().getTypeId(), ((BlackOrWhitelistEntry) obj).createVariant().getTypeId()) && StringUtils.equals(group, ((BlackOrWhitelistEntry) obj).group);
-            }
+            // if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
+            // return StringUtils.equals(base, ((BlackOrWhitelistEntry) obj).base) && StringUtils.equals(group, ((BlackOrWhitelistEntry)
+            // obj).group);
+            // } else {
+            return StringUtils.equals(createVariant().getTypeId(), ((BlackOrWhitelistEntry) obj).createVariant().getTypeId()) && StringUtils.equals(group, ((BlackOrWhitelistEntry) obj).group);
+            // }
 
         }
         return false;
@@ -89,10 +86,10 @@ public class BlackOrWhitelistEntry implements Storable {
             base = baseEnum.name();
             group = baseEnum.getGroup().name();
         } else {
-            String newType = VariantBase.COMPATIBILITY_MAP_ID.get(oldID);
+            String newType = YoutubeCompatibility.getTypeID(oldID);
 
             for (VariantBase v : VariantBase.values()) {
-                if (StringUtils.equals(v.getTypeId(), newType) || StringUtils.equals(v.name(), oldID)) {
+                if (StringUtils.equals(AbstractVariant.get(v).getTypeId(), newType) || StringUtils.equals(v.name(), oldID)) {
                     base = v.name();
                     group = v.getGroup().name();
                     break;

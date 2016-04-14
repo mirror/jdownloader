@@ -41,7 +41,7 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     }
 
     @Override
-    public String _getExtendedName(Object caller) {
+    public String createAdvancedName() {
         String ret = "SUBTITLE " + (getGenericInfo()._getLocale() == null ? getGenericInfo().getLanguage() : getGenericInfo()._getLocale().getDisplayName(Locale.ENGLISH));
         if (StringUtils.isNotEmpty(getGenericInfo().getKind())) {
             ret += ", Kind " + getGenericInfo().getKind();
@@ -114,6 +114,12 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     @Override
     public String getFileNameQualityTag() {
         return getGenericInfo()._getLocale().getDisplayLanguage();
+    }
+
+    @Override
+    public String getTypeId() {
+        return getBaseVariant().name();
+
     }
 
 }

@@ -24,12 +24,12 @@ import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
-import org.jdownloader.plugins.components.youtube.itag.VideoContainer;
 import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.keepForCompatibility.YoutubeVariantOld;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
+import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 
@@ -56,31 +56,32 @@ public class ItagHelper {
                 i = handleCompatibility(i, vo);
             }
 
-            if (vo.getId() != null && dupes.add(vo.getId()) && !VariantBase.COMPATIBILITY_MAP_ID.containsKey(vo.getId())) {
-
-                System.out.println(vo);
-
-                for (VariantBase v : VariantBase.values()) {
-                    if (vo.getiTagAudio() == v.getiTagAudio()) {
-                        if (vo.getiTagData() == v.getiTagData()) {
-                            if (vo.getiTagVideo() == v.getiTagVideo()) {
-                                if (vo.getGroup() == v.getGroup()) {
-
-                                    if (StringUtils.equalsIgnoreCase(vo.getFileExtension(), v.getFileExtension())) {
-                                        if (!StringUtils.equals(vo.getId(), v.getId()) && v.getId() != null) {
-                                            System.out.println("Match" + vo + " - " + v);
-                                            if (!StringUtils.equals(vo.getId(), v.getId())) {
-                                                appendToSrc("COMPATIBILITY_MAP_ID.put(\"" + vo.getId() + "\",\"" + v.getId() + "\");", "// ###APPEND_COMPATIBILITY_MAP_ID###");
-                                            }
-                                            i++;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            // if (vo.getId() != null && dupes.add(vo.getId()) && !VariantBase.COMPATIBILITY_MAP_ID.containsKey(vo.getId())) {
+            //
+            // System.out.println(vo);
+            //
+            // for (VariantBase v : VariantBase.values()) {
+            // if (vo.getiTagAudio() == v.getiTagAudio()) {
+            // if (vo.getiTagData() == v.getiTagData()) {
+            // if (vo.getiTagVideo() == v.getiTagVideo()) {
+            // if (vo.getGroup() == v.getGroup()) {
+            //
+            // if (StringUtils.equalsIgnoreCase(vo.getFileExtension(), v.getContainer().getExtension())) {
+            // if (!StringUtils.equals(vo.getId(), AbstractVariant.get(v).getTypeId()) && AbstractVariant.get(v).getTypeId() != null) {
+            // System.out.println("Match" + vo + " - " + v);
+            // if (!StringUtils.equals(vo.getId(), AbstractVariant.get(v).getTypeId())) {
+            // appendToSrc("COMPATIBILITY_MAP_ID.put(\"" + vo.getId() + "\",\"" + AbstractVariant.get(v).getTypeId() + "\");", "//
+            // ###APPEND_COMPATIBILITY_MAP_ID###");
+            // }
+            // i++;
+            // }
+            // }
+            // }
+            // }
+            // }
+            // }
+            // }
+            // }
 
         }
 
@@ -95,7 +96,7 @@ public class ItagHelper {
                     if (vo.getiTagVideo() == v.getiTagVideo()) {
                         if (vo.getGroup() == v.getGroup()) {
 
-                            if (StringUtils.equalsIgnoreCase(vo.getFileExtension(), v.getFileExtension())) {
+                            if (StringUtils.equalsIgnoreCase(vo.getFileExtension(), v.getContainer().getExtension())) {
                                 System.out.println("Match" + vo + " - " + v);
                                 if (!StringUtils.equals(vo.name(), v.name())) {
                                     appendToSrc("COMPATIBILITY_MAP.put(\"" + vo.name() + "\"," + v.name() + ");", "// ###APPEND_COMPATIBILITY_MAP###");
@@ -186,26 +187,23 @@ public class ItagHelper {
         VideoResolution resolution = dashVideo.getVideoResolution();
         AudioBitrate bitrate = dashAudio.getAudioBitrate();
 
-        VideoContainer container = dashVideo.getVideoContainer();
-        String audioContainer = codecToContainer(dashAudio.getAudioCodec());
+        FileContainer videoContainer = getVideoContainer(dashVideo);
+        FileContainer audioContainer2 = getAudioContainer(dashAudio);
         boolean is3DItag = dashVideo.name().contains("3D");
 
         VideoFrameRate fps = dashVideo.getVideoFrameRate();
 
         VideoCodec videoCodec = dashVideo.getVideoCodec();
         AudioCodec audioCodec = dashAudio.getAudioCodec();
-        String videoExtension = getExtension(dashVideo, false);
 
-        String baseName = container.name() + "_" + videoCodec.name() + "_" + resolution.getHeight() + "P_" + (int) Math.ceil(fps.getFps()) + "FPS_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
+        String baseName = videoContainer.name() + "_" + videoCodec.name() + "_" + resolution.getHeight() + "P_" + (int) Math.ceil(fps.getFps()) + "FPS_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
         baseName = baseName.toUpperCase(Locale.ENGLISH);
 
         VariantInfo vi = new VariantInfo(baseName);
         vi.fps = fps;
         String baseID;
-        vi.id = baseID = container.name() + "_" + resolution.getHeight() + "P_" + (int) Math.ceil(fps.getFps()) + "FPS_" + audioCodec.name();
         vi.group = VariantGroup.VIDEO;
         vi.downloadType = DownloadType.DASH_VIDEO;
-        vi.fileExtension = videoExtension.toLowerCase(Locale.ENGLISH);
 
         vi.videoItag = dashVideo;
         vi.audioItag = dashAudio;
@@ -216,8 +214,8 @@ public class ItagHelper {
 
             vi.baseName = baseName + "_3D";
             vi.group = VariantGroup.VIDEO_3D;
-            vi.id = baseID + "_3D";
-            if (is3DItag || container != VideoContainer.MP4) {
+
+            if (is3DItag) {
                 addVi(vi);
             }
         }
@@ -226,33 +224,30 @@ public class ItagHelper {
             return;
         }
         String audioName;
-        if (StringUtils.equalsIgnoreCase(audioContainer, audioCodec.name())) {
-            audioName = audioContainer + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
+        if (StringUtils.equalsIgnoreCase(audioContainer2.name(), audioCodec.name())) {
+            audioName = audioContainer2.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
         } else {
-            audioName = audioContainer + "_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
+            audioName = audioContainer2.name() + "_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
         }
 
         audioName = audioName.toUpperCase(Locale.ENGLISH);
-        vi.id = audioContainer.toUpperCase(Locale.ENGLISH) + "_" + bitrate.getKbit() + "KBIT";
+
         vi.baseName = audioName;
         vi.group = VariantGroup.AUDIO;
         vi.downloadType = DownloadType.DASH_AUDIO;
-        vi.fileExtension = audioContainer.toLowerCase(Locale.ENGLISH);
+
         vi.videoItag = null;
         // vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_audio(getAudioQuality())";
         // vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), getAudioCodec())";
 
         addVi(vi);
         if (audioCodec == AudioCodec.AAC) {
-            audioContainer = "M4A";
+            audioContainer2 = FileContainer.M4A;
 
-            audioName = audioContainer + "_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
+            audioName = audioContainer2.name() + "_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
 
             vi.baseName = audioName.toUpperCase(Locale.ENGLISH);
-            ;
-            vi.fileExtension = audioContainer.toLowerCase(Locale.ENGLISH);
 
-            vi.id = "M4A_" + bitrate.getKbit() + "KBIT";
             vi.extender = null;
             // generateMethod("@Override", "double getQualityRating()", "", "AudioCodec.M4A.getRating() + AudioBitrate.KBIT_" +
             // bitrate.getKbit() + ".getRating()");
@@ -263,36 +258,64 @@ public class ItagHelper {
 
     }
 
-    private static String codecToContainer(AudioCodec audioCodec) {
-        switch (audioCodec) {
-        case AAC:
-            return "AAC";
-        case M4A:
-            return "M4A";
-        case AMR:
-            return "OGG";
-        case MP3:
-            return "MP3";
-        case OPUS:
-            return "OGG";
-        case VORBIS:
-            return "OGG";
+    private static FileContainer getVideoContainer(YoutubeITAG dashVideo) {
+        switch (dashVideo.getRawContainer()) {
+        case DASH_VIDEO:
+            switch (dashVideo.getVideoCodec()) {
+            case H264:
+                return FileContainer.MP4;
+            case H263:
+                throw new WTFException();
+            default:
+                return FileContainer.WEBM;
+            }
+        case FLV:
+            return FileContainer.FLV;
+        case MP4:
+            return FileContainer.MP4;
+        case THREEGP:
+            return FileContainer.THREEGP;
+        case WEBM:
+            return FileContainer.WEBM;
+        default:
+            throw new WTFException();
         }
-        return null;
+
+    }
+
+    private static FileContainer getAudioContainer(YoutubeITAG audioCodec) {
+        switch (audioCodec.getRawContainer()) {
+        case DASH_AUDIO:
+            switch (audioCodec.getAudioCodec()) {
+            case AAC:
+                return FileContainer.AAC;
+            default:
+                return FileContainer.OGG;
+            }
+        default:
+            switch (audioCodec.getAudioCodec()) {
+            case AAC:
+                return FileContainer.AAC;
+            case MP3:
+                return FileContainer.MP3;
+            default:
+                return FileContainer.OGG;
+            }
+        }
     }
 
     private static class VariantInfo {
 
         public VideoFrameRate fps;
         private String        baseName;
-        public String         id;
+
         public VariantGroup   group;
         public DownloadType   downloadType;
-        public String         fileExtension;
+
         public YoutubeITAG    videoItag;
         public YoutubeITAG    audioItag;
         public YoutubeITAG    dataItag;
-
+        public FileContainer  container;
         public String         converter;
         public String         extender;
 
@@ -311,13 +334,12 @@ public class ItagHelper {
             StringBuilder sb = new StringBuilder();
             sb.append(",\r\n");
             sb.append(name).append("(");
-            sb.append("\"").append(id.toUpperCase(Locale.ENGLISH)).append("\"");
-            sb.append(", ");
+
             sb.append("VariantGroup." + group.name());
             sb.append(", ");
             sb.append("DownloadType." + downloadType.name());
             sb.append(", ");
-            sb.append("\"").append(fileExtension).append("\"");
+            sb.append("\"FileContainer.").append(container).append("\"");
             sb.append(", ");
 
             sb.append(videoItag == null ? "null" : ("YoutubeITAG." + videoItag));
@@ -352,9 +374,9 @@ public class ItagHelper {
         VideoResolution resolution = itag.getVideoResolution();
         AudioBitrate bitrate = itag.getAudioBitrate();
         VideoCodec videoCodec = itag.getVideoCodec();
-        VideoContainer container = itag.getVideoContainer();
+        FileContainer container = getVideoContainer(itag);
         AudioCodec audioCodec = itag.getAudioCodec();
-        String audioContainer = codecToContainer(audioCodec);
+        FileContainer audioContainer = getAudioContainer(itag);
 
         boolean is3DItag = itag.name().contains("3D");
         // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
@@ -367,10 +389,9 @@ public class ItagHelper {
         VariantInfo vi = new VariantInfo(baseName);
         vi.fps = fps;
         String baseID;
-        vi.id = baseID = container.name() + "_" + resolution.getHeight() + "P_" + (int) Math.ceil(fps.getFps()) + "FPS_" + audioCodec.name();
         vi.group = VariantGroup.VIDEO;
         vi.downloadType = DownloadType.VIDEO;
-        vi.fileExtension = getExtension(itag, false).toString().toLowerCase(Locale.ENGLISH);
+        vi.container = container;
         if (itag.name().contains("HLS")) {
             vi.downloadType = DownloadType.HLS_VIDEO;
 
@@ -378,26 +399,21 @@ public class ItagHelper {
         vi.videoItag = itag;
         vi.audioItag = null;
         vi.dataItag = null;
-        // vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(),
-        // getAudioCodec())";
-        // vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_video(\"" + resolution.getHeight() + "p\")";
+
         if (!is3DItag) {
             addVi(vi);
         } else {
 
             vi.baseName = baseName + "_3D";
             vi.group = VariantGroup.VIDEO_3D;
-            vi.id = baseID + "_3D";
-            // vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_video(\"" + resolution.getHeight() + "p 3D\")";
-            if (is3DItag || container != VideoContainer.MP4) {
-                addVi(vi);
-            }
+
+            addVi(vi);
+
         }
-        vi.fileExtension = audioCodec.getLabel().toLowerCase(Locale.ENGLISH);
+        vi.container = audioContainer;
         vi.baseName = "DEMUX_" + audioCodec.name() + "_" + baseName;
-        ;
+
         vi.group = VariantGroup.AUDIO;
-        vi.id = audioCodec.name() + "_" + bitrate.getKbit() + "KBIT";
 
         vi.converter = "YoutubeConverter" + container + "To" + audioContainer + "Audio.getInstance()";
         vi.extender = null;
@@ -412,9 +428,8 @@ public class ItagHelper {
             vi.extender = null;
             // generateMethod("@Override", "double getQualityRating()", "", "AudioCodec.M4A.getRating() + AudioBitrate.KBIT_" +
             // bitrate.getKbit() + ".getRating() - 0.00000" + resolution.getHeight());
-            vi.fileExtension = "m4a";
+            vi.container = FileContainer.M4A;
             vi.baseName = "DEMUX_M4A_" + baseName;
-            vi.id = "M4A_" + bitrate.getKbit() + "KBIT";
 
             addVi(vi);
         }
@@ -486,7 +501,7 @@ public class ItagHelper {
         // YoutubeVariant[] values = YoutubeVariant.values();
         for (VariantBase v : VariantBase.values()) {
 
-            if (StringUtils.equalsIgnoreCase(v.getFileExtension(), vi.fileExtension) && vi.group == v.getGroup() && vi.videoItag == v.getiTagVideo() && vi.audioItag == v.getiTagAudio() && vi.dataItag == v.getiTagData()) {
+            if (StringUtils.equalsIgnoreCase(v.getContainer().getExtension(), vi.container.getExtension()) && vi.group == v.getGroup() && vi.videoItag == v.getiTagVideo() && vi.audioItag == v.getiTagAudio() && vi.dataItag == v.getiTagData()) {
                 String baseName = v.name().replaceAll("_\\d+$", "");
                 if (StringUtils.equals(baseName, vi.baseName)) {
                     return v;
@@ -496,7 +511,7 @@ public class ItagHelper {
         }
 
         for (VariantBase v : VariantBase.values()) {
-            if (StringUtils.equalsIgnoreCase(v.getFileExtension(), vi.fileExtension) && vi.group == v.getGroup() && vi.videoItag == v.getiTagVideo() && vi.audioItag == v.getiTagAudio() && vi.dataItag == v.getiTagData()) {
+            if (StringUtils.equalsIgnoreCase(v.getContainer().getExtension(), vi.container.getExtension()) && vi.group == v.getGroup() && vi.videoItag == v.getiTagVideo() && vi.audioItag == v.getiTagAudio() && vi.dataItag == v.getiTagData()) {
                 return v;
             }
 
@@ -535,40 +550,6 @@ public class ItagHelper {
         }
 
         return false;
-    }
-
-    private static String getExtension(YoutubeITAG dashVideo, boolean audio) {
-        if (audio) {
-            switch (dashVideo.getAudioCodec()) {
-            case AAC:
-                return "aac";
-            case M4A:
-                return "m4a";
-            case AMR:
-                return "ogg";
-            case MP3:
-                return "mp3";
-            case OPUS:
-                return "ogg";
-            case VORBIS:
-                return "ogg";
-
-            }
-
-        } else {
-
-            VideoContainer container = dashVideo.getVideoContainer();
-
-            switch (container) {
-
-            case THREEGP:
-                return "3gp";
-            default:
-                return container.name().toLowerCase(Locale.ENGLISH);
-            }
-
-        }
-        return null;
     }
 
     private QueryInfo       query;

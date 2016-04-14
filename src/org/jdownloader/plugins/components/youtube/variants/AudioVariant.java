@@ -1,14 +1,13 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
@@ -36,14 +35,6 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
     }
 
-    @Override
-    public AudioCodec getAudioContainer() {
-        if (StringUtils.equalsIgnoreCase(getBaseVariant().getFileExtension(), "m4a")) {
-            return AudioCodec.M4A;
-        }
-        return getiTagAudioOrVideoItagEquivalent().getAudioCodec();
-    }
-
     private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
 
     @Override
@@ -60,8 +51,15 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     @Override
     public String _getName(Object caller) {
+        String id = TYPE_ID_PATTERN;
 
-        return _GUI.T.YoutubeVariant_name_generic_audio(getAudioBitrate().getKbit() + "kbit", getAudioContainer().getLabel());
+        id = id.replace("*CONTAINER*", getContainer().getLabel().toUpperCase(Locale.ENGLISH) + "");
+        id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
+        id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*DEMUX*", (getBaseVariant().getiTagAudio() == null) ? "[DEMUX]" : "");
+
+        id = id.trim();
+        return id;
 
     }
 
@@ -79,5 +77,44 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
     public String getFileNamePattern() {
         return PluginJsonConfig.get(YoutubeConfig.class).getAudioFilenamePattern();
     }
+
+    private static final String TYPE_ID_PATTERN = PluginJsonConfig.get(YoutubeConfig.class).getVariantNamePatternAudio();
+
+    public String getTypeId() {
+        String id = TYPE_ID_PATTERN;
+
+        id = id.replace("*CONTAINER*", getContainer().name() + "");
+        id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
+        id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*DEMUX*", (getBaseVariant().getiTagAudio() == null) ? "DEMUX" : "");
+
+        id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
+        return id;
+
+    }
+
+    // @Override
+    // public String getTypeId() {
+    // StringBuilder sb = new StringBuilder();
+    //
+    // if (getiTagVideo() != null) {
+    // sb.append(getFileExtension().toUpperCase(Locale.ENGLISH));
+    // if (sb.length() > 0) {
+    // sb.append("_");
+    // }
+    // sb.append(getiTagVideo().getAudioBitrate().getKbit()).append("KBIT");
+    //
+    // } else {
+    // if (getBaseVariant().getiTagAudio() != null) {
+    // sb.append(getFileExtension().toUpperCase(Locale.ENGLISH));
+    // if (sb.length() > 0) {
+    // sb.append("_");
+    // }
+    // sb.append(getBaseVariant().getiTagAudio().getAudioBitrate().getKbit()).append("KBIT");
+    // }
+    // }
+    // return sb.toString();
+    //
+    // }
 
 }

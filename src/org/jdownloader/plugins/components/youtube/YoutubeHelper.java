@@ -59,12 +59,12 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.components.youtube.YoutubeReplacer.DataSource;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
-import org.jdownloader.plugins.components.youtube.itag.VideoContainer;
 import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
+import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
@@ -72,7 +72,6 @@ import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.w3c.dom.Attr;
@@ -109,10 +108,10 @@ public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         VideoFrameRate.FPS_60.setRating(cfg.getRating60Fps() / 100d);
-        VideoContainer.MP4.setRating(cfg.getRatingContainerMP4() / 10d);
-        VideoContainer.WEBM.setRating(cfg.getRatingContainerWEBM() / 10d);
+        FileContainer.MP4.setQualityRating(cfg.getRatingContainerMP4() / 10d);
+        FileContainer.WEBM.setQualityRating(cfg.getRatingContainerWEBM() / 10d);
         AudioCodec.AAC.setRating(cfg.getRatingContainerAAC() / 10000d);
-        AudioCodec.M4A.setRating(cfg.getRatingContainerM4A() / 10000d);
+        FileContainer.M4A.setQualityRating(cfg.getRatingContainerM4A() / 10000d);
         AudioCodec.MP3.setRating(cfg.getRatingContainerMP3() / 10000d);
         VideoCodec.VP8.setRating(cfg.getRatingCodecVP8());
         final int vp9 = cfg.getRatingCodecVP9();
@@ -2248,28 +2247,26 @@ public class YoutubeHelper {
         return;
     }
 
-    public static final String  YT_LENGTH_SECONDS      = "YT_LENGTH_SECONDS";
+    public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
 
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_DATA      = "YT_STREAMURL_DATA";
+    public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
     @Deprecated
-    public static final String  YT_SUBTITLE_CODE       = "YT_SUBTITLE_CODE";                                // Update YoutubeSubtitleName
+    public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
     @Deprecated
-    public static final String  YT_SUBTITLE_CODE_LIST  = "YT_SUBTITLE_CODE_LIST";
+    public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
-    public static final String  YT_BEST_VIDEO          = "YT_BEST_VIDEO";
+    public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
 
-    public static final String  YT_DESCRIPTION         = "YT_DESCRIPTION";
+    public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
 
     // public static final String YT_VARIANT_INFO = "YT_VARIANT_INFO";
 
-    public static final String  YT_STREAM_DATA_VIDEO   = "YT_STREAM_DATA_VIDEO";
-    public static final String  YT_STREAM_DATA_AUDIO   = "YT_STREAM_DATA_AUDIO";
-    public static final String  YT_STREAM_DATA_DATA    = "YT_STREAM_DATA_DATA";
-
-    public static final boolean USE_EXTENDED_VARIABLES = CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled();
+    public static final String YT_STREAM_DATA_VIDEO  = "YT_STREAM_DATA_VIDEO";
+    public static final String YT_STREAM_DATA_AUDIO  = "YT_STREAM_DATA_AUDIO";
+    public static final String YT_STREAM_DATA_DATA   = "YT_STREAM_DATA_DATA";
 
     public String createFilename(DownloadLink link) {
 
@@ -2602,7 +2599,7 @@ public class YoutubeHelper {
     public static List<BlackOrWhitelistEntry> readExtraList() {
         YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
         List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
-        List<BlackOrWhitelistEntry> configList = USE_EXTENDED_VARIABLES ? cf.getExtraExtendedVariants() : cf.getExtra();
+        List<BlackOrWhitelistEntry> configList = cf.getExtra();
         if (configList != null) {
             for (BlackOrWhitelistEntry obj : configList) {
                 if (obj != null) {
@@ -2626,7 +2623,7 @@ public class YoutubeHelper {
     public static List<BlackOrWhitelistEntry> readBlacklist() {
         YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
         List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
-        List<BlackOrWhitelistEntry> configList = USE_EXTENDED_VARIABLES ? cf.getBlacklistedExtendedVariants() : cf.getBlacklisted();
+        List<BlackOrWhitelistEntry> configList = cf.getBlacklisted();
         if (configList != null) {
             for (BlackOrWhitelistEntry obj : configList) {
                 if (obj != null) {
@@ -2654,7 +2651,7 @@ public class YoutubeHelper {
     public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {
         downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, v);
         downloadLink.setProperty(YoutubeHelper.YT_VARIANT, v.getStorableString());
-        downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getFileExtension());
+        downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getContainer().getExtension());
     }
 
 }

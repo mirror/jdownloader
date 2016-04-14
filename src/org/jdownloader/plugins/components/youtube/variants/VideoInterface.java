@@ -1,7 +1,6 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
-import org.jdownloader.plugins.components.youtube.itag.VideoContainer;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 
 public interface VideoInterface {
@@ -15,7 +14,5 @@ public interface VideoInterface {
     int getVideoFrameRate();
 
     int getVideoHeight();
-
-    VideoContainer getVideoContainer();
 
 }

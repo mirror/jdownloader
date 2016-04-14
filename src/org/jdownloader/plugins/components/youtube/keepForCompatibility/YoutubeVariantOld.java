@@ -22,7 +22,6 @@ import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -770,9 +769,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_128();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() + 0.00000360;
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() + 0.00000360;
+        // }
     },
     DEMUX_M4A_128_360P_V4("M4A_128", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -784,9 +783,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_128();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000360;
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000360;
+        // }
     },
     DEMUX_M4A_128_720P_3D_V1("M4A_128", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -798,10 +797,10 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_128();
         }
 
-        public double getQualityRating() {
-            // -0.0001 because loading DEMUX_M4A_128_360P_V4 would be better
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
-        }
+        // public double getQualityRating() {
+        // // -0.0001 because loading DEMUX_M4A_128_360P_V4 would be better
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
+        // }
     },
     DEMUX_M4A_128_720P_V1("M4A_128", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -813,10 +812,10 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_128();
         }
 
-        public double getQualityRating() {
-            // -0.0001 because loading DEMUX_M4A_128_360P_V4 would be better
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
-        }
+        // public double getQualityRating() {
+        // // -0.0001 because loading DEMUX_M4A_128_360P_V4 would be better
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
+        // }
     },
     DEMUX_M4A_152_720P_3D_V3("M4A_152", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -828,9 +827,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_152();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
+        // }
     },
     DEMUX_M4A_152_720P_V3("M4A_152", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -842,9 +841,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_152();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
+        // }
     },
     DEMUX_M4A_192_720P_3D_V4("M4A_192", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -856,9 +855,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_192();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
+        // }
     },
     DEMUX_M4A_192_720P_V4("M4A_192", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -870,9 +869,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_192();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
+        // }
     },
 
     DEMUX_M4A_96_360P_3D_V1("M4A_96", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
@@ -885,9 +884,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_96();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
+        // }
     },
     DEMUX_M4A_96_360P_V1("M4A_96", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
@@ -898,10 +897,10 @@ public enum YoutubeVariantOld {
         public String getQualityExtension(Object caller) {
             return _GUI.T.YoutubeVariant_filenametag_M4A_96();
         }
-
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
-        }
+        //
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
+        // }
     },
     FLV_240_LOW(null, VariantGroup.VIDEO, DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null) {
 
@@ -993,9 +992,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_128();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating();
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating();
+        // }
     },
     M4A_256(null, VariantGroup.AUDIO, DownloadType.DASH_AUDIO, "m4a", null, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null) {
 
@@ -1007,9 +1006,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_256();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_256.getRating();
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_256.getRating();
+        // }
     },
     M4A_48(null, VariantGroup.AUDIO, DownloadType.DASH_AUDIO, "m4a", null, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null) {
 
@@ -1021,9 +1020,9 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_M4A_48();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_48.getRating();
-        }
+        // public double getQualityRating() {
+        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_48.getRating();
+        // }
     },
     MP3_1("MP3_64KBit", VariantGroup.AUDIO, DownloadType.VIDEO, "mp3", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, org.jdownloader.plugins.components.youtube.converter.YoutubeConverterFLVToMP3Audio.getInstance()) {
 
@@ -2209,9 +2208,7 @@ public enum YoutubeVariantOld {
     }
 
     public String getTypeId() {
-        if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
-            return name();
-        }
+
         if (this.id == null) {
             return this.name();
         }

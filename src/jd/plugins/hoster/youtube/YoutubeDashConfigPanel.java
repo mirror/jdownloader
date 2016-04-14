@@ -24,9 +24,9 @@ import org.jdownloader.plugins.components.youtube.YoutubeConfig.GroupLogic;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.itag.VideoContainer;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
+import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
@@ -75,9 +75,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         @Override
         protected String variantToName(ImageVariant sc, boolean popup) {
-            if (YoutubeHelper.USE_EXTENDED_VARIABLES && popup) {
-                return sc._getExtendedName(this);
-            }
+
             return sc._getName(this);
         }
     }
@@ -89,10 +87,11 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         @Override
         protected String variantToName(AudioVariant sc, boolean popup) {
-            if (YoutubeHelper.USE_EXTENDED_VARIABLES && popup) {
-                return sc._getExtendedName(this);
+            if (PluginJsonConfig.get(YoutubeConfig.class).isAdvancedVariantNamesEnabled() && popup) {
+                return sc.createAdvancedName();
             }
-            return sc.getiTagAudioOrVideoItagEquivalent().getAudioBitrate().getKbit() + "kbit/s " + sc.getAudioContainer().getLabel();
+
+            return sc._getName(YoutubeDashConfigPanel.class);
         }
     }
 
@@ -104,16 +103,12 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         @Override
         protected String variantToName(VideoVariant sc, boolean popup) {
 
-            if (popup) {
-                if (YoutubeHelper.USE_EXTENDED_VARIABLES) {
-                    return sc._getExtendedName(this);
-                }
-                return "[3D]" + sc.getVideoHeight() + "p " + sc.getVideoFrameRate() + "fps" + " " + sc.getContainer().getLabel(null);
-            } else {
-
-                return sc.getVideoHeight() + "p " + sc.getVideoFrameRate() + "fps" + " " + sc.getContainer().getLabel(null);
-
+            if (PluginJsonConfig.get(YoutubeConfig.class).isAdvancedVariantNamesEnabled()) {
+                return sc.createAdvancedName();
             }
+
+            return sc._getName(YoutubeDashConfigPanel.class);
+
         }
     }
 
@@ -129,12 +124,11 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         @Override
         protected String variantToName(VideoVariant sc, boolean popup) {
-            if (YoutubeHelper.USE_EXTENDED_VARIABLES && popup) {
-                return sc._getExtendedName(this);
+            if (PluginJsonConfig.get(YoutubeConfig.class).isAdvancedVariantNamesEnabled() && popup) {
+                return sc.createAdvancedName();
 
             }
-
-            return sc.getVideoHeight() + "p " + sc.getVideoFrameRate() + "fps" + " " + sc.getAudioContainer().getLabel() + "-Audio";
+            return sc._getName(YoutubeDashConfigPanel.class);
 
         }
     }
@@ -251,7 +245,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         for (VariantBase ytv : sorted) {
 
             AbstractVariant variant = AbstractVariant.get(ytv);
-            if (!YoutubeHelper.USE_EXTENDED_VARIABLES && !dupe.add(variant.getTypeId())) {
+            if (!dupe.add(variant.getTypeId())) {
                 continue;
             }
 
@@ -263,34 +257,30 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 image.add((ImageVariant) variant);
                 break;
             case VIDEO:
-                VideoContainer videoTag = ytv.getiTagVideo().getVideoContainer();
+                FileContainer videoTag = ytv.getContainer();
 
                 switch (videoTag) {
                 case FLV:
                     videoFLV.add((VideoVariant) variant);
-                    VideoVariant threeD = (VideoVariant) variant;
-                    threeD = (VideoVariant) AbstractVariant.get(ytv);
-                    video3D.add(threeD);
+
                     break;
                 case MP4:
-
                     videoMP4.add((VideoVariant) variant);
 
                     break;
                 case THREEGP:
                     videoGP3.add((VideoVariant) variant);
-                    threeD = (VideoVariant) AbstractVariant.get(ytv);
-                    threeD.getGenericInfo().setThreeD(true);
-                    video3D.add(threeD);
+
                     break;
                 case WEBM:
                     videoWEBM.add((VideoVariant) variant);
-                    threeD = (VideoVariant) AbstractVariant.get(ytv);
-                    threeD.getGenericInfo().setThreeD(true);
-                    video3D.add(threeD);
+
                     break;
                 }
-
+                VideoVariant threeD = (VideoVariant) variant;
+                threeD = (VideoVariant) AbstractVariant.get(ytv);
+                threeD.getGenericInfo().setThreeD(true);
+                video3D.add(threeD);
                 break;
             case VIDEO_3D:
                 video3D.add((VideoVariant) AbstractVariant.get(ytv));
@@ -464,13 +454,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         getWhitelist(whitelist, extraImage.getComponent());
         getWhitelist(whitelist, extraVideoMp4.getComponent());
         getWhitelist(whitelist, extraVideoWebm.getComponent());
-        if (YoutubeHelper.USE_EXTENDED_VARIABLES) {
-            cf.setBlacklistedExtendedVariants(blacklistSet);
-            cf.setExtraExtendedVariants(whitelist);
-        } else {
-            cf.setBlacklisted(blacklistSet);
-            cf.setExtra(whitelist);
-        }
+
+        cf.setBlacklisted(blacklistSet);
+        cf.setExtra(whitelist);
 
     }
 

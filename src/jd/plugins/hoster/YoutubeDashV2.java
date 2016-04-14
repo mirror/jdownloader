@@ -1206,10 +1206,10 @@ public class YoutubeDashV2 extends PluginForHost {
 
                         // YoutubeVariant ytVariant = (variant instanceof YoutubeCustomConvertVariant) ? ((YoutubeCustomConvertVariant)
                         // variant).getSource() : (YoutubeVariant) variant;
+                        switch (variant.getContainer()) {
+                        case AAC:
 
-                        if (variant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("aac")) {
-
-                            final FFMpegProgress progress = new FFMpegProgress();
+                            FFMpegProgress progress = new FFMpegProgress();
                             progress.setProgressSource(this);
                             try {
                                 downloadLink.addPluginProgress(progress);
@@ -1224,9 +1224,9 @@ public class YoutubeDashV2 extends PluginForHost {
                             } finally {
                                 downloadLink.removePluginProgress(progress);
                             }
-                        } else if (variant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("m4a")) {
-
-                            final FFMpegProgress progress = new FFMpegProgress();
+                            break;
+                        case M4A:
+                            progress = new FFMpegProgress();
                             progress.setProgressSource(this);
                             try {
                                 downloadLink.addPluginProgress(progress);
@@ -1241,10 +1241,9 @@ public class YoutubeDashV2 extends PluginForHost {
                             } finally {
                                 downloadLink.removePluginProgress(progress);
                             }
-
-                        } else if (variant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("ogg")) {
-
-                            final FFMpegProgress progress = new FFMpegProgress();
+                            break;
+                        case OGG:
+                            progress = new FFMpegProgress();
                             progress.setProgressSource(this);
                             try {
                                 downloadLink.addPluginProgress(progress);
@@ -1259,7 +1258,6 @@ public class YoutubeDashV2 extends PluginForHost {
                             } finally {
                                 downloadLink.removePluginProgress(progress);
                             }
-
                         }
 
                     }
@@ -2086,7 +2084,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                 {
                                     // CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v._getExtendedName() :
                                     setName(v._getName(pv));
-                                    setTooltipText(v._getExtendedName(pv));
+                                    setTooltipText(v.createAdvancedName());
                                 }
 
                                 //
@@ -2236,7 +2234,7 @@ public class YoutubeDashV2 extends PluginForHost {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
                                     setName(v._getName(pv));
-                                    setTooltipText(v._getExtendedName(pv));
+                                    setTooltipText(v.createAdvancedName());
                                 }
 
                                 @Override

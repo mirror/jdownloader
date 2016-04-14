@@ -1,16 +1,15 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
@@ -18,7 +17,6 @@ import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
-import org.jdownloader.plugins.components.youtube.itag.VideoContainer;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericVideoInfo;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -37,11 +35,11 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     }
 
     @Override
-    public String _getExtendedName(Object caller) {
+    public String createAdvancedName() {
         if (getGroup() == VariantGroup.VIDEO_3D) {
-            return "3D, " + super._getExtendedName(caller);
+            return "3D, " + super.createAdvancedName();
         }
-        return super._getExtendedName(caller);
+        return super.createAdvancedName();
     }
 
     @Override
@@ -51,20 +49,22 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         }));
     }
 
-    private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
+    private static final Icon   VIDEO           = new AbstractIcon(IconKey.ICON_VIDEO, 16);
+    private static final String TYPE_ID_PATTERN = PluginJsonConfig.get(YoutubeConfig.class).getVariantNamePatternVideo();
 
     public String getTypeId() {
-        if (getGroup() == VariantGroup.VIDEO_3D) {
-            return super.getTypeId() + "_3D";
-        }
-        return super.getTypeId();
-    }
+        String id = TYPE_ID_PATTERN;
 
-    public AudioCodec getAudioContainer() {
-        if (StringUtils.equalsIgnoreCase(getBaseVariant().getFileExtension(), "m4a")) {
-            return AudioCodec.M4A;
-        }
-        return getiTagAudioOrVideoItagEquivalent().getAudioCodec();
+        id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
+        id = id.replace("*HEIGHT*", getVideoHeight() + "");
+        id = id.replace("*FPS*", getVideoFrameRate() + "");
+        id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
+        id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*3D*", (getGroup() == VariantGroup.VIDEO_3D ? "3D" : ""));
+
+        id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
+        return id;
+
     }
 
     @Override
@@ -120,10 +120,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         return fps;
     }
 
-    public VideoContainer getContainer() {
-        return getiTagVideo().getVideoContainer();
-    }
-
     @Override
     public Icon _getIcon(Object caller) {
         return VIDEO;
@@ -132,19 +128,17 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     @Override
     public String _getName(Object caller) {
 
-        int res = getVideoHeight();
-        int fps = getVideoFrameRate();
-        AudioCodec audio = getAudioCodec();
-        if (getGroup() == VariantGroup.VIDEO_3D) {
-            return _GUI.T.YoutubeVariant_name_generic_video2("3D " + res + "p " + fps + "fps", getVideoContainer().getLabel(caller), getAudioBitrate().getLabel(), audio.getLabel());
-        }
-        return _GUI.T.YoutubeVariant_name_generic_video2(res + "p " + fps + "fps", getVideoContainer().getLabel(caller), getAudioBitrate().getLabel(), audio.getLabel());
+        String id = TYPE_ID_PATTERN;
 
-    }
+        id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
+        id = id.replace("*HEIGHT*", getVideoHeight() + "");
+        id = id.replace("*FPS*", getVideoFrameRate() + "");
+        id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
+        id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        id = id.replace("*3D*", (getGroup() == VariantGroup.VIDEO_3D ? " [3D]" : ""));
 
-    @Override
-    public VideoContainer getVideoContainer() {
-        return getiTagVideo().getVideoContainer();
+        return id.trim();
+
     }
 
     @Override

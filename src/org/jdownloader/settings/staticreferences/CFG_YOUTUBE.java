@@ -154,9 +154,6 @@ public class CFG_YOUTUBE {
 
     public static final BooleanKeyHandler             SUBTITLE_COPYFOR_EACH_VIDEO_VARIANT       = SH.getKeyHandler("SubtitleCopyforEachVideoVariant", BooleanKeyHandler.class);
 
-    public static final ObjectKeyHandler              EXTRA_EXTENDED_VARIANTS                   = SH.getKeyHandler("ExtraExtendedVariants", ObjectKeyHandler.class);
-
     public static final BooleanKeyHandler             CREATE_BEST_IMAGE_VARIANT_LINK_ENABLED    = SH.getKeyHandler("CreateBestImageVariantLinkEnabled", BooleanKeyHandler.class);
 
-    public static final ObjectKeyHandler              BLACKLISTED_EXTENDED_VARIANTS             = SH.getKeyHandler("BlacklistedExtendedVariants", ObjectKeyHandler.class);
 }

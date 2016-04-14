@@ -191,11 +191,6 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_RUNNING_DOWNLOADS_COUNT_VISIBLE = SH.getKeyHandler("OverviewPanelDownloadRunningDownloadsCountVisible", BooleanKeyHandler.class);
 
-    /**
-     * If Enabled, Variants will get a more detailed, technical name.
-     **/
-    public static final BooleanKeyHandler                              EXTENDED_VARIANT_NAMES_ENABLED                          = SH.getKeyHandler("ExtendedVariantNamesEnabled", BooleanKeyHandler.class);
-
     public static final BooleanKeyHandler                              BYPASS_ALL_RLY_DELETE_DIALOGS_ENABLED                   = SH.getKeyHandler("BypassAllRlyDeleteDialogsEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              CLIPBOARD_DISABLED_WARNING_FLASH_ENABLED                = SH.getKeyHandler("ClipboardDisabledWarningFlashEnabled", BooleanKeyHandler.class);
