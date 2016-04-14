@@ -67,7 +67,10 @@ public class NonktubeCom extends PluginForHost {
         downloadLink.setLinkID(fid);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        final String redirect = this.br.getRedirectLocation();
+        String redirect = this.br.getRedirectLocation();
+        if (redirect.contains("u=")) {
+            redirect = new Regex(redirect, ".*?u=(http.+)").getMatch(0);
+        }
         if (redirect != null && (!redirect.contains("nonktube.com/") || !redirect.contains("/video/") || redirect.contains("out.php"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
