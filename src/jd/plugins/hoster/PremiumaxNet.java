@@ -82,7 +82,6 @@ public class PremiumaxNet extends antiDDoSForHost {
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         login(account, true);
         getPage("/profile/");
@@ -177,7 +176,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 postPage("/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
-                dllink = br.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl\\d*/[a-z0-9]+/?)\"").getMatch(0);
                 if (dllink == null) {
                     if (br.getHttpConnection().getResponseCode() == 500) {
                         handleErrorRetries("500 Internal Server Error", 20, 5 * 60 * 1000l);
