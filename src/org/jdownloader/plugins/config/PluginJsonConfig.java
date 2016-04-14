@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -18,6 +17,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.InterfaceParseException;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
@@ -29,12 +29,12 @@ public class PluginJsonConfig {
     private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
     protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
 
-        @Override
-        public void delayedrun() {
-            saveAll();
-            cleanup();
-        }
-    };
+                                                                                                                     @Override
+                                                                                                                     public void delayedrun() {
+                                                                                                                         saveAll();
+                                                                                                                         cleanup();
+                                                                                                                     }
+                                                                                                                 };
     private final static boolean                                                                   DEBUG         = false;
 
     static {
@@ -78,12 +78,13 @@ public class PluginJsonConfig {
         CONFIG_CACHE.size();
     }
 
-    public synchronized static <T extends ConfigInterface> T get(Class<T> configInterface, final String prefix) {
-        final String ID = configInterface.getName();
+    public synchronized static <T extends PluginConfigInterface> T get(Class<T> configInterface, final String prefix) {
+        final String ID = JsonConfig.getStorageName(configInterface);
         final ClassLoader cl = configInterface.getClassLoader();
         if (!(cl instanceof PluginClassLoaderChild)) {
-            //
-            throw new WTFException(configInterface + " got loaded by non PluginClassLoaderChild!");
+
+            final File storageFile = Application.getResource("cfg/plugins/" + ID);
+            return JsonConfig.create(storageFile, configInterface);
         }
         HashMap<String, WeakReference<ConfigInterface>> classLoaderMap = CONFIG_CACHE.get(cl);
         if (classLoaderMap == null) {
@@ -139,7 +140,7 @@ public class PluginJsonConfig {
         return (T) intf;
     }
 
-    public synchronized static <T extends ConfigInterface> T get(Class<T> configInterface) {
+    public synchronized static <T extends PluginConfigInterface> T get(Class<T> configInterface) {
         return get(configInterface, null);
     }
 }
