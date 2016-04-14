@@ -4,13 +4,13 @@ import java.util.List;
 
 import javax.swing.Icon;
 
-import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.variants.generics.ImageGenericInfo;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class ImageVariant extends AbstractVariant<ImageGenericInfo> {
     private static final Icon IMAGE = new AbstractIcon(IconKey.ICON_IMAGE, 16);
@@ -30,7 +30,7 @@ public class ImageVariant extends AbstractVariant<ImageGenericInfo> {
 
     @Override
     public String getFileNamePattern() {
-        return JsonConfig.create(YoutubeConfig.class).getImageFilenamePattern();
+        return PluginJsonConfig.get(YoutubeConfig.class).getImageFilenamePattern();
     }
 
     @Override

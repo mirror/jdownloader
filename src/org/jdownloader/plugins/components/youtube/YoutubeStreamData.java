@@ -6,6 +6,11 @@ public class YoutubeStreamData {
 
     private YoutubeClipData clip;
 
+    @Override
+    public String toString() {
+        return "Itag" + itag.getITAG();
+    }
+
     public void setClip(YoutubeClipData clip) {
         this.clip = clip;
     }

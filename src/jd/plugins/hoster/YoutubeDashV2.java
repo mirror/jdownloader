@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,6 +64,7 @@ import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -82,6 +84,8 @@ import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
+import jd.http.QueryInfo;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
@@ -234,7 +238,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        cfg = JsonConfig.create(YoutubeConfig.class);
+        cfg = PluginJsonConfig.get(YoutubeConfig.class);
         String id = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
 
@@ -620,7 +624,10 @@ public class YoutubeDashV2 extends PluginForHost {
                 lstData.add(data.toStreamDataObject());
             }
 
-            return new VariantInfo(getVariant(downloadLink), lstAudio, lstVideo, lstData);
+            VariantInfo ret = new VariantInfo(getVariant(downloadLink), lstAudio, lstVideo, lstData);
+            if (ret.isValid()) {
+                return ret;
+            }
         }
 
         return updateUrls(downloadLink);
@@ -699,8 +706,10 @@ public class YoutubeDashV2 extends PluginForHost {
             }
             return null;
         }
-
-        VariantInfo vi = new VariantInfo(variant, clipData.streams.get(variant.getBaseVariant().getiTagAudio()), clipData.streams.get(variant.getiTagVideo()), clipData.streams.get(variant.getiTagData()));
+        List<YoutubeStreamData> audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio());
+        List<YoutubeStreamData> videoStreams = clipData.getStreams(variant.getiTagVideo());
+        List<YoutubeStreamData> dataStreams = clipData.getStreams(variant.getiTagData());
+        VariantInfo vi = new VariantInfo(variant, audioStreams, videoStreams, dataStreams);
         // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, vi);
         return vi;
     }
@@ -1052,7 +1061,7 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     private int getChunksPerStream() {
-        YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
+        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         if (!cfg.isCustomChunkValueEnabled()) {
             return 0;
         }
@@ -1276,7 +1285,7 @@ public class YoutubeDashV2 extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         isDownloading = true;
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
-        cfg = JsonConfig.create(YoutubeConfig.class);
+        cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
         YoutubeHelper helper = getCachedHelper(downloadLink);
         AbstractVariant variant = getVariant(downloadLink);
@@ -1622,7 +1631,7 @@ public class YoutubeDashV2 extends PluginForHost {
     private YoutubeHelper getCachedHelper(DownloadLink dlink) {
         YoutubeHelper ret = cachedHelper;
         if (ret == null || ret.getBr() != this.br) {
-            ret = new YoutubeHelper(br, JsonConfig.create(YoutubeConfig.class), getLogger());
+            ret = new YoutubeHelper(br, PluginJsonConfig.get(YoutubeConfig.class), getLogger());
 
         }
         ret.setupProxy();
@@ -1686,7 +1695,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-        YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
+        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
         if (variant == null) {
             return;
@@ -1773,17 +1782,7 @@ public class YoutubeDashV2 extends PluginForHost {
         String[] variantIds = getVariantsIDList(downloadLink);
         ;
         return variantIds != null && variantIds.length > 0;
-        // ArrayList<String> variantIds;
-        // try {
-        // downloadLink.getObjectProperty(YoutubeHelper.YT_VARIANTS,YoutubeHelper.TYPE_ARRAY_LIST_STRING );
-        //
-        // variantIds = getVariant(downloadLink).getGenericInfo().getAlternatives();
-        //
-        // return variantIds != null && variantIds.size() > 0;
-        // } catch (Throwable e) {
-        // logger.log(e);
-        // return false;
-        // }
+
     }
 
     private String[] getVariantsIDList(DownloadLink downloadLink) {
@@ -1792,6 +1791,32 @@ public class YoutubeDashV2 extends PluginForHost {
         if (jsonString != null && jsonString instanceof String) {
             String[] lst = JSonStorage.restoreFromString((String) jsonString, TypeRef.STRING_ARRAY);
             downloadLink.setProperty(YoutubeHelper.YT_VARIANTS, lst);
+        }
+
+        String subtitles = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE_LIST);
+        if (StringUtils.isNotEmpty(subtitles)) {
+            downloadLink.removeProperty(YoutubeHelper.YT_SUBTITLE_CODE_LIST);
+            String[] queryList = JSonStorage.restoreFromString(subtitles, TypeRef.STRING_ARRAY);
+            ArrayList<String> subtitleIDs = new ArrayList<String>();
+            if (queryList != null) {
+                for (String q : queryList) {
+                    try {
+                        SubtitleVariant v = new SubtitleVariant();
+                        v.setGenericInfo(new YoutubeSubtitleStorable());
+                        QueryInfo info;
+
+                        info = Request.parseQuery(q);
+
+                        v.getGenericInfo().setKind(info.get("kind"));
+                        v.getGenericInfo().setLanguage(info.get("lng"));
+                        v.getGenericInfo().setSourceLanguage(info.get("src"));
+                        subtitleIDs.add(v.getStorableString());
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            downloadLink.setProperty(YoutubeHelper.YT_VARIANTS, subtitleIDs.toArray(new String[] {}));
         }
         return downloadLink.getObjectProperty(YoutubeHelper.YT_VARIANTS, TypeRef.STRING_ARRAY);
     }

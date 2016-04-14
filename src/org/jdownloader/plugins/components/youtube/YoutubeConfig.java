@@ -3,7 +3,6 @@ package org.jdownloader.plugins.components.youtube;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.CustomStorageName;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -16,10 +15,11 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.plugins.components.youtube.keepForCompatibilitye.YoutubeCompatibility;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeCustomVariantStorable;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.translate._JDT;
 
 @CustomStorageName("youtube/Youtube")
-public interface YoutubeConfig extends ConfigInterface {
+public interface YoutubeConfig extends PluginConfigInterface {
     static Object NOTHING = YoutubeCompatibility.moveJSonFiles("youtube/Youtube");
 
     @DefaultBooleanValue(false)

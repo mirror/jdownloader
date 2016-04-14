@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
@@ -11,6 +12,8 @@ import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGenericVariantInfo;
 
+import jd.http.QueryInfo;
+import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
@@ -42,6 +45,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                     break;
                 case SUBTITLES:
                     ret = new SubtitleVariant();
+
                     ret.setJson("{}");
                     break;
                 case VIDEO:
@@ -216,18 +220,23 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             return (AbstractVariant) tmp;
         }
         AbstractVariant ret = get(downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
-        // if (ret.getGroup() == VariantGroup.SUBTITLES) {
-        // SubtitleVariant var = new SubtitleVariant(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE));
-        //
-        // }
-        // String idsString = downloadLink.getStringProperty(YoutubeHelper.YT_VARIANTS, null);
-        // if (idsString != null && ret.getGenericInfo().getAlternatives() == null) {
-        //
-        // ArrayList<String> ids = JSonStorage.restoreFromString(idsString, new TypeRef<ArrayList<String>>() {
-        // });
-        // ret.getGenericInfo().setAlternatives(ids);
-        //
-        // }
+        if (ret instanceof SubtitleVariant) {
+            String old = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+            if (old != null) {
+                try {
+                    QueryInfo q = Request.parseQuery(old);
+                    ((SubtitleVariant) ret).getGenericInfo().setBase(null);
+                    ((SubtitleVariant) ret).getGenericInfo().setLanguage(q.get("lng"));
+                    ((SubtitleVariant) ret).getGenericInfo().setSourceLanguage(q.get("src"));
+                    ((SubtitleVariant) ret).getGenericInfo().setKind(q.get("kind"));
+                    downloadLink.removeProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+                } catch (Throwable e) {
+                    Log.log(e);
+                }
+
+            }
+        }
+
         if (ret != null) {
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, ret);
         }
@@ -237,7 +246,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     public abstract String getFileNamePattern();
     //
     //
-    // YoutubeConfig cfg = JsonConfig.create(YoutubeConfig.class);
+    // YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
     //
     // String ret = null;
     // switch (baseVariant.getGroup()) {

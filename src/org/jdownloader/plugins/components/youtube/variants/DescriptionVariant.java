@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.swing.Icon;
 
-import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -13,6 +12,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.variants.DescriptionVariant.DescriptionGenericInfo;
 import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGenericVariantInfo;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class DescriptionVariant extends AbstractVariant<DescriptionGenericInfo> {
     public static class DescriptionGenericInfo extends AbstractGenericVariantInfo {
@@ -61,7 +61,7 @@ public class DescriptionVariant extends AbstractVariant<DescriptionGenericInfo> 
 
     @Override
     public String getFileNamePattern() {
-        return JsonConfig.create(YoutubeConfig.class).getDescriptionFilenamePattern();
+        return PluginJsonConfig.get(YoutubeConfig.class).getDescriptionFilenamePattern();
     }
 
 }

@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.components.youtube.itag;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -505,5 +506,9 @@ public enum YoutubeITAG {
     }
 
     private VideoFrameRate videoFrameRate = null;
+
+    public static List<YoutubeITAG> getTagList(int itag) {
+        return Collections.unmodifiableList(TAG_MAP.get(itag));
+    }
 
 }

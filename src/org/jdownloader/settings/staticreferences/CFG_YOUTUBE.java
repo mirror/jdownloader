@@ -1,7 +1,6 @@
 package org.jdownloader.settings.staticreferences;
 
 import org.appwork.storage.config.ConfigUtils;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
@@ -11,6 +10,7 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.storage.config.handler.StringListHandler;
 import org.appwork.utils.Application;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class CFG_YOUTUBE {
     public static void main(String[] args) {
@@ -19,7 +19,7 @@ public class CFG_YOUTUBE {
     }
 
     // Static Mappings for interface org.jdownloader.plugins.components.youtube.YoutubeConfig
-    public static final YoutubeConfig                 CFG                                       = JsonConfig.create(YoutubeConfig.class);
+    public static final YoutubeConfig                 CFG                                       = PluginJsonConfig.get(YoutubeConfig.class);
     public static final StorageHandler<YoutubeConfig> SH                                        = (StorageHandler<YoutubeConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
