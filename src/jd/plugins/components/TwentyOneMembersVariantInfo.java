@@ -97,11 +97,6 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
     }
 
     @Override
-    public String _getExtendedName(Object caller) {
-        return shortType;
-    }
-
-    @Override
     public String _getTooltipDescription(Object caller) {
         return shortType;
     }

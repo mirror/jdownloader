@@ -180,11 +180,6 @@ public enum GenericVariants implements LinkVariant {
         return icon;
     }
 
-    @Override
-    public String _getExtendedName(Object caller) {
-        return _getName(caller) + " [" + _getUniqueId() + "]";
-    }
-
     public String getExtension() {
         return extension;
     }
@@ -221,7 +216,7 @@ public enum GenericVariants implements LinkVariant {
 
     @Override
     public String _getTooltipDescription(Object caller) {
-        return _getExtendedName(caller);
+        return _getName(caller) + " [" + _getUniqueId() + "]";
     }
 
     protected boolean ffmpeg(DownloadLink link, File file, FFMpegProgress set, FFmpeg ffmpeg, File finalFile) throws Exception {

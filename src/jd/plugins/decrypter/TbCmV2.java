@@ -511,7 +511,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         logger.info("Variant Allowed:" + vi);
                         // if we have several variants with the same id, use the one with the highest rating.
                         // example: mp3 conversion can be done from a high and lower video. audio is the same. we should prefer the lq video
-                        if (!YoutubeHelper.USE_EXTENDED_VARIABLES) {
+                        if (!cfg.isAdvancedVariantNamesEnabled()) {
                             VariantInfo mapped = idMap.get(vi.getVariant().getTypeId());
 
                             if (mapped == null || v.getQualityRating() > mapped.getVariant().getQualityRating()) {
@@ -933,7 +933,7 @@ public class TbCmV2 extends PluginForDecrypt {
         String groupID;
         switch (cfg.getGroupLogic()) {
         case BY_FILE_TYPE:
-            groupID = v.getFileExtension();
+            groupID = v.getContainer().name();
             break;
         case NO_GROUP:
             groupID = v._getUniqueId();
@@ -999,7 +999,7 @@ public class TbCmV2 extends PluginForDecrypt {
             // thislink.setProperty(key, value)
             thislink.setProperty(YoutubeHelper.YT_ID, clip.videoID);
 
-            thislink.setProperty(YoutubeHelper.YT_EXT, variantInfo.getVariant().getFileExtension());
+            thislink.setProperty(YoutubeHelper.YT_EXT, variantInfo.getVariant().getContainer().getExtension());
 
             clip.copyToDownloadLink(thislink);
             // thislink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, variantInfo);

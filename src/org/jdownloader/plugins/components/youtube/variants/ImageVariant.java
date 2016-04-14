@@ -49,4 +49,9 @@ public class ImageVariant extends AbstractVariant<ImageGenericInfo> {
         return getBaseVariant().getiTagData().getImageQuality().getLocaleTag();
     }
 
+    @Override
+    public String getTypeId() {
+        return getBaseVariant().name();
+    }
+
 }

@@ -189,14 +189,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     void setBlacklisted(List<BlackOrWhitelistEntry> variants);
 
-    List<BlackOrWhitelistEntry> getExtraExtendedVariants();
-
-    void setExtraExtendedVariants(List<BlackOrWhitelistEntry> variants);
-
-    List<BlackOrWhitelistEntry> getBlacklistedExtendedVariants();
-
-    void setBlacklistedExtendedVariants(List<BlackOrWhitelistEntry> variants);
-
     @AboutConfig
     @DefaultEnumValue("ASK")
     YoutubeConfig.IfUrlisAVideoAndPlaylistAction getLinkIsVideoAndPlaylistUrlAction();
@@ -420,4 +412,29 @@ public interface YoutubeConfig extends PluginConfigInterface {
     int getRatingContainerMP3();
 
     void setRatingContainerMP3(int rating);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @RequiresRestart("A JDownloader Restart is Required")
+    boolean isAdvancedVariantNamesEnabled();
+
+    void setAdvancedVariantNamesEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultStringValue("*3D* *HEIGHT*p *FPS*fps *CONTAINER*-Video *AUDIO_CODEC*-Audio")
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**HEIGHT**FPS**AUDIO_CODEC**3D**AUDIO_BITRATE*")
+
+    String getVariantNamePatternVideo();
+
+    void setVariantNamePatternVideo(String type);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**AUDIO_BITRATE**AUDIO_CODEC**DEMUX*")
+
+    @DefaultStringValue("*CONTAINER* *AUDIO_BITRATE*kbit/s")
+    @RequiresRestart("A JDownloader Restart is Required")
+    String getVariantNamePatternAudio();
+
+    void setVariantNamePatternAudio(String type);
 }

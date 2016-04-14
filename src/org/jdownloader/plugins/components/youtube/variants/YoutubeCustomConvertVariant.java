@@ -32,7 +32,7 @@ public class YoutubeCustomConvertVariant extends AbstractVariant<GenericCustomVa
 
     @Override
     public String _getTooltipDescription(Object link) {
-        return _getExtendedName(link);
+        return null;
     }
 
     public static AbstractVariant parse(YoutubeCustomVariantStorable storable) {
@@ -86,11 +86,6 @@ public class YoutubeCustomConvertVariant extends AbstractVariant<GenericCustomVa
     @Override
     public Icon _getIcon(Object caller) {
         return null;
-    }
-
-    @Override
-    public String getFileExtension() {
-        return extension;
     }
 
     @Override
@@ -161,10 +156,10 @@ public class YoutubeCustomConvertVariant extends AbstractVariant<GenericCustomVa
         return ret;
     }
 
-    @Override
-    public String _getExtendedName(Object caller) {
-        return name;
-    }
+    // @Override
+    // public String _getExtendedName(Object caller) {
+    // return name;
+    // }
 
     @Override
     public String getStorableString() {

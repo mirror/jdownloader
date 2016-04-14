@@ -38,7 +38,6 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.UrlDisplayType;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -530,7 +529,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (children.size() > 0) {
             final CrawledLink cl = children.get(0);
             for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-                ret.add(new LinkVariantStorableV2(lv._getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv._getExtendedName(cl) : lv._getName(cl)));
+                ret.add(new LinkVariantStorableV2(lv._getUniqueId(), lv._getName(cl)));
             }
         }
         return ret;
