@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" }, flags = { 0, 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
 
     public DiskYandexNetFolder(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
     private static final String type_docviewer    = "https?://docviewer\\.yandex\\.[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
     private final String        type_primaryURLs  = "https?://(?:www\\.)?(((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+)";
-    private final String        type_shortURLs_d  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+    private final String        type_shortURLs_d  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+(/[^/]+){0,}";
     private final String        type_shortURLs_i  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
 
     private final String        type_yadi_sk_mail = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
@@ -63,7 +63,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String fname_url = null;
         String fpName = null;
         String mainhashID = null;
-        String path_main = "/";
+        String path_main = new Regex(parameter, type_shortURLs_d).getMatch(1);
+        if (path_main == null) {
+            path_main = "/";
+        }
         if (parameter.matches(type_docviewer)) {
             /* TODO: Change that --> FILE-URLs --> Should work fine then with the fixed decrypter! */
             /* Documents in web view mode --> File-URLs! */
@@ -285,7 +288,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
