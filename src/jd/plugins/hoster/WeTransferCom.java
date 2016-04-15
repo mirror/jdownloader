@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -64,7 +64,7 @@ public class WeTransferCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
         if (dlink.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
@@ -92,32 +92,23 @@ public class WeTransferCom extends PluginForHost {
         }
         String filesize = br.getRegex("class='filename'>.*?</span>.*?([0-9,\\.]+\\s*(K|M|G)B)").getMatch(0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
-        br.getPage(mainpage + "/api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        if (br.containsHTML("\"error\":\"invalid_transfer\"")) {
+        br.getPage(mainpage + "api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
+        if ("invalid_transfer".equals(PluginJSonUtils.getJson(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = PluginJSonUtils.getJson(br, "direct_link");
         if (dllink == null) {
-            final String callback = br.getRegex("\"callback\":\"(\\{.*?)\"\\}\\}$").getMatch(0);
-            String action = PluginJSonUtils.getJson(br, "action");
-            if (action == null || callback == null) {
+            // 20160415-raztoki
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            final LinkedHashMap<String, Object> field = (LinkedHashMap<String, Object>) entries.get("fields");
+            final String action = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "formdata/action");
+            if (action == null || field == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            action += "?";
-            final String[] values = { "unique", "profile", "filename", "expiration", "escaped", "signature" };
-            for (final String value : values) {
-                final String result = PluginJSonUtils.getJson(br, value);
-                if (result == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                action += value + "=" + Encoding.urlEncode(result) + "&";
-            }
-            action += "callback=" + Encoding.urlEncode(callback);
-            dllink = action;
+            dllink = action + "?" + processJson(field.toString().substring(1, field.toString().length() - 1));
         }
         if (dllink != null) {
-            String filename = new Regex(Encoding.htmlDecode(dllink), "filename=([^<>\"]*)").getMatch(0);
+            String filename = new Regex(Encoding.htmlDecode(dllink), "filename=([^&]+)").getMatch(0);
             if (filename == null) {
                 filename = PluginJSonUtils.getJson(br, "filename");
             }
@@ -184,25 +175,10 @@ public class WeTransferCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         // More chunks are possible for some links but not for all
-        String fields = br.getRegex("\"fields\":\\{(\".*?\"\\]\\}\\}\")\\}\\}").getMatch(0);
-        if (fields != null) {
-            fields = fields.replace("\\\"", "JDTEMPREPLACEJD");
-            final String[][] postData = new Regex(fields, "\"(.*?)\":\"(.*?)\"").getMatches();
-            String postString = "";
-            int counter = 0;
-            for (String[] field : postData) {
-                field[1] = field[1].replace("JDTEMPREPLACEJD", "\"");
-                if (counter == 0) {
-                    postString += field[0] + "=" + field[1];
-                } else {
-                    postString += "&" + field[0] + "=" + field[1];
-                }
-                counter++;
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, postString, true, -2);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
-        }
+        /*
+         * 20160415-raztoki <br /> done within get. but could be specified which type via json response. I've only seen gets. removed post
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("<title>Error while downloading your file")) {
@@ -211,6 +187,15 @@ public class WeTransferCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
+    }
+
+    private String processJson(final String s) {
+        String fields = s;
+        final String callback = new Regex(fields, "callback=(\\{.*?\\}\\}$)").getMatch(0);
+        fields = fields.replace(callback, "-JDTEMPREMOVED-");
+        String postString = fields.replace(", ", "&");
+        postString = postString.replace("-JDTEMPREMOVED-", Encoding.urlEncode(callback));
+        return postString;
     }
 
     @Override
