@@ -506,14 +506,14 @@ public enum YoutubeITAG {
         return r;
     }
 
-    public StreamContainer getRawContainer() {
-        return rawContainer;
-    }
-
     private VideoFrameRate videoFrameRate = null;
 
     public static List<YoutubeITAG> getTagList(int itag) {
         return Collections.unmodifiableList(TAG_MAP.get(itag));
+    }
+
+    public StreamContainer getRawContainer() {
+        return rawContainer;
     }
 
 }
