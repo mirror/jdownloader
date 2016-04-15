@@ -70,6 +70,9 @@ public class SubmitYourTapesCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("submityourtapes.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourtapes\\.com)") || br.containsHTML(">Error Page")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("utm_campaign")) {
+            /* Advertising-redirect */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>SubmitYourTapes \\- ([^<>\"]*?)</title>").getMatch(0);
         DLLINK = br.getRegex("addVariable\\(\"file\", \"(http.*?)\"").getMatch(0);

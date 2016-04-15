@@ -69,6 +69,9 @@ public class SubmitYourFlicksCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("utm_campaign")) {
+            /* Advertising-redirect */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^>]+)\"").getMatch(0);
         if (filename == null) {

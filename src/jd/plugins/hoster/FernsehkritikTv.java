@@ -277,12 +277,8 @@ public class FernsehkritikTv extends PluginForHost {
 
                 /* Errorhandling for worst case - no filename information available at all! */
                 if (inValidate(channel) && inValidate(episodename) && date.equals("-1")) {
-                    /* First let's try to get the filename from our direct url in case we found that. */
-                    final_filename = getFilenameFromDownloadlink();
-                    if (inValidate(final_filename)) {
-                        /* Okay finally fallback to url-filename */
-                        final_filename = this.url_videoid + ext;
-                    }
+                    /* Oops we have no filename information at all --> Fallback to finallink-filename or url-filename. */
+                    final_filename = getFilenameLastChance(ext);
                 } else {
                     if (!inValidate(episodename)) {
                         episodenumber = new Regex(episodename, "Folge (\\d+)").getMatch(0);
@@ -431,12 +427,7 @@ public class FernsehkritikTv extends PluginForHost {
 
                 if (inValidate(episodename) && inValidate(episodename) && inValidate(episodename) && inValidate(episodename)) {
                     /* Oops we have no filename information at all --> Fallback to finallink-filename or url-filename. */
-                    /* First let's try to get the filename from our direct url in case we found that. */
-                    final_filename = getFilenameFromDownloadlink();
-                    if (inValidate(final_filename)) {
-                        /* Okay finally fallback to url-filename */
-                        final_filename = this.url_videoid + ext;
-                    }
+                    final_filename = getFilenameLastChance(ext);
                 } else {
                     /* Everything seems to be fine --> Use user defined filename */
                     if (!inValidate(episodename)) {
@@ -504,6 +495,15 @@ public class FernsehkritikTv extends PluginForHost {
         }
 
         return AvailableStatus.TRUE;
+    }
+
+    private String getFilenameLastChance(final String ext) {
+        String filename = getFilenameFromDownloadlink();
+        if (inValidate(filename)) {
+            /* Okay finally fallback to url-filename */
+            filename = this.url_videoid + ext;
+        }
+        return filename;
     }
 
     private String getEpisodenumberFromVideoid() {

@@ -40,11 +40,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wizupload.com" }, urls = { "https?://(www\\.)?wizupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class WizUploadCom extends PluginForHost {
@@ -174,6 +174,9 @@ public class WizUploadCom extends PluginForHost {
         }
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "Download File: ([^<>\"]*?)</").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
