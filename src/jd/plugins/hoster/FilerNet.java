@@ -19,9 +19,10 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
@@ -235,7 +234,7 @@ public class FilerNet extends PluginForHost {
      *            expected value
      * @param ibr
      *            import browser
-     * */
+     */
     @SuppressWarnings("unused")
     private Form getFormByInput(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();
@@ -267,13 +266,9 @@ public class FilerNet extends PluginForHost {
             br.setCookiesExclusive(true);
             prepBrowser();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            try {
-                callAPI("http://api.filer.net/api/profile.json");
-                if (br.getRedirectLocation() != null) {
-                    callAPI(br.getRedirectLocation());
-                }
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            callAPI("http://api.filer.net/api/profile.json");
+            if (br.getRedirectLocation() != null) {
+                callAPI(br.getRedirectLocation());
             }
         }
     }
