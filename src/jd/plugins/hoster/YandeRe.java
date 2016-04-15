@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,80 +30,73 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhd.com" }, urls = { "https?://(?:www\\.)?pornhd\\.com/(videos/\\d+/[^/]+|video/embed/\\d+)" }, flags = { 0 })
-public class PornhdCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/\\d+" }, flags = { 0 })
+public class YandeRe extends PluginForHost {
 
-    public PornhdCom(PluginWrapper wrapper) {
+    public YandeRe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    /* Porn_plugin */
     // Tags:
-    // protocol: no https
-    // other: 2016-04-15: Limited chunks to 1 as tester Guardao reported that anything over 5 chunks would cause issues
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid = getFID(link);
-        link.setLinkID(fid);
-        link.setUrlDownload("http://www.pornhd.com/videos/" + fid);
-    }
+    // protocol: https
+    // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = 5;
 
     private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.pornhd.com/legal/terms";
+        return "https://yande.re/help/posts";
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        final String fid = getFID(downloadLink);
-        String url_filename = new Regex(downloadLink.getDownloadURL(), "/\\d+/([^/]+)$").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"player-container no-video\"|class=\"no\\-video\"")) {
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (url_filename == null) {
-            url_filename = new Regex(this.br.getURL(), "/\\d+/([^/]+)$").getMatch(0);
+        final String json = this.br.getRegex("Post\\.register_resp\\((.*?)\\);").getMatch(0);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "posts/{0}");
+
+        long filesize = 0;
+        String ext = null;
+        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+) \\| #\\d+ \\| yande\\.re\"").getMatch(0);
+        if (filename != null) {
+            filename = url_filename + "_" + filename;
+        } else {
+            filename = url_filename;
         }
-        String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?)\\| PornHD\\.com\"").getMatch(0);
-        if (filename == null) {
-            if (url_filename != null) {
-                filename = fid + "_" + url_filename;
-            } else {
-                filename = fid;
-            }
-        }
-        final String[] qualities = { "1080p", "720p", "480p", "240p" };
-        for (final String quality : qualities) {
-            DLLINK = br.getRegex("\\'" + quality + "\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK != null) {
-                break;
-            }
+        ext = ".png";
+        DLLINK = (String) entries.get("file_url");
+        filesize = DummyScriptEnginePlugin.toLong(entries.get("file_size"), 0);
+        if (DLLINK == null) {
+            ext = ".jpg";
+            DLLINK = (String) entries.get("jpeg_url");
+            filesize = DummyScriptEnginePlugin.toLong(entries.get("jpeg_file_size"), 0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null && DLLINK.contains(".")) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -111,35 +104,33 @@ public class PornhdCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        link.setFinalFileName(filename);
+        if (filesize == 0) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                try {
+                    con = br2.openHeadConnection(DLLINK);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    filesize = con.getLongContentLength();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                link.setProperty("directlink", DLLINK);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "/(\\d+)/[^/]+$").getMatch(0);
+        link.setDownloadSize(filesize);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -181,11 +172,6 @@ public class PornhdCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.UnknownPornScript5;
     }
 
     @Override

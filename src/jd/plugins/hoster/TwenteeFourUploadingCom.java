@@ -49,7 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -57,6 +56,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24uploading.com" }, urls = { "https?://(www\\.)?24uploading\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class TwenteeFourUploadingCom extends PluginForHost {
@@ -141,7 +141,7 @@ public class TwenteeFourUploadingCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || this.br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -547,6 +547,7 @@ public class TwenteeFourUploadingCom extends PluginForHost {
         /* define custom browser headers and language settings */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setAllowedResponseCodes(500);
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */

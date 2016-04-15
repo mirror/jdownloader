@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -56,39 +54,29 @@ public class HotShagCom extends PluginForHost {
         }
         String filename = br.getRegex("<h1 class=\"vd7\">([^<>\"]*?)</h1>").getMatch(0);
         DLLINK = br.getRegex("\"(http://[a-z0-9]+\\.hotshag\\.com/videos/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = null;
+        if (DLLINK != null) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        /* 2016-04-15: Do NOT check filesize here as servers might be slow and we get timeouts! */
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

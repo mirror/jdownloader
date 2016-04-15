@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubemio.com" }, urls = { "http://(www\\.)?tubemio\\.com/view/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubemio.com" }, urls = { "http://(?:www\\.)?tubemio\\.com/view/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class TubeMioCom extends PluginForHost {
 
     public TubeMioCom(PluginWrapper wrapper) {
@@ -49,6 +49,7 @@ public class TubeMioCom extends PluginForHost {
         return "http://www.tubemio.com/contact.php";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -58,13 +59,20 @@ public class TubeMioCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"style4xxx\" style=\"color: #FFCCFF\">\\&nbsp;([^<>\"]*?)</span>").getMatch(0);
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = new Regex(downloadLink.getDownloadURL(), "tubemio\\.com/view/(\\d+/[a-z0-9\\-]+)\\.html").getMatch(0).replace("/", "_");
+        }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             br.getPage("http://www.tubemio.com/fetch/" + new Regex(downloadLink.getDownloadURL(), "/view/(\\d+)/").getMatch(0));
-            DLLINK = br.getRegex("<enclosure url=\"(http[^<>\"]*?)\"/>").getMatch(0);
+            DLLINK = br.getRegex("<enclosure url=\"([^<>\"]*?)\"/>").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (!DLLINK.startsWith("http")) {
+            /* Player will show 'Video not found' */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
