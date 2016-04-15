@@ -104,8 +104,8 @@ public class HzfileCom extends PluginForHost {
     private static final int               ACCOUNT_FREE_MAXCHUNKS        = 1;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = -10;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 1;
 
     /* Linktypes */
     private static final String            TYPE_EMBED                    = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
