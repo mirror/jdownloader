@@ -21,8 +21,9 @@ import java.io.IOException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -32,8 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" }, flags = { 0 })
 public class Shareplacecom extends PluginForHost {
@@ -62,7 +62,7 @@ public class Shareplacecom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         String url = downloadLink.getDownloadURL();
         setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.getPage(url);
@@ -99,6 +99,9 @@ public class Shareplacecom extends PluginForHost {
                 continue;
             }
             dllink = rhino(new Regex(s[0], "(var.*?)var zzipitime").getMatch(0));
+            if (dllink != null) {
+                break;
+            }
         }
         if (dllink == null) {
             if (br.containsHTML("<span>You have got max allowed download sessions from the same IP\\!</span>")) {
@@ -106,7 +109,6 @@ public class Shareplacecom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("dllink doesn't seem to be a file...");
