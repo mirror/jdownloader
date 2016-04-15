@@ -1287,6 +1287,11 @@ public class YoutubeHelper {
     }
 
     public void loadVideo(final YoutubeClipData vid) throws Exception {
+        // TODO: add Cache
+        refreshVideo(vid);
+    }
+
+    public void refreshVideo(final YoutubeClipData vid) throws Exception {
 
         this.vid = vid;
         final Map<YoutubeITAG, List<YoutubeStreamData>> ret = new HashMap<YoutubeITAG, List<YoutubeStreamData>>();
@@ -2267,6 +2272,8 @@ public class YoutubeHelper {
     public static final String YT_STREAM_DATA_VIDEO  = "YT_STREAM_DATA_VIDEO";
     public static final String YT_STREAM_DATA_AUDIO  = "YT_STREAM_DATA_AUDIO";
     public static final String YT_STREAM_DATA_DATA   = "YT_STREAM_DATA_DATA";
+
+    public static final String YT_3D                 = "YT_3D";
 
     public String createFilename(DownloadLink link) {
 

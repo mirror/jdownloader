@@ -1,39 +1,29 @@
 package jd.plugins.hoster;
 
 import java.awt.Color;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
 import javax.swing.JComponent;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.action.BasicAction;
-import org.appwork.swing.components.JScrollMenu;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
@@ -41,11 +31,8 @@ import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.segment.SegmentDownloader;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -61,7 +48,6 @@ import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
-import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -77,11 +63,7 @@ import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.QueryInfo;
@@ -89,7 +71,6 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -109,6 +90,7 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.plugins.hoster.youtube.YoutubeDashConfigPanel;
+import jd.plugins.hoster.youtube.YoutubeLinkGrabberExtender;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
@@ -1894,7 +1876,6 @@ public class YoutubeDashV2 extends PluginForHost {
         // } catch (Exception e) {
         // getLogger().log(e);
         // }
-        // }
         // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANTS, ret2);
         // return ret2;
 
@@ -1902,408 +1883,8 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
-        final JMenu setVariants = new JScrollMenu(_GUI.T.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
-        setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
-        setVariants.setEnabled(false);
+        new YoutubeLinkGrabberExtender(this, parent, pv, allPvs).run();
 
-        final JMenu addVariants = new JScrollMenu(_GUI.T.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add());
-
-        addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
-        addVariants.setEnabled(false);
-        new Thread("Collect Variants") {
-            public void run() {
-                HashMap<String, AbstractVariant> map = new HashMap<String, AbstractVariant>();
-                final HashMap<String, ArrayList<AbstractVariant>> listMap = new HashMap<String, ArrayList<AbstractVariant>>();
-                for (CrawledLink cl : pv.getChildren()) {
-                    List<LinkVariant> v = getVariantsByLink(cl.getDownloadLink());
-                    if (v != null) {
-                        for (LinkVariant lv : v) {
-                            if (lv instanceof AbstractVariant) {
-                                if (map.put(((AbstractVariant) lv).getTypeId(), (AbstractVariant) lv) == null) {
-                                    ArrayList<AbstractVariant> l = listMap.get(((AbstractVariant) lv).getGroup().name());
-                                    if (l == null) {
-                                        l = new ArrayList<AbstractVariant>();
-                                        listMap.put(((AbstractVariant) lv).getGroup().name(), l);
-                                    }
-                                    l.add((AbstractVariant) lv);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-
-                        add(setVariants, addVariants, pv, listMap, VariantGroup.VIDEO);
-                        add(setVariants, addVariants, pv, listMap, VariantGroup.AUDIO);
-
-                        add(setVariants, addVariants, pv, listMap, VariantGroup.IMAGE);
-
-                        add(setVariants, addVariants, pv, listMap, VariantGroup.VIDEO_3D);
-                        add(setVariants, addVariants, pv, listMap, VariantGroup.SUBTITLES);
-
-                    }
-
-                    private void add(JMenu setVariants, JMenu addVariants, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<AbstractVariant>> listMap, final VariantGroup group) {
-                        ArrayList<AbstractVariant> list = listMap.get(group.name());
-                        if (list == null || list.size() == 0) {
-                            addVariants.add(new JMenuItem(new BasicAction() {
-                                {
-                                    setName(_GUI.T.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add_best(group.getLabel()));
-                                }
-
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    new Thread("Add Additional YoutubeLinks") {
-                                        public void run() {
-
-                                            java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
-                                            for (CrawledLink cl : pv.getChildren()) {
-
-                                                String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(group.name());
-
-                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
-                                                job.setText(dummyUrl);
-                                                job.setCustomSourceUrl(cl.getOriginLink().getURL());
-                                                job.setDeepAnalyse(false);
-                                                // job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
-                                                //
-                                                // @Override
-                                                // public void modifyCrawledLink(CrawledLink link) {
-                                                // pi=
-                                                // link.setDesiredPackageInfo(desiredPackageInfo);
-                                                // }
-                                                // });
-                                                LinkCollector.getInstance().addCrawlerJob(job);
-                                                // YoutubeHelper.YT_ID
-                                                // System.out.println(1);
-
-                                            }
-
-                                            LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                            linkChecker.check(checkableLinks);
-
-                                        };
-                                    }.start();
-
-                                }
-
-                            }));
-
-                            return;
-                        }
-                        final Comparator<AbstractVariant> comp;
-                        Collections.sort(list, comp = new Comparator<AbstractVariant>() {
-
-                            @Override
-                            public int compare(AbstractVariant o1, AbstractVariant o2) {
-                                return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
-                            }
-                        });
-                        setVariants.setEnabled(true);
-                        addVariants.setEnabled(true);
-
-                        addToAddMenu(addVariants, pv, listMap, group, list, comp);
-                        addToSetMenu(setVariants, pv, listMap, group, list, comp);
-
-                    }
-
-                    protected void addToAddMenu(JMenu addSubmenu, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<AbstractVariant>> listMap, final VariantGroup group, ArrayList<AbstractVariant> list, final Comparator<AbstractVariant> comp) {
-                        JMenu groupMenu = new JScrollMenu(group.getLabel());
-                        // if (listMap.size() == 1) {
-                        // groupMenu = addSubmenu;
-                        // } else {
-                        addSubmenu.add(groupMenu);
-                        // }
-                        groupMenu.add(new JMenuItem(new BasicAction() {
-                            {
-                                setName(_GUI.T.YoutubeDashV2_add_best(group.getLabel()));
-                            }
-
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                new Thread("Add Additional YoutubeLinks") {
-                                    public void run() {
-
-                                        java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
-                                        for (CrawledLink cl : pv.getChildren()) {
-                                            List<AbstractVariant> variants = new ArrayList<AbstractVariant>();
-                                            for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
-                                                if (v instanceof AbstractVariant) {
-                                                    variants.add((AbstractVariant) v);
-                                                }
-                                            }
-                                            Collections.sort(variants, comp);
-                                            boolean found = false;
-                                            for (AbstractVariant variant : variants) {
-                                                if (variant.getGroup() == group) {
-
-                                                    CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, variant);
-
-                                                    if (newLink != null) {
-                                                        found = true;
-                                                        checkableLinks.add(newLink);
-                                                    } else {
-                                                        Toolkit.getDefaultToolkit().beep();
-                                                    }
-                                                    break;
-                                                }
-
-                                            }
-                                            if (!found) {
-                                                // best group
-                                                String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(group.name());
-
-                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
-                                                job.setText(dummyUrl);
-                                                job.setCustomSourceUrl(cl.getOriginLink().getURL());
-                                                job.setDeepAnalyse(false);
-                                                LinkCollector.getInstance().addCrawlerJob(job);
-
-                                            }
-
-                                        }
-
-                                        LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                        linkChecker.check(checkableLinks);
-
-                                    };
-                                }.start();
-
-                            }
-
-                        }));
-
-                        for (final AbstractVariant v : list) {
-                            groupMenu.add(new JMenuItem(new BasicAction() {
-                                {
-                                    // CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v._getExtendedName() :
-                                    setName(v._getName(pv));
-                                    setTooltipText(v.createAdvancedName());
-                                }
-
-                                //
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
-                                    for (CrawledLink cl : pv.getChildren()) {
-                                        boolean found = false;
-                                        for (LinkVariant variants : getVariantsByLink(cl.getDownloadLink())) {
-                                            if (variants instanceof AbstractVariant) {
-                                                if (((AbstractVariant) variants).getTypeId().equals(v.getTypeId())) {
-                                                    CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, v);
-
-                                                    if (newLink != null) {
-                                                        found = true;
-                                                        checkableLinks.add(newLink);
-                                                    } else {
-                                                        Toolkit.getDefaultToolkit().beep();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if (!found) {
-                                            String dummyUrl;
-                                            try {
-                                                dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(Base64.encodeToString(v.getStorableString().getBytes("UTF-8"), false));
-
-                                                LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
-                                                job.setText(dummyUrl);
-                                                job.setCustomSourceUrl(cl.getOriginLink().getURL());
-                                                job.setDeepAnalyse(false);
-                                                LinkCollector.getInstance().addCrawlerJob(job);
-                                            } catch (UnsupportedEncodingException e1) {
-                                                logger.log(e1);
-                                            }
-
-                                        }
-
-                                    }
-
-                                    LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                    linkChecker.check(checkableLinks);
-                                }
-
-                            }));
-
-                        }
-
-                        groupMenu.add(new JMenuItem(new BasicAction() {
-                            {
-                                setName(_GUI.T.YoutubeDashV2_add_worst(group.getLabel()));
-                            }
-
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
-                                for (CrawledLink cl : pv.getChildren()) {
-                                    List<AbstractVariant> variants = new ArrayList<AbstractVariant>();
-                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
-                                        if (v instanceof AbstractVariant) {
-                                            variants.add((AbstractVariant) v);
-                                        }
-                                    }
-                                    Collections.sort(variants, comp);
-                                    boolean found = false;
-                                    for (int i = variants.size() - 1; i >= 0; i--) {
-                                        AbstractVariant variant = variants.get(i);
-                                        if (variant.getGroup() == group) {
-                                            CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, variant);
-
-                                            if (newLink != null) {
-                                                found = true;
-                                                checkableLinks.add(newLink);
-                                            } else {
-                                                Toolkit.getDefaultToolkit().beep();
-                                            }
-                                            break;
-                                        }
-
-                                    }
-
-                                    if (!found) {
-                                        // worse group
-                                        String dummyUrl = "https://www.youtube.com/watch?v=" + cl.getDownloadLink().getProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(group.name());
-
-                                        LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
-                                        job.setText(dummyUrl);
-                                        job.setCustomSourceUrl(cl.getOriginLink().getURL());
-                                        job.setDeepAnalyse(false);
-                                        LinkCollector.getInstance().addCrawlerJob(job);
-
-                                    }
-
-                                }
-
-                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                linkChecker.check(checkableLinks);
-                            }
-
-                        }));
-                    }
-
-                    protected void addToSetMenu(JMenu setVariants, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<AbstractVariant>> map, final VariantGroup group, ArrayList<AbstractVariant> list, final Comparator<AbstractVariant> comp) {
-                        JMenu groupMenu = new JScrollMenu(group.getLabel());
-                        if (map.size() == 1) {
-                            groupMenu = setVariants;
-                        } else {
-                            setVariants.add(groupMenu);
-                        }
-                        groupMenu.add(new JMenuItem(new BasicAction() {
-                            {
-                                setName(_GUI.T.YoutubeDashV2_add_best(group.getLabel()));
-                            }
-
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
-                                for (CrawledLink cl : pv.getChildren()) {
-                                    List<AbstractVariant> variants = new ArrayList<AbstractVariant>();
-                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
-                                        if (v instanceof AbstractVariant) {
-                                            variants.add((AbstractVariant) v);
-                                        }
-                                    }
-                                    Collections.sort(variants, comp);
-                                    for (AbstractVariant variant : variants) {
-                                        if (variant.getGroup() == group) {
-                                            LinkCollector.getInstance().setActiveVariantForLink(cl.getDownloadLink(), variant);
-
-                                            checkableLinks.add(cl);
-                                            break;
-                                        }
-
-                                    }
-
-                                }
-
-                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                linkChecker.check(checkableLinks);
-                            }
-
-                        }));
-                        for (final AbstractVariant v : list) {
-                            groupMenu.add(new JMenuItem(new BasicAction() {
-                                {
-                                    setName(v._getName(pv));
-                                    setTooltipText(v.createAdvancedName());
-                                }
-
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
-                                    for (CrawledLink cl : pv.getChildren()) {
-                                        for (LinkVariant variants : getVariantsByLink(cl.getDownloadLink())) {
-                                            if (variants instanceof AbstractVariant) {
-                                                if (((AbstractVariant) variants).getTypeId().equals(v.getTypeId())) {
-                                                    LinkCollector.getInstance().setActiveVariantForLink(cl.getDownloadLink(), v);
-                                                    checkableLinks.add(cl);
-                                                }
-                                            }
-                                        }
-
-                                    }
-
-                                    LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                    linkChecker.check(checkableLinks);
-                                }
-
-                            }));
-
-                        }
-
-                        groupMenu.add(new JMenuItem(new BasicAction() {
-                            {
-                                setName(_GUI.T.YoutubeDashV2_add_worst(group.getLabel()));
-                            }
-
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
-                                for (CrawledLink cl : pv.getChildren()) {
-                                    List<AbstractVariant> variants = new ArrayList<AbstractVariant>();
-                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
-                                        if (v instanceof AbstractVariant) {
-                                            variants.add((AbstractVariant) v);
-                                        }
-                                    }
-                                    Collections.sort(variants, comp);
-                                    for (int i = variants.size() - 1; i >= 0; i--) {
-                                        AbstractVariant variant = variants.get(i);
-                                        if (variant.getGroup() == group) {
-                                            LinkCollector.getInstance().setActiveVariantForLink(cl.getDownloadLink(), variant);
-
-                                            checkableLinks.add(cl);
-                                            break;
-                                        }
-
-                                    }
-
-                                }
-
-                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                linkChecker.check(checkableLinks);
-                            }
-
-                        }));
-                    }
-                };
-
-            };
-        }.start();
-
-        parent.add(setVariants);
-        parent.add(addVariants);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

@@ -147,7 +147,7 @@ public class YoutubeClipData {
     public void copyToDownloadLink(final DownloadLink thislink) {
         thislink.setProperty(YoutubeHelper.YT_TITLE, title);
         thislink.setProperty(YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
-
+        thislink.setProperty(YoutubeHelper.YT_3D, is3D());
         thislink.setProperty(YoutubeHelper.YT_CHANNEL, channel);
         thislink.setProperty(YoutubeHelper.YT_USER, user);
         thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.name());

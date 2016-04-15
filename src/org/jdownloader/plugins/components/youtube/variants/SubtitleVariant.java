@@ -118,7 +118,7 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
 
     @Override
     public String getTypeId() {
-        return getBaseVariant().name();
+        return _getUniqueId();
 
     }
 

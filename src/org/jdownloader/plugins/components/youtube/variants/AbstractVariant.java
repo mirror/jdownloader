@@ -25,85 +25,93 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     public static AbstractVariant get(String ytv) {
-        if (ytv.matches("[A-Z0-9_]+")) {
-            // old youtubevariant+try{
-            VariantBase base = VariantBase.get(ytv);
-            if (base != null) {
+        try {
+            if (ytv.matches("[A-Z0-9_]+")) {
+                // old youtubevariant+try{
+                VariantBase base = VariantBase.get(ytv);
+                if (base != null) {
 
-                AbstractVariant ret = null;
-                switch (base.getGroup()) {
-                case AUDIO:
-                    ret = new AudioVariant(base);
-                    ret.setJson("{}");
-                    break;
-                case DESCRIPTION:
-                    ret = new DescriptionVariant();
-                    ret.setJson("null");
-                    break;
-                case IMAGE:
-                    ret = new ImageVariant(base);
-                    ret.setJson("{}");
-                    break;
-                case SUBTITLES:
-                    ret = new SubtitleVariant();
+                    AbstractVariant ret = null;
+                    switch (base.getGroup()) {
+                    case AUDIO:
+                        ret = new AudioVariant(base);
+                        ret.setJson("{}");
+                        break;
+                    case DESCRIPTION:
+                        ret = new DescriptionVariant();
+                        ret.setJson("null");
+                        break;
+                    case IMAGE:
+                        ret = new ImageVariant(base);
+                        ret.setJson("{}");
+                        break;
+                    case SUBTITLES:
+                        ret = new SubtitleVariant();
 
-                    ret.setJson("{}");
-                    break;
-                case VIDEO:
-                case VIDEO_3D:
-                    ret = new VideoVariant(base);
-                    ret.setJson("{}");
-                    break;
+                        ret.setJson("{}");
+                        break;
+                    case VIDEO:
+                    case VIDEO_3D:
+                        ret = new VideoVariant(base);
+                        ret.setJson("{}");
+                        break;
 
+                    }
+
+                    return ret;
                 }
 
-                return ret;
             }
+            if (!ytv.contains("{")) {
+                return null;
+            }
+            YoutubeBasicVariantStorable storable = JSonStorage.restoreFromString(ytv, YoutubeBasicVariantStorable.TYPE);
 
-        }
-        YoutubeBasicVariantStorable storable = JSonStorage.restoreFromString(ytv, YoutubeBasicVariantStorable.TYPE);
-
-        AbstractVariant ret = null;
-        VariantBase base = null;
-        try {
-            base = VariantBase.valueOf(storable.getId());
-            ;
-
-        } catch (Throwable e) {
+            AbstractVariant ret = null;
+            VariantBase base = null;
             try {
-                base = VariantBase.COMPATIBILITY_MAP.get(storable.getId());
+                base = VariantBase.valueOf(storable.getId());
                 ;
 
-            } catch (Throwable e2) {
+            } catch (Throwable e) {
+                try {
+                    base = VariantBase.COMPATIBILITY_MAP.get(storable.getId());
+                    ;
+
+                } catch (Throwable e2) {
+
+                }
+            }
+            if (base == null) {
+                return null;
+            }
+
+            switch (base.getGroup()) {
+            case AUDIO:
+                ret = new AudioVariant(base);
+                break;
+            case DESCRIPTION:
+                ret = new DescriptionVariant();
+                break;
+            case IMAGE:
+                ret = new ImageVariant(base);
+                break;
+            case SUBTITLES:
+                ret = new SubtitleVariant();
+                break;
+            case VIDEO_3D:
+            case VIDEO:
+                ret = new VideoVariant(base);
+                break;
 
             }
-        }
-        if (base == null) {
+            ret.setJson(storable.getData());
+
+            return ret;
+        } catch (Throwable e) {
+            Log.log(e);
             return null;
         }
-
-        switch (base.getGroup()) {
-        case AUDIO:
-            ret = new AudioVariant(base);
-            break;
-        case DESCRIPTION:
-            ret = new DescriptionVariant();
-            break;
-        case IMAGE:
-            ret = new ImageVariant(base);
-            break;
-        case SUBTITLES:
-            ret = new SubtitleVariant();
-            break;
-        case VIDEO_3D:
-        case VIDEO:
-            ret = new VideoVariant(base);
-            break;
-
-        }
-        ret.setJson(storable.getData());
-
-        return ret;
     }
 
     abstract public void setJson(String jsonString);
