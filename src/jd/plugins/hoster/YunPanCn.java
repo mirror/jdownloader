@@ -17,13 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,10 +28,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+|yunpan\\.cn/[a-zA-Z0-9]{13})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://yunpandecrypted\\.cn/\\d+" }, flags = { 0 })
 public class YunPanCn extends PluginForHost {
 
-    private final String preDownloadPassword = "<input class=\"pwd-input\" type=\"";
+    public static final String html_preDownloadPassword = "<input class=\"pwd-input\" type=\"";
 
     public YunPanCn(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,86 +42,75 @@ public class YunPanCn extends PluginForHost {
         return "http://yunpan.360.cn/resource/html/agreement.html";
     }
 
-    @SuppressWarnings("deprecation")
+    private String folderid = null;
+    private String fileid   = null;
+    private String host     = null;
+    private String mainlink = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final UnknownHostException e) {
+        mainlink = link.getStringProperty("mainlink", null);
+        folderid = link.getStringProperty("folderid", null);
+        fileid = link.getStringProperty("fileid", null);
+        host = link.getStringProperty("host", null);
+        if (folderid == null || fileid == null || mainlink == null || host == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(preDownloadPassword)) {
+
+        br.getPage(mainlink);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("id=\"linkError\"")) {
             // if the link was removed, it wouldn't have a password!
             link.getLinkStatus().setStatusText("This file requires pre-download password!");
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("befrherthtu567mut|id=\"linkError\"") || br.getURL().contains("?")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        fileCheck(link);
         return AvailableStatus.TRUE;
-    }
-
-    private void fileCheck(final DownloadLink link) throws PluginException {
-        final String filename = br.getRegex("name\\s*:\\s*'(.*?)',").getMatch(0);
-        final String filesize = br.getRegex("size\\s*:\\s*'(\\d+)',").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) {
-            link.setDownloadSize(Long.parseLong(filesize));
-        }
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(preDownloadPassword)) {
+        if (br.containsHTML(html_preDownloadPassword)) {
+            boolean failed = true;
             for (int i = 0; i != 3; i++) {
-                String passCode = downloadLink.getStringProperty("pass", null);
-                if (passCode == null || "".equals(passCode)) {
+                String passCode = downloadLink.getDownloadPassword();
+                if (passCode == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
                 }
-                if (passCode == null || "".equals(passCode)) {
+                if (passCode == null) {
                     logger.info("User has entered blank password, exiting handlePassword");
-                    downloadLink.setProperty("pass", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password required!");
+                    downloadLink.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
-                Browser br2 = br.cloneBrowser();
-                br2.postPage(new Regex(br.getURL(), "https?://[^/]+").getMatch(-1) + "/share/verifyPassword", "shorturl=" + new Regex(br.getURL(), "/lk/([a-zA-Z0-9]+)$").getMatch(0) + "&linkpassword=" + Encoding.urlEncode(passCode));
-                if (br2.containsHTML("\"errno\":0,")) {
-                    downloadLink.setProperty("pass", passCode);
+                br.postPage("http://" + host + "/share/verifyPassword", "shorturl=" + folderid + "&linkpassword=" + Encoding.urlEncode(passCode));
+                if (br.containsHTML("\"errno\":0,")) {
+                    downloadLink.setDownloadPassword(passCode);
+                    failed = false;
                     break;
-                } else if (i + 1 == 3) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Exausted Password Tries!");
                 } else {
-                    downloadLink.setProperty("pass", Property.NULL);
+                    downloadLink.setDownloadPassword(null);
                 }
             }
-            br.getPage(br.getURL());
-            fileCheck(downloadLink);
+            if (failed) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            br.getPage(mainlink);
         }
-        final Regex urlRegex = new Regex(br.getURL(), "https?://(?:www\\.)?([a-z0-9]+\\.[a-z0-9]+)\\.yunpan\\.cn/lk/(.+)");
-        final String nid = br.getRegex("nid : \\'(\\d+)\\',").getMatch(0);
-        final String domainPart = urlRegex.getMatch(0);
-        final String shortUrl = urlRegex.getMatch(1);
         final String download_permit_token = this.br.getRegex("download_permit_token[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
-        if (nid == null || domainPart == null || shortUrl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String postdata = "shorturl=" + shortUrl + "&nid=" + nid;
+        String postdata = "shorturl=" + folderid + "&nid=" + fileid;
         if (download_permit_token != null) {
             postdata += "&download_permit_token=" + Encoding.urlEncode(download_permit_token);
         }
-        br.postPage("https://" + domainPart + ".yunpan.cn/share/downloadfile/", postdata);
+        br.postPage("https://" + host + "/share/downloadfile/", postdata);
         String dllink = br.getRegex("\"downloadurl\":\"(https?[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
+            if (download_permit_token == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with the yunpan.cn software");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replace("\\", "");
