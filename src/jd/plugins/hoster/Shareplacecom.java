@@ -93,12 +93,16 @@ public class Shareplacecom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         String dllink = null;
         for (final String[] s : br.getRegex("<script language=\"Javascript\">(.*?)</script>").getMatches()) {
             if (!new Regex(s[0], "(vvvvvvvvv|teletubbies|zzipitime)").matches()) {
                 continue;
             }
-            dllink = rhino(new Regex(s[0], "(var.*?)var zzipitime").getMatch(0));
+            dllink = rhino(s[0]);
             if (dllink != null) {
                 break;
             }
@@ -141,16 +145,21 @@ public class Shareplacecom extends PluginForHost {
     }
 
     private String rhino(final String s) {
-        Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            engine.eval(s);
-            result = engine.get("coffee");
-        } catch (final Throwable e) {
-            return null;
+        final String cleanup = new Regex(s, "(var.*?)var zzipitime").getMatch(0);
+        final String[] vars = new Regex(s, "<a href=\"'\\s*\\+\\s*(.*?)\\s*\\+\\s*'\"").getColumn(0);
+        for (final String var : vars) {
+            String result = null;
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                engine.eval(cleanup);
+                result = (String) engine.get(var);
+            } catch (final Throwable e) {
+                return null;
+            }
+            return result != null && !result.contains("jdownloader") && result.startsWith("http") ? result : null;
         }
-        return result != null ? result.toString() : null;
+        return null;
     }
 
 }
