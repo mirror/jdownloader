@@ -62,7 +62,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
         final String[] playlists = br.getRegex("playlist_id=(\\d+)\"").getColumn(0);
         if (playlists == null || playlists.length == 0) {
             /* No content to crawl --> Do NOT add offline URLs in this case! */
-            logger.info("Found no downloadable content in URL: " + parameter);
+            logger.info("Could not find any downloadable content in URL: " + parameter);
             return decryptedLinks;
         }
         if (playlists != null && playlists.length > 0) {
