@@ -103,8 +103,16 @@ public class FastShareCz extends antiDDoSForHost {
         }
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            if (br.containsHTML("No htmlCode read")) {
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error", 30 * 60 * 1000l);
+            /*
+             * E.g.
+             * "<script>alert('Přes FREE můžete stahovat jen jeden soubor současně.');top.location.href='http://www.fastshare.cz/123456789/blabla.bla';</script>"
+             */
+            if (this.br.containsHTML("Přes FREE můžete stahovat jen jeden soubor současně")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting more free downloads", 3 * 60 * 1000l);
+            } else if (this.br.containsHTML("<script>alert\\(")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #1", 30 * 60 * 1000l);
+            } else if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #2", 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
