@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -39,30 +37,31 @@ public class GooglePhotos extends PluginForHost {
 
     /* DEV NOTES */
     // Tags: Google Service
-    // protocol: no https
+    // protocol: https
     // other:
 
-    // /* Extension which will be used if no correct extension is found */
-    // private final String default_Extension_Picture = ".jpg";
-    // private final String default_Extension_Video = ".mp4";
     /* Connection stuff */
-    private final boolean free_resume       = true;
-    private final int     free_maxchunks    = 0;
-    private final int     free_maxdownloads = -1;
+    private boolean   free_resume       = true;
+    private int       free_maxchunks    = 0;
+    private final int free_maxdownloads = -1;
 
-    private String        dllink            = null;
-    private boolean       serverissue       = false;
+    private String    dllink            = null;
+    private boolean   serverissue       = false;
 
     @Override
     public String getAGBLink() {
         return "https://www.google.com/intl/de/policies/terms/";
     }
 
+    /* TODO: Improve this, maybe download the video download, not the stream */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         serverissue = false;
+        free_resume = true;
+        free_maxchunks = 0;
+
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String url_title = new Regex(link.getDownloadURL(), "/photo/([A-Za-z0-9\\-_]+)").getMatch(0).replace("-", " ");
@@ -71,43 +70,85 @@ public class GooglePhotos extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* TODO: Check if there are better ways to find the final downloadlink! */
-        /* For photos */
-        dllink = br.getRegex("2\\][\t\n\r ]*?,\"(https?://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            /* For videos */
-            dllink = br.getRegex("data\\-media\\-key=\"[^<>\"]+\"data\\-url=\"(https[^<>\"]+)\"[^@]+data\\-isvideo=\"true\"").getMatch(0);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final Browser br2 = br.cloneBrowser();
+        boolean isvideo = false;
+        boolean isVideoStreamDwnload = false;
+        long filesize = 0;
+        String filename = null;
         URLConnectionAdapter con = null;
-        try {
+        if (this.br.containsHTML("data\\-isvideo=\"true\"")) {
             try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /*
+                 * Special for videos to find the filename. If we access the 'wrong' videourl we'll get a .gifv filename - if we access the
+                 * 'right' videourl we won't get a filename at all!
+                 */
+                isvideo = true;
+                /* Try to get downloadlink */
+                dllink = br.getRegex("(https?://video\\.googleusercontent\\.com/[A-Za-z0-9\\-_]+)").getMatch(0);
+                if (dllink == null) {
+                    /* Failed? Try to get streamlink! */
+                    dllink = br.getRegex("data\\-media\\-key=\"[^<>\"]+\"data\\-url=\"(https[^<>\"]+)\"[^@]+data\\-isvideo=\"true\"").getMatch(0);
+                    isVideoStreamDwnload = true;
+                }
+                if (dllink != null) {
+                    con = br.openHeadConnection(dllink);
+                    filename = getFileNameFromHeader(con);
+                    if (isVideoStreamDwnload) {
+                        filename = this.removeDoubleExtensions(filename, "mp4");
+                        /* =m22?cpn=blablabla&c=WEB&cver=1.20160414 */
+                        /* Correct videourl */
+                        dllink += "=m22?c=WEB";
+                    } else {
+                        /* Download of original file --> No workaround needed and filesize & final filename is known! */
+                        filesize = con.getLongContentLength();
+                        free_maxchunks = 1;
+                        free_resume = false;
+                    }
+                }
+            } catch (final Throwable e) {
             }
+        } else {
+            /* For photos */
+            dllink = br.getRegex("2\\][\t\n\r ]*?,\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink != null && (filesize == 0 || filename == null)) {
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(getFileNameFromHeader(con));
+                filesize = con.getLongContentLength();
+                if (filename == null) {
+                    filename = getFileNameFromHeader(con);
+                }
+                if (filename == null) {
+                    filename = url_title;
+                    if (isVideoStreamDwnload) {
+                        filename += ".mp4";
+                    } else if (!isvideo) {
+                        filename += ".jpg";
+                    } else {
+                        /* Video download with unknown extension. */
+                    }
+                } else if (isVideoStreamDwnload && !filename.endsWith(".mp4")) {
+                    filename = url_title + ".mp4";
+                }
                 link.setProperty("directlink", dllink);
             } else {
                 serverissue = true;
             }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
         }
+        try {
+            con.disconnect();
+        } catch (final Throwable e) {
+        }
+        link.setFinalFileName(filename);
+        link.setDownloadSize(filesize);
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (serverissue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
@@ -128,20 +169,35 @@ public class GooglePhotos extends PluginForHost {
         dl.startDownload();
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
+    /**
+     * Removes double extensions (of video hosts) to correct ugly filenames such as 'some_videoname.mkv.flv.mp4'.<br />
+     *
+     * @param filename
+     *            input filename whose extensions will be replaced by parameter defaultExtension.
+     * @param defaultExtension
+     *            Extension which is supposed to replace the (multiple) wrong extension(s).
+     */
+    private String removeDoubleExtensions(String filename, final String defaultExtension) {
+        if (filename == null || defaultExtension == null) {
+            return null;
+        }
+        String ext_temp = null;
+        int index = 0;
+        while (filename.contains(".")) {
+            /* First let's remove all common video extensions */
+            index = filename.lastIndexOf(".");
+            ext_temp = filename.substring(index);
+            if (ext_temp != null && ext_temp.matches("\\.(avi|divx|flv|mkv|mov|mp4|gifv|gif)")) {
+                filename = filename.substring(0, index);
+                continue;
+            }
+            break;
+        }
+        /* Add desired video extension */
+        if (!filename.endsWith("." + defaultExtension)) {
+            filename += "." + defaultExtension;
+        }
+        return filename;
     }
 
     @Override

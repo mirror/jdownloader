@@ -423,7 +423,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (!filename.endsWith("." + defaultExtension)) {
             filename += "." + defaultExtension;
         }
-        return filename;
+        return null;
     }
 
     @Override
