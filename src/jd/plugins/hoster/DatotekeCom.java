@@ -94,15 +94,15 @@ public class DatotekeCom extends antiDDoSForHost {
     private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /* Connection stuff */
-    private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = -2;
-    private static final int     free_MAXDOWNLOADS                            = 2;
-    private static final boolean account_FREE_RESUME                          = true;
-    private static final int     account_FREE_MAXCHUNKS                       = -2;
-    private static final int     account_FREE_MAXDOWNLOADS                    = 2;
-    private static final boolean account_PREMIUM_RESUME                       = true;
-    private static final int     account_PREMIUM_MAXCHUNKS                    = -2;
-    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 2;
+    private static final boolean free_RESUME                                  = false;
+    private static final int     free_MAXCHUNKS                               = 1;
+    private static final int     free_MAXDOWNLOADS                            = 1;
+    private static final boolean account_FREE_RESUME                          = false;
+    private static final int     account_FREE_MAXCHUNKS                       = 1;
+    private static final int     account_FREE_MAXDOWNLOADS                    = 1;
+    private static final boolean account_PREMIUM_RESUME                       = false;
+    private static final int     account_PREMIUM_MAXCHUNKS                    = 1;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 1;
 
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
