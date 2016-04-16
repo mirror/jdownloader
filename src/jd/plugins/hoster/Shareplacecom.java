@@ -155,9 +155,12 @@ public class Shareplacecom extends PluginForHost {
                 engine.eval(cleanup);
                 result = (String) engine.get(var);
             } catch (final Throwable e) {
-                return null;
+                continue;
             }
-            return result != null && !result.contains("jdownloader") && result.startsWith("http") ? result : null;
+            if (result == null || (result.contains("jdownloader") && !result.startsWith("http"))) {
+                continue;
+            }
+            return result;
         }
         return null;
     }
