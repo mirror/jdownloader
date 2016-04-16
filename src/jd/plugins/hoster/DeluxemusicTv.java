@@ -26,6 +26,7 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -54,12 +55,14 @@ public class DeluxemusicTv extends PluginForHost {
         return "http://www.deluxemusic.tv/impressum.html";
     }
 
-    public static final String   ENABLE_TEST_FEATURES        = "ENABLE_TEST_FEATURES";
-    public static final boolean  defaultENABLE_TEST_FEATURES = false;
+    public static final String   ENABLE_DATE_AT_BEGINNING_OF_FILENAME        = "ENABLE_DATE_AT_BEGINNING_OF_FILENAME";
+    public static final String   ENABLE_TEST_FEATURES                        = "ENABLE_TEST_FEATURES";
+    public static final boolean  defaultENABLE_DATE_AT_BEGINNING_OF_FILENAME = false;
+    public static final boolean  defaultENABLE_TEST_FEATURES                 = false;
 
-    private static final boolean download_method_prefer_hls  = false;
+    private static final boolean download_method_prefer_hls                  = false;
 
-    private String               xml_source                  = null;
+    private String               xml_source                                  = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -81,14 +84,18 @@ public class DeluxemusicTv extends PluginForHost {
         return status;
     }
 
+    @SuppressWarnings("deprecation")
     public static AvailableStatus parseTrackInfo(final DownloadLink link, final String xml_all, final String[] xml_array) throws IOException, PluginException {
         final DecimalFormat df = new DecimalFormat("0000");
         final String playlist_id = getPlaylistid(link);
         final String xml_source = xml_array[getArrayid(link)];
 
         String title = getXML(xml_source, "title");
+        final boolean addDateAtBeginningOfFilenamesForMashupSets = SubConfiguration.getConfig("deluxemusic.tv").getBooleanProperty(jd.plugins.hoster.DeluxemusicTv.ENABLE_DATE_AT_BEGINNING_OF_FILENAME, jd.plugins.hoster.DeluxemusicTv.defaultENABLE_DATE_AT_BEGINNING_OF_FILENAME);
+        boolean isMashupSet = true;
         String date = new Regex(xml_all, "Die Sets vom (\\d{1,2}\\. [A-Za-z]+)").getMatch(0);
         if (date == null) {
+            isMashupSet = false;
             date = new Regex(xml_source, "UPDATE DELUXE (\\d{4} \\d{1,2} \\d{1,2})").getMatch(0);
         }
         if (title == null) {
@@ -101,7 +108,8 @@ public class DeluxemusicTv extends PluginForHost {
         }
         String filename = "";
 
-        if (date != null) {
+        /* Only add date to the beginning of the filename if wished by the user */
+        if (date != null && ((isMashupSet && addDateAtBeginningOfFilenamesForMashupSets) || !isMashupSet)) {
             /* Remove date from title - we don't need it twice! */
             title = title.replace(" " + date, "");
 
@@ -260,7 +268,8 @@ public class DeluxemusicTv extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_TEST_FEATURES, JDL.L("plugins.hoster.DeluxemusicTv.enableTestMode", "Enable test mode?\r\nONLY ENABLE THIS IF YOU KNOW WHAT YOU'RE DOING!!")).setDefaultValue(defaultENABLE_TEST_FEATURES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_DATE_AT_BEGINNING_OF_FILENAME, JDL.L("plugins.hoster.DeluxemusicTv.dateInFilenameOfMashupSets", "For mashup sets: Put date at the beginning of filenames?\r\nThe date is not relevant for such sets so it is recommended to disable this setting.")).setDefaultValue(defaultENABLE_DATE_AT_BEGINNING_OF_FILENAME));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_TEST_FEATURES, JDL.L("plugins.hoster.DeluxemusicTv.enableTestMode", "<html><p style=\"color:#F62817\">Enable test mode?<br />ONLY ENABLE THIS IF YOU KNOW WHAT YOU'RE DOING!! This setting may add thousands of links to your linkgrabber!</p></html>")).setDefaultValue(defaultENABLE_TEST_FEATURES));
     }
 
     @Override
