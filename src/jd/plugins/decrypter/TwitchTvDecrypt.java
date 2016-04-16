@@ -47,9 +47,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
-public class JustinTvDecrypt extends PluginForDecrypt {
+public class TwitchTvDecrypt extends PluginForDecrypt {
 
-    public JustinTvDecrypt(PluginWrapper wrapper) {
+    public TwitchTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -237,7 +237,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
                     dlink.setProperty("LINKDUPEID", "twitch" + vid + "_" + counter);
-                    final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
+                    final String formattedFilename = jd.plugins.hoster.TwitchTv.getFormattedFilename(dlink);
                     dlink.setName(formattedFilename);
                     if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {
                         dlink.setAvailable(true);
@@ -376,8 +376,8 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         /* Not available in old 0.9.581 Stable */
                     }
                     try {
-                        ((jd.plugins.hoster.JustinTv) plugin).setBrowser(br.cloneBrowser());
-                        dlink.setAvailableStatus(((jd.plugins.hoster.JustinTv) plugin).requestFileInformation(dlink));
+                        ((jd.plugins.hoster.TwitchTv) plugin).setBrowser(br.cloneBrowser());
+                        dlink.setAvailableStatus(((jd.plugins.hoster.TwitchTv) plugin).requestFileInformation(dlink));
                     } catch (Exception e) {
                         dlink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                     }
@@ -503,7 +503,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             return false;
         }
         try {
-            jd.plugins.hoster.JustinTv.login(this.br, aa, force);
+            jd.plugins.hoster.TwitchTv.login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setValid(false);
             return false;
