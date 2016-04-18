@@ -411,7 +411,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         if (url.contains("failure/size")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!");
         }
-        if (url.contains("failure/expired") || url.contains("failure/session")) {
+        if (url.contains("failure/expired") || url.contains("failure/session") || br.containsHTML("<strong>This download ticket is expired")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l);
         }
         if (url.contains("failure/cookie")) {

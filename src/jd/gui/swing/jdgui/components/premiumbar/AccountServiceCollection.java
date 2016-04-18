@@ -59,7 +59,7 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
         if (!hashSet.add(acc)) {
             return false;
         }
-        if (multi == null && acc.isMulti()) {
+        if (multi == null && acc.isMultiHost()) {
             multi = true;
         }
         if (acc.isEnabled()) {
@@ -78,7 +78,7 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
 
     public boolean isMulti() {
         if (size() == 1) {
-            return get(0).isMulti();
+            return get(0).isMultiHost();
         }
         return Boolean.TRUE.equals(multi);
     }

@@ -25,6 +25,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
     static {
         HARDCODEDFAVICONS.put("usenet", IconKey.ICON_LOGO_NZB);
+        HARDCODEDFAVICONS.put("genericusenet", IconKey.ICON_LOGO_NZB);
     }
 
     private static final int                     WIDTH             = 16;

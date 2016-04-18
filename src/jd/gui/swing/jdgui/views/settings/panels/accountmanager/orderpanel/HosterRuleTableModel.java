@@ -176,9 +176,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
 
             @Override
             public String getStringValue(AccountUsageRule value) {
-
                 return value.getHoster();
-
             }
         });
 

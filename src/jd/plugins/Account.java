@@ -149,14 +149,16 @@ public class Account extends Property {
         }
     }
 
-    private AccountInfo                     accinfo      = null;
+    private AccountInfo                     accinfo       = null;
 
-    private long                            updatetime   = 0;
-    private int                             maxDownloads = 0;
+    private long                            updatetime    = 0;
+    private int                             maxDownloads  = 0;
 
-    private transient AccountController     ac           = null;
-    private transient PluginForHost         plugin       = null;
-    private transient boolean               isMulti      = false;
+    private transient AccountController     ac            = null;
+    private transient PluginForHost         plugin        = null;
+    private transient boolean               isMulti       = false;
+
+    private transient boolean               isMultiPlugin = false;
 
     private transient volatile AccountError error;
 
@@ -168,6 +170,15 @@ public class Account extends Property {
 
     public void setPlugin(PluginForHost plugin) {
         this.plugin = plugin;
+        if (plugin != null) {
+            isMultiPlugin = plugin.isHandlingMultipleHosts();
+        } else {
+            isMultiPlugin = false;
+        }
+    }
+
+    public boolean isMultiPlugin() {
+        return isMultiPlugin;
     }
 
     /**
@@ -258,6 +269,17 @@ public class Account extends Property {
         hoster = h;
     }
 
+    public String getHosterByPlugin() {
+        final PluginForHost plugin = this.getPlugin();
+        if (plugin != null && isMultiPlugin()) {
+            final String ret = plugin.getHost(null, this);
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return hoster;
+    }
+
     private final AtomicBoolean checking = new AtomicBoolean(false);
 
     public void setChecking(boolean b) {
@@ -329,6 +351,7 @@ public class Account extends Property {
         tmpDisabledTimeout = -1;
         isMulti = false;
         id = new UniqueAlltimeID();
+        isMultiPlugin = false;
     }
 
     public UniqueAlltimeID getId() {
@@ -508,7 +531,7 @@ public class Account extends Property {
         return true;
     }
 
-    public boolean isMulti() {
+    public boolean isMultiHost() {
         return isMulti;
     }
 

@@ -15,7 +15,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class RemoveAction extends AppAction {
     /**
-     * 
+     *
      */
     private static final long   serialVersionUID = 1L;
     private PremiumAccountTable table;
@@ -36,7 +36,9 @@ public class RemoveAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         final List<AccountEntry> finalSelection;
         if (selection != null) {
             finalSelection = selection;
@@ -49,11 +51,15 @@ public class RemoveAction extends AppAction {
         if (finalSelection != null && finalSelection.size() > 0) {
             StringBuilder sb = new StringBuilder();
             for (AccountEntry account : finalSelection) {
-                if (sb.length() > 0) sb.append("\r\n");
-                sb.append(account.getAccount().getHoster() + "-Account (" + account.getAccount().getUser() + ")");
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
+                }
+                sb.append(account.getAccount().getHosterByPlugin() + "-Account (" + account.getAccount().getUser() + ")");
             }
             try {
-                if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI.T.account_remove_action_title(finalSelection.size()), _GUI.T.account_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                if (!force) {
+                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI.T.account_remove_action_title(finalSelection.size()), _GUI.T.account_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                }
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
@@ -72,7 +78,9 @@ public class RemoveAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        if (this.table != null) return super.isEnabled();
+        if (this.table != null) {
+            return super.isEnabled();
+        }
         return (selection != null && selection.size() > 0);
     }
 

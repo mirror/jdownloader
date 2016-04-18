@@ -41,7 +41,7 @@ CAB:::495363280400.*::::::.+\.cab
 PNG:::89504e470d0a.*:::PNG Imagefile:::.+\.png
 ICO:::000001000a00.*:::Icon Imagefile:::.+\.ico
 MP3:::fffb904.*:::Mp3 Audio:::.+\.mp3
-TS:::47.{374}47.*:::Transport Stream:::.+\.ts
+TS:::47.{374}47.*:::Transport Stream:::.+\.(ts|tp)
 MP3:::fffba0040000.*:::Mp3 Audio:::.+\.mp3
 EXE:::4d5a[a-f0-9]{2}000[a-f0-9]{1}00.*:::Windows executable:::.+\.exe
 GIF:::474946383961.*:::Gif Image:::.+\.gif

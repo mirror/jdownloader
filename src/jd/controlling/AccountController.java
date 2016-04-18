@@ -98,12 +98,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                  };
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -457,8 +457,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                                                           * we are offline, so lets just return without any account update
-                                                           */
+                     * we are offline, so lets just return without any account update
+                     */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -616,7 +616,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         final PluginFinder pluginFinder = new PluginFinder();
         for (final Account account : list(null)) {
             final AccountInfo accountInfo = account.getAccountInfo();
-            if (account.getPlugin() != null && account.isMulti() && accountInfo != null) {
+            if (account.getPlugin() != null && account.isMultiHost() && accountInfo != null) {
                 try {
                     accountInfo.setMultiHostSupport(account.getPlugin(), accountInfo.getMultiHostSupport(), pluginFinder);
                     getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));

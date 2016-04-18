@@ -87,9 +87,9 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                 Account account = history.getAccount();
                 if (account != null) {
                     if (icon == null) {
-                        icon = DomainInfo.getInstance(account.getHoster()).getFavIcon();
+                        icon = DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon();
                     } else {
-                        icon = new BadgeIcon(DomainInfo.getInstance(account.getHoster()).getFavIcon(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
+                        icon = new BadgeIcon(DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
                     }
                     String accountType = null;
                     switch (history.getAccountType()) {
@@ -104,9 +104,9 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                     }
 
                     if (!StringUtils.isEmpty(accountType)) {
-                        str = _GUI.T.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHoster(), accountType);
+                        str = _GUI.T.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHosterByPlugin(), accountType);
                     } else {
-                        str = _GUI.T.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHoster());
+                        str = _GUI.T.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHosterByPlugin());
                     }
                 } else {
                     if (icon == null) {
