@@ -34,27 +34,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.uio.CloseReason;
@@ -79,6 +58,27 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -155,68 +155,8 @@ public abstract class Plugin implements ActionListener {
         return false;
     }
 
-    public PluginCache getCache() {
-        return getCache(getHost());
-    }
-
     public boolean isProxyRotationEnabled(boolean premiumDownload) {
         return !premiumDownload;
-    }
-
-    public static PluginCache getCache(final String id) {
-        final String ID = id + ".";
-        final HashMap<String, Object> cache;
-        synchronized (CACHE) {
-            if (CACHE.containsKey(ID)) {
-                cache = CACHE.get(ID);
-            } else {
-                cache = new HashMap<String, Object>();
-                CACHE.put(ID, cache);
-            }
-        }
-        return new PluginCache() {
-            @Override
-            public Object set(String key, Object value) {
-                synchronized (cache) {
-                    return cache.put(key, value);
-                }
-            }
-
-            @Override
-            public Object remove(String key) {
-                synchronized (cache) {
-                    return cache.remove(key);
-                }
-            }
-
-            @Override
-            public <T> T get(String key, T defaultValue) {
-                synchronized (cache) {
-                    return (T) cache.get(key);
-                }
-            }
-
-            @Override
-            public void clear() {
-                synchronized (cache) {
-                    cache.clear();
-                }
-            }
-
-            @Override
-            public String getID() {
-                return ID;
-
-            }
-
-            @Override
-            public boolean containsKey(String key) {
-                synchronized (cache) {
-                    return cache.containsKey(key);
-                }
-            }
-
-        };
     }
 
     /**

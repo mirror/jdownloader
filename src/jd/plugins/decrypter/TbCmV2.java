@@ -37,10 +37,13 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.components.youtube.BlackOrWhitelistEntry;
+import org.jdownloader.plugins.components.youtube.ClipDataCache;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.GroupLogic;
@@ -61,12 +64,12 @@ import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -78,7 +81,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\&variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\?variant=\\S+)?" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\#variant=\\S+)?" }, flags = { 0, 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
@@ -128,7 +131,6 @@ public class TbCmV2 extends PluginForDecrypt {
     private HashSet<String> dupeCheckSet;
 
     private YoutubeConfig   cfg;
-    private YoutubeHelper   cachedHelper;
 
     private static Object   DIALOGLOCK = new Object();
 
@@ -173,9 +175,9 @@ public class TbCmV2 extends PluginForDecrypt {
 
         String cleanedurl = Encoding.urlDecode(cryptedLink, false);
         cleanedurl = cleanedurl.replace("youtube.jd", "youtube.com");
-        String requestedVariantString = Request.parseQuery(cryptedLink).getDecoded("variant");
 
-        cleanedurl = cleanedurl.replace("\\&variant=[%_A-Za-z0-9]+", "");
+        String requestedVariantString = new Regex(cleanedurl, "\\#variant=(\\S*)").getMatch(0);
+        cleanedurl = cleanedurl.replaceAll("\\#variant=\\S+", "");
         cleanedurl = cleanedurl.replace("/embed/", "/watch?v=");
         videoID = getVideoIDByUrl(cleanedurl);
         // for watch_videos, found within youtube.com music
@@ -184,7 +186,7 @@ public class TbCmV2 extends PluginForDecrypt {
             // first uid in array is the video the user copy url on.
             videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]+)").getMatch(0);
         }
-        YoutubeHelper helper = getCachedHelper();
+        YoutubeHelper helper = new YoutubeHelper(br, getLogger());
 
         playlistID = getListIDByUrls(cleanedurl);
         userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
@@ -463,7 +465,20 @@ public class TbCmV2 extends PluginForDecrypt {
             HashMap<String, VariantInfo> idMap = new HashMap<String, VariantInfo>();
 
             try {
-                helper.loadVideo(vid);
+                // make sure that we reload the video
+                // ClipDataCache.clearCache(vid.videoID);
+                boolean hasCache = ClipDataCache.hasCache(helper, vid.videoID);
+                try {
+                    vid = ClipDataCache.get(helper, vid.videoID);
+                } catch (Exception e) {
+                    if (hasCache) {
+                        ClipDataCache.clearCache(vid.videoID);
+
+                        vid = ClipDataCache.get(helper, vid.videoID);
+                    } else {
+                        throw e;
+                    }
+                }
             } catch (Exception e) {
                 String emsg = null;
                 try {
@@ -471,10 +486,14 @@ public class TbCmV2 extends PluginForDecrypt {
                 } catch (NullPointerException npe) {
                     // e.message can be null...
                 }
-                if (emsg != null && (emsg.contains(YoutubeHelper.PAID_VIDEO))) {
+                if (emsg != null && StringUtils.isEmpty(vid.error)) {
                     vid.error = emsg;
-                } else {
-                    throw e;
+                }
+                if (vid.streams == null || StringUtils.isNotEmpty(vid.error)) {
+                    decryptedLinks.add(createOfflinelink("http://youtube.com/watch?v=" + vid.videoID, "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
+
+                    continue;
+
                 }
             }
             if (vid.streams == null || StringUtils.isNotEmpty(vid.error)) {
@@ -1097,29 +1116,6 @@ public class TbCmV2 extends PluginForDecrypt {
     private DownloadLink createLink(VariantInfo variantInfo, List<VariantInfo> alternatives) {
         try {
 
-            // if (!getCachedHelper().getConfig().isFastLinkCheckEnabled()) {
-            // // sometimes streams are not available due to whatever. (for example internal server errors)
-            // // let's just try the next alternative in this case
-            // HashSet<VariantInfo> dupe = new HashSet<VariantInfo>();
-            // int i = 0;
-            // VariantInfo originalVariant = variantInfo;
-            // while (!validate(variantInfo)) {
-            // dupe.add(variantInfo);
-            // variantInfo = null;
-            // for (; i < alternatives.size(); i++) {
-            // VariantInfo nextVariant = alternatives.get(i);
-            // if (!dupe.contains(nextVariant)) {
-            // variantInfo = nextVariant;
-            // break;
-            // }
-            //
-            // }
-            // if (variantInfo == null) {
-            // variantInfo = originalVariant;
-            // break;
-            // }
-            // }
-            // }
             YoutubeClipData clip = null;
             if (clip == null && variantInfo.getVideoStreams() != null) {
                 clip = variantInfo.getVideoStreams().get(0).getClip();
@@ -1136,6 +1132,8 @@ public class TbCmV2 extends PluginForDecrypt {
             DownloadLink thislink;
             thislink = createDownloadlink(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant()));
 
+            YoutubeHelper helper;
+            ClipDataCache.referenceLink(helper = new YoutubeHelper(br, getLogger()), thislink, clip);
             // thislink.setAvailable(true);
 
             if (cfg.isSetCustomUrlEnabled()) {
@@ -1175,12 +1173,12 @@ public class TbCmV2 extends PluginForDecrypt {
 
             // variantInfo.fillExtraProperties(thislink, alternatives);
             String filename;
-            thislink.setFinalFileName(filename = getCachedHelper().createFilename(thislink));
+            thislink.setFinalFileName(filename = helper.createFilename(thislink));
 
             thislink.setLinkID(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant()));
 
             FilePackage fp = FilePackage.getInstance();
-            YoutubeHelper helper = getCachedHelper();
+
             final String fpName = helper.replaceVariables(thislink, helper.getConfig().getPackagePattern());
             // req otherwise returned "" value = 'various', regardless of user settings for various!
             if (StringUtils.isNotEmpty(fpName)) {
@@ -1198,14 +1196,25 @@ public class TbCmV2 extends PluginForDecrypt {
 
     }
 
-    private YoutubeHelper getCachedHelper() {
-        YoutubeHelper ret = cachedHelper;
-        if (ret == null || ret.getBr() != this.br) {
-            ret = new YoutubeHelper(br, PluginJsonConfig.get(YoutubeConfig.class), getLogger());
+    @Override
+    public void setBrowser(Browser brr) {
+
+        if (CFG_YOUTUBE.CFG.isProxyEnabled()) {
+            final HTTPProxyStorable proxy = CFG_YOUTUBE.CFG.getProxy();
+
+            if (proxy != null) {
+                HTTPProxy prxy = HTTPProxy.getHTTPProxy(proxy);
+                if (prxy != null) {
+                    this.br.setProxy(prxy);
+                } else {
+
+                }
+                return;
+            }
 
         }
-        ret.setupProxy();
-        return ret;
+        super.setBrowser(brr);
+
     }
 
     /**

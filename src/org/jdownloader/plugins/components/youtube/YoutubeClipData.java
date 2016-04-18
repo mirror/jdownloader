@@ -158,7 +158,7 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
         thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
         thislink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
-        thislink.getTempProperties().setProperty(YoutubeHelper.YT_FULL_STREAM_INFOS, this);
+
     }
 
     public List<YoutubeStreamData> getStreams(YoutubeITAG itag) {

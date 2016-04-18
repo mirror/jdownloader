@@ -28,7 +28,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
@@ -338,7 +337,7 @@ public class YoutubeLinkGrabberExtender {
         }));
     }
 
-    private void addAdditionalVariant(final PluginView<CrawledLink> pv, String id, final AbstractVariant requested) {
+    private void addAdditionalVariant(final PluginView<CrawledLink> pv, final String id, final AbstractVariant requested) {
         new Thread("Add Additional YoutubeLinks") {
             public void run() {
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
@@ -373,10 +372,6 @@ public class YoutubeLinkGrabberExtender {
                                                 CrawledLink newLink = LinkCollector.getInstance().addAdditional(brother, brotherVariant);
                                                 if (newLink != null) {
                                                     // forward cache
-                                                    YoutubeClipData clipData = (YoutubeClipData) cl.getDownloadLink().getTempProperties().getProperty(YoutubeHelper.YT_FULL_STREAM_INFOS);
-
-                                                    newLink.getDownloadLink().getTempProperties().setProperty(YoutubeHelper.YT_FULL_STREAM_INFOS, clipData);
-
                                                     checkableLinks.add(newLink);
                                                     continue main;
                                                 } else {
@@ -392,7 +387,7 @@ public class YoutubeLinkGrabberExtender {
                         }
                     }
 
-                    String dummyUrl = "https://www.youtube.com/watch?v=" + videoID + "&variant=" + Encoding.urlEncode(id);
+                    String dummyUrl = "https://www.youtube.com/watch?v=" + videoID + "#variant=" + Encoding.urlEncode(id);
 
                     LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
                     job.setText(dummyUrl);
