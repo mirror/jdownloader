@@ -40,7 +40,6 @@ import javax.xml.transform.stream.StreamResult;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
@@ -72,6 +71,7 @@ import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.w3c.dom.Attr;
@@ -94,14 +94,11 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.QueryInfo;
 import jd.http.Request;
-import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
 
 public class YoutubeHelper {
@@ -787,11 +784,11 @@ public class YoutubeHelper {
         return sb.toString();
     }
 
-    public YoutubeHelper(final Browser br, final YoutubeConfig cfg, final LogInterface logger) {
+    public YoutubeHelper(final Browser br, final LogInterface logger) {
         this.br = br;
         this.logger = logger;
 
-        this.cfg = cfg;
+        this.cfg = CFG_YOUTUBE.CFG;
 
         this.base = "https://www.youtube.com";
 
@@ -826,7 +823,7 @@ public class YoutubeHelper {
         private String src;
     }
 
-    private HashMap<String, HashMap<String, String>> jsCache              = new HashMap<String, HashMap<String, String>>();
+    private HashMap<String, HashMap<String, String>> jsCache             = new HashMap<String, HashMap<String, String>>();
     private HashSet<String>                          subtitleUrls;
     private HashSet<StreamMap>                       fmtMaps;
 
@@ -834,19 +831,17 @@ public class YoutubeHelper {
 
     private HashMap<String, String>                  videoInfo;
 
-    private boolean                                  hlsEnabled           = true;
+    private boolean                                  hlsEnabled          = true;
 
-    private boolean                                  dashMpdEnabled       = true;
+    private boolean                                  dashMpdEnabled      = true;
 
-    private boolean                                  adaptiveFmtsEnabled  = true;
+    private boolean                                  adaptiveFmtsEnabled = true;
 
-    private boolean                                  fmtMapEnabled        = true;
+    private boolean                                  fmtMapEnabled       = true;
 
     private String                                   html5PlayerJs;
 
     private YoutubeClipData                          vid;
-
-    public static final String                       YT_FULL_STREAM_INFOS = "YT_FULL_STREAM_INFOS";
 
     String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
         if (sig == null) {
@@ -880,7 +875,7 @@ public class YoutubeHelper {
         }
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
-            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+            jsContent = br.cloneBrowser().getPage(jsUrl);
             descrambler = new Regex(jsContent, "set\\(\"signature\",([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
 
             final String func = Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}";
@@ -915,7 +910,7 @@ public class YoutubeHelper {
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
                         if (jsContent == null) {
-                            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+                            jsContent = br.cloneBrowser().getPage(jsUrl);
                         }
                         // lets look for missing reference
                         final String ref = new Regex(jsContent, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
@@ -980,7 +975,7 @@ public class YoutubeHelper {
         }
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
-            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+            jsContent = br.cloneBrowser().getPage(jsUrl);
             descrambler = new Regex(jsContent, "\\.sig\\|\\|([\\$\\w]+)\\(").getMatch(0);
             if (descrambler == null) {
                 descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
@@ -1028,7 +1023,7 @@ public class YoutubeHelper {
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
                         if (jsContent == null) {
-                            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+                            jsContent = br.cloneBrowser().getPage(jsUrl);
                         }
                         // lets look for missing reference
                         final String ref = new Regex(jsContent, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
@@ -1197,32 +1192,6 @@ public class YoutubeHelper {
         }
     }
 
-    public String getAbsolute(final String absolute, String id, Browser clone) throws IOException {
-        if (clone == null) {
-            clone = br;
-        }
-        if (id == null) {
-            id = absolute;
-        }
-        PluginCache pluginCache = Plugin.getCache("youtube.com-" + br.getProxy());
-        Object page = pluginCache.get(id, null);
-        if (page != null && page instanceof MinTimeWeakReference) {
-            String content = ((MinTimeWeakReference<String>) page).get();
-            if (StringUtils.isNotEmpty(content)) {
-                clone.setRequest(new GetRequest(absolute));
-                clone.getRequest().setHtmlCode(content);
-                return content;
-            }
-        }
-
-        clone.getPage(absolute);
-        if (clone.getRequest().getHttpConnection().getResponseCode() == 200) {
-            pluginCache.set(id, new MinTimeWeakReference<String>(clone.getRequest().getHtmlCode(), 30000, id));
-        }
-        return clone.getRequest().getHtmlCode();
-
-    }
-
     protected void handleContentWarning(final Browser ibr) throws Exception {
         // not necessarily age related but violence/disturbing content?
         // https://www.youtube.com/watch?v=Wx9GxXYKx_8 gets you
@@ -1304,7 +1273,7 @@ public class YoutubeHelper {
         this.br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
         this.br.getHeaders().put("User-Agent", "Wget/1.12");
 
-        getAbsolute(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999", null, br);
+        br.getPage(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999");
 
         vid.approxThreedLayout = br.getRegex("\"approx_threed_layout\"\\s*\\:\\s*\"([^\"]*)").getMatch(0);
         String[][] keyWordsGrid = br.getRegex("<meta\\s+property=\"([^\"]*)\"\\s+content=\"yt3d\\:([^\"]+)=([^\"]+)\">").getMatches();
@@ -2482,7 +2451,7 @@ public class YoutubeHelper {
         HashMap<String, YoutubeSubtitleStorable> urls = new HashMap<String, YoutubeSubtitleStorable>();
 
         for (String ttsUrl : subtitleUrls) {
-            String xml = getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);
+            String xml = br.getPage(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"));
 
             DocumentBuilder docBuilder = createXMLParser();
             InputSource is = new InputSource(new StringReader(xml));

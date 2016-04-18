@@ -206,8 +206,8 @@
 			</fileset>
 		</jar>
 
-		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">			
-			<fileset dir="${cls}">				
+		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
 				<include name="org/jdownloader/container/**/*" />
 			</fileset>
 		</jar>
@@ -383,8 +383,14 @@
 
 				<include name="org/appwork/**/*" />
 				<exclude name="org/appwork/update/server/**/*" />
+				<exclude name="org/appwork/utils/sms/**/*" />
+				<exclude name="org/appwork/utils/ide/**/*" />
 			</fileset>
 
+			<fileset dir="${dep.awu}/src">
+				<include name="org/appwork/utils/net/effective_tld_names.dat" />
+
+			</fileset>
 			<fileset dir="${dep.jdupdateclient}/src">
 				<include name="cfg/**/*" />
 
