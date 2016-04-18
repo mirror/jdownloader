@@ -14,4 +14,6 @@ public interface AccountBuilderInterface {
 
     Account getAccount();
 
+    boolean updateAccount(Account input, Account output);
+
 }

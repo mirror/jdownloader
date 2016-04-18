@@ -56,7 +56,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
@@ -271,7 +270,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
                 @Override
                 public int compare(Account o1, Account o2) {
-                    return compare(o1.isMulti(), o2.isMulti());
+                    return compare(o1.isMultiHost(), o2.isMultiHost());
                 }
 
             });

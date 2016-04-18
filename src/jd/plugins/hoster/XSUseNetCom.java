@@ -49,7 +49,7 @@ public class XSUseNetCom extends UseNet {
     }
 
     @Override
-    protected UsenetServer getUsenetServer(Account account) {
+    protected UsenetServer getUsenetServer(Account account) throws Exception {
         final UsenetServer ret = super.getUsenetServer(account);
         final AccountInfo ai = account.getAccountInfo();
         if (account.getMaxSimultanDownloads() == 5 || (ai != null && StringUtils.contains(ai.getStatus(), "free"))) {

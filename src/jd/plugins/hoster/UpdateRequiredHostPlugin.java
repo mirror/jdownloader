@@ -29,7 +29,7 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
     }
 
     public String getHost(DownloadLink link, Account account) {
-        return "jdownloader.org";
+        return super.getHost(link, account);
     };
 
     @Override

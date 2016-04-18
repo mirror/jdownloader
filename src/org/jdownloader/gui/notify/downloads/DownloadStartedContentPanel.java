@@ -2,6 +2,12 @@ package org.jdownloader.gui.notify.downloads;
 
 import java.io.File;
 
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.NoProxySelector;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.DomainInfo;
@@ -11,12 +17,6 @@ import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.NoProxySelector;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
 
 public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
 
@@ -43,14 +43,14 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
             filename = addPair(filename, _GUI.T.lit_filename() + ":", downloadLink.getLinkInfo().getIcon());
             filename.setText(new File(downloadLink.getFileOutput()).getName());
         }
-        if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE.isEnabled() && (account == null || account.isMulti())) {
+        if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE.isEnabled() && (account == null || account.isMultiHost())) {
             hoster = addPair(hoster, _GUI.T.lit_hoster() + ":", downloadLink.getDomainInfo().getFavIcon());
             hoster.setText(downloadLink.getDomainInfo().getTld());
         }
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_ACCOUNT_VISIBLE.isEnabled()) {
 
             if (account != null) {
-                this.account = addPair(this.account, _GUI.T.lit_account() + ":", DomainInfo.getInstance(account.getHoster()).getFavIcon());
+                this.account = addPair(this.account, _GUI.T.lit_account() + ":", DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon());
                 this.account.setText(account.getUser() + (CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled() ? "@" + account.getHoster() : ""));
             }
         }

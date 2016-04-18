@@ -44,6 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.InputChangedCallbackInterface;
@@ -570,6 +571,19 @@ public class FilecloudIo extends PluginForHost {
         private static final long serialVersionUID = 1L;
 
         private final String      APIKEYHELP       = "Enter your APIKey / APIKey eingeben";
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
 
         private String getPassword() {
             if (this.pass == null) {

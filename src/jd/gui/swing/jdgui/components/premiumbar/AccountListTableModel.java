@@ -27,7 +27,6 @@ import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
 import jd.nutils.Formatter;
 import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
@@ -194,12 +193,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             protected Icon getIcon(AccountEntry value) {
-                final PluginForHost plugin = value.getAccount().getPlugin();
-                if (plugin != null) {
-                    return DomainInfo.getInstance(plugin.getHost(null, value.getAccount())).getFavIcon();
-                } else {
-                    return DomainInfo.getInstance(value.getAccount().getHoster()).getFavIcon();
-                }
+                return DomainInfo.getInstance(value.getAccount().getHosterByPlugin()).getFavIcon();
             }
 
             @Override
@@ -214,7 +208,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             protected String getTooltipText(AccountEntry obj) {
-                return obj.getAccount().getHoster();
+                return obj.getAccount().getHosterByPlugin();
             }
 
             @Override
@@ -236,7 +230,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             public String getStringValue(AccountEntry value) {
-                return value.getAccount().getHoster();
+                return value.getAccount().getHosterByPlugin();
             }
 
         });

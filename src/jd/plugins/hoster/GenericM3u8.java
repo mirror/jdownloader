@@ -47,7 +47,7 @@ public class GenericM3u8 extends PluginForHost {
     @Override
     public String getHost(DownloadLink link, Account account) {
         if (link != null) {
-            return Browser.getHost(link.getDownloadURL(), true);
+            return Browser.getHost(link.getDownloadURL());
         }
         return super.getHost(link, account);
     }

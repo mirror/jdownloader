@@ -25,13 +25,27 @@ import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.ComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.plaf.basic.ComboPopup;
+
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.gui.UserIO;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.StringUtils;
@@ -58,16 +72,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.UserIO;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
 
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
 
@@ -182,7 +186,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             public String getLabelString() {
                 return null;
             }
-        }, 0, _GUI.T.accountdialog_check(), _GUI.T.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHoster()).getFavIcon());
+        }, 0, _GUI.T.accountdialog_check(), _GUI.T.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHosterByPlugin()).getFavIcon());
         try {
 
             Dialog.getInstance().showDialog(pd);
@@ -253,6 +257,56 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                     return null;
                 }
                 return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
+            }
+
+            @Override
+            protected boolean replaceAutoCompletePopupList() {
+                return true;
+            }
+
+            @Override
+            public void setSelectedIndex(int anIndex) {
+                if (isPopupVisible() && anIndex >= 0) {
+                    try {
+                        final Object popup = getUI().getAccessibleChild(this, 0);
+                        if (popup != null && popup instanceof ComboPopup) {
+                            final JList jlist = ((ComboPopup) popup).getList();
+                            if (anIndex < jlist.getModel().getSize()) {
+                                setSelectedItem(jlist.getModel().getElementAt(anIndex));
+                                return;
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                    }
+                }
+                super.setSelectedIndex(anIndex);
+            }
+
+            @Override
+            protected void searchAutoComplete(ComboBoxModel model, String txt, List<LazyHostPlugin> found, List<LazyHostPlugin> all) {
+                final ArrayList<LazyHostPlugin> goodMatches = new ArrayList<LazyHostPlugin>();
+                for (int i = 0; i < model.getSize(); i++) {
+                    final LazyHostPlugin element = (LazyHostPlugin) model.getElementAt(i);
+                    all.add(element);
+                    final String text = getTextForValue(element);
+                    if (matches(text, txt)) {
+                        found.add(element);
+                    } else {
+                        if (StringUtils.isNotEmpty(txt) && txt.length() > 2 && StringUtils.isNotEmpty(text)) {
+                            if (isSearchCaseSensitive() && StringUtils.containsIgnoreCase(text, txt)) {
+                                goodMatches.add(element);
+                            } else if (StringUtils.contains(text, txt)) {
+                                goodMatches.add(element);
+                            }
+                        }
+                    }
+                }
+                found.addAll(goodMatches);
+            }
+
+            @Override
+            protected void sortFound(List<LazyHostPlugin> found) {
             }
 
             @Override

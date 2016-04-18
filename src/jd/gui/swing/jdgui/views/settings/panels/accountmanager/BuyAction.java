@@ -13,6 +13,9 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
+import jd.controlling.TaskQueue;
+import jd.plugins.PluginForHost;
+
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -35,9 +38,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
 import org.jdownloader.statistics.StatsManager;
-
-import jd.controlling.TaskQueue;
-import jd.plugins.PluginForHost;
 
 public class BuyAction extends AbstractAction {
     /**

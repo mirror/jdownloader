@@ -42,6 +42,7 @@ import jd.plugins.PluginException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
@@ -398,6 +399,19 @@ public class MyFastFileCom extends antiDDoSForHost {
 
         private final String      IDHELP           = "Enter your user id (9 digits)";
         private final String      PINHELP          = "Enter your pin";
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
 
         private String getPassword() {
             if (this.pass == null) {

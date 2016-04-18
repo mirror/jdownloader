@@ -24,19 +24,18 @@ import java.awt.event.WindowFocusListener;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import org.appwork.utils.StringUtils;
+import jd.controlling.TaskQueue;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.gui.swing.dialog.InputOKButtonAdapter;
+import jd.plugins.Account;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.gui.swing.dialog.InputOKButtonAdapter;
-import jd.plugins.Account;
-import net.miginfocom.swing.MigLayout;
 
 public class EditAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
 
@@ -47,7 +46,7 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
     private JPanel                  content;
 
     public EditAccountDialog(Account acc) {
-        super(0, _GUI.T.jd_gui_swing_components_AccountDialog_edit_title(), DomainInfo.getInstance(acc.getHoster()).getFavIcon(), _GUI.T.lit_save(), null);
+        super(0, _GUI.T.jd_gui_swing_components_AccountDialog_edit_title(), DomainInfo.getInstance(acc.getHosterByPlugin()).getFavIcon(), _GUI.T.lit_save(), null);
         this.acc = acc;
     }
 
@@ -106,16 +105,7 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        boolean changed = false;
-                        if (!StringUtils.equals(newAcc.getUser(), acc.getUser())) {
-                            acc.setUser(newAcc.getUser());
-                            changed = true;
-                        }
-                        if (!StringUtils.equals(newAcc.getPass(), acc.getPass())) {
-                            acc.setPass(newAcc.getPass());
-                            changed = true;
-                        }
-                        if (changed) {
+                        if (accountBuilderUI.updateAccount(newAcc, acc)) {
                             AccountChecker.getInstance().check(acc, true);
                         }
                         return null;

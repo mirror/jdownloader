@@ -133,12 +133,6 @@ public class UseNet extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
     }
@@ -150,11 +144,7 @@ public class UseNet extends PluginForHost {
 
     @Override
     public boolean hasConfig() {
-        if (!"usenet".equals(getHost())) {
-            return true;
-        } else {
-            return false;
-        }
+        return false;
     }
 
     public List<UsenetServer> getAvailableUsenetServer() {
@@ -164,7 +154,7 @@ public class UseNet extends PluginForHost {
     private final AtomicReference<SimpleUseNet> client        = new AtomicReference<SimpleUseNet>(null);
     private final String                        PRECHECK_DONE = "PRECHECK_DONE";
 
-    protected UsenetServer getUsenetServer(Account account) {
+    protected UsenetServer getUsenetServer(Account account) throws Exception {
         final UsenetConfigInterface config = getUsenetConfig();
         UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
         if (server == null || !getAvailableUsenetServer().contains(server)) {

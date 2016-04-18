@@ -204,7 +204,12 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             protected Icon getIcon(AccountEntry value) {
-                return DomainInfo.getInstance(value.getAccount().getHoster()).getFavIcon();
+                final PluginForHost plugin = value.getAccount().getPlugin();
+                if (plugin != null) {
+                    return DomainInfo.getInstance(plugin.getHost(null, value.getAccount())).getFavIcon();
+                } else {
+                    return DomainInfo.getInstance(value.getAccount().getHoster()).getFavIcon();
+                }
             }
 
             @Override
@@ -243,7 +248,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public String getStringValue(AccountEntry value) {
-                return value.getAccount().getHoster();
+                return value.getAccount().getHosterByPlugin();
             }
 
         });
