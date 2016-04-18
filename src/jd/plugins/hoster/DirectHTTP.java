@@ -452,11 +452,6 @@ public class DirectHTTP extends antiDDoSForHost {
         return urlConnection;
     }
 
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.handleFree(link);
-    }
-
     private boolean       preferHeadRequest = true;
     private final boolean raz               = false;
 
