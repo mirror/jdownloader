@@ -75,15 +75,15 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youwatch.org" }, urls = { "https?://(www\\.)?youwatch\\.org/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chouhaa.info" }, urls = { "https?://(?:www\\.)?(?:youwatch\\.org|chouhaa.info)/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class YouWatchOrg extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://youwatch.org";
+    private final String               COOKIE_HOST                  = "http://chouhaa.info";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(youwatch\\.org)";
+    private final String               DOMAINS                      = "(chouhaa\\.info|youwatch\\.org)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/video\\.mp4)";
@@ -111,6 +111,14 @@ public class YouWatchOrg extends PluginForHost {
     // captchatype: null
     // other: no redirects
     // mods: heavily modified, do NOT upgrade!
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "youwatch.org".equals(host) || "chouhaa.info".equals(host)) {
+            return "chouhaa.info";
+        }
+        return super.rewriteHost(host);
+    }
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -402,6 +410,7 @@ public class YouWatchOrg extends PluginForHost {
         if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
             final Browser obrc = cbr.cloneBrowser();
+            br.setFollowRedirects(true);
             if (useVidEmbed) {
                 getPage("/vidembed-" + fuid);
                 getDllink();
