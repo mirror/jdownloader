@@ -109,7 +109,7 @@ public class SiteType {
 
         /**
          * <b>Minimum requirements:</b> Usage of "flowplayer" <br />
-         * <b>Additional requirements to be added to main class:</b> NO account support<br />
+         * <b>Additional requirements to be added to main class:</b> NO account support, offline via http code 404<br />
          * <b>Main host class:</b> UnknownPornScript1<br />
          * <b>Example that suits main host class:</b> <a href="http:/dansmovies.com/">dansmovies.com</a><br />
          * <b>Example that does NOT suit main host class (needs separate class):</b> -<br />
@@ -177,6 +177,15 @@ public class SiteType {
          * <b>Example that needs a decrypter class :</b> -<br />
          */
         UnknownPornScript7,
+        /**
+         * <b>Minimum requirements:</b> Website has to fit script <br />
+         * <b>Additional requirements to be added to main class:</b> -<br />
+         * <b>Main host class:</b> -<br />
+         * <b>Example that suits main host class:</b> -<br />
+         * <b>Example that does NOT suit main host class [needs separate class]:</b> NONE<br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         */
+        UnknownPornScript8,
 
         /**
          * Script used by some video hosting sites. <a href="http://cloudy.ec/">cloudy.ec</a>. Not sure what to call this script.
