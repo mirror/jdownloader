@@ -2340,7 +2340,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             @Override
             protected Void run() throws RuntimeException {
                 boolean ignoreUnsafe = true;
-                final boolean isAccountAndIsMulti = candidate.getCachedAccount() != null && candidate.getCachedAccount().getAccount() != null ? candidate.getCachedAccount().getAccount().isMulti() : false;
+                final boolean isAccountAndIsMulti = candidate.getCachedAccount() != null && candidate.getCachedAccount().getAccount() != null ? candidate.getCachedAccount().getAccount().isMultiHost() : false;
                 String downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, isAccountAndIsMulti);
                 if (StringUtils.isEmpty(downloadTo)) {
                     ignoreUnsafe = false;
