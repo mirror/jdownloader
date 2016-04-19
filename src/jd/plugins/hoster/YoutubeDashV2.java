@@ -1484,6 +1484,7 @@ public class YoutubeDashV2 extends PluginForHost {
                 return outputFile;
             }
         };
+        //
         final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(downloadLink);
         if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
 
