@@ -115,7 +115,12 @@ public class VvvvidIt extends PluginForDecrypt {
             final long season = DummyScriptEnginePlugin.toLong(entries.get("season_number"), -1);
             final long episode = DummyScriptEnginePlugin.toLong(entries.get("number"), -1);
 
-            if (inValidate(show_title) || inValidate(title) || inValidate(source_type) || inValidate(hls_master) || season == -1 || episode == -1 || videoid == -1) {
+            if (inValidate(hls_master)) {
+                /* Probably video is not playable without account */
+                continue;
+            }
+
+            if (inValidate(show_title) || inValidate(title) || inValidate(source_type) || season == -1 || episode == -1 || videoid == -1) {
                 return null;
             }
 
