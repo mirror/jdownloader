@@ -65,7 +65,7 @@ public class ServustvCom extends PluginForHost {
             date = this.br.getRegex("class=\"ato programm\\-datum\\-uhrzeit \" >[\t\n\r ]+<span>([^<>\"]*?\\d{1,2}\\.)</span>").getMatch(0);
         }
         if (date == null) {
-            date = this.br.getRegex("Sendung vom (\\d{1,2}\\. April \\d{4} \\| \\d{1,2}:\\d{1,2})").getMatch(0);
+            date = this.br.getRegex("Sendung vom (\\d{1,2}\\. [A-Za-z]+ \\d{4} \\| \\d{1,2}:\\d{1,2})").getMatch(0);
         }
         String title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
         if (title == null) {
@@ -122,7 +122,7 @@ public class ServustvCom extends PluginForHost {
             date = Long.parseLong(input) * 1000;
         } else if (input.matches("\\d{2}\\.\\d{2}\\.\\d{4}")) {
             date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
-        } else if (input.matches("\\d{1,2}\\. April \\d{4} \\| \\d{1,2}:\\d{1,2}")) {
+        } else if (input.matches("\\d{1,2}\\. [A-Za-z]+ \\d{4} \\| \\d{1,2}:\\d{1,2}")) {
             date = TimeFormatter.getMilliSeconds(input, "dd. MMMM yyyy '|' HH:mm", Locale.GERMAN);
         } else {
             final Calendar cal = Calendar.getInstance();
