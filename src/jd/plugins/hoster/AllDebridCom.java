@@ -36,6 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://s\\d+\\.alldebrid\\.com/dl/[a-z0-9]+/.+" }, flags = { 2 })
 public class AllDebridCom extends antiDDoSForHost {
 
@@ -45,6 +47,11 @@ public class AllDebridCom extends antiDDoSForHost {
         super(wrapper);
         setStartIntervall(2 * 1000l);
         this.enablePremium("http://www.alldebrid.com/offer/");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     private static final String NICE_HOST         = "alldebrid.com";

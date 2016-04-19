@@ -40,6 +40,7 @@ import org.appwork.utils.net.usenet.UUInputStream;
 import org.appwork.utils.net.usenet.UnrecognizedCommandException;
 import org.appwork.utils.net.usenet.YEncInputStream;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {
@@ -164,6 +165,11 @@ public class UseNet extends PluginForHost {
             config.setSSLEnabled(server.isSSL());
         }
         return server;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.USENET };
     }
 
     @Override

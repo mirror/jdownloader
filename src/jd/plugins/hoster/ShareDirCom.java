@@ -42,6 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sharedir.com" }, urls = { "http://dl\\.sharedir\\.com/\\d+/" }, flags = { 2 })
 public class ShareDirCom extends PluginForHost {
@@ -65,6 +66,11 @@ public class ShareDirCom extends PluginForHost {
     public ShareDirCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sharedir.com/");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     @Override

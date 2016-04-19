@@ -139,6 +139,7 @@ import org.jdownloader.plugins.SleepPluginProgress;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
@@ -151,6 +152,7 @@ import org.jdownloader.updatev2.UpdateController;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
+
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
 
     private static final Pattern[] PATTERNS       = new Pattern[] {
@@ -160,9 +162,9 @@ public abstract class PluginForHost extends Plugin {
                                                    * point)
                                                    */
                                                   // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin         lazyP          = null;
     /**
@@ -2231,6 +2233,10 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         return null;
+    }
+
+    public FEATURE[] getFeatures() {
+        return new FEATURE[0];
     }
 
     public List<String> getConvertToList(DownloadLink downloadLink) {

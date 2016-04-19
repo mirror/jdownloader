@@ -32,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 // based on raztoki's plugin for jdownloader 1
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streammania.com", "brapid.sk" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323" }, flags = { 2, 2 })
 public class StreamManiaCom extends PluginForHost {
@@ -48,6 +50,11 @@ public class StreamManiaCom extends PluginForHost {
     public StreamManiaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www." + hostPublicDomain + "/premium.php");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     @Override

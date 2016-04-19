@@ -45,6 +45,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "myfastfile.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class MyFastFileCom extends antiDDoSForHost {
@@ -389,6 +390,11 @@ public class MyFastFileCom extends antiDDoSForHost {
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty(sessionRetry, Property.NULL);
         link.setProperty(globalRetry, Property.NULL);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     public static class MyFastFileComAccountFactory extends MigPanel implements AccountBuilderInterface {

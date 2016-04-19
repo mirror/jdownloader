@@ -37,6 +37,7 @@ import jd.plugins.PluginException;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rapeit.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumRapeitNet extends antiDDoSForHost {
@@ -56,6 +57,11 @@ public class PremiumRapeitNet extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/#tou";
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     @Override

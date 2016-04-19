@@ -42,6 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PobierzBiz extends PluginForHost {
@@ -55,6 +56,11 @@ public class PobierzBiz extends PluginForHost {
     public PobierzBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "konto");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     private void login(Account account) throws PluginException, IOException {

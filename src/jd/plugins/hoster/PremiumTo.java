@@ -46,6 +46,8 @@ import jd.plugins.components.UsenetConfigInterface;
 import jd.plugins.components.UsenetServer;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends UseNet {
 
@@ -163,6 +165,11 @@ public class PremiumTo extends UseNet {
 
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
     }
 
     @SuppressWarnings("deprecation")

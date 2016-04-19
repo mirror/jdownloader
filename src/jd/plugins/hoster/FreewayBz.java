@@ -45,6 +45,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "freeway.bz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2 })
 public class FreewayBz extends antiDDoSForHost {
@@ -148,6 +149,11 @@ public class FreewayBz extends antiDDoSForHost {
         ac.setMultiHostSupport(this, supportedHosts);
         account.setValid(true);
         return ac;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     /** no override to keep plugin compatible to old stable */

@@ -38,6 +38,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 /**
  * @author lspcity
  * @author raztoki
@@ -54,6 +56,11 @@ public class Mfhd extends PluginForHost {
     }
 
     private static final String NOCHUNKS = "NOCHUNKS";
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
