@@ -42,8 +42,8 @@ public class XHamsterGallery extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> allPages = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("1");
         String parameter = param.toString().replace("www.", "");
         /* Force english language */
@@ -91,7 +91,9 @@ public class XHamsterGallery extends PluginForDecrypt {
         }
         for (String currentPage : allPages) {
             final String thePage = parameterWihoutHtml + "-" + currentPage + ".html";
-            br.getPage(thePage);
+            if (!"1".equals(currentPage)) {
+                br.getPage(thePage);
+            }
             final String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
             if (allLinks == null) {
                 logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
