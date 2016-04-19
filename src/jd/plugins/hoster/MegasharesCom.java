@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -38,9 +41,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 /**
  * TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen
@@ -207,9 +207,9 @@ public class MegasharesCom extends PluginForHost {
     }
 
     private String findDownloadUrl() {
-        String url = br.getRegex("<div id=\"show_download_button(_\\d+)?\"[^>]*?>[^<>]*?<a[\t\n\r ]+href=\"(http://.*?megashares.*?)\">").getMatch(1);
+        String url = br.getRegex("<div id=\"show_download_button(_\\d+)?\"[^>]*?>[^<>]*?<a\\s+href=\"((?:https?:)?//.*?megashares.*?)\">").getMatch(1);
         if (url == null) {
-            url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
+            url = br.getRegex("<div>\\s*?<a href=\"((?:https?:)?//.*?megashares.*?)\">").getMatch(0);
         }
         return url;
     }
