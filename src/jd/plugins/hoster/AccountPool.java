@@ -43,6 +43,7 @@ import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
 import org.appwork.storage.simplejson.ParserException;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" }, flags = { 0 })
 /**
@@ -152,6 +153,11 @@ public class AccountPool extends PluginForHost {
     }
 
     @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
+    }
+
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
         LinkedHashMap<String, String> parameters = new LinkedHashMap<String, String>();
@@ -217,7 +223,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Handles a non-200 response code from the API by emitting the correct error (throwing a PluginException)
-     * 
+     *
      * @param response
      *            the received response
      * @param account
@@ -324,7 +330,7 @@ public class AccountPool extends PluginForHost {
     // API Communication
     /**
      * Sends an authorized POST request to the API.
-     * 
+     *
      * @param account
      *            Account for which the request should be sent
      * @param path
@@ -348,7 +354,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Sends an authorized GET request to the API.
-     * 
+     *
      * @param account
      *            Account for which the request should be sent
      * @param path
@@ -370,7 +376,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Sends an unauthorized request to the API.
-     * 
+     *
      * @param path
      *            API path
      * @param parameters
@@ -388,7 +394,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Returns the API authentication token which was stored for the specified account.
-     * 
+     *
      * @param account
      *            Account for which the token should be retrieved
      * @return Authentication token for the specified account
@@ -427,7 +433,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Instanciates a new APIResponse object for the specified connection and browser.
-     * 
+     *
      * @param con
      *            Connection
      * @param browser
@@ -451,10 +457,10 @@ public class AccountPool extends PluginForHost {
     // Storage
     /**
      * Converts data returned from the JSON parser and standardizes it so it can be serialized.
-     * 
+     *
      * @param node
      *            JSON data to convert
-     * 
+     *
      * @return graph representing the JSON data. Consists of Maps, Lists and Objects.
      */
     private Object convertJSonToSerializableData(Object node) {
@@ -495,7 +501,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Returns configuration from for the specified Account/Hoster combination.
-     * 
+     *
      * @param account
      *            Account for which the configuration should be retrieved.
      * @param link
@@ -503,7 +509,7 @@ public class AccountPool extends PluginForHost {
      *            returned instead of a hoster specific one.
      * @param key
      *            Name of the setting which should be retrieved.
-     * 
+     *
      * @return retrieved configuration value
      */
     private Object getHosterSetting(Account account, DownloadLink link, String key) {

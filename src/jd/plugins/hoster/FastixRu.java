@@ -39,6 +39,7 @@ import jd.plugins.PluginException;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * @author pspzockerscene
@@ -119,6 +120,11 @@ public class FastixRu extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* handle premium should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     @Override

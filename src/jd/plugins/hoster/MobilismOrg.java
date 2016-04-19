@@ -39,6 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  *
@@ -204,6 +205,11 @@ public class MobilismOrg extends antiDDoSForHost {
             // remove download slot
             controlSlot(-1);
         }
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     @SuppressWarnings("deprecation")

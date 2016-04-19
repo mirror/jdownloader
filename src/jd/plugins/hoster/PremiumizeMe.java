@@ -63,6 +63,7 @@ import org.appwork.utils.net.Base64OutputStream;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }, flags = { 2 })
 public class PremiumizeMe extends UseNet {
@@ -327,6 +328,11 @@ public class PremiumizeMe extends UseNet {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l, "error2");
             }
         }
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
     }
 
     @SuppressWarnings("deprecation")

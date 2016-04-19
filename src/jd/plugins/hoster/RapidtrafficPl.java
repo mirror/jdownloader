@@ -42,6 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidtraffic.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class RapidtrafficPl extends PluginForHost {
@@ -54,6 +55,11 @@ public class RapidtrafficPl extends PluginForHost {
     public RapidtrafficPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "konto");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     private void login(Account account) throws PluginException, IOException {

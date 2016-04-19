@@ -9,6 +9,26 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
+    public static enum FEATURE {
+
+        USENET,
+        MULTIHOST,
+        GENERIC;
+
+        public static final long CACHEVERSION = 19042016l; // change when you add/change enums!
+
+        public boolean isSet(FEATURE[] features) {
+            if (features != null) {
+                for (final FEATURE feature : features) {
+                    if (this.equals(feature)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
     private static enum PROPERTY {
         CONFIG,
         PREMIUM,
@@ -21,6 +41,20 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private volatile byte properties     = 0;
 
     private volatile long parsesLifetime = 0;
+
+    private FEATURE[]     features       = null;
+
+    public FEATURE[] getFeatures() {
+        return features;
+    }
+
+    public boolean hasFeature(FEATURE feature) {
+        return feature != null && feature.isSet(getFeatures());
+    }
+
+    protected void setFeatures(FEATURE[] features) {
+        this.features = features;
+    }
 
     public long getPluginUsage() {
         return parsesLifetime + parses;

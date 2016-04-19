@@ -49,6 +49,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 // DEV NOTES:
 // - ftp filenames can contain & characters!
@@ -136,6 +137,11 @@ public class Ftp extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
     }
 
     protected ProxySelectorInterface getProxySelector() {

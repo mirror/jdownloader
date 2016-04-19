@@ -34,6 +34,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" }, flags = { 2 })
 public class DebridItaliaCom extends antiDDoSForHost {
 
@@ -142,6 +144,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
         setConstants(account, link);
         requestFileInformation(link);
         handleDl();
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     /** no override to keep plugin compatible to old stable */

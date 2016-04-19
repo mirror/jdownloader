@@ -41,6 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tb7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class Tb7Pl extends PluginForHost {
@@ -53,6 +54,11 @@ public class Tb7Pl extends PluginForHost {
     public Tb7Pl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "login");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     private void login(Account account, boolean force) throws PluginException, IOException {

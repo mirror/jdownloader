@@ -91,12 +91,11 @@ public class PremiumizeMe extends PluginForDecrypt {
     }
 
     public static Map<String, PremiumizeBrowseNode> getNodes(Browser br, Account account, final String hash) throws IOException {
-        final String responseString = br.postPage("https://www.premiumize.me/torrent/browse", "customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&hash=" + hash);
+        final String responseString = br.postPage("https://www.premiumize.me/api/torrent/browse", "customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&hash=" + hash);
         final Map<String, Object> responseMap = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP, null);
         final String status = (String) responseMap.get("status");
         if (StringUtils.equals("success", status)) {
-            final Map<String, Object> dataValue = (Map<String, Object>) responseMap.get("data");
-            final Map<String, Object> contentValue = (Map<String, Object>) dataValue.get("content");
+            final Map<String, Object> contentValue = (Map<String, Object>) responseMap.get("content");
             final HashMap<String, PremiumizeBrowseNode> premiumizeNodes = JSonStorage.restoreFromString(JSonStorage.toString(contentValue), new TypeRef<HashMap<String, PremiumizeBrowseNode>>() {
             }, null);
             return premiumizeNodes;

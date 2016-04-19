@@ -35,6 +35,7 @@ import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "genericusenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class GenericUseNet extends UseNet {
@@ -159,6 +160,11 @@ public class GenericUseNet extends UseNet {
                 return acc;
             }
         };
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC, FEATURE.USENET };
     }
 
     @Override

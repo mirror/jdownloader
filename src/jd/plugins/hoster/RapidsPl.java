@@ -39,6 +39,7 @@ import jd.plugins.components.UnavailableHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class RapidsPl extends PluginForHost {
@@ -61,6 +62,11 @@ public class RapidsPl extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://rapids.pl/pomoc/regulamin";
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     private Browser newBrowser() {

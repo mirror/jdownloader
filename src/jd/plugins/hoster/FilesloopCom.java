@@ -39,6 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filesloop.com" }, urls = { "https?://(?:www\\.)?filesloop\\.com/myfiles/.+" }, flags = { 2 })
 public class FilesloopCom extends PluginForHost {
 
@@ -234,6 +236,11 @@ public class FilesloopCom extends PluginForHost {
             // remove download slot
             controlSlot(-1);
         }
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     @Override
