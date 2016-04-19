@@ -23,6 +23,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,11 +48,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(?:www\\.)?(?:exashare\\.com|dowed\\.info)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(?:www\\.)?(?:exashare\\.com|dowed\\.info|bojem3a\\.info)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class ExaShareCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -59,7 +59,7 @@ public class ExaShareCom extends PluginForHost {
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(exashare\\.com|dowed\\.info)";
+    private static final String  DOMAINS                      = "(exashare\\.com|dowed\\.info|bojem3a\\.info)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -147,7 +147,7 @@ public class ExaShareCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (!br.getURL().matches("https?://(www\\.)?exashare\\.com/((vid)?embed\\-)?[a-z0-9]{12}") || new Regex(correctedBR, "(No such file|File Not Found<|>The file was (deleted|removed) by|Reason for deletion:\n|class=\"error\\-container\"|The file you were looking for could not be found)").matches()) {
+        if (!br.getURL().matches("https?://(www\\.)?" + DOMAINS + "/((vid)?embed\\-)?[a-z0-9]{12}") || new Regex(correctedBR, "(No such file|File Not Found<|>The file was (deleted|removed) by|Reason for deletion:\n|class=\"error\\-container\"|The file you were looking for could not be found)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -283,22 +283,29 @@ public class ExaShareCom extends PluginForHost {
             }
         }
         if (dllink == null && VIDEOHOSTER_3) {
-            /* Modified VIDEOHOSTER_2 code */
+            /* They often have multiple embed-redirects until we can finally get the downloadurl */
+
             try {
                 logger.info("Trying to get link via embed");
-                String embed_access = "http://dowed.info/embed-" + fuid + "-962x540.html";
-                /* Either access 'embed_access' url two times or simply set the correct Referer. */
-                br.setCurrentURL(embed_access);
-                getPage(embed_access);
-                embed_access = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-                embed_access = embed_access.replace("\n", "").replace("\r", "");
-                getPage(embed_access);
-                embed_access = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-                if (embed_access != null) {
-                    embed_access = embed_access.replace("\n", "").replace("\r", "");
-                    getPage(embed_access);
-                }
-                dllink = getDllink();
+                String embed_url = null;
+                int counter = 0;
+                do {
+                    if (this.isAbort()) {
+                        break;
+                    }
+                    /* Do not grab the protocol here as they often hide it! */
+                    embed_url = new Regex(correctedBR, "(//[^/]+/embed\\-[^<>\"]*?\\.html(?:\\?\\d+)?)").getMatch(0);
+                    if (embed_url != null) {
+                        embed_url = Encoding.htmlDecode(embed_url);
+                        /* Remove linebreaks! */
+                        embed_url = embed_url.replace("\n", "");
+                        getPage(embed_url);
+                        dllink = getDllink();
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    counter++;
+                } while (embed_url != null && counter <= 10 && dllink == null);
                 if (dllink == null) {
                     logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
@@ -306,6 +313,10 @@ public class ExaShareCom extends PluginForHost {
                 }
             } catch (final Throwable e) {
                 logger.info("Failed to get link via embed");
+            }
+            if (dllink == null) {
+                /* If failed, go back to the beginning */
+                getPage(downloadLink.getDownloadURL());
             }
             if (dllink == null) {
                 /* If failed, go back to the beginning */
@@ -524,13 +535,13 @@ public class ExaShareCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -686,7 +697,7 @@ public class ExaShareCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -712,12 +723,12 @@ public class ExaShareCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -729,10 +740,10 @@ public class ExaShareCom extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
