@@ -50,8 +50,9 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie("cliphunter.com", "qchange", "h");
+        br.setAllowedResponseCodes(410);
         br.getPage(parameter);
-        if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)")) {
+        if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setContentUrl(parameter);
             dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));

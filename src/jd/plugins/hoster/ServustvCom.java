@@ -64,25 +64,41 @@ public class ServustvCom extends PluginForHost {
         if (date == null) {
             date = this.br.getRegex("class=\"ato programm\\-datum\\-uhrzeit \" >[\t\n\r ]+<span>([^<>\"]*?\\d{1,2}\\.)</span>").getMatch(0);
         }
+        if (date == null) {
+            date = this.br.getRegex("Sendung vom (\\d{1,2}\\. April \\d{4} \\| \\d{1,2}:\\d{1,2})").getMatch(0);
+        }
         String title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
         if (title == null) {
             title = new Regex(link.getDownloadURL(), "edien/(.+)$").getMatch(0);
         }
-        if (title == null || date == null) {
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = Encoding.htmlDecode(title.trim());
         final String date_formatted = formatDate(date);
-        link.setFinalFileName(date_formatted + "_servustv_" + title + ".mp4");
+        String filename = "";
+        if (date_formatted != null) {
+            filename = date_formatted + "_";
+        }
+        filename += "servustv_" + title + ".mp4";
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String videoid = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
+        String videoid = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
         if (videoid == null) {
-            /* Seems like what the user wants to download hasn't aired yet --> Wait and retry later! */
+            /* Age restricted videos can only be viewed between 8PM and 6AM --> This way we can usually download them anyways! */
+            videoid = br.getRegex("data\\-videoid=\"(\\d+)\"").getMatch(0);
+        }
+        if (videoid == null) {
+            /* Hmm maybe age-restriction workaround failed */
+            if (this.br.containsHTML("<img src=\"/img/content/FSK\\d+\\.jpg\" alt=\"FSK\\d+\"")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Inhalt ist altersbeschränkt - Download wird später erneut versucht", 30 * 60 * 1000l);
+            }
+            /* Probably the user wants to download hasn't aired yet --> Wait and retry later! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
         }
         br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + videoid);
@@ -98,11 +114,16 @@ public class ServustvCom extends PluginForHost {
 
     @SuppressWarnings({ "static-access" })
     private String formatDate(String input) {
+        if (input == null) {
+            return null;
+        }
         final long date;
         if (input.matches("\\d+")) {
             date = Long.parseLong(input) * 1000;
         } else if (input.matches("\\d{2}\\.\\d{2}\\.\\d{4}")) {
             date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
+        } else if (input.matches("\\d{1,2}\\. April \\d{4} \\| \\d{1,2}:\\d{1,2}")) {
+            date = TimeFormatter.getMilliSeconds(input, "dd. MMMM yyyy '|' HH:mm", Locale.GERMAN);
         } else {
             final Calendar cal = Calendar.getInstance();
             input += cal.get(cal.YEAR);

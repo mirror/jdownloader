@@ -110,6 +110,10 @@ public class YouJizzCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
             if (DLLINK == null) {
+                // class="buttona" >Download This Video</
+                DLLINK = br.getRegex("\"(http://im\\.[^<>\"]+)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
                 String playlist = br.getRegex("so\\.addVariable\\(\"playlist\", \"(https?://(www\\.)?youjizz\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
                 if (playlist == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

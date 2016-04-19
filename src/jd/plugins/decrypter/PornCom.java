@@ -33,6 +33,7 @@ public class PornCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -45,8 +46,9 @@ public class PornCom extends PluginForDecrypt {
         }
         String url = parameter.getCryptedUrl();
         br.getPage(url.replace("/embed/", "/"));
-        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>)")) {
-            return new ArrayList<DownloadLink>(0);
+        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            links.add(this.createOfflinelink(parameter.getCryptedUrl()));
+            return links;
         }
         String fileName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (fileName == null) {
@@ -57,7 +59,7 @@ public class PornCom extends PluginForDecrypt {
         } else {
             fileName = Encoding.htmlDecode(fileName.trim());
         }
-        ArrayList<DownloadLink> links = getLinks(br, url, fileName);
+        links = getLinks(br, url, fileName);
         /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
         if (links.size() == 0) {
             final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);

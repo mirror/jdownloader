@@ -32,16 +32,30 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.net" }, urls = { "http://(www\\.)?24video\\.net/video/view/\\d+" }, flags = { 0 })
-public class TwenteeFourVideoNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.xxx" }, urls = { "http://(?:www\\.)?24video\\.(?:net|xxx)/video/view/\\d+" }, flags = { 0 })
+public class TwenteeFourVideoXxx extends PluginForHost {
 
-    public TwenteeFourVideoNet(PluginWrapper wrapper) {
+    public TwenteeFourVideoXxx(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("24video.net/", "24video.xxx/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.24video.net/staticPage/view/agreement_en";
+        return "http://www.24video.xxx/staticPage/view/agreement_en";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("24video.net".equals(getHost())) {
+            if (host == null || "24video.net".equals(host)) {
+                return "24video.xxx";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     private Browser ajax = null;
@@ -57,6 +71,8 @@ public class TwenteeFourVideoNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        /* Fix old urls */
+        correctDownloadLink(link);
         br.setFollowRedirects(true);
         // are you 18 ?
         br.setCookie(this.getHost(), "plus18-1", "true");

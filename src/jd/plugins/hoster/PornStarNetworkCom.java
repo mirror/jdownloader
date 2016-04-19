@@ -53,66 +53,76 @@ public class PornStarNetworkCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Page not Found<|>Sorry, the page you are looking for cannot be found)")) {
+        if (br.containsHTML("(>Page not Found<|>Sorry, the page you are looking for cannot be found)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final Browser br2 = this.br.cloneBrowser();
         String filename = null;
         if (downloadLink.getDownloadURL().matches(type_embed)) {
             DLLINK = br.getRegex("\"(http://download\\d+\\.pornstarnetwork\\.com/[^<>\"]*?)\"").getMatch(0);
             filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         } else {
             filename = br.getRegex("<div id=\"viewTitle\"><h1>Video \\- ([^<>]*?) \\&nbsp;</h1></div>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
             }
-            br.getPage("http://www.pornstarnetwork.com/streaming/getVideosZ/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/" + new Random().nextInt(1000));
-            DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
+            br2.getPage("http://www.pornstarnetwork.com/streaming/getVideosZ/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/" + new Random().nextInt(1000));
+            DLLINK = br2.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
             if (DLLINK == null) {
-                br.getPage("http://www.pornstarnetwork.com/streaming/getAuthUrl/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/format/h264/" + new Random().nextInt(1000));
-                DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
+                br2.getPage("http://www.pornstarnetwork.com/streaming/getAuthUrl/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/format/h264/" + new Random().nextInt(1000));
+                DLLINK = br2.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
             }
-            if (filename == null || DLLINK == null) {
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        if (DLLINK != null) {
+            DLLINK = Encoding.htmlDecode(DLLINK);
+        }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if ((ext == null || ext.length() > 5) && ext.contains(".mp4")) {
+        String ext = null;
+        if (DLLINK != null) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
+        if (ext != null && ext.contains(".mp4")) {
             ext = ".mp4";
-        } else if ((ext == null || ext.length() > 5) && ext.contains(".flv")) {
+        } else if (ext != null && ext.contains(".flv")) {
             ext = ".flv";
-        } else {
+        } else if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (DLLINK != null) {
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br2.openGetConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (DLLINK == null) {
+            if (this.br.containsHTML("id=\"boxVidStills\"")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
