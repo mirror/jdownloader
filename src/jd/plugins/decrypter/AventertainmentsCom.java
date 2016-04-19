@@ -45,14 +45,21 @@ public class AventertainmentsCom extends PluginForDecrypt {
         this.br.setFollowRedirects(false);
         String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
 
+        boolean foundScreenshot = false;
+        final String screenshot_url_part = this.br.getRegex("imgs\\.aventertainments\\.com/new/bigcover/([A-Za-z0-9\\-_]+\\.jpg)\"").getMatch(0);
         final String[] screenshotRegexes = { "(https://imgs\\.aventertainments\\.com/new/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\.aventertainments\\.com//?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
         for (final String screenshotRegex : screenshotRegexes) {
             final String[] screenshots = br.getRegex(screenshotRegex).getColumn(0);
             if (screenshots != null && screenshots.length > 0) {
+                foundScreenshot = true;
                 for (final String singleLink : screenshots) {
                     decryptedLinks.add(createDownloadlink("directhttp://" + singleLink));
                 }
             }
+        }
+        if (!foundScreenshot && screenshot_url_part != null) {
+            /* E.g. for DVDs these screenshots are officially not available --> We can work around this limitation */
+            decryptedLinks.add(createDownloadlink("directhttp://http://imgs.aventertainments.com/new/screen_shot/" + screenshot_url_part));
         }
 
         final String[] videos = br.getRegex("(https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx[^<>\"\\']+\\.mp4)").getColumn(0);

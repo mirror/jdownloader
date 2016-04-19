@@ -60,7 +60,7 @@ public class MydirtyhobbyCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     private final String         html_buy                     = "name=\"buy\"";
-    private final String         html_logout                  = "/\\?ac=dologout";
+    private final String         html_logout                  = "(/\\?ac=dologout|/logout\")";
     private final String         default_extension            = ".flv";
 
     private String               dllink                       = null;

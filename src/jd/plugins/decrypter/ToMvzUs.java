@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -83,8 +84,16 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private void decryptIframe(ArrayList<DownloadLink> decryptedLinks) {
+    private void decryptIframe(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         // they are always held in iframe src. page seems to only have one.
+        final String toshash = this.br.getRegex("document\\.getElementById\\(\"toshash\"\\)\\.value = \"([^<>\"]+)\"").getMatch(0);
+        final Form tosform = this.br.getFormbyKey("confirm_continue");
+        if (tosform != null) {
+            if (toshash != null) {
+                tosform.put("hash", toshash);
+            }
+            this.br.submitForm(tosform);
+        }
         final String[] iframes = br.getRegex("<iframe .*?</iframe>").getColumn(-1);
         if (iframes != null) {
             for (final String iframe : iframes) {

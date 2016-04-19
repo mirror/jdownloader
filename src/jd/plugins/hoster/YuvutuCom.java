@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+(?:/[A-Za-z0-9\\-_]+)?|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 0 })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
@@ -75,22 +75,15 @@ public class YuvutuCom extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String linkid = this.getLinkid(link);
-        link.setUrlDownload("http://www.yuvutu.com/modules.php?name=Video&op=view&video_id=" + linkid);
-        link.setLinkID(linkid);
-    }
-
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        downloadLink.setName(getLinkid(downloadLink) + ".mp4");
+        final String linkid = this.getLinkid(downloadLink);
+        downloadLink.setName(linkid + ".mp4");
         br.setCookie("http://www.yuvutu.com/", "lang", "english");
         br.setCookie("http://www.yuvutu.com/", "warningcookie", "viewed");
         br.setFollowRedirects(false);
-        final URLConnectionAdapter conf = br.openGetConnection(downloadLink.getDownloadURL());
+        final URLConnectionAdapter conf = br.openGetConnection("http://www.yuvutu.com/modules.php?name=Video&op=view&video_id=" + linkid);
         if (conf.getResponseCode() == 410) {
             conf.disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -163,7 +156,7 @@ public class YuvutuCom extends PluginForHost {
     }
 
     private String getLinkid(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        return new Regex(dl.getDownloadURL(), "(?:video/|video_id=)(\\d+)").getMatch(0);
     }
 
     @Override

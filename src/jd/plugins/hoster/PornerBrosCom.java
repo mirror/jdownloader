@@ -122,7 +122,10 @@ public class PornerBrosCom extends PluginForHost {
         if (DLLINK == null) {
             final String[] qualities = { "1080", "720", "480", "360", "240" };
             String availablequalities = br.getRegex("\\}\\)\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
-            final String lid = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
+            String lid = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
+            if (lid == null) {
+                lid = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
+            }
             if (lid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
