@@ -10,8 +10,14 @@ import java.util.List;
 
 public class ProcMounts {
 
-    private final String device;
-    private final String fileSystem;
+    private final String  device;
+    private final String  fileSystem;
+
+    private final boolean readOnly;
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
 
     public String getFileSystem() {
         return fileSystem;
@@ -27,10 +33,11 @@ public class ProcMounts {
 
     private final String mountPoint;
 
-    private ProcMounts(final String device, final String mountPoint, final String fileSystem) {
+    private ProcMounts(final String device, final String mountPoint, final String fileSystem, final boolean readOnly) {
         this.device = device;
         this.mountPoint = mountPoint;
         this.fileSystem = fileSystem;
+        this.readOnly = readOnly;
     }
 
     @Override
@@ -50,7 +57,8 @@ public class ProcMounts {
                 while ((line = reader.readLine()) != null) {
                     String[] infos = line.split(" ");
                     if (infos.length >= 6) {
-                        final ProcMounts mount = new ProcMounts(infos[0], infos[1].replaceAll("\\\\040", " "), infos[2]);
+                        final boolean readOnly = isReadOnly(infos[3]);
+                        final ProcMounts mount = new ProcMounts(infos[0], infos[1].replaceAll("\\\\040", " "), infos[2], readOnly);
                         ret.add(mount);
                     }
                 }
@@ -63,5 +71,15 @@ public class ProcMounts {
                 fis.close();
             }
         }
+    }
+
+    private static boolean isReadOnly(final String options) {
+        for (final String option : options.split(",")) {
+            if ("ro".equalsIgnoreCase(option)) {
+                return true;
+            }
+        }
+        return false;
+
     }
 }

@@ -97,8 +97,12 @@ public class SystemAPIImpl implements SystemAPI {
         } else {
             final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
             final List<File> roots = new ArrayList<File>();
+            final boolean customPath;
             if (StringUtils.isNotEmpty(path)) {
                 roots.add(new File(path));
+                customPath = true;
+            } else {
+                customPath = false;
             }
             if (roots.size() == 0) {
                 if (!CrossSystem.isWindows()) {
@@ -106,9 +110,11 @@ public class SystemAPIImpl implements SystemAPI {
                         final List<ProcMounts> procMounts = ProcMounts.list();
                         if (procMounts != null) {
                             for (final ProcMounts procMount : procMounts) {
-                                final String mountPoint = procMount.getMountPoint();
-                                if ("/".equals(mountPoint) || mountPoint.startsWith("/home") || mountPoint.startsWith("/mnt") || mountPoint.startsWith("/media")) {
-                                    roots.add(new File(mountPoint));
+                                if (!procMount.isReadOnly()) {
+                                    final String mountPoint = procMount.getMountPoint();
+                                    if ("/".equals(mountPoint) || mountPoint.startsWith("/home") || mountPoint.startsWith("/mnt") || mountPoint.startsWith("/media")) {
+                                        roots.add(new File(mountPoint));
+                                    }
                                 }
                             }
                         }
