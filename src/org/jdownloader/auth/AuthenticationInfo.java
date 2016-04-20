@@ -3,10 +3,21 @@ package org.jdownloader.auth;
 import java.util.Locale;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class AuthenticationInfo implements Storable {
     public AuthenticationInfo() {
         // empty const. required for Storable interface
+    }
+
+    private final UniqueAlltimeID id = new UniqueAlltimeID();
+
+    public void setId(long id) {
+        this.id.setID(id);
+    }
+
+    public long getId() {
+        return id.getID();
     }
 
     public static enum Type {

@@ -11,9 +11,13 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 
+import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
 import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
+import org.jdownloader.myjdownloader.client.bindings.BasicAuthenticationStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -220,4 +224,77 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         return false;
     }
 
+    @Override
+    public List<BasicAuthenticationAPIStorable> listBasicAuth() {
+        List<BasicAuthenticationAPIStorable> result = new ArrayList<>();
+        List<AuthenticationInfo> auths = AuthenticationController.getInstance().list();
+        for (AuthenticationInfo info : auths) {
+            result.add(createAuthenticationStorable(info));
+        }
+        return result;
+    }
+
+    private BasicAuthenticationAPIStorable createAuthenticationStorable(AuthenticationInfo info) {
+        BasicAuthenticationAPIStorable tmp = new BasicAuthenticationAPIStorable();
+        tmp.setCreated(info.getCreated());
+        tmp.setEnabled(info.isEnabled());
+        tmp.setHostmask(info.getHostmask());
+        tmp.setLastValidated(info.getLastValidated());
+        if (info.getType() != null) {
+            BasicAuthenticationStorable.Type type = BasicAuthenticationStorable.Type.valueOf(info.getType().name());
+            tmp.setType(type);
+        }
+        tmp.setUsername(info.getUsername());
+        return tmp;
+    }
+
+    @Override
+    public boolean addBasicAuth(final BasicAuthenticationStorable.Type type, final String hostmask, final String username, final String password) throws BadParameterException {
+        if (type == null) {
+            throw new BadParameterException("type == null");
+        }
+        AuthenticationInfo.Type authType;
+        try {
+            authType = AuthenticationInfo.Type.valueOf(type.name());
+        } catch (IllegalArgumentException e) {
+            throw new BadParameterException("invalid type");
+        }
+        final AuthenticationInfo info = new AuthenticationInfo();
+        info.setType(authType);
+        info.setHostmask(hostmask);
+        info.setUsername(username);
+        info.setPassword(password);
+        AuthenticationController.getInstance().add(info);
+        return true;
+    }
+
+    @Override
+    public boolean removeBasicAuths(final long[] ids) throws BadParameterException {
+        if (ids == null || ids.length == 0) {
+            throw new BadParameterException("ids empty or null");
+        }
+
+        final List<AuthenticationInfo> auths = getBasicAuthsById(ids);
+        AuthenticationController.getInstance().remove(auths);
+
+        return true;
+    }
+
+    private List<AuthenticationInfo> getBasicAuthsById(long[] ids) {
+        final HashSet<Long> todoIDs = new HashSet<Long>();
+        for (long l : ids) {
+            todoIDs.add(l);
+        }
+        final List<AuthenticationInfo> accs = new ArrayList<AuthenticationInfo>();
+        for (final AuthenticationInfo lacc : AuthenticationController.getInstance().list()) {
+            if (lacc != null && todoIDs.size() > 0) {
+                if (todoIDs.remove(lacc.getId())) {
+                    accs.add(lacc);
+                }
+            } else if (todoIDs.size() == 0) {
+                break;
+            }
+        }
+        return accs;
+    }
 }
