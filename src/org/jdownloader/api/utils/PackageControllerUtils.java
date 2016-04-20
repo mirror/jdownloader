@@ -382,14 +382,19 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
      */
 
     public boolean cleanup(final long[] linkIds, final long[] pkgIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
-        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
+        final SelectionInfo<PackageType, ChildType> selection;
+        if (CleanupActionOptions.SelectionType.ALL.equals(selectionType)) {
+            selection = new SelectionInfo<PackageType, ChildType>(null, packageController.getAllChildren());
+        } else {
+            selection = getSelectionInfo(linkIds, pkgIds);
+        }
         if (selection.isEmpty()) {
             throw new BadParameterException("empty selection");
         } else {
             final List<ChildType> nodesToDelete = new ArrayList<ChildType>();
             switch (selectionType) {
-            case SELECTED:
             case ALL:
+            case SELECTED:
                 for (ChildType ct : selection.getChildren()) {
                     if (shouldDeleteLink(action, ct)) {
                         nodesToDelete.add(ct);
