@@ -18,8 +18,12 @@ public class SystemAPIImpl17 {
     public static List<StorageInformationStorable> getStorageInfos(final String path) {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
         final List<Path> roots = new ArrayList<Path>();
+        final boolean customPath;
         if (StringUtils.isNotEmpty(path)) {
             roots.add(new File(path).toPath());
+            customPath = true;
+        } else {
+            customPath = false;
         }
         if (roots.size() == 0) {
             if (!CrossSystem.isWindows()) {
@@ -27,9 +31,11 @@ public class SystemAPIImpl17 {
                     final List<ProcMounts> procMounts = ProcMounts.list();
                     if (procMounts != null) {
                         for (final ProcMounts procMount : procMounts) {
-                            final String mountPoint = procMount.getMountPoint();
-                            if ("/".equals(mountPoint) || mountPoint.startsWith("/home") || mountPoint.startsWith("/mnt") || mountPoint.startsWith("/media")) {
-                                roots.add(new File(mountPoint).toPath());
+                            if (!procMount.isReadOnly()) {
+                                final String mountPoint = procMount.getMountPoint();
+                                if ("/".equals(mountPoint) || mountPoint.startsWith("/home") || mountPoint.startsWith("/mnt") || mountPoint.startsWith("/media")) {
+                                    roots.add(new File(mountPoint).toPath());
+                                }
                             }
                         }
                     }
@@ -46,6 +52,9 @@ public class SystemAPIImpl17 {
             final StorageInformationStorable storage = new StorageInformationStorable();
             try {
                 final FileStore store = Files.getFileStore(root);
+                if (customPath == false && store.isReadOnly()) {
+                    continue;
+                }
                 storage.setPath(root.toString());
                 storage.setSize(store.getTotalSpace());
                 storage.setFree(store.getUsableSpace());
