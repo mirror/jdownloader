@@ -1,5 +1,11 @@
 package org.jdownloader.api.system;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 
@@ -7,10 +13,12 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 import org.jdownloader.myjdownloader.client.bindings.SystemInformationStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.SystemInterface;
 import org.jdownloader.updatev2.ForcedShutdown;
@@ -81,6 +89,48 @@ public class SystemAPIImpl implements SystemAPI {
     public void exitJD() {
         stopJD();
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
+    }
+
+    public List<StorageInformationStorable> getStorageInfos(final String path) {
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            return SystemAPIImpl17.getStorageInfos(path);
+        } else {
+            final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
+            final List<File> roots = new ArrayList<File>();
+            if (StringUtils.isNotEmpty(path)) {
+                roots.add(new File(path));
+            }
+            if (roots.size() == 0) {
+                if (!CrossSystem.isWindows()) {
+                    try {
+                        final List<ProcMounts> procMounts = ProcMounts.list();
+                        if (procMounts != null) {
+                            for (final ProcMounts procMount : procMounts) {
+                                final String mountPoint = procMount.getMountPoint();
+                                if ("/".equals(mountPoint) || mountPoint.startsWith("/home") || mountPoint.startsWith("/mnt") || mountPoint.startsWith("/media")) {
+                                    roots.add(new File(mountPoint));
+                                }
+                            }
+                        }
+                    } catch (final IOException e) {
+                    }
+                }
+                if (roots.size() == 0) {
+                    final File[] fileRoots = File.listRoots();
+                    if (fileRoots != null) {
+                        roots.addAll(Arrays.asList(fileRoots));
+                    }
+                }
+            }
+            for (final File root : roots) {
+                final StorageInformationStorable storage = new StorageInformationStorable();
+                storage.setPath(root.getPath());
+                storage.setSize(root.getTotalSpace());
+                storage.setFree(root.getUsableSpace());
+                ret.add(storage);
+            }
+            return ret;
+        }
     }
 
     @Override
