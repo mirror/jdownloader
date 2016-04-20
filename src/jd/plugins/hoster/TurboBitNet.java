@@ -32,6 +32,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,12 +63,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|dz-files\\.ru|file\\.grad\\.by|gdefile\\.ru|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
@@ -892,10 +892,10 @@ public class TurboBitNet extends PluginForHost {
                 br.getPage(MAINPAGE);
                 br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                 // Check for stupid login captcha
-                if (br.containsHTML(">Limit of login attempts exceeded") || br.containsHTML(">Please enter the captcha")) {
+                if (br.containsHTML(">Limit of login attempts exceeded|>Please enter the captcha")) {
                     logger.info("processing login captcha...");
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
-                    final String captchaLink = br.getRegex("\"(http://turbobit\\.net/captcha/[^<>\"]*?)\"").getMatch(0);
+                    final String captchaLink = br.getRegex("\"(https?://turbobit\\.net/captcha/[^<>\"]*?)\"").getMatch(0);
                     if (captchaLink != null) {
                         final String code = getCaptchaCode("NOTOLDTRBT", captchaLink, dummyLink);
                         String captchaSubtype = "3";
@@ -903,6 +903,10 @@ public class TurboBitNet extends PluginForHost {
                             captchaSubtype = "5";
                         }
                         br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bcaptcha_response%5D=" + Encoding.urlEncode(code) + "&user%5Bcaptcha_type%5D=securimg&user%5Bcaptcha_subtype%5D=" + captchaSubtype + "&user%5Bsubmit%5D=Sign+in");
+                    } else if (br.containsHTML("class=\"g-recaptcha\"")) {
+                        this.setDownloadLink(dummyLink);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&user%5Bcaptcha_type%5D=recaptcha2&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                     } else {
                         final Recaptcha rc = new Recaptcha(br, this);
                         final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
