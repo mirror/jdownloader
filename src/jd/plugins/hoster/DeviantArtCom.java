@@ -510,7 +510,8 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private String getHQpic() {
-        return br.getRegex("class=\"dev\\-content\\-normal\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        final String hqurl = br.getRegex("class=\"dev\\-content\\-normal[^\"]*?\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        return hqurl;
     }
 
     @Override

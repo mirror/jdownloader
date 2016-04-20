@@ -31,14 +31,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "https?://(?:www\\.)?tidido\\.com/((?:[a-z]{2}/)?a[a-f0-9]+(?:/al[a-f0-9]+)?(?:/t[a-f0-9]+)?|[A-Za-z]{2}/moods/[^/]+/[a-f0-9]+|[A-Za-z]{2}/u[a-z0-9]+/playlists/[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "https?://(?:www\\.)?tidido\\.com/.+" }, flags = { 0 })
 public class TididoCom extends PluginForDecrypt {
 
     public TididoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String TYPE_ALBUM         = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+/al[a-z0-9]+";
+    private final String TYPE_ALBUM         = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?(?:a[a-z0-9]+/)?al[a-z0-9]+";
     private final String TYPE_PLAYLIST      = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/(?:u[a-z0-9]+/playlists/[a-z0-9]+|moods/([^/]+)/([a-z0-9]+))";
     private final String TYPE_PLAYLIST_MOOD = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/moods/([^/]+)/([a-z0-9]+)";
     private final String TYPE_PLAYLIST_USER = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/u([a-z0-9]+)/playlists/([a-z0-9]+)";
@@ -49,11 +49,6 @@ public class TididoCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
         final boolean fast_linkcheck = SubConfiguration.getConfig("tidido.com").getBooleanProperty(jd.plugins.hoster.TididoCom.FAST_LINKCHECK, jd.plugins.hoster.TididoCom.defaultFAST_LINKCHECK);
         String name_playlist = null;
         String name_album = null;
@@ -74,6 +69,7 @@ public class TididoCom extends PluginForDecrypt {
             target_song_id = new Regex(parameter, "t([^/]+)$").getMatch(0);
         } else if (parameter.matches(TYPE_ALBUM)) {
             album_id = new Regex(parameter, "al([a-z0-9]+)").getMatch(0);
+            /* artist_id must not be given for album urls */
             artist_id = new Regex(parameter, "a([a-z0-9]+)").getMatch(0);
         } else if (parameter.matches(TYPE_ARTIST)) {
             artist_id = new Regex(parameter, "a([a-z0-9]+)").getMatch(0);
@@ -177,7 +173,7 @@ public class TididoCom extends PluginForDecrypt {
                 /* Small fallback attempt */
                 albumID_this_song = album_id;
             }
-            if (albumID_this_song == null || songid == null || songname == null || bitrate == 0) {
+            if (albumID_this_song == null || songid == null || songname == null) {
                 continue;
             }
             String filename_temp = null;
@@ -188,9 +184,15 @@ public class TididoCom extends PluginForDecrypt {
             } else {
                 filename = songname;
             }
+            final String bitrate_str;
+            if (bitrate == 0) {
+                bitrate_str = "_bitrate_unknown";
+            } else {
+                bitrate_str = "_bitrate_" + bitrate;
+            }
             filename = encodeUnicode(filename);
             /* Include bitrate in temp filename but not in final filename. */
-            filename_temp = filename + "_" + bitrate + ".mp3";
+            filename_temp = filename + "_" + bitrate_str + ".mp3";
             filename += ".mp3";
 
             final String content_url = "http://tidido.com/a" + artistid + "/al" + albumID_this_song + "/t" + songid;
