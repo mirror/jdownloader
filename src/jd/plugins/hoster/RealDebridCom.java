@@ -407,7 +407,7 @@ public class RealDebridCom extends antiDDoSForHost {
         login(account, false);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
-        String dllink = link.getDownloadURL();
+        String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         for (int retry = 0; retry < repeat; retry++) {
             try {
                 if (retry != 0) {
