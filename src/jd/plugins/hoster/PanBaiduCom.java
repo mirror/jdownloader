@@ -21,9 +21,13 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,11 +36,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" }, flags = { 2 })
 public class PanBaiduCom extends PluginForHost {
 
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium();
     }
 
     @Override
@@ -46,7 +51,6 @@ public class PanBaiduCom extends PluginForHost {
 
     private String              DLLINK                                     = null;
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
-    private static final String NOCHUNKS                                   = "NOCHUNKS";
     private static final String USER_AGENT                                 = "netdisk;4.8.3.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
     // private static final String USER_AGENT =
     // "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
@@ -54,6 +58,11 @@ public class PanBaiduCom extends PluginForHost {
 
     private static final String NICE_HOST                                  = "pan.baidu.com";
     private static final String NICE_HOSTproperty                          = "panbaiducom";
+
+    /* Connection stuff */
+    private final boolean       FREE_RESUME                                = true;
+    private final int           FREE_MAXCHUNKS                             = 0;
+    private final int           FREE_MAXDOWNLOADS                          = -1;
 
     /** Known API errors/responses: -20 = Captcha needed / captcha wrong */
 
@@ -83,12 +92,16 @@ public class PanBaiduCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink, "freedirectlink");
+    }
+
+    private void doFree(final DownloadLink downloadLink, final String directlinkproperty) throws Exception {
         final String fsid = downloadLink.getStringProperty("important_fsid", null);
         String sign;
         String tsamp;
-        requestFileInformation(downloadLink);
-        String passCode = downloadLink.getStringProperty("pass", null);
-        DLLINK = checkDirectLink(downloadLink, "panbaidudirectlink");
+        String passCode = downloadLink.getDownloadPassword();
+        DLLINK = checkDirectLink(downloadLink, directlinkproperty);
         if (DLLINK == null) {
             /* Needed to get the pcsett cookie on http://.pcs.baidu.com/ to avoid "hotlinking forbidden" errormessage later */
             getPage(this.br, "http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett");
@@ -229,12 +242,7 @@ public class PanBaiduCom extends PluginForHost {
             }
         }
 
-        int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
             br.followConnection();
             if (br.containsHTML("\"error_code\":31326")) {
@@ -246,30 +254,8 @@ public class PanBaiduCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        downloadLink.setProperty("panbaidudirectlink", DLLINK);
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(PanBaiduCom.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(PanBaiduCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(PanBaiduCom.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(PanBaiduCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        downloadLink.setProperty(directlinkproperty, DLLINK);
+        this.dl.startDownload();
     }
 
     private void getPage(final Browser br, final String url) throws IOException, PluginException {
@@ -279,6 +265,7 @@ public class PanBaiduCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void postPage(final Browser br, final String url, final String postdata) throws IOException, PluginException {
         br.postPage(url, postdata);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/error/core.html")) {
@@ -405,13 +392,98 @@ public class PanBaiduCom extends PluginForHost {
         }
     }
 
+    private static Object LOCK = new Object();
+
+    @SuppressWarnings("deprecation")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.setFollowRedirects(false);
+                br.getPage("http://pan.baidu.com");
+                /* TODO: Maybe add a value for 'gid' */
+                br.getPage("https://passport.baidu.com/v2/api/?getapi&tpl=netdisk&subpro=netdisk_web&apiver=v3&tt=" + System.currentTimeMillis() + "&class=login&gid=&logintype=basicLogin&callback=bd__cbs__38gea8");
+                final String token = this.br.getRegex("\"token\"[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]+)\"").getMatch(0);
+                if (token == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                String errorno = null;
+                for (int i = 0; i <= 1; i++) {
+                    String postData = "staticpage=http%3A%2F%2Fpan.baidu.com%2Fres%2Fstatic%2Fthirdparty%2Fpass_v3_jump.html&charset=utf-8&token=" + Encoding.urlEncode(token) + "&tpl=netdisk&subpro=netdisk_web&apiver=v3&tt=" + System.currentTimeMillis() + "&codestring=&safeflg=0&u=http%3A%2F%2Fpan.baidu.com%2F&isPhone=false&detect=1&gid=&quick_user=0&logintype=basicLogin&logLoginType=pc_loginBasic&idc=&loginmerge=true&foreignusername=&" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&verifycode=&mem_pass=on&ppui_logintime=0&countrycode=&callback=parent.bd__pcbs__22ko42";
+                    br.postPage("https://passport.baidu.com/v2/api/?login", postData);
+                    if (this.br.containsHTML("blabla_TODO")) {
+                        /* Login captcha needed */
+                        final String captchaurl = "https://passport.baidu.com/cgi-bin/genimage?jxIcaptchaservice";
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
+                        final String c = getCaptchaCode(captchaurl, dummyLink);
+                    }
+                    errorno = this.br.getRegex("err_no=(\\d+)").getMatch(0);
+                    break;
+                }
+                if (br.getCookie(this.getHost(), "UBI") == null || "257".equals(errorno)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        /* 2016-04-21: So far all accounts are handled as free accounts - free does not have any limits anyways! */
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        doFree(link, "account_free_directlink");
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return FREE_MAXDOWNLOADS;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
