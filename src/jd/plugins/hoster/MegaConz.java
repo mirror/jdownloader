@@ -37,7 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -47,7 +46,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+(=###n=[a-zA-Z0-9]+)?|mega:///#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+((=###n=|!)[a-zA-Z0-9]+)?|mega:///#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9]+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
@@ -79,6 +78,7 @@ public class MegaConz extends PluginForHost {
             } else {
                 final String nodeID = getNodeFileID(link);
                 if (nodeID != null) {
+                    link.setProperty("public", false);
                     link.setLinkID(getHost() + "N" + nodeID);
                 }
             }
@@ -90,6 +90,14 @@ public class MegaConz extends PluginForHost {
             }
         } else {
             link.setUrlDownload(url.replaceAll("%21", "!").replaceAll("%20", ""));
+        }
+        String parentNode = link.getStringProperty("pn", null);
+        if (parentNode == null) {
+            parentNode = getParentNodeID(link);
+            if (parentNode != null) {
+                link.setProperty("public", false);
+                link.setProperty("pn", parentNode);
+            }
         }
     }
 
@@ -107,16 +115,22 @@ public class MegaConz extends PluginForHost {
         return new Regex(url, "#F\\!([a-zA-Z0-9]+)\\!").getMatch(0);
     }
 
+    private final boolean isPublic(final DownloadLink downloadLink) {
+        return downloadLink.getBooleanProperty("public", true);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         setBrowserExclusive();
-        boolean publicFile = true;
         String fileID = getPublicFileID(link);
         String keyString = getPublicFileKey(link);
         if (fileID == null) {
             fileID = getNodeFileID(link);
             keyString = getNodeFileKey(link);
-            publicFile = false;
+            if (isPublic(link)) {
+                // update existing links
+                link.setProperty("public", false);
+            }
         }
         if (fileID == null || keyString == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -124,22 +138,14 @@ public class MegaConz extends PluginForHost {
         br.getHeaders().put("APPID", "JDownloader");
         try {
             final PostRequest request;
-            String parentNode = link.getStringProperty("pn", null);
-            if (parentNode == null) {
-                parentNode = getParentNodeID(link);
-                link.setProperty("pn", parentNode);
-            }
-            if (parentNode == null && getFolderID(link.getContainerUrl()) != null) {
-                parentNode = getFolderID(link.getContainerUrl());
-                link.setProperty("pn", parentNode);
-            }
+            final String parentNode = getParentNodeID(link);
             if (parentNode != null) {
                 request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + parentNode);
             } else {
                 request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet());
             }
             request.setContentType("text/plain; charset=UTF-8");
-            if (publicFile) {
+            if (isPublic(link)) {
                 request.setPostDataString("[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
             } else {
                 request.setPostDataString("[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
@@ -204,14 +210,11 @@ public class MegaConz extends PluginForHost {
         if (AvailableStatus.TRUE != available) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
         }
-
-        boolean publicFile = true;
         String fileID = getPublicFileID(link);
         String keyString = getPublicFileKey(link);
         if (fileID == null) {
             fileID = getNodeFileID(link);
             keyString = getNodeFileKey(link);
-            publicFile = false;
         }
         // check finished encrypted file. if the decryption interrupted - for whatever reason
         String path = link.getFileOutput();
@@ -247,7 +250,7 @@ public class MegaConz extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final PostRequest request;
-                final String parentNode = link.getStringProperty("pn", null);
+                final String parentNode = getParentNodeID(link);
                 if (parentNode != null) {
                     request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + parentNode);
                 } else {
@@ -255,7 +258,7 @@ public class MegaConz extends PluginForHost {
                 }
                 request.setContentType("text/plain; charset=UTF-8");
                 request.setContentType("text/plain; charset=UTF-8");
-                if (publicFile) {
+                if (isPublic(link)) {
                     request.setPostDataString("[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
                 } else {
                     request.setPostDataString("[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
@@ -358,24 +361,6 @@ public class MegaConz extends PluginForHost {
             return null;
         }
         return br.getRegex("\"e\"\\s*?:\\s*?(-?\\d+)").getMatch(0);
-    }
-
-    private boolean oldStyle() {
-        String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) {
-            return false;
-        }
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
     }
 
     private void setConfigElements() {
@@ -548,7 +533,13 @@ public class MegaConz extends PluginForHost {
     }
 
     private String getParentNodeID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "=###n=([a-zA-Z0-9]+)").getMatch(0);
+        final String ret = new Regex(link.getDownloadURL(), "(=###n=|!|%21)([a-zA-Z0-9]+)$").getMatch(1);
+        final String publicFileKey = getPublicFileKey(link);
+        final String nodeFileKey = getNodeFileKey(link);
+        if (ret != null && !ret.equals(publicFileKey) && !ret.equals(nodeFileKey)) {
+            return ret;
+        }
+        return link.getStringProperty("pn", null);
     }
 
     private String getNodeFileKey(DownloadLink link) {
@@ -606,15 +597,37 @@ public class MegaConz extends PluginForHost {
         return false;
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        if (downloadLink != null && plugin != null) {
-            if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", plugin.getHost()), plugin.getHost())) {
-                return false;
+    @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        if (isPublic(downloadLink)) {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        } else {
+            if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
+                return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+            } else if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
+                String fileID = getPublicFileID(downloadLink);
+                String keyString = getPublicFileKey(downloadLink);
+                if (fileID == null) {
+                    fileID = getNodeFileID(downloadLink);
+                    keyString = getNodeFileKey(downloadLink);
+                }
+                return "https://mega.co.nz/#!" + fileID + "!" + keyString + "!" + getParentNodeID(downloadLink);
+            } else {
+                return null;
             }
         }
-        if (downloadLink != null && downloadLink.getStringProperty("pn") != null) {
-            return StringUtils.equals(getHost(), plugin.getHost());
+
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        if (downloadLink != null) {
+            if (plugin != null) {
+                if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", plugin.getHost()), plugin.getHost())) {
+                    return false;
+                }
+            }
+            return buildExternalDownloadURL(downloadLink, plugin) != null;
         }
         return true;
     }
