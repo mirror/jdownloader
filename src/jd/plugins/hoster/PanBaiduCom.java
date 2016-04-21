@@ -242,7 +242,7 @@ public class PanBaiduCom extends PluginForHost {
             }
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
             br.followConnection();
             if (br.containsHTML("\"error_code\":31326")) {
