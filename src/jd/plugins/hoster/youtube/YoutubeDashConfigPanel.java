@@ -371,7 +371,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         BooleanKeyHandler videoKeyhandler;
         bestVideo = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(videoKeyhandler = cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
-        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explain());
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explained());
         bestLimit = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_limitation(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("BestVideoVariant1080pLimitEnabled", BooleanKeyHandler.class), null));
         bestVideo.getComponent().setDependencies(bestLimit.getComponent());
         add(new JSeparator(), "pushx,growx,spanx");
