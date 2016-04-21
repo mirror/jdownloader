@@ -465,7 +465,7 @@ public class OneFichierCom extends PluginForHost {
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         // Use site login/site download if either API is not working or API says that there are no credits available
-        if ("error".equalsIgnoreCase(br.toString()) || ("0".equals(timeStamp) && freeCredits == null)) {
+        if ("error".equalsIgnoreCase(br.toString()) || ("0".equals(timeStamp) && freeCredits == null || (timeStamp == null && freeCredits == null && "23764902a26fbd6345d3cc3533d1d5eb".equals(JDHash.getMD5(br.toString()))))) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
@@ -484,7 +484,8 @@ public class OneFichierCom extends PluginForHost {
             account.setConcurrentUsePossible(false);
             account.setProperty("freeAPIdisabled", true);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("https://www.1fichier.com/en/console/details.pl");
+            br.setFollowRedirects(true);
+            br.getPage("https://1fichier.com/en/console/details.pl");
             String freeCredits2 = br.getRegex(">Your account have ([^<>\"]*?) of direct download credits").getMatch(0);
             if (freeCredits2 != null) {
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits2));
