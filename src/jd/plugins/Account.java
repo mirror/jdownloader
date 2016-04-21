@@ -17,24 +17,30 @@
 package jd.plugins;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class Account extends Property {
 
@@ -67,7 +73,7 @@ public class Account extends Property {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
         final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
         /*
-         * do not cache antiddos cookies, this is job of the antiddos module, otherwise will can and will cause conflicts!
+         * do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts!
          */
         final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.antiDDoSCookiePattern;
         for (final Cookie cookie : cookies.getCookies()) {
@@ -406,6 +412,93 @@ public class Account extends Property {
         }
     }
 
+    /**
+     * @author raztoki
+     * @since JD2
+     * @see findAndSetNextDayAsTimeOut
+     * @param br
+     */
+    public final void setNextDayAsTempTimeout(final Browser br) {
+        setNextDayAsTempTimeout(br, "EEE, dd MMM yyyy HH:mm:ss z", -1, null);
+    }
+
+    /**
+     * @author raztoki
+     * @since JD2
+     * @see findAndSetNextDayAsTimeOut
+     * @param br
+     * @param message
+     */
+    public final void setNextDayAsTempTimeout(final Browser br, final String message) {
+        setNextDayAsTempTimeout(br, "EEE, dd MMM yyyy HH:mm:ss z", -1, message);
+    }
+
+    /**
+     * @author raztoki
+     * @since JD2
+     * @see findAndSetNextDayAsTimeOut
+     * @param br
+     * @param failOverTime
+     */
+    public final void setNextDayAsTempTimeout(final Browser br, final long failOverTime) {
+        setNextDayAsTempTimeout(br, "EEE, dd MMM yyyy HH:mm:ss z", failOverTime, null);
+    }
+
+    /**
+     * When sites don't tell you when the daily traffic reset is, we can assume that it is on a new day. We can use server time date stamp
+     * to determine this!, on the assumption that is when they do the reset! This method is required because, some sites do not have traffic
+     * left statistics within fetchAccountInfo, which then re-enables download and continue this cycle.
+     *
+     * @author raztoki
+     * @since JD2
+     * @param br
+     * @param formatter
+     * @param failOverTime
+     * @param errorString
+     */
+    public final void setNextDayAsTempTimeout(final Browser br, final String formatter, long failOverTime, final String errorString) {
+        long result = -1;
+        if (failOverTime <= 0) {
+            // 1 hour default.
+            failOverTime = 60 * 60 * 1000l;
+        }
+        if (br != null && br.getHttpConnection() != null) {
+            long serverTime = -1;
+            // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
+            final String dateString = br.getHttpConnection().getHeaderField("Date");
+            if (dateString != null) {
+                if (StringUtils.isNotEmpty(formatter)) {
+                    serverTime = TimeFormatter.getMilliSeconds(dateString, formatter, Locale.ENGLISH);
+                } else {
+                    final Date date = TimeFormatter.parseDateString(dateString);
+                    if (date != null) {
+                        serverTime = date.getTime();
+                    }
+                }
+                // server time.. is generally in GMT! @see http://tools.ietf.org/html/rfc2616#section-3.3
+                final Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                c.setTime(new Date(serverTime));
+                // plus one day!
+                c.set(c.DAY_OF_YEAR, c.get(c.DAY_OF_YEAR) + 1);
+                c.set(c.HOUR_OF_DAY, 0);
+                // offset before check account can trigger fetch account info.
+                c.set(c.MINUTE, 1);
+                c.set(c.SECOND, 0);
+                final long stTomorrow = c.getTimeInMillis();
+                // difference in server time
+                final long stDifference = stTomorrow - serverTime;
+                // user time
+                final long ut = System.currentTimeMillis();
+                // adjustment to user time!
+                result = ut + stDifference;
+            }
+        }
+        this.tmpDisabledTimeout = result > 0 ? result : failOverTime;
+        this.error = AccountError.TEMP_DISABLED;
+        this.errorString = errorString;
+        notifyUpdate(AccountProperty.Property.ERROR, error);
+    }
+
     public void setTmpDisabledTimeout(long tmpDisabledTimeout) {
         this.tmpDisabledTimeout = tmpDisabledTimeout;
     }
@@ -539,7 +632,8 @@ public class Account extends Property {
         setProperty(LATEST_VALID_TIMESTAMP, currentTimeMillis);
     }
 
-    public static enum AccountType implements LabelInterface {
+    public static enum AccountType
+            implements LabelInterface {
         FREE {
             @Override
             public String getLabel() {
