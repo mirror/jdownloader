@@ -65,7 +65,7 @@ public class SubyShareCom extends PluginForHost {
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://subyshare.com";
+    private static final String            COOKIE_HOST                  = "https://subyshare.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|-)", "");
     /* domain names used within download links */
@@ -78,6 +78,7 @@ public class SubyShareCom extends PluginForHost {
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = true;
+    private static final boolean           ENFORCESHTTPS                = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
@@ -102,7 +103,9 @@ public class SubyShareCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing */
-        if (!SUPPORTSHTTPS) {
+        if (SUPPORTSHTTPS && ENFORCESHTTPS) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+        } else if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         }
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
@@ -919,7 +922,8 @@ public class SubyShareCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
+                // they redirect from https to http.. leaks! set cookie is within the response so you don't need to hit redirect
+                br.setFollowRedirects(false);
                 getPage(COOKIE_HOST + "/account/login");
                 final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");
