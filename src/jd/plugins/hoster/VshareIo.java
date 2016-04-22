@@ -72,12 +72,17 @@ public class VshareIo extends PluginForHost {
         final Regex finfo = this.br.getRegex("<p>([^<>\"]+) \\- (\\d{1,4}(?:\\.\\d{1,2})? [A-Za-z]{1,5})</p>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
+            filename = br.getRegex(">\\s*([^<>]+)<br/>\\s*<iframe").getMatch(0);
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
