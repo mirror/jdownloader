@@ -38,12 +38,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -75,6 +69,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?tusfil(es\\.(net|com|co\\.nz)|\\.es)/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
@@ -117,7 +117,11 @@ public class TusFilesNet extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account, untested, set same as FREE
-            chunks = 1;
+            if (this.getPluginConfig().getBooleanProperty(allowUnlimitedFreeChunks, false)) {
+                chunks = 0;
+            } else {
+                chunks = 1;
+            }
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -128,8 +132,12 @@ public class TusFilesNet extends PluginForHost {
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
-            // non account
-            chunks = 1; // tested
+            // non account, tested
+            if (this.getPluginConfig().getBooleanProperty(allowUnlimitedFreeChunks, false)) {
+                chunks = 0;
+            } else {
+                chunks = 1;
+            }
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -1052,39 +1060,40 @@ public class TusFilesNet extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                    = new Browser();
+    private Browser                                           cbr                      = new Browser();
 
-    private String                                            acctype                = null;
-    private String                                            directlinkproperty     = null;
-    private String                                            dllink                 = null;
-    private String                                            fuid                   = null;
-    private String                                            passCode               = null;
-    private String                                            usedHost               = null;
+    private String                                            acctype                  = null;
+    private String                                            directlinkproperty       = null;
+    private String                                            dllink                   = null;
+    private String                                            fuid                     = null;
+    private String                                            passCode                 = null;
+    private String                                            usedHost                 = null;
 
-    private int                                               chunks                 = 1;
+    private int                                               chunks                   = 1;
 
-    private boolean                                           resumes                = false;
-    private boolean                                           skipWaitTime           = false;
+    private boolean                                           resumes                  = false;
+    private boolean                                           skipWaitTime             = false;
 
-    private final String                                      language               = System.getProperty("user.language");
-    private final String                                      preferHTTPS            = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      language                 = System.getProperty("user.language");
+    private final String                                      preferHTTPS              = "preferHTTPS";
+    private final String                                      allowUnlimitedFreeChunks = "allowUnlimitedFreeChunks";
+    private final String                                      ALLWAIT_SHORT            = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT      = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
+    private static AtomicInteger                              maxFree                  = new AtomicInteger(1);
+    private static AtomicInteger                              maxPrem                  = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost    = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost   = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost   = new AtomicInteger(20);
 
-    private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
+    private static AtomicReference<String>                    userAgent                = new AtomicReference<String>(null);
 
-    private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<String, String>                    cloudflareCookies        = new HashMap<String, String>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap                  = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     ACCLOCK                = new Object();
-    private static Object                                     CTRLLOCK               = new Object();
+    private static Object                                     ACCLOCK                  = new Object();
+    private static Object                                     CTRLLOCK                 = new Object();
 
     /**
      * Rules to prevent new downloads from commencing
@@ -1115,6 +1124,7 @@ public class TusFilesNet extends PluginForHost {
             // lets make sure preferhttps setting removed when hoster or we disable the plugin https ability.
             getPluginConfig().setProperty(preferHTTPS, Property.NULL);
         }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), allowUnlimitedFreeChunks, JDL.L("plugins.hoster.xfileshare.tusfilesnet.allowUnlimitedChunksInFreeMode", "Allow unlimited chunks for free downloads?\r\nWARNING: This can cause connection issues and retry-loops!")).setDefaultValue(false));
     }
 
     /**
@@ -1142,7 +1152,6 @@ public class TusFilesNet extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
-    @SuppressWarnings("unused")
     private String getProtocol() {
         if ((supportsHTTPS && enforcesHTTPS) || (supportsHTTPS && getPluginConfig().getBooleanProperty(preferHTTPS, false))) {
             return "https://";
