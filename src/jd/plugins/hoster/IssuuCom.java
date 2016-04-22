@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "http://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" }, flags = { 2 })
 public class IssuuCom extends PluginForHost {
 
     public IssuuCom(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class IssuuCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://issuu.com/acceptterms";
+        return "https://issuu.com/acceptterms";
     }
 
     @SuppressWarnings("deprecation")
@@ -59,11 +59,15 @@ public class IssuuCom extends PluginForHost {
         /* Tyically this oembed API returns 501 for offline content */
         this.br.setAllowedResponseCodes(501);
         this.br.setFollowRedirects(true);
+        final String filename = link.getStringProperty("finalname", null);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.br.getPage("https://issuu.com/oembed?format=json&url=" + Encoding.urlEncode(link.getDownloadURL()));
         if (this.br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setFinalFileName(link.getStringProperty("finalname", null));
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 

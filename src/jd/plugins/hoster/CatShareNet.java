@@ -28,8 +28,11 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,17 +45,30 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(?:www\\.)?catshare\\.net/[A-Za-z0-9]{15,16}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/[A-Za-z0-9]{15,16}" }, flags = { 2 })
 public class CatShareNet extends PluginForHost {
 
-    private String        brbefore = "";
-    private String        HOSTER   = "http://catshare.net";
-    private static Object lock     = new Object();
+    /**
+     * API TODO: <br />
+     * -Add support for password protected urls<br />
+     * -Check free/free account/premium account limits<br />
+     * -Check free mode (when I implemented the API it did not work via API)<br />
+     * -Remove json workaround in availablecheck<br />
+     * -Add sha1/md5 support if admin does -More testing -Check how long such a session cookie is reusable and how to determine if it
+     * expired<br />
+     * -check if stored direct urls can be re-used<br />
+     */
+    private String        brbefore   = "";
+    private String        HOSTER     = "http://catshare.net";
+    private static Object lock       = new Object();
+    private final boolean useAPI     = true;
+    private String        apiSession = null;
 
     // DEV NOTES
     // captchatype: recaptcha
@@ -63,15 +79,107 @@ public class CatShareNet extends PluginForHost {
         this.enablePremium(HOSTER + "/login");
     }
 
-    @SuppressWarnings("deprecation")
+    private Browser prepBRWebsite(final Browser br) {
+        return br;
+    }
+
+    private Browser prepBRAPI(final Browser br) {
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
+    }
+
+    @SuppressWarnings({ "deprecation" })
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            this.prepBRAPI(this.br);
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            int tempcounter = 0;
+            while (true) {
+                tempcounter = 0;
+                links.clear();
+                while (true) {
+                    /* we test 10 links at once (max = 10) */
+                    if (index == urls.length || links.size() > 1) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links=");
+                for (final DownloadLink dl : links) {
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append("\n");
+                }
+                /* TODO: Implement this correctly! */
+                br.postPage("https://" + this.getHost() + "/download/json_check", sb.toString());
+                final String[] json_workaround_array = this.br.toString().split("\\}\\{");
+                for (final DownloadLink dl : links) {
+                    final String source;
+                    if (tempcounter <= json_workaround_array.length - 1) {
+                        source = json_workaround_array[tempcounter];
+                    } else {
+                        source = "WTF_PROBABLY_OFFLINE";
+                    }
+                    final String state = JSonUtils.getJson(source, "status");
+                    final String filename = JSonUtils.getJson(source, "filename");
+                    final String filesize = JSonUtils.getJson(source, "filesize");
+                    if ("offline".equals(state) || state == null) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                    }
+                    /* Trust API - offline urls can still have their filename- and size information available */
+                    if (filename != null) {
+                        dl.setFinalFileName(filename);
+                    }
+                    if (filesize != null) {
+                        dl.setDownloadSize(Long.parseLong(filesize));
+                    }
+
+                    tempcounter++;
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (this.useAPI) {
+            checkLinks(new DownloadLink[] { downloadLink });
+            if (!downloadLink.isAvailabilityStatusChecked()) {
+                return AvailableStatus.UNCHECKED;
+            }
+            if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } else {
+            return requestFileInformationWebsite(downloadLink);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws IOException, PluginException {
         final String downloadURL = link.getDownloadURL();
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadURL);
         doSomething();
-        if (br.containsHTML("<title>Error 404</title>")) {
+        if (br.containsHTML("<title>Error 404</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fileName = new Regex(brbefore, "<h3 class=\"pull-left\" style=\"margin-left: 10px;\">(.*)</h3>[ \t\n\r\f]+<h3 class=\"pull-right\"").getMatch(0);
@@ -89,7 +197,8 @@ public class CatShareNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void checkErrors(DownloadLink theLink, boolean beforeRecaptcha) throws NumberFormatException, PluginException {
+    @SuppressWarnings("deprecation")
+    public void checkErrorsWebsite(DownloadLink theLink, boolean beforeRecaptcha) throws NumberFormatException, PluginException {
         // Some waittimes...
         if (beforeRecaptcha) {
             if (br.containsHTML("<h4 style=\"margin-right: 10px;\">Odczekaj <big id=\"counter\"></big> lub kup")) {
@@ -123,9 +232,108 @@ public class CatShareNet extends PluginForHost {
 
     }
 
-    public void doFreeWebsite(DownloadLink downloadLink, boolean resumable, int maxChunks) throws Exception, PluginException {
+    // Removed fake messages which can kill the plugin
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
+        }
+    }
+
+    @Override
+    public String getAGBLink() {
+        return HOSTER + "/regulamin";
+    }
+
+    public String getDllink() {
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(brbefore, "(https?://(\\w+\\.)?catshare\\.net/dl/(\\d+/){4}[^\"]+)").getMatch(0);
+                if (dllink == null) {
+                    dllink = new Regex(brbefore, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/catshare/\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/dl/(\\d+/){4}[^\"]+)").getMatch(0);
+                }
+            }
+        }
+        return dllink;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (useAPI) {
+            handleDownloadAPI(downloadLink, true, 0, false, "freedirectlink");
+        } else {
+            doFreeWebsite(downloadLink, false, 1);
+        }
+    }
+
+    public void handleDownloadAPI(final DownloadLink downloadLink, final boolean resumable, final int maxChunks, final boolean premium, final String directlinkproperty) throws Exception, PluginException {
+        String passCode = downloadLink.getDownloadPassword();
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String download_post_data = "linkid=" + getLinkid(downloadLink);
+        postPageAPI("https://" + this.getHost() + "/download/json_wait", "");
+        int wait = 0;
+        final String wait_str = JSonUtils.getJson(this.br, "wait_time");
+        if (wait_str != null) {
+            wait = Integer.parseInt(wait_str);
+        }
+        if (!premium) {
+            postPageAPI("https://" + this.getHost() + "/download/json_challenge", "");
+            final String rcID = JSonUtils.getJson(this.br, "key");
+            if (rcID == null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
+            }
+            final Recaptcha rc = new Recaptcha(br, this);
+            rc.setId(rcID);
+            rc.load();
+            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+            download_post_data += "&challenge=" + Encoding.urlEncode(rc.getChallenge() + "&recaptcha_challenge_field=" + Encoding.urlEncode(c));
+        }
+        this.sleep(wait * 1001l, downloadLink);
+        postPageAPI("https://" + this.getHost() + "/download/json_download", download_post_data);
+        dllink = JSonUtils.getJson(br, "downloadUrl");
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
+        }
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxChunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            checkServerErrors();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue");
+        }
+        if (passCode != null) {
+            downloadLink.setDownloadPassword(passCode);
+        }
+        downloadLink.setProperty(directlinkproperty, dllink);
+        dl.startDownload();
+    }
+
+    public void doFreeWebsite(final DownloadLink downloadLink, final boolean resumable, final int maxChunks) throws Exception, PluginException {
         String passCode = null;
-        checkErrors(downloadLink, true);
+        checkErrorsWebsite(downloadLink, true);
 
         String dllink = null;
         long timeBefore = System.currentTimeMillis();
@@ -178,7 +386,7 @@ public class CatShareNet extends PluginForHost {
         }
 
         doSomething();
-        checkErrors(downloadLink, false);
+        checkErrorsWebsite(downloadLink, false);
         dllink = getDllink();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -200,73 +408,53 @@ public class CatShareNet extends PluginForHost {
         dl.startDownload();
     }
 
-    // Removed fake messages which can kill the plugin
-    public void doSomething() throws NumberFormatException, PluginException {
-        brbefore = br.toString();
-        ArrayList<String> someStuff = new ArrayList<String>();
-        ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
-        for (String aRegex : regexStuff) {
-            String lolz[] = br.getRegex(aRegex).getColumn(0);
-            if (lolz != null) {
-                for (String dingdang : lolz) {
-                    someStuff.add(dingdang);
-                }
-            }
-        }
-        for (String fun : someStuff) {
-            brbefore = brbefore.replace(fun, "");
-        }
-    }
-
-    @Override
-    public String getAGBLink() {
-        return HOSTER + "/regulamin";
-    }
-
-    public String getDllink() {
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(brbefore, "(https?://(\\w+\\.)?catshare\\.net/dl/(\\d+/){4}[^\"]+)").getMatch(0);
-                if (dllink == null) {
-                    dllink = new Regex(brbefore, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/catshare/\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/dl/(\\d+/){4}[^\"]+)").getMatch(0);
-                }
-            }
-        }
-        return dllink;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFreeWebsite(downloadLink, false, 1);
-    }
-
     public boolean hasAutoCaptcha() {
         return false;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        boolean hours = false;
+        final AccountInfo ai;
         try {
-            loginWebsite(account, true);
-        } catch (PluginException e) {
-            ai.setStatus(getPhrase("LOGIN_ERROR"));
-            UserIO.getInstance().requestMessageDialog(0, "Catshare.net: " + getPhrase("LOGIN_ERROR"), getPhrase("LOGIN_FAILED"));
-            account.setValid(false);
-            return ai;
+            login(account, true);
+        } catch (final PluginException e) {
+            throw e;
         }
+
+        if (useAPI) {
+            ai = this.fetchAccountInfoAPI(account);
+        } else {
+            ai = this.fetchAccountInfoWebsite(account);
+        }
+        return ai;
+    }
+
+    private AccountInfo fetchAccountInfoAPI(final Account account) {
+        final AccountInfo ai = new AccountInfo();
+        final String type = JSonUtils.getJson(this.br, "type");
+        final String expireTime = JSonUtils.getJson(this.br, "expireTime");
+        final String traffic = JSonUtils.getJson(this.br, "traffic");
+        long expire_long = 0;
+        if (expireTime != null) {
+            expire_long = Long.parseLong(expireTime) * 1000l;
+        }
+        if ("Free".equals(type) || expire_long < System.currentTimeMillis()) {
+            account.setType(AccountType.FREE);
+        } else {
+            account.setType(AccountType.PREMIUM);
+        }
+        if (traffic != null) {
+            ai.setTrafficLeft(Long.parseLong(traffic));
+        }
+        if (expire_long > System.currentTimeMillis()) {
+            ai.setValidUntil(Long.parseLong(expireTime) * 1000l);
+        }
+        return ai;
+    }
+
+    private AccountInfo fetchAccountInfoWebsite(final Account account) {
+        final AccountInfo ai = new AccountInfo();
+        boolean hours = false;
 
         if ("true".equals(account.getProperty("premium"))) {
             final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
@@ -326,13 +514,51 @@ public class CatShareNet extends PluginForHost {
         } else {
             ai.setStatus(getPhrase("FREE"));
         }
+
         return ai;
+    }
+
+    private void login(final Account account, final boolean force) throws Exception {
+        if (useAPI) {
+            loginAPI(account);
+        } else {
+            loginWebsite(account, false);
+        }
+    }
+
+    private void loginAPI(final Account account) throws IOException, PluginException {
+        synchronized (lock) {
+            try {
+                br.setCookiesExclusive(true);
+                prepBRAPI(this.br);
+                /* session_id might be stored for API usage */
+                // final Cookies cookies = account.loadCookies("");
+                // if (cookies != null) {
+                // this.br.setCookies(this.getHost(), cookies);
+                // return;
+                // }
+                postPageAPI("https://" + this.getHost() + "/login/json", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                this.apiSession = JSonUtils.getJson(this.br, "session");
+                if (this.apiSession == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
     }
 
     private void loginWebsite(Account account, boolean force) throws Exception {
         synchronized (lock) {
             try {
                 br.setCookiesExclusive(true);
+                prepBRWebsite(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
@@ -353,6 +579,7 @@ public class CatShareNet extends PluginForHost {
                 } else if ((br.containsHTML("(Konto:[\r\t\n ]+)*Premium \\(<b>\\d+ dni</b>\\)")) || (br.containsHTML("(Konto:[\r\t\n ]+)+Premium \\(<b><span style=\"color: red\">\\d+ godzin</span></b>\\)"))) {
                     account.setType(AccountType.PREMIUM);
                 } else {
+                    /* Unknown account type */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("LOGIN_ERROR"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -363,14 +590,30 @@ public class CatShareNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
-        String passCode = null;
         requestFileInformation(downloadLink);
-        loginWebsite(account, true);
-        br.getPage(downloadLink.getDownloadURL());
+        if (this.useAPI) {
+            handlePremiumAPI(downloadLink, account);
+        } else {
+            handlePremiumWebsite(downloadLink, account);
+        }
+    }
 
+    public void handlePremiumAPI(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
+        if (account.getType() == AccountType.FREE) {
+            handleDownloadAPI(downloadLink, true, 0, false, "directlink_freeaccount");
+        } else {
+            handleDownloadAPI(downloadLink, true, 0, true, "directlink_premiumaccount");
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public void handlePremiumWebsite(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
+        String passCode = null;
+        loginWebsite(account, true);
+
+        br.getPage(downloadLink.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
             doFreeWebsite(downloadLink, false, 1);
             return;
@@ -424,12 +667,62 @@ public class CatShareNet extends PluginForHost {
         dl.startDownload();
     }
 
+    /**
+     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
+     * [NOT html]).
+     */
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void postPageAPI(final String url, String postData) throws IOException {
+        if (apiSession != null) {
+            if (postData == null || postData.equals("")) {
+                postData = "";
+            } else {
+                postData += "&";
+            }
+            postData += "session=" + Encoding.urlEncode(apiSession);
+        }
+        this.br.postPage(url, postData);
+    }
+
+    private void handleErrorsAPI() {
+
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getLinkid(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]{15,16})$").getMatch(0);
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
 
-    /* limit for number of chunks, more cause "service temporarily unavailable" */
+    /* limit for number of chunks, more cause "service temporarily unavailable" (probably 503) */
     public int getMaxChunksPremiumDownload() {
         return -4;
     }
