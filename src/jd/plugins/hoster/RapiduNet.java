@@ -26,14 +26,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -41,7 +37,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,6 +46,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
@@ -479,22 +477,17 @@ public class RapiduNet extends PluginForHost {
         try {
             accountResponse = login(account, true);
         } catch (PluginException e) {
-
-            String errorMessage = e.getErrorMessage();
-
-            if (errorMessage.contains("Maintenance")) {
-                ai.setStatus(errorMessage);
-                account.setError(AccountError.TEMP_DISABLED, errorMessage);
-
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.setProperty("cookies", Property.NULL);
+                final String errorMessage = e.getErrorMessage();
+                if (errorMessage != null && errorMessage.contains("Maintenance")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             } else {
-                ai.setStatus("Login failed");
-                UserIO.getInstance().requestMessageDialog(0, "RapiduNet Login Error", "Login failed: " + errorMessage);
-                account.setValid(false);
+                throw e;
             }
-
-            account.setProperty("cookies", Property.NULL);
-            return ai;
-
         }
         //
         // (string) [userLogin] - Login użytkownika
@@ -631,17 +624,17 @@ public class RapiduNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
-                                                  }
-                                              };
+        {
+            put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
+        {
+            put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
 
-                                                  }
-                                              };
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

@@ -28,7 +28,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -96,13 +95,9 @@ public class AccountPool extends PluginForHost {
         APIResponse response = this.unauthorizedApiRequest("/v1/auth", parameters);
 
         if (response.getResponseCode() == 401) {
-            ai.setStatus("Wrong Login");
-            account.setError(AccountError.INVALID, "Wrong Login");
-            return ai;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong Login", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (response.getResponseCode() != 200) {
-            ai.setStatus("Unknown Error");
-            account.setError(AccountError.PLUGIN_ERROR, "Unknown Error during authentication. Code: " + response.getResponseCode());
-            return ai;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error during authentication. Code: " + response.getResponseCode());
         }
 
         String authenticationToken = (String) ((JSonValue) response.getData().get("authentication_token")).getValue();
@@ -132,24 +127,16 @@ public class AccountPool extends PluginForHost {
                     }
 
                     ai.setMultiHostSupport(this, supportedHosts);
-
-                    account.setError(null, null);
                     account.setConcurrentUsePossible(true);
                     account.setMaxSimultanDownloads(-1);
-
                     ai.setStatus("Good");
-
                     ai.setUnlimitedTraffic();
 
                     return ai;
                 }
             }
         }
-
-        // No (valid) configuration data received, dont know how to handle -> error
-        ai.setStatus("Unknown Error while fetching client configuration data.");
-        account.setError(AccountError.PLUGIN_ERROR, "Unknown Error while fetching client configuration data. Code: " + response.getResponseCode());
-        return ai;
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error while fetching client configuration data. Code: " + response.getResponseCode());
     }
 
     @Override

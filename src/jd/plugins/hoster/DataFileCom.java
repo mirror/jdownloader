@@ -46,7 +46,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -677,7 +676,6 @@ public class DataFileCom extends antiDDoSForHost {
             final AccountInfo ac = new AccountInfo();
             ac.setTrafficLeft(0);
             this.currAcc.setAccountInfo(ac);
-            this.currAcc.setError(AccountError.TEMP_DISABLED, "You are downloading another file at this moment. Please wait for it to complete and then try again.");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are downloading another file at this moment. Please wait for it to complete and then try again.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are downloading another file at this moment. Please wait for it to complete and then try again.", FREE_RECONNECTWAIT);
@@ -701,15 +699,13 @@ public class DataFileCom extends antiDDoSForHost {
             final AccountInfo ac = new AccountInfo();
             ac.setTrafficLeft(0);
             this.currAcc.setAccountInfo(ac);
-            this.currAcc.setError(AccountError.TEMP_DISABLED, "Daily downloadlimit reached");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else {
             logger.info("Premium account: Daily downloadlimit reached");
             final AccountInfo ac = new AccountInfo();
             ac.setTrafficLeft(0);
             this.currAcc.setAccountInfo(ac);
-            this.currAcc.setError(AccountError.TEMP_DISABLED, "Daily downloadlimit reached");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
     }
 

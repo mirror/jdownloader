@@ -29,7 +29,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -584,11 +583,9 @@ public class FilesloopCom extends PluginForHost {
                 statusMessage = "Fatal API failure";
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nFataler API Fehler";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     statusMessage = "\r\nFatal API failure";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             case 5:

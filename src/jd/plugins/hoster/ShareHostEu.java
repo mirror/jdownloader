@@ -26,13 +26,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,7 +43,6 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehost.eu" }, urls = { "https?://(www\\.)?sharehost\\.eu/[^<>\"]*?/(.*)" }, flags = { 2 })
-
 public class ShareHostEu extends PluginForHost {
 
     public ShareHostEu(PluginWrapper wrapper) {
@@ -129,23 +126,17 @@ public class ShareHostEu extends PluginForHost {
         try {
             accountResponse = login(account, true);
         } catch (PluginException e) {
-
-            String errorMessage = e.getErrorMessage();
-
-            if (errorMessage.contains("Maintenance")) {
-                ai.setStatus(errorMessage);
-                account.setError(AccountError.TEMP_DISABLED, errorMessage);
-
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.setProperty("cookies", Property.NULL);
+                final String errorMessage = e.getErrorMessage();
+                if (errorMessage != null && errorMessage.contains("Maintenance")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("LOGIN_ERROR"));
+                }
             } else {
-                ai.setStatus(getPhrase("LOGIN_FAILED_NOT_PREMIUM"));
-                UserIO.getInstance().requestMessageDialog(0, getPhrase("LOGIN_ERROR"), getPhrase("LOGIN_FAILED"));
-                account.setValid(false);
-                return ai;
+                throw e;
             }
-
-            account.setProperty("cookies", Property.NULL);
-            return ai;
-
         }
         // API CALL: /fapi/userInfo
         // Input:

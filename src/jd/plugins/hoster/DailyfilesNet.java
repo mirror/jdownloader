@@ -23,18 +23,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,6 +38,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyfiles.net" }, urls = { "https?://dailyfiles\\.net/([A-Za-z0-9]+)/?" }, flags = { 2 })
 public class DailyfilesNet extends antiDDoSForHost {
@@ -291,14 +289,8 @@ public class DailyfilesNet extends antiDDoSForHost {
         try {
             accountResponse = login(account, true);
         } catch (PluginException e) {
-
-            String errorMessage = e.getErrorMessage();
-
-            ai.setStatus("Login failed");
-            UserIO.getInstance().requestMessageDialog(0, "Dailyfiles.net: " + getPhrase("LOGIN_ERROR"), getPhrase("LOGIN_ERROR") + ": " + errorMessage);
-            account.setError(AccountError.INVALID, getPhrase("LOGIN_ERROR"));
             account.setProperty("cookies", Property.NULL);
-            return ai;
+            throw e;
         }
         // output
         // premium:
@@ -380,27 +372,27 @@ public class DailyfilesNet extends antiDDoSForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
+        {
 
-                                                      put("LOGIN_ERROR", "Login Error");
-                                                      put("PREMIUM_USER", "Premium Account");
-                                                      put("FREE_USER", "Free Account");
-                                                      put("NOT_AUTHENTICATED", "Not Authenticated");
-                                                      put("DOWNLOADLINK_ERROR", "Downloadlink error");
-                                                  }
-                                              };
+            put("LOGIN_ERROR", "Login Error");
+            put("PREMIUM_USER", "Premium Account");
+            put("FREE_USER", "Free Account");
+            put("NOT_AUTHENTICATED", "Not Authenticated");
+            put("DOWNLOADLINK_ERROR", "Downloadlink error");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
+        {
 
-                                                      put("LOGIN_ERROR", "Błąd logowania");
-                                                      put("PREMIUM_USER", "Użytkownik Premium");
-                                                      put("FREE_USER", "Zarejestrowany użytkownik darmowy");
-                                                      put("NOT_AUTHENTICATED", "Nazwa użytkownika lub hasło jest niepoprawne");
-                                                      put("DOWNLOADLINK_ERROR", "Serwer nie zwrócił linku pobierania");
+            put("LOGIN_ERROR", "Błąd logowania");
+            put("PREMIUM_USER", "Użytkownik Premium");
+            put("FREE_USER", "Zarejestrowany użytkownik darmowy");
+            put("NOT_AUTHENTICATED", "Nazwa użytkownika lub hasło jest niepoprawne");
+            put("DOWNLOADLINK_ERROR", "Serwer nie zwrócił linku pobierania");
 
-                                                  }
-                                              };
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

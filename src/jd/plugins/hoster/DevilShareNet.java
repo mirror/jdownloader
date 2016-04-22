@@ -30,7 +30,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -38,7 +37,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -186,23 +184,17 @@ public class DevilShareNet extends PluginForHost {
         try {
             accountResponse = login(account, true);
         } catch (PluginException e) {
-
-            String errorMessage = e.getErrorMessage();
-
-            if (errorMessage.contains("Maintenance")) {
-                ai.setStatus(errorMessage);
-                account.setError(AccountError.TEMP_DISABLED, errorMessage);
-
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.setProperty("cookies", Property.NULL);
+                final String errorMessage = e.getErrorMessage();
+                if (errorMessage != null && errorMessage.contains("Maintenance")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("LOGIN_ERROR"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             } else {
-                ai.setStatus(getPhrase("LOGIN_FAILED_NOT_PREMIUM"));
-                UserIO.getInstance().requestMessageDialog(0, getPhrase("LOGIN_ERROR"), getPhrase("LOGIN_FAILED"));
-                account.setValid(false);
-                return ai;
+                throw e;
             }
-
-            account.setProperty("cookies", Property.NULL);
-            return ai;
-
         }
         String userIsPremium = account.getProperty("premium").toString();
         boolean isPremium = "true".equals(userIsPremium);
@@ -225,7 +217,7 @@ public class DevilShareNet extends PluginForHost {
                 date = dateFormat.parse(userPremiumExpire);
                 ai.setValidUntil(date.getTime());
             } catch (final Exception e) {
-                logger.log( e);
+                logger.log(e);
             }
         } else {
             ai.setProperty("premium", "false");
