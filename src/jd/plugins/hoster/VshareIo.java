@@ -97,6 +97,9 @@ public class VshareIo extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("style=\"text\\-decoration:none;\" href=\"(http[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
+                dllink = br.getRegex("\"(https?://s\\d+\\.vshare\\.io/[^<>\"]+)\"").getMatch(0);
+            }
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
