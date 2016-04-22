@@ -3,7 +3,6 @@ package org.jdownloader.plugins.components.youtube.keepForCompatibility;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import javax.swing.Icon;
 
@@ -17,8 +16,6 @@ import org.jdownloader.plugins.components.youtube.converter.YoutubeConverterMP4T
 import org.jdownloader.plugins.components.youtube.converter.YoutubeConverterMP4ToM4AAudio;
 import org.jdownloader.plugins.components.youtube.converter.YoutubeExternConverter;
 import org.jdownloader.plugins.components.youtube.converter.YoutubeSRTConverter;
-import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
-import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
@@ -625,9 +622,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_128();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000360;
-        }
     },
     DEMUX_AAC_128_360P_V4("AAC_128", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -639,9 +633,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_128();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000360;
-        }
     },
 
     DEMUX_AAC_128_720P_3D_V1("AAC_128", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
@@ -654,10 +645,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_128();
         }
 
-        public double getQualityRating() {
-            // -0,0001 because its better to load the 360p to demux
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
-        }
     },
     DEMUX_AAC_128_720P_V1("AAC_128", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -669,10 +656,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_128();
         }
 
-        public double getQualityRating() {
-            // -0,0001 because its better to load the 360p to demux
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
-        }
     },
     DEMUX_AAC_152_720P_3D_V3("AAC_152", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -684,9 +667,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_152();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
-        }
     },
     DEMUX_AAC_152_720P_V3("AAC_152", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -698,9 +678,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_152();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
-        }
     },
     DEMUX_AAC_192_720P_3D_V4("AAC_192", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -712,9 +689,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_192();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
-        }
     },
     DEMUX_AAC_192_720P_V4("AAC_192", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -726,9 +700,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_192();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
-        }
     },
     DEMUX_AAC_96_360P_3D_V1("AAC_96", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -740,9 +711,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_96();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
-        }
     },
     DEMUX_AAC_96_360P_V1("AAC_96", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
@@ -754,9 +722,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_AAC_96();
         }
 
-        public double getQualityRating() {
-            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
-        }
     },
 
     DEMUX_M4A_128_360P_3D_V4("M4A_128", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
@@ -1034,11 +999,6 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_MP3_1();
         }
 
-        public double getQualityRating() {
-            // slightly higher rating as MP3_2. audio quality is the same, but total size is less
-            return AudioCodec.MP3.getRating() + AudioBitrate.KBIT_64.getRating() + 0.0001;
-        }
-
         public List<File> listProcessFiles(DownloadLink link) {
             List<File> ret = super.listProcessFiles(link);
             File mp3 = new File(link.getFileOutputForPlugin(true, true));
@@ -1058,10 +1018,6 @@ public enum YoutubeVariantOld {
 
         public String getQualityExtension(Object caller) {
             return _GUI.T.YoutubeVariant_filenametag_MP3_2();
-        }
-
-        public double getQualityRating() {
-            return AudioCodec.MP3.getRating() + AudioBitrate.KBIT_64.getRating();
         }
 
         public List<File> listProcessFiles(DownloadLink link) {
@@ -1108,7 +1064,7 @@ public enum YoutubeVariantOld {
         }
     },
 
-    MP4_3D_1080(null, VariantGroup.VIDEO_3D, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC_3D, null, null, null) {
+    MP4_3D_1080(null, VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC_3D, null, null, null) {
 
         public String _getName(Object caller) {
             return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
@@ -1119,7 +1075,7 @@ public enum YoutubeVariantOld {
         }
     },
 
-    MP4_3D_240(null, VariantGroup.VIDEO_3D, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D, null, null, null) {
+    MP4_3D_240(null, VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D, null, null, null) {
 
         public String _getName(Object caller) {
             return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
@@ -1130,7 +1086,7 @@ public enum YoutubeVariantOld {
         }
     },
 
-    MP4_3D_360(null, VariantGroup.VIDEO_3D, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null) {
+    MP4_3D_360(null, VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null) {
 
         public String _getName(Object caller) {
             return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
@@ -1140,7 +1096,7 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_filenametag_MP4_3D_360();
         }
     },
-    MP4_3D_720(null, VariantGroup.VIDEO_3D, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null) {
+    MP4_3D_720(null, VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null) {
 
         public String _getName(Object caller) {
             return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
@@ -1610,7 +1566,7 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_nametag_generic_video("360p");
         }
     },
-    WEBM_3D_360_128(null, VariantGroup.VIDEO_3D, DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, null, null, null) {
+    WEBM_3D_360_128(null, VariantGroup.VIDEO, DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, null, null, null) {
 
         public String _getName(Object caller) {
             return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
@@ -1620,7 +1576,7 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_nametag_generic_video("360p 3D");
         }
     },
-    WEBM_3D_360_192(null, VariantGroup.VIDEO_3D, DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, null, null, null) {
+    WEBM_3D_360_192(null, VariantGroup.VIDEO, DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, null, null, null) {
 
         public String _getName(Object caller) {
             return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
@@ -1630,7 +1586,7 @@ public enum YoutubeVariantOld {
             return _GUI.T.YoutubeVariant_nametag_generic_video("360p 3D");
         }
     },
-    WEBM_3D_720(null, VariantGroup.VIDEO_3D, DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, null, null, null) {
+    WEBM_3D_720(null, VariantGroup.VIDEO, DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, null, null, null) {
 
         public String _getName(Object caller) {
             return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
@@ -2055,7 +2011,7 @@ public enum YoutubeVariantOld {
 
     final private YoutubeITAG  iTagData;
     final private YoutubeITAG  iTagVideo;
-    private final double       qualityRating;
+
     final private DownloadType type;
 
     private YoutubeVariantOld(final String id, final VariantGroup group, final DownloadType type, final String fileExtension, final YoutubeITAG video, final YoutubeITAG audio, YoutubeITAG data, YoutubeConverter converter) {
@@ -2069,41 +2025,14 @@ public enum YoutubeVariantOld {
         this.type = type;
         this.iTagVideo = video;
         this.iTagAudio = audio;
-        this.qualityRating = 0d + (video != null ? video.getQualityRating() : 0) + (audio != null ? audio.getQualityRating() : 0) + (data != null ? data.getQualityRating() : 0);
         this.iTagData = data;
         this.converter = converter;
 
     }
 
     public String _getExtendedName(Object caller) {
-        // String nadsme = _getName();
-        String ret = null;
-        switch (getGroup()) {
-        case AUDIO:
-            if (getiTagVideo() != null) {
-                ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI.T.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "-DEMUX]";
 
-            } else {
-                ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI.T.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "]";
-
-            }
-            break;
-        case IMAGE:
-            ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI.T.lit_image() + " [" + getResolution() + "]";
-            break;
-        case SUBTITLES:
-            ret = _getName(caller);
-            break;
-        case VIDEO:
-            ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI.T.lit_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
-            break;
-        case VIDEO_3D:
-            ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI.T.lit_3d_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
-            break;
-        }
-
-        ret += "(" + name() + " A:" + getiTagAudio() + " V:" + getiTagVideo() + ") " + getQualityRating();
-        return _getName(caller) + " - " + ret;
+        return _getName(caller) + " - ";
     }
 
     private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
@@ -2118,7 +2047,7 @@ public enum YoutubeVariantOld {
             case AUDIO:
                 return AUDIO;
             case VIDEO:
-            case VIDEO_3D:
+
                 return VIDEO;
             case IMAGE:
                 return IMAGE;
@@ -2187,10 +2116,6 @@ public enum YoutubeVariantOld {
 
     public abstract String getQualityExtension(Object caller);
 
-    public double getQualityRating() {
-        return this.qualityRating;
-    }
-
     public String getResolution() {
         String ret = null;
         if (getiTagData() != null) {
@@ -2219,10 +2144,10 @@ public enum YoutubeVariantOld {
         String ret = null;
         if (getiTagData() != null) {
 
-            ret = getiTagData().getVideoCodec().getLabel(null);
+            ret = getiTagData().getVideoCodec().getLabel();
         }
         if (getiTagVideo() != null) {
-            ret = getiTagVideo().getVideoCodec().getLabel(null);
+            ret = getiTagVideo().getVideoCodec().getLabel();
         }
         return ret;
     }

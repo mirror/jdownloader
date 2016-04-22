@@ -17,12 +17,24 @@ public enum VariantGroup implements LabelInterface {
             return _GUI.T.YoutubeBasicVariant_getLabel_video();
         }
     },
-    VIDEO_3D {
-        @Override
-        public String getLabel() {
-            return _GUI.T.YoutubeBasicVariant_getLabel_video3d();
-        }
-    },
+    // VIDEO_3D {
+    // @Override
+    // public String getLabel() {
+    // return _GUI.T.YoutubeBasicVariant_getLabel_video3d();
+    // }
+    // },
+    // VIDEO_360 {
+    // @Override
+    // public String getLabel() {
+    // return _GUI.T.YoutubeBasicVariant_getLabel_video360();
+    // }
+    // },
+    // VIDEO_3D_360 {
+    // @Override
+    // public String getLabel() {
+    // return _GUI.T.YoutubeBasicVariant_getLabel_video360_3D();
+    // }
+    // },
     IMAGE {
         @Override
         public String getLabel() {
@@ -41,4 +53,5 @@ public enum VariantGroup implements LabelInterface {
             return _GUI.T.YoutubeBasicVariant_getLabel_description();
         }
     };
+
 }

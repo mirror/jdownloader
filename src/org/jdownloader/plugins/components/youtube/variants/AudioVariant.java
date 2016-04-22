@@ -16,6 +16,7 @@ import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericAudioInfo;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.translate._JDT;
 
 public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements AudioInterface {
 
@@ -54,11 +55,19 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         String id = TYPE_ID_PATTERN;
 
         id = id.replace("*CONTAINER*", getContainer().getLabel().toUpperCase(Locale.ENGLISH) + "");
-        id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
+        id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
         id = id.replace("*DEMUX*", (getBaseVariant().getiTagAudio() == null) ? "[DEMUX]" : "");
+        switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
+        case AAC_SPATIAL:
+        case VORBIS_SPATIAL:
+            id = id.replace("*SPATIAL*", _JDT.T.YOUTUBE_surround());
+            break;
+        default:
+            id = id.replace("*SPATIAL*", "");
+        }
 
-        id = id.trim();
+        id = id.replace(" - ", "-").trim().replaceAll("[ ]+", " ");
         return id;
 
     }
@@ -87,7 +96,14 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
         id = id.replace("*DEMUX*", (getBaseVariant().getiTagAudio() == null) ? "DEMUX" : "");
-
+        switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
+        case AAC_SPATIAL:
+        case VORBIS_SPATIAL:
+            id = id.replace("*SURROUND*", "Spatial");
+            break;
+        default:
+            id = id.replace("*SURROUND*", "");
+        }
         id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
         return id;
 

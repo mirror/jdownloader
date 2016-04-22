@@ -1,4 +1,4 @@
-package jd.plugins.hoster.youtube;
+package org.jdownloader.plugins.components.youtube;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -16,18 +16,6 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.nutils.encoding.Base64;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.hoster.YoutubeDashV2;
-
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.JScrollMenu;
 import org.appwork.utils.StringUtils;
@@ -40,11 +28,21 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
-import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
+
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.nutils.encoding.Base64;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.hoster.YoutubeDashV2;
 
 public class YoutubeLinkGrabberExtender {
 
@@ -100,9 +98,9 @@ public class YoutubeLinkGrabberExtender {
 
     private void buildMenuInEDT() {
         add(VariantGroup.VIDEO);
-        if (has3D()) {
-            add(VariantGroup.VIDEO_3D);
-        }
+        // if (has3D()) {
+        // add(VariantGroup.VIDEO_3D);
+        // }
         add(VariantGroup.AUDIO);
 
         add(VariantGroup.IMAGE);
@@ -207,7 +205,7 @@ public class YoutubeLinkGrabberExtender {
         case AUDIO:
         case IMAGE:
         case VIDEO:
-        case VIDEO_3D:
+            // case VIDEO_3D:
             groupMenu.add(new JMenuItem(new BasicAction() {
                 {
                     setName(_GUI.T.YoutubeDashV2_add_worst(group.getLabel()));
@@ -446,28 +444,28 @@ public class YoutubeLinkGrabberExtender {
                 }
 
                 lv = AbstractVariant.get(ytv);
-                ((VideoVariant) lv).getGenericInfo().setThreeD(true);
-
-                if (dupeAdd.add(lv.getTypeId())) {
-                    ArrayList<AbstractVariant> l = listMapAdd.get(lv.getGroup().name());
-                    if (l == null) {
-                        l = new ArrayList<AbstractVariant>();
-                        listMapAdd.put(lv.getGroup().name(), l);
-                    }
-                    l.add(lv);
-                }
+                // ((VideoVariant) lv).getGenericInfo().setThreeD(true);
+                //
+                // if (dupeAdd.add(lv.getTypeId())) {
+                // ArrayList<AbstractVariant> l = listMapAdd.get(lv.getGroup().name());
+                // if (l == null) {
+                // l = new ArrayList<AbstractVariant>();
+                // listMapAdd.put(lv.getGroup().name(), l);
+                // }
+                // l.add(lv);
+                // }
 
                 break;
-            case VIDEO_3D:
-                lv = AbstractVariant.get(ytv);
-                if (dupeAdd.add(lv.getTypeId())) {
-                    ArrayList<AbstractVariant> l = listMapAdd.get(lv.getGroup().name());
-                    if (l == null) {
-                        l = new ArrayList<AbstractVariant>();
-                        listMapAdd.put(lv.getGroup().name(), l);
-                    }
-                    l.add(lv);
-                }
+            // case VIDEO_3D:
+            // lv = AbstractVariant.get(ytv);
+            // if (dupeAdd.add(lv.getTypeId())) {
+            // ArrayList<AbstractVariant> l = listMapAdd.get(lv.getGroup().name());
+            // if (l == null) {
+            // l = new ArrayList<AbstractVariant>();
+            // listMapAdd.put(lv.getGroup().name(), l);
+            // }
+            // l.add(lv);
+            // }
 
             case SUBTITLES:
                 // nothing

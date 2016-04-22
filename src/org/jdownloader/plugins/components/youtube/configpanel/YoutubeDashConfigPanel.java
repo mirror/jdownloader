@@ -1,34 +1,46 @@
-package jd.plugins.hoster.youtube;
+package org.jdownloader.plugins.components.youtube.configpanel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.JLabel;
-import javax.swing.JSeparator;
+import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
+import org.appwork.storage.config.annotations.IntegerInterface;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
+import org.appwork.utils.CounterMap;
+import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.components.youtube.BlackOrWhitelistEntry;
+import org.jdownloader.plugins.components.youtube.Projection;
+import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
-import org.jdownloader.plugins.components.youtube.YoutubeConfig.GroupLogic;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
+import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
+import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
+import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
+import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
 import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
+import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
@@ -36,37 +48,19 @@ import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
 import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
-    private AdvancedConfigTableModel        model;
-    private YoutubeConfig                   cf;
-    private Pair<MultiVariantBoxForVideo>   videoMp4;
-    private Pair<MultiVariantBoxForVideo>   videoWebm;
-    private Pair<MultiVariantBoxForVideo>   videoFlv;
-    private Pair<MultiVariantBoxForVideo>   videoGp3;
-    private Pair<MultiVariantBoxFor3DVideo> video3D;
-    private Pair<MultiVariantBoxForAudio>   audioPair;
-    private Pair<MultiVariantBoxForImage>   imagePair;
-    private Pair<Checkbox>                  subtitles;
-    private Pair<MultiVariantBoxForVideo>   extraVideoMp4;
-    private Pair<MultiVariantBoxForVideo>   extraVideoWebm;
-    private Pair<MultiVariantBoxForVideo>   extraVideoFlv;
-    private Pair<MultiVariantBoxForVideo>   extraVideoGp3;
-    private Pair<MultiVariantBoxFor3DVideo> extraVideo3D;
-    private Pair<MultiVariantBoxForAudio>   extraAudio;
-    private Pair<MultiVariantBoxForImage>   extraImage;
-    private boolean                         setting = false;
-    private Pair<Checkbox>                  bestVideo;
-    private Pair<Checkbox>                  bestAudio;
-    private Pair<Checkbox>                  best3D;
-    private Pair<Checkbox>                  bestSubtitle;
-    private Pair<Checkbox>                  bestImage;
-    private Pair<Checkbox>                  bestLimit;
+    private AdvancedConfigTableModel model;
+    private YoutubeConfig            cf;
+
+    private boolean                  setting = false;
+
+    private VariantsMapTable         allowed;
+    private LinkTable                links;
 
     private final class MultiVariantBoxForImage extends MultiVariantBox<ImageVariant> {
         private MultiVariantBoxForImage(YoutubeDashConfigPanel youtubeDashConfigPanel, List<ImageVariant> list) {
@@ -220,15 +214,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
 
-        HashSet<String> dupe = new HashSet<String>();
-        ArrayList<VideoVariant> videoFLV = new ArrayList<VideoVariant>();
-        ArrayList<VideoVariant> videoMP4 = new ArrayList<VideoVariant>();
-        ArrayList<VideoVariant> videoWEBM = new ArrayList<VideoVariant>();
-        ArrayList<VideoVariant> videoGP3 = new ArrayList<VideoVariant>();
-        ArrayList<VideoVariant> video3D = new ArrayList<VideoVariant>();
-
-        ArrayList<AudioVariant> audio = new ArrayList<AudioVariant>();
-        ArrayList<ImageVariant> image = new ArrayList<ImageVariant>();
         VariantBase[] variants = VariantBase.values();
         Comparator<VariantBase> comp = new Comparator<VariantBase>() {
 
@@ -237,56 +222,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
             }
         };
-        ArrayList<VariantBase> sorted = new ArrayList<VariantBase>();
-        for (VariantBase ytv : variants) {
-            sorted.add(ytv);
-        }
-        Collections.sort(sorted, comp);
-        for (VariantBase ytv : sorted) {
-
-            AbstractVariant variant = AbstractVariant.get(ytv);
-            if (!dupe.add(variant.getTypeId())) {
-                continue;
-            }
-
-            switch (ytv.getGroup()) {
-            case AUDIO:
-                audio.add((AudioVariant) variant);
-                break;
-            case IMAGE:
-                image.add((ImageVariant) variant);
-                break;
-            case VIDEO:
-                FileContainer videoTag = ytv.getContainer();
-
-                switch (videoTag) {
-                case FLV:
-                    videoFLV.add((VideoVariant) variant);
-
-                    break;
-                case MP4:
-                    videoMP4.add((VideoVariant) variant);
-
-                    break;
-                case THREEGP:
-                    videoGP3.add((VideoVariant) variant);
-
-                    break;
-                case WEBM:
-                    videoWEBM.add((VideoVariant) variant);
-
-                    break;
-                }
-                VideoVariant threeD = (VideoVariant) variant;
-                threeD = (VideoVariant) AbstractVariant.get(ytv);
-                threeD.getGenericInfo().setThreeD(true);
-                video3D.add(threeD);
-                break;
-            case VIDEO_3D:
-                video3D.add((VideoVariant) AbstractVariant.get(ytv));
-                break;
-
-            }
+        ArrayList<AbstractVariantWrapper> sorted = new ArrayList<>();
+        for (AbstractVariant v : AbstractVariant.listVariants()) {
+            sorted.add(new AbstractVariantWrapper(v));
         }
 
         // Collections.sort(videoMP4, comp);
@@ -299,19 +237,99 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         // Collections.sort(image, comp);
         // Collections.sort(videoWEBM,comp );
         addHeader(_GUI.T.YoutubeDashConfigPanel_allowedtypoes(), NewTheme.I().getIcon(IconKey.ICON_MEDIAPLAYER, 18));
-        videoMp4 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBoxForVideo(this, videoMP4));
-        videoWebm = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_webm(), null, null, new MultiVariantBoxForVideo(this, videoWEBM));
-        videoFlv = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBoxForVideo(this, videoFLV));
-        videoGp3 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_gp3(), null, null, new MultiVariantBoxForVideo(this, videoGP3));
-        this.video3D = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBoxFor3DVideo(this, video3D));
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_quick());
+        links = new LinkTable();
+        allowed = new VariantsMapTable(sorted) {
+            @Override
+            public void onEnabledMapUpdate(CounterMap<String> enabledMap) {
+                links.onEnabledMapUpdate(enabledMap);
+            }
 
-        audioPair = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, new MultiVariantBoxForAudio(this, audio));
+        };
 
-        imagePair = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBoxForImage(this, image));
-        subtitles = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_subtitles(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("SubtitlesEnabled", BooleanKeyHandler.class), null));
+        links.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                try {
+                    Link link = links.getModel().getObjectbyRow(links.getSelectedRow());
+                    allowed.setSelectionByLink(link);
+                } catch (Throwable e1) {
+                    Log.log(e1);
+                }
+            }
+        });
+        // Comparator<IntegerInterface> intComparator = Compar
+
+        List<VariantGroup> groups = Arrays.asList(VariantGroup.values());
+        Collections.sort(groups, LabelInterface.COMPARATOR_ASC);
+        EnumMultiComboBox<VariantGroup> typeSel = new EnumMultiComboBox<VariantGroup>(groups, CFG_YOUTUBE.BLACKLISTED_GROUPS);
+
+        List<FileContainer> container = Arrays.asList(FileContainer.values());
+        Collections.sort(container, LabelInterface.COMPARATOR_ASC);
+        EnumMultiComboBox<FileContainer> containerSel = new EnumMultiComboBox<FileContainer>(container, CFG_YOUTUBE.BLACKLISTED_FILE_CONTAINERS) {
+            @Override
+            protected String getLabel(int i, FileContainer sc) {
+                return sc.getTooltip();
+            }
+        };
+        ;
+        List<Projection> projections = Arrays.asList(Projection.values());
+        Collections.sort(projections, LabelInterface.COMPARATOR_ASC);
+        EnumMultiComboBox<Projection> projectionSelect = new EnumMultiComboBox<Projection>(projections, CFG_YOUTUBE.BLACKLISTED_PROJECTIONS) {
+            @Override
+            protected String getLabel(int i, Projection sc) {
+                return sc.getTooltip();
+            }
+        };
+        List<VideoResolution> heights = Arrays.asList(VideoResolution.values());
+        Collections.sort(heights, IntegerInterface.COMPARATOR_DESC);
+
+        EnumMultiComboBox<VideoResolution> resolutionSelect = new EnumMultiComboBox<VideoResolution>(heights, CFG_YOUTUBE.BLACKLISTED_RESOLUTIONS);
+        List<VideoFrameRate> fpss = Arrays.asList(VideoFrameRate.values());
+        Collections.sort(fpss, IntegerInterface.COMPARATOR_DESC);
+
+        EnumMultiComboBox<VideoFrameRate> fpsSelect = new EnumMultiComboBox<VideoFrameRate>(fpss, CFG_YOUTUBE.BLACKLISTED_VIDEO_FRAMERATES);
+
+        List<VideoCodec> videoCodecs = Arrays.asList(VideoCodec.values());
+        Collections.sort(videoCodecs, LabelInterface.COMPARATOR_ASC);
+        EnumMultiComboBox<VideoCodec> vcodec = new EnumMultiComboBox<VideoCodec>(videoCodecs, CFG_YOUTUBE.BLACKLISTED_VIDEO_CODECS) {
+            @Override
+            protected String getLabel(int i, VideoCodec sc) {
+                return sc.getTooltip();
+            }
+        };
+
+        List<AudioCodec> audioCodecs = Arrays.asList(AudioCodec.values());
+        Collections.sort(audioCodecs, LabelInterface.COMPARATOR_ASC);
+        EnumMultiComboBox<AudioCodec> acodec = new EnumMultiComboBox<AudioCodec>(audioCodecs, CFG_YOUTUBE.BLACKLISTED_AUDIO_CODECS) {
+            @Override
+            protected String getLabel(int i, AudioCodec sc) {
+                return sc.getTooltip();
+            }
+        };
+        List<AudioBitrate> bitrates = Arrays.asList(AudioBitrate.values());
+        Collections.sort(bitrates, IntegerInterface.COMPARATOR_DESC);
+        EnumMultiComboBox<AudioBitrate> aBitrate = new EnumMultiComboBox<AudioBitrate>(bitrates, CFG_YOUTUBE.BLACKLISTED_AUDIO_BITRATES);
+
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE(), null, typeSel);
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE(), null, containerSel);
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION(), null, projectionSelect);
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_RESOLUTION(), null, resolutionSelect);
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FPS(), null, fpsSelect);
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_VIDEO_CODEC(), null, vcodec);
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_CODEC(), null, acodec);
+        addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE(), null, aBitrate);
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_table());
+        JScrollPane sp;
+        add(sp = new JScrollPane(allowed), "pushx,growx,height 100:450:n,spanx");
+        // sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+        addHeader(_GUI.T.YoutubeDashConfigPanel_links(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_links_description());
+        add(new JScrollPane(links), "pushx,growx,spanx,height 100:450:n");
 
         addHeader(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
-        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
         for (org.jdownloader.plugins.components.youtube.YoutubeReplacer r : YoutubeHelper.REPLACER) {
 
             StringBuilder sb = new StringBuilder();
@@ -357,60 +375,16 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePattern", StringKeyHandler.class)));
 
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video(), null, null, new TextInput(CFG_YOUTUBE.VIDEO_FILENAME_PATTERN));
-        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video3D(), null, null, new TextInput(CFG_YOUTUBE.VIDEO3DFILENAME_PATTERN));
+        // addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video3D(), null, null, new
+        // TextInput(CFG_YOUTUBE.VIDEO3DFILENAME_PATTERN));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_audio(), null, null, new TextInput(CFG_YOUTUBE.AUDIO_FILENAME_PATTERN));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_image(), null, null, new TextInput(CFG_YOUTUBE.IMAGE_FILENAME_PATTERN));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_subtitle(), null, null, new TextInput(CFG_YOUTUBE.SUBTITLE_FILENAME_PATTERN));
-
-        addHeader(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_proxy_header(), NewTheme.I().getIcon(IconKey.ICON_PROXY, 18));
-        Pair<Checkbox> checkbox = addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_userproxy(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProxyEnabled", BooleanKeyHandler.class), null));
-
-        Pair<ProxyInput> proxy = addPair("", null, null, new ProxyInput(cf._getStorageHandler().getKeyHandler("Proxy", KeyHandler.class)));
-        checkbox.getComponent().setDependencies(proxy.getComponent());
-        addHeader(_GUI.T.YoutubeDashConfigPanel_links(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
-
-        BooleanKeyHandler videoKeyhandler;
-        bestVideo = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(videoKeyhandler = cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
-        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explained());
-        bestLimit = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_limitation(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("BestVideoVariant1080pLimitEnabled", BooleanKeyHandler.class), null));
-        bestVideo.getComponent().setDependencies(bestLimit.getComponent());
-        add(new JSeparator(), "pushx,growx,spanx");
-        bestImage = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_image(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestImageVariantLinkEnabled", BooleanKeyHandler.class), null));
-
-        bestAudio = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_audio(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestAudioVariantLinkEnabled", BooleanKeyHandler.class), null));
-        best3D = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_3d(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBest3DVariantLinkEnabled", BooleanKeyHandler.class), null));
-        bestSubtitle = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_subtitle(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestSubtitleVariantLinkEnabled", BooleanKeyHandler.class), null));
-
-        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc());
-        extraVideoMp4 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBoxForVideo(this, videoMP4));
-        extraVideoWebm = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_webm(), null, null, new MultiVariantBoxForVideo(this, videoWEBM));
-        extraVideoFlv = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBoxForVideo(this, videoFLV));
-        extraVideoGp3 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_gp3(), null, null, new MultiVariantBoxForVideo(this, videoGP3));
-        extraVideo3D = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBoxFor3DVideo(this, video3D));
-        extraAudio = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, new MultiVariantBoxForAudio(this, audio));
-        extraImage = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBoxForImage(this, image));
 
         updateBest();
     }
 
     private void updateBest() {
-        bestLimit.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        best3D.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        bestAudio.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        bestImage.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        bestSubtitle.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        bestVideo.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        extraVideoMp4.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        extraVideoWebm.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        extraVideoFlv.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        extraVideoGp3.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        extraVideo3D.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        extraAudio.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-        extraImage.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
-
-    }
-
-    public static void main(String[] args) {
 
     }
 
@@ -436,27 +410,27 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         if (setting) {
             return;
         }
-        List<BlackOrWhitelistEntry> blacklistSet = new ArrayList<BlackOrWhitelistEntry>();
-        getBlacklist(blacklistSet, video3D.getComponent());
-        getBlacklist(blacklistSet, audioPair.getComponent());
-        getBlacklist(blacklistSet, videoFlv.getComponent());
-        getBlacklist(blacklistSet, videoGp3.getComponent());
-        getBlacklist(blacklistSet, imagePair.getComponent());
-        getBlacklist(blacklistSet, videoMp4.getComponent());
-        getBlacklist(blacklistSet, videoWebm.getComponent());
+        List<VariantIDStorable> blacklistSet = new ArrayList<VariantIDStorable>();
+        // getBlacklist(blacklistSet, video3D.getComponent());
+        // getBlacklist(blacklistSet, audioPair.getComponent());
+        // getBlacklist(blacklistSet, videoFlv.getComponent());
+        // getBlacklist(blacklistSet, videoGp3.getComponent());
+        // getBlacklist(blacklistSet, imagePair.getComponent());
+        // getBlacklist(blacklistSet, videoMp4.getComponent());
+        // getBlacklist(blacklistSet, videoWebm.getComponent());
 
-        List<BlackOrWhitelistEntry> whitelist = new ArrayList<BlackOrWhitelistEntry>();
+        // List<BlackListEntry> whitelist = new ArrayList<BlackListEntry>();
+        //
+        // getWhitelist(whitelist, extraVideo3D.getComponent());
+        // getWhitelist(whitelist, extraAudio.getComponent());
+        // getWhitelist(whitelist, extraVideoFlv.getComponent());
+        // getWhitelist(whitelist, extraVideoGp3.getComponent());
+        // getWhitelist(whitelist, extraImage.getComponent());
+        // getWhitelist(whitelist, extraVideoMp4.getComponent());
+        // getWhitelist(whitelist, extraVideoWebm.getComponent());
 
-        getWhitelist(whitelist, extraVideo3D.getComponent());
-        getWhitelist(whitelist, extraAudio.getComponent());
-        getWhitelist(whitelist, extraVideoFlv.getComponent());
-        getWhitelist(whitelist, extraVideoGp3.getComponent());
-        getWhitelist(whitelist, extraImage.getComponent());
-        getWhitelist(whitelist, extraVideoMp4.getComponent());
-        getWhitelist(whitelist, extraVideoWebm.getComponent());
-
-        cf.setBlacklisted(blacklistSet);
-        cf.setExtra(whitelist);
+        allowed.save();
+        // cf.setExtra(whitelist);
 
     }
 
@@ -464,10 +438,10 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
      * @param list
      * @param blacklistSet
      */
-    public void getWhitelist(List<BlackOrWhitelistEntry> whitelist, MultiVariantBox<?> list) {
+    public void getWhitelist(List<VariantIDStorable> whitelist, MultiVariantBox<?> list) {
         for (AbstractVariant v : list.getValues()) {
             if (((MultiVariantBox<AbstractVariant>) list).isItemSelected(v)) {
-                whitelist.add(new BlackOrWhitelistEntry(v));
+                whitelist.add(new VariantIDStorable(v));
             }
         }
     }
@@ -476,11 +450,11 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
      * @param list
      * @param blacklistSet
      */
-    public void getBlacklist(List<BlackOrWhitelistEntry> blacklistSet, MultiVariantBox<?> list) {
+    public void getBlacklist(List<VariantIDStorable> blacklistSet, MultiVariantBox<?> list) {
 
         for (AbstractVariant v : list.getValues()) {
             if (!((MultiVariantBox<AbstractVariant>) list).isItemSelected(v)) {
-                blacklistSet.add(new BlackOrWhitelistEntry(v));
+                blacklistSet.add(new VariantIDStorable(v));
             }
         }
 
@@ -491,37 +465,37 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         // ifVideoAndPlaylistCombo.getComponent().setSelectedItem(cf.getLinkIsVideoAndPlaylistUrlAction());
         setting = true;
         try {
+            allowed.load();
+            List<VariantIDStorable> blacklistSet = YoutubeHelper.readBlacklist();
 
-            List<BlackOrWhitelistEntry> blacklistSet = YoutubeHelper.readBlacklist();
+            // setBlacklist(blacklistSet, video3D.getComponent());
+            // setBlacklist(blacklistSet, audioPair.getComponent());
+            // setBlacklist(blacklistSet, videoFlv.getComponent());
+            // setBlacklist(blacklistSet, videoGp3.getComponent());
+            // setBlacklist(blacklistSet, imagePair.getComponent());
+            // setBlacklist(blacklistSet, videoMp4.getComponent());
+            // setBlacklist(blacklistSet, videoWebm.getComponent());
+            List<VariantIDStorable> extraSet = YoutubeHelper.readExtraList();
 
-            setBlacklist(blacklistSet, video3D.getComponent());
-            setBlacklist(blacklistSet, audioPair.getComponent());
-            setBlacklist(blacklistSet, videoFlv.getComponent());
-            setBlacklist(blacklistSet, videoGp3.getComponent());
-            setBlacklist(blacklistSet, imagePair.getComponent());
-            setBlacklist(blacklistSet, videoMp4.getComponent());
-            setBlacklist(blacklistSet, videoWebm.getComponent());
-            List<BlackOrWhitelistEntry> extraSet = YoutubeHelper.readExtraList();
-
-            setWhitelist(extraSet, extraVideo3D.getComponent());
-            setWhitelist(extraSet, extraAudio.getComponent());
-            setWhitelist(extraSet, extraVideoFlv.getComponent());
-            setWhitelist(extraSet, extraVideoGp3.getComponent());
-            setWhitelist(extraSet, extraImage.getComponent());
-            setWhitelist(extraSet, extraVideoMp4.getComponent());
-            setWhitelist(extraSet, extraVideoWebm.getComponent());
+            // setWhitelist(extraSet, extraVideo3D.getComponent());
+            // setWhitelist(extraSet, extraAudio.getComponent());
+            // setWhitelist(extraSet, extraVideoFlv.getComponent());
+            // setWhitelist(extraSet, extraVideoGp3.getComponent());
+            // setWhitelist(extraSet, extraImage.getComponent());
+            // setWhitelist(extraSet, extraVideoMp4.getComponent());
+            // setWhitelist(extraSet, extraVideoWebm.getComponent());
         } finally {
             setting = false;
         }
         //
     }
 
-    public void setWhitelist(List<BlackOrWhitelistEntry> whitelist, MultiVariantBox<?> list) {
+    public void setWhitelist(List<VariantIDStorable> whitelist, MultiVariantBox<?> list) {
 
         ArrayList<AbstractVariant> vList = new ArrayList<AbstractVariant>();
 
         for (AbstractVariant v : list.getValues()) {
-            if (whitelist.contains(new BlackOrWhitelistEntry(v))) {
+            if (whitelist.contains(new VariantIDStorable(v))) {
                 vList.add(v);
             }
 
@@ -533,12 +507,12 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
      * @param blacklistSet
      * @param list
      */
-    public void setBlacklist(List<BlackOrWhitelistEntry> blacklistSet, MultiVariantBox<?> list) {
+    public void setBlacklist(List<VariantIDStorable> blacklistSet, MultiVariantBox<?> list) {
 
         ArrayList<AbstractVariant> vList = new ArrayList<AbstractVariant>();
 
         for (AbstractVariant v : list.getValues()) {
-            BlackOrWhitelistEntry be = new BlackOrWhitelistEntry(v);
+            VariantIDStorable be = new VariantIDStorable(v);
             if (!blacklistSet.contains(be)) {
                 vList.add(v);
 

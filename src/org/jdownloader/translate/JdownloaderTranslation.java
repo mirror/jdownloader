@@ -999,4 +999,62 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wait for %s1: %s2" })
     String WaitForTrackerSlotPluginProcess(String message, String formatSeconds);
 
+    @Default(lngs = { "en" }, values = { "Usenet" })
+    String LazyHostPlugin_FEATURE_USENET();
+
+    @Default(lngs = { "en" }, values = { "Multihoster" })
+    String LazyHostPlugin_FEATURE_MULTIHOST();
+
+    @Default(lngs = { "en" }, values = { "Generic" })
+    String LazyHostPlugin_FEATURE_GENERIC();
+
+    @Default(lngs = { "en" }, values = { "This service supports UseNet downloads (*.nzb files)" })
+    String LazyHostPlugin_FEATURE_USENET_TOOLTIP();
+
+    @Default(lngs = { "en" }, values = { "This service supports downloads form multiple different hosters" })
+    String LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP();
+
+    @Default(lngs = { "en" }, values = { "This plugin implements generic support. Please use the dedicated plugin instead. " })
+    String LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
+
+    @Default(lngs = { "en" }, values = { "Vorbis Spatial 4 Channel" })
+
+    String AudioCodec_vorbis_spatial();
+
+    @Default(lngs = { "en" }, values = { "AAC Spatial 6 Channel" })
+
+    String AudioCodec_aac_spatial();
+
+    @Default(lngs = { "en" }, values = { "Spatial" })
+
+    String YOUTUBE_surround();
+
+    @Default(lngs = { "en" }, values = { "3D" })
+    String Projection_3D();
+
+    @Default(lngs = { "en" }, values = { "2D" })
+
+    String Projection_Normal();
+
+    @Default(lngs = { "en" }, values = { "360°" })
+
+    String Projection_Spherical();
+
+    @Default(lngs = { "en" }, values = { "3D 360°" })
+
+    String Projection_Spherical3D();
+
+    @Default(lngs = { "en" }, values = { "3D HOU 360° Spherical" })
+    String Projection_Spherical3D_tt();
+
+    @Default(lngs = { "en" }, values = { "360° Spherical" })
+    String Projection_Spherical_tt();
+
+    @Default(lngs = { "en" }, values = { "2D - Normal" })
+
+    String Projection_Normal_tt();
+
+    @Default(lngs = { "en" }, values = { "Stereoscopic 3D SBS" })
+    String Projection_3D_tt();
+
 }

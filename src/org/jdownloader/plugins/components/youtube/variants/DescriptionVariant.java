@@ -51,7 +51,7 @@ public class DescriptionVariant extends AbstractVariant<DescriptionGenericInfo> 
 
     @Override
     public String _getName(Object caller) {
-        return _GUI.T.YoutubeVariant_name_DESCRIPTION();
+        return _GUI.T.lit_desciption();
     }
 
     @Override

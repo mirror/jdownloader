@@ -1,33 +1,39 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
-public enum FileContainer {
-    JPG("jpg"),
-    SRT("srt"),
-    THREEGP("3gp", 4d),
-    MP3("mp3"),
-    AAC("aac"),
-    OGG("ogg"),
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.TooltipInterface;
 
-    MP4("mp4", 6d),
+public enum FileContainer implements LabelInterface,TooltipInterface {
+    JPG("jpg", "JPEG Image"),
+    SRT("srt", "Subtitle"),
+    THREEGP("3gp", "3GP Video", 4d),
+    MP3("mp3", "MP3 Audio"),
+    AAC("aac", "AAC Audio"),
+    OGG("ogg", "OGG Audio"),
+
+    MP4("mp4", "MP4 Video", 6d),
     // ma4 and aac have the same codec, but we prefer m4a
-    M4A("m4a", 1 / 10000d),
-    TXT("txt"),
-    WEBM("webm", 5d),
-    FLV("flv", 1);
+    M4A("m4a", "M4A Audio", 1 / 10000d),
+    TXT("txt", "Text"),
+    WEBM("webm", "Google WebM Video", 5d),
+    FLV("flv", "Flash FLV Video", 1);
     private String extension     = null;
     private double qualityRating = 0;
+    private String longLabel;
 
     public double getQualityRating() {
         return qualityRating;
     }
 
-    private FileContainer(String fileExtension, double rating) {
+    private FileContainer(String fileExtension, String longLabel, double rating) {
         this.extension = fileExtension;
         this.qualityRating = rating;
+        this.longLabel = longLabel;
     }
 
-    private FileContainer(String fileExtension) {
+    private FileContainer(String fileExtension, String longLabel) {
         this.extension = fileExtension;
+        this.longLabel = longLabel;
     }
 
     public String getLabel() {
@@ -40,6 +46,11 @@ public enum FileContainer {
 
     public void setQualityRating(double d) {
         this.qualityRating = d;
+    }
+
+    @Override
+    public String getTooltip() {
+        return longLabel;
     }
 
 }

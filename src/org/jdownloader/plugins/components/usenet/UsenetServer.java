@@ -1,4 +1,5 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.usenet;
+
 
 import java.util.ArrayList;
 import java.util.List;

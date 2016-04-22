@@ -1,12 +1,15 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.plugins.components.youtube.Projection;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
@@ -19,6 +22,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> implements LinkVariant {
+    private static ArrayList<AbstractVariant> VARIANTS_LIST;
+
     @Override
     public String toString() {
         return baseVariant.toString();
@@ -51,7 +56,6 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                         ret.setJson("{}");
                         break;
                     case VIDEO:
-                    case VIDEO_3D:
                         ret = new VideoVariant(base);
                         ret.setJson("{}");
                         break;
@@ -99,7 +103,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             case SUBTITLES:
                 ret = new SubtitleVariant();
                 break;
-            case VIDEO_3D:
+
             case VIDEO:
                 ret = new VideoVariant(base);
                 break;
@@ -184,6 +188,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
 
     public double getQualityRating() {
         return baseVariant.getQualityRating();
+
     }
 
     public abstract String getTypeId();
@@ -307,6 +312,75 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     protected abstract void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data);
+
+    private static String dupeid(AbstractVariant var) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(var.getGroup().name()).append("_");
+        sb.append(var.getContainer().name()).append("_");
+        if (var instanceof VideoVariant) {
+            VideoVariant vvar = (VideoVariant) var;
+            sb.append(vvar.getProjection().name()).append("_");
+            sb.append(vvar.getVideoResolution().name()).append("_");
+            sb.append(vvar.getVideoCodec().name()).append("_");
+            sb.append(vvar.getiTagVideo().getVideoFrameRate().name()).append("_");
+        }
+        if (var instanceof AudioInterface) {
+            AudioInterface avar = (AudioInterface) var;
+            sb.append(avar.getAudioBitrate().name()).append("_");
+            sb.append(avar.getAudioCodec().name()).append("_");
+        }
+        if (var instanceof ImageVariant) {
+            sb.append(var.getBaseVariant().name()).append("_");
+        }
+        if (var instanceof DescriptionVariant) {
+            sb.append(var.getBaseVariant().name()).append("_");
+        }
+        if (var instanceof SubtitleVariant) {
+            sb.append(var.getBaseVariant().name()).append("_");
+        }
+        return sb.toString();
+    }
+
+    public static ArrayList<AbstractVariant> listVariants() {
+        if (VARIANTS_LIST != null) {
+            return VARIANTS_LIST;
+        }
+        ArrayList<AbstractVariant> sorted = new ArrayList<AbstractVariant>();
+        HashSet<String> dupes = new HashSet<String>();
+        for (VariantBase b : VariantBase.values()) {
+            AbstractVariant var = AbstractVariant.get(b);
+            if (dupes.add(dupeid(var))) {
+                sorted.add((var));
+            }
+            if (var instanceof VideoVariant && ((VideoVariant) var).getGenericInfo().getProjection() == Projection.NORMAL) {
+                var = AbstractVariant.get(b);
+                ((VideoVariant) var).getGenericInfo().setProjection(Projection.ANAGLYPH_3D);
+                if (dupes.add(dupeid(var))) {
+                    sorted.add((var));
+                }
+
+                var = AbstractVariant.get(b);
+                ((VideoVariant) var).getGenericInfo().setProjection(Projection.SPHERICAL);
+                if (dupes.add(dupeid(var))) {
+                    sorted.add((var));
+                }
+
+                var = AbstractVariant.get(b);
+                ((VideoVariant) var).getGenericInfo().setProjection(Projection.SPHERICAL_3D);
+                if (dupes.add(dupeid(var))) {
+                    sorted.add((var));
+                }
+            }
+
+        }
+        VARIANTS_LIST = sorted;
+        return sorted;
+    }
+
+    public String getStandardGroupingID() {
+
+        return getGroup().name();
+    }
 
     // public abstract void setAlternatives(List<String> altIds);
 }

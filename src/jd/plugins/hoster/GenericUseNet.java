@@ -10,20 +10,6 @@ import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.SpinnerNumberModel;
 
-import jd.PluginWrapper;
-import jd.controlling.proxy.ProxyController;
-import jd.http.Browser;
-import jd.http.SocketConnectionFactory;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DefaultEditAccountPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.UsenetConfigInterface;
-import jd.plugins.components.UsenetServer;
-
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
@@ -35,7 +21,21 @@ import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
+import jd.PluginWrapper;
+import jd.controlling.proxy.ProxyController;
+import jd.http.Browser;
+import jd.http.SocketConnectionFactory;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DefaultEditAccountPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "genericusenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class GenericUseNet extends UseNet {
