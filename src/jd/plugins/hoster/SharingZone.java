@@ -61,7 +61,7 @@ public class SharingZone extends PluginForHost {
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareBasic Version 0.7.5-psp<br />
-     * mods:<br />
+     * mods: fetchAccountInfo[Added support for premium account type "BUSINESS"]<br />
      * limit-info: premium untested, set FREE account limits<br />
      * protocol: https<br />
      * captchatype: reCaptchaV2<br />
@@ -107,8 +107,8 @@ public class SharingZone extends PluginForHost {
     private static final int               account_FREE_MAXCHUNKS                       = 1;
     private static final int               account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
-    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 1;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
 
     private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
@@ -565,7 +565,7 @@ public class SharingZone extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
+        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|BUSINESS|USUARIO DE PAGO)</span>")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
