@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,8 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://(www\\.)?rtbf\\.be/video/detail_[a-z0-9}\\-_]+\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://(www\\.)?rtbf\\.be/(?:video|auvio)/detail_[a-z0-9}\\-_]+\\?id=\\d+" }, flags = { 0 })
 public class RtbfBe extends PluginForHost {
 
     public RtbfBe(PluginWrapper wrapper) {
@@ -46,7 +48,7 @@ public class RtbfBe extends PluginForHost {
         return -1;
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -59,13 +61,12 @@ public class RtbfBe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?) : RTBF Vidéo\"").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
         }
-        filename = Encoding.htmlDecode(filename).trim();
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        br.getPage("http://www.rtbf.be/video/embed?id=" + fid + "&autoplay=1");
+        br.getPage("embed/media?id=" + fid + "&autoplay=1");
         String vid_text = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
         if (vid_text == null) {
             vid_text = this.br.getRegex("data\\-video=\"(.*?)\"").getMatch(0);
@@ -76,26 +77,32 @@ public class RtbfBe extends PluginForHost {
         if (vid_text == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        vid_text = Encoding.htmlDecode(vid_text).replaceAll("\\\\/", "/");
-        DLLINK = new Regex(vid_text, "\"downloadUrl\":\"(http:[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = new Regex(vid_text, "\"high\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        // this is json encoded with htmlentities.
+        vid_text = HTMLEntities.unhtmlentities(vid_text);
+        // we can get filename here also.
+        if (filename == null) {
+            filename = PluginJSonUtils.getJson(vid_text, "title");
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        if (DLLINK == null) {
-            DLLINK = new Regex(vid_text, "\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        dllink = PluginJSonUtils.getJson(vid_text, "downloadUrl");
+        if (dllink == null) {
+            dllink = PluginJSonUtils.getJson(vid_text, "high");
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
+            // audio
+            dllink = PluginJSonUtils.getJson(vid_text, "url");
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(filename + ext);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(DLLINK);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -113,7 +120,7 @@ public class RtbfBe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
