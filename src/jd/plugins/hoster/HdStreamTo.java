@@ -29,7 +29,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -342,10 +341,6 @@ public class HdStreamTo extends PluginForHost {
     public static void errorhandlingPremium(final DownloadInterface dl, final Browser br, final Account account) throws PluginException, IOException {
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
-                try {
-                    account.setError(AccountError.TEMP_DISABLED, "Daily traffic limit reached");
-                } catch (final Throwable e) {
-                }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             errorhandlingGeneral(dl);

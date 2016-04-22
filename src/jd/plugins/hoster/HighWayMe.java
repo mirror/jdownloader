@@ -24,6 +24,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
 import org.jdownloader.gui.notify.BubbleNotify;
@@ -33,22 +48,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HighWayMe extends UseNet {
@@ -630,20 +629,16 @@ public class HighWayMe extends UseNet {
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nDein Account wurde gesperrt!";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     statusMessage = "\r\nYour account was banned!";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 2:
                 statusMessage = "Not enough free traffic";
-                this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 3:
                 statusMessage = "Not enough premium traffic";
-                this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 4:
                 /* Too many simultaneous downloads */
@@ -653,11 +648,9 @@ public class HighWayMe extends UseNet {
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nCode 5: Login Fehler";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     statusMessage = "\r\nCode 5: Login failure";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 6:
@@ -687,11 +680,9 @@ public class HighWayMe extends UseNet {
                 /* MOCH itself is under maintenance */
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nDieser Anbieter führt momentan Wartungsarbeiten durch!";
-                    this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     statusMessage = "\r\nThis service is doing maintenance work!";
-                    this.currAcc.setError(AccountError.TEMP_DISABLED, statusMessage);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             case 13:

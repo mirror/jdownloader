@@ -27,14 +27,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -369,22 +367,16 @@ public class FreshfilePl extends PluginForHost {
         try {
             accountResponse = login(account, true);
         } catch (PluginException e) {
-
-            String errorMessage = e.getErrorMessage();
-
-            if (errorMessage.contains("Maintenance")) {
-                ai.setStatus(errorMessage);
-                account.setError(AccountError.TEMP_DISABLED, errorMessage);
-
-            } else {
-                ai.setStatus("Login failed");
-                UserIO.getInstance().requestMessageDialog(0, "FreshFile.pl Login Error", "Login failed: " + errorMessage);
-                account.setError(AccountError.INVALID, "Login failed!");
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.setProperty("cookies", Property.NULL);
+                final String errorMessage = e.getErrorMessage();
+                if (errorMessage != null && errorMessage.contains("Maintenance")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
-
-            account.setProperty("cookies", Property.NULL);
-            return ai;
-
+            throw e;
         }
 
         int userPremium = Integer.parseInt(getJson("premium", accountResponse));
@@ -412,10 +404,9 @@ public class FreshfilePl extends PluginForHost {
                 date = dateFormat.parse(userPremiumDateEnd);
                 ai.setValidUntil(date.getTime());
             } catch (final Exception e) {
-                logger.log( e);
+                logger.log(e);
             }
         }
-        account.setError(null, null);
         return ai;
     }
 
