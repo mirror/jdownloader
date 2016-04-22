@@ -1,19 +1,52 @@
 package org.jdownloader.plugins.controller.host;
 
-import jd.plugins.PluginForHost;
-
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.TooltipInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.translate._JDT;
+
+import jd.plugins.PluginForHost;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
-    public static enum FEATURE {
+    public static enum FEATURE implements LabelInterface,TooltipInterface {
 
-        USENET,
-        MULTIHOST,
-        GENERIC;
+        USENET {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_USENET();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_USENET_TOOLTIP();
+            }
+        },
+        MULTIHOST {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_MULTIHOST();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP();
+            }
+        },
+        GENERIC {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
+            }
+        };
 
         public static final long CACHEVERSION = 19042016l; // change when you add/change enums!
 
@@ -27,6 +60,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             }
             return false;
         }
+
     }
 
     private static enum PROPERTY {

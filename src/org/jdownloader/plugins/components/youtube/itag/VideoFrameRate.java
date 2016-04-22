@@ -1,6 +1,9 @@
 package org.jdownloader.plugins.components.youtube.itag;
 
-public enum VideoFrameRate {
+import org.appwork.storage.config.annotations.IntegerInterface;
+import org.appwork.storage.config.annotations.LabelInterface;
+
+public enum VideoFrameRate implements IntegerInterface,LabelInterface {
     FPS_60(60, 5, 100),
     FPS_30(30, 3, 100),
 
@@ -31,5 +34,10 @@ public enum VideoFrameRate {
     public String getLabel() {
 
         return (int) Math.ceil(getFps()) + "fps";
+    }
+
+    @Override
+    public int getInt() {
+        return (int) Math.ceil(getFps());
     }
 }

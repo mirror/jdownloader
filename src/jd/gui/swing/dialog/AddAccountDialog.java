@@ -16,38 +16,36 @@
 
 package jd.gui.swing.dialog;
 
+import java.awt.AlphaComposite;
 import java.awt.Component;
+import java.awt.Composite;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.swing.BorderFactory;
-import javax.swing.ComboBoxModel;
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.plaf.basic.ComboPopup;
+import javax.swing.JScrollPane;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.UserIO;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
-import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -56,6 +54,8 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.InputChangedCallbackInterface;
@@ -72,6 +72,17 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
 
@@ -201,25 +212,33 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         return pd;
     }
 
-    private SearchComboBox<LazyHostPlugin> hoster;
+    private HosterChooserTable           hoster;
 
-    private PluginForHost                  plugin;
+    private PluginForHost                plugin;
 
-    private Account                        defaultAccount;
+    private Account                      defaultAccount;
 
-    AccountBuilderInterface                accountBuilderUI;
+    AccountBuilderInterface              accountBuilderUI;
 
-    private JPanel                         content;
+    private JPanel                       content;
 
-    private final PluginClassLoaderChild   cl;
+    private final PluginClassLoaderChild cl;
 
-    protected MouseAdapter                 mouseAdapter;
+    protected MouseAdapter               mouseAdapter;
+
+    private ExtTextField                 filter;
+
+    private JLabel                       header2;
+
+    private JButton                      link;
 
     private AddAccountDialog(final PluginForHost plugin, Account acc) {
         super(UserIO.NO_ICON, _GUI.T.jd_gui_swing_components_AccountDialog_title(), null, _GUI.T.lit_save(), null);
         this.defaultAccount = acc;
         this.plugin = plugin;
         cl = PluginClassLoader.getInstance().getChild();
+        setLocator(new RememberRelativeDialogLocator("AddAccountDialog2", JDGui.getInstance().getMainFrame()));
+        setDimensor(new RememberLastDialogDimension("AddAccountDialog2"));
     }
 
     @Override
@@ -249,99 +268,126 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             // HostPluginWrapper[plugins.size()]);
         }
 
-        hoster = new SearchComboBox<LazyHostPlugin>(plugins) {
+        filter = new ExtTextField() {
+
+            private static final long serialVersionUID = 1L;
 
             @Override
-            protected Icon getIconForValue(LazyHostPlugin value) {
-                if (value == null) {
-                    return null;
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+
+                Graphics2D g2 = (Graphics2D) g;
+                Composite comp = g2.getComposite();
+
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
+                new AbstractIcon(IconKey.ICON_SEARCH, 16).paintIcon(this, g2, 3, 3);
+
+                g2.setComposite(comp);
+            }
+
+        };
+        filter.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                filter.selectAll();
+            }
+        });
+        filter.setHelpText("Search Plugins");
+        filter.addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                    hoster.onKeyDown();
                 }
-                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
-            }
-
-            @Override
-            protected boolean replaceAutoCompletePopupList() {
-                return true;
-            }
-
-            @Override
-            public void setSelectedIndex(int anIndex) {
-                if (isPopupVisible() && anIndex >= 0) {
-                    try {
-                        final Object popup = getUI().getAccessibleChild(this, 0);
-                        if (popup != null && popup instanceof ComboPopup) {
-                            final JList jlist = ((ComboPopup) popup).getList();
-                            if (anIndex < jlist.getModel().getSize()) {
-                                setSelectedItem(jlist.getModel().getElementAt(anIndex));
-                                return;
-                            }
-                        }
-                    } catch (final Throwable e) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-                    }
+                if (e.getKeyCode() == KeyEvent.VK_UP) {
+                    hoster.onKeyUp();
                 }
-                super.setSelectedIndex(anIndex);
             }
+        });
+        // filterText.setOpaque(false);
+        // filterText.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+        // filterText.setBorder(null);
+        filter.setBorder(BorderFactory.createCompoundBorder(filter.getBorder(), BorderFactory.createEmptyBorder(0, 20, 0, 0)));
 
-            @Override
-            protected void searchAutoComplete(ComboBoxModel model, String txt, List<LazyHostPlugin> found, List<LazyHostPlugin> all) {
-                final ArrayList<LazyHostPlugin> goodMatches = new ArrayList<LazyHostPlugin>();
-                for (int i = 0; i < model.getSize(); i++) {
-                    final LazyHostPlugin element = (LazyHostPlugin) model.getElementAt(i);
-                    all.add(element);
-                    final String text = getTextForValue(element);
-                    if (matches(text, txt)) {
-                        found.add(element);
-                    } else {
-                        if (StringUtils.isNotEmpty(txt) && txt.length() > 2 && StringUtils.isNotEmpty(text)) {
-                            if (isSearchCaseSensitive() && StringUtils.containsIgnoreCase(text, txt)) {
-                                goodMatches.add(element);
-                            } else if (StringUtils.contains(text, txt)) {
-                                goodMatches.add(element);
-                            }
-                        }
-                    }
+        hoster = new HosterChooserTable(plugins) {
+            public void valueChanged(javax.swing.event.ListSelectionEvent e) {
+                super.valueChanged(e);
+                if (getModel().isTableStructureChanging()) {
+                    return;
                 }
-                found.addAll(goodMatches);
-            }
+                if (getModel().isTableSelectionClearing()) {
+                    return;
+                }
 
-            @Override
-            protected void sortFound(List<LazyHostPlugin> found) {
-            }
-
-            @Override
-            public void onChanged() {
-                super.onChanged();
+                PluginForHost plg;
                 try {
-                    if (getSelectedItem() == null || content == null) {
+                    plg = getSelectedPlugin().newInstance(cl);
+                    if (plg == null) {
                         return;
                     }
-                    PluginForHost plg = getSelectedItem().newInstance(cl);
-                    if (plg != plugin) {
+                    if (plugin == null || plg.getClass() != plugin.getClass()) {
                         plugin = plg;
                         updatePanel();
 
                     }
-
                 } catch (UpdateRequiredClassNotFoundException e1) {
-                    Dialog.getInstance().showErrorDialog(_GUI.T.AddAccountDialog_actionPerformed_outdated(getSelectedItem().getHost()));
+                    e1.printStackTrace();
+                }
+            }
+        };
+        filter.getDocument().addDocumentListener(new DocumentListener() {
+            private DelayedRunnable delayedRefresh = new DelayedRunnable(200, 1000) {
+
+                @Override
+                public String getID() {
+                    return "AddAccountDialog";
                 }
 
+                @Override
+                public void delayedrun() {
+
+                    hoster.refresh(filter.getText());
+
+                }
+
+            };
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                delayedRefresh.resetAndStart();
             }
 
             @Override
-            protected String getTextForValue(LazyHostPlugin value) {
-                if (value == null) {
-                    return "";
-                }
-                return value.getDisplayName();
+            public void insertUpdate(DocumentEvent e) {
+                delayedRefresh.resetAndStart();
             }
-        };
 
-        final JButton link = new JButton(new AbstractIcon(IconKey.ICON_MONEY, 16));
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                delayedRefresh.resetAndStart();
+            }
+        });
+
+        link = new JButton(new AbstractIcon(IconKey.ICON_MONEY, 16));
         link.setText(_GUI.T.gui_menu_action_premium_buy_name());
         link.setToolTipText(_GUI.T.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
+
             public void actionPerformed(final ActionEvent e) {
                 final PluginForHost lPlugin = plugin;
                 if (lPlugin != null) {
@@ -353,26 +399,28 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
 
         content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
         content.add(header(_GUI.T.AddAccountDialog_layoutDialogContent_choosehoster_()), "gapleft 15,spanx,pushx,growx");
-        content.add(this.hoster, "gapleft 32,height 24!");
+        content.add(filter, "gapleft 32,pushx,growx");
+        content.add(new JScrollPane(hoster), "gapleft 32,pushy,growy");
+
         content.add(link, "height 20!,gapleft 32");
-        content.add(header(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
+        content.add(header2 = header(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
 
         LazyHostPlugin lazyp = null;
-        if (this.plugin != null) {
+        if (this.plugin != null)
+
+        {
             lazyp = plugin.getLazyP();
-        } else {
+        } else
+
+        {
             lazyp = HostPluginController.getInstance().get(getPreselectedHoster());
         }
         if (lazyp != null) {
-            try {
-                hoster.setPrototypeDisplayValue(lazyp);
-            } catch (final Throwable e) {
-            }
-            try {
-                hoster.setSelectedItem(lazyp);
-            } catch (final Exception e) {
-            }
+
+            hoster.setSelectedPlugin(lazyp);
+
         }
+
         getDialog().addWindowFocusListener(new WindowFocusListener() {
 
             @Override
@@ -394,6 +442,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             }
         });
         updatePanel();
+        getDialog().setMinimumSize(new Dimension(400, 300));
         return content;
     }
 
@@ -408,11 +457,18 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     }
 
     protected int getPreferredWidth() {
+        return 600;
+    }
+
+    @Override
+    protected int getPreferredHeight() {
         return 450;
     }
 
     public LazyHostPlugin getHoster() {
-        return this.hoster.getSelectedItem();
+
+        return this.hoster.getSelectedPlugin();
+
     }
 
     protected void updatePanel() {
@@ -429,10 +485,11 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                         p = it.next();
                     }
                 }
-                hoster.setSelectedItem(p);
+                hoster.setSelectedPlugin(p);
                 plg = p.newInstance(cl);
             }
-
+            link.setText(_GUI.T.gui_menu_action_premium_buy_name2(plg.getHost()));
+            header2.setText(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo2(plg.getHost()));
             AccountBuilderInterface accountFactory = plg.getAccountFactory(this);
             if (accountBuilderUI != null) {
                 defaultAccount = accountBuilderUI.getAccount();
@@ -443,7 +500,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             accountBuilderUI.setAccount(defaultAccount);
 
             onChangedInput(null);
-            getDialog().pack();
+            // getDialog().pack();
 
         } catch (UpdateRequiredClassNotFoundException e) {
             e.printStackTrace();
@@ -453,7 +510,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == okButton) {
-            if (hoster != null && hoster.getSelectedItem() != null && accountBuilderUI.validateInputs()) {
+            if (hoster != null && hoster.getSelectedPlugin() != null && accountBuilderUI.validateInputs()) {
                 super.actionPerformed(e);
             }
         } else {
@@ -461,7 +518,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         }
     }
 
-    private JComponent header(String buyAndAddPremiumAccount_layoutDialogContent_get) {
+    private JLabel header(String buyAndAddPremiumAccount_layoutDialogContent_get) {
         JLabel ret = SwingUtils.toBold(new JLabel(buyAndAddPremiumAccount_layoutDialogContent_get));
         ret.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ret.getForeground()));
         return ret;
@@ -471,6 +528,12 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     protected void packed() {
         super.packed();
 
+    }
+
+    @Override
+    public void windowGainedFocus(WindowEvent e) {
+        super.windowGainedFocus(e);
+        filter.requestFocus();
     }
 
     @Override

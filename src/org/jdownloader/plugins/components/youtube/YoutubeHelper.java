@@ -66,7 +66,6 @@ import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
-import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
@@ -74,6 +73,8 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
+import org.jdownloader.updatev2.FilterList;
+import org.jdownloader.updatev2.FilterList.Type;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -88,6 +89,8 @@ import org.xml.sax.SAXParseException;
 
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -123,8 +126,22 @@ public class YoutubeHelper {
             // convert old format
             cfg.setVideoFilenamePattern(filepattern);
             cfg.setAudioFilenamePattern(filepattern);
-            cfg.setVideo3DFilenamePattern(filepattern);
+
             cfg.setFilenamePattern(null);
+        }
+
+        if (cfg.isProxyEnabled()) {
+
+        }
+        HTTPProxyStorable proxyStorable = cfg.getProxy();
+        if (proxyStorable != null) {
+            HTTPProxy proxy = HTTPProxy.getHTTPProxy(proxyStorable);
+            SingleBasicProxySelectorImpl selector = new SingleBasicProxySelectorImpl(proxy);
+            FilterList filterlist = new FilterList(Type.WHITELIST, new String[] { "youtube.com" });
+            selector.setEnabled(cfg.isProxyEnabled());
+            selector.setFilter(filterlist);
+            ProxyController.getInstance().addProxy(selector);
+            cfg.setProxy(null);
         }
 
     }
@@ -281,7 +298,28 @@ public class YoutubeHelper {
             }
 
         });
+        REPLACER.add(new YoutubeReplacer("360", "SPHERICAL") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_spherical();
+            }
 
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+                if (variant != null && variant instanceof VideoVariant) {
+                    switch (((VideoVariant) variant).getProjection()) {
+                    case SPHERICAL:
+                    case SPHERICAL_3D:
+                        return "Spherical";
+                    }
+
+                }
+
+                return "";
+            }
+
+        });
         REPLACER.add(new YoutubeReplacer("THREED", "3D") {
             @Override
             public String getDescription() {
@@ -291,10 +329,13 @@ public class YoutubeHelper {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
-                if (variant != null) {
-                    if (variant.getGroup() == VariantGroup.VIDEO_3D) {
+                if (variant != null && variant instanceof VideoVariant) {
+                    switch (((VideoVariant) variant).getProjection()) {
+                    case ANAGLYPH_3D:
+                    case SPHERICAL_3D:
                         return "3D";
                     }
+
                 }
 
                 return "";
@@ -539,7 +580,7 @@ public class YoutubeHelper {
                 if (variant != null && variant instanceof VideoVariant) {
                     VideoCodec v = ((VideoInterface) variant).getVideoCodec();
                     if (v != null) {
-                        return v.getLabel(link);
+                        return v.getLabel();
                     }
                 }
                 return "";
@@ -1513,6 +1554,15 @@ public class YoutubeHelper {
                                 query.addIfNoAvailable("size", query.get("width") + "x" + query.get("height"));
                             }
                             String fps = query.get("fps");
+
+                            int projectionType = -1;
+
+                            try {
+                                String v = query.get("projection_type");
+                                projectionType = v == null ? -1 : Integer.parseInt(v);
+                            } catch (Throwable e) {
+                                logger.log(e);
+                            }
                             final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.width, c.height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
 
                             List<YoutubeStreamData> lst = ret.get(itag);
@@ -1521,7 +1571,7 @@ public class YoutubeHelper {
                                 ret.put(itag, lst);
                             }
                             YoutubeStreamData vsd;
-                            lst.add(vsd = new YoutubeStreamData(vid, c.downloadurl, itag));
+                            lst.add(vsd = new YoutubeStreamData(vid, c.downloadurl, itag, query));
 
                             try {
                                 vsd.setHeight(Integer.parseInt(query.get("height")));
@@ -1790,6 +1840,14 @@ public class YoutubeHelper {
                 height = Integer.parseInt(splitted[1]);
             }
         }
+        int projectionType = -1;
+
+        try {
+            String v = query.get("projection_type");
+            projectionType = v == null ? -1 : Integer.parseInt(v);
+        } catch (Throwable e) {
+            logger.log(e);
+        }
         String fps = query.get("fps");
         String type = query.get("type");
         if (StringUtils.isNotEmpty(type)) {
@@ -1837,7 +1895,7 @@ public class YoutubeHelper {
                 lst = new ArrayList<YoutubeStreamData>();
                 ret.put(itag, lst);
             }
-            lst.add(vsd = new YoutubeStreamData(vid, url, itag));
+            lst.add(vsd = new YoutubeStreamData(vid, url, itag, query));
             vsd.setHeight(height);
             vsd.setWidth(width);
             vsd.setFps(fps);
@@ -1910,7 +1968,7 @@ public class YoutubeHelper {
     }
 
     private void doUserAPIScan() throws IOException {
-        String checkName = cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getVideo3DFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern() + cfg.getDescriptionFilenamePattern();
+        String checkName = cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern() + cfg.getDescriptionFilenamePattern();
 
         boolean extended = false;
         // only load extra page, if we need the properties
@@ -2024,20 +2082,20 @@ public class YoutubeHelper {
     private List<YoutubeStreamData> loadThumbnails() {
         ArrayList<YoutubeStreamData> ret = new ArrayList<YoutubeStreamData>();
         String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null));
         if (best != null && best.equals("default.jpg")) {
             return ret;
         }
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
         if (best != null && best.equals("mqdefault.jpg")) {
             return ret;
         }
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
         if (best != null && best.equals("hqdefault.jpg")) {
             return ret;
         }
 
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
 
         return ret;
     }
@@ -2354,34 +2412,8 @@ public class YoutubeHelper {
             logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
             if (url != null && itag != null) {
                 YoutubeStreamData vsd;
-                // if (itag == YoutubeITAG.DASH_VIDEO_480P_H264) {
 
-                // QueryInfo qi = Request.parseQuery(url);
-                // ArrayList<KeyValueStringEntry> lst = new ArrayList<KeyValueStringEntry>(qi.list());
-                // Collections.sort(lst, new Comparator<KeyValueStringEntry>() {
-                //
-                // @Override
-                // public int compare(KeyValueStringEntry o1, KeyValueStringEntry o2) {
-                // return o1.getKey().compareTo(o2.getKey());
-                // }
-                //
-                // });
-                // qi = new QueryInfo();
-                // qi.addAll(lst);
-                // String cleanedUrl = new Regex(url, "(http.*?\\?)").getMatch(-1) + qi.toString();
-                // try {
-                // URLConnectionAdapter con = new Browser().openGetConnection(url);
-                // con.disconnect();
-                // if (!con.isOK()) {
-                // return null;
-                // }
-                //
-                // } catch (Throwable e) {
-                // e.printStackTrace();
-                // System.out.println(1);
-                // }
-                // }
-                vsd = new YoutubeStreamData(vid, url, itag);
+                vsd = new YoutubeStreamData(vid, url, itag, query);
                 vsd.setHeight(height);
                 vsd.setWidth(width);
                 vsd.setFps(fps);
@@ -2572,50 +2604,50 @@ public class YoutubeHelper {
         return cfg;
     }
 
-    public static List<BlackOrWhitelistEntry> readExtraList() {
+    public static List<VariantIDStorable> readExtraList() {
         YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
-        List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
-        List<BlackOrWhitelistEntry> configList = cf.getExtra();
-        if (configList != null) {
-            for (BlackOrWhitelistEntry obj : configList) {
-                if (obj != null) {
-                    list.add(obj);
-                }
-            }
-        }
-        String[] strList = cf.getExtraVariants();
-        if (strList != null) {
-            for (String b : strList) {
-
-                list.add(new BlackOrWhitelistEntry(b));
-            }
-            cf.setExtra(list);
-            cf.setExtraVariants(null);
-        }
+        List<VariantIDStorable> list = new ArrayList<VariantIDStorable>();
+        // List<VariantIDStorable> configList = cf.getExtra();
+        // if (configList != null) {
+        // for (VariantIDStorable obj : configList) {
+        // if (obj != null) {
+        // list.add(obj);
+        // }
+        // }
+        // }
+        // String[] strList = cf.getExtraVariants();
+        // if (strList != null) {
+        // for (String b : strList) {
+        //
+        // list.add(new VariantIDStorable(b));
+        // }
+        // cf.setExtra(list);
+        // cf.setExtraVariants(null);
+        // }
 
         return list;
     }
 
-    public static List<BlackOrWhitelistEntry> readBlacklist() {
+    public static List<VariantIDStorable> readBlacklist() {
         YoutubeConfig cf = PluginJsonConfig.get(YoutubeConfig.class);
-        List<BlackOrWhitelistEntry> list = new ArrayList<BlackOrWhitelistEntry>();
-        List<BlackOrWhitelistEntry> configList = cf.getBlacklisted();
-        if (configList != null) {
-            for (BlackOrWhitelistEntry obj : configList) {
-                if (obj != null) {
-                    list.add(obj);
-                }
-            }
-        }
-        String[] strList = cf.getBlacklistedVariants();
-        if (strList != null) {
-            for (String b : strList) {
-
-                list.add(new BlackOrWhitelistEntry(b));
-            }
-            cf.setBlacklisted(list);
-            cf.setBlacklistedVariants(null);
-        }
+        List<VariantIDStorable> list = new ArrayList<VariantIDStorable>();
+        // List<VariantIDStorable> configList = cf.getDisabledVariants();
+        // if (configList != null) {
+        // for (VariantIDStorable obj : configList) {
+        // if (obj != null) {
+        // list.add(obj);
+        // }
+        // }
+        // }
+        // String[] strList = cf.getBlacklistedVariants();
+        // if (strList != null) {
+        // for (String b : strList) {
+        //
+        // list.add(new VariantIDStorable(b));
+        // }
+        // cf.setDisabledVariants(list);
+        // cf.setBlacklistedVariants(null);
+        // }
 
         return list;
     }

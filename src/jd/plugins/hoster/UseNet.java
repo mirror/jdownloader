@@ -8,6 +8,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
+import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.appwork.utils.net.usenet.UUInputStream;
+import org.appwork.utils.net.usenet.UnrecognizedCommandException;
+import org.appwork.utils.net.usenet.YEncInputStream;
+import org.jdownloader.plugins.components.usenet.SimpleUseNetDownloadInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetFile;
+import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.proxy.ProxyController;
 import jd.http.BrowserSettingsThread;
@@ -22,24 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.UsenetConfigInterface;
-import jd.plugins.components.UsenetConfigPanel;
-import jd.plugins.components.UsenetFile;
-import jd.plugins.components.UsenetFileSegment;
-import jd.plugins.components.UsenetServer;
 import jd.plugins.download.HashInfo;
-import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
-import org.appwork.utils.net.usenet.SimpleUseNet;
-import org.appwork.utils.net.usenet.UUInputStream;
-import org.appwork.utils.net.usenet.UnrecognizedCommandException;
-import org.appwork.utils.net.usenet.YEncInputStream;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })

@@ -1,4 +1,5 @@
-package jd.plugins.components;
+package org.jdownloader.plugins.components.usenet;
+
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

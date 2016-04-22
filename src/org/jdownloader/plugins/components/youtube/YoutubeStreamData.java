@@ -2,6 +2,8 @@ package org.jdownloader.plugins.components.youtube;
 
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
+import jd.http.QueryInfo;
+
 public class YoutubeStreamData {
 
     private YoutubeClipData clip;
@@ -76,11 +78,30 @@ public class YoutubeStreamData {
 
     private int    width;
     private String fps;
+    private int    projectionType;
+    private String qualityLabel;
 
-    public YoutubeStreamData(final YoutubeClipData vid, String url, YoutubeITAG itag) {
+    public YoutubeStreamData(final YoutubeClipData vid, String url, YoutubeITAG itag, QueryInfo query) {
         this.clip = vid;
         this.itag = itag;
         this.url = url;
+        if (query != null) {
+            this.qualityLabel = query.get("quality_label");
+            if (qualityLabel == null) {
+                qualityLabel = query.get("quality");
+            }
+            String v = query.get("projection_type");
+            projectionType = v == null ? -1 : Integer.parseInt(v);
 
+        }
+
+    }
+
+    public int getProjectionType() {
+        return projectionType;
+    }
+
+    public void setProjectionType(int projectionType) {
+        this.projectionType = projectionType;
     }
 }

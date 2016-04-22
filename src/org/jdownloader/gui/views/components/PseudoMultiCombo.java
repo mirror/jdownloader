@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.TooltipInterface;
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
@@ -236,6 +238,9 @@ public class PseudoMultiCombo<Type> extends ExtButton {
     }
 
     protected String getLabel(Type sc) {
+        if (sc instanceof LabelInterface) {
+            return ((LabelInterface) sc).getLabel();
+        }
         return sc + "";
     }
 
@@ -327,7 +332,11 @@ public class PseudoMultiCombo<Type> extends ExtButton {
             if (sb.length() > 0) {
                 sb.append("\r\n");
             }
-            sb.append(getLabel(t));
+            if (t instanceof TooltipInterface) {
+                sb.append(((TooltipInterface) t).getTooltip());
+            } else {
+                sb.append(getLabel(t));
+            }
         }
         return sb.toString();
     }

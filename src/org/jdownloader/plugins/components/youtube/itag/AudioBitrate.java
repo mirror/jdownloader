@@ -1,6 +1,9 @@
 package org.jdownloader.plugins.components.youtube.itag;
 
-public enum AudioBitrate {
+import org.appwork.storage.config.annotations.IntegerInterface;
+import org.appwork.storage.config.annotations.LabelInterface;
+
+public enum AudioBitrate implements IntegerInterface,LabelInterface {
     KBIT_128(128, 1000),
     KBIT_152(152, 1000),
     KBIT_160(160, 1000),
@@ -38,6 +41,11 @@ public enum AudioBitrate {
     public String getLabel() {
 
         return kbit + " kbit/s";
+    }
+
+    @Override
+    public int getInt() {
+        return kbit;
     }
 
 }

@@ -80,7 +80,9 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
 
     @Override
     public String _getName(Object caller) {
-
+        if (getGenericInfo() == null || StringUtils.isEmpty(getGenericInfo().getLanguage())) {
+            return _GUI.T.YoutubeBasicVariant_getLabel_subtitles();
+        }
         StringBuilder sb = new StringBuilder();
         if (getGenericInfo()._isTranslated()) {
             sb.append(_GUI.T.lit_translated());

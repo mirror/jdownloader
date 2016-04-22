@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
@@ -73,9 +74,7 @@ public class YoutubeClipData {
                 if (str.contains("side") && str.contains("by")) {
                     return true;
                 }
-                if (str.contains(" ou")) {
-                    return true;
-                }
+
                 if (str.contains("hou")) {
                     return true;
                 }
@@ -88,7 +87,38 @@ public class YoutubeClipData {
         return false;
     }
 
-    public boolean is3D() {
+    public Projection getProjection() {
+        if (is3D()) {
+            return Projection.ANAGLYPH_3D;
+        }
+        int highestProjection = -1;
+        for (Entry<YoutubeITAG, List<YoutubeStreamData>> s : streams.entrySet()) {
+            for (YoutubeStreamData stream : s.getValue()) {
+                highestProjection = Math.max(highestProjection, stream.getProjectionType());
+            }
+        }
+        int threeDLayout = -1;
+        try {
+            threeDLayout = approxThreedLayout == null ? -1 : Integer.parseInt(approxThreedLayout);
+        } catch (Throwable e) {
+
+        }
+        if (highestProjection == 2 && threeDLayout != 3) {
+            return Projection.SPHERICAL;
+        }
+        if (highestProjection == 3) {
+            return Projection.SPHERICAL_3D;
+        }
+        if (highestProjection == 2 && threeDLayout == 3) {
+            return Projection.SPHERICAL_3D;
+        }
+        if (guessSBSorHOU3D()) {
+            return Projection.ANAGLYPH_3D;
+        }
+        return Projection.NORMAL;
+    }
+
+    private boolean is3D() {
         // from yt player js
         if ("1".equals(approxThreedLayout)) {
             return true;
@@ -96,26 +126,6 @@ public class YoutubeClipData {
         if (keywords != null) {
             if (keywords.contains("3D")) {
                 return true;
-            }
-            StringBuilder sb = new StringBuilder();
-            for (String s : keywords) {
-                sb.append(" ").append(s.toLowerCase(Locale.ENGLISH));
-
-            }
-            String str = sb.toString();
-            if (str.contains("3d")) {
-                if (str.contains("sbs")) {
-                    return true;
-                }
-                if (str.contains("side") && str.contains("by")) {
-                    return true;
-                }
-                if (str.contains(" ou")) {
-                    return true;
-                }
-                if (str.contains("hou")) {
-                    return true;
-                }
             }
 
         }
@@ -130,7 +140,7 @@ public class YoutubeClipData {
                 return true;
             }
         }
-        return guessSBSorHOU3D();
+        return false;
     }
 
     @Override

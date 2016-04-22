@@ -28,7 +28,7 @@ public class SubtitleVariantInfo extends VariantInfo {
 
     private static List<YoutubeStreamData> createDummyList(YoutubeClipData vid, String url) {
         ArrayList<YoutubeStreamData> l = new ArrayList<YoutubeStreamData>();
-        l.add(new YoutubeStreamData(vid, url, YoutubeITAG.SUBTITLE));
+        l.add(new YoutubeStreamData(vid, url, YoutubeITAG.SUBTITLE, null));
         return l;
     }
 

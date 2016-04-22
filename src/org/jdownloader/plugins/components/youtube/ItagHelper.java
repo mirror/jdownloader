@@ -117,7 +117,7 @@ public class ItagHelper {
 
     public static void main(String[] args) throws DialogClosedException, DialogCanceledException, IOException {
         Application.setApplication(".jd_home");
-        fillCompatibility();
+        // fillCompatibility();
         EXCLUDES = new HashSet<String>();
         EXCLUDES.add("DEMUX_AMRNB_.*");
         EXCLUDES.add("DEMUX_.*_THREEGP.*");
@@ -204,7 +204,7 @@ public class ItagHelper {
         String baseID;
         vi.group = VariantGroup.VIDEO;
         vi.downloadType = DownloadType.DASH_VIDEO;
-
+        vi.container = videoContainer;
         vi.videoItag = dashVideo;
         vi.audioItag = dashAudio;
         vi.dataItag = null;
@@ -213,7 +213,6 @@ public class ItagHelper {
         } else {
 
             vi.baseName = baseName + "_3D";
-            vi.group = VariantGroup.VIDEO_3D;
 
             if (is3DItag) {
                 addVi(vi);
@@ -235,15 +234,17 @@ public class ItagHelper {
         vi.baseName = audioName;
         vi.group = VariantGroup.AUDIO;
         vi.downloadType = DownloadType.DASH_AUDIO;
-
+        vi.container = audioContainer2;
         vi.videoItag = null;
         // vi.getQualityExtensionMethod = "_GUI.T.YoutubeVariant_nametag_generic_audio(getAudioQuality())";
         // vi.getNameMethod = "_GUI.T.YoutubeVariant_name_generic_audio(getAudioQuality(), getAudioCodec())";
 
         addVi(vi);
-        if (audioCodec == AudioCodec.AAC) {
-            audioContainer2 = FileContainer.M4A;
+        switch (audioContainer2) {
+        case AAC:
 
+            audioContainer2 = FileContainer.M4A;
+            vi.container = audioContainer2;
             audioName = audioContainer2.name() + "_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT" + "_DASH";
 
             vi.baseName = audioName.toUpperCase(Locale.ENGLISH);
@@ -253,7 +254,6 @@ public class ItagHelper {
             // bitrate.getKbit() + ".getRating()");
 
             addVi(vi);
-
         }
 
     }
@@ -288,6 +288,7 @@ public class ItagHelper {
         case DASH_AUDIO:
             switch (audioCodec.getAudioCodec()) {
             case AAC:
+            case AAC_SPATIAL:
                 return FileContainer.AAC;
             default:
                 return FileContainer.OGG;
@@ -295,6 +296,7 @@ public class ItagHelper {
         default:
             switch (audioCodec.getAudioCodec()) {
             case AAC:
+            case AAC_SPATIAL:
                 return FileContainer.AAC;
             case MP3:
                 return FileContainer.MP3;
@@ -339,7 +341,7 @@ public class ItagHelper {
             sb.append(", ");
             sb.append("DownloadType." + downloadType.name());
             sb.append(", ");
-            sb.append("\"FileContainer.").append(container).append("\"");
+            sb.append("FileContainer.").append(container).append("");
             sb.append(", ");
 
             sb.append(videoItag == null ? "null" : ("YoutubeITAG." + videoItag));
@@ -348,8 +350,8 @@ public class ItagHelper {
             sb.append(", ");
             sb.append(dataItag == null ? "null" : ("YoutubeITAG." + dataItag));
             sb.append(", ");
-            sb.append("null");
-            sb.append(", ");
+            // sb.append("null");
+            // sb.append(", ");
             sb.append(converter);
             sb.append(")");
             if (extender != null) {
@@ -405,7 +407,6 @@ public class ItagHelper {
         } else {
 
             vi.baseName = baseName + "_3D";
-            vi.group = VariantGroup.VIDEO_3D;
 
             addVi(vi);
 
@@ -467,9 +468,10 @@ public class ItagHelper {
                 // ok
             } else {
                 System.out.println("Write " + vi.baseName + " replace " + existingVariant);
-                appendToSrc(vi.generateVariantSource(dupes), "// ###APPEND###");
-                removeFromSrc("\r\n\\s+" + existingVariant.name() + "\\(.*?\\}\\s*[,;]", "");
-                appendToSrc("COMPATIBILITY_MAP.put(\"" + existingVariant.name() + "\"," + vi.createName() + ");", "// ###APPEND_COMPATIBILITY_MAP###");
+                // appendToSrc(vi.generateVariantSource(dupes), "// ###APPEND###");
+                // removeFromSrc("\r\n\\s+" + existingVariant.name() + "\\(.*?\\}\\s*[,;]", "");
+                // appendToSrc("COMPATIBILITY_MAP.put(\"" + existingVariant.name() + "\"," + vi.createName() + ");", "//
+                // ###APPEND_COMPATIBILITY_MAP###");
             }
         }
     }
@@ -526,7 +528,7 @@ public class ItagHelper {
         case H264:
             switch (audioCodec) {
             case AAC:
-
+            case AAC_SPATIAL:
                 return true;
             default:
                 return false;
@@ -540,12 +542,13 @@ public class ItagHelper {
         case VP9_WORSE_PROFILE_1:
 
             switch (audioCodec) {
-            case OPUS:
-            case VORBIS:
-            case AMR:
-                return true;
-            default:
+            case AAC:
+            case AAC_SPATIAL:
+            case MP3:
                 return false;
+
+            default:
+                return true;
             }
         }
 

@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.components.youtube.variants.generics;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.plugins.components.youtube.Projection;
 
 public class GenericVideoInfo extends AbstractGenericVariantInfo implements Storable {
     public GenericVideoInfo(/* Storable */) {
@@ -22,14 +23,17 @@ public class GenericVideoInfo extends AbstractGenericVariantInfo implements Stor
         return width;
     }
 
-    private boolean threeD = false;
+    private Projection projection = null;
 
-    public boolean isThreeD() {
-        return threeD;
+    public Projection getProjection() {
+        if (projection == null) {
+            return Projection.NORMAL;
+        }
+        return projection;
     }
 
-    public void setThreeD(boolean threeD) {
-        this.threeD = threeD;
+    public void setProjection(Projection projection) {
+        this.projection = projection;
     }
 
     public void setWidth(int width) {

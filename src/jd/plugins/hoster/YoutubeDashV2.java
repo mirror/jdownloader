@@ -42,7 +42,9 @@ import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeLinkGrabberExtender;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleVariantOld;
@@ -92,8 +94,6 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
-import jd.plugins.hoster.youtube.YoutubeDashConfigPanel;
-import jd.plugins.hoster.youtube.YoutubeLinkGrabberExtender;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
@@ -1416,7 +1416,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                                 switch (v.getGroup()) {
                                 case VIDEO:
-                                case VIDEO_3D:
+
                                     String ext = Files.getExtension(child.getFinalFileName());
                                     if (StringUtils.isNotEmpty(ext)) {
                                         String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);

@@ -1,9 +1,12 @@
 package org.jdownloader.gui.translate;
 
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.DescriptionForTranslationEntry;
 import org.appwork.txtresource.TranslateInterface;
+import org.jdownloader.plugins.components.youtube.Projection;
+import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 
 @Defaults(lngs = { "en" })
 public interface GuiTranslation extends TranslateInterface {
@@ -181,7 +184,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Pause downloads. Limits global speed to %s1 KiB/s" })
     String gui_menu_action_break2_desc(Object s1);
 
-    @Default(lngs = { "en" }, values = { "action.premium.buy" })
+    @Default(lngs = { "en" }, values = { "Buy Premium" })
     String gui_menu_action_premium_buy_name();
 
     @Default(lngs = { "en" }, values = { "Do you want to reconnect your internet connection?" })
@@ -5964,7 +5967,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "My.JDownloader" })
     String action_myjdownloader_menu();
 
-    @Default(lngs = { "en" }, values = { "Video Description" })
+    @Default(lngs = { "en" }, values = { "Description" })
     String YoutubeBasicVariant_getLabel_description();
 
     @Default(lngs = { "en" }, values = { "Please add as much information as possible. If you want us to answer, please add your email address as well." })
@@ -6179,4 +6182,118 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Stream name/id *itag[audio]*->DASH_AUDIO_128K_AAC *itag[audioid]*->140" })
     String YoutubeHelper_getDescription_itag();
+
+    @Default(lngs = { "en" }, values = { "Hoster Logo" })
+    String HosterChooserTableModel_column_icon();
+
+    @Default(lngs = { "en" }, values = { "Domain" })
+    String HosterChooserTableModel_column_domain();
+
+    @Default(lngs = { "en" }, values = { "Typ/Features" })
+
+    String HosterChooserTableModel_column_features();
+
+    @Default(lngs = { "en" }, values = { "2. Enter your %s1 Login Information" })
+    String AddAccountDialog_layoutDialogContent_enterlogininfo2(String host);
+
+    @Default(lngs = { "en" }, values = { "Buy Premium for %s1" })
+    String gui_menu_action_premium_buy_name2(String tld);
+
+    @Default(lngs = { "en" }, values = { "The hoster you are looking for is not supported yet..." })
+
+    String AddAccountDialog_empty_table();
+
+    @Default(lngs = { "en" }, values = { "360° VR Video" })
+
+    String YoutubeBasicVariant_getLabel_video360();
+
+    @Default(lngs = { "en" }, values = { "360° 3D VR Video" })
+    String YoutubeBasicVariant_getLabel_video360_3D();
+
+    @Default(lngs = { "en" }, values = { "Name" })
+
+    String YOUTUBE_CONFIG_PANEL_TABLE_NAME();
+
+    @Default(lngs = { "en" }, values = { "Filetype" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE();
+
+    @Default(lngs = { "en" }, values = { "3D/360°" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION();
+
+    @Default(lngs = { "en" }, values = { "Width" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_WIDTH();
+
+    @Default(lngs = { "en" }, values = { "Height" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_HEIGHT();
+
+    @Default(lngs = { "en" }, values = { "Fps" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_FPS();
+
+    @Default(lngs = { "en" }, values = { "Video Codec" })
+
+    String YOUTUBE_CONFIG_PANEL_TABLE_VIDEO_CODEC();
+
+    @Default(lngs = { "en" }, values = { "Audio Codec" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_CODEC();
+
+    @Default(lngs = { "en" }, values = { "Audio Bitrate" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE();
+
+    @Default(lngs = { "en" }, values = { "Typ" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_TYPE();
+
+    @Default(lngs = { "en" }, values = { "Image: %s1" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_IMAGES(String _getName);
+
+    @Default(lngs = { "en" }, values = { "Description" })
+    String lit_desciption();
+
+    @Default(lngs = { "en" }, values = { "Image/Video Resolution" })
+
+    String YOUTUBE_CONFIG_PANEL_TABLE_RESOLUTION();
+
+    @Default(lngs = { "en" }, values = { "Please choose which media file combination your are interested in.\r\nExample: If JDownloader should not even offer you any 3gp videos or subtitles, simply disable these types below." })
+    String YoutubeDashConfigPanel_allowedtypoes_quick();
+
+    @Default(lngs = { "en" }, values = { "Let's get into detail. This table shows you all media file options remaining from your selection above. If there is anything left you do not want, simple disable it by clicking the checkbox.\r\nMerge ID:\r\nYou will not see all of these variants in the linkgrabber because several variants will be encapsulated according to their Merge ID. For each unique Merge ID, there will be one entry, that contains the best variant available." })
+
+    String YoutubeDashConfigPanel_allowedtypoes_table();
+
+    @Default(lngs = { "en" }, values = { "Enable" })
+    String lit_enable();
+
+    @Default(lngs = { "en" }, values = { "Disable" })
+    String lit_disable();
+
+    @Default(lngs = { "en" }, values = { "WARNING: All media variants are disabled by your filter settings above." })
+    String youtube_empty_table();
+
+    @Default(lngs = { "en" }, values = { "Adds 'Sperical' if this is a sperical 360° Video" })
+
+    String YoutubeHelper_getDescription_spherical();
+
+    @Default(lngs = { "en" }, values = { "Merge ID" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_GROUPING();
+
+    @Default(lngs = { "en" }, values = { "Image: %s1" })
+    String Youtube_imagevariant_name(String localeName);
+
+    @Default(lngs = { "en" }, values = { "Quality Rating" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_AUDIOPRIORITY();
+
+    @Default(lngs = { "en" }, values = { "JDownloader will not create an extra link for each of the variants above, but will try to add an link for each of the collection entries below. Each of them is a collection of one or more variants. JDownloader will choose the best of them and add it to the linkgrabber.\r\nHow to see which variants are in a collection -> Select it and the table above will show the contained variants\r\nHow to add a new collection -> Select the desired variants above > right click > Add link collection\r\nHow to delete collections -> right click > Delete" })
+    String YoutubeDashConfigPanel_links_description();
+
+    @Default(lngs = { "en" }, values = { "Add a Link Collection" })
+    String youtube_config_add_collection();
+
+    @Default(lngs = { "en" }, values = { "Best %s1 %s2" })
+    String Youtube_bestcollection(Projection p, VariantGroup g);
+
+    @Default(lngs = { "en" }, values = { "Best %s1" })
+
+    String Youtube_bestcollection_2(LabelInterface g);
+
+    @Default(lngs = { "en" }, values = { "Collection Size" })
+    String youtube_collection_size();
 }

@@ -15,6 +15,16 @@ public enum YoutubeITAG {
     // DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
     DASH_AUDIO_128K_WEBM(171, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
     DASH_AUDIO_192K_WEBM(172, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
+
+    // [bitrate=241311, spatial_audio_type=2, lmt=14 0754970951297, index=3318-3620, init=0-3317, clen=4606281,
+    // url=https%3A%2F%2Fr1---sn-4g57knzd.googlevideo.com%2Fvideoplayback%3Fsource%3Dyoutube%26nh%3DIgpwZjAxLmZyYTE1Kg04Ny4xMjguMjM2LjUz%26pl%3D19%26signature%3DA8263BC5CD261BEA4982973AB1547B69FEABFE06.727C49E18D216876C67D7C6FD40C026DE87F0ABF%26initcwndbps%3D591250%26gir%3Dyes%26sver%3D3%26expire%3D1461080045%26ms%3Dau%26clen%3D4606281%26mv%3Dm%26mt%3D1461058237%26ipbits%3D0%26mn%3Dsn-4g57knzd%26mm%3D31%26requiressl%3Dyes%26id%3Do-AG82gRa3_bivEt9zZg_17JLkO2U_RnxefRI9bwk2GiE3%26itag%3D339%26dur%3D174.353%26lmt%3D1460754970951297%26key%3Dyt6%26ip%3D79.196.104.182%26fexp%3D9408354%252C9416126%252C9416778%252C9416891%252C9420452%252C9422596%252C9424134%252C9426927%252C9427413%252C9428398%252C9431012%252C9431438%252C9432683%252C9432842%252C9433096%252C9433304%252C9433622%252C9433644%252C9433810%252C9433998%252C9434748%26sparams%3Dclen%252Cdur%252Cgir%252Cid%252Cinitcwndbps%252Cip%252Cipbits%252Citag%252Clmt%252Cmime%252Cmm%252Cmn%252Cms%252Cmv%252Cnh%252Cpl%252Crequiressl%252Csource%252Cupn%252Cexpire%26upn%3DmUoYdnZwYhM%26mime%3Daudio%252Fwebm,
+    // itag=339, type=audio%2Fwebm%3B+codecs%3D%22vorbis%22, projection_type=1]
+    DASH_AUDIO_256K_WEBM_SPATIAL(339, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS_SPATIAL, AudioBitrate.KBIT_256),
+    // [spatial_audio_type=1, init=0-605, lmt=1460754970147370, index=606-853, clen=5616983, bitrate=259110, projection_type=1,
+    // type=audio%2Fmp4%3B+codecs%3D%22mp4a.40.2%22,
+    // url=https%3A%2F%2Fr2---sn-4g5edn7z.googlevideo.com%2Fvideoplayback%3Fid%3Do-AM3XLfNyTxE2x34ifu9haXJBgInh7OqK5HMgIyPhnW9u%26upn%3Del01TRTB5oc%26ipbits%3D0%26key%3Dyt6%26ip%3D79.196.104.182%26pl%3D19%26sver%3D3%26requiressl%3Dyes%26signature%3D21BFCCF29B9EAAF84E6390EB46C4137927D61E8C.0BA2280F90383C044A5045C703DDC27C4902AA3D%26initcwndbps%3D682500%26nh%3DIgpwZjAyLmZyYTE1Kg0yMDkuODUuMTcyLjY3%26sparams%3Dclen%252Cdur%252Cgir%252Cid%252Cinitcwndbps%252Cip%252Cipbits%252Citag%252Clmt%252Cmime%252Cmm%252Cmn%252Cms%252Cmv%252Cnh%252Cpl%252Crequiressl%252Csource%252Cupn%252Cexpire%26fexp%3D9416126%252C9416891%252C9420452%252C9422596%252C9426201%252C9426926%252C9427547%252C9428334%252C9428398%252C9429610%252C9430016%252C9430814%252C9431012%252C9431449%252C9431685%252C9432683%252C9432773%252C9433097%252C9433181%252C9433275%252C9433720%252C9434065%26expire%3D1461080242%26itag%3D327%26mime%3Daudio%252Fmp4%26source%3Dyoutube%26ms%3Dau%26mt%3D1461058587%26mv%3Dm%26clen%3D5616983%26lmt%3D1460754970147370%26gir%3Dyes%26dur%3D174.421%26mm%3D31%26mn%3Dsn-4g5edn7z,
+    // itag=327]
+    DASH_AUDIO_256K_AAC_SPATIAL(327, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_256),
     DASH_AUDIO_256K_AAC(141, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_256),
     DASH_AUDIO_48K_AAC(139, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_48),
     DASH_AUDIO_OPUS_160KBIT(251, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_160),
@@ -49,7 +59,7 @@ public enum YoutubeITAG {
     DASH_VIDEO_ITAG315_VP9_1920P_60FPS(315, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.VP9, VideoFrameRate.FPS_60),
     DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.VP9, VideoFrameRate.FPS_60),
     // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
-    DASH_VIDEO_ORIGINAL_H264_GENERIC_4K(138, StreamContainer.DASH_VIDEO, VideoResolution.P_2160_ESTIMATED, VideoCodec.H264, VideoFrameRate.FPS_30),
+    DASH_VIDEO_ORIGINAL_H264_GENERIC_4K(138, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_ORIGINAL_H264_GENERIC_1080P(138, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30),
 
     // https://www.youtube.com/watch?v=sLprVF6d7Ug
@@ -119,7 +129,7 @@ public enum YoutubeITAG {
     MP4_VIDEO_720P_H264_AUDIO_AAC_V1(22, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
     MP4_VIDEO_720P_H264_AUDIO_AAC_V3(22, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_152),
     // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
-    MP4_VIDEO_AUDIO_ORIGINAL(38, StreamContainer.MP4, VideoResolution.P_2160_ESTIMATED, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
+    MP4_VIDEO_AUDIO_ORIGINAL(38, StreamContainer.MP4, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
     // fake id
     SUBTITLE(10002, StreamContainer.PLAIN, MediaTagsVarious.SUBTITLE),
 
@@ -160,7 +170,9 @@ public enum YoutubeITAG {
     HLS_VIDEO_MP4_720P_AUDIO_AAC(95, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
     HLS_VIDEO_MP4_720P_AUDIO_AAC_300(300, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
 
-    HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256);
+    HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256)
+
+    ;
     private static HashMap<Integer, List<YoutubeITAG>> TAG_MAP = new HashMap<Integer, List<YoutubeITAG>>();
 
     static {
@@ -481,7 +493,9 @@ public enum YoutubeITAG {
         if (videoCodec != null) {
             r += videoCodec.getRating();
         }
-
+        if (imageQuality != null) {
+            r += imageQuality.getRating();
+        }
         if (videoFrameRate != null) {
             r += videoFrameRate.getRating();
         }

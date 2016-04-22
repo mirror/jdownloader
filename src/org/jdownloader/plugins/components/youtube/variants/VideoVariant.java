@@ -11,6 +11,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.youtube.Projection;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
@@ -20,25 +21,41 @@ import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.generics.GenericVideoInfo;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.translate._JDT;
 
 public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements VideoInterface, AudioInterface {
     public VideoVariant(VariantBase base) {
         super(base);
     }
 
-    @Override
-    public VariantGroup getGroup() {
-        if (getGenericInfo().isThreeD()) {
-            return VariantGroup.VIDEO_3D;
-        }
-        return VariantGroup.VIDEO;
-    }
+    // @Override
+    // public VariantGroup getGroup() {
+    // switch (getGenericInfo().getProjection()) {
+    // case ANAGLYPH_3D:
+    // return VariantGroup.VIDEO_3D;
+    // case SPHERICAL:
+    // return VariantGroup.VIDEO_360;
+    // case SPHERICAL_3D:
+    // return VariantGroup.VIDEO_3D_360;
+    // case NORMAL:
+    // return VariantGroup.VIDEO;
+    // default:
+    // throw new WTFException();
+    // }
+    //
+    // }
 
     @Override
     public String createAdvancedName() {
-        if (getGroup() == VariantGroup.VIDEO_3D) {
+        switch (getProjection()) {
+        case SPHERICAL:
+            return "360° VR, " + super.createAdvancedName();
+        case ANAGLYPH_3D:
             return "3D, " + super.createAdvancedName();
+        case SPHERICAL_3D:
+            return "360° VR, 3D, " + super.createAdvancedName();
         }
+
         return super.createAdvancedName();
     }
 
@@ -60,23 +77,52 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         id = id.replace("*FPS*", getVideoFrameRate() + "");
         id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
-        id = id.replace("*3D*", (getGroup() == VariantGroup.VIDEO_3D ? "3D" : ""));
+        switch (getProjection()) {
+        case NORMAL:
+            id = id.replace("*360*", "");
+            id = id.replace("*3D*", "");
+            break;
+        case SPHERICAL:
+            id = id.replace("*360*", "360°");
+            id = id.replace("*3D*", "");
+            break;
+        case ANAGLYPH_3D:
+            id = id.replace("*3D*", "3D");
+            id = id.replace("*360*", "");
+            break;
+        case SPHERICAL_3D:
+            id = id.replace("*3D*", "3D");
+            id = id.replace("*360*", "360°");
+            break;
+        }
 
+        switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
+        case AAC_SPATIAL:
+        case VORBIS_SPATIAL:
+            id = id.replace("*SURROUND*", "Spatial");
+            break;
+        default:
+            id = id.replace("*SURROUND*", "");
+        }
         id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
         return id;
 
     }
 
+    public Projection getProjection() {
+        return getGenericInfo().getProjection();
+    }
+
     @Override
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
 
-        if (vid != null && vid.is3D()) {
+        if (vid != null) {
             //
-            getGenericInfo().setThreeD(true);
+            getGenericInfo().setProjection(vid.getProjection());
 
         }
         if (getBaseVariant().name().contains("_3D")) {
-            getGenericInfo().setThreeD(true);
+            getGenericInfo().setProjection(Projection.ANAGLYPH_3D);
         }
 
         if (video != null) {
@@ -126,6 +172,22 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     }
 
     @Override
+    public double getQualityRating() {
+        double base = getBaseVariant().getQualityRating();
+        if (getGenericInfo().getHeight() > 0) {
+            // we got the actuall height. let's use it for quality rating
+            base -= getBaseVariant().getiTagVideo().getVideoResolution().getRating();
+            base += Math.min(getGenericInfo().getWidth(), getGenericInfo().getHeight());
+        }
+        return base;
+    }
+
+    @Override
+    public String getStandardGroupingID() {
+        return getGroup().name() + "_" + getProjection().name();
+    }
+
+    @Override
     public String _getName(Object caller) {
 
         String id = TYPE_ID_PATTERN;
@@ -133,30 +195,57 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
         id = id.replace("*HEIGHT*", getVideoHeight() + "");
         id = id.replace("*FPS*", getVideoFrameRate() + "");
-        id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
+        id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
-        id = id.replace("*3D*", (getGroup() == VariantGroup.VIDEO_3D ? " [3D]" : ""));
+        switch (getProjection()) {
+        case NORMAL:
+            id = id.replace("*360*", "");
+            id = id.replace("*3D*", "");
+            break;
+        case SPHERICAL:
+            id = id.replace("*360*", "[360°]");
+            id = id.replace("*3D*", "");
+            break;
+        case ANAGLYPH_3D:
+            id = id.replace("*3D*", "[3D]");
+            id = id.replace("*360*", "");
+            break;
+        case SPHERICAL_3D:
+            id = id.replace("*3D*", "[3D]");
+            id = id.replace("*360*", "[360°]");
+            break;
+        }
+        switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
+        case AAC_SPATIAL:
+        case VORBIS_SPATIAL:
+            id = id.replace("*SPATIAL*", _JDT.T.YOUTUBE_surround());
+            break;
+        default:
+            id = id.replace("*SPATIAL*", "");
+        }
 
+        id = id.trim().replace(" - ", "-").replaceAll("[ ]+", " ");
         return id.trim();
 
     }
 
     @Override
     public String getFileNamePattern() {
-        if (getGroup() == VariantGroup.VIDEO_3D) {
-            return PluginJsonConfig.get(YoutubeConfig.class).getVideo3DFilenamePattern();
-        }
+
         return PluginJsonConfig.get(YoutubeConfig.class).getVideoFilenamePattern();
     }
 
     @Override
     public String getFileNameQualityTag() {
+        switch (getProjection()) {
 
-        switch (getGroup()) {
+        case SPHERICAL:
+            return getVideoHeight() + "p " + getVideoFrameRate() + "fps" + " 360VR";
 
-        case VIDEO_3D:
-
+        case ANAGLYPH_3D:
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps" + " 3D";
+        case SPHERICAL_3D:
+            return getVideoHeight() + "p " + getVideoFrameRate() + "fps" + " 360VR 3D";
         default:
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps";
         }
