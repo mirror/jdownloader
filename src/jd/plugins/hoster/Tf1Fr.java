@@ -27,7 +27,6 @@ import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -45,10 +44,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wat.tv" }, urls = { "http://(www\\.)?wat\\.tv/video/.*?\\.html" }, flags = { 0 })
-public class WatTv extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tf1.fr" }, urls = { "https?://(?:www\\.)?(wat\\.tv/video/.*?|tf1\\.fr/.+/videos/[A-Za-z0-9\\-_]+)\\.html" }, flags = { 0 })
+public class Tf1Fr extends PluginForHost {
 
-    public WatTv(final PluginWrapper wrapper) {
+    public Tf1Fr(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -62,34 +61,48 @@ public class WatTv extends PluginForHost {
     private final boolean enable_oauth_api                  = false;
 
     private String        video_id                          = null;
+    private String        uvid                              = null;
 
     @Override
     public String getAGBLink() {
         return "http://www.wat.tv/cgu";
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("wat.tv".equals(getHost())) {
+            if (host == null || "freakshare.net".equals(host)) {
+                return "tf1.fr";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    /* 2016-04-22: Changed domain from wat.tv to tf1.fr - everything else mostly stays the same */
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        video_id = null;
+        uvid = null;
         String filename = null;
         setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(410);
         if (enable_oauth_api) {
             /* thx to: https://github.com/olamedia/medialink/blob/master/mediaDrivers/watTvMediaLinkDriver.php */
             /* xml also possible */
             br.getPage("http://www.wat.tv/interface/oembed/json?url=http%3A%2F%2Fwww.wat.tv%2Fvideo%2F" + downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/")) + "&oembedtype=wattv");
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             filename = (String) entries.get("title");
             final String html = (String) entries.get("html");
             video_id = new Regex(html, "id=\"wat_(\\d{8})\"").getMatch(0);
         } else {
-            try {
-                br.getPage(downloadLink.getDownloadURL());
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>") || br.getHttpConnection().getResponseCode() == 404) {
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
@@ -103,11 +116,8 @@ public class WatTv extends PluginForHost {
             if (video_id == null) {
                 video_id = br.getRegex("xtpage = \"[^;]+video\\-(\\d{6,8})\";").getMatch(0);
             }
-            if (video_id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
-        if (filename == null || filename.equals("") || video_id == null) {
+        if (filename == null || filename.equals("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = encodeUnicode(filename);
@@ -128,13 +138,16 @@ public class WatTv extends PluginForHost {
             videolink = getAndroidURL(video_id);
         } else {
             String getpage = null;
-            /* Contentv4 is used on the website but it returns information that we don't need */
-            br2.getPage("http://www.wat.tv/interface/contentv3/" + video_id);
+            /*
+             * Contentv4 is used on the website but it returns information that we don't need --> 2016-04-22: contentv3 no longer works,
+             * returns 400
+             */
+            br2.getPage("http://www.wat.tv/interface/contentv3/" + uvid);
             String quality = "/web/", country = "DE";
             if (br2.containsHTML("\"hasHD\":true")) {
                 quality = "/webhd/";
             }
-            final String token = computeToken(quality, video_id);
+            final String token = computeToken(quality, uvid);
             if (br2.containsHTML("\"geolock\":true")) {
                 country = "FR";
             }
@@ -142,15 +155,15 @@ public class WatTv extends PluginForHost {
                 /* Their embed players get http urls for some reason. */
                 /* Referer header not needed */
                 br2.getHeaders().put("Referer", "http://www.wat.tv/images/v40/LoaderExportV3.swf?revision=4.1.243&baseUrl=www.wat.tv&v40=1&videoId=" + this.video_id + "&playerType=watPlayer&browser=firefox&context=swf2&referer=undefined&ts=nnznqq&oasTag=WAT%2Fnone%2Fp%2Fle-comte-de-bouderbala&embedMode=direct&isEndAd=1");
-                getpage = "http://www.wat.tv/get" + quality + video_id + "?token=" + token + "&domain=www.wat.tv&domain2=null&refererURL=%2Fimages%2Fv40%2FLoaderExportV3.swf%3Frevision%3D4.1.243%26baseUrl%3Dwww.wat.tv%26v40%3D1%26videoId%3D" + this.video_id + "%26playerType%3DwatPlayer%26browser%3Dfirefox%26context%3Dswf2%26referer%3Dundefined%26ts%3Dnnznqq%26oasTag%3DWAT%252Fnone%252Fp%252Fle-comte-de-bouderbala%26embedMode%3Ddirect%26isEndAd%3D1&revision=4.1.243&synd=0&helios=1&context=swf2&pub=1&country=" + country + "&sitepage=WAT%2Fnone%2Fp%2Fle-comte-de-bouderbala&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2017,0,0,169";
+                getpage = "http://www.wat.tv/get" + quality + uvid + "?token=" + token + "&domain=www.tf1.fr&domain2=null&refererURL=wat.tv&revision=04.00.829%0A&synd=0&helios=1&context=swf2&pub=1&country=" + country + "&sitepage=nt1.tv&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2021,0,0,213";
             } else {
                 /* We'll just leave this out: ?videoId=73rcb */
                 /* Referer header not needed */
                 br2.getHeaders().put("Referer", "http://www.wat.tv/images/v70/PlayerLite.swf");
-                getpage = "http://www.wat.tv/get" + quality + video_id + "?token=" + token + "&domain=www.wat.tv&refererURL=wat.tv&revision=04.00.759%0A&synd=0&helios=1&context=playerWat&pub=1&country=" + country + "&sitepage=WAT%2Fhumour%2Fp%2Fle-comte-de-bouderbala&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2017,0,0,169";
+                getpage = "http://www.wat.tv/get" + quality + uvid + "?token=" + token + "&domain=www.tf1.fr&refererURL=wat.tv&revision=04.00.829%0A&synd=0&helios=1&context=playerWat&pub=1&country=" + country + "&sitepage=nt1.tv&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2021,0,0,213";
             }
             br2.getPage(getpage);
-            if (br2.containsHTML("No htmlCode read")) {
+            if (br2.toString().length() < 25) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Video not available in your country!");
             }
             videolink = br2.toString();
@@ -171,6 +184,22 @@ public class WatTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (this.video_id == null) {
+            /* 2016-04-22: Domainchange from wat.tv to tf1.fr so now the way to get the video_id is slightly different */
+            final String embedframe_id = this.br.getRegex("/embedframe/([^<>\"\\'/]+)").getMatch(0);
+            if (embedframe_id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage("http://www.wat.tv/embedframe/" + embedframe_id);
+            video_id = br.getRegex("videoId=([A-Za-z0-9]+)").getMatch(0);
+            uvid = this.br.getRegex("iphoneId[\t\n\r ]*?:[\t\n\r ]*?\"([^\"]+)\"").getMatch(0);
+            if (uvid == null) {
+                uvid = this.br.getRegex("UVID=([^<>\"\\&]+)").getMatch(0);
+            }
+        }
+        if (video_id == null || uvid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String finallink = getFinalLink();
         if (finallink.startsWith("rtmp")) {
             /* Old */
