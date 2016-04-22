@@ -66,7 +66,7 @@ public class DwnSo extends PluginForHost {
             }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         } else {
-            if (br.getURL().contains("dwn.so/?error=not_found") || br.getURL().equals("http://dwn.so/") || br.containsHTML("<title>Upload Files \\- DwnShare</title>")) {
+            if (br.getURL().contains("dwn.so/?error=not_found") || br.getURL().equals("http://dwn.so/") || br.containsHTML("<title>(Upload Files \\- DwnShare|404 Not Found)</title>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = br.getRegex("<title>([^<>\"]*?) \\- Download File \\- DwnShare</title>").getMatch(0);
