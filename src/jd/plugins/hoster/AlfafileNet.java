@@ -151,24 +151,19 @@ public class AlfafileNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             final String fid = getFileID(downloadLink);
-            this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getPage("/download/start_timer/" + fid);
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("/download/start_timer/" + fid);
             final String reconnect_wait = br.getRegex("Try again in (\\d+) minutes").getMatch(0);
-            if (this.br.containsHTML(">This file can be downloaded by premium users only|>You can download files up to")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            if (br.containsHTML(">This file can be downloaded by premium users only|>You can download files up to")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (reconnect_wait != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(reconnect_wait) * 60 * 1001l);
+            } else if (br.containsHTML("You can't download not more than \\d+ file at a time")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many max sim dls", 20 * 60 * 1000l);
             }
             int wait = 45;
-            String wait_str = this.br.getRegex(">(\\d+) <span>s<").getMatch(0);
+            String wait_str = br.getRegex(">(\\d+) <span>s<").getMatch(0);
             if (wait_str != null) {
                 wait = Integer.parseInt(wait_str);
             }
@@ -177,8 +172,8 @@ public class AlfafileNet extends PluginForHost {
                 redirect_url = "/file/" + fid + "/captcha";
             }
             this.sleep(wait * 1001l, downloadLink);
-            this.br.getPage(redirect_url);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            br.getPage(redirect_url);
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
             }
             this.br.setFollowRedirects(true);
@@ -236,11 +231,7 @@ public class AlfafileNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -260,10 +251,6 @@ public class AlfafileNet extends PluginForHost {
 
     private void prepBR() {
         this.br.setCookie(this.getHost(), "lang", "en");
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
