@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +45,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
@@ -767,7 +767,7 @@ public class OneFichierCom extends PluginForHost {
 
     /**
      * Makes sure that we're allowed to download a link. This function will also find out of a link is password protected.
-     *
+     * 
      * @throws IOException
      */
     private void checkDownloadable() throws PluginException, IOException {
@@ -777,6 +777,8 @@ public class OneFichierCom extends PluginForHost {
             if (br.containsHTML(this.HTML_PASSWORDPROTECTED)) {
                 logger.info("Link is password protected");
                 this.pwProtected = true;
+            } else if (br.containsHTML("Access to download")) {
+                logger.info("Download is possible");
             } else {
                 logger.info("Link is PRIVATE");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");
