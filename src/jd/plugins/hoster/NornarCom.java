@@ -113,7 +113,7 @@ public class NornarCom extends PluginForHost {
     // mods: heavily modified, do NOT upgrade!
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
-    // captchatype: solvemedia
+    // captchatype: recaptchav2
     // other:
     // TODO: Add case maintenance + alternative filesize check
 

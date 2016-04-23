@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvideo.io", "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitvideo\\.io/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" }, flags = { 0, 0 })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
@@ -44,8 +44,6 @@ public class BitvideoIo extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".flv";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -55,7 +53,7 @@ public class BitvideoIo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.bitvideo.io/?c=tos";
+        return "http://www.bitporno.sx/?c=tos";
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
@@ -66,7 +64,7 @@ public class BitvideoIo extends PluginForHost {
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         /* Only use one of their domains */
-        br.getPage("http://www.bitvideo.io/?v=" + fid);
+        br.getPage("http://www.bitporno.sx/?v=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -100,11 +98,7 @@ public class BitvideoIo extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = getFileNameExtensionFromString(dllink);
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".flv");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

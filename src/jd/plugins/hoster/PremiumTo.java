@@ -19,13 +19,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -288,8 +286,6 @@ public class PremiumTo extends UseNet {
                     url = url.replaceFirst("freakshare.com/", "fs.com/");
                 } else if (url.startsWith("depositfiles.com/")) {
                     url = url.replaceFirst("depositfiles.com/", "df.com/");
-                } else if (url.startsWith("filepost.com/")) {
-                    url = url.replaceFirst("filepost.com/", "fp.com/");
                 } else if (url.startsWith("turbobit.net/")) {
                     url = url.replaceFirst("turbobit.net/", "tb.net/");
                 } else if (url.startsWith("filefactory.com/")) {
@@ -590,12 +586,12 @@ public class PremiumTo extends UseNet {
         return -10;
     }
 
-    @Override
-    public List<UsenetServer> getAvailableUsenetServer() {
-        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", false, 119, 81));
-        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 563, 444));
-        return ret;
-    }
+    // @Override
+    // public List<UsenetServer> getAvailableUsenetServer() {
+    // final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+    // ret.addAll(UsenetServer.createServerList("usenet2.premium.to", false, 119, 81));
+    // ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 563, 444));
+    // return ret;
+    // }
 
 }

@@ -27,20 +27,19 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "http://(www\\.)?heavy\\-r\\.com/video/\\d+" }, flags = { 0 })
-public class HeavyRCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "http://(www\\.)?heavy-r\\.com/video/\\d+" }, flags = { 0 })
+public class HeavyRCom extends antiDDoSForHost {
 
     public HeavyRCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String NICE_HOST         = "reavy-r.com";
-    private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|-)", "");
     private static final String NORESUME          = NICE_HOSTproperty + "NORESUME";
 
-    private String              DLLINK            = null;
+    private String              dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -49,17 +48,17 @@ public class HeavyRCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String url = downloadLink.getDownloadURL();
         if (url.matches(".+\\d+$")) {
             url = url + "/x/";
         }
-        br.getPage(url);
+        getPage(url);
         if (br.containsHTML("404 - Not Found")) {
-            br.getPage(url);
+            getPage(url);
         }
         if (br.containsHTML("Video not found!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,13 +67,13 @@ public class HeavyRCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("file: \'(http://[^<>\"]*?)\'").getMatch(0);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = getFileNameExtensionFromString(dllink);
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
@@ -85,7 +84,7 @@ public class HeavyRCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             br2.getHeaders().put("Range", "bytes=" + 0 + "-");
-            con = openConnection(br2, DLLINK);
+            con = openConnection(br2, dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -113,7 +112,7 @@ public class HeavyRCom extends PluginForHost {
             maxchunks = 1;
         }
         downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             downloadLink.setChunksProgress(null);

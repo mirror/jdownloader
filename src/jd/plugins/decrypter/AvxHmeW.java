@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.in" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

@@ -27,6 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,12 +55,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
@@ -266,7 +266,7 @@ public class XFileSharingProBasic extends PluginForHost {
              */
             fileInfo[0] = this.fuid + ".jpg";
         }
-        if (inValidate(fileInfo[0]) || fileInfo[0].equals("")) {
+        if (inValidate(fileInfo[0])) {
             /*
              * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin
              * code needs to be updated in this case!

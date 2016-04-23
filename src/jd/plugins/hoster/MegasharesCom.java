@@ -269,7 +269,7 @@ public class MegasharesCom extends PluginForHost {
             if (captchaAddress == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
+            HashMap<String, String> input = HTMLParser.getInputHiddenFields(br.toString());
 
             String code = getCaptchaCode(captchaAddress, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + System.currentTimeMillis();

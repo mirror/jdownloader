@@ -96,7 +96,7 @@ public class File4GoCom extends PluginForHost {
         if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores") || br.getURL().endsWith("/404.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">Nome:</b>\\s*(.*?)\\s*</span>").getMatch(0);
+        String filename = br.getRegex(">Nome:</b>\\s*(.*?)\\s*(?:</p>)?</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div id=\"titulo_a\">\\s*(.*?)\\s*</div>").getMatch(0);
             if (filename == null) {
