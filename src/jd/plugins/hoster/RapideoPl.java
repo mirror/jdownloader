@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,8 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapideo.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class RapideoPl extends PluginForHost {
 
@@ -53,8 +53,8 @@ public class RapideoPl extends PluginForHost {
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String[][]                        HOSTS              = { { "vip-file", "vip-file.com" }, { "unibytes", "unibytes.com" }, { "uptobox", "uptobox.com" }, { "fileshark", "fileshark.pl" }, { "megaszafa", "megaszafa.com" }, { "nowvideo", "nowvideo.sx" }, { "divxstage", "divxstage.eu" }, { "oboom", "oboom.com" }, { "rapidu", "rapidu.net" }, { "ddlstorage", "ddlstorage.com" }, { "uploadable", "uploadable.ch" }, { "secureupload", "secureupload.eu" }, { "uloz", "uloz.to" }, { "cloudstor", "cloudstor.es" }, { "1fichier", "1fichier.com" }, { "datafile", "datafile.com" }, { "terafile", "terafile.co" }, { "hugefiles", "hugefiles.net" }, { "zippyshare", "zippyshare.com" }, { "fastshare", "fastshare.cz" }, { "lunaticfiles", "lunaticfiles.com" }, { "fileparadox", "fileparadox.in" }, { "filesmonster", "filesmonster.com" }, { "hd3d", "hd3d.cc" }, { "lumfile", "lumfile.com" },
-        { "catshare", "catshare.org" }, { "ultramegabit", "ultramegabit.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "letitbit", "letitbit.net" }, { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" }, { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" },
-            { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
+            { "catshare", "catshare.org" }, { "ultramegabit", "ultramegabit.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "letitbit", "letitbit.net" }, { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "4shared", "4shared.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "videobb", "videobb.com" }, { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" },
+            { "glumbouploads", "glumbouploads.com" } };
 
     public RapideoPl(PluginWrapper wrapper) {
         super(wrapper);

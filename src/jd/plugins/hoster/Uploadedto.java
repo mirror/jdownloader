@@ -40,6 +40,12 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -66,12 +72,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -946,14 +946,7 @@ public class Uploadedto extends PluginForHost {
     private void generalFreeErrorhandling(final Account account) throws PluginException {
         /* "err" strings: */
         if (br.containsHTML("\"err\":\"This file exceeds the max")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (br.containsHTML("\"err\":\"Sharing this type of file is prohibited")) {
             logger.info("File offline after captcha...");

@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -45,8 +44,6 @@ public class MyviRu extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".flv";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* Chunkload possible but not really stable --> Disable it right away */
@@ -128,11 +125,7 @@ public class MyviRu extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -143,7 +136,7 @@ public class MyviRu extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -204,20 +197,6 @@ public class MyviRu extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

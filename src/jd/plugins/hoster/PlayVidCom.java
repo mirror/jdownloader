@@ -51,7 +51,7 @@ public class PlayVidCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -92,8 +92,8 @@ public class PlayVidCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         String filename = downloadLink.getStringProperty("directname", null);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
             /* Refresh directlink */
             br.getPage(downloadLink.getStringProperty("mainlink", null));
             if (isOffline(this.br)) {
@@ -107,22 +107,22 @@ public class PlayVidCom extends PluginForHost {
                 logger.info("User is not logged in but tries to download a quality which needs login");
                 return AvailableStatus.TRUE;
             }
-            DLLINK = getQuality(downloadLink.getStringProperty("qualityvalue", null), videosource);
+            dllink = getQuality(downloadLink.getStringProperty("qualityvalue", null), videosource);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(filename);
         // In case the link redirects to the finallink
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(DLLINK);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -144,7 +144,7 @@ public class PlayVidCom extends PluginForHost {
             logger.info("User is not logged in but tries to download a quality which needs login");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -329,6 +329,11 @@ public class PlayVidCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.playvidcom.check360p", "Grab 360p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.playvidcom.check480p", "Grab 480p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, JDL.L("plugins.hoster.playvidcom.check720p", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+    }
+
+    public Browser prepBrowser(final Browser prepBr) {
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        return prepBr;
     }
 
     @Override

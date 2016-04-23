@@ -38,6 +38,7 @@ public class WeTransferCom extends PluginForHost {
     private String hash   = null;
     private String code   = null;
     private String dllink = null;
+    private String param  = null;
 
     public WeTransferCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -102,10 +103,16 @@ public class WeTransferCom extends PluginForHost {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
             final LinkedHashMap<String, Object> field = (LinkedHashMap<String, Object>) entries.get("fields");
             final String action = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "formdata/action");
+            final String method = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "formdata/method");
             if (action == null || field == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = action + "?" + processJson(field.toString().substring(1, field.toString().length() - 1));
+            if ("GET".equalsIgnoreCase(method)) {
+                dllink = action + "?" + processJson(field.toString().substring(1, field.toString().length() - 1));
+            } else {
+                dllink = action;
+                param = processJson(field.toString().substring(1, field.toString().length() - 1));
+            }
         }
         if (dllink != null) {
             String filename = new Regex(Encoding.htmlDecode(dllink), "filename=([^&]+)").getMatch(0);
@@ -175,10 +182,11 @@ public class WeTransferCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         // More chunks are possible for some links but not for all
-        /*
-         * 20160415-raztoki <br /> done within get. but could be specified which type via json response. I've only seen gets. removed post
-         */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        if (param != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, param, true, -2);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("<title>Error while downloading your file")) {

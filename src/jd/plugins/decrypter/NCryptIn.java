@@ -74,13 +74,9 @@ public class NCryptIn extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         br = new Browser();
         dupe.clear();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("open-", "folder-").replace("urlcrypt.com/", "ncrypt.in/");
-        try {
-            br.setLoadLimit(16777216);
-        } catch (final Throwable e) {
-            // Not available in old 0.9.581 Stable
-        }
+        br.setLoadLimit(16777216);
         if (parameter.contains("ncrypt.in/link")) {
             final String finallink = decryptSingle(parameter);
             if (finallink == null) {

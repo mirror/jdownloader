@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,9 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class SuperdownComBr extends PluginForHost {
 
@@ -51,8 +51,8 @@ public class SuperdownComBr extends PluginForHost {
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     private static Object                                  LOCK               = new Object();
-    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "Bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "Letitbit", "letitbit.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "Megashares", "megashares.com" },
-        { "mightyupload", "mightyupload.com" }, { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Terafile", "terafile.co" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Jumbofiles", "jumbofiles.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
+    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "Bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "Letitbit", "letitbit.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "Megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "novafile", "novafile.com" },
+            { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Terafile", "terafile.co" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);

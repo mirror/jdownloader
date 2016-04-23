@@ -27,7 +27,6 @@ public class UlInstantPw extends PluginForHost {
     private int                        maxChunks       = 0;
     private final static AtomicInteger maxDownloads    = new AtomicInteger(10);
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         URLConnectionAdapter connection = null;
@@ -76,7 +75,6 @@ public class UlInstantPw extends PluginForHost {
         return maxDownloads.get();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
