@@ -30,6 +30,11 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashget.com" }, urls = { "flashget://.+&?" }, flags = { 0 })
 public class FlshGt extends PluginForDecrypt {
 
+    @Override
+    public Boolean siteTesterDisabled() {
+        return true;
+    }
+
     public FlshGt(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
@@ -39,7 +44,9 @@ public class FlshGt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = Encoding.Base64Decode(new Regex(parameter.toString(), "flashget://(.*?)&|$").getMatch(0));
-        if (url == null) return null;
+        if (url == null) {
+            return null;
+        }
         url = url.replaceAll("(\\[FLASHGET\\])", "");
         decryptedLinks.add(this.createDownloadlink(url));
         return decryptedLinks;
