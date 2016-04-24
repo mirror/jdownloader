@@ -81,7 +81,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         try {
             if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
                 cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-                id = new Regex(parameter, "\\&resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
+                id = new Regex(parameter, "(?:&|\\?)resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
             } else if (parameter.matches(TYPE_ONEDRIVE_REDIRECT_RESID) || parameter.matches(TYPE_SKYDRIVE_REDIRECT_RESID) || parameter.matches(TYPE_ONEDRIVE_VIEW_RESID)) {
                 final Regex fInfo = new Regex(parameter, "\\?resid=([A-Za-z0-9]+)(\\!\\d+)");
                 cid = fInfo.getMatch(0);
@@ -116,13 +116,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 if (id == null) {
                     id = getLastID(parameter);
                 }
-                authkey = new Regex(redirect, "\\&authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
+                authkey = new Regex(redirect, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
             } else {
                 cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
                 id = getLastID(parameter);
             }
             if (authkey == null) {
-                authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
+                authkey = new Regex(parameter, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
             }
             if (!parameter.matches(TYPE_ONEDRIVE_ROOT) && (cid == null || id == null)) {
                 if (cid != null) {
