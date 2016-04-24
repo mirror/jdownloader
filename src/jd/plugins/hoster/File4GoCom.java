@@ -152,7 +152,7 @@ public class File4GoCom extends PluginForHost {
          * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
          * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
          */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
