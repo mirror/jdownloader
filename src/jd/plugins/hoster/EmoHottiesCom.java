@@ -65,7 +65,11 @@ public class EmoHottiesCom extends PluginForHost {
         // DLLINK = br.getRegex("(http://emohotties\\.com/playerConfig\\.php\\?[^<>\"/]+\\.(flv|mp4)(\\|\\d+)?)\"").getMatch(0);
         /* Important: Remember that: http://jdownloader.net:8081/pastebin/123271 */
         DLLINK = br.getRegex("itemprop=\"contentURL\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("clip: \\{\\s+url: \\'([^\\']+)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
+            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
