@@ -93,7 +93,7 @@ public class KeepShareNet extends PluginForHost {
     private static final boolean           WAITFORCED                   = false;
     private static final int               WAITSECONDSMIN               = 3;
     private static final int               WAITSECONDSMAX               = 100;
-    private static final int               WAITSECONDSFORCED            = 5;
+    private static final int               WAITSECONDSFORCED            = 10;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
     private static final int               FREE_MAXCHUNKS               = -2;
@@ -744,12 +744,16 @@ public class KeepShareNet extends PluginForHost {
         String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
         if (ttt == null) {
             ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
-        }
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
-        }
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds count\">(\\d+)</").getMatch(0);
+            if (ttt == null) {
+                ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+                if (ttt == null) {
+                    ttt = new Regex(correctedBR, "class=\"seconds count\">(\\d+)</").getMatch(0);
+                    if (ttt == null) {
+                        // prevent null value
+                        ttt = "" + (WAITSECONDSFORCED + new Random().nextInt(10));
+                    }
+                }
+            }
         }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
@@ -757,12 +761,6 @@ public class KeepShareNet extends PluginForHost {
                 logger.warning("Wait exceeds max/min, using forced wait!");
                 wait = WAITSECONDSFORCED;
             }
-        } else if (WAITFORCED) {
-            int i = 0;
-            while (i <= WAITSECONDSMIN) {
-                i += new Random().nextInt(WAITSECONDSMIN);
-            }
-            wait = i;
         }
         wait -= passedTime;
         if (wait > 0) {
