@@ -88,7 +88,7 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\#variant=\\S+)?" }, flags = { 0, 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
-    private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
+    private static final int DDOS_WAIT_MAX = Application.isJared(null) ? 1000 : 10;
 
     private static final int DDOS_INCREASE_FACTOR = 15;
 
@@ -134,15 +134,15 @@ public class TbCmV2 extends PluginForDecrypt {
 
     private HashSet<String> dupeCheckSet;
 
-    private YoutubeConfig   cfg;
+    private YoutubeConfig cfg;
 
-    private static Object   DIALOGLOCK = new Object();
+    private static Object DIALOGLOCK = new Object();
 
-    private String          videoID;
-    private String          watch_videos;
-    private String          playlistID;
-    private String          channelID;
-    private String          userID;
+    private String videoID;
+    private String watch_videos;
+    private String playlistID;
+    private String channelID;
+    private String userID;
 
     private AbstractVariant requestedVariant;
 
@@ -505,7 +505,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 getLogger().info("isDashEnabledEnabled=false");
             }
 
-            ArrayList<AbstractVariant> enabledVariants = AbstractVariant.listVariants();
+            List<AbstractVariant> enabledVariants = new ArrayList<AbstractVariant>(AbstractVariant.listVariants());
             List<VariantIDStorable> disabled = CFG_YOUTUBE.CFG.getDisabledVariants();
             HashSet<String> disabledIds = new HashSet<String>();
             if (disabled != null) {
@@ -579,7 +579,12 @@ public class TbCmV2 extends PluginForDecrypt {
             List<VariantInfo> subtitles = enabledVariantGroups.contains(VariantGroup.SUBTITLES) ? findSubtitleVariants(vid) : new ArrayList<VariantInfo>();
 
             ArrayList<VariantInfo> descriptions = enabledVariantGroups.contains(VariantGroup.DESCRIPTION) ? findDescriptionVariant(vid) : new ArrayList<VariantInfo>();
-
+            if (subtitles != null) {
+                variants.addAll(subtitles);
+            }
+            if (descriptions != null) {
+                variants.addAll(descriptions);
+            }
             boolean found = false;
             // if (requestedVariant != null) {
             // List<VariantInfo> sortedGroupList = groups.get(requestedVariant.getGroup().name());
@@ -693,6 +698,20 @@ public class TbCmV2 extends PluginForDecrypt {
             // }
 
             List<Link> links = Link.load();
+            // enabledVariants
+            // new VariantIDStorable(variant).
+            HashSet<String> allowedVariantsSet = new HashSet<String>();
+            for (AbstractVariant v : enabledVariants) {
+                VariantIDStorable storable = new VariantIDStorable(v);
+
+                allowedVariantsSet.add(storable.createUniqueID());
+            }
+            HashMap<VariantInfo, VariantIDStorable> storables = new HashMap<VariantInfo, VariantIDStorable>();
+            for (VariantInfo v : variants) {
+                System.out.println(v.getVariant());
+                VariantIDStorable storable = new VariantIDStorable(v.getVariant());
+                storables.put(v, storable);
+            }
 
             // HashMap<Link, List<VariantInfo>> linkMap = new HashMap<Link, List<VariantInfo>>();
             for (Link l : links) {
@@ -701,23 +720,28 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 ArrayList<VariantInfo> linkVariants = new ArrayList<VariantInfo>();
                 if (StringUtils.isNotEmpty(l.getGroupingID())) {
-                    for (VariantInfo v : variants) {
 
-                        if (StringUtils.equals(l.getGroupingID(), v.getVariant().getStandardGroupingID())) {
-                            linkVariants.add(v);
-                            continue;
-                        } else if (StringUtils.equals(l.getGroupingID(), v.getVariant().getContainer().name())) {
-                            linkVariants.add(v);
-                            continue;
+                    for (VariantInfo v : variants) {
+                        VariantIDStorable vi = storables.get(v);
+                        if (StringUtils.equals(l.getGroupingID(), vi.createGroupingID())) {
+                            if (allowedVariantsSet.contains(vi.createUniqueID())) {
+                                linkVariants.add(v);
+                            }
                         }
                     }
+
                 } else if (l.getVariants() != null && l.getVariants().size() > 0) {
+
                     HashSet<String> idSet = l.createUniqueIDSet();
                     for (VariantInfo v : variants) {
-                        if (idSet.contains(v.getUniqueID())) {
-                            linkVariants.add(v);
+                        VariantIDStorable vi = storables.get(v);
+                        if (idSet.contains(vi.createUniqueID())) {
+                            if (allowedVariantsSet.contains(vi.createUniqueID())) {
+                                linkVariants.add(v);
+                            }
                         }
                     }
+
                 } else {
                     continue;
                 }
@@ -726,10 +750,11 @@ public class TbCmV2 extends PluginForDecrypt {
 
                     @Override
                     public int compare(VariantInfo o1, VariantInfo o2) {
-                        return CompareUtils.compare(o1.getVariant().getQualityRating(), o2.getVariant().getQualityRating());
+                        return CompareUtils.compare(o2.getVariant().getQualityRating(), o1.getVariant().getQualityRating());
                     }
                 });
                 // remove dupes
+                // System.out.println("Link " + l.getName());
                 VariantInfo last = null;
                 for (final Iterator<VariantInfo> it = linkVariants.iterator(); it.hasNext();) {
                     VariantInfo cur = it.next();
@@ -740,11 +765,14 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                     }
                     last = cur;
+                    // System.out.println(cur.getVariant() + " - " + cur.getVariant().getQualityRating());
 
                 }
-
+                System.out.println("Link " + l.getName());
                 if (linkVariants.size() > 0) {
-                    createLink(linkVariants.get(0), linkVariants);
+                    DownloadLink lnk = createLink(linkVariants.get(0), linkVariants);
+                    System.out.println(lnk);
+                    decryptedLinks.add(lnk);
                 }
 
             }
@@ -930,10 +958,15 @@ public class TbCmV2 extends PluginForDecrypt {
             // }
 
         }
-        for (DownloadLink dl : decryptedLinks) {
+        for (
+
+        DownloadLink dl : decryptedLinks)
+
+        {
             dl.setContainerUrl(cryptedLink);
         }
         return decryptedLinks;
+
     }
 
     private <T> HashSet<T> createHashSet(List<T> list) {

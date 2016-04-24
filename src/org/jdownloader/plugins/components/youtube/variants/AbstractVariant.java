@@ -2,6 +2,7 @@ package org.jdownloader.plugins.components.youtube.variants;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -341,9 +342,9 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         return sb.toString();
     }
 
-    public static ArrayList<AbstractVariant> listVariants() {
+    public static List<AbstractVariant> listVariants() {
         if (VARIANTS_LIST != null) {
-            return VARIANTS_LIST;
+            return Collections.unmodifiableList(VARIANTS_LIST);
         }
         ArrayList<AbstractVariant> sorted = new ArrayList<AbstractVariant>();
         HashSet<String> dupes = new HashSet<String>();
@@ -374,7 +375,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
 
         }
         VARIANTS_LIST = sorted;
-        return sorted;
+        return Collections.unmodifiableList(sorted);
     }
 
     public String getStandardGroupingID() {

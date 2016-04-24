@@ -36,12 +36,9 @@ import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
-import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
 import org.jdownloader.plugins.components.youtube.variants.FileContainer;
-import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
-import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
@@ -57,75 +54,10 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private AdvancedConfigTableModel model;
     private YoutubeConfig            cf;
 
-    private boolean                  setting = false;
+    private boolean setting = false;
 
-    private VariantsMapTable         allowed;
-    private LinkTable                links;
-
-    private final class MultiVariantBoxForImage extends MultiVariantBox<ImageVariant> {
-        private MultiVariantBoxForImage(YoutubeDashConfigPanel youtubeDashConfigPanel, List<ImageVariant> list) {
-            super(youtubeDashConfigPanel, list);
-        }
-
-        @Override
-        protected String variantToName(ImageVariant sc, boolean popup) {
-
-            return sc._getName(this);
-        }
-    }
-
-    private final class MultiVariantBoxForAudio extends MultiVariantBox<AudioVariant> {
-        private MultiVariantBoxForAudio(YoutubeDashConfigPanel youtubeDashConfigPanel, List<AudioVariant> list) {
-            super(youtubeDashConfigPanel, list);
-        }
-
-        @Override
-        protected String variantToName(AudioVariant sc, boolean popup) {
-            if (PluginJsonConfig.get(YoutubeConfig.class).isAdvancedVariantNamesEnabled() && popup) {
-                return sc.createAdvancedName();
-            }
-
-            return sc._getName(YoutubeDashConfigPanel.class);
-        }
-    }
-
-    private final class MultiVariantBoxFor3DVideo extends MultiVariantBox<VideoVariant> {
-        private MultiVariantBoxFor3DVideo(YoutubeDashConfigPanel youtubeDashConfigPanel, List<VideoVariant> list) {
-            super(youtubeDashConfigPanel, list);
-        }
-
-        @Override
-        protected String variantToName(VideoVariant sc, boolean popup) {
-
-            if (PluginJsonConfig.get(YoutubeConfig.class).isAdvancedVariantNamesEnabled()) {
-                return sc.createAdvancedName();
-            }
-
-            return sc._getName(YoutubeDashConfigPanel.class);
-
-        }
-    }
-
-    private final class MultiVariantBoxForVideo extends MultiVariantBox<VideoVariant> {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-
-        private MultiVariantBoxForVideo(YoutubeDashConfigPanel youtubeDashConfigPanel, List<VideoVariant> list) {
-            super(youtubeDashConfigPanel, list);
-        }
-
-        @Override
-        protected String variantToName(VideoVariant sc, boolean popup) {
-            if (PluginJsonConfig.get(YoutubeConfig.class).isAdvancedVariantNamesEnabled() && popup) {
-                return sc.createAdvancedName();
-
-            }
-            return sc._getName(YoutubeDashConfigPanel.class);
-
-        }
-    }
+    private VariantsMapTable allowed;
+    private LinkTable        links;
 
     public abstract class MultiVariantBox<Type extends AbstractVariant> extends MultiComboBox<Type> {
 
@@ -222,7 +154,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
             }
         };
-        ArrayList<AbstractVariantWrapper> sorted = new ArrayList<>();
+        ArrayList<AbstractVariantWrapper> sorted = new ArrayList<AbstractVariantWrapper>();
         for (AbstractVariant v : AbstractVariant.listVariants()) {
             sorted.add(new AbstractVariantWrapper(v));
         }

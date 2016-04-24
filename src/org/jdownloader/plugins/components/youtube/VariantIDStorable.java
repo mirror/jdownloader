@@ -130,7 +130,7 @@ public class VariantIDStorable implements Storable {
 
     public String createGroupingID() {
         if (VariantGroup.VIDEO.name().equals(getGroup())) {
-            return projection + "_" + getGroup();
+            return getGroup() + "_" + projection;
         }
         return getGroup();
     }
