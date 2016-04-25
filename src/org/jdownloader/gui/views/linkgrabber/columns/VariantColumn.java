@@ -79,14 +79,9 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     @Override
     protected JComponent getPopupElement(LinkVariant object, boolean selected, AbstractNode value) {
         JComponent ret = null;
-        if (object instanceof CrawledLink) {
-            if (((CrawledLink) object).hasVariantSupport()) {
-                ret = ((CrawledLink) object).gethPlugin().getVariantPopupComponent(((CrawledLink) object).getDownloadLink());
-            }
-        } else if (false && object instanceof DownloadLink) {
-            /* DownloadTable does not have VariantSupport yet */
-            if (((DownloadLink) object).hasVariantSupport()) {
-                ret = ((DownloadLink) object).getDefaultPlugin().getVariantPopupComponent(((DownloadLink) object));
+        if (value instanceof CrawledLink) {
+            if (((CrawledLink) value).hasVariantSupport()) {
+                ret = ((CrawledLink) value).gethPlugin().getVariantPopupComponent(((CrawledLink) value).getDownloadLink());
             }
         }
         if (ret != null) {
@@ -97,104 +92,125 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
     @Override
     protected void fillPopup(final JPopupMenu popup, AbstractNode value, LinkVariant selected, ComboBoxModel<LinkVariant> dm) {
-        super.fillPopup(popup, value, selected, dm);
+
+        JComponent ret = null;
         if (value instanceof CrawledLink) {
             final CrawledLink link = (CrawledLink) value;
-
-            final HashSet<String> dupeSet = new HashSet<String>();
-            final CrawledPackage parent = link.getParentNode();
-            final boolean readL = parent.getModifyLock().readLock();
-            try {
-                for (CrawledLink cl : parent.getChildren()) {
-                    dupeSet.add(cl.getLinkID());
+            if (link.hasVariantSupport()) {
+                if (link.gethPlugin().fillVariantsPopup(this, popup, value, selected, dm)) {
+                    return;
                 }
-            } finally {
-                parent.getModifyLock().readUnlock(readL);
             }
+
+            fillPopupWithVariants(popup, value, selected, dm);
             popup.add(new JSeparator());
-            JMenu m = new JMenu(_GUI.T.VariantColumn_fillPopup_add());
-            m.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
 
-            for (int i = 0; i < dm.getSize(); i++) {
-                final LinkVariant o = dm.getElementAt(i);
+            fillPopupWithAddAdditionalSubmenu(popup, dm, link);
 
-                ExtMenuItem mi;
-                m.add(mi = new ExtMenuItem(new BasicAction() {
+            fillPopupWithPluginSettingsButton(popup, link);
+        }
+    }
 
-                    private CrawledLink cl;
+    public void fillPopupWithPluginSettingsButton(final JPopupMenu popup, final CrawledLink link) {
+        popup.add(new JMenuItem(new BasicAction() {
+            {
 
-                    {
-                        DownloadLink dl = link.getDownloadLink();
-                        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
-                        dllink.setProperties(link.getDownloadLink().getProperties());
-                        dllink.setProperty("DUMMY", true);
-                        cl = new CrawledLink(dllink);
-                        setSmallIcon(o._getIcon(link));
-                        setName(o._getName(link));
+                setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 18), DomainInfo.getInstance(link.getDownloadLink().getDefaultPlugin().getHost()).getIcon(10), 0, 0).crop(18, 18));
+                setName(_GUI.T.VariantColumn_fillPopup_settings(link.getDownloadLink().getDefaultPlugin().getHost()));
 
-                        cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
-
-                        setEnabled(!dupeSet.contains(cl.getLinkID()));
-                    }
-
-                    @Override
-                    public void actionPerformed(final ActionEvent e) {
-                        if (!isEnabled()) {
-
-                            Toolkit.getDefaultToolkit().beep();
-                            return;
-                        }
-
-                        final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
-                        list.add(cl);
-                        dupeSet.add(cl.getLinkID());
-                        // if (LinkCollector.getInstance().hasLinkID(cl.getLinkID())) {
-                        //
-                        // } else {
-                        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                            @Override
-                            protected Void run() throws RuntimeException {
-
-                                LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
-
-                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-                                checkableLinks.add(cl);
-                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                                linkChecker.check(checkableLinks);
-                                return null;
-                            }
-                        });
-
-                        // }
-                        setEnabled(false);
-
-                    }
-
-                }));
-                mi.setHideOnClick(false);
             }
-            popup.add(m);
 
-            popup.add(new JMenuItem(new BasicAction() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                popup.setVisible(false);
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
+                ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(link.getDownloadLink().getDefaultPlugin().getClass());
+            }
+
+        }));
+    }
+
+    public void fillPopupWithAddAdditionalSubmenu(final JPopupMenu popup, ComboBoxModel<LinkVariant> dm, final CrawledLink link) {
+        final HashSet<String> dupeSet = new HashSet<String>();
+        final CrawledPackage parent = link.getParentNode();
+        final boolean readL = parent.getModifyLock().readLock();
+        try {
+            for (CrawledLink cl : parent.getChildren()) {
+                dupeSet.add(cl.getLinkID());
+            }
+        } finally {
+            parent.getModifyLock().readUnlock(readL);
+        }
+
+        JMenu m = new JMenu(_GUI.T.VariantColumn_fillPopup_add());
+        m.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
+
+        for (int i = 0; i < dm.getSize(); i++) {
+            final LinkVariant o = dm.getElementAt(i);
+
+            ExtMenuItem mi;
+            m.add(mi = new ExtMenuItem(new BasicAction() {
+
+                private CrawledLink cl;
+
                 {
+                    DownloadLink dl = link.getDownloadLink();
+                    final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
+                    dllink.setProperties(link.getDownloadLink().getProperties());
+                    dllink.setProperty("DUMMY", true);
+                    cl = new CrawledLink(dllink);
+                    setSmallIcon(o._getIcon(link));
+                    setName(o._getName(link));
 
-                    setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 18), DomainInfo.getInstance(link.getDownloadLink().getDefaultPlugin().getHost()).getIcon(10), 0, 0).crop(18, 18));
-                    setName(_GUI.T.VariantColumn_fillPopup_settings(link.getDownloadLink().getDefaultPlugin().getHost()));
+                    cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
 
+                    setEnabled(!dupeSet.contains(cl.getLinkID()));
                 }
 
                 @Override
                 public void actionPerformed(final ActionEvent e) {
-                    popup.setVisible(false);
-                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-                    JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-                    ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
-                    ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(link.getDownloadLink().getDefaultPlugin().getClass());
+                    if (!isEnabled()) {
+
+                        Toolkit.getDefaultToolkit().beep();
+                        return;
+                    }
+
+                    final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+                    list.add(cl);
+                    dupeSet.add(cl.getLinkID());
+                    // if (LinkCollector.getInstance().hasLinkID(cl.getLinkID())) {
+                    //
+                    // } else {
+                    LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+
+                            LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
+
+                            java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                            checkableLinks.add(cl);
+                            LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                            linkChecker.check(checkableLinks);
+                            return null;
+                        }
+                    });
+
+                    // }
+                    setEnabled(false);
+
                 }
 
             }));
+            mi.setHideOnClick(false);
         }
+        popup.add(m);
+    }
+
+    public void fillPopupWithVariants(final JPopupMenu popup, AbstractNode value, LinkVariant selected, ComboBoxModel<LinkVariant> dm) {
+        super.fillPopup(popup, value, selected, dm);
     }
 
     @Override

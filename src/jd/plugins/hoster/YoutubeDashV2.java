@@ -1,30 +1,41 @@
 package jd.plugins.hoster;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
+import javax.swing.ComboBoxModel;
 import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
@@ -32,8 +43,12 @@ import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -44,6 +59,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.YoutubeLinkGrabberExtender;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialog;
 import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
@@ -52,6 +68,7 @@ import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -70,6 +87,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.http.Browser;
 import jd.http.QueryInfo;
 import jd.http.Request;
@@ -255,6 +273,7 @@ public class YoutubeDashV2 extends PluginForHost {
         helper.setupProxy();
 
         AbstractVariant variant = getVariant(downloadLink);
+        List<String> ret = new ArrayList<String>();
 
         // update linkid
         final String linkid = downloadLink.getLinkID();
@@ -262,7 +281,7 @@ public class YoutubeDashV2 extends PluginForHost {
             switch (variant.getType()) {
             case SUBTITLES: {
 
-                final String subtitleID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant);
+                final String subtitleID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant, Arrays.asList(getVariantsIDList(downloadLink)));
                 if (!subtitleID.equals(linkid)) {
                     // update it
                     downloadLink.setLinkID(subtitleID);
@@ -273,7 +292,7 @@ public class YoutubeDashV2 extends PluginForHost {
             case VIDEO:
             case DASH_AUDIO:
             case DASH_VIDEO: {
-                final String videoID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant);
+                final String videoID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant, Arrays.asList(getVariantsIDList(downloadLink)));
 
                 if (!videoID.equals(linkid)) {
                     // update it
@@ -1738,7 +1757,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
             String filename;
             downloadLink.setFinalFileName(filename = new YoutubeHelper(br, getLogger()).createFilename(downloadLink));
-            downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant));
+            downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));
             // if (prefers) {
             downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(((AbstractVariant) variant)._getUniqueId()));
             // } else {
@@ -1746,7 +1765,7 @@ public class YoutubeDashV2 extends PluginForHost {
             // "&variant=" + variant);
             //
             // }
-            downloadLink.setLinkID(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant));
+            downloadLink.setLinkID(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));
 
         }
         if (downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null) == null) {
@@ -1837,6 +1856,81 @@ public class YoutubeDashV2 extends PluginForHost {
             return null;
         }
 
+    }
+
+    @Override
+    public JComponent getVariantPopupComponent(DownloadLink downloadLink) {
+        return super.getVariantPopupComponent(downloadLink);
+    }
+
+    @Override
+    public boolean fillVariantsPopup(VariantColumn variantColumn, JPopupMenu popup, AbstractNode value, LinkVariant selected, ComboBoxModel<LinkVariant> dm) {
+        final CrawledLink link = (CrawledLink) value;
+        variantColumn.fillPopupWithVariants(popup, value, selected, dm);
+        VariantGroup group = ((AbstractVariant) selected).getGroup();
+        switch (group) {
+        case AUDIO:
+        case IMAGE:
+        case VIDEO:
+            popup.add(new JMenuItem(new BasicAction() {
+                {
+
+                    setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_GO_NEXT, 18), DomainInfo.getInstance(link.getDownloadLink().getDefaultPlugin().getHost()).getIcon(10), 0, 0).crop(20, 18));
+                    setName(_GUI.T.lit_more_point_point_point());
+
+                }
+
+                @Override
+                public void actionPerformed(final ActionEvent e) {
+                    // popup.setVisible(false);
+                    ProgressGetter pg = new ProgressGetter() {
+
+                        @Override
+                        public void run() throws Exception {
+                            YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), getLogger()), link.getDownloadLink());
+
+                            new Thread("Choose Youtube Variant") {
+                                public void run() {
+                                    YoutubeVariantSelectionDialog d;
+                                    UIOManager.I().show(null, d = new YoutubeVariantSelectionDialog(link, (AbstractVariant) selected, clipData, clipData.findVariants()));
+                                    LinkVariant variant = d.getVariant();
+                                    if (variant != null) {
+
+                                        LinkCollector.getInstance().setActiveVariantForLink(link, variant);
+                                    }
+                                };
+                            }.start();
+
+                        }
+
+                        @Override
+                        public String getString() {
+                            return null;
+                        }
+
+                        @Override
+                        public int getProgress() {
+                            return -1;
+                        }
+
+                        @Override
+                        public String getLabelString() {
+                            return null;
+                        }
+                    };
+                    ProgressDialog dialog = new ProgressDialog(pg, 0, _GUI.T.lit_please_wait(), "Scan all Variants", new AbstractIcon(IconKey.ICON_WAIT, 32));
+                    UIOManager.I().show(null, dialog);
+                }
+
+            }));
+        }
+
+        popup.add(new JSeparator());
+
+        variantColumn.fillPopupWithAddAdditionalSubmenu(popup, dm, link);
+
+        variantColumn.fillPopupWithPluginSettingsButton(popup, link);
+        return true;
     }
 
     @Override

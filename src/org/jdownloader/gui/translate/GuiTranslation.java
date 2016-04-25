@@ -4252,8 +4252,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Subtitles" })
     String YoutubeDashConfigPanel_allowedtypoes_subtitles();
 
-    @Default(lngs = { "en" }, values = { "Default Variants" })
-    String YoutubeDashConfigPanel_links();
+    @Default(lngs = { "en" }, values = { "Variant Collections" })
+    String YoutubeDashConfigPanel_collections_header();
 
     @Default(lngs = { "en" }, values = { "Create a Link for the best Video Quality" })
     String YoutubeDashConfigPanel_allowedtypoes_best_video();
@@ -6279,7 +6279,7 @@ public interface GuiTranslation extends TranslateInterface {
     String Youtube_imagevariant_name(String localeName);
 
     @Default(lngs = { "en" }, values = { "Quality Rating" })
-    String YOUTUBE_CONFIG_PANEL_TABLE_AUDIOPRIORITY();
+    String YOUTUBE_CONFIG_PANEL_TABLE_PRIORITY();
 
     @Default(lngs = { "en" }, values = { "JDownloader will not create an extra link for each of the variants above, but will try to add an link for each of the collection entries below. Each of them is a collection of one or more variants. JDownloader will choose the best of them and add it to the linkgrabber.\r\nHow to see which variants are in a collection -> Select it and the table above will show the contained variants\r\nHow to add a new collection -> Select the desired variants above > right click > Add link collection\r\nHow to delete collections -> right click > Delete" })
     String YoutubeDashConfigPanel_links_description();
@@ -6296,4 +6296,18 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Collection Size" })
     String youtube_collection_size();
+
+    @Default(lngs = { "en" }, values = { "Collection name" })
+    String YoutubeHelper_getDescription_collection();
+
+    @Default(lngs = { "en" }, values = { "more..." })
+    String lit_more_point_point_point();
+
+    @Default(lngs = { "en" }, values = { "Select" })
+
+    String lit_choose();
+
+    @Default(lngs = { "en" }, values = { "Choose a Variant for %s1" })
+
+    String youtube_variant_selection_dialog_title(String title);
 }

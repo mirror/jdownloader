@@ -47,6 +47,10 @@ public class VariantsMapTable extends BasicJDTable<AbstractVariantWrapper> {
         setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
     }
 
+    public VariantsMapTable(VariantsMapTableModel m) {
+        super(m);
+    }
+
     @Override
     public VariantsMapTableModel getModel() {
         return (VariantsMapTableModel) super.getModel();
@@ -72,7 +76,7 @@ public class VariantsMapTable extends BasicJDTable<AbstractVariantWrapper> {
                 AbstractVariantWrapper best = null;
 
                 for (AbstractVariantWrapper w : selection) {
-                    variants.add(w.getBlackListEntry());
+                    variants.add(w.getVariableIDStorable());
                     if (best == null || best.variant.getQualityRating() < w.variant.getQualityRating()) {
                         best = w;
                     }
@@ -215,17 +219,19 @@ public class VariantsMapTable extends BasicJDTable<AbstractVariantWrapper> {
     }
 
     public void setSelectionByLink(Link link) {
-        if (link == null || link.getVariants() == null) {
+        if (link == null) {
             return;
         }
 
         ArrayList<AbstractVariantWrapper> selection = new ArrayList<AbstractVariantWrapper>();
-        HashSet<String> idSet = new HashSet<String>();
-        for (VariantIDStorable s : link.getVariants()) {
-            idSet.add(s.createUniqueID());
-        }
+        HashSet<String> idSet = link.createUniqueIDSet();
+
         for (AbstractVariantWrapper v : getModel().getTableData()) {
-            if (idSet.contains(v.getBlackListEntry().createUniqueID())) {
+            if (idSet.contains(v.getVariableIDStorable().createUniqueID())) {
+                selection.add(v);
+            } else if (StringUtils.equals(v.getVariableIDStorable().getContainer(), link.getGroupingID())) {
+                selection.add(v);
+            } else if (StringUtils.equals(v.getVariableIDStorable().createGroupingID(), link.getGroupingID())) {
                 selection.add(v);
             }
 

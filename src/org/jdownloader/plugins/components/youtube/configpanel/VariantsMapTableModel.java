@@ -35,8 +35,10 @@ import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
+import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 import jd.gui.swing.jdgui.AlternateHighlighter;
@@ -166,8 +168,8 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         }
     }
 
-    private abstract class AutoResizingTextColumn extends ExtTextColumn<AbstractVariantWrapper> {
-        private AutoResizingTextColumn(String name) {
+    public abstract class AutoResizingTextColumn extends ExtTextColumn<AbstractVariantWrapper> {
+        public AutoResizingTextColumn(String name) {
             super(name);
             rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
             this.setRowSorter(new ExtDefaultRowSorter<AbstractVariantWrapper>() {
@@ -237,8 +239,8 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
     }
 
-    private abstract class AutoResizingIntColumn extends ExtTextColumn<AbstractVariantWrapper> {
-        private AutoResizingIntColumn(String name) {
+    public abstract class AutoResizingIntColumn extends ExtTextColumn<AbstractVariantWrapper> {
+        public AutoResizingIntColumn(String name) {
             super(name);
             rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
             this.setRowSorter(new ExtDefaultRowSorter<AbstractVariantWrapper>() {
@@ -312,25 +314,23 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
     }
 
-    private ArrayList<AbstractVariantWrapper>        all;
+    protected ArrayList<AbstractVariantWrapper>      all;
     private ExtTextColumn<AbstractVariantWrapper>    mergeIDColumn;
     private HashMap<AbstractVariantWrapper, Integer> alternateMergeIDMap;
+    private AutoResizingTextColumn                   videoCodecColumn;
+    private AutoResizingIntColumn                    fpsColumn;
+    private AutoResizingIntColumn                    heightColumn;
+    private AutoResizingIntColumn                    widthColumn;
 
     public VariantsMapTableModel(ArrayList<AbstractVariantWrapper> sorted) {
-        super("VariantsMapTableModel");
+        this("VariantsMapTableModel", sorted);
+    }
+
+    public VariantsMapTableModel(String id, ArrayList<AbstractVariantWrapper> sorted) {
+        super(id);
         this.all = sorted;
 
-        CFG_YOUTUBE.BLACKLISTED_AUDIO_BITRATES.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.BLACKLISTED_AUDIO_CODECS.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.BLACKLISTED_FILE_CONTAINERS.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.BLACKLISTED_GROUPS.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.BLACKLISTED_PROJECTIONS.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.BLACKLISTED_RESOLUTIONS.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.BLACKLISTED_VIDEO_CODECS.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.BLACKLISTED_VIDEO_FRAMERATES.getEventSender().addListener(this, true);
-        CFG_YOUTUBE.DISABLED_VARIANTS.getEventSender().addListener(this, true);
-
-        onConfigValueModified(null, null);
+        initListeners();
         final AlternateHighlighter<AbstractVariantWrapper> alternate = new AlternateHighlighter<AbstractVariantWrapper>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null);
         addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractVariantWrapper>(null, Color.BLACK, null) {
 
@@ -351,145 +351,63 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         });
     }
 
+    protected void initListeners() {
+        CFG_YOUTUBE.BLACKLISTED_AUDIO_BITRATES.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.BLACKLISTED_AUDIO_CODECS.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.BLACKLISTED_FILE_CONTAINERS.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.BLACKLISTED_GROUPS.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.BLACKLISTED_PROJECTIONS.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.BLACKLISTED_RESOLUTIONS.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.BLACKLISTED_VIDEO_CODECS.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.BLACKLISTED_VIDEO_FRAMERATES.getEventSender().addListener(this, true);
+        CFG_YOUTUBE.DISABLED_VARIANTS.getEventSender().addListener(this, true);
+
+        onConfigValueModified(null, null);
+    }
+
     @Override
     protected void initColumns() {
-        addColumn(new EnabledColumn(_GUI.T.lit_enabled()) {
-            @Override
-            protected void setBooleanValue(boolean value, AbstractVariantWrapper object) {
-                super.setBooleanValue(value, object);
-                updateEnabledMap();
-            }
-        });
+        addCheckBoxColumn();
 
-        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE()) {
+        addTypeColumn();
 
-            @Override
-            public boolean isAutoWidthEnabled() {
-                return true;
-            }
-
-            @Override
-            protected String getTooltipText(AbstractVariantWrapper obj) {
-                return obj.variant.createAdvancedName();
-            }
-
-            @Override
-            public String getStringValue(AbstractVariantWrapper value) {
-                switch (value.variant.getGroup()) {
-                case DESCRIPTION:
-                    return _GUI.T.lit_desciption();
-                case IMAGE:
-                    return _GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_IMAGES(value.variant.getFileNameQualityTag());
-                default:
-                    return value.variant.getGroup().getLabel();
-                }
-
-            }
-
-        });
-
-        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE()) {
-
-            @Override
-            public String getStringValue(AbstractVariantWrapper value) {
-
-                return value.variant.getContainer().getLabel();
-            }
-        });
+        addContainerColumn();
         addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION()) {
 
             @Override
             public String getStringValue(AbstractVariantWrapper value) {
+                String audioProjection = "";
+                if (value.variant instanceof AudioInterface) {
+                    switch (((AudioInterface) value.variant).getAudioCodec()) {
+                    case AAC_SPATIAL:
+                    case VORBIS_SPATIAL:
+                        audioProjection = _JDT.T.youtube_spatial();
+                    }
+                }
                 if (value.variant instanceof VideoVariant) {
                     switch (((VideoVariant) value.variant).getGenericInfo().getProjection()) {
                     case NORMAL:
-                        return "";
+                        return audioProjection;
 
                     default:
+                        if (StringUtils.isNotEmpty(audioProjection)) {
+                            return ((VideoVariant) value.variant).getGenericInfo().getProjection().getLabel() + " " + audioProjection;
+                        }
                         return ((VideoVariant) value.variant).getGenericInfo().getProjection().getLabel();
                     }
 
                 }
-                return "";
+                return audioProjection;
 
             }
         });
 
-        addColumn(new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_WIDTH()) {
-            @Override
-            public boolean isDefaultVisible() {
-                return false;
-            }
+        addWidthColumn();
+        addHeightColumn();
 
-            @Override
-            public String getStringValue(AbstractVariantWrapper value) {
-                if (value.variant instanceof ImageVariant) {
-                    if (value.variant.getBaseVariant() == VariantBase.IMAGE_MAX) {
-                        return ">480";
-                    }
-                }
-                return super.getStringValue(value);
-            }
+        addFPSColumn();
 
-            @Override
-            public int getInt(AbstractVariantWrapper value) {
-                return value.getWidth();
-
-            }
-
-        });
-        addColumn(new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_HEIGHT()) {
-            @Override
-            public String getStringValue(AbstractVariantWrapper value) {
-                if (value.variant instanceof ImageVariant) {
-                    if (value.variant.getBaseVariant() == VariantBase.IMAGE_MAX) {
-                        return "~" + ((ImageVariant) value.variant).getHeight();
-                    }
-                }
-
-                return super.getStringValue(value);
-            }
-
-            @Override
-            public int getInt(AbstractVariantWrapper value) {
-
-                return value.getHeight();
-            }
-
-        });
-
-        addColumn(new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FPS()) {
-
-            @Override
-            public int getInt(AbstractVariantWrapper value) {
-                if (value.variant instanceof VideoVariant) {
-                    return ((VideoVariant) value.variant).getVideoFrameRate();
-                }
-                ;
-                return -1;
-            }
-
-        });
-
-        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_VIDEO_CODEC()) {
-
-            @Override
-            public String getStringValue(AbstractVariantWrapper value) {
-                if (value.variant instanceof VideoVariant) {
-                    return ((VideoVariant) value.variant).getVideoCodec().getLabel();
-                }
-                return "";
-
-            }
-
-            @Override
-            protected String getTooltipText(AbstractVariantWrapper value) {
-                if (value.variant instanceof VideoVariant) {
-                    return ((VideoVariant) value.variant).getVideoCodec().getLabelLong();
-                }
-                return "";
-            }
-        });
+        addVideoCodecColumn();
 
         addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_CODEC()) {
             @Override
@@ -530,6 +448,30 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             }
 
         });
+        addGroupingColumn();
+
+        addPriorityColumn();
+
+    }
+
+    protected void addPriorityColumn() {
+        addColumn(new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PRIORITY()) {
+            @Override
+            public boolean isDefaultVisible() {
+                return false;
+            }
+
+            @Override
+            public int getInt(AbstractVariantWrapper value) {
+
+                return (int) (value.variant.getQualityRating() * 10000);
+
+            }
+
+        });
+    }
+
+    protected void addGroupingColumn() {
         addColumn(mergeIDColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_GROUPING()) {
             {
                 rendererField.setHorizontalAlignment(SwingConstants.LEFT);
@@ -546,22 +488,141 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             }
 
         });
+    }
 
-        addColumn(new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIOPRIORITY()) {
+    protected void addVideoCodecColumn() {
+        addColumn(videoCodecColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_VIDEO_CODEC()) {
+
+            @Override
+            public String getStringValue(AbstractVariantWrapper value) {
+                if (value.variant instanceof VideoVariant) {
+                    return ((VideoVariant) value.variant).getVideoCodec().getLabel();
+                }
+                return "";
+
+            }
+
+            @Override
+            protected String getTooltipText(AbstractVariantWrapper value) {
+                if (value.variant instanceof VideoVariant) {
+                    return ((VideoVariant) value.variant).getVideoCodec().getLabelLong();
+                }
+                return "";
+            }
+        });
+    }
+
+    protected void addFPSColumn() {
+        addColumn(fpsColumn = new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FPS()) {
+
+            @Override
+            public int getInt(AbstractVariantWrapper value) {
+                if (value.variant instanceof VideoVariant) {
+                    return ((VideoVariant) value.variant).getVideoFrameRate();
+                }
+                ;
+                return -1;
+            }
+
+        });
+    }
+
+    protected void addHeightColumn() {
+        addColumn(heightColumn = new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_HEIGHT()) {
+            @Override
+            public String getStringValue(AbstractVariantWrapper value) {
+                if (value.variant instanceof ImageVariant) {
+                    if (value.variant.getBaseVariant() == VariantBase.IMAGE_MAX) {
+                        return "~" + ((ImageVariant) value.variant).getHeight();
+                    }
+                }
+
+                return super.getStringValue(value);
+            }
+
+            @Override
+            public int getInt(AbstractVariantWrapper value) {
+
+                return value.getHeight();
+            }
+
+        });
+    }
+
+    protected void addWidthColumn() {
+        addColumn(widthColumn = new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_WIDTH()) {
             @Override
             public boolean isDefaultVisible() {
                 return false;
             }
 
             @Override
-            public int getInt(AbstractVariantWrapper value) {
+            public String getStringValue(AbstractVariantWrapper value) {
+                if (value.variant instanceof ImageVariant) {
+                    if (value.variant.getBaseVariant() == VariantBase.IMAGE_MAX) {
+                        return ">480";
+                    }
+                }
+                return super.getStringValue(value);
+            }
 
-                return (int) (value.variant.getQualityRating() * 10000);
+            @Override
+            public int getInt(AbstractVariantWrapper value) {
+                return value.getWidth();
 
             }
 
         });
+    }
 
+    protected void addContainerColumn() {
+        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE()) {
+
+            @Override
+            public String getStringValue(AbstractVariantWrapper value) {
+
+                return value.variant.getContainer().getLabel();
+            }
+        });
+    }
+
+    protected void addTypeColumn() {
+        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE()) {
+
+            @Override
+            public boolean isAutoWidthEnabled() {
+                return true;
+            }
+
+            @Override
+            protected String getTooltipText(AbstractVariantWrapper obj) {
+                return obj.variant.createAdvancedName();
+            }
+
+            @Override
+            public String getStringValue(AbstractVariantWrapper value) {
+                switch (value.variant.getGroup()) {
+                case DESCRIPTION:
+                    return _GUI.T.lit_desciption();
+                case IMAGE:
+                    return _GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_IMAGES(value.variant.getFileNameQualityTag());
+                default:
+                    return value.variant.getGroup().getLabel();
+                }
+
+            }
+
+        });
+    }
+
+    protected void addCheckBoxColumn() {
+        addColumn(new EnabledColumn(_GUI.T.lit_enabled()) {
+            @Override
+            protected void setBooleanValue(boolean value, AbstractVariantWrapper object) {
+                super.setBooleanValue(value, object);
+                updateEnabledMap();
+            }
+        });
     }
 
     public ExtTextColumn<AbstractVariantWrapper> getMergeIDColumn() {
@@ -574,15 +635,62 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
     @Override
     public void _fireTableStructureChanged(java.util.List<AbstractVariantWrapper> newtableData, boolean refreshSort) {
-        // CFG_YOUTUBE.BLACKLISTED_AUDIO_BITRATES.getEventSender().addListener(this, true);
-        // CFG_YOUTUBE.BLACKLISTED_AUDIO_CODECS.getEventSender().addListener(this, true);
-        // CFG_YOUTUBE.BLACKLISTED_FILE_CONTAINERS.getEventSender().addListener(this, true);
-        // CFG_YOUTUBE.BLACKLISTED_GROUPS.getEventSender().addListener(this, true);
-        // CFG_YOUTUBE.BLACKLISTED_PROJECTIONS.getEventSender().addListener(this, true);
-        // CFG_YOUTUBE.BLACKLISTED_RESOLUTIONS.getEventSender().addListener(this, true);
-        // CFG_YOUTUBE.BLACKLISTED_VIDEO_CODECS.getEventSender().addListener(this, true);
-        // CFG_YOUTUBE.BLACKLISTED_VIDEO_FRAMERATES.getEventSender().addListener(this, true);
+        if (getTable() == null) {
+            super._fireTableStructureChanged(newtableData, refreshSort);
+            return;
+        }
+        filter(newtableData);
 
+        HashMap<AbstractVariantWrapper, Integer> map = new HashMap<AbstractVariantWrapper, Integer>();
+        int i = 0;
+        AbstractVariantWrapper last = null;
+        ExtColumn<AbstractVariantWrapper> sc = getSortColumn();
+        if (sc != null && sc instanceof ExtTextColumn) {
+            final ExtTextColumn txtCol = (ExtTextColumn) sc;
+            Collections.sort(newtableData, txtCol.getRowSorter());
+
+            for (AbstractVariantWrapper e : newtableData) {
+
+                if (last == null || !txtCol.getStringValue(last).equals(txtCol.getStringValue(e))) {
+                    i++;
+                    last = e;
+                }
+                System.out.println(txtCol.getStringValue(e) + " - " + i);
+                map.put(e, i);
+
+            }
+        }
+        boolean hasImage = false;
+        boolean hasVideo = false;
+        for (AbstractVariantWrapper e : newtableData) {
+            if (e.variant.getGroup() == VariantGroup.VIDEO) {
+                hasVideo = true;
+
+            } else if (e.variant.getGroup() == VariantGroup.IMAGE) {
+                hasImage = true;
+
+            }
+        }
+
+        if (heightColumn != null) {
+            setColumnVisible(heightColumn, hasVideo || hasImage);
+        }
+        if (widthColumn != null) {
+            setColumnVisible(widthColumn, hasVideo || hasImage);
+        }
+        if (fpsColumn != null) {
+            setColumnVisible(fpsColumn, hasVideo);
+        }
+        if (videoCodecColumn != null) {
+            setColumnVisible(videoCodecColumn, hasVideo);
+        }
+        this.alternateMergeIDMap = map;
+        super._fireTableStructureChanged(newtableData, refreshSort);
+        this.updateEnabledMap();
+
+    }
+
+    protected void filter(java.util.List<AbstractVariantWrapper> newtableData) {
         HashSet<Object> blacklisted = new HashSet<Object>();
         for (Object o : list(CFG_YOUTUBE.CFG.getBlacklistedAudioBitrates())) {
             if (o != null) {
@@ -677,31 +785,6 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             }
 
         }
-
-        HashMap<AbstractVariantWrapper, Integer> map = new HashMap<AbstractVariantWrapper, Integer>();
-        int i = 0;
-        AbstractVariantWrapper last = null;
-        ExtColumn<AbstractVariantWrapper> sc = getSortColumn();
-        if (sc != null && sc instanceof ExtTextColumn) {
-            final ExtTextColumn txtCol = (ExtTextColumn) sc;
-            Collections.sort(newtableData, txtCol.getRowSorter());
-
-            for (AbstractVariantWrapper e : newtableData) {
-
-                if (last == null || !txtCol.getStringValue(last).equals(txtCol.getStringValue(e))) {
-                    i++;
-                    last = e;
-                }
-                System.out.println(txtCol.getStringValue(e) + " - " + i);
-                map.put(e, i);
-
-            }
-        }
-
-        this.alternateMergeIDMap = map;
-        super._fireTableStructureChanged(newtableData, refreshSort);
-        this.updateEnabledMap();
-
     }
 
     public void updateEnabledMap() {
@@ -709,7 +792,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
         for (AbstractVariantWrapper e : getTableData()) {
             if (e.isEnabled()) {
-                enabledMap.increment(e.getBlackListEntry().createUniqueID());
+                enabledMap.increment(e.getVariableIDStorable().createUniqueID());
                 enabledMap.increment(e.variant.getStandardGroupingID());
 
                 enabledMap.increment(e.variant.getContainer().name());
@@ -744,7 +827,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             }
             // if (ids.size() > 0) {
             for (AbstractVariantWrapper s : all) {
-                s.setEnabled(!ids.contains(s.getBlackListEntry().createUniqueID()));
+                s.setEnabled(!ids.contains(s.getVariableIDStorable().createUniqueID()));
             }
             // }
 
@@ -762,7 +845,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         ArrayList<VariantIDStorable> lst = new ArrayList<VariantIDStorable>();
         for (AbstractVariantWrapper s : all) {
             if (!s.isEnabled()) {
-                lst.add(s.getBlackListEntry());
+                lst.add(s.getVariableIDStorable());
             }
         }
         CFG_YOUTUBE.CFG.setDisabledVariants(lst);

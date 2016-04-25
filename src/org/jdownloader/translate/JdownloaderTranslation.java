@@ -1057,4 +1057,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Stereoscopic 3D SBS" })
     String Projection_3D_tt();
 
+    @Default(lngs = { "en" }, values = { "Spatial Multichannel Audio" })
+    String youtube_spatial();
+
 }
