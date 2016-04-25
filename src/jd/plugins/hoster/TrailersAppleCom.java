@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,6 +34,27 @@ public class TrailersAppleCom extends PluginForHost {
 
     public TrailersAppleCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
+    }
+
+    public static final String  preferBest         = "preferBest";
+    public static final boolean preferBest_default = true;
+    public static final String  p1080              = "p1080";
+    public static final boolean p1080_default      = true;
+    public static final String  p720               = "p720";
+    public static final boolean p720_default       = true;
+    public static final String  p480               = "p480";
+    public static final boolean p480_default       = true;
+    public static final String  p360               = "p360";
+    public static final boolean p360_default       = true;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), preferBest, "Prefer Best, highest availble 'p' within the selection enabled below.").setDefaultValue(preferBest_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), p1080, "Enable '" + p1080 + "'.").setDefaultValue(p1080_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), p720, "Enable '" + p720 + "'.").setDefaultValue(p720_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), p480, "Enable '" + p480 + "'.").setDefaultValue(p480_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), p360, "Enable '" + p360 + "'.").setDefaultValue(p360_default));
+
     }
 
     @Override
