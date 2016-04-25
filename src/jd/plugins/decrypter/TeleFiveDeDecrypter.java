@@ -178,11 +178,24 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             videosinfo = br.getRegex("\"(https?://api\\.medianac\\.com/p/\\d+/sp/\\d+/embedIframeJs/uiconf_id/\\d+/partner_id/[^<>\"/]*?)\"").getColumn(0);
         }
         if ((videosinfo == null || videosinfo.length == 0) && (youtubeurls == null || youtubeurls.length == 0)) {
-            if (!br.containsHTML("kaltura_player_")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+            logger.info("Failed to find any downloadable content --> Trying to find URLs to videos e.g. all episodes of the current series");
+            final String[] articles = this.br.getRegex("<article(.*?)</article>").getColumn(0);
+            if (articles != null && articles.length > 0) {
+                logger.info("Found articles - let's see if any of them are videos");
+                for (final String article : articles) {
+                    final boolean isVideo = article.contains("class=\"playButton\"");
+                    final String url = new Regex(article, "<a href=\"(https?://(?:www\\.)?tele5\\.de/[^<>\"]+\\.html)\">").getMatch(0);
+                    if (url != null && isVideo) {
+                        decryptedLinks.add(this.createDownloadlink(url));
+                    }
+                }
+                if (decryptedLinks.size() > 0) {
+                    logger.info("Found potentially downloadable content");
+                }
+            } else {
+                logger.info("Failed to find any videos --> There is nothing to download");
             }
-            return null;
+            return decryptedLinks;
         }
 
         if (videosinfo != null && videosinfo.length > 0) {
