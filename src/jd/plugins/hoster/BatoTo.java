@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -44,6 +43,7 @@ public class BatoTo extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://bato.to/forums/index.php?app=core&module=global&section=register");
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
+        setStartIntervall(250);
     }
 
     @Override
@@ -59,15 +59,12 @@ public class BatoTo extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 3;
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
-
-    private String               DLLINK                    = null;
+    private String               dllink                    = null;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         this.br.getHeaders().put("Referer", "http://bato.to/reader");
@@ -91,7 +88,7 @@ public class BatoTo extends PluginForHost {
             fname_without_ext = this.br.getRegex("document\\.title = \\'([^<>\"]*?) \\| Batoto\\!';").getMatch(0);
         }
         if (fname_without_ext == null) {
-            /* Dont fail just because we couldnt find nice filenames! */
+            /* Don't fail just because we couldn't find nice filenames! */
             final Regex linkinfo = new Regex(link.getDownloadURL(), "/areader\\?id=([a-z0-9]+)\\&p=(\\d+)");
             fname_without_ext = linkinfo.getMatch(0) + "_" + linkinfo.getMatch(1);
         }
@@ -104,7 +101,7 @@ public class BatoTo extends PluginForHost {
         if (unformattedSource == null || unformattedSource.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = unformattedSource[0];
+        dllink = unformattedSource[0];
         final String extension = unformattedSource[1];
         link.setFinalFileName(fname_without_ext + extension);
 
@@ -114,7 +111,7 @@ public class BatoTo extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -140,7 +137,7 @@ public class BatoTo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -150,7 +147,7 @@ public class BatoTo extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, DLLINK);
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -217,12 +214,11 @@ public class BatoTo extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
@@ -232,12 +228,6 @@ public class BatoTo extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
