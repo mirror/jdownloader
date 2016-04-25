@@ -61,7 +61,7 @@ public class ThreerbupCom extends PluginForHost {
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareBasic Version 0.7.2-psp<br />
-     * mods:<br />
+     * mods: heavily modified, do NOT upgrade!<br />
      * limit-info:<br />
      * protocol: no https<br />
      * captchatype: null, solvemedia, reCaptchaV1, reCaptchaV2<br />
@@ -239,7 +239,7 @@ public class ThreerbupCom extends PluginForHost {
                     logger.info("Found continue_link, continuing...");
                 }
                 final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                if (isDownloadlink(continue_link) || skipCaptcha) {
+                if ((isDownloadlink(continue_link) || skipCaptcha) && (skipWaittime || i > 1)) {
                     /*
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
@@ -376,7 +376,10 @@ public class ThreerbupCom extends PluginForHost {
         int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */
-        final String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        if (ttt == null) {
+            ttt = this.br.getRegex("var seconds = (\\d+);").getMatch(0);
+        }
         if (ttt != null) {
             wait = Integer.parseInt(ttt) + additional_WAIT_SECONDS;
         }

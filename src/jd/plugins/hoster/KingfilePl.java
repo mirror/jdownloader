@@ -49,8 +49,8 @@ public class KingfilePl extends PluginForHost {
 
     /* Connection stuff */
     private final boolean FREE_RESUME                  = true;
-    private final int     FREE_MAXCHUNKS               = 0;
-    private final int     FREE_MAXDOWNLOADS            = 20;
+    private final int     FREE_MAXCHUNKS               = 1;
+    private final int     FREE_MAXDOWNLOADS            = 1;
     private final boolean ACCOUNT_FREE_RESUME          = true;
     private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
@@ -60,6 +60,7 @@ public class KingfilePl extends PluginForHost {
 
     private String        fid                          = null;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -89,15 +90,23 @@ public class KingfilePl extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             this.br.getPage("/download/" + this.fid + "/?plan=n");
-            int wait = 68;
+            long wait = 68;
             final String wait_str = JSonUtils.getJson(this.br, "timer");
             if (wait_str != null) {
-                wait = Integer.parseInt(wait_str);
+                wait = Long.parseLong(wait_str);
             }
-            this.sleep(wait * 1001l, downloadLink);
             boolean success = false;
+            final long timetarget = System.currentTimeMillis() + (wait * 1001l);
             for (int i = 0; i <= 3; i++) {
                 final String code = this.getCaptchaCode("/seccode/normal.png", downloadLink);
+                if (i == 0) {
+                    /* Waittime needed before the first captcha-try --> Minimize this waittime. */
+                    if (System.currentTimeMillis() < timetarget) {
+                        /* Wait if we still have to! */
+                        wait = timetarget - System.currentTimeMillis();
+                        this.sleep(wait, downloadLink);
+                    }
+                }
                 this.br.getPage("/download/" + this.fid + "/?plan=n&captcha=" + Encoding.urlEncode(code));
                 if (this.br.toString().replace("\\", "").contains("/seccode/normal.png")) {
                     continue;
