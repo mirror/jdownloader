@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -34,12 +36,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+/**
+ * @author raztoki
+ */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "https?://bato\\.to/reader#[a-z0-9]+" }, flags = { 0 })
 public class BatoTo extends PluginForDecrypt {
 
-    /**
-     * @author raztoki
-     */
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
         /* Prevent server response 503! */
@@ -54,7 +56,7 @@ public class BatoTo extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         /* Login if possible */
@@ -69,11 +71,12 @@ public class BatoTo extends PluginForDecrypt {
         br.setAllowedResponseCodes(405);
         br.getPage(parameter.toString());// needed, sets cookie
         final String id = new Regex(parameter.toString(), "([a-z0-9]+)$").getMatch(0);
-        final String url = "http://bato.to/areader?id=" + id + "&p=";
+        final String url = "/areader?id=" + id + "&p=";
         // // enforcing one img per page because you can't always get all images displayed on one page.
         // br.setCookie("bato.to", "supress_webtoon", "t");
-        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        this.br.getHeaders().put("Referer", "http://bato.to/reader");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Referer", "http://bato.to/reader");
+        br.getHeaders().put("Accept", "*/*");
         // Access page one
         br.getPage(url + 1);
 
@@ -88,40 +91,39 @@ public class BatoTo extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String title_comic = this.br.getRegex("<li style=\"display: inline-block; margin-right: \\d+px;\"><a href=\"http://bato\\.to/comic/[^<>\"]+\">([^<>\"]*?)</a>").getMatch(0);
+        String title_comic = br.getRegex("<li style=\"display: inline-block; margin-right: \\d+px;\"><a href=\"http://bato\\.to/comic/[^<>\"]+\">([^<>\"]*?)</a>").getMatch(0);
         // We get the title
-        String tag_title = this.br.getRegex("value=\"https?://bato\\.to/reader#[a-z0-9]+\" selected=\"selected\">([^<>\"]*?)</option>").getMatch(0);
-        if (tag_title == null) {
+        String title_tag = br.getRegex("value=\"https?://bato\\.to/reader#[a-z0-9]+\" selected=\"selected\">([^<>\"]*?)</option>").getMatch(0);
+        // group
+        String title_group = br.getRegex("<select name=\"group_select\"[^>]*>\\s*<option[^>]*>(.*?)</option>").getMatch(0);
+        // final String
+        if (title_tag == null) {
             /* Fallback if everything else fails! */
-            tag_title = id;
+            title_tag = id;
         }
 
-        tag_title = Encoding.htmlDecode(tag_title);
-        tag_title = tag_title.replace(": ", " - ");
+        title_tag = Encoding.htmlDecode(title_tag);
+        title_tag = title_tag.replace(": ", " - ");
         final FilePackage fp = FilePackage.getInstance();
         // may as well set this globally. it used to belong inside 2 of the formatting if statements
         fp.setProperty("CLEANUP_NAME", false);
-        if (title_comic != null) {
-            title_comic = Encoding.htmlDecode(title_comic).trim();
-            fp.setName(title_comic + " - " + tag_title);
-        } else {
-            fp.setName(tag_title);
-        }
+        fp.setName(Encoding.htmlDecode(title_comic).trim() + (title_comic != null ? " - " : "") + title_tag + (title_group != null ? " - " + title_group : ""));
 
-        String pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
+        final String pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
         if (pages == null) {
             // even though the cookie is set... they don't always respect this for small page count
             // http://www.batoto.net/read/_/249050/useful-good-for-nothing_ch1_by_suras-place
             // pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
             // Temporary fix:
-            String imglist = br.getRegex("(<div style=\"text-align:center\\;\">.*?<img.*?<div)").getMatch(0);
+            final String imglist = br.getRegex("(<div style=\"text-align:center\\;\">.*?<img.*?<div)").getMatch(0);
             if (imglist != null) {
                 logger.info("imglist: " + imglist);
-                String[] imgs = br.getRegex("<img src='(.*?)'").getColumn(0);
+                final String[] imgs = br.getRegex("<img src='(.*?)'").getColumn(0);
                 for (final String img : imgs) {
                     final DownloadLink link = createDownloadlink(img);
                     String imgname = new Regex(img, "([^/]*)$").getMatch(0);
-                    link.setFinalFileName(title_comic + " - " + tag_title + " - " + imgname);
+                    link.setFinalFileName(title_comic + " - " + title_tag + " - " + imgname);
+                    link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                     link.setAvailable(true);
                     fp.add(link);
                     distribute(link);
@@ -149,14 +151,10 @@ public class BatoTo extends PluginForDecrypt {
             }
             final String pageNumber = df_page.format(i);
             final DownloadLink link = createDownloadlink("http://bato.to/areader?id=" + id + "&p=" + pageNumber);
-            final String fname_without_ext;
-            if (title_comic != null) {
-                fname_without_ext = title_comic + " - " + tag_title + " - Page " + pageNumber;
-            } else {
-                fname_without_ext = tag_title + " - Page " + pageNumber;
-            }
+            final String fname_without_ext = fp.getName() + " - Page " + pageNumber;
             link.setProperty("fname_without_ext", fname_without_ext);
-            link.setName(fname_without_ext + ".png");
+            link.setName(fname_without_ext);
+            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
             link.setAvailable(true);
             link.setContentUrl("http://bato.to/reader#" + id + "_" + pageNumber);
             fp.add(link);
