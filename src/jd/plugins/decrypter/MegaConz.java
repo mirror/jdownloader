@@ -28,7 +28,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:///#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+" }, flags = { 0 })
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:///#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+((!|%21)[a-zA-Z0-9]+)?" }, flags = { 0 })
 public class MegaConz extends PluginForDecrypt {
 
     private static AtomicLong CS = new AtomicLong(System.currentTimeMillis());
@@ -49,13 +51,24 @@ public class MegaConz extends PluginForDecrypt {
 
     }
 
+    private String getParentNodeID(CryptedLink link) {
+        final String ret = new Regex(link.getCryptedUrl(), "(!|%21)([a-zA-Z0-9]+)$").getMatch(1);
+        final String folderID = getFolderID(link);
+        final String masterKey = getMasterKey(link);
+        if (ret != null && !ret.equals(folderID) && !ret.equals(masterKey)) {
+            return ret;
+        }
+        return null;
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter.setCryptedUrl(parameter.toString().replaceAll("%21", "!"));
 
-        String folderID = getFolderID(parameter);
-        String masterKey = getMasterKey(parameter);
+        final String folderID = getFolderID(parameter);
+        final String masterKey = getMasterKey(parameter);
+        final String parentNodeID = getParentNodeID(parameter);
         final String containerURL;
         if (parameter.getCryptedUrl().startsWith("chrome://")) {
             if (folderID != null && masterKey != null) {
@@ -72,7 +85,7 @@ public class MegaConz extends PluginForDecrypt {
         }
         br.getHeaders().put("APPID", "JDownloader");
         br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\"}]");
-        String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
+        final String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
         /*
          * p = parent node (ID)
          * 
@@ -90,41 +103,40 @@ public class MegaConz extends PluginForDecrypt {
          * 
          * k = node key
          */
-        HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
-        for (String node : nodes) {
-            String encryptedNodeKey = new Regex(getField("k", node), ":(.*?)$").getMatch(0);
+        final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
+        for (final String node : nodes) {
+            final String encryptedNodeKey = new Regex(getField("k", node), ":(.*?)$").getMatch(0);
             if (encryptedNodeKey == null) {
                 continue;
             }
             String nodeAttr = getField("a", node);
-            String nodeID = getField("h", node);
+            final String nodeID = getField("h", node);
+            final String nodeParentID = getField("p", node);
             String nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
 
             nodeAttr = decrypt(nodeAttr, nodeKey);
             if (nodeAttr == null) {
                 continue;
             }
-            String nodeName = new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
-            String nodeType = getField("t", node);
+            final String nodeName = new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
+            final String nodeType = getField("t", node);
             if ("1".equals(nodeType)) {
                 /* folder */
-
                 MegaFolder fo = new MegaFolder(nodeID);
-                String nodeParentID = getField("p", node);
                 fo.parent = nodeParentID;
                 fo.name = nodeName;
                 folders.put(nodeID, fo);
-
             } else if ("0".equals(nodeType)) {
+                if (parentNodeID != null && !StringUtils.equals(nodeParentID, parentNodeID)) {
+                    continue;
+                }
                 /* file */
-                final String nodeParentID = getField("p", node);
                 final MegaFolder folder = folders.get(nodeParentID);
-
                 final FilePackage fp = FilePackage.getInstance();
                 final String path = getRelPath(folder, folders);
                 fp.setName(path.substring(1));
                 fp.setProperty("ALLOW_MERGE", true);
-                String nodeSize = getField("s", node);
+                final String nodeSize = getField("s", node);
                 if (nodeSize == null) {
                     continue;
                 }
