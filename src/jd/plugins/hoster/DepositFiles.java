@@ -33,6 +33,12 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,6 +47,7 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -58,12 +65,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends antiDDoSForHost {
@@ -245,7 +246,25 @@ public class DepositFiles extends antiDDoSForHost {
         // br.getHeaders().put("Referer", "http://www.google.de");
         br.setFollowRedirects(false);
         br.getPage(link);
-
+        {
+            /*
+             * ok redirection can happen here due to user using a proxy and our test for 'primary domain is done once!, and not every time
+             * access happens'
+             */
+            String rd = br.getRedirectLocation();
+            if (rd != null) {
+                final String path1 = new Regex(link, Pattern.quote(Browser.getHost(link)) + "(/.+)$").getMatch(0);
+                // redirect location might be relative.
+                final String host2 = Browser.getHost(rd = Request.getLocation(rd, br.getRequest()));
+                final String path2 = new Regex(rd, Pattern.quote(host2) + "(/.+)$").getMatch(0);
+                if (path1 != null && path2 != null && path1.equals(path2)) {
+                    br.getPage(rd);
+                } else {
+                    // problem ?
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
