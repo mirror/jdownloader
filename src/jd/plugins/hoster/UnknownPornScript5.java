@@ -32,8 +32,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "nudez.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to" }, urls = { "http://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "http://[a-z]{2}\\.porndoe\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html",
-        "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornpillow.com", "tubous.com", "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "nudez.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to" }, urls = { "http://(?:www\\.)?pornpillow\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html", "http://(?:www\\.)?tubous\\.com/videos/\\d+(/[a-z0-9\\-]+)?", "http://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?porndoe\\.com/video/\\d+/[a-z0-9\\-]+",
+        "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class UnknownPornScript5 extends PluginForHost {
 
     public UnknownPornScript5(PluginWrapper wrapper) {
@@ -101,22 +101,29 @@ public class UnknownPornScript5 extends PluginForHost {
                 break;
             }
         }
-        if (url_filename == null) {
+        if (url_filename == null && url_id != null) {
+
+        }
+        if (url_filename == null && url_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        url_filename = url_filename.replace(".html", "");
-        if (url_id == null) {
-            /* In case we have an ID, it might be in the url_filename --> Find it */
-            /* First check if we find it at the beginning. */
-            url_id = new Regex(url_filename, "^(\\d+\\-).+").getMatch(0);
+        if (url_filename == null) {
+            url_filename = url_id;
+        } else {
+            url_filename = url_filename.replace(".html", "");
             if (url_id == null) {
-                /* Secondly check if we find it at the end. */
-                url_id = new Regex(url_filename, ".+(\\-\\d+)$").getMatch(0);
+                /* In case we have an ID, it might be in the url_filename --> Find it */
+                /* First check if we find it at the beginning. */
+                url_id = new Regex(url_filename, "^(\\d+\\-).+").getMatch(0);
+                if (url_id == null) {
+                    /* Secondly check if we find it at the end. */
+                    url_id = new Regex(url_filename, ".+(\\-\\d+)$").getMatch(0);
+                }
             }
-        }
-        if (url_id != null) {
-            /* Remove url_id from url_filename */
-            url_filename = url_filename.replace(url_id, "");
+            if (url_id != null) {
+                /* Remove url_id from url_filename */
+                url_filename = url_filename.replace(url_id, "");
+            }
         }
         /* Make it look nicer! */
         url_filename = url_filename.replace("-", " ");
@@ -178,9 +185,13 @@ public class UnknownPornScript5 extends PluginForHost {
             }
         }
         if (jwplayer_source == null) {
+            /* Search in html for videourls inside video-tag e.g. tubous.com */
+            dllink = this.br.getRegex("<video src=\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             *
+             * 
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
