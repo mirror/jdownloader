@@ -42,14 +42,14 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
-import jd.plugins.hoster.YoutubeDashV2;
+import jd.plugins.PluginForHost;
 
 public class YoutubeLinkGrabberExtender {
 
     private JComponent                                    parent;
     private PluginView<CrawledLink>                       pv;
     private Collection<PluginView<CrawledLink>>           allPvs;
-    private YoutubeDashV2                                 plg;
+    private PluginForHost                                 plg;
     private LogInterface                                  logger;
     private JScrollMenu                                   setVariants;
     private JScrollMenu                                   addVariants;
@@ -58,7 +58,7 @@ public class YoutubeLinkGrabberExtender {
     protected HashMap<String, ArrayList<AbstractVariant>> listMapAvailable;
     private HashMap<String, ArrayList<AbstractVariant>>   listMapSet;
 
-    public YoutubeLinkGrabberExtender(YoutubeDashV2 plg, JComponent parent, PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
+    public YoutubeLinkGrabberExtender(PluginForHost plg, JComponent parent, PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
         this.plg = plg;
         this.parent = parent;
         this.pv = pv;
@@ -362,7 +362,8 @@ public class YoutubeLinkGrabberExtender {
                         for (CrawledLink brother : lst) {
                             if (StringUtils.equals(brother.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID, null), cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID, null))) {
                                 // link form the same videoID
-                                List<LinkVariant> brotherVariants = plg.getVariantsByLink(brother.getDownloadLink());
+
+                                List<? extends LinkVariant> brotherVariants = plg.getVariantsByLink(brother.getDownloadLink());
                                 if (brotherVariants != null) {
                                     for (LinkVariant brotherVariant : brotherVariants) {
                                         if (brotherVariant != null && brotherVariant instanceof AbstractVariant) {
@@ -474,7 +475,7 @@ public class YoutubeLinkGrabberExtender {
         }
         // add generics
         for (CrawledLink cl : pv.getChildren()) {
-            List<LinkVariant> v = plg.getVariantsByLink(cl.getDownloadLink());
+            List<? extends LinkVariant> v = plg.getVariantsByLink(cl.getDownloadLink());
             if (v != null) {
                 for (LinkVariant lv : v) {
                     if (lv instanceof AbstractVariant) {

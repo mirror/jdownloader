@@ -25,7 +25,7 @@ public class AbstractVariantWrapper {
         this.enabled = enabled;
     }
 
-    final protected AbstractVariant variant;
+    final public AbstractVariant variant;
 
     public int getWidth() {
         if (variant instanceof VideoVariant) {
@@ -77,7 +77,7 @@ public class AbstractVariantWrapper {
         return -1;
     }
 
-    public VariantIDStorable getBlackListEntry() {
+    public VariantIDStorable getVariableIDStorable() {
         return blackListEntry;
     }
 

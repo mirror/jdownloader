@@ -78,7 +78,7 @@ public class VariantInfo implements Comparable<VariantInfo> {
 
     public String getUniqueID() {
 
-        return new AbstractVariantWrapper(variant).getBlackListEntry().createUniqueID();
+        return new AbstractVariantWrapper(variant).getVariableIDStorable().createUniqueID();
     }
 
 }

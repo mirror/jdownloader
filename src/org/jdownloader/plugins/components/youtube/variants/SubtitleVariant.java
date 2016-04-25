@@ -113,6 +113,10 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
         return ret;
     }
 
+    public String getDisplayLanguage() {
+        return getGenericInfo()._getLocale().getDisplayLanguage();
+    }
+
     @Override
     public String getFileNameQualityTag() {
         return getGenericInfo()._getLocale().getDisplayLanguage();
@@ -122,6 +126,10 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     public String getTypeId() {
         return _getUniqueId();
 
+    }
+
+    public String getLanguageCode() {
+        return getGenericInfo()._getLocale().getLanguage();
     }
 
 }

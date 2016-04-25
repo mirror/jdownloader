@@ -54,10 +54,10 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private AdvancedConfigTableModel model;
     private YoutubeConfig            cf;
 
-    private boolean setting = false;
+    private boolean                  setting = false;
 
-    private VariantsMapTable allowed;
-    private LinkTable        links;
+    private VariantsMapTable         allowed;
+    private LinkTable                links;
 
     public abstract class MultiVariantBox<Type extends AbstractVariant> extends MultiComboBox<Type> {
 
@@ -133,16 +133,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist(), null, null, new ComboBox<IfUrlisAPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsPlaylistUrlAction", KeyHandler.class), IfUrlisAPlaylistAction.values(), null));
 
-        // ComboBox<GroupLogic> box = new ComboBox<GroupLogic>(cf._getStorageHandler().getKeyHandler("GroupLogic", KeyHandler.class),
-        // GroupLogic.values(), null) {
-        // @Override
-        // public void onConfigValueModified(KeyHandler<GroupLogic> keyHandler, GroupLogic newValue) {
-        // super.onConfigValueModified(keyHandler, newValue);
-        // updateBest();
-        // }
-        // };
-        //
-        // addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
 
@@ -159,15 +149,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             sorted.add(new AbstractVariantWrapper(v));
         }
 
-        // Collections.sort(videoMP4, comp);
-        // Collections.sort(video3D, comp);
-        // Collections.sort(videoFLV, comp);
-        // Collections.sort(videoGP3, comp);
-        // Collections.sort(videoMP4, comp);
-        // Collections.sort(videoWEBM, comp);
-        // Collections.sort(audio, comp);
-        // Collections.sort(image, comp);
-        // Collections.sort(videoWEBM,comp );
         addHeader(_GUI.T.YoutubeDashConfigPanel_allowedtypoes(), NewTheme.I().getIcon(IconKey.ICON_MEDIAPLAYER, 18));
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_quick());
         links = new LinkTable();
@@ -191,7 +172,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 }
             }
         });
-        // Comparator<IntegerInterface> intComparator = Compar
 
         List<VariantGroup> groups = Arrays.asList(VariantGroup.values());
         Collections.sort(groups, LabelInterface.COMPARATOR_ASC);
@@ -257,7 +237,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         add(sp = new JScrollPane(allowed), "pushx,growx,height 100:450:n,spanx");
         // sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 
-        addHeader(_GUI.T.YoutubeDashConfigPanel_links(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
+        addHeader(_GUI.T.YoutubeDashConfigPanel_collections_header(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_links_description());
         add(new JScrollPane(links), "pushx,growx,spanx,height 100:450:n");
 

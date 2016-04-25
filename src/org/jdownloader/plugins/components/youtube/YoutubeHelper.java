@@ -43,6 +43,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -283,6 +284,18 @@ public class YoutubeHelper {
                     LOGGER.log(e);
                     return "[INVALID LINK!]";
                 }
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("COLLECTION", "COL") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_collection();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_COLLECTION, "");
             }
 
         });
@@ -2302,6 +2315,8 @@ public class YoutubeHelper {
 
     public static final String YT_3D                 = "YT_3D";
 
+    public static final String YT_COLLECTION         = "YT_COLLECTION";
+
     public String createFilename(DownloadLink link) {
 
         AbstractVariant variant = AbstractVariant.get(link);
@@ -2652,8 +2667,8 @@ public class YoutubeHelper {
         return list;
     }
 
-    public static String createLinkID(String videoID, AbstractVariant variant) {
-        return "youtubev2://" + videoID + "/" + Encoding.urlEncode(variant._getUniqueId());
+    public static String createLinkID(String videoID, AbstractVariant variant, List<String> variants) {
+        return "youtubev2://" + videoID + "/" + Encoding.urlEncode(variant._getUniqueId()) + "/" + Encoding.urlEncode(Hash.getMD5(JSonStorage.serializeToJson(variants)));
     }
 
     public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {

@@ -9,8 +9,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
+import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.DescriptionVariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VariantBase;
+import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 import jd.plugins.DownloadLink;
 
@@ -186,6 +194,83 @@ public class YoutubeClipData {
                         break;
                     }
                 }
+            }
+        }
+        return ret;
+    }
+
+    public List<VariantInfo> findSubtitleVariants() {
+        List<VariantInfo> allSubtitles = new ArrayList<VariantInfo>();
+
+        for (final YoutubeSubtitleStorable si : subtitles) {
+
+            SubtitleVariantInfo vi = new SubtitleVariantInfo(new SubtitleVariant(si), this);
+            allSubtitles.add(vi);
+
+        }
+
+        return allSubtitles;
+    }
+
+    public ArrayList<VariantInfo> findDescriptionVariant() {
+        ArrayList<VariantInfo> descriptions = new ArrayList<VariantInfo>();
+
+        final String descText = description;
+        if (StringUtils.isNotEmpty(descText)) {
+
+            VariantInfo vi;
+
+            descriptions.add(vi = new DescriptionVariantInfo(descText, this));
+
+        }
+        return descriptions;
+    }
+
+    public List<VariantInfo> findVariants() {
+        ArrayList<VariantInfo> ret = new ArrayList<VariantInfo>();
+
+        for (VariantBase v : VariantBase.values()) {
+
+            if (!CFG_YOUTUBE.CFG.isExternMultimediaToolUsageEnabled() && v.isVideoToolRequired()) {
+
+                continue;
+            }
+            if (!v.isValidFor(this)) {
+                Log.info("Invalid Variant for: " + v);
+
+                continue;
+            }
+            // System.out.println("test for " + v);
+
+            List<YoutubeStreamData> audio = null;
+            List<YoutubeStreamData> video = null;
+            List<YoutubeStreamData> data = null;
+            boolean valid = v.getiTagVideo() != null || v.getiTagAudio() != null || v.getiTagData() != null;
+
+            if (v.getiTagVideo() != null) {
+                video = streams.get(v.getiTagVideo());
+                if (video == null) {
+                    valid = false;
+                }
+            }
+            if (v.getiTagAudio() != null) {
+                audio = streams.get(v.getiTagAudio());
+                if (audio == null) {
+                    valid = false;
+                }
+            }
+            if (v.getiTagData() != null) {
+                data = streams.get(v.getiTagData());
+                if (data == null) {
+                    valid = false;
+                }
+            }
+
+            if (valid) {
+
+                VariantInfo vi = new VariantInfo(AbstractVariant.get(v, this, audio, video, data), audio, video, data);
+                ret.add(vi);
+
             }
         }
         return ret;
