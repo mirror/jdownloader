@@ -92,7 +92,7 @@ public class AppleTrailer extends PluginForDecrypt {
 
     private void processFeed(String filmID) throws Exception {
         br2 = br.cloneBrowser();
-        br2.getPage("https://trailers.apple.com/trailers/feeds/data/" + filmID + ".json");
+        br2.getPage("http://trailers.apple.com/trailers/feeds/data/" + filmID + ".json");
         final LinkedHashMap<String, Object> json;
         try {
             if (br2.containsHTML("404 - Page Not Found")) {
@@ -133,24 +133,24 @@ public class AppleTrailer extends PluginForDecrypt {
                         dlLink.setAvailable(true);
                         temp.add(dlLink);
                     }
-                    decryptedLinks.addAll(determineBest(temp));
+                    decryptedLinks.addAll(analyseUserSettings(temp));
                 }
             }
         }
     }
 
-    private ArrayList<DownloadLink> determineBest(final ArrayList<DownloadLink> links) {
+    private ArrayList<DownloadLink> analyseUserSettings(final ArrayList<DownloadLink> links) {
         if (this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.preferBest, jd.plugins.hoster.TrailersAppleCom.preferBest_default)) {
             int bestest = 0;
             DownloadLink bdlink = null;
             for (final DownloadLink dl : links) {
                 if (dl.getStringProperty("pSize", null) != null) {
-                    int best = Integer.parseInt(dl.getStringProperty("pSize"));
-                    if (!isPqualityEnabled(best)) {
+                    int p = Integer.parseInt(dl.getStringProperty("pSize"));
+                    if (!isPqualityEnabled(p)) {
                         continue;
                     }
-                    if (best > bestest) {
-                        bestest = best;
+                    if (p > bestest) {
+                        bestest = p;
                         bdlink = dl;
                     }
                 }
@@ -161,7 +161,17 @@ public class AppleTrailer extends PluginForDecrypt {
                 return b;
             }
         }
-        return links;
+        // we need code to still respect checkboxes when best isn't enabled
+        final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
+        for (final DownloadLink dl : links) {
+            if (dl.getStringProperty("pSize", null) != null) {
+                int p = Integer.parseInt(dl.getStringProperty("pSize"));
+                if (isPqualityEnabled(p)) {
+                    results.add(dl);
+                }
+            }
+        }
+        return results.isEmpty() ? links : results;
     }
 
     private final boolean isPqualityEnabled(final int p) {
