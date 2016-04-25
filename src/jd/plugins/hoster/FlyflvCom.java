@@ -17,11 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,19 +29,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xtwisted.com", "dansmovies.com", "pornsteep.com", "frigtube.com", "porndull.com" }, urls = { "https?://(?:www\\.)?xtwisted\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?dansmovies\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https://(?:www\\.)?pornsteep\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https://(?:www\\.)?frigtube\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https://(?:www\\.)?porndull\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0, 0, 0, 0, 0 })
-public class UnknownPornScript1 extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyflv.com" }, urls = { "http://(?:www\\.)?flyflv\\.com/movies/\\d+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+public class FlyflvCom extends PluginForHost {
 
-    public UnknownPornScript1(PluginWrapper wrapper) {
+    public FlyflvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    /* Porn_plugin */
-    /* V0.1 */
-    // Tags: For porn sites using the flowplayer videoplayer
+    // Tags:
+    // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
@@ -53,41 +49,48 @@ public class UnknownPornScript1 extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
-        return "http://www.dansmovies.com/tos/";
+        return "http://www.flyflv.com/site/page/terms";
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
-        final String host = downloadLink.getHost();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(downloadLink.getDownloadURL(), "/video/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
-        String filename = regexStandardTitleWithHost(host);
+        final String url_filename = new Regex(link.getDownloadURL(), "movies/\\d+/(.+)").getMatch(0).replace("-", " ");
+        String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
-        final String html_clip = this.br.getRegex("clip: \\{(.*?)\\},").getMatch(0);
-        if (html_clip != null) {
-            DLLINK = new Regex(html_clip, "url: \\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (dllink == null) {
+            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("var fileUrl[\t\n\r ]*?=[\t\n\r ]*?\"(http[^<>\"\\']+)\"").getMatch(0);
+        }
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -95,23 +98,20 @@ public class UnknownPornScript1 extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            /* Do NOT use Head-Request here!! */
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
+                link.setProperty("directlink", dllink);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issues = true;
             }
-            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -124,7 +124,12 @@ public class UnknownPornScript1 extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -157,18 +162,9 @@ public class UnknownPornScript1 extends PluginForHost {
         return output;
     }
 
-    private String regexStandardTitleWithHost(final String host) {
-        return this.br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + host + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.UnknownPornScript1;
     }
 
     @Override
