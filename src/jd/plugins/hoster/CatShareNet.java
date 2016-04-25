@@ -28,6 +28,8 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -46,6 +48,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -64,11 +67,12 @@ public class CatShareNet extends PluginForHost {
      * expired<br />
      * -check if stored direct urls can be re-used<br />
      */
-    private String        brbefore   = "";
-    private String        HOSTER     = "http://catshare.net";
-    private static Object lock       = new Object();
-    private final boolean useAPI     = true;
-    private String        apiSession = null;
+    private String         brbefore   = "";
+    private String         HOSTER     = "http://catshare.net";
+    private static Object  lock       = new Object();
+    protected final String USE_API    = "USE_API";
+    // private final boolean useAPI = true;
+    private String         apiSession = null;
 
     // DEV NOTES
     // captchatype: recaptcha
@@ -77,6 +81,7 @@ public class CatShareNet extends PluginForHost {
     public CatShareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(HOSTER + "/login");
+        this.setConfigElements();
     }
 
     private Browser prepBRWebsite(final Browser br) {
@@ -158,7 +163,8 @@ public class CatShareNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (this.useAPI) {
+
+        if (getUseAPI()) {
             checkLinks(new DownloadLink[] { downloadLink });
             if (!downloadLink.isAvailabilityStatusChecked()) {
                 return AvailableStatus.UNCHECKED;
@@ -280,7 +286,7 @@ public class CatShareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (useAPI) {
+        if (getUseAPI()) {
             handleDownloadAPI(downloadLink, true, 0, false, "freedirectlink");
         } else {
             doFreeWebsite(downloadLink, false, 1);
@@ -421,7 +427,7 @@ public class CatShareNet extends PluginForHost {
             throw e;
         }
 
-        if (useAPI) {
+        if (getUseAPI()) {
             ai = this.fetchAccountInfoAPI(account);
         } else {
             ai = this.fetchAccountInfoWebsite(account);
@@ -440,8 +446,10 @@ public class CatShareNet extends PluginForHost {
         }
         if ("Free".equals(type) || expire_long < System.currentTimeMillis()) {
             account.setType(AccountType.FREE);
+            ai.setStatus(getPhrase("FREE"));
         } else {
             account.setType(AccountType.PREMIUM);
+            ai.setStatus(getPhrase("PREMIUM"));
         }
         if (traffic != null) {
             ai.setTrafficLeft(Long.parseLong(traffic));
@@ -456,7 +464,7 @@ public class CatShareNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         boolean hours = false;
 
-        if ("true".equals(account.getProperty("premium"))) {
+        if (account.getType() == AccountType.PREMIUM) {
             final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
             if (dailyLimitLeft != null) {
                 ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
@@ -519,10 +527,10 @@ public class CatShareNet extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        if (useAPI) {
+        if (getUseAPI()) {
             loginAPI(account);
         } else {
-            loginWebsite(account, false);
+            loginWebsite(account, force);
         }
     }
 
@@ -593,7 +601,7 @@ public class CatShareNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (this.useAPI) {
+        if (getUseAPI()) {
             handlePremiumAPI(downloadLink, account);
         } else {
             handlePremiumWebsite(downloadLink, account);
@@ -768,6 +776,7 @@ public class CatShareNet extends PluginForHost {
                                                       put("FREE", "Free User");
                                                       put("NO_LOGIN_FORM", "no login form");
                                                       put("ACCOUNT_SHARED", "System detected account violation - account is shared.");
+                                                      put("USE_API", "Use API (recommended!)");
                                                   }
                                               };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
@@ -790,6 +799,7 @@ public class CatShareNet extends PluginForHost {
                                                       put("FREE", "Użytkownik darmowy");
                                                       put("NO_LOGIN_FORM", "brak formularza logowania");
                                                       put("ACCOUNT_SHARED", "System wykrył naruszenie regulaminu w zakresie dostępu do konta.");
+                                                      put("USE_API", "Używaj API (rekomendowane!)");
                                                   }
                                               };
 
@@ -808,4 +818,13 @@ public class CatShareNet extends PluginForHost {
         }
         return "Translation not found!";
     }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.CatShareNet.useAPI", getPhrase("USE_API"))).setDefaultValue(false));
+    }
+
+    private boolean getUseAPI() {
+        return this.getPluginConfig().getBooleanProperty("USE_API", true);
+    }
+
 }
