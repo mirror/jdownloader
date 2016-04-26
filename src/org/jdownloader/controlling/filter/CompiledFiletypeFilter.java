@@ -105,9 +105,13 @@ public class CompiledFiletypeFilter {
 
     public static enum DocumentExtensions implements ExtensionsFilterInterface {
         TXT,
-        DOC("(docx?)"),
+        HTML,
+        DOC("(doc(x|m)?|dot(x|m)?)"),
         EPUB,
         README,
+        XML,
+        CSV,
+
         RTF,
         PDF;
 
@@ -374,8 +378,10 @@ public class CompiledFiletypeFilter {
         JPG,
         JPEG,
         GIF,
+        EPS,
         PNG,
         BMP,
+        TIF,
         TIFF,
         RAW,
         SVG,

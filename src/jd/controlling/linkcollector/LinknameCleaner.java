@@ -136,17 +136,23 @@ public class LinknameCleaner {
 
         /* remove extension */
         if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
-            final int lastPoint = name.lastIndexOf(".");
-            if (lastPoint > 0) {
-                final int extLength = (name.length() - (lastPoint + 1));
-                final String ext = name.substring(lastPoint + 1);
-                final ExtensionsFilterInterface knownExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
-                if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
-                    /* make sure to cut off only known extensions */
-                    name = name.substring(0, lastPoint);
-                } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
-                    /* make sure to cut off only known extensions */
-                    name = name.substring(0, lastPoint);
+            while (true) {
+                final int lastPoint = name.lastIndexOf(".");
+                if (lastPoint > 0) {
+                    final int extLength = (name.length() - (lastPoint + 1));
+                    final String ext = name.substring(lastPoint + 1);
+                    final ExtensionsFilterInterface knownExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
+                    if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
+                        /* make sure to cut off only known extensions */
+                        name = name.substring(0, lastPoint);
+                    } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
+                        /* make sure to cut off only known extensions */
+                        name = name.substring(0, lastPoint);
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
                 }
             }
         }
