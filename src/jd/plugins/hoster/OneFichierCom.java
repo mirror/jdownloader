@@ -198,7 +198,6 @@ public class OneFichierCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         /* Offline links should also get nice filenames. */
-        link.setName(this.getFID(link));
         correctDownloadLink(link);
         checkLinks(new DownloadLink[] { link });
         prepareBrowser(br);
@@ -767,7 +766,7 @@ public class OneFichierCom extends PluginForHost {
 
     /**
      * Makes sure that we're allowed to download a link. This function will also find out of a link is password protected.
-     * 
+     *
      * @throws IOException
      */
     private void checkDownloadable() throws PluginException, IOException {

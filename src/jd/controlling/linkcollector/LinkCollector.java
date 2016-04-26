@@ -31,64 +31,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.appwork.controlling.SingleReachableState;
-import org.appwork.exceptions.WTFException;
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.shutdown.ShutdownRequest;
-import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoListener;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.queue.Queue;
-import org.appwork.utils.event.queue.Queue.QueuePriority;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.io.J7FileList;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.controlling.linkcrawler.GenericVariants;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.SelectionInfo.PackageView;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
-import org.jdownloader.translate._JDT;
-
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -123,6 +65,66 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.controlling.SingleReachableState;
+import org.appwork.exceptions.WTFException;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.io.J7FileList;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.linkcrawler.GenericVariants;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
+import org.jdownloader.translate._JDT;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
 
@@ -655,49 +657,70 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* try to find good matching package or create new one */
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
-            private void newPackage(final java.util.List<CrawledLink> links, String newPackageName, final String downloadFolder, final CrawledPackageMappingID crawledPackageMappingID) {
+            private void addToNewPackage(final List<CrawledLink> links, String newPackageName, final CrawledPackageMappingID crawledPackageMappingID) {
                 final CrawledPackage pkg = new CrawledPackage();
                 pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
                 pkg.setName(newPackageName);
-                if (downloadFolder != null) {
-                    pkg.setDownloadFolder(downloadFolder);
-                }
+                pkg.setDownloadFolder(crawledPackageMappingID.getDownloadFolder());
                 packageMap.put(crawledPackageMappingID, pkg);
                 if (links != null && links.size() > 0) {
                     LinkCollector.this.moveOrAddAt(pkg, links, -1);
-                    putBadMappings(newPackageName, crawledPackageMappingID, links);
                 }
-                // check of we have matching links in offline maper
-                List<CrawledLink> list = offlineMap.remove(crawledPackageMappingID);
-                if (list != null && list.size() > 0) {
-                    LinkCollector.this.moveOrAddAt(pkg, list, -1);
-                }
-                list = variousMap.remove(crawledPackageMappingID);
-                if (list != null && list.size() > 0) {
-                    LinkCollector.this.moveOrAddAt(pkg, list, -1);
-                }
-                if (StringUtils.equals(newPackageName, crawledPackageMappingID.getPackageName())) {
+                if (crawledPackageMappingID.getPackageName() != null) {
+                    // check if we have matching links in offline maper
+                    List<CrawledLink> list = offlineMap.remove(crawledPackageMappingID);
+                    if (list != null && list.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    }
+                    list = variousMap.remove(crawledPackageMappingID);
+                    if (list != null && list.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    }
                     list = getBadMappings(crawledPackageMappingID, pkg);
                     if (list != null && list.size() > 0) {
                         LinkCollector.this.moveOrAddAt(pkg, list, -1);
                     }
+                } else {
+                    putBadMappings(newPackageName, crawledPackageMappingID, links);
+                }
+            }
+
+            private void addToExistingPackage(final List<CrawledLink> links, CrawledPackage pkg, final CrawledPackageMappingID crawledPackageMappingID) {
+                final String packageName = pkg.getName();
+                if (links != null && links.size() > 0) {
+                    LinkCollector.this.moveOrAddAt(pkg, links, -1);
+                }
+                if (crawledPackageMappingID.getPackageName() != null) {
+                    // check if we have matching links in offline maper
+                    List<CrawledLink> list = offlineMap.remove(crawledPackageMappingID);
+                    if (list != null && list.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    }
+                    list = variousMap.remove(crawledPackageMappingID);
+                    if (list != null && list.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    }
+                    list = getBadMappings(crawledPackageMappingID, pkg);
+                    if (list != null && list.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    }
+                } else {
+                    putBadMappings(packageName, crawledPackageMappingID, links);
                 }
             }
 
             private void putBadMappings(String newPackageName, CrawledPackageMappingID crawledPackageMappingID, List<CrawledLink> links) {
-                if (!StringUtils.equals(newPackageName, crawledPackageMappingID.getPackageName())) {
-                    final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolder());
-                    List<CrawledLink> badMappings = badMappingMap.get(badID);
-                    if (links != null) {
-                        for (CrawledLink link : links) {
-                            final DownloadLink dlLink = link.getDownloadLink();
-                            if (dlLink.getContainerUrl() != null) {
-                                if (badMappings == null) {
-                                    badMappings = new ArrayList<CrawledLink>();
-                                    badMappingMap.put(badID, badMappings);
-                                }
-                                badMappings.add(link);
+                final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolder());
+                List<CrawledLink> badMappings = badMappingMap.get(badID);
+                if (links != null) {
+                    for (CrawledLink link : links) {
+                        final DownloadLink dlLink = link.getDownloadLink();
+                        if (dlLink.getContainerUrl() != null || dlLink.getOriginUrl() != null) {
+                            if (badMappings == null) {
+                                badMappings = new ArrayList<CrawledLink>();
+                                badMappingMap.put(badID, badMappings);
                             }
+                            badMappings.add(link);
                         }
                     }
                 }
@@ -708,32 +731,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolder());
                 List<CrawledLink> badMappings = badMappingMap.get(badID);
                 if (badMappings != null) {
-                    final HashMap<String, Boolean> checked = new HashMap<String, Boolean>();
+                    final HashSet<String> searchFor = new HashSet<String>();
                     final boolean readL = pkg.getModifyLock().readLock();
                     try {
-                        for (CrawledLink link : badMappings) {
-                            final String browserURL = link.getDownloadLink().getBrowserUrl();
-                            Boolean check = checked.get(browserURL);
-                            if (check == null) {
-                                for (final CrawledLink cLink : pkg.getChildren()) {
-                                    final DownloadLink dlLink = cLink.getDownloadLink();
-                                    if (StringUtils.equals(browserURL, dlLink.getBrowserUrl())) {
-                                        check = Boolean.TRUE;
-                                        checked.put(browserURL, check);
-                                        break;
-                                    }
-                                }
-                                if (check == null) {
-                                    check = Boolean.FALSE;
-                                    checked.put(browserURL, check);
-                                }
-                            }
-                            if (Boolean.TRUE.equals(check)) {
-                                ret.add(link);
-                            }
+                        for (final CrawledLink cLink : pkg.getChildren()) {
+                            final DownloadLink dlLink = cLink.getDownloadLink();
+                            searchFor.add(dlLink.getContainerUrl());
+                            searchFor.add(dlLink.getOriginUrl());
                         }
                     } finally {
                         pkg.getModifyLock().readUnlock(readL);
+                    }
+                    searchFor.remove(null);
+                    for (final CrawledLink cLink : badMappings) {
+                        final DownloadLink dlLink = cLink.getDownloadLink();
+                        if (searchFor.contains(dlLink.getContainerUrl()) || searchFor.contains(dlLink.getOriginUrl())) {
+                            ret.add(cLink);
+                        }
                     }
                     badMappings.removeAll(ret);
                     if (badMappings.size() == 0) {
@@ -849,12 +863,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
                         if (crawledPackageName == null) {
                             final DownloadLink dlLink = link.getDownloadLink();
+                            final String fileName;
                             if (link.isNameSet() || dlLink.isNameSet()) {
-                                crawledPackageName = link.getName();
+                                fileName = link.getName();
                             } else {
-                                final String name = LinkCrawler.getUnsafeName(link.getName(), null);
-                                if (name != null) {
-                                    crawledPackageName = name;
+                                fileName = LinkCrawler.getUnsafeName(link.getName(), null);
+                            }
+                            if (fileName != null) {
+                                if (AvailableLinkState.ONLINE.equals(link.getLinkState())) {
+                                    crawledPackageName = fileName;
+                                } else {
+                                    final ExtensionsFilterInterface extension = link.getLinkInfo().getExtension();
+                                    if (extension instanceof Enum && !(extension instanceof DocumentExtensions)) {
+                                        crawledPackageName = fileName;
+                                    } else {
+                                        crawledPackageName = null;
+                                    }
                                 }
                             }
                             if (crawledPackageName != null) {
@@ -905,21 +929,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 java.util.List<CrawledLink> list = getIdentifiedMap(crawledPackageMapID, variousMap);
                                 list.add(link);
                                 if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                                    newPackage(null, newPackageName, downloadFolder, crawledPackageMapID);
+                                    addToNewPackage(null, newPackageName, crawledPackageMapID);
                                 } else {
-                                    List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                    java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                     add.add(link);
-                                    LinkCollector.this.moveOrAddAt(getVariousCrawledPackage(), add, -1);
+                                    addToExistingPackage(add, getVariousCrawledPackage(), crawledPackageMapID);
                                 }
                             } else {
                                 java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
-                                newPackage(add, newPackageName, downloadFolder, crawledPackageMapID);
+                                addToNewPackage(add, newPackageName, crawledPackageMapID);
                             }
                         } else {
-                            List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                            java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
-                            LinkCollector.this.moveOrAddAt(pkg, add, -1);
+                            addToExistingPackage(add, pkg, crawledPackageMapID);
                         }
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
                         autoStartManager.onLinkAdded(link);
@@ -1119,9 +1143,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
