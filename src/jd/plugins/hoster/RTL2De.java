@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/sendung/[^/]+/video/\\d+[^/]+/\\d+[^/]+/" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/sendung/[^/]+/video/\\d+.+" }, flags = { 32 })
 public class RTL2De extends PluginForHost {
 
     /* Tags: rtl-interactive.de */
@@ -61,7 +61,6 @@ public class RTL2De extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final Regex idregex = new Regex(downloadLink.getDownloadURL(), "rtl2\\.de/sendung/[^/]+/video/(\\d+)[^/]+/(\\d+)[^/]+/");
         /* Offline links should also have nice filenames */
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "rtl2\\.de/(.+)").getMatch(0));
         setBrowserExclusive();
@@ -83,14 +82,14 @@ public class RTL2De extends PluginForHost {
             vico_id = br.getRegex("vico_id=(\\d+)").getMatch(0);
         }
         if (vico_id == null) {
-            vico_id = idregex.getMatch(0);
+            vico_id = new Regex(downloadLink.getDownloadURL(), "rtl2\\.de/sendung/[^/]+/video/(\\d+)").getMatch(0);
         }
         String vivi_id = br.getRegex("vivi_id[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
         if (vivi_id == null) {
             vivi_id = br.getRegex("vivi_id=(\\d+)").getMatch(0);
         }
         if (vivi_id == null) {
-            vivi_id = idregex.getMatch(1);
+            vivi_id = br.getRegex("data\\-video=\"(\\d+)\"").getMatch(0);
         }
         if (vico_id == null || vivi_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -132,6 +131,7 @@ public class RTL2De extends PluginForHost {
         return ret;
     }
 
+    @SuppressWarnings("deprecation")
     private void download(final DownloadLink downloadLink) throws Exception {
         if (DLCONTENT == null || !DLCONTENT.startsWith("rtmp")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -163,7 +163,7 @@ public class RTL2De extends PluginForHost {
         rtmp.setUrl(url);
         rtmp.setApp(app);
         rtmp.setPageUrl(downloadLink.getDownloadURL());
-        rtmp.setResume(true);
+        rtmp.setResume(false);
         /* Make sure we use the right protocol... */
         rtmp.setProtocol(0);
         // rtmp.setRealTime();
