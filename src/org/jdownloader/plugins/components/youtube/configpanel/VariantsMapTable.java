@@ -14,7 +14,6 @@ import java.util.List;
 
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
-import javax.swing.JTable;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.CheckBoxIcon;
@@ -41,14 +40,10 @@ import jd.gui.swing.jdgui.BasicJDTable;
 
 public class VariantsMapTable extends BasicJDTable<AbstractVariantWrapper> {
 
-    public VariantsMapTable(ArrayList<AbstractVariantWrapper> sorted) {
-        super(new VariantsMapTableModel(sorted));
+    public VariantsMapTable(VariantsMapTableModel model) {
+        super(model);
         setSearchEnabled(true);
-        setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-    }
-
-    public VariantsMapTable(VariantsMapTableModel m) {
-        super(m);
+        setColumnBottonVisibility(false);
     }
 
     @Override
@@ -133,10 +128,10 @@ public class VariantsMapTable extends BasicJDTable<AbstractVariantWrapper> {
 
                 String name = UIOManager.I().show(InputDialogInterface.class, new InputDialog(0, _GUI.T.lit_name(), "", sb.toString(), null, null, null)).getText();
                 if (StringUtils.isNotEmpty(name)) {
-                    Link link = new Link(name, variants);
-                    List<Link> links = CFG_YOUTUBE.CFG.getLinks();
+                    YoutubeVariantCollection link = new YoutubeVariantCollection(name, variants);
+                    List<YoutubeVariantCollection> links = CFG_YOUTUBE.CFG.getCollections();
                     links.add(link);
-                    CFG_YOUTUBE.CFG.setLinks(links);
+                    CFG_YOUTUBE.CFG.setCollections(links);
                 }
             }
 
@@ -218,7 +213,7 @@ public class VariantsMapTable extends BasicJDTable<AbstractVariantWrapper> {
         getModel().save();
     }
 
-    public void setSelectionByLink(Link link) {
+    public void setSelectionByLink(YoutubeVariantCollection link) {
         if (link == null) {
             return;
         }

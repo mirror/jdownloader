@@ -21,11 +21,12 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 
-public class LinkTable extends BasicJDTable<Link> {
+public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
 
-    public LinkTable() {
-        super(new LinkTableModel());
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Link>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null) {
+    public CollectionsTable(CollectionsTableModel model) {
+        super(model);
+        setColumnBottonVisibility(false);
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<YoutubeVariantCollection>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null) {
 
             @Override
             protected Color getBackground(Color current) {
@@ -33,7 +34,7 @@ public class LinkTable extends BasicJDTable<Link> {
             }
 
             @Override
-            public boolean accept(ExtColumn<Link> column, Link value, boolean selected, boolean focus, int row) {
+            public boolean accept(ExtColumn<YoutubeVariantCollection> column, YoutubeVariantCollection value, boolean selected, boolean focus, int row) {
                 return value.getGroupingID() != null;
             }
 
@@ -42,13 +43,13 @@ public class LinkTable extends BasicJDTable<Link> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Link contextObject, final List<Link> selection, ExtColumn<Link> column, MouseEvent mouseEvent) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, YoutubeVariantCollection contextObject, final List<YoutubeVariantCollection> selection, ExtColumn<YoutubeVariantCollection> column, MouseEvent mouseEvent) {
         popup.add(new AppAction() {
             {
                 setSmallIcon(new AbstractIcon(IconKey.ICON_REMOVE, 20));
                 setName(_GUI.T.lit_delete());
                 setEnabled(false);
-                for (Link l : selection) {
+                for (YoutubeVariantCollection l : selection) {
                     if (l.getGroupingID() == null) {
                         setEnabled(true);
                         break;
@@ -66,26 +67,26 @@ public class LinkTable extends BasicJDTable<Link> {
     }
 
     @Override
-    protected boolean onShortcutDelete(final List<Link> selectedObjects, KeyEvent evt, final boolean direct) {
+    protected boolean onShortcutDelete(final List<YoutubeVariantCollection> selectedObjects, KeyEvent evt, final boolean direct) {
         if (selectedObjects == null || selectedObjects.size() == 0) {
             return false;
         }
         if (direct || UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.lit_are_you_sure())) {
             getSelectionModel().clearSelection();
-            List<Link> links = CFG_YOUTUBE.CFG.getLinks();
-            for (Link l : selectedObjects) {
+            List<YoutubeVariantCollection> links = CFG_YOUTUBE.CFG.getCollections();
+            for (YoutubeVariantCollection l : selectedObjects) {
                 if (l.getGroupingID() == null) {
                     links.remove(l);
                 }
             }
-            CFG_YOUTUBE.CFG.setLinks(links);
+            CFG_YOUTUBE.CFG.setCollections(links);
             return true;
         }
         return false;
     }
 
     public void onEnabledMapUpdate(CounterMap<String> enabledMap) {
-        ((LinkTableModel) getModel()).onEnabledMapUpdate(enabledMap);
+        ((CollectionsTableModel) getModel()).onEnabledMapUpdate(enabledMap);
     }
 
 }

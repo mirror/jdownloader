@@ -223,7 +223,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
         @Override
         public boolean isAutoWidthEnabled() {
-            return true;
+            return false;
         }
 
         @Override
@@ -288,7 +288,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
         @Override
         public boolean isAutoWidthEnabled() {
-            return true;
+            return false;
         }
 
         @Override
@@ -480,6 +480,11 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             @Override
             protected String getTooltipText(AbstractVariantWrapper obj) {
                 return obj.variant.createAdvancedName();
+            }
+
+            @Override
+            public boolean isDefaultVisible() {
+                return false;
             }
 
             @Override

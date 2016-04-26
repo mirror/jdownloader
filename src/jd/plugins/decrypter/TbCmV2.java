@@ -50,7 +50,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAnd
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.configpanel.AbstractVariantWrapper;
-import org.jdownloader.plugins.components.youtube.configpanel.Link;
+import org.jdownloader.plugins.components.youtube.configpanel.YoutubeVariantCollection;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
@@ -696,7 +696,7 @@ public class TbCmV2 extends PluginForDecrypt {
             //
             // }
 
-            List<Link> links = Link.load();
+            List<YoutubeVariantCollection> links = YoutubeVariantCollection.load();
             // enabledVariants
             // new VariantIDStorable(variant).
             HashSet<String> allowedVariantsSet = new HashSet<String>();
@@ -713,7 +713,7 @@ public class TbCmV2 extends PluginForDecrypt {
             }
 
             // HashMap<Link, List<VariantInfo>> linkMap = new HashMap<Link, List<VariantInfo>>();
-            for (Link l : links) {
+            for (YoutubeVariantCollection l : links) {
                 if (!l.isEnabled()) {
                     continue;
                 }
@@ -1109,7 +1109,7 @@ public class TbCmV2 extends PluginForDecrypt {
     // return groupID;
     // }
 
-    private DownloadLink createLink(Link l, VariantInfo variantInfo, List<VariantInfo> alternatives) {
+    private DownloadLink createLink(YoutubeVariantCollection l, VariantInfo variantInfo, List<VariantInfo> alternatives) {
         try {
             System.out.println("Add  Link " + l.getName());
             YoutubeClipData clip = null;

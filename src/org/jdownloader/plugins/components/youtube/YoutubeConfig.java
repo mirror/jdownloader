@@ -15,7 +15,7 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.plugins.components.youtube.configpanel.Link;
+import org.jdownloader.plugins.components.youtube.configpanel.YoutubeVariantCollection;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
@@ -399,7 +399,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
 
-    void setLinks(List<Link> links);
+    void setCollections(List<YoutubeVariantCollection> links);
 
-    List<Link> getLinks();
+    List<YoutubeVariantCollection> getCollections();
 }
