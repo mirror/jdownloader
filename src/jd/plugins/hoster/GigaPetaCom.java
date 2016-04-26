@@ -16,14 +16,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,15 +36,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "http://[\\w\\.]*?gigapeta\\.com/dl/\\w+" }, flags = { 2 })
 public class GigaPetaCom extends PluginForHost {
-
-    private static AtomicInteger simultanpremium = new AtomicInteger(1);
-
-    public boolean               nopremium       = false;
 
     // Gehört zu tenfiles.com/tenfiles.info
     public GigaPetaCom(PluginWrapper wrapper) {
@@ -73,7 +69,7 @@ public class GigaPetaCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception {
         String captchaKey = (int) (Math.random() * 100000000) + "";
-        String captchaUrl = "http://gigapeta.com/img/captcha.gif?x=" + captchaKey;
+        String captchaUrl = "/img/captcha.gif?x=" + captchaKey;
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
             br.postPage(br.getURL(), "download=&captcha_key=" + captchaKey + "&captcha=" + captchaCode);
@@ -110,29 +106,12 @@ public class GigaPetaCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            return login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        if (!nopremium) {
-            String expire = br.getRegex("You have <b>premium</b> account till(.*?)</p>").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm", null));
-            }
-            ai.setStatus("Premium Account");
-        } else {
-            ai.setStatus("Registered (free) User");
-        }
-        return ai;
     }
 
     public String getAGBLink() {
@@ -140,12 +119,7 @@ public class GigaPetaCom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium.get();
+        return 2;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -156,10 +130,10 @@ public class GigaPetaCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (nopremium) {
+        if (AccountType.FREE.equals(account.getType())) {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
@@ -189,7 +163,7 @@ public class GigaPetaCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
 
-    private void login(Account account) throws Exception {
+    private AccountInfo login(Account account, boolean fromFetchAccount) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://gigapeta.com", "lang", "us");
         br.setDebug(true);
@@ -215,15 +189,27 @@ public class GigaPetaCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        if (br.containsHTML("You have <b>basic</b> account")) {
-            nopremium = true;
-            simultanpremium.set(1);
-        } else if (br.getRegex("You have <b>([^<>\"]*?)</b> account till").getMatch(0) != null) {
-            simultanpremium.set(-1);
-        } else {
-            logger.warning("Unknown accounttype, disabling it...");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        final AccountInfo ai = new AccountInfo();
+        final String expire = br.getRegex("You have <b>premium</b> account till(.*?)</p>").getMatch(0);
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm", null));
+            if (!ai.isExpired()) {
+                account.setMaxSimultanDownloads(-1);
+                ai.setStatus("Premium Account");
+            }
         }
+        if (br.containsHTML("You have <b>basic</b> account") || ai.isExpired()) {
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free Account");
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        if (!fromFetchAccount) {
+            account.setAccountInfo(ai);
+        }
+        return ai;
     }
 
     public void reset() {
@@ -238,7 +224,7 @@ public class GigaPetaCom extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (AccountType.FREE.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
         }
