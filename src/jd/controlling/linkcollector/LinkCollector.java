@@ -96,6 +96,8 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.filter.LinkFilterController;
@@ -759,46 +761,49 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             private CrawledPackage getCrawledPackage(CrawledPackageMappingID crawledPackageMappingID, CrawledLink mappingLink) {
                 CrawledPackage ret = packageMap.get(crawledPackageMappingID);
-                if (ret == null && crawledPackageMappingID.getPackageName() == null && mappingLink.getDownloadLink().getContainerUrl() != null) {
-                    final HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>> bestMappings = new HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>>();
-                    for (final Entry<CrawledPackageMappingID, CrawledPackage> chance : packageMap.entrySet()) {
-                        int equals = 0;
-                        if (StringUtils.equals(crawledPackageMappingID.getId(), chance.getKey().getId())) {
-                            equals++;
-                        }
-                        if (StringUtils.equals(crawledPackageMappingID.getDownloadFolder(), chance.getKey().getDownloadFolder())) {
-                            equals++;
-                        }
-                        if (equals > 0) {
-                            HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(equals));
-                            if (mappings == null) {
-                                mappings = new HashMap<CrawledPackageMappingID, CrawledPackage>();
-                                bestMappings.put(new Integer(equals), mappings);
+                if (ret == null && crawledPackageMappingID.getPackageName() == null) {
+                    final String containerURL = mappingLink.getDownloadLink().getContainerUrl();
+                    final String originURL = mappingLink.getDownloadLink().getOriginUrl();
+                    if (containerURL != null || originURL != null) {
+                        final HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>> bestMappings = new HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>>();
+                        for (final Entry<CrawledPackageMappingID, CrawledPackage> chance : packageMap.entrySet()) {
+                            int equals = 0;
+                            if (StringUtils.equals(crawledPackageMappingID.getId(), chance.getKey().getId())) {
+                                equals++;
                             }
-                            mappings.put(chance.getKey(), chance.getValue());
+                            if (StringUtils.equals(crawledPackageMappingID.getDownloadFolder(), chance.getKey().getDownloadFolder())) {
+                                equals++;
+                            }
+                            if (equals > 0) {
+                                HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(equals));
+                                if (mappings == null) {
+                                    mappings = new HashMap<CrawledPackageMappingID, CrawledPackage>();
+                                    bestMappings.put(new Integer(equals), mappings);
+                                }
+                                mappings.put(chance.getKey(), chance.getValue());
+                            }
                         }
-                    }
-                    final String browserURL = mappingLink.getDownloadLink().getContainerUrl();
-                    for (int x = 2; x > 0; x--) {
-                        HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(x));
-                        if (mappings != null) {
-                            for (final Entry<CrawledPackageMappingID, CrawledPackage> mapping : mappings.entrySet()) {
-                                final CrawledPackage pkg = mapping.getValue();
-                                final boolean readL = pkg.getModifyLock().readLock();
-                                try {
-                                    for (final CrawledLink cLink : pkg.getChildren()) {
-                                        final DownloadLink dlLink = cLink.getDownloadLink();
-                                        if (dlLink != null && dlLink.getContainerUrl() != null && StringUtils.equals(dlLink.getContainerUrl(), browserURL)) {
-                                            final CrawledPackageMappingID id = mapping.getKey();
-                                            if (id.getPackageName() != null) {
-                                                return pkg;
-                                            } else if (ret != null) {
-                                                ret = pkg;
+                        for (int x = 2; x > 0; x--) {
+                            HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(x));
+                            if (mappings != null) {
+                                for (final Entry<CrawledPackageMappingID, CrawledPackage> mapping : mappings.entrySet()) {
+                                    final CrawledPackage pkg = mapping.getValue();
+                                    final boolean readL = pkg.getModifyLock().readLock();
+                                    try {
+                                        for (final CrawledLink cLink : pkg.getChildren()) {
+                                            final DownloadLink dlLink = cLink.getDownloadLink();
+                                            if (dlLink != null && ((containerURL != null && StringUtils.equals(dlLink.getContainerUrl(), containerURL)) || (originURL != null && StringUtils.equals(dlLink.getOriginUrl(), originURL)))) {
+                                                final CrawledPackageMappingID id = mapping.getKey();
+                                                if (id.getPackageName() != null) {
+                                                    return pkg;
+                                                } else if (ret != null) {
+                                                    ret = pkg;
+                                                }
                                             }
                                         }
+                                    } finally {
+                                        pkg.getModifyLock().readUnlock(readL);
                                     }
-                                } finally {
-                                    pkg.getModifyLock().readUnlock(readL);
                                 }
                             }
                         }
@@ -874,10 +879,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     crawledPackageName = fileName;
                                 } else {
                                     final ExtensionsFilterInterface extension = link.getLinkInfo().getExtension();
-                                    if (extension instanceof Enum && !(extension instanceof DocumentExtensions)) {
-                                        crawledPackageName = fileName;
-                                    } else {
-                                        crawledPackageName = null;
+                                    if (!"".equalsIgnoreCase(extension.name())) {
+                                        if (!DocumentExtensions.HTML.equals(extension)) {
+                                            crawledPackageName = fileName;
+                                        } else {
+                                            final String tmpFileName = fileName.replaceFirst("\\.html?$", "");
+                                            final ExtensionsFilterInterface tmpExtension = CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(tmpFileName));
+                                            if (tmpExtension != null) {
+                                                crawledPackageName = tmpFileName;
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -885,7 +896,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 crawledPackageName = LinknameCleaner.cleanFileName(crawledPackageName, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                             }
                         }
-                        if (crawledPackageName == null) {
+                        if (crawledPackageName == null && link.getLinkInfo().getExtension() instanceof ArchiveExtensions) {
                             final ExtractionExtension lArchiver = archiver;
                             if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.isEnabled()) {
                                 final CrawledLinkFactory clf = new CrawledLinkFactory(link);
@@ -1143,9 +1154,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {

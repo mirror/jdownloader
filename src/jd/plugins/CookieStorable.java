@@ -96,10 +96,23 @@ public class CookieStorable implements Storable {
         this.expireTime = expireTime;
     }
 
-    private String       host         = null;
-    private String       value        = null;
-    private String       key          = null;
-    private String       domain       = null;
+    private String  host   = null;
+    private String  value  = null;
+    private String  key    = null;
+    private String  domain = null;
+    private Boolean secure = null;
+
+    public Boolean getSecure() {
+        if (this.cookie != null) {
+            return this.cookie.isSecure();
+        }
+        return secure;
+    }
+
+    public void setSecure(Boolean secure) {
+        this.secure = secure;
+    }
+
     private long         hostTime     = -1;
     private long         creationTime = -1;
     private long         expireTime   = -1;
@@ -123,6 +136,7 @@ public class CookieStorable implements Storable {
         ret.setHostTime(this.getHostTime());
         ret.setCreationTime(this.getCreationTime());
         ret.setExpireDate(this.getExpireTime());
+        ret.setSecure(getSecure());
         return ret;
     }
 }
