@@ -111,7 +111,6 @@ public class CompiledFiletypeFilter {
         README,
         XML,
         CSV,
-
         RTF,
         PDF;
 
