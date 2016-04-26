@@ -106,6 +106,10 @@ public class CompiledFiletypeFilter {
     public static enum DocumentExtensions implements ExtensionsFilterInterface {
         TXT,
         HTML("(html?)"),
+        PHP,
+        JSP,
+        JAVA,
+        JS,
         DOC("(doc(x|m)?|dot(x|m)?)"),
         EPUB,
         README,

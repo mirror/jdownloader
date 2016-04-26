@@ -75,10 +75,6 @@ public class EnvJSBrowser implements ContextCallback {
         return INSTANCES.get(id).get();
     }
 
-    public String getCookieStringByUrl(String url) {
-        return Request.getCookieString(br.getCookies(url));
-    }
-
     public void logToConsole(String message) {
         logger.info("console.log >" + message);
 
