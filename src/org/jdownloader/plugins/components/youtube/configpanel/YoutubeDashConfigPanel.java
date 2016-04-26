@@ -20,6 +20,7 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.CounterMap;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.PerfectHeightScrollPane;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -57,7 +58,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private boolean                  setting = false;
 
     private VariantsMapTable         allowed;
-    private LinkTable                links;
+    private CollectionsTable         collections;
 
     public abstract class MultiVariantBox<Type extends AbstractVariant> extends MultiComboBox<Type> {
 
@@ -151,21 +152,48 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         addHeader(_GUI.T.YoutubeDashConfigPanel_allowedtypoes(), NewTheme.I().getIcon(IconKey.ICON_MEDIAPLAYER, 18));
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_quick());
-        links = new LinkTable();
-        allowed = new VariantsMapTable(sorted) {
+        collections = new CollectionsTable(new CollectionsTableModel() {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                super.onConfigValueModified(keyHandler, newValue);
+                refreshLayout();
+
+            }
+        });
+        allowed = new VariantsMapTable(new VariantsMapTableModel(sorted) {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                super.onConfigValueModified(keyHandler, newValue);
+                refreshLayout();
+
+            }
+        }) {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
             @Override
             public void onEnabledMapUpdate(CounterMap<String> enabledMap) {
-                links.onEnabledMapUpdate(enabledMap);
+                collections.onEnabledMapUpdate(enabledMap);
             }
 
         };
 
-        links.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        collections.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 try {
-                    Link link = links.getModel().getObjectbyRow(links.getSelectedRow());
+                    YoutubeVariantCollection link = collections.getModel().getObjectbyRow(collections.getSelectedRow());
                     allowed.setSelectionByLink(link);
                 } catch (Throwable e1) {
                     Log.log(e1);
@@ -234,13 +262,12 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE(), null, aBitrate);
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_table());
         JScrollPane sp;
-        add(sp = new JScrollPane(allowed), "pushx,growx,height 100:450:n,spanx");
+        add(new PerfectHeightScrollPane(allowed), "pushx,growx,spanx");
         // sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 
         addHeader(_GUI.T.YoutubeDashConfigPanel_collections_header(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_links_description());
-        add(new JScrollPane(links), "pushx,growx,spanx,height 100:450:n");
-
+        add(new PerfectHeightScrollPane(collections), "pushx,growx,spanx");
         addHeader(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
         for (org.jdownloader.plugins.components.youtube.YoutubeReplacer r : YoutubeHelper.REPLACER) {
 
@@ -294,6 +321,17 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_subtitle(), null, null, new TextInput(CFG_YOUTUBE.SUBTITLE_FILENAME_PATTERN));
 
         updateBest();
+    }
+
+    protected void refreshLayout() {
+        System.out.println("Refresh");
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                revalidate();
+            }
+        };
     }
 
     private void updateBest() {

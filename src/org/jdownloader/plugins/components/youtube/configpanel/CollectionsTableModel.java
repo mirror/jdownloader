@@ -24,16 +24,16 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-public class LinkTableModel extends ExtTableModel<Link> implements GenericConfigEventListener<Object> {
+public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollection> implements GenericConfigEventListener<Object> {
 
-    private abstract class AutoResizingTextColumn extends ExtTextColumn<Link> {
+    private abstract class AutoResizingTextColumn extends ExtTextColumn<YoutubeVariantCollection> {
         private AutoResizingTextColumn(String name) {
             super(name);
 
-            this.setRowSorter(new ExtDefaultRowSorter<Link>() {
+            this.setRowSorter(new ExtDefaultRowSorter<YoutubeVariantCollection>() {
 
                 @Override
-                public int compare(final Link o1, final Link o2) {
+                public int compare(final YoutubeVariantCollection o1, final YoutubeVariantCollection o2) {
                     String o1s = getStringValue(o1);
                     String o2s = getStringValue(o2);
                     if (o1s == null) {
@@ -58,7 +58,7 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
         }
 
         @Override
-        public boolean isEnabled(Link obj) {
+        public boolean isEnabled(YoutubeVariantCollection obj) {
             return obj.isEnabled();
         }
 
@@ -68,7 +68,7 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
         }
 
         @Override
-        protected String getTooltipText(Link obj) {
+        protected String getTooltipText(YoutubeVariantCollection obj) {
             return null;
         }
 
@@ -84,7 +84,12 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
 
         @Override
         public int getDefaultWidth() {
-            return 0;
+            return this.calculateMinimumHeaderWidth();
+        }
+
+        @Override
+        public int getMinWidth() {
+            return this.calculateMinimumHeaderWidth();
         }
 
         @Override
@@ -95,14 +100,14 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
 
     }
 
-    private abstract class AutoResizingIntColumn extends ExtTextColumn<Link> {
+    private abstract class AutoResizingIntColumn extends ExtTextColumn<YoutubeVariantCollection> {
         private AutoResizingIntColumn(String name) {
             super(name);
             rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
-            this.setRowSorter(new ExtDefaultRowSorter<Link>() {
+            this.setRowSorter(new ExtDefaultRowSorter<YoutubeVariantCollection>() {
 
                 @Override
-                public int compare(final Link o1, final Link o2) {
+                public int compare(final YoutubeVariantCollection o1, final YoutubeVariantCollection o2) {
 
                     final int _1 = AutoResizingIntColumn.this.getInt(o1);
                     final int _2 = AutoResizingIntColumn.this.getInt(o2);
@@ -122,14 +127,14 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
         }
 
         @Override
-        public boolean isEnabled(Link obj) {
+        public boolean isEnabled(YoutubeVariantCollection obj) {
             return obj.isEnabled();
         }
 
-        public abstract int getInt(Link value);
+        public abstract int getInt(YoutubeVariantCollection value);
 
         @Override
-        public String getStringValue(Link value) {
+        public String getStringValue(YoutubeVariantCollection value) {
             int i = getInt(value);
             if (i <= 0) {
                 return "";
@@ -138,7 +143,7 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
         }
 
         @Override
-        protected String getTooltipText(Link obj) {
+        protected String getTooltipText(YoutubeVariantCollection obj) {
             return null;
         }
 
@@ -159,7 +164,12 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
 
         @Override
         public int getDefaultWidth() {
-            return 0;
+            return this.calculateMinimumHeaderWidth();
+        }
+
+        @Override
+        public int getMinWidth() {
+            return this.calculateMinimumHeaderWidth();
         }
 
         @Override
@@ -170,13 +180,13 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
 
     }
 
-    private class EnabledColumn extends ExtCheckColumn<Link> {
+    private class EnabledColumn extends ExtCheckColumn<YoutubeVariantCollection> {
         private EnabledColumn(String string) {
             super(string);
 
-            this.setRowSorter(new ExtDefaultRowSorter<Link>() {
+            this.setRowSorter(new ExtDefaultRowSorter<YoutubeVariantCollection>() {
                 @Override
-                public int compare(final Link o1, final Link o2) {
+                public int compare(final YoutubeVariantCollection o1, final YoutubeVariantCollection o2) {
                     final boolean b1 = getBooleanValue(o1);
                     final boolean b2 = getBooleanValue(o2);
 
@@ -224,36 +234,36 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
         }
 
         @Override
-        public boolean isEditable(Link obj) {
+        public boolean isEditable(YoutubeVariantCollection obj) {
             return true;
         }
 
         @Override
-        protected boolean getBooleanValue(Link value) {
+        protected boolean getBooleanValue(YoutubeVariantCollection value) {
             return value.isEnabled();
         }
 
         @Override
-        protected void setBooleanValue(boolean value, Link object) {
+        protected void setBooleanValue(boolean value, YoutubeVariantCollection object) {
             object.setEnabled(value);
         }
     }
 
     private CounterMap<String> enabledMap;
 
-    public LinkTableModel() {
+    public CollectionsTableModel() {
         super("YoutubeLinkTableModel");
         // ensure Link and its statics are loaded
 
-        _fireTableStructureChanged(Link.load(), true);
-        CFG_YOUTUBE.LINKS.getEventSender().addListener(this, true);
+        _fireTableStructureChanged(YoutubeVariantCollection.load(), true);
+        CFG_YOUTUBE.COLLECTIONS.getEventSender().addListener(this, true);
     }
 
     @Override
     protected void initColumns() {
         addColumn(new EnabledColumn(_GUI.T.lit_enabled()) {
             @Override
-            protected void setBooleanValue(boolean value, Link object) {
+            protected void setBooleanValue(boolean value, YoutubeVariantCollection object) {
                 super.setBooleanValue(value, object);
                 save();
             }
@@ -265,23 +275,23 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
             }
 
             @Override
-            public boolean isEditable(Link obj) {
+            public boolean isEditable(YoutubeVariantCollection obj) {
                 return true;
             }
 
             @Override
-            public boolean isEnabled(Link obj) {
+            public boolean isEnabled(YoutubeVariantCollection obj) {
                 return getEnabledCount(obj) > 0 && obj.isEnabled();
             }
 
             @Override
-            protected void setStringValue(String value, Link object) {
+            protected void setStringValue(String value, YoutubeVariantCollection object) {
                 object.setName(value);
                 save();
             }
 
             @Override
-            public String getStringValue(Link value) {
+            public String getStringValue(YoutubeVariantCollection value) {
                 return value.getName();
             }
         });
@@ -293,12 +303,12 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
             }
 
             @Override
-            public boolean isEnabled(Link obj) {
+            public boolean isEnabled(YoutubeVariantCollection obj) {
                 return getEnabledCount(obj) > 0 && obj.isEnabled();
             }
 
             @Override
-            public String getStringValue(Link value) {
+            public String getStringValue(YoutubeVariantCollection value) {
                 int i = getEnabledCount(value);
                 if (value.getVariants() == null) {
                     return i + "";
@@ -310,7 +320,7 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
     }
 
     protected void save() {
-        CFG_YOUTUBE.CFG.setLinks(getTableData());
+        CFG_YOUTUBE.CFG.setCollections(getTableData());
     }
 
     @Override
@@ -323,7 +333,7 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
 
             @Override
             protected void runInEDT() {
-                _fireTableStructureChanged(Link.load(), true);
+                _fireTableStructureChanged(YoutubeVariantCollection.load(), true);
             }
         };
     }
@@ -337,7 +347,7 @@ public class LinkTableModel extends ExtTableModel<Link> implements GenericConfig
 
     }
 
-    protected int getEnabledCount(Link value) {
+    protected int getEnabledCount(YoutubeVariantCollection value) {
         int i = 0;
         if (enabledMap == null) {
             return 0;

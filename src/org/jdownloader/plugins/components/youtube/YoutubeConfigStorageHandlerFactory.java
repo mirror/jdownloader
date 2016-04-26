@@ -9,7 +9,7 @@ import org.appwork.storage.config.StorageHandlerFactory;
 import org.appwork.storage.config.handler.DefaultFactoryInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
-import org.jdownloader.plugins.components.youtube.configpanel.Link;
+import org.jdownloader.plugins.components.youtube.configpanel.YoutubeVariantCollection;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
@@ -43,8 +43,8 @@ public class YoutubeConfigStorageHandlerFactory implements StorageHandlerFactory
             ret.add(AudioCodec.VORBIS_SPATIAL);
             return ret;
         }
-        if (handler == CFG_YOUTUBE.LINKS) {
-            return Link.getDefaults();
+        if (handler == CFG_YOUTUBE.COLLECTIONS) {
+            return YoutubeVariantCollection.getDefaults();
         }
         return o;
     }

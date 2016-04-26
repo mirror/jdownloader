@@ -40,7 +40,7 @@ public class CFG_YOUTUBE {
 
     public static final ObjectKeyHandler              BLACKLISTED_RESOLUTIONS               = SH.getKeyHandler("BlacklistedResolutions", ObjectKeyHandler.class);
 
-    public static final ObjectKeyHandler              LINKS                                 = SH.getKeyHandler("Links", ObjectKeyHandler.class);
+    public static final ObjectKeyHandler              COLLECTIONS                           = SH.getKeyHandler("Collections", ObjectKeyHandler.class);
 
     public static final BooleanKeyHandler             ADVANCED_VARIANT_NAMES_ENABLED        = SH.getKeyHandler("AdvancedVariantNamesEnabled", BooleanKeyHandler.class);
 

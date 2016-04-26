@@ -13,9 +13,9 @@ import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-public class Link implements Storable {
+public class YoutubeVariantCollection implements Storable {
 
-    public Link(/* storable */) {
+    public YoutubeVariantCollection(/* storable */) {
     }
 
     private boolean enabled;
@@ -56,26 +56,26 @@ public class Link implements Storable {
     private String                  name;
     private List<VariantIDStorable> variants;
 
-    public Link(String name, List<VariantIDStorable> variants) {
+    public YoutubeVariantCollection(String name, List<VariantIDStorable> variants) {
         enabled = true;
         this.name = name;
         this.variants = variants;
     }
 
-    public Link(String name, String id) {
+    public YoutubeVariantCollection(String name, String id) {
         this.enabled = true;
         this.name = name;
         this.groupingID = id;
     }
 
-    public static List<Link> load() {
-        List<Link> links = CFG_YOUTUBE.CFG.getLinks();
+    public static List<YoutubeVariantCollection> load() {
+        List<YoutubeVariantCollection> links = CFG_YOUTUBE.CFG.getCollections();
         ;
-        ArrayList<Link> ret = new ArrayList<Link>();
+        ArrayList<YoutubeVariantCollection> ret = new ArrayList<YoutubeVariantCollection>();
 
         HashSet<String> groupIds = new HashSet<String>();
         if (links != null) {
-            for (Link l : links) {
+            for (YoutubeVariantCollection l : links) {
                 if (l != null) {
                     ret.add(l);
                     if (StringUtils.isNotEmpty(l.getGroupingID())) {
@@ -85,7 +85,7 @@ public class Link implements Storable {
 
             }
         }
-        for (Link g : getDefaults()) {
+        for (YoutubeVariantCollection g : getDefaults()) {
             if (groupIds.add(g.getGroupingID())) {
                 ret.add(g);
             }
@@ -104,8 +104,8 @@ public class Link implements Storable {
         return ret;
     }
 
-    public static List<Link> getDefaults() {
-        ArrayList<Link> ret = new ArrayList<Link>();
+    public static List<YoutubeVariantCollection> getDefaults() {
+        ArrayList<YoutubeVariantCollection> ret = new ArrayList<YoutubeVariantCollection>();
 
         for (VariantGroup g : VariantGroup.values()) {
 
@@ -114,22 +114,22 @@ public class Link implements Storable {
                 for (Projection p : Projection.values()) {
                     String id = g.name() + "_" + p.name();
 
-                    ret.add(0, new Link(_GUI.T.Youtube_bestcollection(p, g), id));
+                    ret.add(0, new YoutubeVariantCollection(_GUI.T.Youtube_bestcollection(p, g), id));
 
                 }
                 break;
             default:
                 String id = g.name();
 
-                ret.add(0, new Link(_GUI.T.Youtube_bestcollection_2(g), id));
+                ret.add(0, new YoutubeVariantCollection(_GUI.T.Youtube_bestcollection_2(g), id));
 
             }
         }
         for (FileContainer fc : FileContainer.values()) {
             String id = fc.name();
 
-            Link l;
-            ret.add(l = new Link(_GUI.T.Youtube_bestcollection_2(fc), id));
+            YoutubeVariantCollection l;
+            ret.add(l = new YoutubeVariantCollection(_GUI.T.Youtube_bestcollection_2(fc), id));
             l.setEnabled(false);
 
         }
