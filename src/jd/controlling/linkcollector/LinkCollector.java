@@ -215,13 +215,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return downloadFolder;
         }
 
+        private String getDownloadFolderRaw() {
+            return downloadFolderRaw;
+        }
+
+        private String getMappingID() {
+            return getId() + "|_|" + getPackageName() + "|_|" + getDownloadFolderRaw();
+        }
+
         private final String packageName;
         private final String downloadFolder;
-        private final String combined;
+        private final String downloadFolderRaw;
 
-        public String getCombined() {
-            return combined;
-        }
+        private final String internalID;
 
         private static CrawledPackageMappingID get(String combined) {
             if (combined != null) {
@@ -261,6 +267,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
             this.packageName = packageName;
+            this.downloadFolderRaw = downloadFolder;
             if (CrossSystem.isWindows() && downloadFolder != null) {
                 /**
                  * windows has case insensitive filesystem
@@ -268,12 +275,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 downloadFolder = downloadFolder.toLowerCase(Locale.ENGLISH);
             }
             this.downloadFolder = downloadFolder;
-            combined = id + "|_|" + packageName + "|_|" + downloadFolder;
+            internalID = id + "|_|" + packageName + "|_|" + downloadFolder;
         }
 
         @Override
         public int hashCode() {
-            return combined.hashCode();
+            return internalID.hashCode();
         }
 
         @Override
@@ -282,7 +289,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 return true;
             }
             if (obj != null && obj instanceof CrawledPackageMappingID) {
-                return StringUtils.equals(combined, ((CrawledPackageMappingID) obj).combined);
+                return StringUtils.equals(internalID, ((CrawledPackageMappingID) obj).internalID);
             }
             return false;
         }
@@ -663,7 +670,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 final CrawledPackage pkg = new CrawledPackage();
                 pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
                 pkg.setName(newPackageName);
-                pkg.setDownloadFolder(crawledPackageMappingID.getDownloadFolder());
+                pkg.setDownloadFolder(crawledPackageMappingID.getDownloadFolderRaw());
                 packageMap.put(crawledPackageMappingID, pkg);
                 if (links != null && links.size() > 0) {
                     LinkCollector.this.moveOrAddAt(pkg, links, -1);
@@ -712,7 +719,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
             private void putBadMappings(String newPackageName, CrawledPackageMappingID crawledPackageMappingID, List<CrawledLink> links) {
-                final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolder());
+                final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolderRaw());
                 List<CrawledLink> badMappings = badMappingMap.get(badID);
                 if (links != null) {
                     for (CrawledLink link : links) {
@@ -730,7 +737,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             private List<CrawledLink> getBadMappings(CrawledPackageMappingID crawledPackageMappingID, CrawledPackage pkg) {
                 final List<CrawledLink> ret = new ArrayList<CrawledLink>();
-                final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolder());
+                final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolderRaw());
                 List<CrawledLink> badMappings = badMappingMap.get(badID);
                 if (badMappings != null) {
                     final HashSet<String> searchFor = new HashSet<String>();
@@ -1154,9 +1161,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2100,7 +2107,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             /* save packageID */
                             final CrawledPackageMappingID crawledPackageMappingID = LinkCollector.this.getPackageMapID(pkg);
                             if (crawledPackageMappingID != null) {
-                                packageStorable.setPackageID(crawledPackageMappingID.getCombined());
+                                packageStorable.setPackageID(crawledPackageMappingID.getMappingID());
                             }
                             if (!CrawledPackageStorable.TYPE.NORMAL.equals(packageStorable.getType())) {
                                 if (CrawledPackageStorable.TYPE.VARIOUS.equals(packageStorable.getType())) {
@@ -2109,7 +2116,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         final CrawledLink cLink = link._getCrawledLink();
                                         final CrawledPackageMappingID id = getIDFromMap(variousMap, cLink);
                                         if (id != null) {
-                                            link.setID(id.getCombined());
+                                            link.setID(id.getMappingID());
                                         }
                                     }
                                 } else if (CrawledPackageStorable.TYPE.OFFLINE.equals(packageStorable.getType())) {
@@ -2118,7 +2125,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         final CrawledLink cLink = link._getCrawledLink();
                                         final CrawledPackageMappingID id = getIDFromMap(offlineMap, cLink);
                                         if (id != null) {
-                                            link.setID(id.getCombined());
+                                            link.setID(id.getMappingID());
                                         }
                                     }
                                 }
