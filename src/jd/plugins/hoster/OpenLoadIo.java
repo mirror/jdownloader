@@ -258,6 +258,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 dllink = (String) api_data.get("url");
                 if (dllink == null) {
+                    handleAPIErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
@@ -303,7 +304,10 @@ public class OpenLoadIo extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            this.updatestatuscode();
+            this.handleAPIErrors();
+            /* We usually use their API so no matter what goes wrong here - a retry should help! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
@@ -543,10 +547,11 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     private void getPageAPI(final String url) throws Exception {
         super.getPage(url);
-        if (super.br.getHttpConnection().getResponseCode() == 500) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
-        }
         this.updatestatuscode();
+        handleAPIErrors();
+    }
+
+    private void handleAPIErrors() throws PluginException {
         final String status = getJson("status");
         switch (api_responsecode) {
         case 0:
@@ -558,8 +563,12 @@ public class OpenLoadIo extends antiDDoSForHost {
         case 400:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error 400");
         case 403:
+            /* E.g. "msg":"Download Ticket not valid any more" */
             if (br.containsHTML("the owner of this file doesn't allow API downloads")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "The owner of this file doesn't allow API downloads");
+            }
+            if ("Download Ticket not valid any more".equals(this.api_msg)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API error 403 '" + this.api_msg + "'", 5 * 60 * 1000l);
             }
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -578,6 +587,12 @@ public class OpenLoadIo extends antiDDoSForHost {
 
         }
 
+        if (super.br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
+        } else if (super.br.getHttpConnection().getResponseCode() == 503) {
+            /* E.g. overloaded server. */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+        }
     }
 
     /**
