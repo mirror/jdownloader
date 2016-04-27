@@ -67,22 +67,22 @@ public class Video2brainCom extends PluginForHost {
     /* Connection stuff */
     // private final boolean FREE_RESUME = false;
     // private final int FREE_MAXCHUNKS = 0;
-    private final int           FREE_MAXDOWNLOADS      = 20;
-    private final boolean       RESUME_RTMP            = false;
-    private final boolean       RESUME_HTTP            = true;
-    private final int           MAXCHUNKS_HTTP         = 0;
-    private final int           ACCOUNT_MAXDOWNLOADS   = 20;
+    private final int           FREE_MAXDOWNLOADS    = 20;
+    private final boolean       RESUME_RTMP          = false;
+    private final boolean       RESUME_HTTP          = true;
+    private final int           MAXCHUNKS_HTTP       = 0;
+    private final int           ACCOUNT_MAXDOWNLOADS = 20;
 
-    private boolean             premiumonly            = false;
-    private boolean             inPremiumMode          = false;
+    private boolean             premiumonly          = false;
+    private boolean             inPremiumMode        = false;
 
-    public static final String  domain                 = "video2brain.com";
-    public static final String  domain_dummy_education = "video2brain.com_EDUCATION";
-    private final String        TYPE_OLD               = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
-    public static final String  ADD_ORDERID            = "ADD_ORDERID";
-    public static final long    trust_cookie_age       = 300000l;
+    public static final String  domain               = "video2brain.com";
+    // public static final String domain_dummy_education = "video2brain.com_EDUCATION";
+    private final String        TYPE_OLD             = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
+    public static final String  ADD_ORDERID          = "ADD_ORDERID";
+    public static final long    trust_cookie_age     = 300000l;
 
-    public static final boolean defaultADD_ORDERID     = false;
+    public static final boolean defaultADD_ORDERID   = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -306,9 +306,9 @@ public class Video2brainCom extends PluginForHost {
             try {
                 br = newBrowser(br);
                 br.setCookiesExclusive(true);
-                String given_language = account.getStringProperty("language", null);
+                String account_language = account.getStringProperty("language", null);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                if (cookies != null && account_language != null) {
                     br.setCookies(domain, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                         /* We trust these cookies --> Do not check them */
@@ -322,34 +322,25 @@ public class Video2brainCom extends PluginForHost {
                      * This does not matter as he is still loggedin with his logindata via cookies so html code will contain the "logout"
                      * button --> Login should work fine!<br />
                      */
-                    for (String language : languages) {
-                        if (given_language != null) {
-                            /* Avoid too many site requests by re-using the last used language. */
-                            language = given_language;
-                        }
-                        /**
-                         * Each country may have individual logins - we could request this in the login mask or we simply go through all of
-                         * them.
-                         */
-                        getPage(br, "https://www." + domain + "/" + language + "/education");
-                        if (isLoggedIn(br)) {
-                            /* Save new cookie timestamp */
-                            account.saveCookies(br.getCookies(domain), "");
-                            return;
-                        }
-                        if (given_language != null) {
-                            /* Hm something must have went wrong --> Quit this loop! */
-                            break;
-                        }
+                    getPage(br, "https://www." + domain + "/" + account_language + "/education");
+                    if (isLoggedIn(br)) {
+                        /* Save new cookie timestamp */
+                        account.saveCookies(br.getCookies(domain), "");
+                        return;
                     }
                     br = newBrowser(new Browser());
                 }
-                /* First lets check if maybe the user has VPN education access --> No need to login with logindata! */
                 boolean success = false;
+                /**
+                 * Each country/language may have individual logins - we could request this in the login mask or we simply go through all of
+                 * them.
+                 */
                 for (final String language : languages) {
                     /* Ignore previously saved given language - if it worked fine we would not have to re-login anyways! */
-                    given_language = language;
+                    account_language = language;
                     final String lang_uppercase = language.toUpperCase();
+
+                    /* First lets check if maybe the user has VPN education access --> No need to login with logindata! */
                     getPage(br, "https://www." + domain + "/" + language + "/education");
                     /* E.g. errormessage: Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 91.49.11.2 */
                     if (br.containsHTML("class=\"notice\\-page\\-msg\"")) {
@@ -424,7 +415,7 @@ public class Video2brainCom extends PluginForHost {
 
                 account.saveCookies(br.getCookies(domain), "");
                 /* Save used language String to avoid unnecessary server requests for future login requests. */
-                account.setProperty("language", given_language);
+                account.setProperty("language", account_language);
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
