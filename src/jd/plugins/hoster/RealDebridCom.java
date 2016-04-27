@@ -207,11 +207,13 @@ public class RealDebridCom extends antiDDoSForHost {
                 }
             };
             final Browser br2 = br.cloneBrowser();
+            boolean increment = false;
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(dllink), resumes, maxChunks);
                 if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
                     /* content disposition, lets download it */
                     RUNNING_DOWNLOADS.incrementAndGet();
+                    increment = true;
                     boolean ret = dl.startDownload();
                     if (ret && link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         // download is 100%
@@ -314,6 +316,9 @@ public class RealDebridCom extends antiDDoSForHost {
                 } else {
                     /* download is not content disposition. */
                     br2.followConnection();
+                    if (br2.containsHTML("error\":11,")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     logger.info(this.getHost() + "Unknown Error3");
                     int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown3", 0);
                     link.getLinkStatus().setRetryCount(0);
@@ -336,17 +341,13 @@ public class RealDebridCom extends antiDDoSForHost {
                 logger.info("Download failed " + i + " of " + repeat);
                 sleep(3000, link);
                 LogSource.exception(logger, e);
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable t) {
-                }
                 continue;
             } finally {
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable t) {
                 }
-                if (RUNNING_DOWNLOADS.decrementAndGet() == 0) {
+                if (increment && RUNNING_DOWNLOADS.decrementAndGet() == 0) {
                     MAX_DOWNLOADS.set(Integer.MAX_VALUE);
                 }
             }
@@ -512,9 +513,7 @@ public class RealDebridCom extends antiDDoSForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":11,")) {
-                logger.info("Host seems buggy, remove it from list");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("error\":12,")) {
                 /* You have too many simultaneous downloads */
                 errTooManySimCon(account, link);
