@@ -40,9 +40,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(?:de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }, flags = { 2 })
 public class Video2brainCom extends PluginForHost {
 
     public Video2brainCom(PluginWrapper wrapper) {
@@ -50,6 +51,8 @@ public class Video2brainCom extends PluginForHost {
         this.enablePremium("https://www.video2brain.com/en/support/faq");
         setConfigElements();
     }
+
+    private static final String[] languages = { "de", "en", "fr", "es" };
 
     @Override
     public String getAGBLink() {
@@ -77,6 +80,7 @@ public class Video2brainCom extends PluginForHost {
     public static final String  domain_dummy_education = "video2brain.com_EDUCATION";
     private final String        TYPE_OLD               = "https?://(?:www\\.)?video2brain\\.com/[a-z]{2}/videos\\-\\d+\\.htm";
     public static final String  ADD_ORDERID            = "ADD_ORDERID";
+    public static final long    trust_cookie_age       = 300000l;
 
     public static final boolean defaultADD_ORDERID     = false;
 
@@ -176,6 +180,13 @@ public class Video2brainCom extends PluginForHost {
         if (premiumonly) {
             /* This can even happen to paid users! */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (this.inPremiumMode && !isLoggedIn(this.br)) {
+            /* This might happen if user changes password while our login function still trusts the cookies without checking on them. */
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         final String videoid = getActiveVideoID(this.br);
         final String url_language = getUrlLanguage(downloadLink);
@@ -295,9 +306,14 @@ public class Video2brainCom extends PluginForHost {
             try {
                 br = newBrowser(br);
                 br.setCookiesExclusive(true);
+                String given_language = account.getStringProperty("language", null);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(domain, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
                     /**
                      * Education users need to access this page first otherwise they will NOT be logged in! <br />
                      * So what do we do? Simply access that url regarding of the user account type.<br />
@@ -306,86 +322,118 @@ public class Video2brainCom extends PluginForHost {
                      * This does not matter as he is still loggedin with his logindata via cookies so html code will contain the "logout"
                      * button --> Login should work fine!<br />
                      */
-                    getPage(br, "https://www." + domain + "/de/education");
-                    if (br.containsHTML("user\\-logout\\.htm\"")) {
-                        /* Save new cookie timestamp */
-                        account.saveCookies(br.getCookies(domain), "");
-                        return;
+                    for (String language : languages) {
+                        if (given_language != null) {
+                            /* Avoid too many site requests by re-using the last used language. */
+                            language = given_language;
+                        }
+                        /**
+                         * Each country may have individual logins - we could request this in the login mask or we simply go through all of
+                         * them.
+                         */
+                        getPage(br, "https://www." + domain + "/" + language + "/education");
+                        if (isLoggedIn(br)) {
+                            /* Save new cookie timestamp */
+                            account.saveCookies(br.getCookies(domain), "");
+                            return;
+                        }
+                        if (given_language != null) {
+                            /* Hm something must have went wrong --> Quit this loop! */
+                            break;
+                        }
                     }
                     br = newBrowser(new Browser());
                 }
-                /* TODO: Maybe make sure this also works for users of other countries! */
                 /* First lets check if maybe the user has VPN education access --> No need to login with logindata! */
-                getPage(br, "https://www." + domain + "/de/education");
-                /* E.g. errormessage: Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 91.49.11.2 */
-                if (br.containsHTML("class=\"notice\\-page\\-msg\"")) {
-                    /* Either EDU user is not connected to his VPN or our user is a normal user who needs username & password to login */
-                    /* First thing we can do is to do is make sure user entered a valid E-Mail address in the username field! */
-                    if (!account.getUser().matches(".+@.+\\..+")) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                boolean success = false;
+                for (final String language : languages) {
+                    /* Ignore previously saved given language - if it worked fine we would not have to re-login anyways! */
+                    given_language = language;
+                    final String lang_uppercase = language.toUpperCase();
+                    getPage(br, "https://www." + domain + "/" + language + "/education");
+                    /* E.g. errormessage: Sie befinden sich außerhalb einer gültigen IP-Range für einen IP-Login. Ihre IP: 91.49.11.2 */
+                    if (br.containsHTML("class=\"notice\\-page\\-msg\"")) {
+                        /* Either EDU user is not connected to his VPN or our user is a normal user who needs username & password to login */
+                        /* First thing we can do is to do is make sure user entered a valid E-Mail address in the username field! */
+                        if (!account.getUser().matches(".+@.+\\..+")) {
+                            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            }
                         }
-                    }
 
-                    /* Set this property on account - it might be useful later */
-                    account.setProperty("education", false);
-                    getPage(br, "https://www." + domain + "/de/login");
-                    Form loginform = br.getFormbyProperty("id", "login_form");
-                    if (loginform == null) {
-                        loginform = new Form();
-                        loginform.setMethod(MethodType.POST);
-                    }
-                    /* Fix action */
-                    if (loginform.getAction() == null || loginform.getAction().isEmpty()) {
-                        loginform.setAction("/de/custom/modules/user/user_ajax.cfc?method=login");
-                    }
-                    /* Remove trash fields */
-                    loginform.remove("v2b_userpassword");
-                    final String token = getToken(br);
-                    /* Fix token */
-                    final InputField tokenfield = loginform.getInputFieldByName("sectoken");
-                    if (tokenfield != null) {
-                        loginform.remove("sectoken");
-                    }
-                    if (token != null) {
-                        loginform.put("token", Encoding.urlEncode(token));
-                    }
-                    /* Add logindata */
-                    loginform.put("email", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    loginform.put("set_cookie", "true");
-                    /* Prepare Headers */
-                    prepAjaxHeaders(br);
-                    br.submitForm(loginform);
-                    /* TODO: Maybe make sure/check if this also works for users of other countries! */
-                    if (br.getCookie(domain, "V2B_USER_DE") == null) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        /* Set this property on account - it might be useful later */
+                        account.setProperty("education", false);
+                        getPage(br, "https://www." + domain + "/" + language + "/login");
+                        Form loginform = br.getFormbyProperty("id", "login_form");
+                        if (loginform == null) {
+                            loginform = new Form();
+                            loginform.setMethod(MethodType.POST);
                         }
-                    }
-                    String continue_url = br.getRegex("\"url\":\"(https[^<>\"\\']+)\"").getMatch(0);
-                    if (continue_url != null) {
-                        continue_url = continue_url.replace("\\", "");
+                        /* Fix action */
+                        if (loginform.getAction() == null || loginform.getAction().isEmpty()) {
+                            loginform.setAction("/" + language + "/custom/modules/user/user_ajax.cfc?method=login");
+                        }
+                        /* Remove trash fields */
+                        loginform.remove("v2b_userpassword");
+                        final String token = getToken(br);
+                        /* Fix token */
+                        final InputField tokenfield = loginform.getInputFieldByName("sectoken");
+                        if (tokenfield != null) {
+                            loginform.remove("sectoken");
+                        }
+                        if (token != null) {
+                            loginform.put("token", Encoding.urlEncode(token));
+                        }
+                        /* Add logindata */
+                        loginform.put("email", Encoding.urlEncode(account.getUser()));
+                        loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        loginform.put("set_cookie", "true");
+                        /* Prepare Headers */
+                        prepAjaxHeaders(br);
+                        br.submitForm(loginform);
+                        /* TODO: Maybe make sure/check if this also works for users of other countries! */
+                        final String language_based_cookie = br.getCookie(domain, "V2B_USER_" + lang_uppercase);
+                        if (language_based_cookie == null) {
+                            continue;
+                        }
+                        String continue_url = JSonUtils.getJson(br, "url");
+                        if (continue_url == null) {
+                            /* Small fallback. */
+                            continue_url = "/" + language + "/login";
+                        }
+                        getPage(br, continue_url);
+                        success = true;
+                        break;
                     } else {
-                        /* TODO: Maybe make sure this also works for users of other countries! */
-                        continue_url = "/de/login";
+                        /* Set this property on account - it might be useful later */
+                        account.setProperty("education", true);
+                        success = true;
+                        break;
                     }
-                    getPage(br, continue_url);
-                } else {
-                    /* Set this property on account - it might be useful later */
-                    account.setProperty("education", true);
+                }
+
+                if (!success) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
 
                 account.saveCookies(br.getCookies(domain), "");
+                /* Save used language String to avoid unnecessary server requests for future login requests. */
+                account.setProperty("language", given_language);
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
             }
         }
+    }
+
+    public static boolean isLoggedIn(final Browser br) {
+        return br.containsHTML("user\\-logout\\.htm\"");
     }
 
     public static void prepAjaxHeaders(final Browser br) {

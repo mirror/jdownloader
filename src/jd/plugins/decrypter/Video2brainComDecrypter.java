@@ -182,7 +182,7 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
             }
         }
 
-        /* If everything else fails we can at least add the video of the current page if there is any :) */
+        /* If everything else fails we can at least add the video of the current page as there usually is one :) */
         if (decryptedLinks.size() == 0 && videoid_first_video != null) {
             decryptedLinks.add(this.createDownloadlink(this.createOldDownloadURL(url_language, videoid_first_video)));
         }
