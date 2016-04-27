@@ -518,7 +518,7 @@ public class TvnowDe extends PluginForHost {
         }
     }
 
-    /** Checks wether we know that rtmp url and can download it or not. */
+    /** Checks whether we know that rtmp url and can download it or not. */
     private boolean isValidRTMPUrl(final String url_rtmp) {
         if (url_rtmp.startsWith("/abr/") || !(url_rtmp.endsWith(".f4v") || url_rtmp.endsWith(".flv"))) {
             return false;
