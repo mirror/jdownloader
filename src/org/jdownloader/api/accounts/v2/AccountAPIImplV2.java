@@ -6,11 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.controlling.AccountController;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
@@ -22,6 +17,11 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+
+import jd.controlling.AccountController;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
 
 public class AccountAPIImplV2 implements AccountAPIV2 {
 
@@ -226,7 +226,7 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
     @Override
     public List<BasicAuthenticationAPIStorable> listBasicAuth() {
-        List<BasicAuthenticationAPIStorable> result = new ArrayList<>();
+        List<BasicAuthenticationAPIStorable> result = new ArrayList<BasicAuthenticationAPIStorable>();
         List<AuthenticationInfo> auths = AuthenticationController.getInstance().list();
         for (AuthenticationInfo info : auths) {
             result.add(createAuthenticationStorable(info));
