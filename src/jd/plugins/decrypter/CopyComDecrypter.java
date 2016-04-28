@@ -22,7 +22,6 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "https?://(www\\.)?copy\\.com/[^<>\"]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "copy.com" }, urls = { "https?://(www\\.)?copy\\.com/[^<>\"]+" }, flags = { 0 })
 public class CopyComDecrypter extends PluginForDecrypt {
 
     public CopyComDecrypter(PluginWrapper wrapper) {
@@ -53,11 +52,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
             parameter = "https://www.copy.com/s/" + new Regex(parameter, "copy\\.com/([A-Za-z0-9]+)\\?download=1").getMatch(0);
         }
         final DownloadLink offline = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        try {
-            offline.setContentUrl(parameter);
-        } catch (Throwable e) {
-
-        }
+        offline.setContentUrl(parameter);
         offline.setAvailable(false);
         offline.setProperty("offline", true);
         offline.setName(new Regex(parameter, "copy\\.com/(.+)").getMatch(0));
@@ -91,12 +86,12 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 } catch (final Throwable e) {
                 }
             }
-            final String newparameter = br.getRedirectLocation();
-            if (newparameter == null || !newparameter.matches(VALID_URL)) {
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            parameter = newparameter;
+            // final String newparameter = br.getRedirectLocation();
+            // if (newparameter == null || !newparameter.matches(VALID_URL)) {
+            // decryptedLinks.add(offline);
+            // return decryptedLinks;
+            // }
+            // parameter = newparameter;
         }
 
         final String root_url = new Regex(parameter, "(https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+)").getMatch(0);
@@ -106,9 +101,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
             br.getHeaders().put("X-Client-Version", "1.0.00");
             br.getHeaders().put("X-Client-Type", "API");
             br.getHeaders().put("X-Api-Version", "1.0");
-            try {
-                br.getPage("https://apiweb.copy.com/rest/meta" + additionalPath + "?offset=0&limit=2000&order=asc");
-            } catch (final BrowserException e) {
+            br.setAllowedResponseCodes(400);
+            br.getPage("https://apiweb.copy.com/rest/meta" + additionalPath + "?offset=0&limit=2000&order=asc");
+            if (this.br.getHttpConnection().getResponseCode() == 400) {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
