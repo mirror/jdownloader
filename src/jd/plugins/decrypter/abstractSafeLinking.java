@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -49,31 +48,20 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    protected String                               parameter = null;
-    protected String                               cType     = "notDetected";
-    protected String                               uid       = null;
+    protected String parameter = null;
+    protected String cType     = "notDetected";
+    protected String uid       = null;
 
-    protected final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
-
-    protected Browser prepBrowser(Browser br) {
-        // browser stuff
-        try {
-            /* not available in old versions (before jd2) */
-            br.setAllowedResponseCodes(new int[] { 422, 500 });
-        } catch (Throwable e) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setAllowedResponseCodes(new int[] { 422, 500 });
+            prepBr.setReadTimeout(2 * 60 * 1000);
+            prepBr.setConnectTimeout(2 * 60 * 1000);
         }
-        // we only want to load user-agent when specified
-        if (useRUA()) {
-            if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", userAgent.get());
-        }
-        br.setReadTimeout(2 * 60 * 1000);
-        br.setConnectTimeout(2 * 60 * 1000);
-        return br;
+        return prepBr;
     }
 
     @Override
@@ -81,13 +69,12 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // link correction
         parameter = correctLink(param.toString());
-        prepBrowser(br);
         // setuid
         uid = getUID(parameter);
         // shortlink i assume
         if (parameter.matches(regexLinkShort())) {
             // currently https does not work with short links!
-            br.getPage(parameter.replace("https://", "http://"));
+            getPage(parameter.replace("https://", "http://"));
             String newparameter = br.getRedirectLocation();
             if (newparameter == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -100,7 +87,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             }
             parameter = newparameter;
         }
-        br.getPage(parameter);
+        getPage(parameter);
         // /d/ should redirect, but now apparently it stays on the short url link..
         if (parameter.matches(".*?/d/([a-f0-9]{10}|" + regexBase58() + ")")) {
             final String link = br.getRedirectLocation();
@@ -198,14 +185,14 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             break;
                         }
                         case 4: {
-                            captchaBr.getPage("/includes/captcha_factory/fancycaptcha.php?hash=" + uid);
+                            getPage(captchaBr, "/includes/captcha_factory/fancycaptcha.php?hash=" + uid);
                             nextPost = ammendJson(nextPost, "fancy-captcha", captchaBr.toString().trim());
                             nextPost = ammendJson(nextPost, "type", 4);
                             break;
                         }
                         case 5: {
                             captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                            captchaBr.postPage("/includes/captcha_factory/Qaptcha.jquery.php?hash=" + uid, "action=qaptcha");
+                            postPage(captchaBr, "/includes/captcha_factory/Qaptcha.jquery.php?hash=" + uid, "action=qaptcha");
                             if (!captchaBr.containsHTML("\"error\":false")) {
                                 logger.warning("Decrypter broken for link: " + parameter + "\n");
 
@@ -223,7 +210,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             // short wait to prevent hammering
                             Thread.sleep(2500);
                             // maybe also good to clear cookies?
-                            br.getPage(br.getURL());
+                            getPage(br.getURL());
                             continue;
                         }
                         case 12: {
@@ -273,19 +260,9 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     private Browser ajax = null;
 
-    private String ajaxPostPage(final String url, final String post) throws IOException {
+    protected final void ajaxPostPageRaw(final String url, final String post) throws Exception {
         setAjaxForPost();
-        return ajax.postPage(url, post);
-    }
-
-    private String ajaxPostPageRaw(final String url, final String post) throws IOException {
-        setAjaxForPost();
-        return ajax.postPageRaw(url, post);
-    }
-
-    private String ajaxGetPage(final String url) throws IOException {
-        setAjaxForGet();
-        return ajax.getPage(url);
+        postPageRaw(ajax, url, post, true);
     }
 
     private void setAjaxForGet() {
@@ -306,10 +283,9 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // link correction
         parameter = correctLink(param.toString());
-        prepBrowser(br);
         // setuid
         uid = getUID(parameter);
-        br.getPage(parameter);
+        getPage(parameter);
         if (isOffline()) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -327,7 +303,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             parameter = correctLink(newparameter);
-            br.getPage(parameter);
+            getPage(parameter);
         }
         if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("^.+" + regexSupportedDomains() + "/404$")) {
             logger.info("Link offline: " + parameter);
@@ -581,13 +557,13 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 }
                 case 5: {
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.getPage("/includes/captcha_factory/fancycaptcha.php?hash=" + uid);
-                    protectedForm.put("fancy-captcha", captchaBr.toString().trim());
+                    getPage(captchaBr, getCaptchaFancyUrl());
+                    protectedForm.put(getCaptchaFancyInputfieldName(), captchaBr.toString().trim());
                     break;
                 }
                 case 6: {
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.postPage("/includes/captcha_factory/Qaptcha.jquery.php?hash=" + uid, "action=qaptcha");
+                    postPage(captchaBr, "/includes/captcha_factory/Qaptcha.jquery.php?hash=" + uid, "action=qaptcha");
                     if (!captchaBr.containsHTML("\"error\":false")) {
                         logger.warning("Decrypter broken for link: " + parameter + "\n");
                         logger.warning("Qaptcha handling broken");
@@ -608,7 +584,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     // short wait to prevent hammering
                     Thread.sleep(2500);
                     // maybe also good to clear cookies?
-                    br.getPage(br.getURL());
+                    getPage(br.getURL());
                     protectedForm = formProtected();
                     prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
                     continue;
@@ -621,7 +597,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 }
                 }
                 if (captchaRegex.containsKey(cType) || password) {
-                    br.submitForm(protectedForm);
+                    submitForm(protectedForm);
                     if (br.getHttpConnection().getResponseCode() == 500) {
                         logger.warning("500 Internal Server Error. Link: " + parameter);
                         continue;
@@ -655,6 +631,14 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 break;
             }
         }
+    }
+
+    protected String getCaptchaFancyInputfieldName() {
+        return "fancy-captcha";
+    }
+
+    protected String getCaptchaFancyUrl() {
+        return "/includes/captcha_factory/fancycaptcha.php?hash=" + uid;
     }
 
     protected boolean isCaptchaSkipable() {
@@ -771,11 +755,10 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         br.getRequest().setHtmlCode(res);
     }
 
-    private ArrayList<DownloadLink> loadcontainer(String format, CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> loadcontainer(final String format, final CryptedLink param) throws IOException, PluginException {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        String containerLink = br.getRegex("\"(https?://[^/]*" + regexSupportedDomains() + "/c/[a-z0-9]+" + format + ")").getMatch(0);
+        String containerLink = br.getRegex(regexContainer(format)).getMatch(0);
         if (containerLink == null) {
-            logger.warning("Contailerlink for link " + param.toString() + " for format " + format + " could not be found.");
             return links;
         }
         Browser brc = br.cloneBrowser();
@@ -783,7 +766,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         File file = null;
         URLConnectionAdapter con = null;
         try {
-            con = brc.openGetConnection(test);
+            con = openAntiDDoSRequestConnection(brc, brc.createGetRequest(test));
             if (con.getResponseCode() == 200) {
                 try {
                     /* does not exist in 09581 */
@@ -815,29 +798,26 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         return links;
     }
 
-    protected ArrayList<DownloadLink> decryptMultipleLinks(final CryptedLink param) throws IOException, PluginException {
+    protected String regexContainer(final String format) {
+        return "\"(https?://[^/]*" + regexSupportedDomains() + "/c/[a-z0-9]+" + format + ")";
+    }
+
+    protected ArrayList<DownloadLink> decryptMultipleLinks(final CryptedLink param) throws Exception {
         ArrayList<String> cryptedLinks = new ArrayList<String>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         // TODO: Add handling for offline links/containers
-
-        /* Container handling (if no containers found, use webprotection) */
-        if (br.containsHTML("\\.dlc")) {
-            decryptedLinks.addAll(loadcontainer(".dlc", param));
+        if (supportsContainers()) {
+            /* Container handling (if no containers found, use webprotection) */
+            decryptedLinks.addAll(loadcontainer(regexContainerDlc(), param));
             if (!decryptedLinks.isEmpty()) {
                 return decryptedLinks;
             }
-        }
-
-        if (br.containsHTML("\\.rsdf")) {
-            decryptedLinks.addAll(loadcontainer(".rsdf", param));
+            decryptedLinks.addAll(loadcontainer(regexContainerRsdf(), param));
             if (!decryptedLinks.isEmpty()) {
                 return decryptedLinks;
             }
-        }
-
-        if (br.containsHTML("\\.ccf")) {
-            decryptedLinks.addAll(loadcontainer(".ccf", param));
+            decryptedLinks.addAll(loadcontainer(regexContainerCcf(), param));
             if (!decryptedLinks.isEmpty()) {
                 return decryptedLinks;
             }
@@ -846,7 +826,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         // TODO: don't think this is needed! confirm -raztoki, not required by keeplinks or safemylink
         /* Webprotection decryption */
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(parameter)) {
-            br.getPage(parameter);
+            getPage(parameter);
         }
 
         for (String[] s : br.getRegex(regexLinks()).getMatches()) {
@@ -865,7 +845,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             if (link.matches(".*" + regexSupportedDomains() + "/d/.+")) {
                 Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(false);
-                br2.getPage(link);
+                getPage(br2, link);
                 dl = decryptSingleLink(br2);
                 if (dl == null) {
                     continue;
@@ -876,6 +856,22 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
+    }
+
+    protected boolean supportsContainers() {
+        return true;
+    }
+
+    protected String regexContainerCcf() {
+        return "\\.ccf";
+    }
+
+    protected String regexContainerRsdf() {
+        return "\\.rsdf";
+    }
+
+    protected String regexContainerDlc() {
+        return "\\.dlc";
     }
 
     /**

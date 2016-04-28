@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keeplinks.me", "linkpacking.net" }, urls = { "https?://(www\\.)?keeplinks\\.(me|eu)/(p\\d*|d)/[a-z0-9]+", "http://(www\\.)?linkpacking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.me", "linkpacking.net" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu)/(p\\d*|d)/[a-z0-9]+", "http://(www\\.)?linkpacking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
 public class KeepLinksMe extends abstractSafeLinking {
 
     public KeepLinksMe(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = super.decryptIt_oldStyle(param, progress);
+        final ArrayList<DownloadLink> decryptedLinks = super.decryptIt_oldStyle(param, progress);
         return decryptedLinks;
     }
 
@@ -74,6 +74,30 @@ public class KeepLinksMe extends abstractSafeLinking {
     }
 
     @Override
+    protected String regexCaptchaFancy() {
+        if ("kprotector.com".equals(getHost())) {
+            return "class=\"ajax-fc-container\"";
+        }
+        return super.regexCaptchaFancy();
+    }
+
+    @Override
+    protected String getCaptchaFancyUrl() {
+        if ("kprotector.com".equals(getHost())) {
+            return "/fancycaptcha/captcha/captcha.php";
+        }
+        return super.getCaptchaFancyUrl();
+    }
+
+    @Override
+    protected String getCaptchaFancyInputfieldName() {
+        if ("kprotector.com".equals(getHost())) {
+            return "captcha";
+        }
+        return super.getCaptchaFancyInputfieldName();
+    }
+
+    @Override
     protected String correctLink(final String string) {
         final String s = string.replaceFirst("^https?://", enforcesHTTPS() && supportsHTTPS() ? "https://" : "http://").replaceFirst("keeplinks\\.me/", "keeplinks.eu/");
         return s;
@@ -91,6 +115,46 @@ public class KeepLinksMe extends abstractSafeLinking {
     @Override
     protected String regexLinks() {
         return "<lable[^>]+class=\"num(?:live|direct) nodisplay\"[^>]*>(.*?)</a>(?:<br\\s*/>|</label>)";
+    }
+
+    @Override
+    protected String regexContainerDlc() {
+        if ("kprotector.com".equals(getHost())) {
+            return "/download/" + uid + "/dlc";
+        }
+        return super.regexContainerDlc();
+    }
+
+    @Override
+    protected String regexContainerCcf() {
+        if ("kprotector.com".equals(getHost())) {
+            return "/download/" + uid + "/ccf";
+        }
+        return super.regexContainerCcf();
+    }
+
+    @Override
+    protected String regexContainerRsdf() {
+        if ("kprotector.com".equals(getHost())) {
+            return "/download/" + uid + "/rsdf";
+        }
+        return super.regexContainerRsdf();
+    }
+
+    @Override
+    protected String regexContainer(final String format) {
+        if ("kprotector.com".equals(getHost())) {
+            return "\"(https?://[^/]*" + regexSupportedDomains() + format + ")";
+        }
+        return super.regexContainer(format);
+    }
+
+    @Override
+    protected boolean supportsContainers() {
+        if ("kprotector.com".equals(getHost())) {
+            return false;
+        }
+        return super.supportsContainers();
     }
 
     @Override
