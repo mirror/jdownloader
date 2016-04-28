@@ -26,6 +26,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,13 +51,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" }, flags = { 2 })
 public class FShareVn extends PluginForHost {
@@ -117,11 +118,7 @@ public class FShareVn extends PluginForHost {
             URLConnectionAdapter con = null;
             br.setFollowRedirects(true);
             try {
-                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                    con = br.openHeadConnection(redirect);
-                } else {
-                    con = br.openGetConnection(redirect);
-                }
+                con = br.openHeadConnection(redirect);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     br.followConnection();
                     if (con.getRequestMethod() == RequestMethod.HEAD) {
@@ -147,18 +144,18 @@ public class FShareVn extends PluginForHost {
                 br.setFollowRedirects(follows_redirects);
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("content=\"Error 404\"") || br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("content=\"Error 404\"") || br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<|>\\s*Your requested file does not existed\\.\\s*<|>The file has been deleted by the user\\.<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("file\" title=\"(.*?)\">").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<i class=\"fa fa-file-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>Fshare - (.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<i class=\"fa fa-file-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<title>Fshare - (.*?)</title>").getMatch(0);
+                }
+            }
         }
         String filesize = br.getRegex("<i class=\"fa fa-hdd-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
         if (filesize == null) {
@@ -209,10 +206,10 @@ public class FShareVn extends PluginForHost {
                 ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 final String postdata = "fs_csrf=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" + getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
                 ajax.postPage("/download/get", postdata);
-                if (StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "please try again later")) {
+                if (StringUtils.containsIgnoreCase(PluginJSonUtils.getJson(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(PluginJSonUtils.getJson(ajax, "msg"), "please try again later")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
                 }
-                dllink = getJson(ajax, "url");
+                dllink = PluginJSonUtils.getJson(ajax, "url");
                 if (dllink != null && br.containsHTML(IPBLOCKED) || ajax.containsHTML(IPBLOCKED)) {
                     final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
                     logger.info("Next download: " + nextDl);
@@ -240,7 +237,7 @@ public class FShareVn extends PluginForHost {
                 }
                 logger.info("downloadURL = " + dllink);
                 // Waittime
-                String wait = getJson(ajax, "wait_time");
+                String wait = PluginJSonUtils.getJson(ajax, "wait_time");
                 if (wait == null) {
                     br.getRegex("var count = \"(\\d+)\";").getMatch(0);
                     if (wait == null) {
@@ -343,9 +340,9 @@ public class FShareVn extends PluginForHost {
                     dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
                         final String page = getDllink();
-                        dllink = getJson(page, "url");
+                        dllink = PluginJSonUtils.getJson(page, "url");
                         if (dllink == null) {
-                            final String msg = getJson(page, "msg");
+                            final String msg = PluginJSonUtils.getJson(page, "msg");
                             if (StringUtils.containsIgnoreCase(msg, "try again")) {
                                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
                             }
@@ -421,7 +418,7 @@ public class FShareVn extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(this.getHost(), key, value);
+                            br.setCookie(this.getHost(), key, value);
                         }
                         return;
                     }
@@ -457,7 +454,7 @@ public class FShareVn extends PluginForHost {
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(this.getHost());
+                final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -509,7 +506,7 @@ public class FShareVn extends PluginForHost {
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
-        } else if (this.br.containsHTML(">BUNDLE</a>")) {
+        } else if (br.containsHTML(">BUNDLE</a>")) {
             /* This is a kind of account that they give to their ADSL2+/FTTH service users. It works like VIP. */
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
@@ -544,68 +541,6 @@ public class FShareVn extends PluginForHost {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
