@@ -24,6 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,9 +50,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }, flags = { 2 })
@@ -94,7 +94,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     private final boolean       docs_add_unique_id                    = true;
 
-    private static Object       LOCK                                  = new Object();
+    public static Object        LOCK                                  = new Object();
     private String              finalUrl                              = null;
 
     private String              ownerID                               = null;
@@ -742,7 +742,7 @@ public class VKontakteRuHoster extends PluginForHost {
             useragent = default_user_agent;
         }
         br.getHeaders().put("User-Agent", useragent);
-        /* Set english language */
+        /* Set English language */
         br.setCookie(DOMAIN, "remixlang", "3");
         br.setReadTimeout(1 * 60 * 1000);
         br.setConnectTimeout(2 * 60 * 1000);
@@ -978,7 +978,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public static final String   SLEEP_PAGINATION_GENERAL                      = "SLEEP_PAGINATION_GENERAL";
     public static final String   SLEEP_PAGINATION_COMMUNITY_VIDEO              = "SLEEP_PAGINATION_COMMUNITY_VIDEO";
-    public static final String   SLEEP_TOO_MANY_REQUESTS                       = "SLEEP_TOO_MANY_REQUESTS";
+    public static final String   SLEEP_TOO_MANY_REQUESTS                       = "SLEEP_TOO_MANY_REQUESTS_V1";
     /* Default values... */
     private static final boolean default_fastlinkcheck_FASTLINKCHECK           = true;
     private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK    = true;
@@ -1050,7 +1050,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, JDL.L("plugins.hoster.vkontakteruhoster.customUserAgent", "User-Agent: ")).setDefaultValue(default_user_agent));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationCommunityVideos", "Define sleep time for community videos pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.vkontakteruhoster.sleep.tooManyRequests", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.vkontakteruhoster.sleep.tooManyRequests", "Define sleep time for general pagination"), 3000, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
     }
 
 }
