@@ -88,7 +88,11 @@ public class HotstarCom extends PluginForHost {
         final long date = DummyScriptEnginePlugin.toLong(entries.get("broadcastDate"), -1);
         final String description = (String) entries.get("description");
         String title = (String) entries.get("episodeTitle");
-        if (inValidate(title) || date == -1 || inValidate(objectType) || inValidate(objectSubtype)) {
+        if (inValidate(title)) {
+            /* Fallback */
+            title = this.contentId;
+        }
+        if (inValidate(objectType) || inValidate(objectSubtype)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
@@ -99,7 +103,11 @@ public class HotstarCom extends PluginForHost {
 
         title = Encoding.htmlDecode(title.trim());
         final String date_formatted = formatDate(date);
-        String filename = date_formatted + "_hotstar_" + title;
+        String filename = "";
+        if (date_formatted != null) {
+            filename = date_formatted + "_";
+        }
+        filename += "_hotstar_" + title;
         /* Make nicer filenames in case we have a full episode of a series. */
         if (objectSubtype.equals("EPISODE") && episode != -1 && !inValidate(season_str)) {
             season = Long.parseLong(season_str);
@@ -145,6 +153,9 @@ public class HotstarCom extends PluginForHost {
     }
 
     private String formatDate(long date) {
+        if (date == -1) {
+            return null;
+        }
         date = date * 1000;
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
