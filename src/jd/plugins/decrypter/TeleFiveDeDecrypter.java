@@ -179,12 +179,15 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         }
         if ((videosinfo == null || videosinfo.length == 0) && (youtubeurls == null || youtubeurls.length == 0)) {
             logger.info("Failed to find any downloadable content --> Trying to find URLs to videos e.g. all episodes of the current series");
-            final String[] articles = this.br.getRegex("<article(.*?)</article>").getColumn(0);
+            final String[] articles = this.br.getRegex("(<a href=\"http[^\"]+\">\\s+<article.*?)</article>").getColumn(0);
             if (articles != null && articles.length > 0) {
                 logger.info("Found articles - let's see if any of them are videos");
                 for (final String article : articles) {
-                    final boolean isVideo = article.contains("class=\"playButton\"");
+                    boolean isVideo = article.contains("class=\"playButton\"");
                     final String url = new Regex(article, "<a href=\"(https?://(?:www\\.)?tele5\\.de/[^<>\"]+\\.html)\">").getMatch(0);
+                    if (isVideo && url != null) {
+                        isVideo = url.contains("/video/");
+                    }
                     if (url != null && isVideo) {
                         decryptedLinks.add(this.createDownloadlink(url));
                     }

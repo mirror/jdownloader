@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,29 +38,40 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4shared.com" }, urls = { "https?://(?:www\\.)?4shared(?:\\-china)?\\.com/(?:dir|folder|minifolder)/[A-Za-z0-9\\-_]+/(?:\\d+/)?[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     public FrShrdFldr(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String                  sid            = null;
-    private String                  host           = null;
-    private String                  uid            = null;
-    private String                  parameter      = null;
-    private String                  pass           = null;
-    private Browser                 br2            = new Browser();
-    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private String                  sid                         = null;
+    private String                  host                        = null;
+    private String                  uid                         = null;
+    private String                  fid                         = null;
+    private String                  fname                       = null;
+    private String                  parameter                   = null;
+    private String                  pass                        = null;
+    private Browser                 br2                         = new Browser();
+    private ArrayList<DownloadLink> decryptedLinks              = new ArrayList<DownloadLink>();
+    private String                  type_folder_with_pagenumber = "https?://(?:www\\.)?4shared(?:\\-china)?\\.com/(?:dir|folder|minifolder)/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+";
 
     /**
      * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
      */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        host = new Regex(param.toString(), "(https?://[^/]+)").getMatch(0);
-        uid = new Regex(param.toString(), "\\.com/(dir|folder|minifolder)/(.+)").getMatch(1);
-        parameter = new Regex(param.toString(), "(https?://(www\\.)?4shared(\\-china)?\\.com/)").getMatch(0);
+        parameter = param.toString();
+        if (param.toString().matches(type_folder_with_pagenumber)) {
+            /* Remove pagenumber from added URL - important! */
+            final String pagenumber = new Regex(parameter, "\\.com/[^/]+/[A-Za-z0-9\\-_]+/(\\d+/)[A-Za-z0-9\\-_]+").getMatch(0);
+            parameter = parameter.replace(pagenumber, "");
+        }
+        host = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
+        uid = new Regex(parameter, "\\.com/(dir|folder|minifolder)/(.+)").getMatch(1);
+        fid = new Regex(parameter, "\\.com/(?:dir|folder|minifolder)/([^/]+)").getMatch(0);
+        fname = new Regex(parameter, "\\.com/(?:dir|folder|minifolder)/[^/]+/([^/]+)").getMatch(0);
+        parameter = new Regex(parameter, "(https?://(?:www\\.)?4shared(?:\\-china)?\\.com/)").getMatch(0);
         parameter = parameter + "folder/" + uid;
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "4langcookie", "en");
@@ -141,26 +151,32 @@ public class FrShrdFldr extends PluginForDecrypt {
             parsePage("0");
             parseNextPage();
         } else {
-            final ArrayList<String> pages = new ArrayList<String>();
-            pages.add(parameter);
-            final String folderText = br.getRegex("<div id=\"folderToolbar\" class=\"simplePagerAndUpload\">(.*?)</div>").getMatch(0);
+            int pagemax = 1;
+            final String folderText = br.getRegex("<div id=\"folderToolbar\" class=\"simplePagerAndUpload\">(.*?)<div id=\"footer\">").getMatch(0);
             if (folderText != null) {
-                final String[] pageLinks = new Regex(folderText, "<a href=\"(/folder/[^<>\"]*?)\" >\\d+</a>").getColumn(0);
+                final String[] pageLinks = new Regex(folderText, "<a href=\"(/folder/[^<>\"]*?)\"").getColumn(0);
                 if (pageLinks != null && pageLinks.length > 0) {
                     for (String aPage : pageLinks) {
-                        aPage = Request.getLocation(aPage, br.getRequest());
-                        if (!pages.contains(aPage)) {
-                            pages.add(aPage);
+                        final String page_str_temp = new Regex(aPage, "/folder/[^/]+/(\\d+)/[^/]+\\.html").getMatch(0);
+                        if (page_str_temp == null) {
+                            continue;
+                        }
+                        final int pagetmp = Integer.parseInt(page_str_temp);
+                        if (pagetmp > pagemax) {
+                            pagemax = pagetmp;
                         }
                     }
                 }
             }
 
-            int pagecounter = 1;
-            for (final String page : pages) {
+            for (int pagecounter = 1; pagecounter <= pagemax; pagecounter++) {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return decryptedLinks;
+                }
                 if (pagecounter > 1) {
-                    logger.info("Decrypting page " + pagecounter + " of " + pages.size());
-                    br.getPage(page);
+                    logger.info("Decrypting page " + pagecounter + " of " + pagemax);
+                    br.getPage("http://www.4shared.com/folder/" + this.fid + "/" + pagecounter + "/" + this.fname + ".html?detailView=false&sortAsc=true&sortsMode=NAME");
                 }
                 final String subfolder_html = br.getRegex("id=\"folderContent\"(.*?)class=\"simplePagerAndUpload\"").getMatch(0);
                 String[] linkInfo = br.getRegex("<tr align=\"center\">(.*?)</tr>").getColumn(0);
@@ -194,6 +210,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                         /* Do NOT set available true because status is not known! */
                         // fina.setAvailable(true);
                         decryptedLinks.add(fina);
+                        distribute(fina);
                     }
                 }
 
@@ -209,7 +226,10 @@ public class FrShrdFldr extends PluginForDecrypt {
                     }
                 }
 
-                pagecounter++;
+                if (fid == null || fname == null) {
+                    /* Emergency exit */
+                    break;
+                }
             }
         }
 
