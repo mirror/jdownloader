@@ -105,7 +105,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * defines custom browser requirements
-     * 
+     *
      * @author raztoki
      */
     @Override
@@ -150,6 +150,7 @@ public class UpstoRe extends antiDDoSForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        handleErrorsHTML();
         currentIP.set(this.getIP());
         synchronized (CTRLLOCK) {
             /* Load list of saved IPs + timestamp of last download */
@@ -164,16 +165,7 @@ public class UpstoRe extends antiDDoSForHost {
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
-            if (br.containsHTML(">This file is available only for Premium users<")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-            if (br.containsHTML(">Server for free downloads is overloaded<")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
-            }
-            // Same server error (displayed differently) also exists for premium users
-            if (br.containsHTML(">Server with file not found<")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-            }
+            handleErrorsHTML();
             /**
              * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
              */
@@ -237,6 +229,7 @@ public class UpstoRe extends antiDDoSForHost {
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+                handleErrorsJson();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
@@ -247,13 +240,45 @@ public class UpstoRe extends antiDDoSForHost {
         setDownloadStarted(downloadLink, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("not found")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-            }
+            handleServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (br.containsHTML("not found")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'not found'", 30 * 60 * 1000l);
+        }
+    }
+
+    private void handleErrorsJson() throws PluginException {
+        /*
+         * Example error json:
+         * {"errors":["Sorry, download server with your file is temporary unavailable... Try again later or contact support."]}
+         */
+        if (this.br.containsHTML("Sorry, download server with your file is temporary unavailable")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
+    }
+
+    private void handleErrorsHTML() throws PluginException {
+        /* Example: "<span class="error">File size is larger than 2 GB. Unfortunately, it can be downloaded only with premium</span>" */
+        if (this.br.containsHTML("File size is larger than|it can be downloaded only with premium")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (br.containsHTML(">This file is available only for Premium users<")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+
+        /* Here some errors that should only happen in free(account) mode: */
+        if (br.containsHTML(">Server for free downloads is overloaded<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server for free downloads is overloaded'", 30 * 60 * 1000l);
+        }
+        // Same server error (displayed differently) also exists for premium users
+        if (br.containsHTML(">Server with file not found<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server with file not found'", 60 * 60 * 1000l);
+        }
     }
 
     private String getSoup() {
@@ -380,7 +405,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * saves cookies to HashMap from provided browser
-     * 
+     *
      * @author raztoki
      * @param br
      * @return
@@ -398,7 +423,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * returns true if provided Cookie contains keyname is contained within getLoginCookies()
-     * 
+     *
      * @author raztoki
      * @param c
      * @return
@@ -466,7 +491,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * Method to determine if current cookie session is still valid.
-     * 
+     *
      * @author raztoki
      * @param account
      * @return
@@ -505,7 +530,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * Array containing all required premium cookies!
-     * 
+     *
      * @return
      */
     private String[] getLoginCookies() {
@@ -516,7 +541,7 @@ public class UpstoRe extends antiDDoSForHost {
      * If default browser contains ALL cookies within 'loginCookies' array, it will return true<br />
      * <br />
      * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
-     * 
+     *
      * @author raztoki
      */
     private boolean browserCookiesMatchLoginCookies(final Browser br) {
@@ -574,6 +599,7 @@ public class UpstoRe extends antiDDoSForHost {
             dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
+            handleErrorsJson();
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -582,11 +608,7 @@ public class UpstoRe extends antiDDoSForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            // Same server error (displayed differently) also exists for free
-            // users
-            if (br.containsHTML("not found")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-            }
+            this.handleServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
