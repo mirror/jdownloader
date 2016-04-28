@@ -81,6 +81,9 @@ public class DrTuberCom extends PluginForHost {
     private static final String  normalUA                     = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0";
     private static final String  mobileUA                     = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile";
 
+    private final String         type_embed                   = "https?://(?:www\\.)?drtuber\\.com/embed/\\d+";
+    private final String         type_normal                  = "https?://(?:www\\.)?drtuber\\.com/video/\\d+(?:/[a-z0-9\\-_]+)?";
+
     private String               DLLINK                       = null;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -146,11 +149,12 @@ public class DrTuberCom extends PluginForHost {
         }
 
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true")) {
+        if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // No account support -> No support for private videos
         if (br.containsHTML("Sorry\\.\\.\\. Video is private")) {
+            logger.info("Private video --> Unsupported --> Offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (use_mobile) {
@@ -176,9 +180,20 @@ public class DrTuberCom extends PluginForHost {
             filename = br.getRegex("<title>Download Free Mobile Porn \\-([^<>\"]*?)\\- Download Preview \\- DrTuber\\.com</title>").getMatch(0);
             DLLINK = br.getRegex("\"(https?://[a-z0-9\\.\\-]+/(mp4|3gp)/[^<>\"]*?)\"").getMatch(0);
         } else {
+            /* 2016-04-29: They're playing games with us with their embed html --> Avoid that! */
+            if (downloadLink.getDownloadURL().matches(type_embed)) {
+                String source_url = this.br.getRegex("target_url=(http[^<>\"\\'=\\&]+)").getMatch(0);
+                if (source_url != null) {
+                    source_url = Encoding.htmlDecode(source_url);
+                }
+                if (source_url != null && source_url.matches(type_normal)) {
+                    downloadLink.setUrlDownload(source_url);
+                    this.br.getPage(source_url);
+                }
+            }
             String vkey = null;
-            /* normal links */
-            if (new Regex(downloadLink.getDownloadURL(), Pattern.compile("http://(www\\.)?drtuber\\.com/video/\\d+", Pattern.CASE_INSENSITIVE)).matches()) {
+            /* Normal links */
+            if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(type_normal)).matches()) {
                 filename = br.getRegex("<title>(.*?) \\- Free Porn.*?DrTuber\\.com</title>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
@@ -197,7 +212,7 @@ public class DrTuberCom extends PluginForHost {
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         * 
+                         *
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */
@@ -230,8 +245,9 @@ public class DrTuberCom extends PluginForHost {
                         }
                     }
                 }
-            } else if (downloadLink.getDownloadURL().matches("http://(www\\.)?drtuber\\.com/embed/\\d+")) {
+            } else if (downloadLink.getDownloadURL().matches("https?://(?:www\\.)?drtuber\\.com/embed/\\d+")) {
                 /* embed v4 */
+                /* 2016-04-29: They're playing games with us with their embed html ... */
                 String nextUrl = br.getRegex("config=(http%3A%2F%2F(www\\.)?drtuber\\.com%2Fplayer_config%2F[^<>\"]*?)\"").getMatch(0);
                 if (nextUrl == null) {
                     String[] hashEncValues = br.getRegex("flashvars=\"id_video=(\\d+)\\&t=(\\d+)").getRow(0);
@@ -491,7 +507,7 @@ public class DrTuberCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        return new Regex(dl.getDownloadURL(), "(?:embed|video)/(\\d+)$").getMatch(0);
     }
 
     private void prepBR(final Browser br) {
