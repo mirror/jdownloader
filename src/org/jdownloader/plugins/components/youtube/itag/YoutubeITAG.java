@@ -6,8 +6,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import org.appwork.utils.logging2.extmanager.Log;
-
 import jd.http.QueryInfo;
 
 public enum YoutubeITAG {
@@ -352,8 +350,8 @@ public enum YoutubeITAG {
             }
         }
         if (bestValue != 0d && height > 0 && fps > 3) {
-            System.out.println("Height missmatch");
-            Log.warning("Youtube ITag Mismatch: lookup fps" + fps + " height" + height + " -> " + best);
+            // System.out.println("Height missmatch");
+            // Log.warning("Youtube ITag Mismatch: lookup fps" + fps + " height" + height + " -> " + best);
         }
         return best;
 

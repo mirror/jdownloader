@@ -386,7 +386,8 @@ public class YoutubeHelper {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                return link.getStringProperty(YoutubeHelper.YT_EXT, "unknown");
+                AbstractVariant variant = AbstractVariant.get(link);
+                return variant.getContainer().getExtension();
             }
 
         });
@@ -762,7 +763,6 @@ public class YoutubeHelper {
         });
     }
 
-    public static final String  YT_EXT                           = "YT_EXT";
     public static final String  YT_TITLE                         = "YT_TITLE";
     public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
     public static final String  YT_ID                            = "YT_ID";
@@ -897,19 +897,24 @@ public class YoutubeHelper {
 
     private YoutubeClipData                          vid;
 
-    String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
+    private String                                   html5PlayerSource;
+
+    String descrambleSignature(final String sig) throws IOException, PluginException {
         if (sig == null) {
             return null;
         }
-        String ret = descrambleSignatureNew(sig, jsUrl, id);
+        if (html5PlayerSource == null) {
+            html5PlayerSource = br.cloneBrowser().getPage(html5PlayerJs);
+        }
+        String ret = descrambleSignatureNew(sig);
         if (StringUtils.isNotEmpty(ret)) {
             return ret;
         }
-        return descrambleSignatureOld(sig, jsUrl, id);
+        return descrambleSignatureOld(sig);
 
     }
 
-    String descrambleSignatureNew(final String sig, String jsUrl, final String id) throws IOException, PluginException {
+    String descrambleSignatureNew(final String sig) throws IOException, PluginException {
 
         if (sig == null) {
             return null;
@@ -918,10 +923,10 @@ public class YoutubeHelper {
         String all = null;
         String descrambler = null;
         String des = null;
-        String jsContent = null;
+
         Object result = null;
 
-        HashMap<String, String> cache = jsCache.get(id);
+        HashMap<String, String> cache = jsCache.get(vid.videoID);
         if (cache != null && !cache.isEmpty()) {
             all = cache.get("all");
             descrambler = cache.get("descrambler");
@@ -929,15 +934,15 @@ public class YoutubeHelper {
         }
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
-            jsContent = br.cloneBrowser().getPage(jsUrl);
-            descrambler = new Regex(jsContent, "set\\(\"signature\",([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
+
+            descrambler = new Regex(html5PlayerSource, "set\\(\"signature\",([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
 
             final String func = Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}";
-            des = new Regex(jsContent, Pattern.compile(func, Pattern.DOTALL)).getMatch(1);
-            all = new Regex(jsContent, Pattern.compile(Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?", Pattern.DOTALL)).getMatch(-1);
+            des = new Regex(html5PlayerSource, Pattern.compile(func, Pattern.DOTALL)).getMatch(1);
+            all = new Regex(html5PlayerSource, Pattern.compile(Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?", Pattern.DOTALL)).getMatch(-1);
 
-            String requiredObjectName = new Regex(des, "([\\w\\d]+)\\.([\\w\\d]{2})\\(").getMatch(0);
-            String requiredObject = new Regex(jsContent, Pattern.compile("var " + Pattern.quote(requiredObjectName) + "=\\{.*?\\}\\};", Pattern.DOTALL)).getMatch(-1);
+            String requiredObjectName = new Regex(des, "([\\w\\d\\$]+)\\.([\\w\\d]{2})\\(").getMatch(0);
+            String requiredObject = new Regex(html5PlayerSource, Pattern.compile("var " + Pattern.quote(requiredObjectName) + "=\\{.*?\\}\\};", Pattern.DOTALL)).getMatch(-1);
             all += ";";
             all += requiredObject;
         }
@@ -952,7 +957,7 @@ public class YoutubeHelper {
                         cache.put("descrambler", descrambler);
                         // not used by js but the failover.
                         cache.put("des", des);
-                        jsCache.put(id, cache);
+                        jsCache.put(vid.videoID, cache);
                     }
                     return result.toString();
                 }
@@ -963,11 +968,9 @@ public class YoutubeHelper {
                     final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
-                        if (jsContent == null) {
-                            jsContent = br.cloneBrowser().getPage(jsUrl);
-                        }
+
                         // lets look for missing reference
-                        final String ref = new Regex(jsContent, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
+                        final String ref = new Regex(html5PlayerSource, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
                         if (ref != null) {
                             all = ref + "\r\n" + all;
                             continue;
@@ -1010,7 +1013,7 @@ public class YoutubeHelper {
      * @throws IOException
      * @throws PluginException
      */
-    String descrambleSignatureOld(final String sig, String jsUrl, final String id) throws IOException, PluginException {
+    String descrambleSignatureOld(final String sig) throws IOException, PluginException {
         if (sig == null) {
             return null;
         }
@@ -1018,10 +1021,10 @@ public class YoutubeHelper {
         String all = null;
         String descrambler = null;
         String des = null;
-        String jsContent = null;
+
         Object result = null;
 
-        HashMap<String, String> cache = jsCache.get(id);
+        HashMap<String, String> cache = jsCache.get(vid.videoID);
         if (cache != null && !cache.isEmpty()) {
             all = cache.get("all");
             descrambler = cache.get("descrambler");
@@ -1029,19 +1032,19 @@ public class YoutubeHelper {
         }
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
-            jsContent = br.cloneBrowser().getPage(jsUrl);
-            descrambler = new Regex(jsContent, "\\.sig\\|\\|([\\$\\w]+)\\(").getMatch(0);
+
+            descrambler = new Regex(html5PlayerSource, "\\.sig\\|\\|([\\$\\w]+)\\(").getMatch(0);
             if (descrambler == null) {
-                descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
+                descrambler = new Regex(html5PlayerSource, "\\w+\\.signature\\=([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
                 if (descrambler == null) {
                     return sig;
                 }
             }
             final String func = "function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
-            des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
-            all = new Regex(jsContent, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?")).getMatch(-1);
+            des = new Regex(html5PlayerSource, Pattern.compile(func)).getMatch(1);
+            all = new Regex(html5PlayerSource, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?")).getMatch(-1);
             if (all == null) {
-                all = new Regex(jsContent, Pattern.compile("var " + Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?")).getMatch(-1);
+                all = new Regex(html5PlayerSource, Pattern.compile("var " + Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?")).getMatch(-1);
                 // pleaseee...
                 if (all != null) {
                     final String[] a = new Regex(all, "var (" + Pattern.quote(descrambler) + ")=function(.+)").getRow(0);
@@ -1065,7 +1068,7 @@ public class YoutubeHelper {
                         cache.put("descrambler", descrambler);
                         // not used by js but the failover.
                         cache.put("des", des);
-                        jsCache.put(id, cache);
+                        jsCache.put(vid.videoID, cache);
                     }
                     return result.toString();
                 }
@@ -1076,11 +1079,9 @@ public class YoutubeHelper {
                     final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
-                        if (jsContent == null) {
-                            jsContent = br.cloneBrowser().getPage(jsUrl);
-                        }
+
                         // lets look for missing reference
-                        final String ref = new Regex(jsContent, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
+                        final String ref = new Regex(html5PlayerSource, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
                         if (ref != null) {
                             all = ref + "\r\n" + all;
                             continue;
@@ -1835,7 +1836,7 @@ public class YoutubeHelper {
         }
         if (StringUtils.isEmpty(signature)) {
             // verified 7.1.213
-            signature = this.descrambleSignature(query.get("s"), html5PlayerJs, vid.videoID);
+            signature = this.descrambleSignature(query.get("s"));
         }
 
         if (url != null && !url.contains("sig")) {
@@ -2390,7 +2391,7 @@ public class YoutubeHelper {
 
         if (StringUtils.isEmpty(signature) && query.get("s") != null) {
             // verified 7.1.213
-            signature = this.descrambleSignature(query.get("s"), html5PlayerJs, vid.videoID);
+            signature = this.descrambleSignature(query.get("s"));
 
         }
 
@@ -2668,13 +2669,13 @@ public class YoutubeHelper {
     }
 
     public static String createLinkID(String videoID, AbstractVariant variant, List<String> variants) {
-        return "youtubev2://" + videoID + "/" + Encoding.urlEncode(variant._getUniqueId()) + "/" + Encoding.urlEncode(Hash.getMD5(JSonStorage.serializeToJson(variants)));
+        return "youtubev2://" + videoID + "/" + Hash.getMD5(Encoding.urlEncode(variant._getUniqueId()));
     }
 
     public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {
         downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, v);
         downloadLink.setProperty(YoutubeHelper.YT_VARIANT, v.getStorableString());
-        downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getContainer().getExtension());
+
     }
 
 }

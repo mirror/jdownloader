@@ -31,41 +31,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcollector.autostart.AutoStartManager;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkProperty;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerFilter;
-import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.controlling.linkcrawler.LinkCrawlerRule;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -128,7 +93,44 @@ import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcollector.autostart.AutoStartManager;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
+
+    public static final String SOURCE_VARIANT_ID = "SOURCE_VARIANT_ID";
 
     public static final class JobLinkCrawler extends LinkCollectorCrawler {
         private final LinkCollectingJob         job;
@@ -822,8 +824,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 try {
-                    final String linkID = link.getLinkID();
-                    final CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
+                    String linkID = link.getLinkID();
+                    CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
+                    // give the hPLugin a chance to fix this;
+                    while (existingLink != null) {
+                        PluginForHost hPlugin = link.gethPlugin();
+                        if (hPlugin == null || !hPlugin.onLinkCollectorDupe(existingLink, link)) {
+                            break;
+                        }
+                        linkID = link.getLinkID();
+                        existingLink = getCrawledLinkByLinkID(linkID);
+                    }
                     if (existingLink != null && existingLink != link) {
                         /* clear references */
                         clearCrawledLinkReferences(link);
@@ -1084,10 +1095,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 protected Void run() throws RuntimeException {
                     try {
-                        final String linkID = filtered.getLinkID();
+                        String linkID = filtered.getLinkID();
                         if (checkDupe) {
-                            final CrawledLink existing = getCrawledLinkByLinkID(linkID);
-                            if (existing != null) {
+                            CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
+
+                            // give the hPLugin a chance to fix this;
+                            while (existingLink != null) {
+                                PluginForHost hPlugin = filtered.gethPlugin();
+                                if (hPlugin == null || !hPlugin.onLinkCollectorDupe(existingLink, filtered)) {
+                                    break;
+                                }
+                                linkID = filtered.getLinkID();
+                                existingLink = getCrawledLinkByLinkID(linkID);
+                            }
+
+                            if (existingLink != null) {
                                 /* clear references */
                                 clearCrawledLinkReferences(filtered);
                                 eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
@@ -1161,9 +1183,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1289,11 +1311,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         } else {
                             /* avoid additional linkCheck when linkID already exists */
                             /* update dupeCheck map */
-                            final String id = link.getLinkID();
-                            final CrawledLink existing = getCrawledLinkByLinkID(id);
-                            if (existing != null) {
+                            String linkID = link.getLinkID();
+                            CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
+
+                            // give the hPLugin a chance to fix this;
+                            while (existingLink != null) {
+                                PluginForHost hPlugin = link.gethPlugin();
+                                if (hPlugin == null || !hPlugin.onLinkCollectorDupe(existingLink, link)) {
+                                    break;
+                                }
+                                linkID = link.getLinkID();
+                                existingLink = getCrawledLinkByLinkID(linkID);
+                            }
+                            if (existingLink != null) {
                                 /* clear references */
-                                logger.info("Filtered Dupe: " + id);
+                                logger.info("Filtered Dupe: " + linkID);
                                 clearCrawledLinkReferences(link);
                                 eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
                                 return null;
@@ -2797,7 +2829,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public CrawledLink addAdditional(final CrawledLink link, final LinkVariant o) {
 
         final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
+
         dllink.setProperties(link.getDownloadLink().getProperties());
+        dllink.setProperty(SOURCE_VARIANT_ID, link.getUniqueID().getID());
         // so plugins like youtube set inherent browserurl (not the youtubev2:// link)
         dllink.setOriginUrl(link.getDownloadLink().getOriginUrl());
         dllink.setContentUrl(link.getDownloadLink().getContainerUrl());

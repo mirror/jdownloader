@@ -6310,4 +6310,51 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose a Variant for %s1" })
 
     String youtube_variant_selection_dialog_title(String title);
+
+    @Default(lngs = { "en" }, values = { "Choose a Variant and click select or double-click a variant to choose it quickly." })
+
+    String youtube_coose_variant_help();
+
+    @Default(lngs = { "en" }, values = { "Change Variant..." })
+    String youtube_choose_variant();
+
+    @Default(lngs = { "en" }, values = { "Loading video to scan Variants..." })
+
+    String youtube_scan_variants();
+
+    @Default(lngs = { "en" }, values = { "Add additional Variants (new Link)..." })
+    String youtube_add_variant();
+
+    @Default(lngs = { "en" }, values = { "Add additional Variants for %s1" })
+
+    String youtube_variant_selection_dialog_title_additional(String title);
+
+    @Default(lngs = { "en" }, values = { "Select at least one new variant. JDownloader will create a new link for every selected entry." })
+    String youtube_add_variant_help();
+
+    @Default(lngs = { "en" }, values = { "Choose a Variant for %s2 %s1 Link/s" })
+
+    String youtube_variant_selection_dialog_title2(String string, int count);
+
+    @Default(lngs = { "en" }, values = { "%s1 Variant" })
+    String youtube_choose_variant_group(String label);
+
+    @Default(lngs = { "en" }, values = { "Change %s1 Variant for %s2 Link/s" })
+    String youtube_choose_variant_group_linkcount(String label, int int1);
+
+    @Default(lngs = { "en" }, values = { "The choosen Variant is not available for all %s1 Links (%s2/%s3). Auto-choose best alternative?" })
+    String youtube_mass_change_or_add_choose_alternative(String group, int matching, int linksCount);
+
+    @Default(lngs = { "en" }, values = { "Please choose a new Variant" })
+
+    String youtube_mass_change_or_add_choose_help();
+
+    @Default(lngs = { "en" }, values = { "The choosen Variant is available for all %s1 Links (%s2)" })
+
+    String youtube_mass_change_or_add_choose_ok(String group, int count);
+
+    @Default(lngs = { "en" }, values = { "Links" })
+
+    String youtube_matching_links();
+
 }

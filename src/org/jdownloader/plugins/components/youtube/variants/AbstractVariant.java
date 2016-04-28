@@ -136,7 +136,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
 
     @Override
     public String _getUniqueId() {
-        return baseVariant.name();
+        return getStorableString();
     }
 
     public String createAdvancedName() {
@@ -181,8 +181,8 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof AbstractVariant) {
-
-            return StringUtils.equals(_getUniqueId(), ((AbstractVariant) obj)._getUniqueId());
+            AbstractVariant var = (AbstractVariant) obj;
+            return obj == this || (var.getBaseVariant() == getBaseVariant() && StringUtils.equals(_getUniqueId(), var._getUniqueId()));
         }
         return false;
     }

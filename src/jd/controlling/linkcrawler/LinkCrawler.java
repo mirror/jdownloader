@@ -29,27 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.controlling.HTACCESSController;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -88,6 +67,27 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.HTACCESSController;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+
 public class LinkCrawler {
 
     private static enum DISTRIBUTE {
@@ -117,7 +117,7 @@ public class LinkCrawler {
     private final static AtomicInteger                     CRAWLER                     = new AtomicInteger(0);
     private final ConcurrentHashMap<String, Object>        duplicateFinderContainer;
     private final ConcurrentHashMap<String, Object>        duplicateFinderCrawler;
-    private final ConcurrentHashMap<String, Object>        duplicateFinderFinal;
+    private final ConcurrentHashMap<String, CrawledLink>   duplicateFinderFinal;
     private final ConcurrentHashMap<String, Object>        duplicateFinderDeep;
     private LinkCrawlerHandler                             handler                     = null;
     protected static final ThreadPoolExecutor              threadPool;
@@ -352,7 +352,7 @@ public class LinkCrawler {
         } else {
             duplicateFinderContainer = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             duplicateFinderCrawler = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
-            duplicateFinderFinal = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            duplicateFinderFinal = new ConcurrentHashMap<String, CrawledLink>(8, 0.9f, 1);
             duplicateFinderDeep = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             if (CONFIG.isLinkCrawlerRulesEnabled()) {
                 this.linkCrawlerRules = Collections.unmodifiableList(getLinkCrawlerRules());
@@ -2737,9 +2737,14 @@ public class LinkCrawler {
             if (isDoDuplicateFinderFinalCheck()) {
                 /* specialHandling: Crypted A - > B - > Final C , and A equals C */
                 // if link comes from flashgot, origin might be null
-                final boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
-                if (duplicateFinderFinal.putIfAbsent(link.getLinkID(), this) != null && !specialHandling) {
-                    return;
+                boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
+
+                CrawledLink existing;
+                if ((existing = duplicateFinderFinal.putIfAbsent(link.getLinkID(), link)) != null && !specialHandling) {
+                    PluginForHost hPlugin = link.gethPlugin();
+                    if (hPlugin == null || hPlugin.onLinkCrawlerDupeFilterEnabled(existing, link)) {
+                        return;
+                    }
                 }
             }
             if (isCrawledLinkFiltered(link) == false) {

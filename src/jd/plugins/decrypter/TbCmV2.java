@@ -1156,8 +1156,6 @@ public class TbCmV2 extends PluginForDecrypt {
             thislink.setProperty(YoutubeHelper.YT_ID, clip.videoID);
             thislink.setProperty(YoutubeHelper.YT_COLLECTION, l.getName());
 
-            thislink.setProperty(YoutubeHelper.YT_EXT, variantInfo.getVariant().getContainer().getExtension());
-
             clip.copyToDownloadLink(thislink);
             // thislink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, variantInfo);
 
