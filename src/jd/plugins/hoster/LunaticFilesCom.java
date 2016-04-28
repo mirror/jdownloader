@@ -777,21 +777,18 @@ public class LunaticFilesCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic == null) {
-            availabletraffic = new Regex(correctedBR, "<b id=\"traffic_left\">([^<>\"\\']+)</b>").getMatch(0);
+        /* Do NOT change this - they put this in the html code especially for download managers! */
+        String availabletraffic = this.br.getRegex("TRAFFIC_LEFT (\\d+(\\.\\d{1,2})? (?:KB|MB|GB)) TRAFFIC_LEFT").getMatch(0);
+        /* This traffic only gets used if the other traffic reaches 0 but let's sum them together to display the real traffic left. */
+        String availabletraffic_extra = new Regex(correctedBR, "Pozostały transfer nieodnawialny:.*?<b>(\\d+(\\.\\d{1,2})? (?:KB|MB|GB))</b>").getMatch(0);
+        long trafficleft = 0;
+        if (availabletraffic != null) {
+            trafficleft += SizeFormatter.getSize(availabletraffic);
         }
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
-        } else {
-            ai.setUnlimitedTraffic();
+        if (availabletraffic_extra != null) {
+            trafficleft += SizeFormatter.getSize(availabletraffic_extra);
         }
+        ai.setTrafficLeft(trafficleft);
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
