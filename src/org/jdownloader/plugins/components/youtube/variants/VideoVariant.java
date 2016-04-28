@@ -278,7 +278,7 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
 
     @Override
     public int getVideoWidth() {
-        int width = getGenericInfo().getHeight();
+        int width = getGenericInfo().getWidth();
         if (width < 3) {
             width = getiTagVideo().getVideoResolution().getWidth();
         }

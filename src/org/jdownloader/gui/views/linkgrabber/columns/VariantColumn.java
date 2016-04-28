@@ -104,8 +104,9 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
             fillPopupWithVariants(popup, value, selected, dm);
             popup.add(new JSeparator());
-
-            fillPopupWithAddAdditionalSubmenu(popup, dm, link);
+            JMenu m = new JMenu(_GUI.T.VariantColumn_fillPopup_add());
+            m.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
+            fillPopupWithAddAdditionalSubmenu(popup, m, dm, link);
 
             fillPopupWithPluginSettingsButton(popup, link);
         }
@@ -132,7 +133,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         }));
     }
 
-    public void fillPopupWithAddAdditionalSubmenu(final JPopupMenu popup, ComboBoxModel<LinkVariant> dm, final CrawledLink link) {
+    public void fillPopupWithAddAdditionalSubmenu(final JPopupMenu popup, JMenu m, ComboBoxModel<LinkVariant> dm, final CrawledLink link) {
         final HashSet<String> dupeSet = new HashSet<String>();
         final CrawledPackage parent = link.getParentNode();
         final boolean readL = parent.getModifyLock().readLock();
@@ -143,9 +144,6 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         } finally {
             parent.getModifyLock().readUnlock(readL);
         }
-
-        JMenu m = new JMenu(_GUI.T.VariantColumn_fillPopup_add());
-        m.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
 
         for (int i = 0; i < dm.getSize(); i++) {
             final LinkVariant o = dm.getElementAt(i);

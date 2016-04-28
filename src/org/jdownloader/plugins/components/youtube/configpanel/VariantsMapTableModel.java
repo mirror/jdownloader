@@ -34,8 +34,8 @@ import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
-import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.translate._JDT;
@@ -321,6 +321,16 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
     private AutoResizingIntColumn                    fpsColumn;
     private AutoResizingIntColumn                    heightColumn;
     private AutoResizingIntColumn                    widthColumn;
+    protected boolean                                hasImage;
+    protected boolean                                hasVideo;
+    protected boolean                                hasSubtitle;
+    protected AutoResizingTextColumn                 typeColumn;
+    protected boolean                                hasAudio;
+    protected AutoResizingTextColumn                 projectionColumn;
+    protected AutoResizingTextColumn                 audioCodecColumn;
+    protected AutoResizingIntColumn                  audioBitrateColumn;
+    protected boolean                                hasAudioSpatial;
+    protected boolean                                hasDescription;
 
     public VariantsMapTableModel(ArrayList<AbstractVariantWrapper> sorted) {
         this("VariantsMapTableModel", sorted);
@@ -331,6 +341,10 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         this.all = sorted;
 
         initListeners();
+        initHighLighter();
+    }
+
+    protected void initHighLighter() {
         final AlternateHighlighter<AbstractVariantWrapper> alternate = new AlternateHighlighter<AbstractVariantWrapper>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null);
         addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractVariantWrapper>(null, Color.BLACK, null) {
 
@@ -372,7 +386,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         addTypeColumn();
 
         addContainerColumn();
-        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION()) {
+        addColumn(projectionColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION()) {
 
             @Override
             public String getStringValue(AbstractVariantWrapper value) {
@@ -409,7 +423,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
         addVideoCodecColumn();
 
-        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_CODEC()) {
+        addColumn(audioCodecColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_CODEC()) {
             @Override
             public String getStringValue(AbstractVariantWrapper value) {
                 if (value.variant instanceof AudioInterface) {
@@ -429,7 +443,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
         });
 
-        addColumn(new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE()) {
+        addColumn(audioBitrateColumn = new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE()) {
             @Override
             public String getStringValue(AbstractVariantWrapper value) {
                 String v = super.getStringValue(value);
@@ -592,7 +606,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
     }
 
     protected void addTypeColumn() {
-        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE()) {
+        addColumn(typeColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE()) {
 
             @Override
             public boolean isAutoWidthEnabled() {
@@ -611,6 +625,10 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
                     return _GUI.T.lit_desciption();
                 case IMAGE:
                     return _GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_IMAGES(value.variant.getFileNameQualityTag());
+                case SUBTITLES:
+                    if (((SubtitleVariant) value.variant).getGenericInfo()._getLocale() != null) {
+                        return value.variant._getName(null);
+                    }
                 default:
                     return value.variant.getGroup().getLabel();
                 }
@@ -660,20 +678,50 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
                     i++;
                     last = e;
                 }
-                System.out.println(txtCol.getStringValue(e) + " - " + i);
                 map.put(e, i);
 
             }
         }
-        boolean hasImage = false;
-        boolean hasVideo = false;
+        onStructureChanged(newtableData);
+        this.alternateMergeIDMap = map;
+        super._fireTableStructureChanged(newtableData, refreshSort);
+        this.updateEnabledMap();
+
+    }
+
+    protected void onStructureChanged(List<AbstractVariantWrapper> newtableData) {
+        hasDescription = false;
+        hasImage = false;
+        hasVideo = false;
+        hasAudio = false;
+        hasAudioSpatial = false;
+        hasSubtitle = false;
         for (AbstractVariantWrapper e : newtableData) {
-            if (e.variant.getGroup() == VariantGroup.VIDEO) {
-                hasVideo = true;
-
-            } else if (e.variant.getGroup() == VariantGroup.IMAGE) {
+            switch (e.variant.getGroup()) {
+            case AUDIO:
+                hasAudio = true;
+                break;
+            case DESCRIPTION:
+                hasDescription = true;
+                break;
+            case IMAGE:
                 hasImage = true;
+                break;
+            case SUBTITLES:
+                hasSubtitle = true;
+                break;
+            case VIDEO:
+                hasVideo = true;
+                break;
 
+            }
+            if (e.variant instanceof AudioInterface) {
+                hasAudio = true;
+                switch (((AudioInterface) e.variant).getAudioCodec()) {
+                case AAC_SPATIAL:
+                case VORBIS_SPATIAL:
+                    hasAudioSpatial = true;
+                }
             }
         }
 
@@ -689,10 +737,16 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         if (videoCodecColumn != null) {
             setColumnVisible(videoCodecColumn, hasVideo);
         }
-        this.alternateMergeIDMap = map;
-        super._fireTableStructureChanged(newtableData, refreshSort);
-        this.updateEnabledMap();
 
+        if (projectionColumn != null) {
+            setColumnVisible(projectionColumn, hasVideo || hasAudioSpatial);
+        }
+        if (audioBitrateColumn != null) {
+            setColumnVisible(audioBitrateColumn, hasAudio);
+        }
+        if (audioCodecColumn != null) {
+            setColumnVisible(audioCodecColumn, hasAudio);
+        }
     }
 
     protected void filter(java.util.List<AbstractVariantWrapper> newtableData) {
@@ -812,7 +866,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
     public void onEnabledMapUpdate(HashSet<String> enabledMap) {
     }
 
-    private List<Object> list(List<?> list) {
+    protected List<Object> list(List<?> list) {
         if (list == null) {
             return new ArrayList<Object>();
         }

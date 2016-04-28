@@ -7,9 +7,7 @@ import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
@@ -61,11 +59,9 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
     }
 
-    private static final Icon TEXT = new AbstractIcon(IconKey.ICON_TEXT, 16);
-
     @Override
     public Icon _getIcon(Object caller) {
-        return TEXT;
+        return getGroup().getIcon(18);
     }
 
     @Override

@@ -3,7 +3,6 @@ package org.jdownloader.plugins.components.youtube.variants;
 import java.util.List;
 
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
-import org.jdownloader.plugins.components.youtube.configpanel.AbstractVariantWrapper;
 
 public class VariantInfo implements Comparable<VariantInfo> {
 
@@ -74,11 +73,6 @@ public class VariantInfo implements Comparable<VariantInfo> {
     @Override
     public int compareTo(VariantInfo o) {
         return new Double(o.variant.getQualityRating()).compareTo(new Double(variant.getQualityRating()));
-    }
-
-    public String getUniqueID() {
-
-        return new AbstractVariantWrapper(variant).getVariableIDStorable().createUniqueID();
     }
 
 }

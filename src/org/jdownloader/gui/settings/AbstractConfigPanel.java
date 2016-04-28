@@ -159,7 +159,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         save();
     }
 
-    protected JLabel createLabel(String name) {
+    public JLabel createLabel(String name) {
         JLabel lbl = new JLabel(name) {
             {
                 LAFOptions.getInstance().applyConfigLabelEnabledTextColor(this);

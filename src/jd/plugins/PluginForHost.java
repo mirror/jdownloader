@@ -2257,4 +2257,12 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
+    public boolean onLinkCollectorDupe(CrawledLink existingLink, CrawledLink newLink) {
+        return false;
+    }
+
+    public boolean onLinkCrawlerDupeFilterEnabled(CrawledLink existingLink, CrawledLink newLink) {
+        return true;
+    }
+
 }

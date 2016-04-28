@@ -31,64 +31,26 @@ import org.jdownloader.translate._JDT;
 @StorageHandlerFactoryAnnotation(YoutubeConfigStorageHandlerFactory.class)
 public interface YoutubeConfig extends PluginConfigInterface {
 
-    static Object NOTHING = YoutubeCompatibility.moveJSonFiles("youtube/Youtube");
-
-    @DefaultBooleanValue(false)
-    @AboutConfig
-    boolean isAndroidSupportEnabled();
-
-    void setAndroidSupportEnabled(boolean b);
-
-    @DefaultBooleanValue(false)
-    @AboutConfig
-    boolean isCustomChunkValueEnabled();
-
-    void setCustomChunkValueEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Disable this if you do not want to use the new DASH Format. This will disable AUDIO only Downloads, and High Quality Video Downloads")
-    @AboutConfig
-    boolean isExternMultimediaToolUsageEnabled();
-
-    void setExternMultimediaToolUsageEnabled(boolean b);
-
-    @DefaultBooleanValue(false)
-    @AboutConfig
-    boolean isFastLinkCheckEnabled();
-
-    void setFastLinkCheckEnabled(boolean b);
-
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("sets the CUSTOM 'download from' field to: yourProtocolPreference + \"://www.youtube.com/watch?v=\" + videoID. Useful for when you don't want courselist / playlist / variant information polluting URL.")
-    @AboutConfig
-    boolean isSetCustomUrlEnabled();
-
-    void setSetCustomUrlEnabled(boolean b);
-
-    @DefaultBooleanValue(false)
-    @Deprecated
-    /**
-     * @deprecated use proxy and whitelist instead
-     * @return
-     */
-    boolean isProxyEnabled();
-
-    @Deprecated
-    /**
-     * @deprecated use proxy and whitelist instead
-     * @return
-     */
-    void setProxyEnabled(boolean b);
-
-    @Deprecated
-    /**
-     * @deprecated use proxy and whitelist instead
-     * @return
-     */
-    HTTPProxyStorable getProxy();
-
-    @Deprecated
-    void setProxy(HTTPProxyStorable address);
+    public static enum IfUrlisAPlaylistAction implements LabelInterface {
+        ASK {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_ASK();
+            }
+        },
+        NOTHING {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_NOTHING();
+            }
+        },
+        PROCESS {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_PROCESS();
+            }
+        };
+    }
 
     public static enum IfUrlisAVideoAndPlaylistAction implements LabelInterface {
 
@@ -98,10 +60,10 @@ public interface YoutubeConfig extends PluginConfigInterface {
                 return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_ASK();
             }
         },
-        VIDEO_ONLY {
+        NOTHING {
             @Override
             public String getLabel() {
-                return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
+                return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
             }
         },
         PLAYLIST_ONLY {
@@ -110,52 +72,121 @@ public interface YoutubeConfig extends PluginConfigInterface {
                 return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_PLAYLIST_ONLY();
             }
         },
-        NOTHING {
+        VIDEO_ONLY {
             @Override
             public String getLabel() {
-                return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
+                return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
             }
         },;
 
     }
 
-    public static enum IfUrlisAPlaylistAction implements LabelInterface {
-        ASK {
-            @Override
-            public String getLabel() {
-                return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_ASK();
-            }
-        },
-        PROCESS {
-            @Override
-            public String getLabel() {
-                return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_PROCESS();
-            }
-        },
-        NOTHING {
-            @Override
-            public String getLabel() {
-                return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_NOTHING();
-            }
-        };
-    }
+    static Object NOTHING = YoutubeCompatibility.moveJSonFiles("youtube/Youtube");
+
+    @AboutConfig
+    @DefaultStringValue("*VIDEO_NAME* (*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
+    String getAudioFilenamePattern();
+
+    @AboutConfig
+    @DefaultJsonObject("[]")
+    List<AudioBitrate> getBlacklistedAudioBitrates();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isChooseAlternativeForMassChangeOrAddDialog();
+
+    void setChooseAlternativeForMassChangeOrAddDialog(boolean v);
+
+    @AboutConfig
+
+    List<AudioCodec> getBlacklistedAudioCodecs();
+
+    @AboutConfig
+    @DefaultJsonObject("[]")
+    List<FileContainer> getBlacklistedFileContainers();
+
+    @AboutConfig
+    @DefaultJsonObject("[]")
+    List<VariantGroup> getBlacklistedGroups();
+
+    @AboutConfig
+    @DefaultJsonObject("[]")
+    List<Projection> getBlacklistedProjections();
+
+    @AboutConfig
+    @DefaultJsonObject("[]")
+    List<VideoResolution> getBlacklistedResolutions();
+
+    @AboutConfig
+    @DefaultJsonObject("[]")
+    List<VideoCodec> getBlacklistedVideoCodecs();
+
+    @AboutConfig
+    @DefaultJsonObject("[]")
+    List<VideoFrameRate> getBlacklistedVideoFramerates();
+
+    @DefaultJsonObject("[]")
+    List<AudioBitrate> getChooseVariantDialogBlacklistedAudioBitrates();
+
+    @DefaultJsonObject("[]")
+    List<AudioCodec> getChooseVariantDialogBlacklistedAudioCodecs();
+
+    @DefaultJsonObject("[]")
+    List<FileContainer> getChooseVariantDialogBlacklistedFileContainers();
+
+    @DefaultJsonObject("[]")
+    List<VariantGroup> getChooseVariantDialogBlacklistedGroups();
+
+    @DefaultJsonObject("[]")
+    List<Projection> getChooseVariantDialogBlacklistedProjections();
+
+    @DefaultJsonObject("[]")
+    List<VideoResolution> getChooseVariantDialogBlacklistedResolutions();
+
+    @DefaultJsonObject("[]")
+    List<VideoCodec> getChooseVariantDialogBlacklistedVideoCodecs();
+
+    @DefaultJsonObject("[]")
+    List<VideoFrameRate> getChooseVariantDialogBlacklistedVideoFramerates();
+
+    @AboutConfig
+    @DefaultIntValue(15)
+    int getChunksCount();
+
+    List<YoutubeVariantCollection> getCollections();
+
+    @AboutConfig
+    @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
+    String getDescriptionFilenamePattern();
 
     @AboutConfig
     List<VariantIDStorable> getDisabledVariants();
 
-    void setDisabledVariants(List<VariantIDStorable> variants);
+    @AboutConfig
+    ArrayList<String> getExtraSubtitles();
 
     @AboutConfig
-    @DefaultEnumValue("ASK")
-    YoutubeConfig.IfUrlisAVideoAndPlaylistAction getLinkIsVideoAndPlaylistUrlAction();
+    @Deprecated
+    String getFilenamePattern();
 
-    void setLinkIsVideoAndPlaylistUrlAction(YoutubeConfig.IfUrlisAVideoAndPlaylistAction action);
+    @AboutConfig
+    @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
+    String getImageFilenamePattern();
 
     @AboutConfig
     @DefaultEnumValue("ASK")
     YoutubeConfig.IfUrlisAPlaylistAction getLinkIsPlaylistUrlAction();
 
-    void setLinkIsPlaylistUrlAction(YoutubeConfig.IfUrlisAPlaylistAction action);
+    @AboutConfig
+    @DefaultEnumValue("ASK")
+    YoutubeConfig.IfUrlisAVideoAndPlaylistAction getLinkIsVideoAndPlaylistUrlAction();
+
+    @AboutConfig
+    @DefaultStringValue("*VIDEO_NAME*")
+    String getPackagePattern();
+
+    @AboutConfig
+    String[] getPreferedSubtitleLanguages();
 
     // @DefaultBooleanValue(false)
     // @AboutConfig
@@ -169,112 +200,12 @@ public interface YoutubeConfig extends PluginConfigInterface {
     //
     // void setBestGroupVariantEnabled(boolean b);
 
-    @AboutConfig
     @Deprecated
-    String getFilenamePattern();
-
-    @Deprecated
-    void setFilenamePattern(String name);
-
-    @AboutConfig
-    @DefaultStringValue("*3D* *360* *VIDEO_NAME* (*H*p_*FPS*fps_*VIDEO_CODEC*-*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
-    String getVideoFilenamePattern();
-
-    void setVideoFilenamePattern(String name);
-
-    @AboutConfig
-    @DefaultStringValue("*VIDEO_NAME* (*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
-    String getAudioFilenamePattern();
-
-    void setAudioFilenamePattern(String name);
-
-    @AboutConfig
-    @DefaultStringValue("*VIDEO_NAME* (*LNG[DISPLAY]*).*EXT*")
-    String getSubtitleFilenamePattern();
-
-    void setSubtitleFilenamePattern(String name);
-
-    @AboutConfig
-    @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
-    String getDescriptionFilenamePattern();
-
-    void setDescriptionFilenamePattern(String name);
-
-    @AboutConfig
-    @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
-    String getImageFilenamePattern();
-
-    void setImageFilenamePattern(String name);
-
-    @AboutConfig
-    @DefaultIntValue(15)
-    int getChunksCount();
-
-    void setChunksCount(int count);
-
-    @AboutConfig
-    String[] getPreferedSubtitleLanguages();
-
-    void setPreferedSubtitleLanguages(String[] lngKeys);
-
-    @AboutConfig
-    ArrayList<String> getSubtitleWhiteList();
-
-    void setSubtitleWhiteList(ArrayList<String> list);
-
-    @AboutConfig
-    ArrayList<String> getExtraSubtitles();
-
-    void setExtraSubtitles(ArrayList<String> list);
-
-    // @AboutConfig
-    // ArrayList<YoutubeCustomVariantStorable> getCustomVariants();
-    //
-    // void setCustomVariants(ArrayList<YoutubeCustomVariantStorable> list);
-
-    @AboutConfig
-    @DefaultStringValue("*VIDEO_NAME*")
-    String getPackagePattern();
-
-    void setPackagePattern(String pattern);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    void setSubtitleCopyforEachVideoVariant(boolean b);
-
-    boolean isSubtitleCopyforEachVideoVariant();
-
-    @AboutConfig
-    @DefaultIntValue(40)
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
-    int getRatingCodecH264();
-
-    void setRatingCodecH264(int rating);
-
-    @AboutConfig
-    @DefaultIntValue(25)
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
-    int getRatingCodecH263();
-
-    void setRatingCodecH263(int rating);
-
-    @AboutConfig
-    @DefaultIntValue(30)
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
-    int getRatingCodecVP9();
-
-    void setRatingCodecVP9(int rating);
-
-    @AboutConfig
-    @DefaultIntValue(20)
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
-    int getRatingCodecVP8();
-
-    void setRatingCodecVP8(int rating);
+    /**
+     * @deprecated use proxy and whitelist instead
+     * @return
+     */
+    HTTPProxyStorable getProxy();
 
     @AboutConfig
     @DefaultIntValue(5)
@@ -282,31 +213,29 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
     int getRating60Fps();
 
-    void setRating60Fps(int rating);
-
     @AboutConfig
-    @DefaultIntValue(60)
+    @DefaultIntValue(25)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
-    int getRatingContainerMP4();
-
-    void setRatingContainerMP4(int rating);
+    int getRatingCodecH263();
 
     @AboutConfig
-    @DefaultIntValue(50)
+    @DefaultIntValue(40)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
-    int getRatingContainerWEBM();
-
-    void setRatingContainerWEBM(int rating);
+    int getRatingCodecH264();
 
     @AboutConfig
-    @DefaultIntValue(5)
+    @DefaultIntValue(20)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
-    int getRatingContainerM4A();
+    int getRatingCodecVP8();
 
-    void setRatingContainerM4A(int rating);
+    @AboutConfig
+    @DefaultIntValue(30)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+    int getRatingCodecVP9();
 
     @AboutConfig
     @DefaultIntValue(4)
@@ -314,7 +243,11 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
     int getRatingContainerAAC();
 
-    void setRatingContainerAAC(int rating);
+    @AboutConfig
+    @DefaultIntValue(5)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+    int getRatingContainerM4A();
 
     @AboutConfig
     @DefaultIntValue(2)
@@ -322,23 +255,24 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
     int getRatingContainerMP3();
 
-    void setRatingContainerMP3(int rating);
+    @AboutConfig
+    @DefaultIntValue(60)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+    int getRatingContainerMP4();
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultIntValue(50)
     @RequiresRestart("A JDownloader Restart is Required")
-    boolean isAdvancedVariantNamesEnabled();
-
-    void setAdvancedVariantNamesEnabled(boolean b);
+    @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+    int getRatingContainerWEBM();
 
     @AboutConfig
-    @DefaultStringValue("*3D* *360* *HEIGHT*p *FPS*fps *CONTAINER* - Video *AUDIO_CODEC* - Audio")
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**HEIGHT**FPS**AUDIO_CODEC**3D**AUDIO_BITRATE**SPATIAL*")
+    @DefaultStringValue("*VIDEO_NAME* (*LNG[DISPLAY]*).*EXT*")
+    String getSubtitleFilenamePattern();
 
-    String getVariantNamePatternVideo();
-
-    void setVariantNamePatternVideo(String type);
+    @AboutConfig
+    ArrayList<String> getSubtitleWhiteList();
 
     @AboutConfig
     @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**AUDIO_BITRATE**AUDIO_CODEC**DEMUX**SPATIAL*")
@@ -347,59 +281,171 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @RequiresRestart("A JDownloader Restart is Required")
     String getVariantNamePatternAudio();
 
-    void setVariantNamePatternAudio(String type);
+    @AboutConfig
+    @DefaultStringValue("*3D* *360* *HEIGHT*p *FPS*fps *CONTAINER* - Video *AUDIO_CODEC* - Audio")
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**HEIGHT**FPS**AUDIO_CODEC**3D**AUDIO_BITRATE**SPATIAL*")
+
+    String getVariantNamePatternVideo();
 
     @AboutConfig
-    @DefaultJsonObject("[]")
-    List<AudioBitrate> getBlacklistedAudioBitrates();
+    @DefaultStringValue("*3D* *360* *VIDEO_NAME* (*H*p_*FPS*fps_*VIDEO_CODEC*-*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
+    String getVideoFilenamePattern();
 
     @AboutConfig
-    @DefaultJsonObject("[]")
-    List<VariantGroup> getBlacklistedGroups();
+    @DefaultBooleanValue(false)
+    @RequiresRestart("A JDownloader Restart is Required")
+    boolean isAdvancedVariantNamesEnabled();
 
+    @DefaultBooleanValue(false)
     @AboutConfig
-    @DefaultJsonObject("[]")
-    List<FileContainer> getBlacklistedFileContainers();
+    boolean isAndroidSupportEnabled();
 
+    @DefaultBooleanValue(false)
     @AboutConfig
-    @DefaultJsonObject("[]")
-    List<Projection> getBlacklistedProjections();
+    boolean isCustomChunkValueEnabled();
 
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Disable this if you do not want to use the new DASH Format. This will disable AUDIO only Downloads, and High Quality Video Downloads")
     @AboutConfig
-    @DefaultJsonObject("[]")
-    List<VideoResolution> getBlacklistedResolutions();
+    boolean isExternMultimediaToolUsageEnabled();
 
+    // @AboutConfig
+    // ArrayList<YoutubeCustomVariantStorable> getCustomVariants();
+    //
+    // void setCustomVariants(ArrayList<YoutubeCustomVariantStorable> list);
+
+    @DefaultBooleanValue(false)
     @AboutConfig
-    @DefaultJsonObject("[]")
-    List<VideoFrameRate> getBlacklistedVideoFramerates();
+    boolean isFastLinkCheckEnabled();
 
+    @DefaultBooleanValue(false)
+    @Deprecated
+    /**
+     * @deprecated use proxy and whitelist instead
+     * @return
+     */
+    boolean isProxyEnabled();
+
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("sets the CUSTOM 'download from' field to: yourProtocolPreference + \"://www.youtube.com/watch?v=\" + videoID. Useful for when you don't want courselist / playlist / variant information polluting URL.")
     @AboutConfig
-    @DefaultJsonObject("[]")
-    List<VideoCodec> getBlacklistedVideoCodecs();
+    boolean isSetCustomUrlEnabled();
 
-    @AboutConfig
+    boolean isSubtitleCopyforEachVideoVariant();
 
-    List<AudioCodec> getBlacklistedAudioCodecs();
+    void setAdvancedVariantNamesEnabled(boolean b);
+
+    void setAndroidSupportEnabled(boolean b);
+
+    void setAudioFilenamePattern(String name);
 
     void setBlacklistedAudioBitrates(List<AudioBitrate> v);
 
-    void setBlacklistedGroups(List<VariantGroup> v);
+    void setBlacklistedAudioCodecs(List<AudioCodec> v);
 
     void setBlacklistedFileContainers(List<FileContainer> v);
+
+    void setBlacklistedGroups(List<VariantGroup> v);
 
     void setBlacklistedProjections(List<Projection> v);
 
     void setBlacklistedResolutions(List<VideoResolution> v);
 
-    void setBlacklistedVideoFramerates(List<VideoFrameRate> v);
-
     void setBlacklistedVideoCodecs(List<VideoCodec> v);
 
-    void setBlacklistedAudioCodecs(List<AudioCodec> v);
+    void setBlacklistedVideoFramerates(List<VideoFrameRate> v);
+
+    void setChooseVariantDialogBlacklistedAudioBitrates(List<AudioBitrate> v);
+
+    void setChooseVariantDialogBlacklistedAudioCodecs(List<AudioCodec> v);
+
+    void setChooseVariantDialogBlacklistedFileContainers(List<FileContainer> v);
+
+    void setChooseVariantDialogBlacklistedGroups(List<VariantGroup> v);
+
+    void setChooseVariantDialogBlacklistedProjections(List<Projection> v);
+
+    void setChooseVariantDialogBlacklistedResolutions(List<VideoResolution> v);
+
+    void setChooseVariantDialogBlacklistedVideoCodecs(List<VideoCodec> v);
+
+    void setChooseVariantDialogBlacklistedVideoFramerates(List<VideoFrameRate> v);
+
+    void setChunksCount(int count);
 
     @AboutConfig
 
     void setCollections(List<YoutubeVariantCollection> links);
 
-    List<YoutubeVariantCollection> getCollections();
+    void setCustomChunkValueEnabled(boolean b);
+
+    void setDescriptionFilenamePattern(String name);
+
+    void setDisabledVariants(List<VariantIDStorable> variants);
+
+    void setExternMultimediaToolUsageEnabled(boolean b);
+
+    void setExtraSubtitles(ArrayList<String> list);
+
+    void setFastLinkCheckEnabled(boolean b);
+
+    @Deprecated
+    void setFilenamePattern(String name);
+
+    void setImageFilenamePattern(String name);
+
+    void setLinkIsPlaylistUrlAction(YoutubeConfig.IfUrlisAPlaylistAction action);
+
+    void setLinkIsVideoAndPlaylistUrlAction(YoutubeConfig.IfUrlisAVideoAndPlaylistAction action);
+
+    void setPackagePattern(String pattern);
+
+    void setPreferedSubtitleLanguages(String[] lngKeys);
+
+    @Deprecated
+    void setProxy(HTTPProxyStorable address);
+
+    @Deprecated
+    /**
+     * @deprecated use proxy and whitelist instead
+     * @return
+     */
+    void setProxyEnabled(boolean b);
+
+    void setRating60Fps(int rating);
+
+    void setRatingCodecH263(int rating);
+
+    void setRatingCodecH264(int rating);
+
+    void setRatingCodecVP8(int rating);
+
+    void setRatingCodecVP9(int rating);
+
+    void setRatingContainerAAC(int rating);
+
+    void setRatingContainerM4A(int rating);
+
+    void setRatingContainerMP3(int rating);
+
+    void setRatingContainerMP4(int rating);
+
+    void setRatingContainerWEBM(int rating);
+
+    void setSetCustomUrlEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    void setSubtitleCopyforEachVideoVariant(boolean b);
+
+    void setSubtitleFilenamePattern(String name);
+
+    void setSubtitleWhiteList(ArrayList<String> list);
+
+    void setVariantNamePatternAudio(String type);
+
+    void setVariantNamePatternVideo(String type);
+
+    void setVideoFilenamePattern(String name);
 }

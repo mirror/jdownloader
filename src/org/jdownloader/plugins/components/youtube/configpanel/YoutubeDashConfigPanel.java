@@ -203,11 +203,11 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         List<VariantGroup> groups = Arrays.asList(VariantGroup.values());
         Collections.sort(groups, LabelInterface.COMPARATOR_ASC);
-        EnumMultiComboBox<VariantGroup> typeSel = new EnumMultiComboBox<VariantGroup>(groups, CFG_YOUTUBE.BLACKLISTED_GROUPS);
+        EnumMultiComboBox<VariantGroup> typeSel = new EnumMultiComboBox<VariantGroup>(groups, CFG_YOUTUBE.BLACKLISTED_GROUPS, true);
 
         List<FileContainer> container = Arrays.asList(FileContainer.values());
         Collections.sort(container, LabelInterface.COMPARATOR_ASC);
-        EnumMultiComboBox<FileContainer> containerSel = new EnumMultiComboBox<FileContainer>(container, CFG_YOUTUBE.BLACKLISTED_FILE_CONTAINERS) {
+        EnumMultiComboBox<FileContainer> containerSel = new EnumMultiComboBox<FileContainer>(container, CFG_YOUTUBE.BLACKLISTED_FILE_CONTAINERS, true) {
             @Override
             protected String getLabel(int i, FileContainer sc) {
                 return sc.getTooltip();
@@ -216,7 +216,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         ;
         List<Projection> projections = Arrays.asList(Projection.values());
         Collections.sort(projections, LabelInterface.COMPARATOR_ASC);
-        EnumMultiComboBox<Projection> projectionSelect = new EnumMultiComboBox<Projection>(projections, CFG_YOUTUBE.BLACKLISTED_PROJECTIONS) {
+        EnumMultiComboBox<Projection> projectionSelect = new EnumMultiComboBox<Projection>(projections, CFG_YOUTUBE.BLACKLISTED_PROJECTIONS, true) {
             @Override
             protected String getLabel(int i, Projection sc) {
                 return sc.getTooltip();
@@ -225,15 +225,15 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         List<VideoResolution> heights = Arrays.asList(VideoResolution.values());
         Collections.sort(heights, IntegerInterface.COMPARATOR_DESC);
 
-        EnumMultiComboBox<VideoResolution> resolutionSelect = new EnumMultiComboBox<VideoResolution>(heights, CFG_YOUTUBE.BLACKLISTED_RESOLUTIONS);
+        EnumMultiComboBox<VideoResolution> resolutionSelect = new EnumMultiComboBox<VideoResolution>(heights, CFG_YOUTUBE.BLACKLISTED_RESOLUTIONS, true);
         List<VideoFrameRate> fpss = Arrays.asList(VideoFrameRate.values());
         Collections.sort(fpss, IntegerInterface.COMPARATOR_DESC);
 
-        EnumMultiComboBox<VideoFrameRate> fpsSelect = new EnumMultiComboBox<VideoFrameRate>(fpss, CFG_YOUTUBE.BLACKLISTED_VIDEO_FRAMERATES);
+        EnumMultiComboBox<VideoFrameRate> fpsSelect = new EnumMultiComboBox<VideoFrameRate>(fpss, CFG_YOUTUBE.BLACKLISTED_VIDEO_FRAMERATES, true);
 
         List<VideoCodec> videoCodecs = Arrays.asList(VideoCodec.values());
         Collections.sort(videoCodecs, LabelInterface.COMPARATOR_ASC);
-        EnumMultiComboBox<VideoCodec> vcodec = new EnumMultiComboBox<VideoCodec>(videoCodecs, CFG_YOUTUBE.BLACKLISTED_VIDEO_CODECS) {
+        EnumMultiComboBox<VideoCodec> vcodec = new EnumMultiComboBox<VideoCodec>(videoCodecs, CFG_YOUTUBE.BLACKLISTED_VIDEO_CODECS, true) {
             @Override
             protected String getLabel(int i, VideoCodec sc) {
                 return sc.getTooltip();
@@ -242,7 +242,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         List<AudioCodec> audioCodecs = Arrays.asList(AudioCodec.values());
         Collections.sort(audioCodecs, LabelInterface.COMPARATOR_ASC);
-        EnumMultiComboBox<AudioCodec> acodec = new EnumMultiComboBox<AudioCodec>(audioCodecs, CFG_YOUTUBE.BLACKLISTED_AUDIO_CODECS) {
+        EnumMultiComboBox<AudioCodec> acodec = new EnumMultiComboBox<AudioCodec>(audioCodecs, CFG_YOUTUBE.BLACKLISTED_AUDIO_CODECS, true) {
             @Override
             protected String getLabel(int i, AudioCodec sc) {
                 return sc.getTooltip();
@@ -250,7 +250,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         };
         List<AudioBitrate> bitrates = Arrays.asList(AudioBitrate.values());
         Collections.sort(bitrates, IntegerInterface.COMPARATOR_DESC);
-        EnumMultiComboBox<AudioBitrate> aBitrate = new EnumMultiComboBox<AudioBitrate>(bitrates, CFG_YOUTUBE.BLACKLISTED_AUDIO_BITRATES);
+        EnumMultiComboBox<AudioBitrate> aBitrate = new EnumMultiComboBox<AudioBitrate>(bitrates, CFG_YOUTUBE.BLACKLISTED_AUDIO_BITRATES, true);
 
         addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE(), null, typeSel);
         addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE(), null, containerSel);
