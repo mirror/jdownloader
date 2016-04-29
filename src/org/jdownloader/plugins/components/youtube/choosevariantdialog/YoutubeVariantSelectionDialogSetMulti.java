@@ -12,6 +12,7 @@ import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.CounterMap;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.youtube.configpanel.AbstractVariantWrapper;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
@@ -98,6 +99,9 @@ public class YoutubeVariantSelectionDialogSetMulti extends YoutubeVariantSelecti
                 addColumn(matches = new AutoResizingIntColumn(_GUI.T.youtube_matching_links()) {
                     @Override
                     public String getStringValue(AbstractVariantWrapper value) {
+                        if (value.variant instanceof SubtitleVariant) {
+                            return matchingLinks.getInt(value.variant._getUniqueId()) + "/" + linksCount;
+                        }
                         return matchingLinks.getInt(value.getVariableIDStorable().createUniqueID()) + "/" + linksCount;
                     }
 
@@ -108,6 +112,9 @@ public class YoutubeVariantSelectionDialogSetMulti extends YoutubeVariantSelecti
 
                     @Override
                     public int getInt(AbstractVariantWrapper value) {
+                        if (value.variant instanceof SubtitleVariant) {
+                            return matchingLinks.getInt(value.variant._getUniqueId());
+                        }
                         return matchingLinks.getInt(value.getVariableIDStorable().createUniqueID());
                     }
 
