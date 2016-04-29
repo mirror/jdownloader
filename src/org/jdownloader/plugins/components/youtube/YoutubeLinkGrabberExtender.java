@@ -4,9 +4,12 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -15,6 +18,7 @@ import javax.swing.JMenuItem;
 
 import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.CompareUtils;
 import org.appwork.utils.CounterMap;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
@@ -32,8 +36,11 @@ import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialogSetMulti;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -230,7 +237,7 @@ public class YoutubeLinkGrabberExtender {
                             UIOManager.I().show(null, d = new YoutubeVariantSelectionDialogSetMulti(matchingLinks, g, groupCount.getInt(g), vs)).throwCloseExceptions();
 
                             boolean alternativesEnabled = d.isAutoAlternativesEnabled();
-                            AbstractVariant choosenVariant = (AbstractVariant) d.getVariant();
+                            final AbstractVariant choosenVariant = (AbstractVariant) d.getVariant();
 
                             for (CrawledLink cl : pv.getChildren()) {
 
@@ -238,16 +245,21 @@ public class YoutubeLinkGrabberExtender {
                                 if (activeVariant.getGroup() != g) {
                                     continue;
                                 }
-                                LinkCollector.getInstance().setActiveVariantForLink(cl, choosenVariant);
-
+                                AbstractVariant found = findBestVariant(cl, g, choosenVariant, alternativesEnabled);
+                                if (found != null) {
+                                    LinkCollector.getInstance().setActiveVariantForLink(cl, found);
+                                }
                             }
 
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         } catch (DialogCanceledException e) {
                             e.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    };
+                    }
+
                 }.start();
 
             }
@@ -359,6 +371,104 @@ public class YoutubeLinkGrabberExtender {
 
         }.start();
 
+    };
+
+    private AbstractVariant findBestVariant(final CrawledLink cl, VariantGroup g, final AbstractVariant choosenVariant, final boolean alternativesEnabled) throws Exception {
+        VariantInfo found = null;
+        final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
+
+        switch (g) {
+        case DESCRIPTION:
+            return null;
+        case SUBTITLES:
+            List<VariantInfo> subtitles = clipData.findSubtitleVariants();
+            if (subtitles != null) {
+
+                for (VariantInfo v : subtitles) {
+                    if (StringUtils.equals(v.getVariant()._getUniqueId(), choosenVariant._getUniqueId())) {
+                        found = v;
+                        break;
+                    }
+                }
+                if (found == null && alternativesEnabled) {
+                    Locale choosenLocale = ((SubtitleVariant) choosenVariant).getGenericInfo()._getLocale();
+                    for (VariantInfo v : subtitles) {
+                        Locale vLocale = ((SubtitleVariant) v.getVariant()).getGenericInfo()._getLocale();
+                        if (StringUtils.equals(vLocale.getLanguage(), choosenLocale.getLanguage())) {
+                            found = v;
+                            break;
+                        }
+                    }
+                }
+
+            }
+            break;
+        case AUDIO:
+        case IMAGE:
+        case VIDEO:
+            List<VariantInfo> variants = clipData.findVariants();
+
+            // sorts the best matching variants first. (based on quality rating)
+            Collections.sort(variants, new Comparator<VariantInfo>() {
+
+                @Override
+                public int compare(VariantInfo o1, VariantInfo o2) {
+
+                    return CompareUtils.compare(Math.abs(choosenVariant.getQualityRating() - o1.getVariant().getQualityRating()), Math.abs(choosenVariant.getQualityRating() - o2.getVariant().getQualityRating()));
+                }
+            });
+
+            for (VariantInfo v : variants) {
+                if (StringUtils.equals(v.getVariant()._getUniqueId(), choosenVariant._getUniqueId())) {
+                    return v.getVariant();
+                }
+            }
+            if (found == null) {
+                for (VariantInfo v : variants) {
+                    if (StringUtils.equals(v.getVariant().getTypeId(), choosenVariant.getTypeId())) {
+                        return v.getVariant();
+                    }
+                }
+            }
+            if (alternativesEnabled) {
+
+                if (found == null) {
+                    for (VariantInfo v : variants) {
+                        if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
+                            if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
+                                if (choosenVariant instanceof VideoVariant && v.getVariant() instanceof VideoVariant) {
+                                    if (((VideoVariant) v.getVariant()).getVideoCodec() == ((VideoVariant) choosenVariant).getVideoCodec()) {
+                                        if (((VideoVariant) v.getVariant()).getAudioCodec() == ((VideoVariant) choosenVariant).getAudioCodec()) {
+                                            return v.getVariant();
+                                        }
+                                    }
+                                } else if (choosenVariant instanceof AudioVariant && v.getVariant() instanceof AudioVariant) {
+                                    if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
+                                        if (((AudioVariant) v.getVariant()).getAudioCodec() == ((AudioVariant) choosenVariant).getAudioCodec()) {
+                                            return v.getVariant();
+                                        }
+                                    }
+
+                                }
+                            }
+
+                        }
+                    }
+                }
+                if (found == null) {
+                    for (VariantInfo v : variants) {
+                        if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
+                            if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
+                                return v.getVariant();
+                            }
+                        }
+                    }
+                }
+
+            }
+
+        }
+        return null;
     };
 
     private String getHost() {
