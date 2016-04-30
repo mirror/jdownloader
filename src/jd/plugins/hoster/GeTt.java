@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://((www|open)\\.)?ge\\.tt/(api/)?\\d/files/[0-9a-zA-z]+/\\d+/blob(\\?download)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://((www|open|api)\\.)?ge\\.tt/(api/)?\\d/files/[0-9a-zA-z]+/\\d+/blob(\\?download)?" }, flags = { 0 })
 public class GeTt extends PluginForHost {
 
     private String              dllink               = null;
@@ -75,6 +75,10 @@ public class GeTt extends PluginForHost {
             }
         } else {
             dllink = downloadLink.getDownloadURL();
+            // correction for people who have added old links
+            if (dllink.contains("//open")) {
+                dllink = dllink.replace("//open", "//api") + "?download";
+            }
         }
         // In case the link redirects to the finallink
         brc.setFollowRedirects(true);
@@ -84,6 +88,8 @@ public class GeTt extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                // contains redirects
+                dllink = brc.getURL();
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

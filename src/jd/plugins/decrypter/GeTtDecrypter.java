@@ -61,7 +61,7 @@ public class GeTtDecrypter extends PluginForDecrypt {
             if (singleFile != null) {
                 id = singleFile;
             }
-            decryptedLinks.add(createDownloadlink("http://open.ge.tt/1/files/" + fid + "/" + id + "/blob"));
+            decryptedLinks.add(createDownloadlink("http://api.ge.tt/1/files/" + fid + "/" + id + "/blob?download"));
             if (singleFile != null) {
                 break;
             }
