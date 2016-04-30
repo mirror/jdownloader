@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -95,9 +96,30 @@ public class FivehundretPxCom extends PluginForHost {
             if (ext != null) {
                 ext = "." + ext;
             }
-            dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
+            // array full of images, we need to analyse for best
+            ArrayList<Object> images = (ArrayList<Object>) entries.get("images");
+            if (images != null) {
+                int size = -1;
+                for (Object o : images) {
+                    LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) o;
+                    if (data.containsKey("size")) {
+                        int s = (int) data.get("size");
+                        if (s > size) {
+                            size = s;
+                            dllink = (String) data.get("https_url");
+                            if (dllink == null) {
+                                dllink = (String) data.get("url");
+                            }
+                        }
+                    }
+                }
+            }
             if (dllink == null) {
-                dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
+                // old raztoki20160430
+                dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
+                if (dllink == null) {
+                    dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
+                }
             }
         }
         if (title == null || dllink == null) {
