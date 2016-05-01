@@ -34,6 +34,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialogAddMulti;
 import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialogSetMulti;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
@@ -61,13 +62,13 @@ public class YoutubeLinkGrabberExtender {
     private Collection<PluginView<CrawledLink>> allPvs;
     private PluginForHost                       plg;
 
-    private JMenuItem                           addVariants;
+    private JMenuItem addVariants;
 
     // protected HashMap<String, AbstractVariant> map;
 
-    private JMenu                               youtubeMenu;
-    private HashMap<VariantGroup, JMenuItem>    groupMenuItems;
-    private LogInterface                        logger;
+    private JMenu                            youtubeMenu;
+    private HashMap<VariantGroup, JMenuItem> groupMenuItems;
+    private LogInterface                     logger;
 
     public YoutubeLinkGrabberExtender(PluginForHost plg, JComponent parent, PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
         this.plg = plg;
@@ -186,6 +187,118 @@ public class YoutubeLinkGrabberExtender {
             ((YoutubeHostPluginInterface) pv.getPlugin()).showChangeOrAddVariantDialog(pv.getChildren().get(0), null);
             return;
         }
+        ProgressGetter pg = new ProgressGetter() {
+
+            private int done;
+
+            protected void aggregate(CrawledLink cl, final CounterMap<String> matchingLinks, HashSet<String> dupeAdd, final ArrayList<VariantInfo> vs, List<VariantInfo> variants) {
+                HashSet<String> dupe = new HashSet<String>();
+                ;
+                for (VariantInfo vi : variants) {
+
+                    String id = new VariantIDStorable(vi.getVariant()).createUniqueID();
+                    if (vi.getVariant() instanceof SubtitleVariant) {
+                        id = vi.getVariant()._getUniqueId();
+                    }
+                    if (dupe.add(id)) {
+
+                        matchingLinks.increment(id);
+                    }
+                    if (dupeAdd.add(id)) {
+                        vs.add(vi);
+
+                    }
+
+                }
+            }
+
+            @Override
+            public void run() throws Exception {
+
+                final CounterMap<String> matchingLinks = new CounterMap<String>();
+                HashSet<String> dupeAdd = new HashSet<String>();
+                final ArrayList<VariantInfo> vs = new ArrayList<VariantInfo>();
+                final HashSet<String> videoIDDupe = new HashSet<String>();
+                done = 0;
+
+                for (CrawledLink cl : pv.getChildren()) {
+
+                    try {
+
+                        final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
+                        if (!videoIDDupe.add(clipData.videoID)) {
+                            continue;
+                        }
+
+                        aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findVariants());
+                        aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findDescriptionVariant());
+
+                        aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findSubtitleVariants());
+
+                    } finally {
+                        done++;
+                    }
+                }
+
+                new Thread("Add Youtube Variant") {
+                    public void run() {
+                        YoutubeVariantSelectionDialogAddMulti d;
+                        try {
+
+                            UIOManager.I().show(null, d = new YoutubeVariantSelectionDialogAddMulti(matchingLinks, videoIDDupe.size(), vs)).throwCloseExceptions();
+
+                            boolean alternativesEnabled = d.isAutoAlternativesEnabled();
+                            final List<LinkVariant> choosenVariant = d.getVariants();
+                            java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                            for (LinkVariant lv : choosenVariant) {
+                                HashSet<String> dupe = new HashSet<String>();
+                                for (CrawledLink cl : pv.getChildren()) {
+
+                                    if (!dupe.add(cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID))) {
+                                        continue;
+                                    }
+
+                                    AbstractVariant found = findBestVariant(cl, ((AbstractVariant) lv).getGroup(), ((AbstractVariant) lv), alternativesEnabled);
+                                    if (found != null) {
+                                        CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, found);
+                                        if (newLink != null) {
+                                            checkableLinks.add(newLink);
+                                        }
+                                    }
+                                }
+                            }
+                            LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                            linkChecker.check(checkableLinks);
+                        } catch (DialogClosedException e) {
+                            e.printStackTrace();
+                        } catch (DialogCanceledException e) {
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }.start();
+
+            }
+
+            @Override
+            public String getString() {
+                return null;
+            }
+
+            @Override
+            public int getProgress() {
+                return (done * 100) / pv.getChildren().size();
+            }
+
+            @Override
+            public String getLabelString() {
+                return null;
+            }
+        };
+        ProgressDialog dialog = new ProgressDialog(pg, 0, _GUI.T.lit_please_wait(), _GUI.T.youtube_scan_variants(), new AbstractIcon(IconKey.ICON_WAIT, 32));
+        UIOManager.I().show(null, dialog);
     }
 
     protected void setVariants(final VariantGroup g) {
@@ -238,11 +351,10 @@ public class YoutubeLinkGrabberExtender {
 
                             boolean alternativesEnabled = d.isAutoAlternativesEnabled();
                             final AbstractVariant choosenVariant = (AbstractVariant) d.getVariant();
-
+                            HashSet<String> dupe = new HashSet<String>();
                             for (CrawledLink cl : pv.getChildren()) {
 
-                                AbstractVariant activeVariant = (AbstractVariant) cl.gethPlugin().getActiveVariantByLink(cl.getDownloadLink());
-                                if (activeVariant.getGroup() != g) {
+                                if (!dupe.add(cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID))) {
                                     continue;
                                 }
                                 AbstractVariant found = findBestVariant(cl, g, choosenVariant, alternativesEnabled);
@@ -374,7 +486,7 @@ public class YoutubeLinkGrabberExtender {
     };
 
     private AbstractVariant findBestVariant(final CrawledLink cl, VariantGroup g, final AbstractVariant choosenVariant, final boolean alternativesEnabled) throws Exception {
-        VariantInfo found = null;
+
         final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
 
         switch (g) {
@@ -386,17 +498,15 @@ public class YoutubeLinkGrabberExtender {
 
                 for (VariantInfo v : subtitles) {
                     if (StringUtils.equals(v.getVariant()._getUniqueId(), choosenVariant._getUniqueId())) {
-                        found = v;
-                        break;
+                        return v.getVariant();
                     }
                 }
-                if (found == null && alternativesEnabled) {
+                if (alternativesEnabled) {
                     Locale choosenLocale = ((SubtitleVariant) choosenVariant).getGenericInfo()._getLocale();
                     for (VariantInfo v : subtitles) {
                         Locale vLocale = ((SubtitleVariant) v.getVariant()).getGenericInfo()._getLocale();
                         if (StringUtils.equals(vLocale.getLanguage(), choosenLocale.getLanguage())) {
-                            found = v;
-                            break;
+                            return v.getVariant();
                         }
                     }
                 }
@@ -423,46 +533,45 @@ public class YoutubeLinkGrabberExtender {
                     return v.getVariant();
                 }
             }
-            if (found == null) {
-                for (VariantInfo v : variants) {
-                    if (StringUtils.equals(v.getVariant().getTypeId(), choosenVariant.getTypeId())) {
-                        return v.getVariant();
-                    }
+
+            for (VariantInfo v : variants) {
+                if (StringUtils.equals(v.getVariant().getTypeId(), choosenVariant.getTypeId())) {
+                    return v.getVariant();
                 }
             }
+
             if (alternativesEnabled) {
 
-                if (found == null) {
-                    for (VariantInfo v : variants) {
-                        if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
-                            if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
-                                if (choosenVariant instanceof VideoVariant && v.getVariant() instanceof VideoVariant) {
-                                    if (((VideoVariant) v.getVariant()).getVideoCodec() == ((VideoVariant) choosenVariant).getVideoCodec()) {
-                                        if (((VideoVariant) v.getVariant()).getAudioCodec() == ((VideoVariant) choosenVariant).getAudioCodec()) {
-                                            return v.getVariant();
-                                        }
+                for (VariantInfo v : variants) {
+                    if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
+                        if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
+                            if (choosenVariant instanceof VideoVariant && v.getVariant() instanceof VideoVariant) {
+                                if (((VideoVariant) v.getVariant()).getVideoCodec() == ((VideoVariant) choosenVariant).getVideoCodec()) {
+                                    if (((VideoVariant) v.getVariant()).getAudioCodec() == ((VideoVariant) choosenVariant).getAudioCodec()) {
+                                        return v.getVariant();
                                     }
-                                } else if (choosenVariant instanceof AudioVariant && v.getVariant() instanceof AudioVariant) {
-                                    if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
-                                        if (((AudioVariant) v.getVariant()).getAudioCodec() == ((AudioVariant) choosenVariant).getAudioCodec()) {
-                                            return v.getVariant();
-                                        }
-                                    }
-
                                 }
-                            }
+                            } else if (choosenVariant instanceof AudioVariant && v.getVariant() instanceof AudioVariant) {
+                                if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
+                                    if (((AudioVariant) v.getVariant()).getAudioCodec() == ((AudioVariant) choosenVariant).getAudioCodec()) {
+                                        return v.getVariant();
+                                    }
+                                }
 
-                        }
-                    }
-                }
-                if (found == null) {
-                    for (VariantInfo v : variants) {
-                        if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
-                            if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
-                                return v.getVariant();
                             }
                         }
+
                     }
+
+                }
+
+                for (VariantInfo v : variants) {
+                    if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
+                        if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
+                            return v.getVariant();
+                        }
+                    }
+
                 }
 
             }
