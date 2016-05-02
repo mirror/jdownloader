@@ -331,7 +331,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
                 // there can be multiple hd/sd etc need to identify with framesize.
-                final String linkdupeid = ID + "_" + fmt + "_" + quality[3];
+                final String linkdupeid;
+                if (StringUtils.isNotEmpty(quality[7])) {
+                    linkdupeid = ID + "_" + fmt + "_" + quality[3] + "_" + quality[7];
+                } else {
+                    linkdupeid = ID + "_" + fmt + "_" + quality[3];
+                }
                 final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin" + format + "://"));
                 link.setProperty("directURL", url);
                 // videoTitle is required!

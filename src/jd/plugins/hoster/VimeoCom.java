@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -181,10 +182,26 @@ public class VimeoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String quality[] : qualities) {
+            final String linkdupeid;
+            if (StringUtils.isNotEmpty(quality[7])) {
+                linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + "_" + quality[7];
+            } else {
+                linkdupeid = ID + "_" + quality[2] + "_" + quality[3];
+            }
             // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross over!
-            if (downloadLink.getStringProperty("videoQuality", null).equalsIgnoreCase(quality[2])) {
+            if (StringUtils.equalsIgnoreCase(linkdupeid, downloadLink.getLinkID())) {
                 finalURL = quality[0];
                 break;
+            }
+        }
+        if (finalURL == null) {
+            for (String quality[] : qualities) {
+                // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
+                // over!
+                if (downloadLink.getStringProperty("videoQuality", null).equalsIgnoreCase(quality[2])) {
+                    finalURL = quality[0];
+                    break;
+                }
             }
         }
         if (finalURL == null) {
@@ -393,7 +410,7 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public static final int quality_info_length = 7;
+    public static final int quality_info_length = 8;
 
     @SuppressWarnings({ "unchecked", "unused" })
     public static String[][] getQualities(final Browser ibr, final String ID) throws Exception {
@@ -403,7 +420,6 @@ public class VimeoCom extends PluginForHost {
         Thread.sleep(1000);
         // process the different page layouts
         String qualities[][] = null;
-        String download[][] = null;
         boolean debug = false;
 
         // qx[0] = url
@@ -413,12 +429,47 @@ public class VimeoCom extends PluginForHost {
         // qx[4] = bitrate (\d+)
         // qx[5] = fileSize (\d [a-zA-Z]{2})
         // qx[6] = Codec
+        // qx[6] = ID
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (configURL == null) {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
             configURL = JSonUtils.getJson(ibr, "config_url");
         }
-        if (ibr.containsHTML("iconify_down_b")) {
+        if (ibr.containsHTML("download_config")) {
+            // new//
+            Browser gq = ibr.cloneBrowser();
+            /* With dl button */
+            gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final String json = gq.getPage("http://vimeo.com/" + ID + "?action=load_download_config");
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final List<Object> files = (List<Object>) entries.get("files");
+            if (files != null) {
+                qualities = new String[files.size()][quality_info_length];
+                int i = 0;
+                for (final Object file : files) {
+                    final int index = i++;
+                    final Map<String, Object> info = (Map<String, Object>) file;
+                    qualities[index][0] = String.valueOf(info.get("download_url"));
+                    final String ext = String.valueOf(info.get("extension"));
+                    if (StringUtils.isNotEmpty(ext)) {
+                        qualities[index][1] = "." + ext;
+                    }
+                    if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "sd")) {
+                        qualities[index][2] = "sd";
+                    } else if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "hd")) {
+                        qualities[index][2] = "hd";
+                    }
+                    qualities[index][3] = String.valueOf(info.get("width")) + "x" + String.valueOf(info.get("height"));
+                    qualities[index][4] = null;
+                    qualities[index][5] = String.valueOf(info.get("size"));
+                    /* No codec given */
+                    qualities[index][6] = null;
+                    /* ID */
+                    qualities[index][7] = null;
+                }
+            }
+        } else if (ibr.containsHTML("iconify_down_b")) {
+            // old//
             /* E.g. video 1761235 */
             /* download button.. does this give you all qualities? If not we should drop this. */
             Browser gq = ibr.cloneBrowser();
@@ -439,11 +490,9 @@ public class VimeoCom extends PluginForHost {
                     qualities[i][5] = q[i][4];
                     /* No codec given */
                     qualities[i][6] = null;
+                    /* ID */
+                    qualities[i][7] = null;
                 }
-            }
-            if (debug) {
-                download = qualities;
-                qualities = null;
             }
         }
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
@@ -502,6 +551,8 @@ public class VimeoCom extends PluginForHost {
                         /* No filesize given */
                         qualities[foundqualities][5] = null;
                         qualities[foundqualities][6] = ".mp4".equalsIgnoreCase(ext) ? "h264" : "vp5";
+                        /* ID */
+                        qualities[foundqualities][7] = String.valueOf(abc.get("id"));
                         foundqualities++;
                     }
                 }
@@ -541,6 +592,8 @@ public class VimeoCom extends PluginForHost {
                                 /* No filesize given */
                                 qualities[counter][5] = null;
                                 qualities[counter][6] = codec;
+                                /* ID */
+                                qualities[counter][7] = null;
                                 foundqualities++;
                             }
                             counter++;
