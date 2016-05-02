@@ -2,6 +2,7 @@ package jd.gui.swing.dialog;
 
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -44,22 +45,25 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
     }
 
     @Override
+    protected int[] guessSelectedRows(List<LazyHostPlugin> oldTableData, int leadIndex, int anchorIndex, BitSet selectedRowsBitSet) {
+        return new int[] { 0 };
+    }
+
+    @Override
     public void _fireTableStructureChanged(java.util.List<LazyHostPlugin> newtableData, boolean refreshSort) {
         final String ltext = text;
         if (!StringUtils.isEmpty(ltext)) {
             try {
-                String p = toRegex(ltext);
-                Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
-
+                final String p = toRegex(ltext);
+                final Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
                 main: for (final Iterator<LazyHostPlugin> it = newtableData.iterator(); it.hasNext();) {
                     final LazyHostPlugin next = it.next();
                     if (pattern.matcher(clean(next.getHost())).find()) {
                         continue;
                     }
-                    FEATURE[] features = next.getFeatures();
+                    final FEATURE[] features = next.getFeatures();
                     if (features != null) {
-                        for (FEATURE f : features) {
-
+                        for (final FEATURE f : features) {
                             if (pattern.matcher(clean(f.getLabel())).find()) {
                                 continue main;
                             }
@@ -67,50 +71,53 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
                     }
                     it.remove();
                 }
-
             } catch (Throwable e) {
                 Log.log(e);
             }
         }
         super._fireTableStructureChanged(newtableData, refreshSort);
+    }
 
+    @Override
+    public List<LazyHostPlugin> getSelectedObjects(int maxItems, BitSet selectedRows) {
+        final List<LazyHostPlugin> ret = super.getSelectedObjects(maxItems, selectedRows);
+        if (ret == null || ret.size() == 0) {
+            final List<LazyHostPlugin> ltableData = getTableData();
+            if (ltableData != null && ltableData.size() > 0) {
+                final List<LazyHostPlugin> ret2 = new ArrayList<LazyHostPlugin>();
+                ret2.add(ltableData.get(0));
+                return ret2;
+            }
+        }
+        return ret;
     }
 
     @Override
     public List<LazyHostPlugin> sort(List<LazyHostPlugin> data, ExtColumn<LazyHostPlugin> column) {
         if (StringUtils.isEmpty(text)) {
-            Comparator<LazyHostPlugin> compar = new Comparator<LazyHostPlugin>() {
+            final Comparator<LazyHostPlugin> compar = new Comparator<LazyHostPlugin>() {
 
                 @Override
                 public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-
                     return o1.getHost().compareToIgnoreCase(o2.getHost());
 
                 }
             };
-
             Collections.sort(data, compar);
-
             return data;
         } else {
             final Pattern patternStarts = Pattern.compile("^" + toRegex(text) + ".*$", Pattern.CASE_INSENSITIVE);
-
-            Comparator<LazyHostPlugin> compar = new Comparator<LazyHostPlugin>() {
-
+            final Comparator<LazyHostPlugin> compar = new Comparator<LazyHostPlugin>() {
                 @Override
                 public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-
                     int ret = CompareUtils.compare(patternStarts.matcher(clean(o2.getHost())).matches(), patternStarts.matcher(clean(o1.getHost())).matches());
                     if (ret == 0) {
                         ret = o1.getHost().compareToIgnoreCase(o2.getHost());
                     }
-
                     return ret;
                 }
             };
-
             Collections.sort(data, compar);
-
             return data;
         }
     }
@@ -122,11 +129,6 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
     public void refresh(final String filterText) {
         this.text = clean(filterText);
         _fireTableStructureChanged(new ArrayList<LazyHostPlugin>(allPlugins), true);
-        // if (getTable() != null) {
-        if (getTableData().size() > 0) {
-            setSelectedRows(new int[] { 0 });
-            // }
-        }
     }
 
     private String clean(String text) {
