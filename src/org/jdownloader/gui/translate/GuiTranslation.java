@@ -6156,6 +6156,39 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Router IP" })
     String lit_router_ip();
 
+    @Default(lngs = { "en" }, values = { "Click on the open circle!" })
+    String ClickCaptchaChallenge_click_open_circle();
+
+    @Default(lngs = { "en" }, values = { "Read the combination in the background and click the corresponding combination in the overview!" })
+    String ShareLinksBiz_captcha_help();
+
+    @Default(lngs = { "en" }, values = { "Click on the dashed circle!" })
+    String ClickCaptchaChallenge_click_dashed_circle();
+
+    @Default(lngs = { "en" }, values = { "antiDDoS Provider 'Clouldflare' requires Captcha" })
+
+    String cloudFlare_requires_captcha_context();
+
+    @Default(lngs = { "en" }, values = { "Account Login: %s1" })
+
+    String Captcha_context_account_login(String host);
+
+    @Default(lngs = { "en" }, values = { "This server is under maintenance" })
+
+    String lit_this_server_is_under_maintainance();
+
+    @Default(lngs = { "en" }, values = { "Waiting till new downloads can be started" })
+
+    String plugins_xfilesharingpro_waiting_until_new_downloads_can_be_started();
+
+    @Default(lngs = { "en" }, values = { "Max downloadable filesize for free users: %s1" })
+
+    String plugins_xfilesharingpro_max_downloadable_Filesize_for_free_user(String filesizelimit);
+
+    @Default(lngs = { "en" }, values = { "Only downloadable with premium or registered account" })
+
+    String plugins_xfilesharingpro_premium_or_registered_required();
+
     @Default(lngs = { "en" }, values = { "Account is OK." })
     String lit_account_is_ok();
 
@@ -6356,5 +6389,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Links" })
 
     String youtube_matching_links();
+
+    @Default(lngs = { "en" }, values = { "Add additional Variants" })
+
+    String youtube_variant_add_variant_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "Auto-choose an alternative if a variant is not available for all links" })
+
+    String youtube_variant_add_variant_dialog_help();
+
+    @Default(lngs = { "en" }, values = { "Choose at least one Variant. JDownloader then will try to add a new Variant link for each selected video." })
+
+    String youtube_add_variants_help(int linksCount);
 
 }
