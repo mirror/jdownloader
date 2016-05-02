@@ -238,10 +238,12 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         BasicAuthenticationAPIStorable tmp = new BasicAuthenticationAPIStorable();
         tmp.setCreated(info.getCreated());
         tmp.setEnabled(info.isEnabled());
+        tmp.setUsername(info.getUsername());
         tmp.setHostmask(info.getHostmask());
+        tmp.setId(info.getId());
         tmp.setLastValidated(info.getLastValidated());
         if (info.getType() != null) {
-            BasicAuthenticationStorable.Type type = BasicAuthenticationStorable.Type.valueOf(info.getType().name());
+            BasicAuthenticationAPIStorable.Type type = BasicAuthenticationAPIStorable.Type.valueOf(info.getType().name());
             tmp.setType(type);
         }
         tmp.setUsername(info.getUsername());
@@ -249,7 +251,7 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
     }
 
     @Override
-    public boolean addBasicAuth(final BasicAuthenticationStorable.Type type, final String hostmask, final String username, final String password) throws BadParameterException {
+    public long addBasicAuth(final BasicAuthenticationStorable.Type type, final String hostmask, final String username, final String password) throws BadParameterException {
         if (type == null) {
             throw new BadParameterException("type == null");
         }
@@ -265,7 +267,7 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         info.setUsername(username);
         info.setPassword(password);
         AuthenticationController.getInstance().add(info);
-        return true;
+        return info.getId();
     }
 
     @Override
@@ -274,13 +276,13 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
             throw new BadParameterException("ids empty or null");
         }
 
-        final List<AuthenticationInfo> auths = getBasicAuthsById(ids);
+        final List<AuthenticationInfo> auths = getBasicAuthsByIds(ids);
         AuthenticationController.getInstance().remove(auths);
 
         return true;
     }
 
-    private List<AuthenticationInfo> getBasicAuthsById(long[] ids) {
+    private List<AuthenticationInfo> getBasicAuthsByIds(long[] ids) {
         final HashSet<Long> todoIDs = new HashSet<Long>();
         for (long l : ids) {
             todoIDs.add(l);
@@ -296,5 +298,49 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
             }
         }
         return accs;
+    }
+
+    @Override
+    public boolean updateBasicAuth(BasicAuthenticationAPIStorable updatedEntry) throws BadParameterException {
+        if (updatedEntry == null) {
+            throw new BadParameterException("updated entry == null");
+        }
+        if (updatedEntry.getId() == -1) {
+            throw new BadParameterException("id not set");
+        }
+        List<AuthenticationInfo> infos = getBasicAuthsByIds(new long[] { updatedEntry.getId() });
+        if (infos.size() == 0) {
+            throw new BadParameterException("entry not found");
+        }
+
+        AuthenticationInfo existingEntry = infos.get(0);
+        boolean updated = false;
+        if (updatedEntry.getHostmask() != null) {
+            existingEntry.setHostmask(updatedEntry.getHostmask());
+            updated = true;
+        }
+        if (updatedEntry.getUsername() != null) {
+            existingEntry.setUsername(updatedEntry.getUsername());
+            updated = true;
+        }
+        if (updatedEntry.getPassword() != null) {
+            existingEntry.setPassword(updatedEntry.getPassword());
+            updated = true;
+        }
+        if (updatedEntry.isEnabled() != null) {
+            existingEntry.setEnabled(updatedEntry.isEnabled());
+            updated = true;
+        }
+
+        if (updatedEntry.getType() != null) {
+            try {
+                existingEntry.setType(AuthenticationInfo.Type.valueOf(updatedEntry.getType().name()));
+                updated = true;
+            } catch (IllegalArgumentException e) {
+                throw new BadParameterException("unkown type");
+            }
+        }
+
+        return updated;
     }
 }

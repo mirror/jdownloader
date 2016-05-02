@@ -35,7 +35,9 @@ public interface AccountAPIV2 extends RemoteAPIInterface {
 
     void refreshAccounts(long[] ids);
 
-    boolean addBasicAuth(Type type, String hostmask, String username, String password) throws BadParameterException;
+    long addBasicAuth(Type type, String hostmask, String username, String password) throws BadParameterException;
 
     boolean removeBasicAuths(final long[] ids) throws BadParameterException;
+
+    boolean updateBasicAuth(BasicAuthenticationAPIStorable updatedEntry) throws BadParameterException;
 }
