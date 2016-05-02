@@ -96,7 +96,7 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
         private void register() {
             if (registered.compareAndSet(false, true)) {
-                LinkCollectorCrawler crwl = crawler.get();
+                final LinkCollectorCrawler crwl = crawler.get();
                 if (crwl != null) {
                     crwl.getEventSender().removeListener(this);
                     show(this);
@@ -132,7 +132,7 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
     public void onLinkCrawlerAdded(final LinkCollectorCrawler crawler) {
         if (isEnabled()) {
             synchronized (map) {
-                LinkCrawlerBubbleWrapper wrapper = new LinkCrawlerBubbleWrapper(crawler);
+                final LinkCrawlerBubbleWrapper wrapper = new LinkCrawlerBubbleWrapper(crawler);
                 crawler.getEventSender().addListener(wrapper, true);
                 map.put(crawler, wrapper);
             }
