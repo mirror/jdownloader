@@ -2836,8 +2836,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         dllink.setOriginUrl(link.getDownloadLink().getOriginUrl());
         dllink.setContentUrl(link.getDownloadLink().getContainerUrl());
         dllink.setReferrerUrl(link.getDownloadLink().getReferrerUrl());
-        final CrawledLink cl = new CrawledLink(dllink);
 
+        final CrawledLink cl = new CrawledLink(dllink);
+        dllink.setNodeChangeListener(cl);
         cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
 
         return LinkCollector.getInstance().getQueue().addWait(new QueueAction<CrawledLink, RuntimeException>() {

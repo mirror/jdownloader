@@ -31,6 +31,7 @@ import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -90,6 +91,7 @@ import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.http.Browser;
@@ -1667,7 +1669,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             return null;
         }
         // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
-        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var._getUniqueId() + ".dashAudio";
+        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getBaseVariant().name() + "_" + Hash.getMD5(var._getUniqueId()) + ".dashAudio";
     }
 
     public String getVideoStreamPath(DownloadLink link) throws PluginException {
@@ -1688,7 +1690,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             return null;
         }
         // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
-        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var._getUniqueId() + ".dashVideo";
+        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getBaseVariant().name() + "_" + Hash.getMD5(var._getUniqueId()) + ".dashVideo";
     }
 
     @Override
@@ -2027,10 +2029,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             UIOManager.I().show(null, d = new YoutubeVariantSelectionDialog(link, s, clipData, vs)).throwCloseExceptions();
 
                             if (s == null) {
+                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
                                 List<LinkVariant> variants = d.getVariants();
                                 for (LinkVariant v : variants) {
-                                    LinkCollector.getInstance().addAdditional(link, v);
+                                    CrawledLink newLink = LinkCollector.getInstance().addAdditional(link, v);
+                                    if (newLink != null) {
+                                        checkableLinks.add(newLink);
+                                    }
                                 }
+
+                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                linkChecker.check(checkableLinks);
 
                             } else {
                                 LinkVariant variant = d.getVariant();
