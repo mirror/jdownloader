@@ -103,7 +103,7 @@ public class FivehundretPxCom extends PluginForHost {
                 for (Object o : images) {
                     LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) o;
                     if (data.containsKey("size")) {
-                        int s = (int) data.get("size");
+                        int s = ((Number) data.get("size")).intValue();
                         if (s > size) {
                             size = s;
                             dllink = (String) data.get("https_url");
