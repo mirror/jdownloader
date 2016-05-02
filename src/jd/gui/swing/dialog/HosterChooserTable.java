@@ -11,11 +11,11 @@ import java.util.List;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 
+import jd.gui.swing.jdgui.BasicJDTable;
+
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.jdgui.BasicJDTable;
 
 public class HosterChooserTable extends BasicJDTable<LazyHostPlugin> {
 
@@ -64,8 +64,6 @@ public class HosterChooserTable extends BasicJDTable<LazyHostPlugin> {
     @Override
     public void valueChanged(ListSelectionEvent e) {
         super.valueChanged(e);
-        List<LazyHostPlugin> objects = getModel().getSelectedObjects(1);
-        System.out.println(" Choose " + objects);
     }
 
     @Override
@@ -78,11 +76,10 @@ public class HosterChooserTable extends BasicJDTable<LazyHostPlugin> {
     }
 
     public LazyHostPlugin getSelectedPlugin() {
-        List<LazyHostPlugin> objects = getModel().getSelectedObjects(1);
+        final List<LazyHostPlugin> objects = getModel().getSelectedObjects(1);
         if (objects == null || objects.size() == 0) {
             return defaultPlugin;
         }
-
         return objects.get(0);
     }
 

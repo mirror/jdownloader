@@ -44,9 +44,21 @@ import javax.swing.JScrollPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -73,17 +85,6 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
 
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
@@ -108,7 +109,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     }
 
     private Account getAccount() {
-        AccountBuilderInterface leditAccountPanel = accountBuilderUI;
+        final AccountBuilderInterface leditAccountPanel = accountBuilderUI;
         if (leditAccountPanel != null) {
             return leditAccountPanel.getAccount();
         }
@@ -250,6 +251,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     protected void initFocus(final JComponent focus) {
     }
 
+    private LazyHostPlugin lazyHostPlugin = null;
+
     @Override
     public JComponent layoutDialogContent() {
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
@@ -325,25 +328,20 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         filter.setBorder(BorderFactory.createCompoundBorder(filter.getBorder(), BorderFactory.createEmptyBorder(0, 20, 0, 0)));
 
         hoster = new HosterChooserTable(plugins) {
+
             public void valueChanged(javax.swing.event.ListSelectionEvent e) {
                 super.valueChanged(e);
-                if (getModel().isTableStructureChanging()) {
+                if (e.getValueIsAdjusting() || getModel().isTableSelectionClearing()) {
                     return;
                 }
-                if (getModel().isTableSelectionClearing()) {
-                    return;
-                }
-
-                PluginForHost plg;
                 try {
-                    plg = getSelectedPlugin().newInstance(cl);
-                    if (plg == null) {
-                        return;
-                    }
-                    if (plugin == null || plg.getClass() != plugin.getClass()) {
-                        plugin = plg;
-                        updatePanel();
-
+                    scrollToSelection(0);
+                    final PluginForHost plg = getSelectedPlugin().newInstance(cl);
+                    if (plg != null && (lazyHostPlugin == null || !lazyHostPlugin.equals(plg.getLazyP()))) {
+                        final PluginForHost ret = updatePanel(plg);
+                        if (ret != null) {
+                            lazyHostPlugin = ret.getLazyP();
+                        }
                     }
                 } catch (UpdateRequiredClassNotFoundException e1) {
                     e1.printStackTrace();
@@ -353,6 +351,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         filter.getDocument().addDocumentListener(new DocumentListener() {
             private DelayedRunnable delayedRefresh = new DelayedRunnable(200, 1000) {
 
+                String lastText = null;
+
                 @Override
                 public String getID() {
                     return "AddAccountDialog";
@@ -360,11 +360,18 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
 
                 @Override
                 public void delayedrun() {
+                    new EDTRunner() {
 
-                    hoster.refresh(filter.getText());
-
+                        @Override
+                        protected void runInEDT() {
+                            final String text = filter.getText();
+                            if (!StringUtils.equals(lastText, text)) {
+                                lastText = text;
+                                hoster.refresh(text);
+                            }
+                        }
+                    }.waitForEDT();
                 }
-
             };
 
             @Override
@@ -389,9 +396,13 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         link.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
-                final PluginForHost lPlugin = plugin;
-                if (lPlugin != null) {
-                    StatsManager.I().openAfflink(lPlugin, null, "accountmanager/table");
+                try {
+                    final PluginForHost plugin = hoster.getSelectedPlugin().newInstance(cl);
+                    if (plugin != null) {
+                        StatsManager.I().openAfflink(plugin, null, "accountmanager/table");
+                    }
+                } catch (UpdateRequiredClassNotFoundException e1) {
+                    e1.printStackTrace();
                 }
             }
         });
@@ -405,20 +416,14 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         content.add(link, "height 20!,gapleft 32");
         content.add(header2 = header(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
 
-        LazyHostPlugin lazyp = null;
-        if (this.plugin != null)
-
-        {
+        final LazyHostPlugin lazyp;
+        if (this.plugin != null) {
             lazyp = plugin.getLazyP();
-        } else
-
-        {
+        } else {
             lazyp = HostPluginController.getInstance().get(getPreselectedHoster());
         }
         if (lazyp != null) {
-
             hoster.setSelectedPlugin(lazyp);
-
         }
 
         getDialog().addWindowFocusListener(new WindowFocusListener() {
@@ -441,14 +446,13 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 hoster.requestFocus();
             }
         });
-        updatePanel();
         getDialog().setMinimumSize(new Dimension(400, 300));
         return content;
     }
 
     public static String getPreselectedHoster() {
-        Sponsor sp = SponsorUtils.getSponsor();
-        String host = sp.getPreSelectedInAddAccountDialog();
+        final Sponsor sp = SponsorUtils.getSponsor();
+        final String host = sp.getPreSelectedInAddAccountDialog();
         if (host != null) {
             return host;
         } else {
@@ -466,18 +470,15 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     }
 
     public LazyHostPlugin getHoster() {
-
         return this.hoster.getSelectedPlugin();
-
     }
 
-    protected void updatePanel() {
+    private PluginForHost updatePanel(PluginForHost plugin) {
         try {
             if (content == null) {
-                return;
+                return null;
             }
-            PluginForHost plg = plugin;
-            if (plg == null) {
+            if (plugin == null) {
                 LazyHostPlugin p = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (p == null) {
                     Iterator<LazyHostPlugin> it = HostPluginController.getInstance().list().iterator();
@@ -485,12 +486,11 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                         p = it.next();
                     }
                 }
-                hoster.setSelectedPlugin(p);
-                plg = p.newInstance(cl);
+                plugin = p.newInstance(cl);
             }
-            link.setText(_GUI.T.gui_menu_action_premium_buy_name2(plg.getHost()));
-            header2.setText(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo2(plg.getHost()));
-            AccountBuilderInterface accountFactory = plg.getAccountFactory(this);
+            link.setText(_GUI.T.gui_menu_action_premium_buy_name2(plugin.getHost()));
+            header2.setText(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo2(plugin.getHost()));
+            final AccountBuilderInterface accountFactory = plugin.getAccountFactory(this);
             if (accountBuilderUI != null) {
                 defaultAccount = accountBuilderUI.getAccount();
                 content.remove(accountBuilderUI.getComponent());
@@ -501,9 +501,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
 
             onChangedInput(null);
             // getDialog().pack();
-
+            return plugin;
         } catch (UpdateRequiredClassNotFoundException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
@@ -527,7 +528,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     @Override
     protected void packed() {
         super.packed();
-
     }
 
     @Override
@@ -538,9 +538,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
 
     @Override
     public void onChangedInput(Object component) {
-
         InputOKButtonAdapter.register(this, accountBuilderUI);
-
     }
 
 }
