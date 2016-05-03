@@ -43,6 +43,12 @@ import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
+import jd.plugins.AddonPanel;
+
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -74,12 +80,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainFrameClosingHandler;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-import jd.plugins.AddonPanel;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
     @Override
@@ -313,11 +313,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             *
+                             * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             *
+                             * 
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             *
+                             * 
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);

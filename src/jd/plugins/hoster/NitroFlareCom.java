@@ -29,13 +29,6 @@ import java.util.Random;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,6 +48,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" }, flags = { 2 })
 public class NitroFlareCom extends antiDDoSForHost {
