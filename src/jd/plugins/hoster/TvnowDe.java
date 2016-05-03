@@ -660,12 +660,12 @@ public class TvnowDe extends PluginForHost {
                 // System.out.println(media);
 
             }
-            System.out.println(1);
+            
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
 
-            System.out.println(1);
+            
         }
         return null;
     }

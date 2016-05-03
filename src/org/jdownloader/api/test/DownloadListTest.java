@@ -118,6 +118,6 @@ public class DownloadListTest extends Test {
         // pq.setHosts(true);
         // link.queryPackages(pq);
 
-        System.out.println(1);
+        
     }
 }

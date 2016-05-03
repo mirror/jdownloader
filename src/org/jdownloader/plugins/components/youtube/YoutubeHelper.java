@@ -1549,7 +1549,7 @@ public class YoutubeHelper {
                     if (xml.trim().startsWith("#EXTM3U")) {
                         ArrayList<HlsContainer> containers = HlsContainer.getHlsQualities(clone);
                         for (HlsContainer c : containers) {
-                            System.out.println(1);
+                            
                             String[][] params = new Regex(c.downloadurl, "/([^/]+)/([^/]+)").getMatches();
                             final QueryInfo query = Request.parseQuery(c.downloadurl);
                             if (params != null) {

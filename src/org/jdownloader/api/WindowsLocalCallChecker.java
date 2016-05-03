@@ -317,7 +317,7 @@ public class WindowsLocalCallChecker {
             return address.getHostAddress();
         } catch (UnknownHostException e) {
             // e.printStackTrace();
-            System.out.println(1);
+            
         }
         return dwLocalAddr + "";
 

@@ -300,7 +300,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                 // no Reason to log here
             } catch (final DialogCanceledException e) {
                 // no Reason to log here
-                System.out.println(1);
+                
             } finally {
                 if (handle != null) {
                     handle.dispose();

@@ -379,7 +379,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                         }
                         // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
                         final boolean pending = UpdateController.getInstance().hasPendingUpdates();
-                        // System.out.println(1);
+                        // 
 
                         if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later())) {
                             RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));

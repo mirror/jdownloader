@@ -3,9 +3,6 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -22,10 +19,14 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+import jd.utils.JDUtilities;
 
 public interface GeneralSettings extends ConfigInterface {
 
@@ -58,7 +59,7 @@ public interface GeneralSettings extends ConfigInterface {
         String defaultFolder = null;
 
         @Override
-        public String getValue(String value) {
+        public String getValue(KeyHandler<String> keyHandler, String value) {
             if (StringUtils.isEmpty(value)) {
                 if (defaultFolder != null) {
                     return defaultFolder;
@@ -457,10 +458,8 @@ public interface GeneralSettings extends ConfigInterface {
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
     public static enum CreateFolderTrigger {
-        @EnumLabel("When the actual Download starts")
-        ON_DOWNLOAD_START,
-        @EnumLabel("When the links are added to the Downloadlist")
-        ON_LINKS_ADDED,
+        @EnumLabel("When the actual Download starts") ON_DOWNLOAD_START,
+        @EnumLabel("When the links are added to the Downloadlist") ON_LINKS_ADDED,
 
     }
 

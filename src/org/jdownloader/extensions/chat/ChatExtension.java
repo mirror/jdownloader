@@ -492,7 +492,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             public void focusGained(final FocusEvent e) {
 
                 if (e.getOppositeComponent() == null) {
-                    System.out.println(1);
+                    
                 }
                 ChatExtension.this.tabbedPane.setForegroundAt(ChatExtension.this.tabbedPane.getSelectedIndex(), Color.black);
             }
