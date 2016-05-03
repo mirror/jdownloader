@@ -84,46 +84,48 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return new int[] { 0 };
     }
 
-    private static final String     TYPE_FBSHORTLINK                = "https?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
-    private static final String     TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
-    private static final String     TYPE_SINGLE_PHOTO               = "https?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
-    private static final String     TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(?:www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
-    private static final String     TYPE_SINGLE_VIDEO_EMBED         = "https?://(?:www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
-    private static final String     TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(?:www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
-    private static final String     TYPE_SET_LINK_PHOTO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
-    private static final String     TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
-    private static final String     TYPE_PHOTOS_ALBUMS_LINK         = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
-    private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
-    private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
-    private static final String     TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[^/]+/photos_stream.*";
-    private static final String     TYPE_PHOTOS_STREAM_LINK_2       = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream&tab=.*";
-    private static final String     TYPE_PHOTOS_LINK                = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos.*";
-    private static final String     TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
-    private static final String     TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
-    private static final String     TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)5$";
-    private static final String     TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)6$";
-    private static final String     TYPE_NOTES                      = "https?://(?:www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
-    private static final String     TYPE_MESSAGE                    = "https?://(?:www\\.)?facebook\\.com/messages/.+";
+    // can be url encoded
+    private static final String         COMPONENT_USERNAME              = "(?:(?:%(?-i)[A-F0-9]{2}(?i)){1,}|[a-zA-Z0-9\\-]+){1,}";
+    private static final String         TYPE_FBSHORTLINK                = "https?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
+    private static final String         TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
+    private static final String         TYPE_SINGLE_PHOTO               = "https?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
+    private static final String         TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(?:www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
+    private static final String         TYPE_SINGLE_VIDEO_EMBED         = "https?://(?:www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
+    private static final String         TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(?:www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
+    private static final String         TYPE_SET_LINK_PHOTO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
+    private static final String         TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
+    private static final String         TYPE_PHOTOS_ALBUMS_LINK         = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
+    private static final String         TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
+    private static final String         TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
+    private static final String         TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[^/]+/photos_stream.*";
+    private static final String         TYPE_PHOTOS_STREAM_LINK_2       = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream&tab=.*";
+    private static final String         TYPE_PHOTOS_LINK                = "https?://(?:www\\.)?facebook\\.com/" + COMPONENT_USERNAME + "/photos.*";
+    private static final String         TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
+    private static final String         TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
+    private static final String         TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)5$";
+    private static final String         TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)6$";
+    private static final String         TYPE_NOTES                      = "https?://(?:www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
+    private static final String         TYPE_MESSAGE                    = "https?://(?:www\\.)?facebook\\.com/messages/.+";
 
-    private static final int        MAX_LOOPS_GENERAL               = 150;
-    private static final int        MAX_PICS_DEFAULT                = 5000;
-    public static final String      REV_2                           = "1938577";
-    public static final String      REV_3                           = "2141616";
+    private static final int            MAX_LOOPS_GENERAL               = 150;
+    private static final int            MAX_PICS_DEFAULT                = 5000;
+    public static final String          REV_2                           = "1938577";
+    public static final String          REV_3                           = "2276891";
 
-    private static String           MAINPAGE                        = "https://www.facebook.com";
-    private static final String     CRYPTLINK                       = "facebookdecrypted.com/";
-    private static final String     EXCEPTION_LINKOFFLINE           = "EXCEPTION_LINKOFFLINE";
-    private static final String     EXCEPTION_NOTLOGGEDIN           = "EXCEPTION_NOTLOGGEDIN";
-    private static final String     EXCEPTION_PLUGINDEFECT          = "EXCEPTION_PLUGINDEFECT";
+    private static String               MAINPAGE                        = "https://www.facebook.com";
+    private static final String         CRYPTLINK                       = "facebookdecrypted.com/";
+    private static final String         EXCEPTION_LINKOFFLINE           = "EXCEPTION_LINKOFFLINE";
+    private static final String         EXCEPTION_NOTLOGGEDIN           = "EXCEPTION_NOTLOGGEDIN";
+    private static final String         EXCEPTION_PLUGINDEFECT          = "EXCEPTION_PLUGINDEFECT";
 
-    private static final String     CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
-    private String                  parameter                       = null;
-    private boolean                 fastLinkcheckPictures           = true;                                                                                                                 // jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
-    private boolean                 logged_in                       = false;
-    private ArrayList<DownloadLink> decryptedLinks                  = null;
-    private LinkedHashSet<String>   dupe                            = null;
+    private static final String         CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
+    private String                      parameter                       = null;
+    private boolean                     fastLinkcheckPictures           = true;                                                                                                                 // jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
+    private boolean                     logged_in                       = false;
+    private ArrayList<DownloadLink>     decryptedLinks                  = null;
+    private final LinkedHashSet<String> dupe                            = new LinkedHashSet<String>();;
 
-    private boolean                 debug                           = false;
+    private boolean                     debug                           = false;
 
     /*
      * Dear whoever is looking at this - this is a classic example of spaghetticode. If you like spaghettis, go ahead, and get you some
@@ -139,7 +141,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br = new Browser();
         fp = null;
         decryptedLinks = new ArrayList<DownloadLink>();
-        dupe = new LinkedHashSet<String>();
+        dupe.clear();
 
         br.setAllowedResponseCodes(400);
         br.setLoadLimit(br.getLoadLimit() * 4);
@@ -520,15 +522,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount) {
-                logger.info("facebook.com: Found less pics than a full page -> Continuing anyways");
+                logger.info("Found less pics than a full page -> Continuing anyways");
             }
-            logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
+            logger.info("Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
             if (timesNochange == 3) {
-                logger.info("facebook.com: Three times no change -> Aborting decryption");
+                logger.info("Three times no change -> Aborting decryption");
                 stop = true;
             }
             if (decryptedPicsNum >= totalPicsNum) {
-                logger.info("facebook.com: Decrypted all pictures -> Stopping");
+                logger.info("Decrypted all pictures -> Stopping");
                 stop = true;
             }
             if (decryptedPicsNum == lastDecryptedPicsNum) {
@@ -538,13 +540,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             lastDecryptedPicsNum = decryptedPicsNum;
             if (stop) {
-                logger.info("facebook.com: Seems like we're done and decrypted all links, stopping at page: " + i);
+                logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
                 break;
             }
         }
-        logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
+        logger.info("Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
         if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-            logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
+            logger.info("-> Even though it seems like we don't have all images, that's all ;)");
         }
     }
 
@@ -621,15 +623,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
             addedlinks = linkscount_after - linkscount_before;
             // currentMaxPicCount = max number of links per segment
             if (addedlinks < currentMaxPicCount) {
-                logger.info("facebook.com: Found less pics than a full page -> Continuing anyways");
+                logger.info("Found less pics than a full page -> Continuing anyways");
             }
-            logger.info("facebook.com: Decrypted " + this.decryptedLinks.size() + " of " + totalPicsNum);
+            logger.info("Decrypted " + this.decryptedLinks.size() + " of " + totalPicsNum);
             if (timesNochange == 3) {
-                logger.info("facebook.com: Three times no change -> Aborting decryption");
+                logger.info("Three times no change -> Aborting decryption");
                 break;
             }
             if (this.decryptedLinks.size() >= totalPicsNum) {
-                logger.info("facebook.com: Decrypted all pictures -> Stopping");
+                logger.info("Decrypted all pictures -> Stopping");
                 break;
             }
             if (this.decryptedLinks.size() == linkscount_before) {
@@ -639,7 +641,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
         }
         if (this.decryptedLinks.size() < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-            logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
+            logger.info("-> Even though it seems like we don't have all images, that's all ;)");
         }
     }
 
@@ -789,15 +791,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
             addedlinks = linkscount_after - linkscount_before;
             // currentMaxPicCount = max number of links per segment
             if (addedlinks < (i > 1 ? currentMaxPicCount / 2 : currentMaxPicCount)) {
-                logger.info("facebook.com: Found less pics than a full page -> Continuing anyways");
+                logger.info("Found less pics than a full page -> Continuing anyways");
             }
-            logger.info("facebook.com: Decrypted " + this.decryptedLinks.size() + " of " + totalPicsNum);
+            logger.info("Decrypted " + this.decryptedLinks.size() + " of " + totalPicsNum);
             if (timesNochange == 3) {
-                logger.info("facebook.com: Three times no change -> Aborting decryption");
+                logger.info("Three times no change -> Aborting decryption");
                 break;
             }
             // if (this.decryptedLinks.size() >= totalPicsNum) {
-            // logger.info("facebook.com: Decrypted all pictures -> Stopping");
+            // logger.info("Decrypted all pictures -> Stopping");
             // break;
             // }
             if (this.decryptedLinks.size() == linkscount_before) {
@@ -807,7 +809,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
         }
         if (this.decryptedLinks.size() < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-            logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
+            logger.info("-> Even though it seems like we don't have all images, that's all ;)");
         }
     }
 
@@ -909,7 +911,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             String[] links;
             if (i > 1) {
                 if (br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-                    logger.info("facebook.com: Server says the set is fully loaded -> Stopping");
+                    logger.info("Server says the set is fully loaded -> Stopping");
                     break;
                 }
                 final String currentLastFbid = getLastFBID();
@@ -961,15 +963,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount) {
-                logger.info("facebook.com: Found less pics than a full page -> Continuing anyways");
+                logger.info("Found less pics than a full page -> Continuing anyways");
             }
-            logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
+            logger.info("Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
             if (timesNochange == 3) {
-                logger.info("facebook.com: Three times no change -> Aborting decryption");
+                logger.info("Three times no change -> Aborting decryption");
                 stop = true;
             }
             if (decryptedPicsNum >= totalPicsNum) {
-                logger.info("facebook.com: Decrypted all pictures -> Stopping");
+                logger.info("Decrypted all pictures -> Stopping");
                 stop = true;
             }
             if (decryptedPicsNum == lastDecryptedPicsNum) {
@@ -979,13 +981,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             lastDecryptedPicsNum = decryptedPicsNum;
             if (stop) {
-                logger.info("facebook.com: Seems like we're done and decrypted all links, stopping at page: " + i);
+                logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
                 break;
             }
         }
-        logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
+        logger.info("Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
         if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-            logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
+            logger.info("-> Even though it seems like we don't have all images, that's all ;)");
         }
 
     }
@@ -1091,6 +1093,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         throw new DecrypterException(EXCEPTION_PLUGINDEFECT);
     }
 
+    private String data = null;
+
     // TODO: Use this everywhere as it should work universal
     private void decryptPicsGeneral(String controller) throws Exception {
         String fpName = getPageTitle();
@@ -1100,10 +1104,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
         final String appcollection = br.getRegex("\"pagelet_timeline_app_collection_(\\d+:\\d+)(:\\d+)?\"").getMatch(0);
         final String profileID = getProfileID();
         final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
+        final String ajaxpipe = getajaxpipeToken();
+        data = null;
         if (controller == null) {
             controller = br.getRegex("\"photos\",\\[\\{\"controller\":\"([^<>\"]*?)\"").getMatch(0);
+            if (controller == null) {
+                controller = updateControllerAndData(br);
+            }
         }
-        if (user == null || profileID == null || appcollection == null) {
+        if (user == null || profileID == null || (appcollection == null && data == null)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return;
         }
@@ -1113,8 +1122,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
         fp = FilePackage.getInstance();
         fp.setName(fpName);
-        boolean dynamicLoadAlreadyDecrypted = false;
-        final ArrayList<String> allids = new ArrayList<String>();
         // Use this as default as an additional fail safe
         long totalPicsNum = MAX_PICS_DEFAULT;
         if (totalPicCount != null) {
@@ -1127,35 +1134,21 @@ public class FaceBookComGallery extends PluginForDecrypt {
         prepBrPhotoGrab();
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
+            final Browser br = this.br.cloneBrowser();
             if (this.isAbort()) {
                 logger.info("Decryption stopped at request " + i);
                 return;
             }
 
-            int currentMaxPicCount = 20;
-
             String[] links;
             if (i > 1) {
                 if (br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-                    logger.info("facebook.com: Server says the set is fully loaded -> Stopping");
+                    logger.info("Server says the set is fully loaded -> Stopping");
                     break;
                 }
-                final String cursor = br.getRegex("\\[\"pagelet_timeline_app_collection_[^<>\"]*?\",\\{\"[^<>\"]*?\":\"[^<>\"]*?\"\\},\"([^<>\"]*?)\"").getMatch(0);
-                // If we have exactly currentMaxPicCount pictures then we reload one
-                // time and got all, 2nd time will then be 0 more links
-                // -> Stop
-                if (cursor == null && dynamicLoadAlreadyDecrypted) {
-                    break;
-                } else if (cursor == null) {
-                    logger.warning("Decrypter maybe broken for link: " + parameter);
-                    logger.info("Returning already decrypted links anyways...");
-                    break;
-                }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" + Encoding.urlEncode(appcollection) + "%3A5%22%2C%22cursor%22%3A%22" + cursor + "%22%2C%22tab_key%22%3A%22photos_all%22%2C%22profile_id%22%3A" + profileID + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=" + i + "&__rev=" + rev;
+                final String loadLink = "/ajax/pagelet/generic.php/" + controller + "?dpr=1&ajaxpipe=1&ajaxpipe_token=" + Encoding.urlEncode(ajaxpipe) + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__pc=EXP1%3ADEFAULT&__rev=" + REV_3 + "&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
-                currentMaxPicCount = 40;
-                dynamicLoadAlreadyDecrypted = true;
             } else {
                 links = br.getRegex("id=\"pic_(\\d+)\"").getColumn(0);
             }
@@ -1166,8 +1159,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             boolean stop = false;
             logger.info("Decrypting page " + i + " of ??");
             for (final String picID : links) {
-                if (!allids.contains(picID)) {
-                    allids.add(picID);
+                if (dupe.add(picID)) {
                     final DownloadLink dl = createPicDownloadlink(picID);
                     fp.add(dl);
                     distribute(dl);
@@ -1175,17 +1167,21 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     decryptedPicsNum++;
                 }
             }
-            // currentMaxPicCount = max number of links per segment
-            if (links.length < currentMaxPicCount) {
-                logger.info("facebook.com: Found less pics than a full page -> Continuing anyways");
+            if (i >= 2) {
+                // we need to update last last_fbid
+                controller = updateControllerAndData(br);
+                if (controller == null || data == null) {
+                    logger.info("Couldn't find 'updateController' response, task completed!");
+                    stop = true;
+                }
             }
-            logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
+            logger.info("Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
             if (timesNochange == 3) {
-                logger.info("facebook.com: Three times no change -> Aborting decryption");
+                logger.info("Three times no change -> Aborting decryption");
                 stop = true;
             }
             if (decryptedPicsNum >= totalPicsNum) {
-                logger.info("facebook.com: Decrypted all pictures -> Stopping");
+                logger.info("Decrypted all pictures -> Stopping");
                 stop = true;
             }
             if (decryptedPicsNum == lastDecryptedPicsNum) {
@@ -1195,14 +1191,31 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             lastDecryptedPicsNum = decryptedPicsNum;
             if (stop) {
-                logger.info("facebook.com: Seems like we're done and decrypted all links, stopping at page: " + i);
+                logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
                 break;
             }
         }
-        logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
+        logger.info("Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
         if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-            logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
+            logger.info("-> Even though it seems like we don't have all images, that's all ;)");
         }
+    }
+
+    private String updateControllerAndData(final Browser br) throws DecrypterException {
+        String d = "return new ScrollingPager\\(\"[^\"]+\"\\s*,\\s*\"(.*?)\"\\s*,\\s*(\\{.*?\\})";
+        String controller = br.getRegex(d).getMatch(0);
+        data = br.getRegex(d).getMatch(1);
+        if (controller == null && data == null) {
+            // json
+            String q = Character.toString((char) 92) + Character.toString((char) 92) + "\"";
+            Pattern e = Pattern.compile("return new ScrollingPager\\(" + q + "[^\"]+" + q + "\\s*,\\s*" + q + "(.*?)" + q + "\\s*,\\s*(\\{.*?\\})");
+            controller = br.getRegex(e).getMatch(0);
+            data = br.getRegex(e).getMatch(1);
+            if (data != null) {
+                data = data.replace("\\\"", "\"");
+            }
+        }
+        return controller;
     }
 
     private void getpagefirsttime(final String parameter) throws IOException {
@@ -1300,7 +1313,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     public static String getDyn() {
-        return "7n8apij2qmumdDgDxyIJ3Ga58Ciq2W8GA8ABGeqheCu6po";
+        return "7xeXxmdwgp8fqwOyax68xfLFwgoqwgEoyUnwgU6C7QdwPwDyUG4UeUuwh8eUny8lwIwHwJwr9U";
     }
 
     public static String get_fb_dtsg(final Browser br) {
