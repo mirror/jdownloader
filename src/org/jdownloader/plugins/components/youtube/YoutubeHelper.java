@@ -1512,7 +1512,7 @@ public class YoutubeHelper {
             boolean fmtChecked = false;
             for (final String line : fmt.mapData.split(",")) {
                 try {
-                    final YoutubeStreamData match = this.parseLine(Request.parseQuery(line));
+                    final YoutubeStreamData match = this.parseLine(Request.parseQuery(line), fmt);
                     if (match != null) {
 
                         if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
@@ -1585,7 +1585,7 @@ public class YoutubeHelper {
                                 ret.put(itag, lst);
                             }
                             YoutubeStreamData vsd;
-                            lst.add(vsd = new YoutubeStreamData(vid, c.downloadurl, itag, query));
+                            lst.add(vsd = new YoutubeStreamData(mpdUrl.src, vid, c.downloadurl, itag, query));
 
                             try {
                                 vsd.setHeight(Integer.parseInt(query.get("height")));
@@ -1618,7 +1618,7 @@ public class YoutubeHelper {
                                     query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
                                 }
                             }
-                            handleQuery(representation, ret, url, query);
+                            handleQuery(representation, ret, url, query, mpdUrl);
 
                         }
                     }
@@ -1796,16 +1796,18 @@ public class YoutubeHelper {
     }
 
     /**
-     * @param vid
      * @param ret
-     * @param html5PlayerJs
-     * @param r
      * @param url
      * @param query
+     * @param src
+     *            TODO
+     * @param vid
+     * @param html5PlayerJs
+     * @param r
      * @throws IOException
      * @throws PluginException
      */
-    private void handleQuery(Element representation, final Map<YoutubeITAG, List<YoutubeStreamData>> ret, String url, final QueryInfo query) throws IOException, PluginException {
+    private void handleQuery(Element representation, final Map<YoutubeITAG, List<YoutubeStreamData>> ret, String url, final QueryInfo query, StreamMap src) throws IOException, PluginException {
         String r = null;
 
         r = xmlNodeToString(representation);
@@ -1909,7 +1911,7 @@ public class YoutubeHelper {
                 lst = new ArrayList<YoutubeStreamData>();
                 ret.put(itag, lst);
             }
-            lst.add(vsd = new YoutubeStreamData(vid, url, itag, query));
+            lst.add(vsd = new YoutubeStreamData(src.src, vid, url, itag, query));
             vsd.setHeight(height);
             vsd.setWidth(width);
             vsd.setFps(fps);
@@ -2096,20 +2098,20 @@ public class YoutubeHelper {
     private List<YoutubeStreamData> loadThumbnails() {
         ArrayList<YoutubeStreamData> ret = new ArrayList<YoutubeStreamData>();
         String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null));
+        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null));
         if (best != null && best.equals("default.jpg")) {
             return ret;
         }
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
+        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
         if (best != null && best.equals("mqdefault.jpg")) {
             return ret;
         }
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
+        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
         if (best != null && best.equals("hqdefault.jpg")) {
             return ret;
         }
 
-        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
+        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
 
         return ret;
     }
@@ -2360,7 +2362,7 @@ public class YoutubeHelper {
         return formattedFilename;
     }
 
-    protected YoutubeStreamData parseLine(final QueryInfo query) throws MalformedURLException, IOException, PluginException {
+    protected YoutubeStreamData parseLine(final QueryInfo query, StreamMap src) throws MalformedURLException, IOException, PluginException {
 
         if (StringUtils.equalsIgnoreCase(query.get("conn"), "rtmp")) {
             logger.info("Stream is not supported: " + query);
@@ -2429,7 +2431,7 @@ public class YoutubeHelper {
             if (url != null && itag != null) {
                 YoutubeStreamData vsd;
 
-                vsd = new YoutubeStreamData(vid, url, itag, query);
+                vsd = new YoutubeStreamData(src.src, vid, url, itag, query);
                 vsd.setHeight(height);
                 vsd.setWidth(width);
                 vsd.setFps(fps);

@@ -80,8 +80,14 @@ public class YoutubeStreamData {
     private String fps;
     private int    projectionType;
     private String qualityLabel;
+    private String src;
 
-    public YoutubeStreamData(final YoutubeClipData vid, String url, YoutubeITAG itag, QueryInfo query) {
+    public String getSrc() {
+        return src;
+    }
+
+    public YoutubeStreamData(String src, final YoutubeClipData vid, String url, YoutubeITAG itag, QueryInfo query) {
+        this.src = src;
         this.clip = vid;
         this.itag = itag;
         this.url = url;

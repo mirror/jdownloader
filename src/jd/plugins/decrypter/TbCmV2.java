@@ -35,6 +35,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -180,6 +181,9 @@ public class TbCmV2 extends PluginForDecrypt {
         cleanedurl = cleanedurl.replace("youtube.jd", "youtube.com");
 
         String requestedVariantString = new Regex(cleanedurl, "\\#variant=(\\S*)").getMatch(0);
+        if (StringUtils.isNotEmpty(requestedVariantString)) {
+            requestedVariant = AbstractVariant.get(Base64.decodeToString(requestedVariantString));
+        }
         cleanedurl = cleanedurl.replaceAll("\\#variant=\\S+", "");
         cleanedurl = cleanedurl.replace("/embed/", "/watch?v=");
         videoID = getVideoIDByUrl(cleanedurl);
@@ -194,100 +198,6 @@ public class TbCmV2 extends PluginForDecrypt {
         playlistID = getListIDByUrls(cleanedurl);
         userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         channelID = new Regex(cleanedurl, "/channel/([A-Za-z0-9\\-_]+)").getMatch(0);
-
-        // if (requestedVariantString != null) {
-        // boolean worst = false;
-        // if (requestedVariantString.startsWith("-")) {
-        // worst = true;
-        // requestedVariantString = requestedVariantString.substring(1);
-        //
-        // }
-        // if (requestedVariantString.startsWith("+")) {
-        // worst = false;
-        // requestedVariantString = requestedVariantString.substring(1);
-        //
-        // }
-        // VariantGroup group = null;
-        // try {
-        // group = VariantGroup.valueOf(requestedVariantString);
-        // } catch (Throwable e) {
-        //
-        // }
-        // if (group != null) {
-        // addExtraSubtitles = false;
-        // addExtraVariants = false;
-        // addAllVariantsInUngroupedMode = false;
-        // addBest3DVideo = false;
-        // addBestImage = false;
-        // addBestVideo = false;
-        // addBestAudio = false;
-        // addAllSubtitles = false;
-        // addBestSubtitle = false;
-        // addDescription = false;
-        // switch (group) {
-        // case AUDIO:
-        // if (worst) {
-        // addWorstAudio = true;
-        // } else {
-        // addBestAudio = true;
-        // }
-        //
-        // break;
-        // case DESCRIPTION:
-        //
-        // addDescription = true;
-        // break;
-        // case IMAGE:
-        //
-        // if (worst) {
-        // addWorstImage = true;
-        // } else {
-        // addBestImage = true;
-        // }
-        //
-        // break;
-        // case SUBTITLES:
-        // addBestSubtitle = true;
-        // break;
-        // case VIDEO:
-        //
-        // if (worst) {
-        // addWorstVideo = true;
-        // } else {
-        // addBestVideo = true;
-        // }
-        // break;
-        // // case VIDEO_3D:
-        // //
-        // // if (worst) {
-        // // addWorst3DVideo = true;
-        // // } else {
-        // // addBest3DVideo = true;
-        // // }
-        // //
-        // // break;
-        // }
-        // } else {
-        //
-        // requestedVariant = AbstractVariant.get(requestedVariantString);
-        // if (requestedVariant == null) {
-        // requestedVariant = AbstractVariant.get(new String(Base64.decode(requestedVariantString), "UTF-8"));
-        //
-        // }
-        // addExtraSubtitles = false;
-        // addExtraVariants = false;
-        // addAllVariantsInUngroupedMode = false;
-        // addBest3DVideo = false;
-        // addBestImage = false;
-        // addBestVideo = false;
-        // addBestAudio = false;
-        // addAllSubtitles = false;
-        // addBestSubtitle = false;
-        // addDescription = false;
-        //
-        // }
-        //
-        // }
 
         helper.login(false, false);
         synchronized (DIALOGLOCK) {
@@ -584,119 +494,16 @@ public class TbCmV2 extends PluginForDecrypt {
             if (descriptions != null) {
                 variants.addAll(descriptions);
             }
-            boolean found = false;
-            // if (requestedVariant != null) {
-            // List<VariantInfo> sortedGroupList = groups.get(requestedVariant.getGroup().name());
-            // switch (requestedVariant.getGroup()) {
-            // case DESCRIPTION:
-            // addDescription = true;
-            // break;
-            // case SUBTITLES:
-            // if (sortedGroupList != null) {
-            // // subtitles available
-            // for (VariantInfo vi : sortedGroupList) {
-            // if (vi.getVariant() instanceof SubtitleVariant) {
-            // if (StringUtils.equals(((SubtitleVariant) vi.getVariant())._getUniqueId(), requestedVariant._getUniqueId())) {
-            // decryptedLinks.add(createLink(vi, sortedGroupList));
-            // found = true;
-            // break;
-            // }
-            // }
-            //
-            // }
-            // if (!found) {
-            //
-            // for (VariantInfo vi : sortedGroupList) {
-            // if (vi.getVariant() instanceof SubtitleVariant) {
-            // if (StringUtils.equals(((SubtitleVariant) vi.getVariant()).getGenericInfo().getLanguage(), ((SubtitleVariant)
-            // requestedVariant).getGenericInfo().getLanguage())) {
-            // decryptedLinks.add(createLink(vi, sortedGroupList));
-            // found = true;
-            // break;
-            // }
-            // }
-            //
-            // }
-            // }
-            // }
-            // if (!found) {
-            // addBestSubtitle = true;
-            // }
-            //
-            // break;
-            // default:
-            // if (sortedGroupList != null) {
-            // Collections.sort(sortedGroupList);
-            // List<VariantInfo> groupList = new ArrayList<VariantInfo>(sortedGroupList);
-            // Collections.sort(groupList, new Comparator<VariantInfo>() {
-            // public int compare(boolean x, boolean y) {
-            // return (x == y) ? 0 : (x ? 1 : -1);
-            // }
-            //
-            // @Override
-            // public int compare(VariantInfo o1, VariantInfo o2) {
-            // double diff1 = Math.abs(requestedVariant.getQualityRating() - o1.getVariant().getQualityRating());
-            // double diff2 = Math.abs(requestedVariant.getQualityRating() - o2.getVariant().getQualityRating());
-            // if (requestedVariant.getContainer() != o2.getVariant().getContainer()) {
-            // diff2 += 100d;
-            // }
-            // if (requestedVariant.getContainer() != o1.getVariant().getContainer()) {
-            // diff1 += 100d;
-            // }
-            // // int ret = compare(diff1 > 0, diff2 > 0);
-            // // if (ret == 0) {
-            // return Double.compare(diff1, diff2);
-            // // }
-            // // return ret;
-            // }
-            //
-            // });
-            //
-            // decryptedLinks.add(createLink(groupList.get(0), sortedGroupList));
-            // System.out.println("Sorted " + requestedVariant.getQualityRating());
-            // if (requestedVariant.getQualityRating() - groupList.get(0).getVariant().getQualityRating() != 0) {
-            // Toolkit.getDefaultToolkit().beep();
-            // }
-            // for (VariantInfo vi : groupList) {
-            // System.out.println(vi + " - " + (requestedVariant.getQualityRating() - vi.getVariant().getQualityRating()));
-            // }
-            // }
-            // }
-            //
-            // // for (VariantInfo v : allVariants.values()) {
-            // // if (v.getVariant().getTypeId().equals(requestedVariant)) {
-            // // String groupID = getGroupID(v.getVariant());
-            // // List<VariantInfo> fromGroup = groups.get(groupID);
-            // // decryptedLinks.add(createLink(v, fromGroup));
-            // // found = true;
-            // // }
-            // // }
-            // // for (VariantInfo vi : allSubtitles) {
-            // // if (StringUtils.equalsIgnoreCase(vi.getVariant()._getUniqueId(), requestedVariantString)) {
-            // // decryptedLinks.add(createLink(vi, allSubtitles));
-            // // found = true;
-            // // }
-            // // }
-            // // for (VariantInfo vi : descriptions) {
-            // // if (StringUtils.equalsIgnoreCase(vi.getVariant()._getUniqueId(), requestedVariantString)) {
-            // // decryptedLinks.add(createLink(vi, descriptions));
-            // // found = true;
-            // // }
-            // // }
-            // // if (!found) {
-            // // if(reVar!=null){
-            // // ArrayList<VariantInfo> lst = new ArrayList<VariantInfo>( groups.get(reVar.getGroup().name()));
-            // // VariantInfo best;
-            // //
-            // // for(VariantInfo vi:lst){
-            // // vi.getVariant().getQualityRating()-reVar.getQualityRating()
-            // // }
-            // // }
-            // // }
-            //
-            // }
 
             List<YoutubeVariantCollection> links = YoutubeVariantCollection.load();
+            if (requestedVariant != null) {
+                // create a dummy collection
+                links = new ArrayList<YoutubeVariantCollection>();
+                ArrayList<VariantIDStorable> varList = new ArrayList<VariantIDStorable>();
+                varList.add(new VariantIDStorable(requestedVariant));
+                links.add(new YoutubeVariantCollection("Dummy", varList));
+
+            }
             // enabledVariants
             // new VariantIDStorable(variant).
             HashSet<String> allowedVariantsSet = new HashSet<String>();
@@ -1150,7 +957,7 @@ public class TbCmV2 extends PluginForDecrypt {
             if (cfg.isSetCustomUrlEnabled()) {
                 thislink.setCustomURL(getBase() + "/watch?v=" + clip.videoID);
             }
-            thislink.setContentUrl(getBase() + "/watch?v=" + clip.videoID + "&variant=" + Encoding.urlEncode(variantInfo.getVariant()._getUniqueId()));
+            thislink.setContentUrl(getBase() + "/watch?v=" + clip.videoID + "#variant=" + Encoding.urlEncode(Base64.encode(variantInfo.getVariant().getStorableString())));
 
             // thislink.setProperty(key, value)
             thislink.setProperty(YoutubeHelper.YT_ID, clip.videoID);

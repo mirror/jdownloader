@@ -328,7 +328,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isProxyEnabled();
 
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("sets the CUSTOM 'download from' field to: yourProtocolPreference + \"://www.youtube.com/watch?v=\" + videoID. Useful for when you don't want courselist / playlist / variant information polluting URL.")
+    @DescriptionForConfigEntry("sets the CUSTOM 'download from' field to: http://www.youtube.com/watch?v=\" + videoID. Useful for when you don't want courselist / playlist / variant information polluting URL.")
     @AboutConfig
     boolean isSetCustomUrlEnabled();
 
