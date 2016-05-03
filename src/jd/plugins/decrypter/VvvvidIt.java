@@ -23,6 +23,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -61,6 +62,7 @@ public class VvvvidIt extends PluginForDecrypt {
         }
         final long show_id = Long.parseLong(show_id_str);
         final long season_id;
+        prepBR(this.br);
         this.br.postPageRaw("http://www.vvvvid.it/user/login", "{\"action\":\"login\",\"email\":\"\",\"password\":\"\",\"facebookParams\":\"\",\"mobile\":false,\"hls\":false,\"flash\":true,\"isIframe\":false}");
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
         conn_id = (String) DummyScriptEnginePlugin.walkJson(entries, "data/conn_id");
@@ -147,6 +149,12 @@ public class VvvvidIt extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.setCookie("https://www.vvvvid.it/", "vvvvid_cookies_accepted", "1");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0");
+        return br;
     }
 
     /**
