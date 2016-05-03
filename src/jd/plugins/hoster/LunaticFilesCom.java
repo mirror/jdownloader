@@ -18,9 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,7 +27,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +35,7 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -123,7 +121,7 @@ public class LunaticFilesCom extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
@@ -780,7 +778,11 @@ public class LunaticFilesCom extends PluginForHost {
         /* Do NOT change this - they put this in the html code especially for download managers! */
         String availabletraffic = this.br.getRegex("TRAFFIC_LEFT (\\d+(\\.\\d{1,2})? (?:KB|MB|GB)) TRAFFIC_LEFT").getMatch(0);
         /* This traffic only gets used if the other traffic reaches 0 but let's sum them together to display the real traffic left. */
-        String availabletraffic_extra = new Regex(correctedBR, "Pozostały transfer nieodnawialny:.*?<b>(\\d+(\\.\\d{1,2})? (?:KB|MB|GB))</b>").getMatch(0);
+        String availabletraffic_extra = this.br.getRegex("TRAFFIC_LEFT_ADDITIONAL (\\d+(\\.\\d{1,2})? (?:KB|MB|GB)) TRAFFIC_LEFT_ADDITIONAL").getMatch(0);
+        if (availabletraffic_extra == null) {
+            /* Fallback RegEx - this should NOT be needed! */
+            availabletraffic_extra = new Regex(correctedBR, "Pozostały transfer nieodnawialny:.*?<b>(\\d+(\\.\\d{1,2})? (?:KB|MB|GB))</b>").getMatch(0);
+        }
         long trafficleft = 0;
         if (availabletraffic != null) {
             trafficleft += SizeFormatter.getSize(availabletraffic);
@@ -789,60 +791,54 @@ public class LunaticFilesCom extends PluginForHost {
             trafficleft += SizeFormatter.getSize(availabletraffic_extra);
         }
         ai.setTrafficLeft(trafficleft);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             ai.setStatus("Registered (free) User");
-            try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
+            maxPrem.set(1);
+            // free accounts can still have captcha.
+            totalMaxSimultanFreeDownload.set(maxPrem.get());
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
         } else {
-            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            boolean expireformat_1 = false;
+            String expire = this.br.getRegex("EXPIRE_DATE_FORMAT2 (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) EXPIRE_DATE_FORMAT2").getMatch(0);
+            if (expire == null) {
+                expire = this.br.getRegex("EXPIRE_DATE_FORMAT1 (\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4}) EXPIRE_DATE_FORMAT1").getMatch(0);
+                expireformat_1 = true;
+            }
+            /* Old RegEx */
+            // if(expire == null){
+            // expire = new Regex(correctedBR,
+            // "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            // }
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-                try {
-                    maxPrem.set(20);
-                    account.setMaxSimultanDownloads(maxPrem.get());
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                    // not available in old Stable 0.9.581
+                if (expireformat_1) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+                } else {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
                 }
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
             }
             ai.setStatus("Premium User");
         }
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
@@ -869,21 +865,13 @@ public class LunaticFilesCom extends PluginForHost {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<|>Your premium account will expire in)").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setType(AccountType.PREMIUM);
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -894,7 +882,7 @@ public class LunaticFilesCom extends PluginForHost {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, 1, "freelink2");
         } else {
