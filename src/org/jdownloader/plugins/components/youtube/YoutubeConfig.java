@@ -221,7 +221,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
         public String getValue(KeyHandler<String> keyHandler, String value) {
             if (StringUtils.isEmpty(value)) {
                 value = keyHandler.getDefaultValue();
-
             }
             return value;
 
