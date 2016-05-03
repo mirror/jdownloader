@@ -34,7 +34,9 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -433,7 +435,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         firstException = null;
                                         break;
                                     } else {
-
+                                        if (si.getSrc() != null) {
+                                            Log.info("Stream Source: " + si.getSrc());
+                                        }
                                         // if (i == 0) {
                                         // resetStreamUrls(downloadLink);
                                         // continue;
@@ -464,6 +468,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         // resetStreamUrls(downloadLink);
                                         // continue;
                                         // }
+                                        if (si.getSrc() != null) {
+                                            Log.info("Stream Source: " + si.getSrc());
+                                        }
                                         if (firstException == null) {
                                             firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                                         }
@@ -592,26 +599,37 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         // // we should cache this information:
 
         downloadLink.setFinalFileName(helper.createFilename(downloadLink));
+
         String oldLinkName = downloadLink.getStringProperty("name", null);
-        if (StringUtils.isNotEmpty(oldLinkName)) {
+        if (StringUtils.isNotEmpty(oldLinkName))
+
+        {
             // old link?
 
             downloadLink.setFinalFileName(oldLinkName);
         }
 
         downloadLink.setInternalTmpFilenameAppend(null);
+
         AbstractVariant v = getVariant(downloadLink);
-        if (v.hasConverter(downloadLink)) {
+        if (v.hasConverter(downloadLink))
+
+        {
             downloadLink.setInternalTmpFilenameAppend(".tmp");
         }
 
-        if (verifiedSize && totalSize > 0) {
+        if (verifiedSize && totalSize > 0)
+
+        {
             downloadLink.setVerifiedFileSize(totalSize);
-        } else if (!verifiedSize && totalSize > 0) {
+        } else if (!verifiedSize && totalSize > 0)
+
+        {
             downloadLink.setDownloadSize(totalSize);
         }
 
         return AvailableStatus.TRUE;
+
     }
 
     private AvailableStatus requestFileInformationDescription(DownloadLink downloadLink, String id, YoutubeHelper helper) throws Exception, UnsupportedEncodingException {
@@ -1712,37 +1730,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         if (variant == null) {
             return;
         }
-        // if (variant instanceof SubtitleVariant) {
-        //
-        // // reset Streams urls. we need new ones
-        //
-        // resetStreamUrls(downloadLink);
-        // downloadLink.setDownloadSize(-1);
-        // downloadLink.setVerifiedFileSize(-1);
-        // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, Property.NULL);
-        // downloadLink.setProperty(YoutubeHelper.YT_VARIANT, VariantBase.SUBTITLES.name());
-        // downloadLink.setProperty(YoutubeHelper.YT_EXT, VariantBase.SUBTITLES.getFileExtension());
-        // downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariantOld) variant)._getIdentifier());
-        // String filename;
-        // downloadLink.setFinalFileName(filename = getCachedHelper(downloadLink).createFilename(downloadLink));
-        //
-        // downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID),
-        // (AbstractVariant) variant));
-        //
-        // // if (prefers) {
-        // downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) +
-        // "&variant=" + Encoding.urlEncode(((SubtitleVariantOld) variant).getTypeId()));
-        // // } else {
-        // // downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) +
-        // // "&variant=" + variant);
-        // //
-        // // }
-        // final String subtitleID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant)
-        // variant);
-        // downloadLink.setLinkID(subtitleID);
-        //
-        // } else
-        //
+
+        downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "#variant=" + Encoding.urlEncode(Base64.encode(((AbstractVariant) variant).getStorableString())));
         if (variant instanceof AbstractVariant) {
             AbstractVariant v = (AbstractVariant) variant;
             // reset Streams urls. we need new ones
@@ -1780,13 +1769,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             String filename;
             downloadLink.setFinalFileName(filename = new YoutubeHelper(br, getLogger()).createFilename(downloadLink));
             downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));
-            // if (prefers) {
-            downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + Encoding.urlEncode(((AbstractVariant) variant)._getUniqueId()));
-            // } else {
-            // downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) +
-            // "&variant=" + variant);
-            //
-            // }
+
+            downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "#variant=" + Encoding.urlEncode(Base64.encode(v.getStorableString())));
+
             downloadLink.setLinkID(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));
 
         }

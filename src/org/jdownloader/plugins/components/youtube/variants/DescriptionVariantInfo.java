@@ -15,7 +15,7 @@ public class DescriptionVariantInfo extends VariantInfo {
 
     private static List<YoutubeStreamData> createDummy(YoutubeClipData vid) {
         ArrayList<YoutubeStreamData> list = new ArrayList<YoutubeStreamData>();
-        list.add(new YoutubeStreamData(vid, null, YoutubeITAG.DESCRIPTION, null));
+        list.add(new YoutubeStreamData(null, vid, null, YoutubeITAG.DESCRIPTION, null));
         ;
         return list;
 

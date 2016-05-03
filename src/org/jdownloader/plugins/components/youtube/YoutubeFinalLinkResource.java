@@ -89,7 +89,7 @@ public class YoutubeFinalLinkResource implements Storable {
     }
 
     public YoutubeStreamData toStreamDataObject() {
-        YoutubeStreamData ret = new YoutubeStreamData(new YoutubeClipData(videoID), baseUrl, itag, null);
+        YoutubeStreamData ret = new YoutubeStreamData(null, new YoutubeClipData(videoID), baseUrl, itag, null);
         ret.setHeight(height);
         ret.setWidth(width);
 
