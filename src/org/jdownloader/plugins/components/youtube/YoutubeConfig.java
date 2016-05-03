@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
 import org.appwork.storage.config.annotations.CustomStorageName;
+import org.appwork.storage.config.annotations.CustomValueGetter;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
@@ -14,6 +16,8 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.plugins.components.youtube.configpanel.YoutubeVariantCollection;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
@@ -84,7 +88,8 @@ public interface YoutubeConfig extends PluginConfigInterface {
     static Object NOTHING = YoutubeCompatibility.moveJSonFiles("youtube/Youtube");
 
     @AboutConfig
-    @DefaultStringValue("*VIDEO_NAME* (*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
+    @DefaultStringValue(value = "*VIDEO_NAME* (*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
+    @CustomValueGetter(NotNullCustomGetter.class)
     String getAudioFilenamePattern();
 
     @AboutConfig
@@ -156,6 +161,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     List<YoutubeVariantCollection> getCollections();
 
     @AboutConfig
+    @CustomValueGetter(NotNullCustomGetter.class)
     @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
     String getDescriptionFilenamePattern();
 
@@ -169,6 +175,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @Deprecated
     String getFilenamePattern();
 
+    @CustomValueGetter(NotNullCustomGetter.class)
     @AboutConfig
     @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
     String getImageFilenamePattern();
@@ -182,6 +189,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     YoutubeConfig.IfUrlisAVideoAndPlaylistAction getLinkIsVideoAndPlaylistUrlAction();
 
     @AboutConfig
+    @CustomValueGetter(NotNullCustomGetter.class)
     @DefaultStringValue("*VIDEO_NAME*")
     String getPackagePattern();
 
@@ -207,9 +215,24 @@ public interface YoutubeConfig extends PluginConfigInterface {
      */
     HTTPProxyStorable getProxy();
 
+    public static class NotNullCustomGetter extends AbstractCustomValueGetter<String> {
+
+        @Override
+        public String getValue(KeyHandler<String> keyHandler, String value) {
+            if (StringUtils.isEmpty(value)) {
+                value = keyHandler.getDefaultValue();
+
+            }
+            return value;
+
+        }
+
+    }
+
     @AboutConfig
     @DefaultIntValue(5)
     @RequiresRestart("A JDownloader Restart is Required")
+
     @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
     int getRating60Fps();
 
@@ -268,6 +291,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     int getRatingContainerWEBM();
 
     @AboutConfig
+    @CustomValueGetter(NotNullCustomGetter.class)
     @DefaultStringValue("*VIDEO_NAME* (*LNG[DISPLAY]*).*EXT*")
     String getSubtitleFilenamePattern();
 
@@ -277,6 +301,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**AUDIO_BITRATE**AUDIO_CODEC**DEMUX**SPATIAL*")
 
+    @CustomValueGetter(NotNullCustomGetter.class)
     @DefaultStringValue("*CONTAINER* *AUDIO_BITRATE* *SPATIAL* kbit/s")
     @RequiresRestart("A JDownloader Restart is Required")
     String getVariantNamePatternAudio();
@@ -286,9 +311,11 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**HEIGHT**FPS**AUDIO_CODEC**3D**AUDIO_BITRATE**SPATIAL*")
 
+    @CustomValueGetter(NotNullCustomGetter.class)
     String getVariantNamePatternVideo();
 
     @AboutConfig
+    @CustomValueGetter(NotNullCustomGetter.class)
     @DefaultStringValue("*3D* *360* *VIDEO_NAME* (*H*p_*FPS*fps_*VIDEO_CODEC*-*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
     String getVideoFilenamePattern();
 

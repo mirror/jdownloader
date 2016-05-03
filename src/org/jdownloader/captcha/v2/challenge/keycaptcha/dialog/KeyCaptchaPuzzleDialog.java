@@ -45,7 +45,7 @@ public class KeyCaptchaPuzzleDialog extends AbstractCaptchaDialog<KeyCaptchaPuzz
         // dimensions = new Dimension(465, 250);
         imageData = challenge.getHelper().getPuzzleData().getImages();
 
-        System.out.println(1);
+        
     }
 
     protected int getPreferredHeight() {

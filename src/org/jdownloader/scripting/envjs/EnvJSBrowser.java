@@ -858,7 +858,7 @@ public class EnvJSBrowser implements ContextCallback {
                 break;
             }
         }
-        System.out.println(1);
+        
 
     }
 

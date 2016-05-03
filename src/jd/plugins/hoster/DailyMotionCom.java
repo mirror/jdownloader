@@ -135,7 +135,7 @@ public class DailyMotionCom extends PluginForHost {
             dllink = downloadLink.getStringProperty("directlink", null);
             logger.info("dllink: " + dllink);
             if (dllink == null) {
-                System.out.println(1);
+                
             } else {
                 // System.out.println("DLink FOund");
             }

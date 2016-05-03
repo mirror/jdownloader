@@ -796,7 +796,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                      th = result.getThrowable();
                      if (th != null) {
                          if (th instanceof PluginException) {
-                             System.out.println(1);
+                             
                              String error = ((PluginException) th).getErrorMessage();
                              if (error != null && (error.contains("Reconnection") || error.contains("Waiting till new downloads can be started"))) {
                                  dl.setResult(DownloadResult.IP_BLOCKED);

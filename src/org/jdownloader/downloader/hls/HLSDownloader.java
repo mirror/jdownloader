@@ -328,7 +328,7 @@ public class HLSDownloader extends DownloadInterface {
                     }
                     String id = request.getParameterbyKey("id");
                     if (id == null) {
-                        System.out.println(1);
+                        
                         return false;
                     }
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {

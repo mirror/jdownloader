@@ -641,7 +641,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                                             if (value.equals(newValue)) {
                                                 if (currentValue != newValue) {
-                                                    System.out.println(1);
+                                                    
                                                 }
                                                 currentValue = newValue;
                                                 break;

@@ -534,7 +534,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             final int pre = decryptedLinks.size();
             final List<Map<String, Object>> collection = parseCollection();
             if (decryptedLinks.size() != pre + max_entries_per_request) {
-                System.out.println(1);
+                
             }
             if (collection == null || collection.size() < max_entries_per_request) {
                 break;

@@ -122,7 +122,7 @@ public class UninstalledExtension {
                                         }
                                         // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
                                         final boolean pending = UpdateController.getInstance().hasPendingUpdates();
-                                        // System.out.println(1);
+                                        // 
                                         new EDTRunner() {
 
                                             @Override
