@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,8 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 //http://en.channel.pandora.tv/channel/video.ptv?ch_userid=keigoo&prgid=36487732&categid=32224359&page=36
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+|http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+" }, flags = { 0 })
 public class PandoraTV extends PluginForHost {
@@ -46,11 +44,13 @@ public class PandoraTV extends PluginForHost {
         super(wrapper);
     }
 
-    private static final String TYPE1    = "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+";
-    private static final String TYPE2    = "http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+";
+    private LinkedHashMap<String, Object> entries  = null;
 
-    private static final String MAINPAGE = "http://www.pandora.tv";
-    private static final String DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
+    private static final String           TYPE1    = "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+";
+    private static final String           TYPE2    = "http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+";
+
+    private static final String           MAINPAGE = "http://www.pandora.tv";
+    private static final String           DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
 
     private String decodeUnicode(final String s) {
         final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
@@ -82,9 +82,14 @@ public class PandoraTV extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private String getUserid(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "ch_userid=([A-Za-z0-9]+)").getMatch(0);
+    }
+
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        entries = null;
         setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
@@ -95,19 +100,22 @@ public class PandoraTV extends PluginForHost {
             downloadLink.setName(fid);
         }
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("title\": \"(.*?)\",").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\"title\":\"(.*?)\"").getMatch(0);
-        }
-        String filesize = br.getRegex("filesize\": \"(.*?)\",").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("\"filesize\":\"(.*?)\"").getMatch(0);
-        }
-        if (filename == null || filesize == null) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setName(decodeUnicode(filename.trim()) + ".flv");
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        final String json = this.br.getRegex("nextVodInfo[\t\n\r ]*?=[\t\n\r ]*?(\\{.*?\\});").getMatch(0);
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        entries = (LinkedHashMap<String, Object>) entries.get("flvInfo");
+        String filename = (String) entries.get("title");
+        long filesize = DummyScriptEnginePlugin.toLong(entries.get("filesize"), 0);
+        if (filename == null || filesize == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        downloadLink.setName(decodeUnicode(filename) + ".flv");
+        downloadLink.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }
 
@@ -119,9 +127,20 @@ public class PandoraTV extends PluginForHost {
         final int dummy = rnddummy.nextInt(50000 - 10000) + 10000;
         String urlpath = br.getRegex("var vod = \"http.*?\\.tv(.*?)\"").getMatch(0);
         /* check for high quality */
-        final String hqurl = br.getRegex("flvInfo\":\\{\"flv\":\"http.*?\\.tv(.*?)\"").getMatch(0);
+        final String hqurl = (String) entries.get("flv");
         if (hqurl != null) {
-            urlpath = hqurl.replaceAll("\\\\/", "/");
+            /* Fix path ... */
+            urlpath = new Regex(hqurl, "(/hd/.+)").getMatch(0);
+            if (urlpath != null) {
+                final String userid = getUserid(downloadLink);
+                final String userid_letter_1 = userid.substring(0, 1);
+                final String userid_letter_2 = userid.substring(1, 2);
+                final String userpath = "/_user/" + userid_letter_1 + "/" + userid_letter_2 + "/" + getUserid(downloadLink) + "/";
+                urlpath = urlpath.replace("/_user////", userpath);
+            }
+        }
+        if (urlpath == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* KEY1 */
         br.getPage("/channel/cryptKey.ptv?dummy=" + dummy + "?");
@@ -138,7 +157,7 @@ public class PandoraTV extends PluginForHost {
         if (country == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(DLPAGE + urlpath + keys + "&class=normal&country=" + country + "&method=differ");
+        br.getPage(DLPAGE + urlpath + keys + "&class=normal&country=" + country + "&skip=0&method=differ");
         if (br.containsHTML("error") || br.getRequest().getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
