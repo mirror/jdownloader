@@ -20,7 +20,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,15 +40,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridLinkFr extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Map<Account, Map<String, String>>       accountInfo        = new HashMap<Account, Map<String, String>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
     private static final String                            apiHost            = "https://debrid-link.fr/api";
     private static final String                            publicApiKey       = "kMREtSnp61OgLvG8";
     private long                                           ts                 = 0;
@@ -70,11 +68,6 @@ public class DebridLinkFr extends PluginForHost {
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setCustomCharset("UTF-8");
         return prepBr;
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
     }
 
     @Override
