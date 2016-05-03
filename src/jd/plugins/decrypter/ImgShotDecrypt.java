@@ -48,7 +48,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com" };
+        return new String[] { "imgtwyti.com", "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com" };
     }
 
     /**

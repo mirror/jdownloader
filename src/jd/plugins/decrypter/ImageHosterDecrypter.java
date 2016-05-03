@@ -34,12 +34,12 @@ import jd.plugins.FilePackage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-        names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
+names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
 
-        urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}",
-                "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
+urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+",
+        "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
-        flags = { 0 })
+flags = { 0 })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
@@ -239,25 +239,6 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
                     String filename = new Regex(finallink, "/([^/]+)$").getMatch(0);
                     finalfilename = fuid + "-" + filename;
                 }
-            }
-        } else if (parameter.contains("imagetwist.com/")) {
-            br.getPage(parameter);
-            if (!br.containsHTML(">Continue to your  image<") && !br.containsHTML(">Show image to friends") && !br.containsHTML("class=\"btndiv\">copy</div>")) {
-                logger.info("Unsupported linktype: " + parameter);
-                return decryptedLinks;
-            }
-            if (br.containsHTML(">Image Not Found<|Die von Ihnen angeforderte Datei konnte nicht gefunden werden")) {
-                logger.info("Link offline: " + parameter);
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
-                return decryptedLinks;
-            }
-            finallink = br.getRegex("\"(http://img\\d+\\.imagetwist\\.com/i/\\d+/.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("<p><img src=\"(http://.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("pic4you.ru/")) {
             br.getPage(parameter);

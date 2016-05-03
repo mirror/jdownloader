@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -30,12 +32,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "http://okdecrypted\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "http://okdecrypted\\d+" }, flags = { 2 })
 public class OkRu extends PluginForHost {
 
     public OkRu(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
     }
 
     /* DEV NOTES */
@@ -50,6 +54,8 @@ public class OkRu extends PluginForHost {
     private static final boolean free_resume         = true;
     private static final int     free_maxchunks      = 0;
     private static final int     free_maxdownloads   = -1;
+
+    private final String         PREFER_480P         = "PREFER_480P";
 
     private String               dllink              = null;
     private boolean              download_impossible = false;
@@ -99,8 +105,13 @@ public class OkRu extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
         if (url_quality != null) {
-            /* Always prefer highest quality available */
-            dllink = dllink.replace(url_quality, "st.mq=5");
+            /* st.mq: 2 = 480p (mobile format), 3=?, 4=? 5 = highest */
+            if (this.getPluginConfig().getBooleanProperty(PREFER_480P, false)) {
+                dllink = dllink.replace(url_quality, "st.mq=2");
+            } else {
+                /* Prefer highest quality available */
+                dllink = dllink.replace(url_quality, "st.mq=5");
+            }
         }
         String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
@@ -214,6 +225,10 @@ public class OkRu extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_480P, JDL.L("plugins.hoster.OkRu.preferLow480pQuality", "Prefer download of 480p version instead of the highest video quality?")).setDefaultValue(false));
     }
 
     @Override
