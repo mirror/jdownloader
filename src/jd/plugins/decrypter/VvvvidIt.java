@@ -22,16 +22,20 @@ import java.util.LinkedHashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
+import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+(?:/\\d+/\\d+)?" }, flags = { 0 })
 public class VvvvidIt extends PluginForDecrypt {
@@ -44,7 +48,7 @@ public class VvvvidIt extends PluginForDecrypt {
      * A lot of countries (e.g. Germany) are GEO-blocked. VPN needed to access the website but download of their (hls) streams is possible
      * without VPN.
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -54,7 +58,15 @@ public class VvvvidIt extends PluginForDecrypt {
         final String show_id_str = urlinfo.getMatch(0);
         final String season_id_str = urlinfo_2.getMatch(0);
         final String episode_videoid = urlinfo_2.getMatch(1);
-        String conn_id;
+        String conn_id = null;
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        if (aa != null) {
+            jd.plugins.hoster.VvvvidIt.login(this.br, aa, false);
+            conn_id = jd.plugins.hoster.VvvvidIt.getConnIDFromAccount(aa);
+        } else {
+            prepBR(this.br);
+            conn_id = getConnID(this.br);
+        }
 
         long episode_videoid_target = 0;
         if (episode_videoid != null) {
@@ -62,13 +74,7 @@ public class VvvvidIt extends PluginForDecrypt {
         }
         final long show_id = Long.parseLong(show_id_str);
         final long season_id;
-        prepBR(this.br);
-        this.br.postPageRaw("http://www.vvvvid.it/user/login", "{\"action\":\"login\",\"email\":\"\",\"password\":\"\",\"facebookParams\":\"\",\"mobile\":false,\"hls\":false,\"flash\":true,\"isIframe\":false}");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-        conn_id = (String) DummyScriptEnginePlugin.walkJson(entries, "data/conn_id");
-        if (conn_id != null) {
-            conn_id = Encoding.urlEncode(conn_id);
-        }
+        LinkedHashMap<String, Object> entries = null;
         if (season_id_str != null) {
             /* season_id given via URL */
             season_id = Long.parseLong(season_id_str);
@@ -154,7 +160,17 @@ public class VvvvidIt extends PluginForDecrypt {
     public static Browser prepBR(final Browser br) {
         br.setCookie("https://www.vvvvid.it/", "vvvvid_cookies_accepted", "1");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0");
+        br.setFollowRedirects(true);
         return br;
+    }
+
+    public static String getConnID(final Browser br) throws Exception {
+        br.postPageRaw("http://www.vvvvid.it/user/login", "{\"action\":\"login\",\"email\":\"\",\"password\":\"\",\"facebookParams\":\"\",\"mobile\":false,\"hls\":true,\"flash\":true,\"isIframe\":false}");
+        String conn_id = JSonUtils.getJson(br, "conn_id");
+        if (conn_id != null) {
+            conn_id = Encoding.urlEncode(conn_id);
+        }
+        return conn_id;
     }
 
     /**
