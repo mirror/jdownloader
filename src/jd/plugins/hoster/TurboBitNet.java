@@ -32,12 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,6 +57,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|dz-files\\.ru|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
@@ -431,7 +431,7 @@ public class TurboBitNet extends PluginForHost {
             }
         }
         boolean waited = false;
-        int tt = 60;
+        int tt = getPreDownloadWaittime(this.br, 220);
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
             tt = tt < realWait ? tt : realWait;
@@ -570,6 +570,20 @@ public class TurboBitNet extends PluginForHost {
         }
         handleServerErrors();
         dl.startDownload();
+    }
+
+    public static int getPreDownloadWaittime(final Browser br, final int wait_fallback) {
+        int wait = wait_fallback;
+        /* This is NOT a corrent implementation - they use js for the waittime but usually this will do just fine! */
+        final String wait_str = br.getRegex("minLimit[\t\n\r ]*?:[\t\n\r ]*?(\\d+)").getMatch(0);
+        if (wait_str != null) {
+            wait = Integer.parseInt(wait_str);
+            if (wait > 800 || wait < 60) {
+                /* We do not want to wait too long! */
+                wait = wait_fallback;
+            }
+        }
+        return wait;
     }
 
     private void handleDownloadRedirectErrors(final Browser br) throws PluginException {

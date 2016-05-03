@@ -379,7 +379,7 @@ public class HitFileNet extends PluginForHost {
                 maxWait = realWait;
             }
         }
-        int tt = 60;
+        int tt = jd.plugins.hoster.TurboBitNet.getPreDownloadWaittime(this.br, 220);
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
             tt = tt < realWait ? tt : realWait;

@@ -36,10 +36,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daf.fm" }, urls = { "http://(www\\.)?daf\\.fm/video/[^<>\"/]+\\.html|http://www\\d+\\.anleger\\-fernsehen\\.de/[a-z0-9\\-_]+\\.html\\?id=\\d+" }, flags = { 0 })
-public class DafFm extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deraktionaer.tv" }, urls = { "https?://(?:www\\.)?(?:daf\\.fm|deraktionaer\\.tv)/video/[^<>\"/]+\\.html|http://www\\d+\\.anleger\\-fernsehen\\.de/[a-z0-9\\-_]+\\.html\\?id=\\d+" }, flags = { 0 })
+public class DeraktionaerTv extends PluginForHost {
 
-    public DafFm(PluginWrapper wrapper) {
+    public DeraktionaerTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -59,7 +59,17 @@ public class DafFm extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.daf.fm/agb.pdf";
+        return "http://www.deraktionaer.tv/agb.pdf";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("daf.fm".equals(getHost())) {
+            if (host == null || "daf.fm".equals(host)) {
+                return "deraktionaer.tv";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
@@ -85,6 +95,9 @@ public class DafFm extends PluginForHost {
         this.br.getPage(iframe);
         DLLINK = br.getRegex("\"(https?://vcast\\.daf\\.tmt\\.de/video/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) {
+            if (this.br.containsHTML("Dieses Video ist nicht mehr")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -99,7 +112,7 @@ public class DafFm extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        filename = date_formatted + "_daf_" + filename;
+        filename = date_formatted + "_deraktionaer_" + filename;
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -107,7 +120,7 @@ public class DafFm extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -116,7 +129,6 @@ public class DafFm extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -180,20 +192,6 @@ public class DafFm extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
