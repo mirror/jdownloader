@@ -27,12 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -58,7 +52,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(www\\.)?subyshare\\.com/(vidembed-)?[a-z0-9]{12}" }, flags = { 2 })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class SubyShareCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -75,7 +75,7 @@ public class SubyShareCom extends PluginForHost {
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or free account");
-    private static final boolean           VIDEOHOSTER                  = false;
+    private static final boolean           VIDEOHOSTER                  = true;
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = true;
     private static final boolean           ENFORCESHTTPS                = true;
@@ -221,6 +221,9 @@ public class SubyShareCom extends PluginForHost {
             dllink = getDllink();
         }
         /* Third, do they provide video hosting? */
+        if (dllink == null) {
+            dllink = handleVideoembed1(dllink);
+        }
         if (dllink == null && VIDEOHOSTER) {
             try {
                 logger.info("Trying to get link via vidembed");
@@ -419,6 +422,25 @@ public class SubyShareCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private String handleVideoembed1(String dllink) {
+        if (VIDEOHOSTER) {
+            try {
+                logger.info("Trying to get link via vidembed");
+                final Browser brv = br.cloneBrowser();
+                brv.getPage("/vidembed-" + fuid);
+                dllink = brv.getRedirectLocation();
+                if (dllink == null) {
+                    logger.info("Failed to get link via vidembed");
+                } else {
+                    logger.info("Successfully found link via vidembed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via vidembed");
+            }
+        }
+        return dllink;
     }
 
     @Override
@@ -981,7 +1003,11 @@ public class SubyShareCom extends PluginForHost {
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
+                /* Special: vidembed will also work for non-videos and via premium mode! */
+                dllink = handleVideoembed1(dllink);
+                if (dllink == null) {
+                    dllink = getDllink();
+                }
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {

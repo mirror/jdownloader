@@ -36,7 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//http://en.channel.pandora.tv/channel/video.ptv?ch_userid=keigoo&prgid=36487732&categid=32224359&page=36
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+|http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+" }, flags = { 0 })
 public class PandoraTV extends PluginForHost {
 
