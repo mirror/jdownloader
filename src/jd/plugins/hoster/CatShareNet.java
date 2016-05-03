@@ -67,12 +67,14 @@ public class CatShareNet extends PluginForHost {
      * expired<br />
      * -check if stored direct urls can be re-used<br />
      */
-    private String         brbefore   = "";
-    private String         HOSTER     = "http://catshare.net";
-    private static Object  lock       = new Object();
-    protected final String USE_API    = "USE_API";
+    private String         brbefore               = "";
+    private String         HOSTER                 = "http://catshare.net";
+    private static Object  lock                   = new Object();
+    protected final String USE_API                = "USE_API";
+    private final boolean  use_api_availablecheck = true;
+
     // private final boolean useAPI = true;
-    private String         apiSession = null;
+    private String         apiSession             = null;
 
     // DEV NOTES
     // captchatype: recaptcha
@@ -172,7 +174,7 @@ public class CatShareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
 
-        if (getUseAPI()) {
+        if (use_api_availablecheck) {
             checkLinks(new DownloadLink[] { downloadLink });
             if (!downloadLink.isAvailabilityStatusChecked()) {
                 return AvailableStatus.UNCHECKED;
@@ -291,12 +293,16 @@ public class CatShareNet extends PluginForHost {
         return 1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (getUseAPI()) {
             handleDownloadAPI(downloadLink, true, 0, false, "freedirectlink");
         } else {
+            if (use_api_availablecheck) {
+                this.br.getPage(downloadLink.getDownloadURL());
+            }
             doFreeWebsite(downloadLink, false, 1);
         }
     }

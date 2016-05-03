@@ -21,11 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,6 +41,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigfile.to" }, urls = { "https?://(?:www\\.)?(uploadable\\.ch|bigfile\\.to)/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
@@ -155,10 +155,8 @@ public class UploadableCh extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not available<|>This file is no longer available.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().contains("error_code=617")) {
-            /* >File is not available. Please check your link again.< */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        handleErrorsWebsite();
         final String filename = br.getRegex("id=\"file_name\" title=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("class=\"filename_normal\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
         if (filename == null || filesize == null) {
@@ -246,6 +244,7 @@ public class UploadableCh extends PluginForHost {
 
             dllink = br.getRedirectLocation();
             if (dllink == null) {
+                handleErrorsWebsite();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -255,18 +254,47 @@ public class UploadableCh extends PluginForHost {
             checkResponseCodeErrors(dl.getConnection());
             logger.info("Finallink does not lead to a file, continuing...");
             br.followConnection();
-            /* Error-links: http://www.uploadable.ch/l-error.php?error_code=ERRORCODE */
-            /* Your download link has expired */
-            if (br.containsHTML("error_code=1702")) {
-                downloadLink.setProperty("directlink", null);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Your download link has expired'", 1 * 60 * 1000l);
-            } else if (br.containsHTML("error_code=1703")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 406", 5 * 60 * 1000l);
-            }
+            this.handleErrorsWebsite();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    private void handleErrorsWebsite() throws PluginException {
+        /*
+         * <h1>File is not available<br>We are sorry...<br/>The page you requested cannot be displayed right now. The file may have removed
+         * by the uploader or expired.</h1>
+         */
+        if (this.br.containsHTML(">File is not available<|The file may have removed by the uploader or expired")) {
+            /* Typically file offline after download attempt. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
+        /* Error-links: http://www.bigfile.to/l-error.php?error_code=ERRORCODE OR http://www.bigfile.to//landing-1406.html */
+        String errorcode_str = new Regex(this.br.getURL(), "error_code=(\\d+)").getMatch(0);
+        if (errorcode_str == null) {
+            errorcode_str = new Regex(this.br.getURL(), "landing\\-(\\d+)\\.html").getMatch(0);
+        }
+        int errorcode = 0;
+        if (errorcode_str != null) {
+            errorcode = Integer.parseInt(errorcode_str);
+            switch (errorcode) {
+            case 617:
+                /* This typically happens in availablecheck. */
+                /* >File is not available. Please check your link again.< */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 1406:
+                /* Probably this is some kinda expired session. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error '406 - Cookie not found'", 3 * 60 * 1000l);
+            case 1702:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Your download link has expired'", 1 * 60 * 1000l);
+            case 1703:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error '406 - Cookie not found'", 3 * 60 * 1000l);
+            default:
+                break;
+            }
+        }
     }
 
     /**
@@ -466,6 +494,7 @@ public class UploadableCh extends PluginForHost {
                 }
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
+                    handleErrorsWebsite();
                     logger.warning("Final link is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -480,6 +509,7 @@ public class UploadableCh extends PluginForHost {
                 checkDirectlinkFailed(link, directlinkproperty);
                 checkResponseCodeErrors(dl.getConnection());
                 br.followConnection();
+                handleErrorsWebsite();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dllink);

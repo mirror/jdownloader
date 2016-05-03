@@ -39,7 +39,7 @@ public class MxCloudCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String            INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
+    private static final String            INVALIDLINKS = "https?://(?:www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
     private static AtomicReference<String> agent        = new AtomicReference<String>();
 
     @Override
@@ -92,12 +92,16 @@ public class MxCloudCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final Regex originalinfo = this.br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]*?\\.mp3)\"");
-        final String previewLinkpart = originalinfo.getMatch(1);
-        if (previewLinkpart != null) {
-            /* TODO: Find a way to get that server dynamically */
-            final String mp3link = "https://stream19.mixcloud.com/c/originals/" + previewLinkpart;
-            tempLinks.add(mp3link);
+        final String url_mp3_preview = this.br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
+        if (url_mp3_preview != null) {
+            final Regex originalinfo = new Regex(url_mp3_preview, "\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]*?\\.mp3)\"");
+            final String previewLinkpart = originalinfo.getMatch(1);
+            if (previewLinkpart != null) {
+                /* TODO: Find a way to get that server dynamically */
+                final String mp3link = "https://stream19.mixcloud.com/c/originals/" + previewLinkpart;
+                tempLinks.add(mp3link);
+            }
+            tempLinks.add(url_mp3_preview);
         }
 
         String result = null;
