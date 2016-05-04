@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -32,11 +30,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" }, flags = { 0 })
-public class IFilezComDecrypter extends PluginForDecrypt {
+public class DepfileComDecrypter extends PluginForDecrypt {
 
-    public IFilezComDecrypter(PluginWrapper wrapper) {
+    public DepfileComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -96,7 +96,7 @@ public class IFilezComDecrypter extends PluginForDecrypt {
     private void handleErrors() throws Exception {
         PluginForHost DeviantArtPlugin = JDUtilities.getPluginForHost("depfile.com");
         try {
-            ((jd.plugins.hoster.IFilezCom) DeviantArtPlugin).handleErrors();
+            ((jd.plugins.hoster.DepfileCom) DeviantArtPlugin).handleErrors();
         } catch (final Exception e) {
             if (e instanceof PluginException) {
                 throw (PluginException) e;

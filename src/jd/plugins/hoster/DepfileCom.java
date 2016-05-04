@@ -20,10 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,8 +38,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 2 })
-public class IFilezCom extends PluginForHost {
+public class DepfileCom extends PluginForHost {
 
     private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
     private static final String MAINPAGE             = "http://depfile.com/";
@@ -51,7 +51,7 @@ public class IFilezCom extends PluginForHost {
     private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
     private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
 
-    public IFilezCom(PluginWrapper wrapper) {
+    public DepfileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "premium");
         // Would be needed if multiple free-downloads were possible
@@ -150,6 +150,10 @@ public class IFilezCom extends PluginForHost {
         if (additionalWaittime != null) {
             /* wait 15 secs more to be sure */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(additionalWaittime) + 15) * 1001l);
+        }
+        /* <p class='notice'>Download limit for free user.</p> */
+        if (br.containsHTML(">Download limit for free user")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
         }
         if (br.containsHTML(">Free users can download up to \\d+G per day.")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 4 * 60 * 60 * 1000l);
