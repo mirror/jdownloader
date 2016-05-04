@@ -136,11 +136,16 @@ public class TididoCom extends PluginForDecrypt {
                 song_array = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "songs/songs");
                 name_album = (String) DummyScriptEnginePlugin.walkJson(entries, "songs/albums/{0}/name");
             } else {
-                this.br.getPage("http://tidido.com/api/gene/artist/" + artist_id + "?section=topSongs&limit=1000");
+                /* TODO: Add possibility to crawl more than 100 entries */
+                this.br.getPage("http://tidido.com/api/gene/artist/" + artist_id + "?section=topSongs&limit=100");
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 song_array = (ArrayList) entries.get("songs");
             }
-            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "songs/artists");
+            Object ressourcelist_artist_o = DummyScriptEnginePlugin.walkJson(entries, "songs/artists");
+            if (ressourcelist_artist_o == null) {
+                ressourcelist_artist_o = entries.get("artists");
+            }
+            ressourcelist = (ArrayList) ressourcelist_artist_o;
         }
         /* First fill artist_info */
         for (final Object artisto : ressourcelist) {
