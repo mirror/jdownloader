@@ -430,6 +430,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Disable Archive *.rev Files" })
     String DisableRevFilesPackageRulee_rule_name();
 
+    @Default(lngs = { "en" }, values = { "Disable Parity Archive *.par(2) Files" })
+    String DisableParFilesPackageRulee_rule_name();
+
     @Default(lngs = { "en" }, values = { "Your 'My JDownloader' email has not been confirmed yet. \r\nPlease check your emails and click the confirmal Link" })
     String MyJDownloaderController_onError_account_unconfirmed();
 
@@ -1018,30 +1021,24 @@ public interface JdownloaderTranslation extends TranslateInterface {
     String LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
 
     @Default(lngs = { "en" }, values = { "Vorbis Spatial 4 Channel" })
-
     String AudioCodec_vorbis_spatial();
 
     @Default(lngs = { "en" }, values = { "AAC Spatial 6 Channel" })
-
     String AudioCodec_aac_spatial();
 
     @Default(lngs = { "en" }, values = { "Spatial" })
-
     String YOUTUBE_surround();
 
     @Default(lngs = { "en" }, values = { "3D" })
     String Projection_3D();
 
     @Default(lngs = { "en" }, values = { "2D" })
-
     String Projection_Normal();
 
     @Default(lngs = { "en" }, values = { "360°" })
-
     String Projection_Spherical();
 
     @Default(lngs = { "en" }, values = { "3D 360°" })
-
     String Projection_Spherical3D();
 
     @Default(lngs = { "en" }, values = { "3D HOU 360° Spherical" })
@@ -1051,7 +1048,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     String Projection_Spherical_tt();
 
     @Default(lngs = { "en" }, values = { "2D - Normal" })
-
     String Projection_Normal_tt();
 
     @Default(lngs = { "en" }, values = { "Stereoscopic 3D SBS" })

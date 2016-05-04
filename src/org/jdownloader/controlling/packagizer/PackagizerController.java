@@ -172,6 +172,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             DisableRevFilesPackageRule disableRevFilesRule = null;
             SubFolderByPackageRule subFolderByPackgeRule = null;
             SubFolderByPluginRule subFolderByPluginRule = null;
+            DisableParFilesPackageRule disableParFilesRule = null;
             for (PackagizerRule rule : list) {
                 final PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
                 });
@@ -204,6 +205,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         r.setEnabled(rule.isEnabled());
                         disableRevFilesRule = r;
                     }
+                } else if (DisableParFilesPackageRule.ID.equals(rule.getId())) {
+                    if (dupefinder.add(rule.getId())) {
+                        final DisableParFilesPackageRule r = new DisableParFilesPackageRule();
+                        newList.add(r);
+                        r.init();
+                        r.setEnabled(rule.isEnabled());
+                        disableParFilesRule = r;
+                    }
                 } else {
                     newList.add(rule);
                 }
@@ -211,6 +220,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             if (disableRevFilesRule == null) {
                 newList.add(disableRevFilesRule = new DisableRevFilesPackageRule());
                 disableRevFilesRule.init();
+            }
+            if (disableParFilesRule == null) {
+                newList.add(disableParFilesRule = new DisableParFilesPackageRule());
+                disableParFilesRule.init();
             }
             if (subFolderByPackgeRule == null) {
                 newList.add(subFolderByPackgeRule = new SubFolderByPackageRule());
