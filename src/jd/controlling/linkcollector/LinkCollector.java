@@ -679,17 +679,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 if (crawledPackageMappingID.getPackageName() != null) {
                     // check if we have matching links in offline maper
-                    List<CrawledLink> list = offlineMap.remove(crawledPackageMappingID);
-                    if (list != null && list.size() > 0) {
-                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    final List<CrawledLink> offline = offlineMap.remove(crawledPackageMappingID);
+                    if (offline != null && offline.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, offline, -1);
                     }
-                    list = variousMap.remove(crawledPackageMappingID);
-                    if (list != null && list.size() > 0) {
-                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    final List<CrawledLink> various = variousMap.remove(crawledPackageMappingID);
+                    if (various != null && various.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, various, -1);
                     }
-                    list = getBadMappings(crawledPackageMappingID, pkg);
-                    if (list != null && list.size() > 0) {
-                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    final List<CrawledLink> bad = getBadMappings(crawledPackageMappingID, pkg);
+                    if (bad != null && bad.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, bad, -1);
                     }
                 } else {
                     putBadMappings(newPackageName, crawledPackageMappingID, links);
@@ -702,18 +702,20 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     LinkCollector.this.moveOrAddAt(pkg, links, -1);
                 }
                 if (crawledPackageMappingID.getPackageName() != null) {
-                    // check if we have matching links in offline maper
-                    List<CrawledLink> list = offlineMap.remove(crawledPackageMappingID);
-                    if (list != null && list.size() > 0) {
-                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
-                    }
-                    list = variousMap.remove(crawledPackageMappingID);
-                    if (list != null && list.size() > 0) {
-                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
-                    }
-                    list = getBadMappings(crawledPackageMappingID, pkg);
-                    if (list != null && list.size() > 0) {
-                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    if (!TYPE.VARIOUS.equals(pkg.getType())) {
+                        // check if we have matching links in offline maper
+                        final List<CrawledLink> offline = offlineMap.remove(crawledPackageMappingID);
+                        if (offline != null && offline.size() > 0) {
+                            LinkCollector.this.moveOrAddAt(pkg, offline, -1);
+                        }
+                        final List<CrawledLink> various = variousMap.remove(crawledPackageMappingID);
+                        if (various != null && various.size() > 0) {
+                            LinkCollector.this.moveOrAddAt(pkg, various, -1);
+                        }
+                        final List<CrawledLink> bad = getBadMappings(crawledPackageMappingID, pkg);
+                        if (bad != null && bad.size() > 0) {
+                            LinkCollector.this.moveOrAddAt(pkg, bad, -1);
+                        }
                     }
                 } else {
                     putBadMappings(packageName, crawledPackageMappingID, links);
@@ -958,7 +960,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 java.util.List<CrawledLink> list = getIdentifiedMap(crawledPackageMapID, variousMap);
                                 list.add(link);
                                 if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                                    addToNewPackage(null, newPackageName, crawledPackageMapID);
+                                    addToNewPackage(list, newPackageName, crawledPackageMapID);
                                 } else {
                                     java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                     add.add(link);
@@ -1184,9 +1186,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
