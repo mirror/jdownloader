@@ -26,14 +26,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map.Entry;
 
-import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.CompareUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -49,7 +45,6 @@ import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.configpanel.AbstractVariantWrapper;
 import org.jdownloader.plugins.components.youtube.configpanel.YoutubeVariantCollection;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
@@ -57,12 +52,10 @@ import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
-import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
-import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
@@ -400,16 +393,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
             // get best video resolution
-            YoutubeITAG bestVideoResolution = null;
-            for (Entry<YoutubeITAG, List<YoutubeStreamData>> es : vid.streams.entrySet()) {
-                if (es.getKey().getVideoResolution() != null) {
-                    if (bestVideoResolution == null || bestVideoResolution.getQualityRating() < es.getKey().getQualityRating()) {
-                        bestVideoResolution = es.getKey();
-                    }
-                }
 
-            }
-            vid.bestVideoItag = bestVideoResolution;
             if (!cfg.isExternMultimediaToolUsageEnabled()) {
                 getLogger().info("isDashEnabledEnabled=false");
             }
@@ -485,6 +469,18 @@ public class TbCmV2 extends PluginForDecrypt {
 
             // write all available variants to groups and allVariants
             List<VariantInfo> variants = vid.findVariants();
+
+            VideoVariant bestVideoResolution = null;
+            for (VariantInfo vi : variants) {
+                if (vi.getVariant() instanceof VideoVariant) {
+
+                    if (bestVideoResolution == null || bestVideoResolution.getVideoHeight() < ((VideoVariant) vi.getVariant()).getVideoHeight()) {
+                        bestVideoResolution = (VideoVariant) vi.getVariant();
+                    }
+                }
+
+            }
+            vid.bestVideoItag = bestVideoResolution;
             List<VariantInfo> subtitles = enabledVariantGroups.contains(VariantGroup.SUBTITLES) ? vid.findSubtitleVariants() : new ArrayList<VariantInfo>();
 
             ArrayList<VariantInfo> descriptions = enabledVariantGroups.contains(VariantGroup.DESCRIPTION) ? vid.findDescriptionVariant() : new ArrayList<VariantInfo>();
@@ -557,50 +553,10 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
 
                 Collections.sort(linkVariants, new Comparator<VariantInfo>() {
-                    private HashMap<String, Integer> prefSubtitles = new HashMap<String, Integer>();
-
-                    {
-                        String[] prefs = CFG_YOUTUBE.CFG.getPreferedSubtitleLanguages();
-                        int prefID = 0;
-
-                        if (prefs != null) {
-
-                            for (int i = 0; i < prefs.length; i++) {
-                                if (prefs[i] != null) {
-                                    prefSubtitles.put(prefs[i].toLowerCase(Locale.ENGLISH), prefID++);
-                                }
-
-                            }
-                        }
-                        prefSubtitles.put(TranslationFactory.getDesiredLanguage().toLowerCase(Locale.ENGLISH), prefID++);
-                        prefSubtitles.put(Locale.getDefault().getLanguage().toLowerCase(Locale.ENGLISH), prefID++);
-
-                        prefSubtitles.put("en", prefID++);
-                    }
 
                     @Override
                     public int compare(VariantInfo o1, VariantInfo o2) {
-
-                        if (o1.getVariant() instanceof SubtitleVariant && o2.getVariant() instanceof SubtitleVariant) {
-                            Integer pref1 = prefSubtitles.get(((SubtitleVariant) o1.getVariant()).getLanguageCode());
-                            Integer pref2 = prefSubtitles.get(((SubtitleVariant) o2.getVariant()).getLanguageCode());
-                            if (pref1 == null) {
-                                pref1 = Integer.MAX_VALUE;
-                            }
-                            if (pref2 == null) {
-                                pref2 = Integer.MAX_VALUE;
-                            }
-                            int ret = CompareUtils.compare(pref1, pref2);
-                            if (ret == 0) {
-                                ret = CompareUtils.compare(o2.getVariant().getQualityRating(), o1.getVariant().getQualityRating());
-                            }
-                            if (ret == 0) {
-                                ret = CompareUtils.compare(((SubtitleVariant) o1.getVariant()).getDisplayLanguage(), ((SubtitleVariant) o2.getVariant()).getDisplayLanguage());
-                            }
-                            return ret;
-
-                        }
-                        return CompareUtils.compare(o2.getVariant().getQualityRating(), o1.getVariant().getQualityRating());
+                        return o2.compareTo(o1);
                     }
                 });
                 // remove dupes
@@ -616,7 +572,10 @@ public class TbCmV2 extends PluginForDecrypt {
                     }
                     last = cur;
                 }
-
+                // for (final Iterator<VariantInfo> it = linkVariants.iterator(); it.hasNext();) {
+                // VariantInfo cur = it.next();
+                // System.out.println(cur.getVariant().getBaseVariant() + "\t" + cur.getVariant().getQualityRating());
+                // }
                 if (linkVariants.size() > 0) {
                     DownloadLink lnk = createLink(l, linkVariants.get(0), linkVariants);
 

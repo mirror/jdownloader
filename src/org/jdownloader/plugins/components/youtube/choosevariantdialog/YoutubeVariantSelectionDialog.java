@@ -9,7 +9,6 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -24,7 +23,6 @@ import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
-import org.appwork.utils.CompareUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -144,13 +142,7 @@ public class YoutubeVariantSelectionDialog extends AbstractDialog<Object> implem
 
     protected void initVariants(VariantGroup group) {
         List<String> dupe = new ArrayList<String>();
-        Collections.sort(variants, new Comparator<VariantInfo>() {
-
-            @Override
-            public int compare(VariantInfo o1, VariantInfo o2) {
-                return CompareUtils.compare(o2.getVariant().getQualityRating(), o1.getVariant().getQualityRating());
-            }
-        });
+        Collections.sort(variants);
         variantWrapperList = new ArrayList<AbstractVariantWrapper>();
 
         allowedGroups = new HashSet<VariantGroup>();

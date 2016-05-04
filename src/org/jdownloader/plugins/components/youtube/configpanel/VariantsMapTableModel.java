@@ -464,25 +464,6 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         });
         addGroupingColumn();
 
-        addPriorityColumn();
-
-    }
-
-    protected void addPriorityColumn() {
-        addColumn(new AutoResizingIntColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PRIORITY()) {
-            @Override
-            public boolean isDefaultVisible() {
-                return false;
-            }
-
-            @Override
-            public int getInt(AbstractVariantWrapper value) {
-
-                return (int) (value.variant.getQualityRating() * 10000);
-
-            }
-
-        });
     }
 
     protected void addGroupingColumn() {

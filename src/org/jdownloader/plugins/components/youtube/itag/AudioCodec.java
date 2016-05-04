@@ -2,29 +2,32 @@ package org.jdownloader.plugins.components.youtube.itag;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
+import org.jdownloader.plugins.components.youtube.YT_STATICS;
+import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.translate._JDT;
 
 public enum AudioCodec implements LabelInterface,TooltipInterface {
-    AAC("Advanced Audio Codec", "AAC", 4, 10000),
-    MP3("MP3", "MP3", 2, 10000),
-    OPUS("Opus Audio", "Opus", 1, 10000),
-    VORBIS("Vorbis Audio", "Vorbis", 3, 10000),
-    AMR("Adaptive Multi-Rate Codec", "ARM", 1, 10000),
-    VORBIS_SPATIAL(null, "Vorbis 4Ch", 0.3, 10000) {
-
-        public String getLabelLong() {
-            return _JDT.T.AudioCodec_vorbis_spatial();
-        }
-
-    },
-    AAC_SPATIAL(null, "AAC 6Ch", 0.4, 10000) {
+    AAC("Advanced Audio Codec", "AAC"),
+    VORBIS("Vorbis Audio", "Vorbis"),
+    OPUS("Opus Audio", "Opus"),
+    MP3("MP3", "MP3"),
+    AMR("Adaptive Multi-Rate Codec", "ARM"),
+    AAC_SPATIAL(null, "AAC 6Ch") {
 
         public String getLabelLong() {
             return _JDT.T.AudioCodec_aac_spatial();
         }
 
+    },
+    VORBIS_SPATIAL(null, "Vorbis 4Ch") {
+
+        public String getLabelLong() {
+            return _JDT.T.AudioCodec_vorbis_spatial();
+        }
+
     };
-    private double rating = -1;
+
     private String label;
     private String labelLong;
 
@@ -32,18 +35,9 @@ public enum AudioCodec implements LabelInterface,TooltipInterface {
         return labelLong;
     }
 
-    private AudioCodec(String labelLong, String label, double rating, double modifier) {
-        this.rating = rating / modifier;
+    private AudioCodec(String labelLong, String label) {
         this.label = label;
         this.labelLong = labelLong;
-    }
-
-    public double getRating() {
-        return rating;
-    }
-
-    public void setRating(double rating) {
-        this.rating = rating;
     }
 
     public String getLabel() {
@@ -55,4 +49,23 @@ public enum AudioCodec implements LabelInterface,TooltipInterface {
         return getLabelLong();
     }
 
+    public static AudioCodec getByVariant(AbstractVariant o1) {
+        if (o1 instanceof AudioInterface) {
+            return ((AudioInterface) o1).getAudioCodec();
+        }
+        return null;
+    }
+
+    public static int getSortId(AbstractVariant v) {
+
+        AudioCodec res = getByVariant(v);
+        if (res == null) {
+            return -1;
+        }
+        Object intObj = YT_STATICS.SORTIDS_AUDIO_CODEC.get(res);
+        if (intObj == null) {
+            return -1;
+        }
+        return ((Number) intObj).intValue();
+    }
 }

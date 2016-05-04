@@ -17,6 +17,7 @@ import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
@@ -42,7 +43,7 @@ public class YoutubeClipData {
     public String                                    channelID;
     public long                                      dateUpdated;
     public String                                    userGooglePlusID;
-    public YoutubeITAG                               bestVideoItag;
+    public VideoVariant                              bestVideoItag;
     public String                                    description;
     public Map<YoutubeITAG, List<YoutubeStreamData>> streams;
     public ArrayList<YoutubeSubtitleStorable>        subtitles;
@@ -168,7 +169,7 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_3D, is3D());
         thislink.setProperty(YoutubeHelper.YT_CHANNEL, channel);
         thislink.setProperty(YoutubeHelper.YT_USER, user);
-        thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.name());
+        thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.getBaseVariant().getiTagVideo().name());
         thislink.setProperty(YoutubeHelper.YT_DATE, date);
         thislink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, length);
         thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);

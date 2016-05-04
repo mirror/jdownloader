@@ -45,10 +45,10 @@ public class ImageVariant extends AbstractVariant<ImageGenericInfo> {
         return _GUI.T.Youtube_imagevariant_name(getBaseVariant().getiTagData().getImageQuality().getLocaleName());
     }
 
-    @Override
-    public double getQualityRating() {
-        return super.getQualityRating();
-    }
+    // @Override
+    // public double getQualityRating() {
+    // return super.getQualityRating();
+    // }
 
     @Override
     public String getFileNameQualityTag() {

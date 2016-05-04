@@ -14,7 +14,6 @@ import org.jdownloader.plugins.components.youtube.converter.YoutubeConverter;
 import org.jdownloader.plugins.components.youtube.converter.YoutubeConverterFLVToMP3Audio;
 import org.jdownloader.plugins.components.youtube.converter.YoutubeConverterMP4ToAACAudio;
 import org.jdownloader.plugins.components.youtube.converter.YoutubeConverterMP4ToM4AAudio;
-import org.jdownloader.plugins.components.youtube.converter.YoutubeExternConverter;
 import org.jdownloader.plugins.components.youtube.converter.YoutubeSRTConverter;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
@@ -2179,9 +2178,6 @@ public enum YoutubeVariantOld {
                 return true;
             }
             if (converter instanceof YoutubeConverterFLVToMP3Audio) {
-                return true;
-            }
-            if (converter instanceof YoutubeExternConverter) {
                 return true;
             }
 

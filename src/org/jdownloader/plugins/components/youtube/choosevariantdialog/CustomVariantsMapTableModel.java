@@ -47,11 +47,6 @@ public class CustomVariantsMapTableModel extends VariantsMapTableModel {
     }
 
     @Override
-    protected void addPriorityColumn() {
-
-    }
-
-    @Override
     protected void initColumns() {
 
         super.initColumns();

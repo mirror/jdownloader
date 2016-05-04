@@ -15,7 +15,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.youtube.ExternalToolRequired;
-import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.updatev2.UpdateController;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -105,12 +104,6 @@ public class YoutubeConverterFLVToAACAudio implements YoutubeConverter, External
             downloadLink.removePluginProgress(set);
         }
 
-    }
-
-    @Override
-    public double getQualityRating(VariantBase base, double qualityRating) {
-        double penaltyForDemux = base.getiTagVideo().getVideoResolution().getHeight() / 100000000d;
-        return base.getiTagVideo().getAudioCodec().getRating() + base.getiTagVideo().getAudioBitrate().getRating() - penaltyForDemux;
     }
 
 }

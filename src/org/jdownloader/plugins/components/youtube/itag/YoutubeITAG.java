@@ -365,7 +365,6 @@ public enum YoutubeITAG {
 
     private MediaTagsVarious[] qualityTags;
 
-    private double             qualityRating = -1;
     private VideoResolution    videoResolution;
 
     private VideoCodec         videoCodec;
@@ -481,41 +480,6 @@ public enum YoutubeITAG {
 
     public int getITAG() {
         return this.itag;
-    }
-
-    public double getQualityRating() {
-        if (qualityRating >= 0) {
-            return qualityRating;
-        }
-        double r = 0d;
-        if (videoCodec != null) {
-            r += videoCodec.getRating();
-        }
-        if (imageQuality != null) {
-            r += imageQuality.getRating();
-        }
-        if (videoFrameRate != null) {
-            r += videoFrameRate.getRating();
-        }
-        if (videoResolution != null) {
-            r += videoResolution.getRating();
-        }
-        if (audioBitrate != null) {
-            r += audioBitrate.getRating();
-        }
-        if (audioCodec != null) {
-            r += audioCodec.getRating();
-        }
-        r += rawContainer.getRating();
-        if (qualityTags != null) {
-            for (MediaTagsVarious t : qualityTags) {
-                r += t.getRating();
-            }
-        }
-
-        qualityRating = r;
-
-        return r;
     }
 
     private VideoFrameRate videoFrameRate = null;

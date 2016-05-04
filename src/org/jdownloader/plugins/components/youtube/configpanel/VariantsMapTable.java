@@ -72,7 +72,7 @@ public class VariantsMapTable extends BasicJDTable<AbstractVariantWrapper> {
 
                 for (AbstractVariantWrapper w : selection) {
                     variants.add(w.getVariableIDStorable());
-                    if (best == null || best.variant.getQualityRating() < w.variant.getQualityRating()) {
+                    if (best == null || best.variant.compareTo(w.variant) == -1) {
                         best = w;
                     }
                     extensions.add(w.variant.getContainer().getLabel());

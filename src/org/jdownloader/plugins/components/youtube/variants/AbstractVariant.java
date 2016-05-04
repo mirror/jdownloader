@@ -7,13 +7,16 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.CompareUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.plugins.components.youtube.Projection;
+import org.jdownloader.plugins.components.youtube.YT_STATICS;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.itag.QualitySortIdentifier;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGenericVariantInfo;
 
@@ -22,12 +25,56 @@ import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
-public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> implements LinkVariant {
+public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> implements LinkVariant, Comparable {
     private static ArrayList<AbstractVariant> VARIANTS_LIST;
 
     @Override
     public String toString() {
         return baseVariant.toString();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        if (!(o instanceof AbstractVariant)) {
+            return -1;
+        }
+        AbstractVariant o1 = this;
+        AbstractVariant o2 = (AbstractVariant) o;
+        int ret = 0;
+
+        for (QualitySortIdentifier q : YT_STATICS.SORTIDS) {
+            ret = q.compare(o1, o2);
+            if (ret != 0) {
+                return ret;
+            }
+        }
+        // if (o1 instanceof AudioVariant && o2 instanceof AudioVariant) {
+        // // demux is worse
+        // ret = CompareUtils.compare(o1.getBaseVariant().getiTagAudio() != null, o2.getBaseVariant().getiTagAudio() != null);
+        // if (ret != 0) {
+        // return ret;
+        // }
+        // }
+
+        if (o1 instanceof SubtitleVariant && o2 instanceof SubtitleVariant) {
+            Integer pref1 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o1).getLanguageCode());
+            Integer pref2 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o2).getLanguageCode());
+            if (pref1 == null) {
+                pref1 = Integer.MAX_VALUE;
+            }
+            if (pref2 == null) {
+                pref2 = Integer.MAX_VALUE;
+            }
+            ret = CompareUtils.compare(pref1, pref2);
+
+            if (ret == 0) {
+                ret = CompareUtils.compare(((SubtitleVariant) o1).getDisplayLanguage(), ((SubtitleVariant) o2).getDisplayLanguage());
+            }
+            return ret;
+
+        }
+
+        return ret;
     }
 
     public static AbstractVariant get(String ytv) {
@@ -185,11 +232,6 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             return obj == this || (var.getBaseVariant() == getBaseVariant() && StringUtils.equals(_getUniqueId(), var._getUniqueId()));
         }
         return false;
-    }
-
-    public double getQualityRating() {
-        return baseVariant.getQualityRating();
-
     }
 
     public abstract String getTypeId();

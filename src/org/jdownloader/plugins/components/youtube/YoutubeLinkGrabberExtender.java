@@ -18,7 +18,6 @@ import javax.swing.JMenuItem;
 
 import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.CompareUtils;
 import org.appwork.utils.CounterMap;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
@@ -62,13 +61,13 @@ public class YoutubeLinkGrabberExtender {
     private Collection<PluginView<CrawledLink>> allPvs;
     private PluginForHost                       plg;
 
-    private JMenuItem addVariants;
+    private JMenuItem                           addVariants;
 
     // protected HashMap<String, AbstractVariant> map;
 
-    private JMenu                            youtubeMenu;
-    private HashMap<VariantGroup, JMenuItem> groupMenuItems;
-    private LogInterface                     logger;
+    private JMenu                               youtubeMenu;
+    private HashMap<VariantGroup, JMenuItem>    groupMenuItems;
+    private LogInterface                        logger;
 
     public YoutubeLinkGrabberExtender(PluginForHost plg, JComponent parent, PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
         this.plg = plg;
@@ -523,8 +522,7 @@ public class YoutubeLinkGrabberExtender {
 
                 @Override
                 public int compare(VariantInfo o1, VariantInfo o2) {
-
-                    return CompareUtils.compare(Math.abs(choosenVariant.getQualityRating() - o1.getVariant().getQualityRating()), Math.abs(choosenVariant.getQualityRating() - o2.getVariant().getQualityRating()));
+                    return o2.compareTo(o1);
                 }
             });
 
@@ -532,6 +530,27 @@ public class YoutubeLinkGrabberExtender {
                 if (StringUtils.equals(v.getVariant()._getUniqueId(), choosenVariant._getUniqueId())) {
                     return v.getVariant();
                 }
+            }
+
+            VariantInfo vCur = null;
+            VariantInfo vLast = null;
+
+            for (int i = 0; i < variants.size(); i++) {
+                vCur = variants.get(i);
+                int comCur = choosenVariant.compareTo(vCur.getVariant());
+                if (comCur == 0) {
+
+                    return vCur.getVariant();
+
+                } else if (comCur > 0) {
+                    if (vLast != null) {
+                        return vLast.getVariant();
+                    } else {
+                        return vCur.getVariant();
+                    }
+                }
+
+                vLast = vCur;
             }
 
             for (VariantInfo v : variants) {
