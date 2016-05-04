@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample).+" }, flags = { 0 })
 public class AventertainmentsCom extends PluginForDecrypt {
 
     public AventertainmentsCom(PluginWrapper wrapper) {
@@ -43,17 +43,40 @@ public class AventertainmentsCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         this.br.setFollowRedirects(false);
-        String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        String fpName;
+        final String title_part1 = this.br.getRegex("class=\"top\\-title\">Item #:([^<>\"]+)</div>").getMatch(0);
+        final String title_part2 = this.br.getRegex("<h2>([^<>\"]+)(?:\\&nbsp;)?<").getMatch(0);
+        if (title_part1 != null && title_part2 != null) {
+            fpName = title_part1.trim() + " - " + title_part2.trim();
+        } else {
+            fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        }
 
         boolean foundScreenshot = false;
         final String screenshot_url_part = this.br.getRegex("imgs\\.aventertainments\\.com/new/bigcover/([A-Za-z0-9\\-_]+\\.jpg)\"").getMatch(0);
-        final String[] screenshotRegexes = { "(https://imgs\\.aventertainments\\.com/new/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\.aventertainments\\.com//?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
+        final String[] screenshotRegexes = { "(https?://imgs\\.aventertainments\\.com/new/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\.aventertainments\\.com//?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
+        final String[] galleryRegexes = { "(https?://imgs\\.aventertainments\\.com//?vodimages/gallery/large/[^<>\"\\']+\\.jpg)" };
+
         for (final String screenshotRegex : screenshotRegexes) {
             final String[] screenshots = br.getRegex(screenshotRegex).getColumn(0);
             if (screenshots != null && screenshots.length > 0) {
                 foundScreenshot = true;
                 for (final String singleLink : screenshots) {
-                    decryptedLinks.add(createDownloadlink("directhttp://" + singleLink));
+                    final DownloadLink dl = createDownloadlink(singleLink);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setProperty("type", "screenshot");
+                    // decryptedLinks.add(dl);
+                }
+            }
+        }
+        for (final String galleryRegex : galleryRegexes) {
+            final String[] galleryImages = br.getRegex(galleryRegex).getColumn(0);
+            if (galleryImages != null && galleryImages.length > 0) {
+                for (final String singleLink : galleryImages) {
+                    final DownloadLink dl = createDownloadlink(singleLink);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setProperty("type", "gallery");
+                    decryptedLinks.add(dl);
                 }
             }
         }
@@ -66,12 +89,10 @@ public class AventertainmentsCom extends PluginForDecrypt {
         try {
             if (videos != null && videos.length > 0) {
                 for (final String singleLink : videos) {
-                    this.br.getPage(singleLink);
-                    final String directlink = this.br.getRedirectLocation();
-                    if (directlink == null) {
-                        continue;
-                    }
-                    decryptedLinks.add(createDownloadlink("directhttp://" + directlink));
+                    final DownloadLink dl = createDownloadlink(singleLink);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setProperty("type", "video");
+                    decryptedLinks.add(dl);
                 }
             }
         } catch (final Throwable e) {

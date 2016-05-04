@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(www\\.)?decryptedemohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(?:www\\.)?decryptedemohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
 public class EmoHottiesCom extends PluginForHost {
 
     public EmoHottiesCom(PluginWrapper wrapper) {
