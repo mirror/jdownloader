@@ -57,14 +57,11 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.components.youtube.YoutubeReplacer.DataSource;
-import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
-import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
-import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
@@ -106,22 +103,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 public class YoutubeHelper {
+
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        VideoFrameRate.FPS_60.setRating(cfg.getRating60Fps() / 100d);
-        FileContainer.MP4.setQualityRating(cfg.getRatingContainerMP4() / 10d);
-        FileContainer.WEBM.setQualityRating(cfg.getRatingContainerWEBM() / 10d);
-        AudioCodec.AAC.setRating(cfg.getRatingContainerAAC() / 10000d);
-        FileContainer.M4A.setQualityRating(cfg.getRatingContainerM4A() / 10000d);
-        AudioCodec.MP3.setRating(cfg.getRatingContainerMP3() / 10000d);
-        VideoCodec.VP8.setRating(cfg.getRatingCodecVP8());
-        final int vp9 = cfg.getRatingCodecVP9();
-        VideoCodec.H263.setRating(cfg.getRatingCodecH263());
-        VideoCodec.H264.setRating(cfg.getRatingCodecH264());
-        VideoCodec.VP9_WORSE_PROFILE_1.setRating(vp9 - 1);
-        VideoCodec.VP9.setRating(vp9);
-        VideoCodec.VP9_BETTER_PROFILE_1.setRating(vp9 + 1);
-        VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
+
         String filepattern = cfg.getFilenamePattern();
         if (filepattern != null && !"*videoname* (*quality*).*ext*".equals(filepattern)) {
             // convert old format
@@ -856,7 +841,7 @@ public class YoutubeHelper {
 
         @Override
         public String toString() {
-            return src;
+            return mapData + " (" + src + ")";
         }
 
         @Override
@@ -903,9 +888,7 @@ public class YoutubeHelper {
         if (sig == null) {
             return null;
         }
-        if (html5PlayerSource == null) {
-            html5PlayerSource = br.cloneBrowser().getPage(html5PlayerJs);
-        }
+
         String ret = descrambleSignatureNew(sig);
         if (StringUtils.isNotEmpty(ret)) {
             return ret;
@@ -934,7 +917,7 @@ public class YoutubeHelper {
         }
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
-
+            String html5PlayerSource = ensurePlayerSource();
             descrambler = new Regex(html5PlayerSource, "set\\(\"signature\",([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
 
             final String func = Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}";
@@ -968,7 +951,7 @@ public class YoutubeHelper {
                     final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
-
+                        String html5PlayerSource = ensurePlayerSource();
                         // lets look for missing reference
                         final String ref = new Regex(html5PlayerSource, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
                         if (ref != null) {
@@ -999,6 +982,13 @@ public class YoutubeHelper {
             throw e;
         }
 
+    }
+
+    private String ensurePlayerSource() throws IOException {
+        if (html5PlayerSource == null) {
+            html5PlayerSource = br.cloneBrowser().getPage(html5PlayerJs);
+        }
+        return html5PlayerSource;
     }
 
     /**
@@ -1032,7 +1022,7 @@ public class YoutubeHelper {
         }
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
-
+            String html5PlayerSource = ensurePlayerSource();
             descrambler = new Regex(html5PlayerSource, "\\.sig\\|\\|([\\$\\w]+)\\(").getMatch(0);
             if (descrambler == null) {
                 descrambler = new Regex(html5PlayerSource, "\\w+\\.signature\\=([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
@@ -1079,7 +1069,7 @@ public class YoutubeHelper {
                     final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
-
+                        String html5PlayerSource = ensurePlayerSource();
                         // lets look for missing reference
                         final String ref = new Regex(html5PlayerSource, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
                         if (ref != null) {
@@ -1121,16 +1111,29 @@ public class YoutubeHelper {
 
         }
         if (StringUtils.isEmpty(vid.description)) {
-            String match = br.getRegex("<div id=\"watch-description-text\".*?><p id=\"eow-description\"\\s*>(.*?)</p\\s*>\\s*</div>\\s*<div id=\"watch-description-extras\"\\s*>").getMatch(0);
+
+            String match = br.getRegex("<div id=\"watch-description-text\".*?><p id=\"eow-description\".*?>(.*?)</p\\s*>\\s*</div>\\s*<div id=\"watch-description-extras\"\\s*>").getMatch(0);
             if (StringUtils.isNotEmpty(match)) {
+                // 04 Mai 2016
+                match = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim().replaceAll("<br\\s*/>", "\r\n"));
+                match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
+                vid.description = match;
+            }
+            if (StringUtils.isEmpty(vid.description)) {
+                // 04 Mai 2016
+                match = br.getRegex("<meta name=\"description\" content=\"([^\"]*)").getMatch(0);
                 match = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim().replaceAll("<br\\s*/>", "\r\n"));
                 match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
                 vid.description = match;
 
-            } else {
+            }
+
+            if (StringUtils.isEmpty(vid.description)) {
                 // video has no description
                 vid.description = "";
+
             }
+
         }
         if (StringUtils.isEmpty(vid.title)) {
             final String match = this.br.getRegex("<title>(.*?) - YouTube</title>").getMatch(0);
@@ -1326,7 +1329,7 @@ public class YoutubeHelper {
         /* this cookie makes html5 available and skip controversy check */
 
         this.br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
-        this.br.getHeaders().put("User-Agent", "Wget/1.12");
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20150101 Firefox/44.0 (Chrome)");
 
         br.getPage(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999");
 
@@ -1539,7 +1542,18 @@ public class YoutubeHelper {
                         continue;
                     }
                     Browser clone = br.cloneBrowser();
-                    clone.getPage(mpdUrl.mapData);
+
+                    String newv = mpdUrl.mapData;
+
+                    String scrambledSign = new Regex(mpdUrl.mapData, "/s/(.*?)/").getMatch(0);
+                    if (StringUtils.isNotEmpty(scrambledSign)) {
+                        String sign = descrambleSignature(scrambledSign);
+                        newv = mpdUrl.mapData.replaceAll("/s/(.*?)/", "/signature/" + sign + "/");
+
+                    }
+
+                    clone.getPage(newv);
+
                     String xml = clone.getRequest().getHtmlCode();
                     if (!clone.getHttpConnection().isOK()) {
                         logger.severe("Bad Request: ");
@@ -1549,7 +1563,7 @@ public class YoutubeHelper {
                     if (xml.trim().startsWith("#EXTM3U")) {
                         ArrayList<HlsContainer> containers = HlsContainer.getHlsQualities(clone);
                         for (HlsContainer c : containers) {
-                            
+
                             String[][] params = new Regex(c.downloadurl, "/([^/]+)/([^/]+)").getMatches();
                             final QueryInfo query = Request.parseQuery(c.downloadurl);
                             if (params != null) {
@@ -1721,7 +1735,7 @@ public class YoutubeHelper {
         }
         json = JSonStorage.restoreFromString(json, TypeRef.STRING);
         if (json != null) {
-            subtitleUrls.add(handleSignature(json));
+            subtitleUrls.add(json);
         }
     }
 
@@ -1732,7 +1746,7 @@ public class YoutubeHelper {
         }
         String ttsurl = videoInfo.get("ttsurl");
         if (StringUtils.isNotEmpty(ttsurl)) {
-            subtitleUrls.add(handleSignature(ttsurl));
+            subtitleUrls.add(ttsurl);
         }
 
         if (adaptiveFmtsEnabled) {
@@ -1752,19 +1766,21 @@ public class YoutubeHelper {
                 fmtMaps.add(new StreamMap(url_encoded_fmt_stream_map, "url_encoded_fmt_stream_map." + src));
             }
         }
-        if (dashMpdEnabled) {
+        // if StringUtils.equalsIgnoreCase(videoInfo.get("use_cipher_signature"), "true"), the manifest url uses a unknown signature.
+        // anyway. it seems that these manifest files do not contain any new information.
+        if (dashMpdEnabled && !StringUtils.equalsIgnoreCase(videoInfo.get("use_cipher_signature"), "true")) {
             String dashmpd = videoInfo.get("dashmpd");
             if (StringUtils.isNotEmpty(dashmpd)) {
-                final String url = handleSignature(dashmpd);
+                final String url = dashmpd;
                 if (url != null) {
                     mpdUrls.add(new StreamMap(url, "dashmpd." + src));
                 }
             }
         }
-        if (hlsEnabled) {
+        if (hlsEnabled & !StringUtils.equalsIgnoreCase(videoInfo.get("use_cipher_signature"), "true")) {
             String hlsvp = videoInfo.get("hlsvp");
             if (StringUtils.isNotEmpty(hlsvp)) {
-                final String url = handleSignature(hlsvp);
+                final String url = hlsvp;
                 if (url != null) {
                     mpdUrls.add(new StreamMap(url, "hlsvp." + src));
                 }
@@ -1779,20 +1795,11 @@ public class YoutubeHelper {
         }
         map = JSonStorage.restoreFromString(map, TypeRef.STRING);
         if (StringUtils.isNotEmpty(map)) {
-            final String url = handleSignature(map);
+            final String url = map;
             if (url != null) {
                 mpdUrls.add(new StreamMap(url, src));
             }
         }
-    }
-
-    private String handleSignature(String map) {
-        String s = new Regex(map, "/s/(.*?\\..*?)/").getMatch(0);
-        if (s != null) {
-            // the website does not load these urls neither
-            return null;
-        }
-        return map;
     }
 
     /**

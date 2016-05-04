@@ -3,7 +3,6 @@ package org.jdownloader.plugins.components.youtube.configpanel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -38,7 +37,6 @@ import org.jdownloader.plugins.components.youtube.itag.VideoFrameRate;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.FileContainer;
-import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
@@ -137,14 +135,14 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
 
-        VariantBase[] variants = VariantBase.values();
-        Comparator<VariantBase> comp = new Comparator<VariantBase>() {
-
-            @Override
-            public int compare(VariantBase o1, VariantBase o2) {
-                return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
-            }
-        };
+        // VariantBase[] variants = VariantBase.values();
+        // Comparator<VariantBase> comp = new Comparator<VariantBase>() {
+        //
+        // @Override
+        // public int compare(VariantBase o1, VariantBase o2) {
+        // return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
+        // }
+        // };
         ArrayList<AbstractVariantWrapper> sorted = new ArrayList<AbstractVariantWrapper>();
         for (AbstractVariant v : AbstractVariant.listVariants()) {
             sorted.add(new AbstractVariantWrapper(v));

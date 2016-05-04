@@ -97,17 +97,17 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
         }
     }
 
-    @Override
-    public double getQualityRating() {
-        double ret = super.getQualityRating();
-        if (getGenericInfo()._isTranslated()) {
-            ret /= 2;
-        }
-        if (getGenericInfo()._isSpeechToText()) {
-            ret /= 3;
-        }
-        return ret;
-    }
+    // @Override
+    // public double getQualityRating() {
+    // double ret = super.getQualityRating();
+    // if (getGenericInfo()._isTranslated()) {
+    // ret /= 2;
+    // }
+    // if (getGenericInfo()._isSpeechToText()) {
+    // ret /= 3;
+    // }
+    // return ret;
+    // }
 
     public String getDisplayLanguage() {
         return getGenericInfo()._getLocale().getDisplayLanguage();

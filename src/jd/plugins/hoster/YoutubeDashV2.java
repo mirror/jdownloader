@@ -29,7 +29,6 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.CompareUtils;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -69,7 +68,6 @@ import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialog;
 import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
-import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleVariantOld;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.DownloadType;
@@ -422,9 +420,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     break;
                                 } else {
                                     String url = cache.getBaseUrl();
-                                    if (false && vv.getQualityRating() > VideoResolution.P_360.getRating()) {
-                                        url = url.replace("signature=", "signature=BAD");
-                                    }
+                                    // if (false && vv.getQualityRating() > VideoResolution.P_360.getRating()) {
+                                    // url = url.replace("signature=", "signature=BAD");
+                                    // }
                                     br.openRequestConnection(new HeadRequest(url)).disconnect();
                                     con = br.getHttpConnection();
                                     if (con.getResponseCode() == 200) {
@@ -1959,7 +1957,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 AbstractVariant a1 = (AbstractVariant) o1;
                 AbstractVariant a2 = (AbstractVariant) o2;
 
-                return CompareUtils.compare(a2.getQualityRating(), a1.getQualityRating());
+                return a2.compareTo(a1);
             }
         });
         ArrayList<String> newIDList = new ArrayList<String>();

@@ -2,33 +2,26 @@ package org.jdownloader.plugins.components.youtube.itag;
 
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.jdownloader.plugins.components.youtube.YT_STATICS;
+import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 
 public enum VideoFrameRate implements IntegerInterface,LabelInterface {
-    FPS_60(60, 5, 100),
-    FPS_30(30, 3, 100),
+    FPS_60(60),
+    FPS_30(30),
+    FPS_24(24),
+    FPS_15(15),
+    FPS_6(6);
 
-    FPS_6(6, -5, 100),
-    FPS_15(15, -4, 100),
-    FPS_24(24, -1, 100);
-
-    private double rating = -1;
     private double fps;
 
     public double getFps() {
         return fps;
     }
 
-    private VideoFrameRate(double fps, double rating, double modifier) {
-        this.rating = rating / modifier;
+    private VideoFrameRate(double fps) {
+
         this.fps = fps;
-    }
-
-    public double getRating() {
-        return rating;
-    }
-
-    public void setRating(double rating) {
-        this.rating = rating;
     }
 
     public String getLabel() {
@@ -39,5 +32,25 @@ public enum VideoFrameRate implements IntegerInterface,LabelInterface {
     @Override
     public int getInt() {
         return (int) Math.ceil(getFps());
+    }
+
+    public static VideoFrameRate getByVariant(AbstractVariant o1) {
+        if (o1 instanceof VideoVariant) {
+            return ((VideoVariant) o1).getiTagVideo().getVideoFrameRate();
+        }
+        return null;
+    }
+
+    public static int getSortId(AbstractVariant v) {
+
+        VideoFrameRate res = getByVariant(v);
+        if (res == null) {
+            return -1;
+        }
+        Object intObj = YT_STATICS.SORTIDS_VIDEO_FRAMERATE.get(res);
+        if (intObj == null) {
+            return -1;
+        }
+        return ((Number) intObj).intValue();
     }
 }

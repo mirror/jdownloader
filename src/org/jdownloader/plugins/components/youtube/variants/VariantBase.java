@@ -510,7 +510,6 @@ public enum VariantBase {
 
     final private YoutubeITAG  iTagVideo;
 
-    private final double       qualityRating;
     final private DownloadType type;
 
     private FileContainer      container;
@@ -525,8 +524,8 @@ public enum VariantBase {
         this.type = type;
         this.iTagVideo = video;
         this.iTagAudio = audio;
-        this.qualityRating = 0d + (video != null ? video.getQualityRating() : 0) + (audio != null ? audio.getQualityRating() : 0) + (data != null ? data.getQualityRating() : 0) + container.getQualityRating();
         this.iTagData = data;
+
         this.converter = converter;
 
     }
@@ -566,18 +565,18 @@ public enum VariantBase {
         return getiTagAudio() == null && getGroup() == VariantGroup.AUDIO;
     }
 
-    public double getQualityRating() {
-
-        if (converter != null) {
-            return converter.getQualityRating(this, qualityRating);
-        }
-        if (isDemux()) {
-            // the higher the video overhead, the higher the penalty
-            double penaltyForDemux = getiTagVideo().getVideoResolution().getHeight() / 100000000d;
-            return getiTagVideo().getAudioCodec().getRating() + getiTagVideo().getAudioBitrate().getRating() - penaltyForDemux;
-        }
-        return this.qualityRating;
-    }
+    // public double getQualityRating() {
+    //
+    // if (converter != null) {
+    // return converter.getQualityRating(this, qualityRating);
+    // }
+    // if (isDemux()) {
+    // // the higher the video overhead, the higher the penalty
+    // double penaltyForDemux = getiTagVideo().getVideoResolution().getHeight() / 100000000d;
+    // return getiTagVideo().getAudioCodec().getRating() + getiTagVideo().getAudioBitrate().getRating() - penaltyForDemux;
+    // }
+    // return this.qualityRating;
+    // }
 
     public DownloadType getType() {
         return this.type;

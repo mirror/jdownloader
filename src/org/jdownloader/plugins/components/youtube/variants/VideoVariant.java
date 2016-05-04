@@ -171,16 +171,16 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         return VIDEO;
     }
 
-    @Override
-    public double getQualityRating() {
-        double base = getBaseVariant().getQualityRating();
-        if (getGenericInfo().getHeight() > 0) {
-            // we got the actuall height. let's use it for quality rating
-            base -= getBaseVariant().getiTagVideo().getVideoResolution().getRating();
-            base += Math.min(getGenericInfo().getWidth(), getGenericInfo().getHeight());
-        }
-        return base;
-    }
+    // @Override
+    // public double getQualityRating() {
+    // double base = getBaseVariant().getQualityRating();
+    // if (getGenericInfo().getHeight() > 0) {
+    // // we got the actuall height. let's use it for quality rating
+    // base -= getBaseVariant().getiTagVideo().getVideoResolution().getRating();
+    // base += Math.min(getGenericInfo().getWidth(), getGenericInfo().getHeight());
+    // }
+    // return base;
+    // }
 
     @Override
     public String getStandardGroupingID() {

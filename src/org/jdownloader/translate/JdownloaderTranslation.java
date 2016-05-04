@@ -1056,4 +1056,32 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Spatial Multichannel Audio" })
     String youtube_spatial();
 
+    @Default(lngs = { "en" }, values = { "Video Codec" })
+
+    String lit_video_codec();
+
+    @Default(lngs = { "en" }, values = { "Video Framerate" })
+
+    String lit_video_framerate();
+
+    @Default(lngs = { "en" }, values = { "Resolution" })
+
+    String lit_resolution();
+
+    @Default(lngs = { "en" }, values = { "Audio Bitrate" })
+
+    String lit_audio_bitrate();
+
+    @Default(lngs = { "en" }, values = { "Audio Codec" })
+
+    String lit_audio_codec();
+
+    @Default(lngs = { "en" }, values = { "Filetype" })
+
+    String lit_file_container();
+
+    @Default(lngs = { "en" }, values = { "Demux Audio" })
+
+    String youtube_demux();
+
 }

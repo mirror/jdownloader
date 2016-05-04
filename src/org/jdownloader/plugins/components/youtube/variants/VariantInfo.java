@@ -72,7 +72,7 @@ public class VariantInfo implements Comparable<VariantInfo> {
 
     @Override
     public int compareTo(VariantInfo o) {
-        return new Double(o.variant.getQualityRating()).compareTo(new Double(variant.getQualityRating()));
+        return variant.compareTo(o.variant);
     }
 
 }

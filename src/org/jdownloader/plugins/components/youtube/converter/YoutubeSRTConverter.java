@@ -8,7 +8,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.utils.SubtitleConverter;
 
 import jd.plugins.DownloadLink;
@@ -84,11 +83,6 @@ public class YoutubeSRTConverter implements YoutubeConverter {
             downloadLink.removePluginProgress(set);
         }
 
-    }
-
-    @Override
-    public double getQualityRating(VariantBase variantBase, double qualityRating) {
-        return qualityRating;
     }
 
 }
