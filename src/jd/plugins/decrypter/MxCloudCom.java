@@ -97,6 +97,7 @@ public class MxCloudCom extends PluginForDecrypt {
             final Regex originalinfo = new Regex(url_mp3_preview, "\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]*?\\.mp3)\"");
             final String previewLinkpart = originalinfo.getMatch(1);
             if (previewLinkpart != null) {
+                /* 2016-05-01: It seems like it is not possibly anymore to download the original uploaded file (mp3) :( */
                 /* TODO: Find a way to get that server dynamically */
                 final String mp3link = "https://stream19.mixcloud.com/c/originals/" + previewLinkpart;
                 tempLinks.add(mp3link);

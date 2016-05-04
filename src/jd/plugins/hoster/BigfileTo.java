@@ -48,9 +48,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigfile.to" }, urls = { "https?://(?:www\\.)?(uploadable\\.ch|bigfile\\.to)/file/[A-Za-z0-9]+" }, flags = { 2 })
-public class UploadableCh extends PluginForHost {
+public class BigfileTo extends PluginForHost {
 
-    public UploadableCh(PluginWrapper wrapper) {
+    public BigfileTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(baseDomain + "/extend.php");
         this.setConfigElements();
@@ -389,6 +389,8 @@ public class UploadableCh extends PluginForHost {
                     loginform.put("userPassword", Encoding.urlEncode(account.getPass()));
                     loginform.remove("autoLogin");
                     loginform.put("autoLogin", "on");
+                    loginform.remove("action__login");
+                    loginform.put("action__login", "normalLogin");
                     if (loginform.hasInputFieldByName("recaptcha_response_field")) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), baseDomain, true);
                         final Recaptcha rc = new Recaptcha(br, this);
@@ -458,7 +460,7 @@ public class UploadableCh extends PluginForHost {
 
     private boolean isNotLoggedIn(final Browser br, final Account account) throws IOException, PluginException {
         doesPasswordNeedChanging(br, account);
-        return br.getCookie(getHost(), "autologin") == null || StringUtils.containsIgnoreCase(br.getCookie(getHost(), "autologin"), "deleted") || !br.containsHTML("class=\"icon logout\"");
+        return !br.containsHTML("class=\"icon logout\"");
     }
 
     @SuppressWarnings("deprecation")

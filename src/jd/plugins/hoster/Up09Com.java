@@ -25,10 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,7 +45,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.up09.com" }, urls = { "https?://(www\\.)?file\\.up09\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.up09.com" }, urls = { "https?://file\\.up09\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class Up09Com extends PluginForHost {
 
     private String                         correctedBR                  = "";
