@@ -46,6 +46,9 @@ public class IndianPornVideosCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getDownloadURL().matches("https?://(www.)?indianpornvideos.com/(account|categories|contact-us|dmca|faq|feed|login|privacy|report-abuse|terms|wp-content|wp-includes|wp-json)")) {
+            return AvailableStatus.FALSE;
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
