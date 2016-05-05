@@ -18,16 +18,13 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -486,7 +483,6 @@ public class SharingZone extends PluginForHost {
 
     private static final Object LOCK = new Object();
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -494,21 +490,15 @@ public class SharingZone extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBrowser(this.br);
                 br.setFollowRedirects(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(mainpage, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    this.br.getPage(this.getProtocol() + this.getHost() + "/account_home.html");
+                    if (this.br.containsHTML("/logout.html\"")) {
+                        this.br.setCookies(this.getHost(), cookies);
                         return;
                     }
+                    this.br = prepBrowser(new Browser());
                 }
                 br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
@@ -537,17 +527,9 @@ public class SharingZone extends PluginForHost {
                     }
                 }
                 br.getPage(loginstart + this.getHost() + "/account_home." + type);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mainpage);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
