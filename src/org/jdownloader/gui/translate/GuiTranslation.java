@@ -4315,7 +4315,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Variant. e.g. *v[name]->'480p 30fps Mp4 Video' v[id]->'DEMUX_AAC_HLS_MP4_H264_360P_30FPS_AAC_128KBIT' " })
     String YoutubeHelper_getDescription_variantid2();
 
-    @Default(lngs = { "en" }, values = { "Variant tag. e.g. '1080p'" })
+    @Default(lngs = { "en" }, values = { "Variant tag. e.g. '1080p 30fps'" })
     String YoutubeHelper_getDescription_quality();
 
     @Default(lngs = { "en" }, values = { "Unique Video ID" })
