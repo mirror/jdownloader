@@ -419,10 +419,13 @@ public class FilesloopCom extends PluginForHost {
                 return;
             }
         }
-        this.getAPISafe(DOMAIN + "login?email=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
+        this.br.getPage(DOMAIN + "login?email=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
         currLogintoken = getJson("token");
         if (currLogintoken == null) {
-            /* Should never happen */
+            /* Errorhandling should cover failed login already */
+            updatestatuscode();
+            handleAPIErrors(this.br);
+            /* Should never happen - but we don't want an NPE to happen. */
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -534,6 +537,8 @@ public class FilesloopCom extends PluginForHost {
                 statuscode = 4;
             } else if (error.equalsIgnoreCase("invalid-file")) {
                 statuscode = 5;
+            } else if (error.equalsIgnoreCase("dl-error-too-many-logins")) {
+                statuscode = 6;
             } else {
                 statuscode = 666;
             }
@@ -583,14 +588,16 @@ public class FilesloopCom extends PluginForHost {
                 statusMessage = "Fatal API failure";
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nFataler API Fehler";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     statusMessage = "\r\nFatal API failure";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 5:
                 /* "invalid-file" --> The name itself has no meaning - its just a general error so we should retry */
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_apierror_invalidfile", 20, 5 * 60 * 1000l);
+            case 6:
+                statusMessage = "Too many logins - try re-logging in later";
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 100:
                 /* File offline - don't trust their API! */
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

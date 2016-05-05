@@ -305,9 +305,18 @@ public class VipCocoleechCom extends PluginForHost {
             ai.setValidUntil(timestamp_validuntil);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
+            account.setConcurrentUsePossible(true);
+            /*
+             * 2016-05-05: Accounts do not have general traffic limits - however there are individual host traffic limits see mainpage -->
+             * "Host Status": http://vip.cocoleech.com/
+             */
+            ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
+            /* 2016-05-05: According to admin, free accounts cannot download anything */
+            account.setConcurrentUsePossible(false);
+            ai.setTrafficLeft(0);
         }
 
         this.getAPISafe(API_ENDPOINT + "/status.php");
@@ -325,8 +334,6 @@ public class VipCocoleechCom extends PluginForHost {
             supportedhostslist.add(domain);
         }
         account.setValid(true);
-        account.setConcurrentUsePossible(true);
-        ai.setUnlimitedTraffic();
 
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
@@ -532,9 +539,9 @@ public class VipCocoleechCom extends PluginForHost {
                 statusMessage = "Missing http in front of link";
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_missinghttp_should_never_happen", 5, 10 * 60 * 1000l);
             case 203:
-                /* TODO: Clarify which limit is ment to be reached here - account limit or single filehost (daily) traffic limitation ... */
-                statusMessage = "Limit reached";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                /* Individual host limit is reached --> Temp disable that */
+                statusMessage = "Individual host limit reached";
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_individual_host", 3, 10 * 60 * 1000l);
             case 204:
                 statusMessage = "Filehost is under maintenance";
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_maintenance", 5, 10 * 60 * 1000l);
@@ -550,10 +557,15 @@ public class VipCocoleechCom extends PluginForHost {
                 statusMessage = "Failed to generate link";
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_failed_to_generate_final_downloadlink", 30, 10 * 60 * 1000l);
             case 666:
-                /* Unknown error */
-                statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
+                // /* Unknown error */
+                // statusMessage = "Unknown error";
+                // logger.info(NICE_HOST + ": Unknown API error");
+                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
+                /** TODO: Remove this once this plugin is in a stable state */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF");
+            default:
+                /** TODO: Remove this once this plugin is in a stable state */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF");
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
