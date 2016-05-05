@@ -156,11 +156,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else {
                 id = new Regex(parameter, "(?:v=|video_id=)(\\d+)").getMatch(0);
             }
-            decryptedLinks.add(createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + id));
+            final DownloadLink dl = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + id);
+            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (parameter.matches(TYPE_SINGLE_PHOTO)) {
             final String id = new Regex(parameter, "fbid=(\\d+)").getMatch(0);
-            decryptedLinks.add(createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id));
+            final DownloadLink dl = createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id);
+            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (parameter.matches(TYPE_FB_REDIRECT_TO_EXTERN_SITE)) {
             decryptedLinks.add(createDownloadlink(getRedirectToExternalSite(parameter)));
