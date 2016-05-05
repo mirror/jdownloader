@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,11 +50,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
@@ -100,7 +101,7 @@ public class VimeoCom extends PluginForHost {
         return -1;
     }
 
-    private static final AtomicReference<String> userAgent = new AtomicReference<String>("Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36");
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     public Browser prepBrGeneral(final DownloadLink dl, final Browser prepBr) {
         final String vimeo_forced_referer = dl != null ? getForcedReferer(dl) : null;
@@ -109,6 +110,9 @@ public class VimeoCom extends PluginForHost {
         }
         /* we do not want German headers! */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        while (userAgent.get() == null || userAgent.get().contains(" Chrome/")) {
+            userAgent.set(UserAgents.stringUserAgent());
+        }
         prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.setAllowedResponseCodes(418);
         return prepBr;
@@ -118,7 +122,7 @@ public class VimeoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        prepBrGeneral(downloadLink, this.br);
+        prepBrGeneral(downloadLink, br);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -127,13 +131,8 @@ public class VimeoCom extends PluginForHost {
         finalURL = downloadLink.getStringProperty("directURL", null);
         if (finalURL != null) {
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(finalURL);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(finalURL);
-                }
+                /* @since JD2 */
+                con = br.openHeadConnection(finalURL);
                 if (con.getContentType() != null && !con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
@@ -154,16 +153,15 @@ public class VimeoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Run decrypter again!");
         }
         setBrowserExclusive();
-        this.br = prepBrGeneral(downloadLink, new Browser());
-        this.br.setFollowRedirects(true);
+        br = prepBrGeneral(downloadLink, new Browser());
+        br.setFollowRedirects(true);
         if (usePrivateHandling(downloadLink)) {
             br.getPage("http://player.vimeo.com/video/" + ID);
-            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(getJson("message"))) {
+            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJson(br, "message"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            br.getPage("http://vimeo.com/" + ID);
-
+            br.getPage("https://vimeo.com/" + ID);
             /* Workaround for User from Iran */
             if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
                 br.getPage("http://player.vimeo.com/config/" + ID);
@@ -172,7 +170,7 @@ public class VimeoCom extends PluginForHost {
                 }
             }
 
-            handlePW(downloadLink, br, "http://vimeo.com/" + ID + "/password");
+            handlePW(downloadLink, br, "https://vimeo.com/" + ID + "/password");
         }
         // because names can often change by the uploader, like youtube.
         String name = getTitle(br);
@@ -181,17 +179,16 @@ public class VimeoCom extends PluginForHost {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (String quality[] : qualities) {
-            final String linkdupeid;
-            if (StringUtils.isNotEmpty(quality[7])) {
-                linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + "_" + quality[7];
-            } else {
-                linkdupeid = ID + "_" + quality[2] + "_" + quality[3];
-            }
-            // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross over!
-            if (StringUtils.equalsIgnoreCase(linkdupeid, downloadLink.getLinkID())) {
-                finalURL = quality[0];
-                break;
+        {
+            final String downloadlinkId = downloadLink.getLinkID().replace("_ORIGINAL", "");
+            for (String quality[] : qualities) {
+                final String linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "");
+                // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
+                // over!
+                if (StringUtils.equalsIgnoreCase(linkdupeid, downloadlinkId)) {
+                    finalURL = quality[0];
+                    break;
+                }
             }
         }
         if (finalURL == null) {
@@ -328,7 +325,7 @@ public class VimeoCom extends PluginForHost {
         synchronized (LOCK) {
             try {
                 setBrowserExclusive();
-                this.prepBrGeneral(null, br);
+                prepBrGeneral(null, br);
                 br.setFollowRedirects(true);
                 br.setDebug(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -429,18 +426,19 @@ public class VimeoCom extends PluginForHost {
         // qx[4] = bitrate (\d+)
         // qx[5] = fileSize (\d [a-zA-Z]{2})
         // qx[6] = Codec
-        // qx[6] = ID
+        // qx[7] = ID
+
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (configURL == null) {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
-            configURL = JSonUtils.getJson(ibr, "config_url");
+            configURL = PluginJSonUtils.getJson(ibr, "config_url");
         }
         if (ibr.containsHTML("download_config")) {
             // new//
             Browser gq = ibr.cloneBrowser();
             /* With dl button */
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String json = gq.getPage("http://vimeo.com/" + ID + "?action=load_download_config");
+            final String json = gq.getPage("/" + ID + "?action=load_download_config");
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
             final List<Object> files = (List<Object>) entries.get("files");
             if (files != null) {
@@ -475,7 +473,7 @@ public class VimeoCom extends PluginForHost {
             Browser gq = ibr.cloneBrowser();
             /* With dl button */
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            gq.getPage("http://vimeo.com/" + ID + "?action=download");
+            gq.getPage("/" + ID + "?action=download");
             /* german accept language will effect the language of this response, Datei instead of file. */
             String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / ((?:\\d+\\.)?\\d+MB)\\)</span>").getMatches();
             if (q != null) {
@@ -768,16 +766,6 @@ public class VimeoCom extends PluginForHost {
             ut_pluginLoaded = true;
         }
         return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(this.br, key);
     }
 
     private String getForcedReferer(final DownloadLink dl) {
