@@ -20,6 +20,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,10 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 2 })
 public class DepfileCom extends PluginForHost {
@@ -201,7 +201,8 @@ public class DepfileCom extends PluginForHost {
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
+                            // enforce english! this correction is only needed until next core update! -raztoki20160506
+                            final String value = "sdlanguageid".equals(key) && !"2".equals(cookieEntry.getValue()) ? "2" : cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
                         return;
@@ -209,10 +210,13 @@ public class DepfileCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://depfile.com/", "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
-                // Language not English? Change setting and go on!
+                /*
+                 * they set language based on account profile, so it can be wrong post login. Language not English? Change setting and go
+                 * on!
+                 */
                 if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
                     br.setCookie(MAINPAGE, "sdlanguageid", "2");
-                    br.getPage("https://depfile.com/");
+                    br.getPage("/");
                 }
 
                 if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null) {
@@ -253,7 +257,7 @@ public class DepfileCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -329,9 +333,9 @@ public class DepfileCom extends PluginForHost {
                     } while ((verifycode = getVerifyCode()) != null);
                 }
             }
-            String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
+            String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(https?://.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(\"|')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)\\1").getMatch(1);
+                dllink = br.getRegex("(\"|')(https?://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)\\1").getMatch(1);
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
