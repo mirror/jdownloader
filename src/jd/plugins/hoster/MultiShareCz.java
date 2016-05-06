@@ -203,7 +203,7 @@ public class MultiShareCz extends antiDDoSForHost {
 
     private void dlGeneratedMhLink(final DownloadLink downloadLink) throws Exception {
         requestFileInformationMh(downloadLink);
-        handleDl(downloadLink, br.getURL());
+        handleDl(downloadLink, br.getURL(), 1);
     }
 
     public AvailableStatus requestFileInformationMh(DownloadLink dl) throws PluginException, IOException {
@@ -263,15 +263,26 @@ public class MultiShareCz extends antiDDoSForHost {
         if (br.containsHTML("ERR: Invalid password\\.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        String dllink = getJson("link");
+        final String dllink = getJson("link");
+        final String maxChunks = getJson("chunks");
         if (dllink == null) {
             handleUnknownErrors(this.currentAcc, link, "dllinknull", 10);
         }
-        handleDl(link, dllink);
+        int chunks = 1;
+        if (maxChunks != null) {
+            try {
+                final int tmp = Integer.parseInt(maxChunks);
+                if (tmp > 1) {
+                    chunks = -tmp;
+                }
+            } catch (final Throwable e) {
+            }
+        }
+        handleDl(link, dllink, chunks);
     }
 
-    private void handleDl(final DownloadLink downloadLink, final String dllink) throws Exception {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+    private void handleDl(final DownloadLink downloadLink, final String dllink, int chunks) throws Exception {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             dl.startDownload();
