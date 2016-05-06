@@ -313,7 +313,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         List<Map<String, Object>> tracks = (List<Map<String, Object>>) data.get("tracks");
         if (tracks == null || tracks.size() == 0) {
-            br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION);
+            br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
             data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
             tracks = (List<Map<String, Object>>) data.get("tracks");
         }
@@ -529,12 +529,12 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
-            final String next_page_url = "https://api.soundcloud.com/groups/" + group_id + "/tracks?app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=approved_at";
+            final String next_page_url = "https://api.soundcloud.com/groups/" + group_id + "/tracks?app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=approved_at";
             br.getPage(next_page_url);
             final int pre = decryptedLinks.size();
             final List<Map<String, Object>> collection = parseCollection();
             if (decryptedLinks.size() != pre + max_entries_per_request) {
-                
+
             }
             if (collection == null || collection.size() < max_entries_per_request) {
                 break;
@@ -622,7 +622,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         String next_href = null;
         String offset = "0";
         do {
-            final String base = "https://api-v2.soundcloud.com/stream/users/" + userID + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION;
+            final String base = "https://api-v2.soundcloud.com/stream/users/" + userID + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br);
             br.getPage(base);
             List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() != maxPerCall) {

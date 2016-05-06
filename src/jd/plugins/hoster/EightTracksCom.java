@@ -461,8 +461,8 @@ public class EightTracksCom extends antiDDoSForHost {
         return dllink;
     }
 
-    private void accessSoundcloudLink(final Browser brsc, final String sclink) throws IOException {
-        brsc.getPage("https://api.soundcloud.com/tracks/" + getSoundcloudTrackID(sclink) + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION + "&format=json");
+    private void accessSoundcloudLink(final Browser brsc, final String sclink) throws IOException, PluginException {
+        brsc.getPage("https://api.soundcloud.com/tracks/" + getSoundcloudTrackID(sclink) + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(null) + "&format=json");
     }
 
     private String getSoundcloudTrackID(final String sclink) {
@@ -547,7 +547,8 @@ public class EightTracksCom extends antiDDoSForHost {
             current_downloadlink.setProperty("playtoken", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Avoiding limit");
             // final String hours =
-            // br.getRegex("We\\'re sorry, our music license requires us to limit the number of times you can play a particular mix in an (\\d+)\\-hour period\\.").getMatch(0);
+            // br.getRegex("We\\'re sorry, our music license requires us to limit the number of times you can play a particular mix in an
+            // (\\d+)\\-hour period\\.").getMatch(0);
             // if (hours != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(hours) * 60 * 60 * 1001l); }
             // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
