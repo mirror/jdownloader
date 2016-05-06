@@ -13,15 +13,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.IO;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaAutoSolver;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.statistics.StatsManager;
-
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,6 +22,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.ThrowingRunnable;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaAutoSolver;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.statistics.StatsManager;
 
 public class KeyCaptcha {
     public static enum KeyCaptchaType {
@@ -368,13 +367,9 @@ public class KeyCaptcha {
     }
 
     private ScriptEngine getScriptEngine() {
-        try {
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            return engine;
-        } catch (Throwable e) {
-            throw new WTFException("Could not load org.jdownloader.scripting.JavaScriptEngineFactory", e);
-        }
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        return engine;
     }
 
     private String evalGHS(String arg0, String arg1) throws Exception {
