@@ -20,8 +20,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,39 +29,41 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 1 $", interfaceVersion = 1, names = { "mp3.zing.vn" }, urls = { "http://mp3\\.zing\\.vn/album/(\\S+)" }, flags = { 0 })
-public class ZingMp3 extends PluginForDecrypt {
+/**
+ *
+ * @author noone2407
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.zing.vn" }, urls = { "http://mp3\\.zing\\.vn/album/\\S+" }, flags = { 0 })
+public class Mp3ZingVn extends PluginForDecrypt {
 
-    public ZingMp3(PluginWrapper wrapper) {
+    public Mp3ZingVn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String url = parameter.getCryptedUrl();
-        br.setDebug(true);
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String url = parameter.toString();
         br.setFollowRedirects(true);
         br.getPage(url);
         // package name
         String title = br.getRegex("<title[^>]*>(.*?)</title>").getMatch(0);
-        title = title.split("\\|")[0];
-        FilePackage filePackage = FilePackage.getInstance();
-        filePackage.setName(title);
+        if (title != null) {
+            title = title.split("\\|")[0];
+        }
         // get all songs
-        List<String> allMatches = new ArrayList<String>();
-        Matcher m = br.getRegex("\"http://mp3.zing.vn/bai-hat/(.*?)\"").getMatcher();
-        while (m.find()) {
-            if (!allMatches.contains(m.group())) {
-                allMatches.add(m.group());
+        final String[] allMatches = br.getRegex("\"(http://mp3.zing.vn/bai-hat/.*?)\"").getColumn(0);
+        if (allMatches != null) {
+            for (final String s : allMatches) {
+                decryptedLinks.add(createDownloadlink(s));
             }
         }
-        String link = null;
-        for (final String s : allMatches) {
-            link = s.replace("\"", "");
-            DownloadLink dllink = createDownloadlink(link);
-            dllink._setFilePackage(filePackage);
-            decryptedLinks.add(dllink);
+        if (title != null) {
+            final FilePackage filePackage = FilePackage.getInstance();
+            filePackage.setName(title);
+            filePackage.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

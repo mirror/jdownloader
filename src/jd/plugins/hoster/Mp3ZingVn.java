@@ -29,12 +29,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 1, names = { "mp3.zing.vn" }, urls = { "http://mp3\\.zing\\.vn/bai-hat/(\\S+).html" }, flags = { 2 })
-public class ZingMp3 extends PluginForHost {
+/**
+ * @author noone2407
+ * @author raztoki
+ *
+ */
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.zing.vn" }, urls = { "http://mp3\\.zing\\.vn/bai-hat/(\\S+)\\.html$" }, flags = { 0 })
+public class Mp3ZingVn extends PluginForHost {
 
     private String dllink = null;
 
-    public ZingMp3(PluginWrapper wrapper) {
+    public Mp3ZingVn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -47,22 +52,27 @@ public class ZingMp3 extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
-        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(url);
         String filename = br.getRegex("<h1 class=\"txt-primary\">(.*?)<\\/h1>").getMatch(0);
-        downloadLink.setName(filename);
-        downloadLink.setFinalFileName(filename + ".mp3");
-        downloadLink.setHost("mp3.zing.vn");
-        String datacode = br.getRegex("<a\\s+(?:[^>]*?\\s+)?data-code=\"(.*?)\"").getMatch(0);
-        String json_source = br.getPage("http://mp3.zing.vn/xhr/song/get-download?panel=.fn-tab-panel-service&code=" + datacode + "&group=.fn-tab-panel");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json_source);
-        String datalink = (String) DummyScriptEnginePlugin.walkJson(entries, "data/128/link");
-        Integer datasize = (Integer) DummyScriptEnginePlugin.walkJson(entries, "data/128/size");
-        Boolean vip = (Boolean) DummyScriptEnginePlugin.walkJson(entries, "data/128/vip");
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setFinalFileName(filename.replaceFirst("\\.{3}$", "").replace(":", "-") + ".mp3");
+        final String datacode = br.getRegex("<a\\s+(?:[^>]*?\\s+)?data-code=\"(.*?)\"").getMatch(0);
+        final String json_source = br.getPage("http://mp3.zing.vn/xhr/song/get-download?panel=.fn-tab-panel-service&code=" + datacode + "&group=.fn-tab-panel");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json_source);
+        if ("Không thể download bài hát này vì yêu cầu từ nhà sở hữu bản quyền.".equals(entries.get("msg"))) {
+            // from google translate
+            // Unable to download this song because the request from the copyright owner.
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String datalink = (String) DummyScriptEnginePlugin.walkJson(entries, "data/128/link");
+        final Integer datasize = (Integer) DummyScriptEnginePlugin.walkJson(entries, "data/128/size");
+        final Boolean vip = (Boolean) DummyScriptEnginePlugin.walkJson(entries, "data/128/vip");
         dllink = datalink;
         downloadLink.setDownloadSize(datasize);
-        if (vip != null && vip == true) {
+        if (Boolean.TRUE.equals(vip)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
 
