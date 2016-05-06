@@ -133,7 +133,7 @@ public class VimeoCom extends PluginForHost {
             try {
                 /* @since JD2 */
                 con = br.openHeadConnection(finalURL);
-                if (con.getContentType() != null && !con.getContentType().contains("html")) {
+                if (con.getContentType() != null && !con.getContentType().contains("html") && con.isOK()) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
                     return AvailableStatus.TRUE;
@@ -220,6 +220,7 @@ public class VimeoCom extends PluginForHost {
         if (finalURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.getPage(downloadLink.getDownloadURL());
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

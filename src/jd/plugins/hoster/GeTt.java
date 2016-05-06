@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -31,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://((www|open|api)\\.)?ge\\.tt/(api/)?\\d/files/[0-9a-zA-z]+/\\d+/blob(\\?download)?" }, flags = { 0 })
 public class GeTt extends PluginForHost {
@@ -121,7 +121,7 @@ public class GeTt extends PluginForHost {
         if (dllink.contains(LIMITREACHED)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, LIMITREACHEDUSERTEXT, 30 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
