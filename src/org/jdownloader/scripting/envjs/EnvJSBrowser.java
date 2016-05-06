@@ -3,6 +3,8 @@ package org.jdownloader.scripting.envjs;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,16 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.SwingUtilities;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.scripting.ContextCallback;
-import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -52,6 +44,16 @@ import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.Main;
 import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.SourceProvider;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.scripting.ContextCallback;
+import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
+
 public class EnvJSBrowser implements ContextCallback {
     static {
         try {
@@ -76,7 +78,11 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public String getCookieStringByUrl(String url) {
-        return Request.getCookieString(br.getCookies(url));
+        try {
+            return Request.getCookieString(br.getCookies(url), new URL(url));
+        } catch (MalformedURLException e) {
+            throw new WTFException(e);
+        }
     }
 
     public void logToConsole(String message) {
@@ -445,8 +451,8 @@ public class EnvJSBrowser implements ContextCallback {
 
                 /**
                  * Returns the name of the function corresponding to this frame, if it is a function and it has a name. If the function does
-                 * not have a name, this method will try to return the name under which it was referenced. See
-                 * <a href="http://www.digital-web.com/articles/scope_in_javascript/">this page</a> for a good explanation of how the
+                 * not have a name, this method will try to return the name under which it was referenced. See <a
+                 * href="http://www.digital-web.com/articles/scope_in_javascript/">this page</a> for a good explanation of how the
                  * <tt>thisObj</tt> plays into this guess.
                  *
                  * @param thisObj
