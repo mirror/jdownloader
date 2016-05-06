@@ -71,9 +71,9 @@ public class TvZingVn extends PluginForDecrypt {
         final String[] pages = br.getRegex("<a title=\"Trang \\d+\" \\S+>\\d+</a>").getColumn(-1);
         int totalPage = pages != null && pages.length != 0 ? pages.length : 1;
 
-        for (int i = 1; i <= totalPage; i++) {
+        for (int i = 0; i <= totalPage; i++) {
             // get all video
-            if (i > 1) {
+            if (i > 0) {
                 br.getPage("?p=" + i);
             }
             final String[] allvideos = br.getRegex("(/video/[a-zA-Z0-9\\-]+/[a-zA-Z0-9\\-]+.html)").getColumn(0);
