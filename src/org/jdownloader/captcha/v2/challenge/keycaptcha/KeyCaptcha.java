@@ -3,7 +3,6 @@ package org.jdownloader.captcha.v2.challenge.keycaptcha;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -14,6 +13,15 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.IO;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaAutoSolver;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.statistics.StatsManager;
+
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -22,18 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.ThrowingRunnable;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import jd.utils.JDUtilities;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.IO;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaAutoSolver;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.statistics.StatsManager;
 
 public class KeyCaptcha {
     public static enum KeyCaptchaType {
@@ -145,8 +142,11 @@ public class KeyCaptcha {
             while ((redirect = rcBr.getRedirectLocation()) != null) {
                 base = new Regex(redirect, "(http.+/)swfs/").getMatch(0);
                 rcBr.getHeaders().put("Referer", downloadUrl);
-
+                rcBr.addAllowedResponseCodes(502);
                 rcBr.getPage(redirect);
+                if (rcBr.getHttpConnection().getResponseCode() == 502) {
+                    continue;
+                }
             }
             capsUrl = getCapsUrl(rcBr.getRegex("(var _13=[^;]+;)").getMatch(0));
             rcBr.getHeaders().put("Referer", downloadUrl);
@@ -368,10 +368,8 @@ public class KeyCaptcha {
     }
 
     private ScriptEngine getScriptEngine() {
-        final PluginForHost plugin = JDUtilities.getPluginForHost("DummyScriptEnginePlugin");
         try {
-            final Method method = plugin.getClass().getMethod("getScriptEngineManager", new Class[] { Object.class });
-            final ScriptEngineManager manager = (ScriptEngineManager) method.invoke(null, this);
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             return engine;
         } catch (Throwable e) {
@@ -839,7 +837,6 @@ public class KeyCaptcha {
             parse();
             load();
         } catch (final Throwable e) {
-
             throw new Exception(e);
         } finally {
             try {
