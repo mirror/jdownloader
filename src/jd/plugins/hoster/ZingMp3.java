@@ -62,7 +62,7 @@ public class ZingMp3 extends PluginForHost {
         Boolean vip = (Boolean) DummyScriptEnginePlugin.walkJson(entries, "data/128/vip");
         dllink = datalink;
         downloadLink.setDownloadSize(datasize);
-        if (vip == true) {
+        if (vip != null && vip == true) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
 
