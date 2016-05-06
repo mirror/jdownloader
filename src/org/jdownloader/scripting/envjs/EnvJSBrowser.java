@@ -15,6 +15,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.SwingUtilities;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.scripting.ContextCallback;
+import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
+
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -42,16 +52,6 @@ import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.Main;
 import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.SourceProvider;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.scripting.ContextCallback;
-import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
-
 public class EnvJSBrowser implements ContextCallback {
     static {
         try {
@@ -73,6 +73,10 @@ public class EnvJSBrowser implements ContextCallback {
     public static EnvJSBrowser get(long id) {
 
         return INSTANCES.get(id).get();
+    }
+
+    public String getCookieStringByUrl(String url) {
+        return Request.getCookieString(br.getCookies(url));
     }
 
     public void logToConsole(String message) {
@@ -441,8 +445,8 @@ public class EnvJSBrowser implements ContextCallback {
 
                 /**
                  * Returns the name of the function corresponding to this frame, if it is a function and it has a name. If the function does
-                 * not have a name, this method will try to return the name under which it was referenced. See <a
-                 * href="http://www.digital-web.com/articles/scope_in_javascript/">this page</a> for a good explanation of how the
+                 * not have a name, this method will try to return the name under which it was referenced. See
+                 * <a href="http://www.digital-web.com/articles/scope_in_javascript/">this page</a> for a good explanation of how the
                  * <tt>thisObj</tt> plays into this guess.
                  *
                  * @param thisObj
@@ -703,7 +707,7 @@ public class EnvJSBrowser implements ContextCallback {
             // var DEBUG_LEVEL=DEBUG_LEVEL;
             // var require=require;
             // evaluateTrustedString(cx, scope,
-            // "Envjs.scriptTypes[\"text/javascript\"] = {\"text/javascript\"   :true,   \"text/envjs\"        :true};", "js", 1, null);
+            // "Envjs.scriptTypes[\"text/javascript\"] = {\"text/javascript\" :true, \"text/envjs\" :true};", "js", 1, null);
         } catch (Throwable e) {
             throw new WTFException(e);
         } finally {
@@ -858,7 +862,6 @@ public class EnvJSBrowser implements ContextCallback {
                 break;
             }
         }
-        
 
     }
 
