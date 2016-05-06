@@ -877,11 +877,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String fpName = getPageTitle();
         final String rev = getRev(this.br);
         final String user = getUser(this.br);
-        final String dyn = getDyn();
+        final String dyn = "7AzHK5kcxx2u6V45E9odoyEhy8jXWo466EeVEoyUnwgU6C7RyUcWwAyUG4UeUuwh9UcU88lwIxWcwJwpV9UK";
         final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
         final String ajaxpipe_token = getajaxpipeToken();
-        final String controller = "GroupPhotosetPagelet";
-        final String group_id = new Regex(parameter, "groups/(\\d+)/").getMatch(0);
+        // this should be 'GroupPhotosetPagelet'
+        String controller = updateControllerAndData(br);
         if (user == null || ajaxpipe_token == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return;
@@ -892,7 +892,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
         fp = FilePackage.getInstance();
         fp.setName(fpName);
-        boolean dynamicLoadAlreadyDecrypted = false;
         // Use this as default as an additional fail safe
         long totalPicsNum = MAX_PICS_DEFAULT;
         if (totalPicCount != null) {
@@ -918,22 +917,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Server says the set is fully loaded -> Stopping");
                     break;
                 }
-                final String currentLastFbid = getLastFBID();
-                // If we have exactly currentMaxPicCount pictures then we reload one
-                // time and got all, 2nd time will then be 0 more links
-                // -> Stop
-                if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
-                    break;
-                } else if (currentLastFbid == null) {
-                    logger.warning("Decrypter maybe broken for link: " + parameter);
-                    logger.info("Returning already decrypted links anyways...");
-                    break;
-                }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A120%2C%22group_id%22%3A" + group_id + "%7D&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=" + i + "&__rev=" + rev;
+                final String loadLink = "/ajax/pagelet/generic.php/" + controller + "?dpr=1&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__be=0&__pc=EXP1%3ADEFAULT&__rev=" + rev + "__adt=" + i;
                 getPage(loadLink);
                 links = br.getRegex("\"(https?://(www\\.)?facebook\\.com/(photo\\.php\\?(fbid|v)=|media/set/\\?set=oa\\.)\\d+)").getColumn(0);
                 currentMaxPicCount = 40;
-                dynamicLoadAlreadyDecrypted = true;
             } else {
                 links = br.getRegex("\"(https?://(www\\.)?facebook\\.com/(photo\\.php\\?(fbid|v)=|media/set/\\?set=oa\\.)\\d+)").getColumn(0);
             }
@@ -964,6 +951,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 distribute(dl);
                 decryptedLinks.add(dl);
                 decryptedPicsNum++;
+            }
+            if (i >= 2) {
+                // we need to update last last_fbid
+                controller = updateControllerAndData(br);
+                if (controller == null || data == null) {
+                    logger.info("Couldn't find 'updateController' response, task completed!");
+                    stop = true;
+                }
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount) {
