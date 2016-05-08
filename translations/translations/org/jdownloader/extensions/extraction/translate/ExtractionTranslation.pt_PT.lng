@@ -29,6 +29,7 @@ context_password_msg=Definir senha para extrair %s1.
 context_password_msg2=Definir senha para extrair %s1. Sugestão: %s2
 context_password_msg2_multi=Definir senha. Sugestão: %s1
 context_password_msg_multi=Definir senha
+contextmenu_abort=Interromper extração
 contextmenu_autodeletefiles='Eliminar arquivos' ativado
 contextmenu_autodeletelinks='Eliminar ligaçoes da lista de descarga' ligado
 contextmenu_autoextract=Extração automática habilitada
