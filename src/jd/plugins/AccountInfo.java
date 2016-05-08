@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -23,10 +24,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -36,6 +33,11 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+import jd.utils.JDUtilities;
 
 public class AccountInfo extends Property {
 
@@ -149,7 +151,8 @@ public class AccountInfo extends Property {
         if (validUntil == 0) {
             return true;
         }
-        return validUntil < System.currentTimeMillis();
+        final boolean expired = validUntil < System.currentTimeMillis();
+        return expired;
     }
 
     public void setAccountBalance(final long parseInt) {
@@ -264,7 +267,13 @@ public class AccountInfo extends Property {
             }
         }
         if (serverTime > 0) {
-            setValidUntil(validuntil + (System.currentTimeMillis() - serverTime));
+            final long a1 = validuntil + (System.currentTimeMillis() - serverTime);
+            if (false) {
+                final Date b1 = new Date(a1);
+                final SimpleDateFormat s = new SimpleDateFormat("dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+                System.out.println("Valid until: " + s.format(b1));
+            }
+            setValidUntil(a1);
             return true;
         } else {
             // failover
@@ -298,12 +307,47 @@ public class AccountInfo extends Property {
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {
         if (multiHostSupportList != null && multiHostSupportList.size() > 0) {
-            final ArrayList<String> multiHostSupport = new ArrayList<String>(multiHostSupportList);
+            final ArrayList<String> multiHostSupport = new ArrayList<String>();
+            // lets do some preConfiguring, and match hosts which do not contain tld
+            {
+                HostPluginController hpc = null;
+                for (final String host : multiHostSupportList) {
+                    final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
+                    /*
+                     * if the multihoster doesn't include full host name with tld, we can search and add all partial matches!
+                     */
+                    if (!cleanup.contains(".")) {
+                        if (hpc == null) {
+                            hpc = HostPluginController.getInstance();
+                        }
+                        for (final LazyHostPlugin lhp : hpc.list()) {
+                            final PluginForHost plugin = JDUtilities.getPluginForHost(lhp.getHost());
+                            final String classname = lhp.getClassName();
+                            if (classname == null || classname.endsWith("r.Offline")) {
+                                continue;
+                            }
+                            /*
+                             * because they might add a wrong name (not primary), siteSupportedNames provides array of _ALL_ supported
+                             * siteNames.
+                             */
+                            final String[] moreHosts = plugin.siteSupportedNames();
+                            for (final String d : (moreHosts == null ? new String[] { lhp.getHost() } : moreHosts)) {
+                                if (StringUtils.containsIgnoreCase(d, cleanup)) {
+                                    // add the primary
+                                    multiHostSupport.add(lhp.getHost());
+                                }
+                            }
+                        }
+                    } else {
+                        multiHostSupport.add(cleanup);
+                    }
+                }
+            }
+            // sorting will now work properly since they are all pre-corrected to lowercase.
             Collections.sort(multiHostSupport, new NaturalOrderComparator());
             final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
-            for (String host : multiHostSupport) {
+            for (final String host : multiHostSupport) {
                 if (host != null) {
-                    host = host.toLowerCase(Locale.ENGLISH);
                     final String assignedHost;
                     if (pluginFinder == null) {
                         assignedHost = host;
