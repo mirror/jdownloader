@@ -30,6 +30,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -37,7 +38,6 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.NaturalOrderComparator;
-import jd.utils.JDUtilities;
 
 public class AccountInfo extends Property {
 
@@ -307,23 +307,30 @@ public class AccountInfo extends Property {
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {
         if (multiHostSupportList != null && multiHostSupportList.size() > 0) {
-            final ArrayList<String> multiHostSupport = new ArrayList<String>();
+            final HostPluginController hpc = HostPluginController.getInstance();
+            final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
             // lets do some preConfiguring, and match hosts which do not contain tld
-            {
-                HostPluginController hpc = null;
-                for (final String host : multiHostSupportList) {
-                    final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
-                    /*
-                     * if the multihoster doesn't include full host name with tld, we can search and add all partial matches!
-                     */
-                    if (!cleanup.contains(".")) {
-                        if (hpc == null) {
-                            hpc = HostPluginController.getInstance();
+            for (final String host : multiHostSupportList) {
+                final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
+                /*
+                 * if the multihoster doesn't include full host name with tld, we can search and add all partial matches!
+                 */
+                if (cleanup.indexOf('.') == -1) {
+                    for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
+                        if (lazyHostPlugin.isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
+                            continue;
                         }
-                        for (final LazyHostPlugin lhp : hpc.list()) {
-                            final PluginForHost plugin = JDUtilities.getPluginForHost(lhp.getHost());
-                            final String classname = lhp.getClassName();
-                            if (classname == null || classname.endsWith("r.Offline")) {
+                        if (StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), cleanup)) {
+                            supportedHostsSet.add(lazyHostPlugin.getHost());
+                        } else {
+                            final PluginForHost plugin;
+                            try {
+                                plugin = lazyHostPlugin.getPrototype(null);
+                                if (plugin == null || plugin.getLazyP().isFallbackPlugin()) {
+                                    continue;
+                                }
+                            } catch (UpdateRequiredClassNotFoundException e) {
+                                LogController.CL().log(e);
                                 continue;
                             }
                             /*
@@ -331,42 +338,47 @@ public class AccountInfo extends Property {
                              * siteNames.
                              */
                             final String[] moreHosts = plugin.siteSupportedNames();
-                            for (final String d : (moreHosts == null ? new String[] { lhp.getHost() } : moreHosts)) {
-                                if (StringUtils.containsIgnoreCase(d, cleanup)) {
-                                    // add the primary
-                                    multiHostSupport.add(lhp.getHost());
+                            if (moreHosts != null) {
+                                for (final String moreHost : moreHosts) {
+                                    if (StringUtils.containsIgnoreCase(moreHost, cleanup)) {
+                                        supportedHostsSet.add(lazyHostPlugin.getHost());
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    } else {
-                        multiHostSupport.add(cleanup);
                     }
+                } else {
+                    supportedHostsSet.add(cleanup);
                 }
             }
             // sorting will now work properly since they are all pre-corrected to lowercase.
+            final List<String> multiHostSupport = new ArrayList<String>(supportedHostsSet);
             Collections.sort(multiHostSupport, new NaturalOrderComparator());
-            final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
+            supportedHostsSet.clear();
             for (final String host : multiHostSupport) {
-                if (host != null) {
+                if (host != null && !supportedHostsSet.contains(host)) {
                     final String assignedHost;
                     if (pluginFinder == null) {
                         assignedHost = host;
                     } else {
                         assignedHost = pluginFinder.assignHost(host);
                     }
-                    final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(assignedHost);
-                    if (lazyPlugin != null && !lazyPlugin.getClassName().endsWith("r.Offline") && !supportedHostsSet.contains(lazyPlugin.getHost())) {
-                        try {
-                            if (!lazyPlugin.isHasAllowHandle()) {
-                                supportedHostsSet.add(lazyPlugin.getHost());
-                            } else {
-                                final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
-                                if (lazyPlugin.getPrototype(null).allowHandle(link, multiHostPlugin)) {
+                    if (assignedHost != null && !supportedHostsSet.contains(assignedHost)) {
+                        final LazyHostPlugin lazyPlugin = hpc.get(assignedHost);
+                        if (lazyPlugin != null && !lazyPlugin.isOfflinePlugin() && !lazyPlugin.isFallbackPlugin() && !supportedHostsSet.contains(lazyPlugin.getHost())) {
+                            try {
+                                if (!lazyPlugin.isHasAllowHandle()) {
                                     supportedHostsSet.add(lazyPlugin.getHost());
+                                } else {
+                                    final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
+                                    if (lazyPlugin.getPrototype(null).allowHandle(link, multiHostPlugin)) {
+                                        supportedHostsSet.add(lazyPlugin.getHost());
+                                    }
                                 }
+                            } catch (final Throwable e) {
+                                LogController.CL().log(e);
                             }
-                        } catch (final Throwable e) {
-                            LogController.CL().log(e);
                         }
                     }
                 }
@@ -377,6 +389,7 @@ public class AccountInfo extends Property {
             }
         }
         this.setProperty("multiHostSupport", Property.NULL);
+
     }
 
     public List<String> getMultiHostSupport() {

@@ -12,7 +12,8 @@ import jd.plugins.PluginForHost;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
-    public static enum FEATURE implements LabelInterface,TooltipInterface {
+    public static enum FEATURE
+            implements LabelInterface, TooltipInterface {
 
         USENET {
             @Override
@@ -80,6 +81,14 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     public FEATURE[] getFeatures() {
         return features;
+    }
+
+    public boolean isFallbackPlugin() {
+        return "UpdateRequired".equalsIgnoreCase(getDisplayName());
+    }
+
+    public boolean isOfflinePlugin() {
+        return getClassName().endsWith("r.Offline");
     }
 
     public boolean hasFeature(FEATURE feature) {
