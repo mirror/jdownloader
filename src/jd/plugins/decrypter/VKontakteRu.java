@@ -91,6 +91,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     ALLOW_360P                              = "ALLOW_360P";
     private static final String     ALLOW_480P                              = "ALLOW_480P";
     private static final String     ALLOW_720P                              = "ALLOW_720P";
+    private static final String     ALLOW_1080P                             = "ALLOW_1080P";
     private static final String     VKWALL_GRAB_ALBUMS                      = "VKWALL_GRAB_ALBUMS";
     private static final String     VKWALL_GRAB_PHOTOS                      = "VKWALL_GRAB_PHOTOS";
     private static final String     VKWALL_GRAB_AUDIO                       = "VKWALL_GRAB_AUDIO";
@@ -718,11 +719,13 @@ public class VKontakteRu extends PluginForDecrypt {
                 boolean q360p = cfg.getBooleanProperty(ALLOW_360P, false);
                 boolean q480p = cfg.getBooleanProperty(ALLOW_480P, false);
                 boolean q720p = cfg.getBooleanProperty(ALLOW_720P, false);
-                if (q240p == false && q360p == false && q480p == false && q720p == false) {
+                boolean q1080p = cfg.getBooleanProperty(ALLOW_1080P, false);
+                if (!q240p && !q360p && !q480p && !q720p && !q1080p) {
                     q240p = true;
                     q360p = true;
                     q480p = true;
                     q720p = true;
+                    q1080p = true;
                 }
                 if (q240p) {
                     selectedQualities.add("240p");
@@ -735,6 +738,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 if (q720p) {
                     selectedQualities.add("720p");
+                }
+                if (q1080p) {
+                    selectedQualities.add("1080p");
                 }
             }
             for (final String selectedQualityValue : selectedQualities) {
@@ -972,7 +978,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /** Find needed information */
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
-        final String[][] qualities = { { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
+        final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         for (final String[] qualityInfo : qualities) {
             String finallink = PluginJSonUtils.getJson(br, qualityInfo[0]);
