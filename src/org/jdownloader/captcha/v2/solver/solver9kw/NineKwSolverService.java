@@ -7,14 +7,6 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -35,6 +27,14 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public class NineKwSolverService extends AbstractSolverService implements ServicePanelExtender {
     private static final NineKwSolverService INSTANCE = new NineKwSolverService();
@@ -113,7 +113,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
         try {
             String servercheck = br.getPage(getAPIROOT() + "grafik/servercheck.txt");
-            LoggerFactory.getDefaultLogger().info(br.getRequest() + "");
+            LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
             ret.setWorker(Integer.parseInt(new Regex(servercheck, "worker=(\\d+)").getMatch(0)));
             ret.setAvgSolvtime(Integer.parseInt(new Regex(servercheck, "avg1h=(\\d+)").getMatch(0)));
             ret.setQueue(Integer.parseInt(new Regex(servercheck, "queue=(\\d+)").getMatch(0)));
@@ -131,7 +131,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
             ret.setError("API Key is not correct!");
         } else {
             credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
-            LoggerFactory.getDefaultLogger().info(br.getRequest() + "");
+            LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
             try {
                 ret.setCreditBalance(Integer.parseInt(credits.trim()));
                 String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
