@@ -21,6 +21,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -28,6 +34,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -37,10 +44,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class Grab8Com extends antiDDoSForHost {
@@ -61,8 +66,8 @@ public class Grab8Com extends antiDDoSForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                        = null;
     private DownloadLink                                   currDownloadLink               = null;
-    private String                                         currPremiumPage                = null;
     private static Object                                  LOCK                           = new Object();
+    private Browser                                        ajax                           = null;
 
     public Grab8Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -144,72 +149,65 @@ public class Grab8Com extends antiDDoSForHost {
                 }
             }
         }
-
-        String transferID = link.getStringProperty("transferID", null);
         br = new Browser();
         setConstants(account, link);
         login(false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            currPremiumPage = getPremiumPage();
-            if (currPremiumPage == null) {
-                setPremiumPage(br);
-                if (currPremiumPage == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            getPage("https://grab8.com/");
+            postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            dllink = PluginJSonUtils.getJson(ajax, "linkdown");
+            // TODO: transload/api error handling.
+            final boolean transload = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(ajax, "use_transload"));
+            if (transload) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
             }
-            getPage(currPremiumPage);
-            dllink = br.getBaseURL();
-            br.setFollowRedirects(true);
-            postAPISafe(br.getBaseURL() + "index.php", "referer=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fhome%2Fgrab8%2Fpublic_html%2F2%2Ffiles&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            final Form transloadform = br.getFormbyKey("saveto");
-            if (transloadform != null) {
-                logger.info("Found transloadform --> Submitting it");
-                submitFormAPISafe(transloadform);
-            } else {
-                logger.warning("Could not find transloadform --> Possible failure");
-            }
-            /*
-             * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we will not
-             * see the transferID in the html although it exists and hasn't changed. In this case we should still have it saved from the
-             * first download attempt.
-             */
-            final String newtransferID = br.getRegex("name=\"files\\[\\]\" value=\"(\\d+)\"").getMatch(0);
-            if (newtransferID != null) {
-                transferID = newtransferID;
-                logger.info("Successfully found transferID");
-                link.setProperty("transferID", transferID);
-            } else {
-                logger.warning("Failed to find transferID");
-            }
-            /* Normal case: Requested file is downloaded to the multihost and downloadable via the multihost. */
-            dllink = br.getRegex("File <b><a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
-            /*
-             * If we try an already existing link many times we'll get a site asking us if the download is broken thus it looks different so
-             * we need another RegEx.
-             */
-            if (dllink == null) {
-                dllink = br.getRegex("<b>Download: <a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
-            }
+            // final Form transloadform = br.getFormbyKey("saveto");
+            // if (transloadform != null) {
+            // logger.info("Found transloadform --> Submitting it");
+            // submitFormAPISafe(transloadform);
+            // } else {
+            // logger.warning("Could not find transloadform --> Possible failure");
+            // }
+            // /*
+            // * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we will
+            // not
+            // * see the transferID in the html although it exists and hasn't changed. In this case we should still have it saved from the
+            // * first download attempt.
+            // */
+            // final String newtransferID = br.getRegex("name=\"files\\[\\]\" value=\"(\\d+)\"").getMatch(0);
+            // if (newtransferID != null) {
+            // transferID = newtransferID;
+            // logger.info("Successfully found transferID");
+            // link.setProperty("transferID", transferID);
+            // } else {
+            // logger.warning("Failed to find transferID");
+            // }
+            // /* Normal case: Requested file is downloaded to the multihost and downloadable via the multihost. */
+            // dllink = br.getRegex("File <b><a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
+            // /*
+            // * If we try an already existing link many times we'll get a site asking us if the download is broken thus it looks different
+            // so
+            // * we need another RegEx.
+            // */
+            // if (dllink == null) {
+            // dllink = br.getRegex("<b>Download: <a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
+            // }
             if (dllink == null) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 10, 2 * 60 * 1000l);
             }
-            /* Happens sometimes - in the tests it frequently happened with share-online.biz links */
-            if (dllink.equals("files/ip")) {
-                handleErrorRetries("dllink_invalid_ip", 10, 2 * 60 * 1000l);
-            }
-            dllink = br.getBaseURL() + dllink;
+            // /* Happens sometimes - in the tests it frequently happened with share-online.biz links */
+            // if (dllink.equals("files/ip")) {
+            // handleErrorRetries("dllink_invalid_ip", 10, 2 * 60 * 1000l);
+            // }
         }
         handleDL(account, link, dllink);
     }
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        final String transferID = link.getStringProperty("transferID", null);
         final boolean deleteAfterDownload = this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, false);
-        /* we want to follow redirects in final stage */
-        br.setFollowRedirects(true);
         /* First set hardcoded limit */
         int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         /* Then check if chunks failed before. */
@@ -233,14 +231,14 @@ public class Grab8Com extends antiDDoSForHost {
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 br.followConnection();
-                updatestatuscode();
+                updatestatuscode(br);
                 handleAPIErrors(this.br);
                 handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
             }
             try {
                 if (this.dl.startDownload()) {
-                    if (transferID != null && deleteAfterDownload) {
-                        deleteFileFromServer(transferID);
+                    if (deleteAfterDownload) {
+                        deleteFileFromServer(dllink);
                     }
                 } else {
                     try {
@@ -279,21 +277,33 @@ public class Grab8Com extends antiDDoSForHost {
         }
     }
 
-    private boolean deleteFileFromServer(final String transferID) {
-        boolean success = false;
+    private boolean deleteFileFromServer(final String dllink) {
         try {
-            /* We can skip this first step and directly confirm that we want to delete that file. */
-            // br.postPage(premiumPage, "act=delete&files%5B%5D=" + transferID);
-            postPage(currPremiumPage, "act=delete_go&files%5B%5D=" + transferID + "&yes=Yes");
-            success = true;
+            final Browser del = new Browser();
+            loadCookies(del);
+            getPage(del, "https://grab8.com/account");
+            String md5 = null;
+            // find the md5checksum
+            final String[] results = br.getRegex("<a id=\"link-[a-f0-9]{32}.*?></a>").getColumn(-1);
+            if (results != null) {
+                for (final String result : results) {
+                    if (result.contains(dllink)) {
+                        md5 = new Regex(result, "link-([a-f0-9]{32})").getMatch(0);
+                        break;
+                    }
+                }
+            }
+            if (md5 != null) {
+                postAPISafe(del, "/ajax/action.php", "action=delete-files&sel_files%5B%5D=" + md5);
+                if ("File deleted!".equals(PluginJSonUtils.getJson(ajax, "message"))) {
+                    logger.info("Successfully deleted file from server");
+                    return true;
+                }
+            }
         } catch (final Throwable e) {
         }
-        if (success) {
-            logger.info("Successfully deleted file from server");
-        } else {
-            logger.warning("Failed to delete file from server");
-        }
-        return success;
+        logger.warning("Failed to delete file from server");
+        return false;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -326,28 +336,26 @@ public class Grab8Com extends antiDDoSForHost {
         setConstants(account, null);
         br = new Browser();
         final AccountInfo ai = new AccountInfo();
-        login(true);
+        login(false);
         br.setFollowRedirects(true);
-        getPage("/index.php");
-        final String expire = br.getRegex(">Your account will expire on[^\r\n]+(\\d{2}-\\d{2}-\\d{4})</span>").getMatch(0);
-        if (expire != null) {
+        getPage("https://grab8.com/account");
+        final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+) /([0-9\\.]+ GB)</p>").getRow(0);
+        if (traffic == null || traffic.length != 2) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        // they show traffic used not left.
+        ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
+        ai.setTrafficMax(SizeFormatter.getSize(traffic[1]));
+        final String expire = br.getRegex("<p><b>Expiry</b>:&nbsp;(\\d{2}-\\d{2}-\\d{4})</p>").getMatch(0);
+        if (expire != null && ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH), br) && !ai.isExpired()) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH));
-            final String traffic_used = br.getRegex("Traffic use: <font color=#[A-F0-9]+>(\\d+)(\\.\\d{1,20})? MB</font>").getMatch(0);
-            final String traffic_max = br.getRegex("Max Traffic: <font color=#[A-F0-9]+>(\\d+) MB</font>").getMatch(0);
-            if (traffic_max == null || traffic_used == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
-            final long traffic_max_long = Long.parseLong(traffic_max) * 1024 * 1024;
-            ai.setTrafficLeft(traffic_max_long - (Long.parseLong(traffic_used) * 1024 * 1024));
-            ai.setTrafficMax(traffic_max_long);
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
@@ -355,24 +363,29 @@ public class Grab8Com extends antiDDoSForHost {
             ai.setTrafficLeft(0);
         }
         account.setValid(true);
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
+        // get hostmap from /hosts, this shows if host is available to free mode and if its up and down...
+        getPage("/hosts");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] hostDomainsInfo = br.getRegex("<li><span>(.*?)</span></li>").getColumn(0);
-        for (String crippledhost : hostDomainsInfo) {
-            crippledhost = crippledhost.trim();
-            crippledhost = crippledhost.toLowerCase();
-            crippledhost = crippledhost.replaceAll("(<strike>|</strike>)", "");
-            if (crippledhost.contains(".")) {
-                /* Domain is already fine */
-                supportedHosts.add(crippledhost);
-            } else {
-                /* Go insane */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
-                }
+        final String[] tableRow = br.getRegex("<tr>\\s*<td>.*?</tr>").getColumn(-1);
+        final boolean freeAccount = account.getType() == AccountType.FREE;
+        for (final String row : tableRow) {
+            // we should be left with two cleanuped up lines
+            final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", "").trim();
+            String host = cleanup.split("\r\n")[0];
+            final String online = cleanup.split("\r\n")[1];
+            final boolean free = new Regex(row, "//grab8\\.com/themes/images/free\\.gif").matches();
+            if (host == null || online == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (StringUtils.endsWithCaseInsensitive(online, "offline") || StringUtils.endsWithCaseInsensitive(online, "fixing")) {
+                continue;
+            }
+            if (freeAccount && !free) {
+                continue;
+            }
+            supportedHosts.add(host);
         }
+        // note: on the account page, they do have array of hosts but it only shows ones with traffic limits.
         ai.setMultiHostSupport(this, supportedHosts);
 
         return ai;
@@ -384,53 +397,99 @@ public class Grab8Com extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    @SuppressWarnings("unchecked")
     private void login(final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Object ret = currAcc.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(currAcc.getUser()).equals(currAcc.getStringProperty("name", Encoding.urlEncode(currAcc.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(currAcc.getPass()).equals(currAcc.getStringProperty("pass", Encoding.urlEncode(currAcc.getPass())));
+                if (!force && loadCookies(br)) {
+                    return;
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (currAcc.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(NICE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                getAPISafe("http://grab8.com/member/index.php");
+                // new browser
+                final Browser br = new Browser();
+                getPage(br, "https://grab8.com/");
                 // find the form
-                Form login = br.getFormByInputFieldKeyValue("user", "Username");
+                Form login = br.getFormByInputFieldKeyValue("username", null);
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                login.put("user", Encoding.urlEncode(currAcc.getUser()));
-                login.put("pass", Encoding.urlEncode(currAcc.getPass()));
-                submitFormAPISafe(login);
-                final String pass_cookie = br.getCookie(NICE_HOST, "pass");
-                if (pass_cookie == null || pass_cookie.equals("NULL")) {
+                login.setAction("/ajax/action.php");
+                login.put("username", Encoding.urlEncode(currAcc.getUser()));
+                login.put("password", Encoding.urlEncode(currAcc.getPass()));
+                login.put("rememberme", "true");
+                if (login.containsHTML("name=\"g-recaptcha-response\"")) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                    final DownloadLink odl = this.getDownloadLink();
+                    this.setDownloadLink(dummyLink);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (odl != null) {
+                        this.setDownloadLink(odl);
+                    }
+                }
+                submitFormAPISafe(br, login);
+                if (inValidateCookies(br, new String[] { "auth", "user" })) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                setPremiumPage(br);
                 currAcc.setProperty("name", Encoding.urlEncode(currAcc.getUser()));
                 currAcc.setProperty("pass", Encoding.urlEncode(currAcc.getPass()));
-                currAcc.setProperty("cookies", fetchCookies(NICE_HOST));
+                currAcc.setProperty("cookies", fetchCookies(br, NICE_HOST));
+                // load cookies to this.br
+                loadCookies(this.br);
             } catch (final PluginException e) {
                 currAcc.setProperty("cookies", Property.NULL);
                 throw e;
             }
+        }
+    }
+
+    /**
+     * all cookies must match!
+     *
+     * @author raztoki
+     * @param br
+     * @param strings
+     * @return
+     */
+    private boolean inValidateCookies(final Browser br, final String... strings) {
+        if (strings == null) {
+            return true;
+        }
+        boolean result = false;
+        for (final String string : strings) {
+            final String cookie = br.getCookie(getHost(), string);
+            result = cookie == null || "NULL".equals(cookie) ? true : false;
+            if (result) {
+                return true;
+            }
+        }
+        return result;
+    }
+
+    private boolean loadCookies(final Browser br) {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(true);
+            final Object ret = currAcc.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(currAcc.getUser()).equals(currAcc.getStringProperty("name", Encoding.urlEncode(currAcc.getUser())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(currAcc.getPass()).equals(currAcc.getStringProperty("pass", Encoding.urlEncode(currAcc.getPass())));
+            }
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (currAcc.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        br.setCookie(NICE_HOST, key, value);
+                    }
+                    // perform a test?
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -450,60 +509,43 @@ public class Grab8Com extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void setPremiumPage(final Browser br) throws Exception {
-        synchronized (LOCK) {
-            // this is after login! cookies are present!
-            // lets do this in another browser, wont effect download stuff
-            final Browser br2 = br.cloneBrowser();
-            if (br2.getURL() != null && !br2.getURL().endsWith("//grab8.com/member/index.php")) {
-                getPage(br2, "http://grab8.com/member/index.php");
-            }
-            currPremiumPage = br2.getRegex("<b>Your Premium Page is at: </b><a href=('|\")(http://[a-z0-9\\-\\.]+\\.grab8\\.com[^<>\"]*?)\\1").getMatch(1);
-            if (currPremiumPage == null) {
-                logger.warning("PremiumPage is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            currAcc.setProperty("premiumPage", currPremiumPage);
-        }
-    }
-
-    private String getPremiumPage() throws Exception {
-        return currAcc.getStringProperty("premiumPage", null);
-    }
-
-    private void getAPISafe(final String accesslink) throws Exception {
-        getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(br);
-    }
-
     private void postAPISafe(final String accesslink, final String postdata) throws Exception {
-        postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(br);
+        postAPISafe(br, accesslink, postdata);
     }
 
-    private void submitFormAPISafe(final Form form) throws Exception {
-        submitForm(form);
-        updatestatuscode();
-        handleAPIErrors(br);
+    private void postAPISafe(final Browser br, final String accesslink, final String postdata) throws Exception {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        postPage(ajax, accesslink, postdata);
+        // updatestatuscode(br);
+        // handleAPIErrors(br);
+    }
+
+    private void submitFormAPISafe(final Browser br, final Form form) throws Exception {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        submitForm(ajax, form);
+        // updatestatuscode(br);
+        // handleAPIErrors(br);
     }
 
     /**
      * 0 = everything ok, 1-99 = "htmlerror"-errors
      */
-    private void updatestatuscode() {
+    private void updatestatuscode(final Browser br) {
         final String error = br.getRegex("class=\"htmlerror\"><b>(.*?)</b></span>").getMatch(0);
         if (error != null) {
-            if (error.equals("No premium account working")) {
+            if (StringUtils.containsIgnoreCase(error, "No premium account working")) {
                 statuscode = 1;
-            } else if (error.contains("username or password is incorrect")) {
+            } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid")) {
                 statuscode = 2;
-            } else if (error.contains("Files not found")) {
+            } else if (StringUtils.containsIgnoreCase(error, "Files not found")) {
                 statuscode = 3;
-            } else if (error.contains("the daily download limit of")) {
+            } else if (StringUtils.containsIgnoreCase(error, "the daily download limit of")) {
                 statuscode = 4;
-            } else if (error.contains("Get link download error")) {
+            } else if (StringUtils.containsIgnoreCase(error, "Get link download error")) {
                 statuscode = 5;
             } else {
                 /* Do not set any error-errorcode here as the "htmlerror"-class sometimes simply returns red texts which are no errors! */
