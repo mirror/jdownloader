@@ -16,6 +16,7 @@ import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.plugins.FinalLinkState;
@@ -384,7 +385,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     public boolean cleanup(final long[] linkIds, final long[] pkgIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
         final SelectionInfo<PackageType, ChildType> selection;
         if (false && CleanupActionOptions.SelectionType.ALL.equals(selectionType)) {
-            selection = new SelectionInfo<PackageType, ChildType>(null, packageController.getAllChildren());
+            selection = new PackageControllerSelectionInfo(packageController);
         } else {
             selection = getSelectionInfo(linkIds, pkgIds);
         }
