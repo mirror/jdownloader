@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -27,7 +28,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -38,8 +38,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tropicshare.com" }, urls = { "http://(www\\.)?tropicshare\\.com/files/\\d+" }, flags = { 2 })
+
 public class TropicShareCom extends PluginForHost {
 
     public TropicShareCom(PluginWrapper wrapper) {
@@ -52,19 +55,21 @@ public class TropicShareCom extends PluginForHost {
         return "http://tropicshare.com/pages/6-Terms-of-service.html";
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     private void prepBR(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
+        while (userAgent.get() == null || !userAgent.get().contains(" Chrome/")) {
+            userAgent.set(UserAgents.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", userAgent.get());
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        prepBR(this.br);
+        prepBR(br);
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File size: </span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -97,24 +102,17 @@ public class TropicShareCom extends PluginForHost {
         if (br.containsHTML("\"status\":\"Please wait, while downloading\"")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-        final String uid = br.getRegex("\"uid\":\"([^<>\"]*?)\"").getMatch(0);
+        final String uid = PluginJSonUtils.getJson(br, "uid");
         if (uid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.sleep(wait * 1001l, downloadLink);
-        final String dllink = "/free_download.php?id=" + uid;
+        sleep(wait * 1001l, downloadLink);
+        final String dllink = "/files/download/?uid=" + uid;
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Error, you not have premium acount")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (br.containsHTML("Waiting time: ")) {
                 final String minutes = br.getRegex("<span id=\"min\">(\\d+)</span>").getMatch(0);
                 final String seconds = br.getRegex("<span id=\"sec\">(\\d+)</span>").getMatch(0);
@@ -141,7 +139,7 @@ public class TropicShareCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBR(this.br);
+                prepBR(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -153,7 +151,7 @@ public class TropicShareCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
@@ -209,7 +207,7 @@ public class TropicShareCom extends PluginForHost {
         final long expireMilliseconds = (monthsSeconds + daysSeconds) * 1001;
         ai.setValidUntil(System.currentTimeMillis() + expireMilliseconds);
         account.setValid(true);
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium Account");
         return ai;
     }
 
@@ -217,36 +215,25 @@ public class TropicShareCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        br = new Browser();
         login(account, false);
         // can be directlinks!
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             final String fid = br.getRegex("fileid=\"(\\d+)\"").getMatch(0);
             if (fid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String dllink = "http://tropicshare.com/files/download/premium/" + fid;
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), false, 1);
+            final String dllink = "/files/download/premium/" + fid;
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) {
-                    return;
-                }
-            } catch (final Throwable e) {
-            }
-            /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(TropicShareCom.NOCHUNKS, false) == false) {
-                link.setProperty(TropicShareCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        }
+        dl.startDownload();
     }
 
     @Override
