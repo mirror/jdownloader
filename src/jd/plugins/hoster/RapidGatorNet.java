@@ -1020,7 +1020,7 @@ public class RapidGatorNet extends PluginForHost {
                     final String fileSize = this.getJSonValueByKey("size");
                     final String fileHash = this.getJSonValueByKey("hash");
                     if (fileName != null) {
-                        link.setFinalFileName(fileName);
+                        link.setFinalFileName(org.appwork.storage.simplejson.JSonUtils.unescape(fileName));
                     }
                     if (fileSize != null) {
                         final long size = Long.parseLong(fileSize);
