@@ -27,6 +27,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,12 +51,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/[A-Za-z0-9]{15,16}" }, flags = { 2 })
 public class CatShareNet extends PluginForHost {
@@ -102,7 +103,7 @@ public class CatShareNet extends PluginForHost {
             return false;
         }
         try {
-            this.prepBRAPI(this.br);
+            this.prepBRAPI(br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -135,7 +136,7 @@ public class CatShareNet extends PluginForHost {
 
                 /* TODO: Implement this correctly once admin fixes json! */
                 br.postPage("https://" + this.getHost() + "/download/json_check", sb.toString());
-                final String[] json_workaround_array = this.br.toString().split("\\}\\{");
+                final String[] json_workaround_array = br.toString().split("\\}\\{");
                 for (final DownloadLink dl : links) {
                     final String source;
                     if (tempcounter <= json_workaround_array.length - 1) {
@@ -195,7 +196,7 @@ public class CatShareNet extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadURL);
         doSomething();
-        if (br.containsHTML("<title>Error 404</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("<title>Error 404</title>") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fileName = new Regex(brbefore, "<h3 class=\"pull-left\" style=\"margin-left: 10px;\">(.*)</h3>[ \t\n\r\f]+<h3 class=\"pull-right\"").getMatch(0);
@@ -301,7 +302,7 @@ public class CatShareNet extends PluginForHost {
             handleDownloadAPI(downloadLink, true, 0, false, "freedirectlink");
         } else {
             if (use_api_availablecheck) {
-                this.br.getPage(downloadLink.getDownloadURL());
+                br.getPage(downloadLink.getDownloadURL());
             }
             doFreeWebsite(downloadLink, false, 1);
         }
@@ -310,31 +311,33 @@ public class CatShareNet extends PluginForHost {
     public void handleDownloadAPI(final DownloadLink downloadLink, final boolean resumable, final int maxChunks, final boolean premium, final String directlinkproperty) throws Exception, PluginException {
         String passCode = downloadLink.getDownloadPassword();
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        String download_post_data = "linkid=" + getLinkid(downloadLink);
-        postPageAPI("https://" + this.getHost() + "/download/json_wait", "");
-        int wait = 0;
-        final String wait_str = JSonUtils.getJson(this.br, "wait_time");
-        if (wait_str != null) {
-            wait = Integer.parseInt(wait_str);
-        }
-        if (!premium) {
-            postPageAPI("https://" + this.getHost() + "/download/json_challenge", "");
-            final String rcID = JSonUtils.getJson(this.br, "key");
-            if (rcID == null) {
+        if (dllink == null) {
+            String download_post_data = "linkid=" + getLinkid(downloadLink);
+            postPageAPI("https://" + this.getHost() + "/download/json_wait", "");
+            int wait = 0;
+            final String wait_str = PluginJSonUtils.getJson(br, "wait_time");
+            if (wait_str != null) {
+                wait = Integer.parseInt(wait_str);
+            }
+            if (!premium) {
+                postPageAPI("/download/json_challenge", "");
+                final String rcID = PluginJSonUtils.getJson(br, "key");
+                if (rcID == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
+                }
+                final Recaptcha rc = new Recaptcha(br, this);
+                rc.setId(rcID);
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                download_post_data += "&challenge=" + Encoding.urlEncode(rc.getChallenge() + "&recaptcha_challenge_field=" + Encoding.urlEncode(c));
+            }
+            this.sleep(wait * 1001l, downloadLink);
+            postPageAPI("/download/json_download", download_post_data);
+            dllink = PluginJSonUtils.getJson(br, "downloadUrl");
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
             }
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.setId(rcID);
-            rc.load();
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-            download_post_data += "&challenge=" + Encoding.urlEncode(rc.getChallenge() + "&recaptcha_challenge_field=" + Encoding.urlEncode(c));
-        }
-        this.sleep(wait * 1001l, downloadLink);
-        postPageAPI("https://" + this.getHost() + "/download/json_download", download_post_data);
-        dllink = JSonUtils.getJson(br, "downloadUrl");
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxChunks);
@@ -371,7 +374,7 @@ public class CatShareNet extends PluginForHost {
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             final Recaptcha rc = new Recaptcha(br, this);
             rc.setForm(dlForm);
-            String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             rc.setId(id);
             for (int i = 0; i < 5; i++) {
                 rc.load();
@@ -451,9 +454,9 @@ public class CatShareNet extends PluginForHost {
 
     private AccountInfo fetchAccountInfoAPI(final Account account) {
         final AccountInfo ai = new AccountInfo();
-        final String type = JSonUtils.getJson(this.br, "type");
-        final String expireTime = JSonUtils.getJson(this.br, "expireTime");
-        final String traffic = JSonUtils.getJson(this.br, "traffic");
+        final String type = PluginJSonUtils.getJson(br, "type");
+        final String expireTime = PluginJSonUtils.getJson(br, "expireTime");
+        final String traffic = PluginJSonUtils.getJson(br, "traffic");
         long expire_long = 0;
         if (expireTime != null) {
             expire_long = Long.parseLong(expireTime) * 1000l;
@@ -552,15 +555,15 @@ public class CatShareNet extends PluginForHost {
         synchronized (lock) {
             try {
                 br.setCookiesExclusive(true);
-                prepBRAPI(this.br);
+                prepBRAPI(br);
                 /* session_id might be stored for API usage */
                 // final Cookies cookies = account.loadCookies("");
                 // if (cookies != null) {
-                // this.br.setCookies(this.getHost(), cookies);
+                // br.setCookies(this.getHost(), cookies);
                 // return;
                 // }
                 postPageAPI("https://" + this.getHost() + "/login/json", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                this.apiSession = JSonUtils.getJson(this.br, "session");
+                this.apiSession = PluginJSonUtils.getJson(br, "session");
                 if (this.apiSession == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -568,7 +571,7 @@ public class CatShareNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -580,10 +583,10 @@ public class CatShareNet extends PluginForHost {
         synchronized (lock) {
             try {
                 br.setCookiesExclusive(true);
-                prepBRWebsite(this.br);
+                prepBRWebsite(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 br.getPage("http://" + this.getHost() + "/login");
@@ -604,7 +607,7 @@ public class CatShareNet extends PluginForHost {
                     /* Unknown account type */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("LOGIN_ERROR"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -656,7 +659,6 @@ public class CatShareNet extends PluginForHost {
                 if (blockDateTime.length == 0) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ACCOUNT_SHARED"), 2 * 60 * 60 * 1000l);
                 } else {
-
                     final DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
                     final Date waitUntil = df.parse(blockDateTime[0][0] + " " + blockDateTime[0][1] + ":00");
                     final long difference = waitUntil.getTime() - (new Date()).getTime();
@@ -727,7 +729,7 @@ public class CatShareNet extends PluginForHost {
             }
             postData += "session=" + Encoding.urlEncode(apiSession);
         }
-        this.br.postPage(url, postData);
+        br.postPage(url, postData);
     }
 
     private void handleErrorsAPI() {
