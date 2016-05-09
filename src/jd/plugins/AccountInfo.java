@@ -309,53 +309,62 @@ public class AccountInfo extends Property {
         if (multiHostSupportList != null && multiHostSupportList.size() > 0) {
             final HostPluginController hpc = HostPluginController.getInstance();
             final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
-            // lets do some preConfiguring, and match hosts which do not contain tld
-            for (final String host : multiHostSupportList) {
-                final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
-                /*
-                 * if the multihoster doesn't include full host name with tld, we can search and add all partial matches!
-                 */
-                if (cleanup.indexOf('.') == -1) {
-                    for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
+            {
+                final LinkedHashSet<String> nonTldHosts = new LinkedHashSet<String>();
+                // lets do some preConfiguring, and match hosts which do not contain tld
+                for (final String host : multiHostSupportList) {
+                    final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
+                    /*
+                     * if the multihoster doesn't include full host name with tld, we can search and add all partial matches!
+                     */
+                    if (cleanup.indexOf('.') == -1) {
+                        nonTldHosts.add(cleanup);
+                    } else {
+                        supportedHostsSet.add(cleanup);
+                    }
+                }
+                if (!nonTldHosts.isEmpty()) {
+                    // since there's more host plugins than supported hosts, its faster to process this in this manner
+                    final List<String> nontldhosts = new ArrayList<String>(nonTldHosts);
+                    plugin: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
                         if (lazyHostPlugin.isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
                             continue;
                         }
-                        if (StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), cleanup)) {
-                            supportedHostsSet.add(lazyHostPlugin.getHost());
-                        } else {
-                            final PluginForHost plugin;
-                            try {
-                                plugin = lazyHostPlugin.getPrototype(null);
-                                if (plugin == null || plugin.getLazyP().isFallbackPlugin()) {
-                                    continue;
-                                }
-                            } catch (UpdateRequiredClassNotFoundException e) {
-                                LogController.CL().log(e);
+                        final PluginForHost plugin;
+                        try {
+                            plugin = lazyHostPlugin.getPrototype(null);
+                            if (plugin == null || plugin.getLazyP().isFallbackPlugin()) {
                                 continue;
                             }
+                        } catch (UpdateRequiredClassNotFoundException e) {
+                            LogController.CL().log(e);
+                            continue;
+                        }
+                        final String[] moreHosts = plugin.siteSupportedNames();
+                        for (final String cleanup : nontldhosts) {
                             /*
                              * because they might add a wrong name (not primary), siteSupportedNames provides array of _ALL_ supported
-                             * siteNames.
+                             * siteNames. moreHosts contains plugin.gethost, so process this first!
                              */
-                            final String[] moreHosts = plugin.siteSupportedNames();
                             if (moreHosts != null) {
                                 for (final String moreHost : moreHosts) {
                                     if (StringUtils.containsIgnoreCase(moreHost, cleanup)) {
                                         supportedHostsSet.add(lazyHostPlugin.getHost());
-                                        break;
+                                        continue plugin;
                                     }
                                 }
+                            } else if (StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), cleanup)) {
+                                supportedHostsSet.add(lazyHostPlugin.getHost());
+                                continue plugin;
                             }
                         }
                     }
-                } else {
-                    supportedHostsSet.add(cleanup);
                 }
             }
-            // sorting will now work properly since they are all pre-corrected to lowercase.
             final List<String> multiHostSupport = new ArrayList<String>(supportedHostsSet);
-            Collections.sort(multiHostSupport, new NaturalOrderComparator());
             supportedHostsSet.clear();
+            // sorting will now work properly since they are all pre-corrected to lowercase.
+            Collections.sort(multiHostSupport, new NaturalOrderComparator());
             for (final String host : multiHostSupport) {
                 if (host != null && !supportedHostsSet.contains(host)) {
                     final String assignedHost;
