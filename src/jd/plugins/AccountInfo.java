@@ -352,12 +352,12 @@ public class AccountInfo extends Property {
                              */
                             if (moreHosts != null) {
                                 for (final String moreHost : moreHosts) {
-                                    if (StringUtils.containsIgnoreCase(moreHost, cleanup)) {
+                                    if (StringUtils.containsIgnoreCase(moreHost, cleanup) || StringUtils.containsIgnoreCase(moreHost.replace("-", ""), cleanup)) {
                                         supportedHostsSet.add(lazyHostPlugin.getHost());
                                         continue plugin;
                                     }
                                 }
-                            } else if (StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), cleanup)) {
+                            } else if (StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), cleanup) || StringUtils.containsIgnoreCase(lazyHostPlugin.getHost().replace("-", ""), cleanup)) {
                                 supportedHostsSet.add(lazyHostPlugin.getHost());
                                 continue plugin;
                             }
