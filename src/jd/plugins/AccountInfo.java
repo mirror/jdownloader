@@ -318,6 +318,10 @@ public class AccountInfo extends Property {
                      * if the multihoster doesn't include full host name with tld, we can search and add all partial matches!
                      */
                     if (cleanup.indexOf('.') == -1) {
+                        // we need to ignore/blacklist common phrases, else too many false positives
+                        if (cleanup.matches("file|up|upload|video")) {
+                            continue;
+                        }
                         nonTldHosts.add(cleanup);
                     } else {
                         supportedHostsSet.add(cleanup);
