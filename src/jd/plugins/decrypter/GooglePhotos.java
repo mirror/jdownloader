@@ -46,7 +46,7 @@ public class GooglePhotos extends PluginForDecrypt {
         final Regex urlinfo = new Regex(parameter, "/share/([A-Za-z0-9\\-_]+)\\?key=([A-Za-z0-9\\-_]+)");
         final String idMAIN = urlinfo.getMatch(0);
         final String key = urlinfo.getMatch(1);
-        final String[] ids = br.getRegex("\\[\"([A-Za-z0-9\\-_]{22,})").getColumn(0);
+        final String[] ids = br.getRegex("\\[\"([A-Za-z0-9\\-_]{22,})\",\\[\"https").getColumn(0);
         String fpName = br.getRegex("<title>[A-Za-z0-9 ]+ – ([^<>\"]+) \\- Google Fotos</title>").getMatch(0);
         if (fpName == null) {
             fpName = idMAIN;

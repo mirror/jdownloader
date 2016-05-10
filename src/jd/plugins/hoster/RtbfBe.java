@@ -79,6 +79,8 @@ public class RtbfBe extends PluginForHost {
         }
         // this is json encoded with htmlentities.
         vid_text = HTMLEntities.unhtmlentities(vid_text);
+        vid_text = Encoding.htmlDecode(vid_text);
+        vid_text = PluginJSonUtils.unescape(vid_text);
         // we can get filename here also.
         if (filename == null) {
             filename = PluginJSonUtils.getJson(vid_text, "title");
