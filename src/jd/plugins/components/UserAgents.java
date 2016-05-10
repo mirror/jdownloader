@@ -2,6 +2,11 @@ package jd.plugins.components;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.regex.Pattern;
+
+import org.appwork.exceptions.WTFException;
+
+import jd.parser.Regex;
 
 public class UserAgents {
 
@@ -145,7 +150,33 @@ public class UserAgents {
     }
 
     /**
-     * Returns a random User-Agent String (from a HbbTV supported device) of specified array. This array contains current user agents
+     * Browser Names, this is used for defining stringUserAgent(BrowserName);
+     *
+     * @author raztoki
+     *
+     */
+    public enum BrowserName {
+        Chrome(
+                " Chrome/"),
+        Firefox(
+                " FireFox/"),
+        Safari(
+                " Version/[0-9]\\.[0-9]\\.[0-9] Safari/[0-9]{3}\\.[0-9]\\.[0-9]");
+
+        private final Pattern pattern;
+
+        public Pattern getPattern() {
+            return this.pattern;
+        }
+
+        private BrowserName(final String s) {
+            this.pattern = Pattern.compile(s);
+        }
+
+    }
+
+    /**
+     * Returns a random User-Agent String (from a HbbTV supported device) from specified array. This array contains current user agents
      * gathered from httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid. Source:
      * https://udger.com/resources/ua-list/device-detail?device=Smart+TV
      *
@@ -159,8 +190,8 @@ public class UserAgents {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
-     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) from specified array. This array contains current user agents gathered
+     * from httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      *
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      * @author raztoki
@@ -173,8 +204,8 @@ public class UserAgents {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
-     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) from specified array. This array contains current user agents gathered from
+     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      *
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      * @author raztoki
@@ -183,6 +214,26 @@ public class UserAgents {
         final Random rand = new Random();
         final int i = rand.nextInt(stringAgent.size());
         final String ret = stringAgent.get(i);
+        return ret;
+    }
+
+    /**
+     * Returns a random User-Agent String of BrowserName from specified array. This array contains current user agents gathered from httpd
+     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     *
+     * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
+     * @author raztoki
+     */
+    public static String stringUserAgent(final BrowserName browser) {
+        if (browser == null) {
+            throw new WTFException();
+        }
+        final Random rand = new Random();
+        String ret = null;
+        while (ret == null || !new Regex(ret, browser.pattern).matches()) {
+            final int i = rand.nextInt(stringAgent.size());
+            ret = stringAgent.get(i);
+        }
         return ret;
     }
 
