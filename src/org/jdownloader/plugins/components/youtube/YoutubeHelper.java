@@ -761,7 +761,7 @@ public class YoutubeHelper {
 
         });
 
-        REPLACER.add(new YoutubeReplacer("VIDEONUMBER") {
+        REPLACER.add(new YoutubeReplacer("VIDEONUMBER", "PLAYLIST_POSITION") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_videonumber();
