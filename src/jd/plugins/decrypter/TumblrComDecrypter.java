@@ -221,13 +221,20 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             if (externID.matches(".+tumblr\\.com/video_file/.+")) {
                 br.setFollowRedirects(false);
                 // the puid stays the same throughout all these requests
-                br.getPage(externID);
-                externID = br.getRedirectLocation();
-                if (externID != null && externID.matches("https?://www\\.tumblr\\.com/video_file/.+")) {
+                final String hd_final_url_part = new Regex(externID, "/(tumblr_[^/]+)/\\d+$").getMatch(0);
+                if (hd_final_url_part != null) {
+                    /* Yey we have an HD url ... */
+                    externID = "https://vt.tumblr.com/" + externID + ".mp4";
+                } else {
+                    /* Let's download the stream ... */
                     br.getPage(externID);
                     externID = br.getRedirectLocation();
+                    if (externID != null && externID.matches("https?://www\\.tumblr\\.com/video_file/.+")) {
+                        br.getPage(externID);
+                        externID = br.getRedirectLocation();
+                    }
+                    externID = externID.replace("#_=_", "");
                 }
-                externID = externID.replace("#_=_", "");
                 final DownloadLink dl = createDownloadlink(externID);
                 String extension = getFileNameExtensionFromURL(externID);
                 if (extension == null) {

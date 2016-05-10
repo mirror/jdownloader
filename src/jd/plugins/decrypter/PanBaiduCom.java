@@ -33,14 +33,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(?:#dir/path=%2F.+)?" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/.+(.+\\&dir=.+|#dir/path=%.+)";
+    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9]+#dir/path=%.+)";
     private static final String TYPE_FOLDER_GENERAL                   = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#dir/path=%2F.+))";
     private static final String TYPE_FOLDER_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
@@ -51,11 +51,13 @@ public class PanBaiduCom extends PluginForDecrypt {
     private String              link_password_cookie                  = null;
     private String              shareid                               = null;
     private String              uk                                    = null;
+    private String              shorturl                              = null;
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
+        shorturl = new Regex(parameter, "/s/([A-Za-z0-9]+)").getMatch(0);
         /* Extract password from url in case the url came from this decrypter before. */
         link_password = new Regex(parameter, "\\&linkpassword=([^<>\"\\&=]+)").getMatch(0);
         if (link_password != null) {
@@ -188,14 +190,12 @@ public class PanBaiduCom extends PluginForDecrypt {
                 final long isdelete = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
                 final long isdir = DummyScriptEnginePlugin.toLong(entries.get("isdir"), 0);
                 if (isdir == 1) {
-                    /* Subfolder --> Goes back into decrypter */
-                    final String subdir_name = Encoding.urlEncode(server_filename);
-                    String subdir_link = null;
-                    if (parameter.matches(TYPE_FOLDER_SUBFOLDER)) {
-                        subdir_link = parameter + "%2F" + subdir_name;
-                    } else {
-                        subdir_link = parameter + "#dir/path=%2F" + subdir_name;
+                    final String path = (String) entries.get("path");
+                    if (path == null || shorturl == null) {
+                        continue;
                     }
+                    /* Subfolder --> Goes back into decrypter */
+                    String subdir_link = "http://pan.baidu.com/s/" + shorturl + "#dir/path=" + Encoding.urlEncode(path);
                     if (link_password != null) {
                         /*
                          * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password
