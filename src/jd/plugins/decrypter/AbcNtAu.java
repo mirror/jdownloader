@@ -35,7 +35,7 @@ import jd.plugins.FilePackage;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "abc.net.au" }, urls = { "https?://(?:www\\.)?abc\\.net\\.au/news/\\d{4}-\\d{2}-\\d{2}/[\\w\\-]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "abc.net.au" }, urls = { "https?://(?:www\\.)?abc\\.net\\.au/news/\\d{4}-\\d{2}-\\d{2}/[^/]+/\\d+" }, flags = { 0 })
 public class AbcNtAu extends antiDDoSForDecrypt {
 
     public AbcNtAu(PluginWrapper wrapper) {
