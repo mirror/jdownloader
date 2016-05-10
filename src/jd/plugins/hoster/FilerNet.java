@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -57,6 +58,7 @@ public class FilerNet extends PluginForHost {
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filer.net/upgrade");
+        this.setStartIntervall(2000l);
     }
 
     @SuppressWarnings("deprecation")
@@ -371,12 +373,28 @@ public class FilerNet extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                // Temporary errorhandling for a bug which isn't handled by the API
-                if (br.getURL().equals("http://filer.net/error/500")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
-                }
-                if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /**
+                 * there error handling is fubared, the message is the same for all /error/\d+ <br />
+                 * logs show they can be downloaded, at least in free mode test I've done -raztoki20160510 <br />
+                 * just retry!
+                 */
+                // // Temporary errorhandling for a bug which isn't handled by the API
+                // if (br.getURL().equals("http://filer.net/error/500")) {
+                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
+                // }
+                // if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // }
+                if (br.getURL().matches(".+/error/\\d+")) {
+                    final int failed = downloadLink.getIntegerProperty("errorFailure", 0) + 1;
+                    downloadLink.setProperty("errorFailure", failed);
+                    if (failed > 10) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Retry count over 10, count=" + failed);
+                    } else if (failed > 4) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster has issues, count=" + failed, 15 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -456,7 +474,8 @@ public class FilerNet extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        link.setProperty("errorFailure", Property.NULL);
     }
 
     @Override
