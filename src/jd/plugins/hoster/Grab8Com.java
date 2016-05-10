@@ -339,7 +339,7 @@ public class Grab8Com extends antiDDoSForHost {
         login(false);
         br.setFollowRedirects(true);
         getPage("https://grab8.com/account");
-        final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+) /([0-9\\.]+ GB)</p>").getRow(0);
+        final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+ [KMG]{0,1}B)\\s*/\\s*([0-9\\.]+ GB)</p>").getRow(0);
         if (traffic == null || traffic.length != 2) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -353,7 +353,7 @@ public class Grab8Com extends antiDDoSForHost {
         ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
         ai.setTrafficMax(SizeFormatter.getSize(traffic[1]));
         final String expire = br.getRegex("<p><b>Expiry</b>:&nbsp;(\\d{2}-\\d{2}-\\d{4})</p>").getMatch(0);
-        if (expire != null && ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH), br) && !ai.isExpired()) {
+        if (expire != null && ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", Locale.ENGLISH), br) && !ai.isExpired()) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
         } else {
