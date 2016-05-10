@@ -373,7 +373,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return IconKey.ICON_VIDEO;
+            return IconKey.ICON_EXTRACT;
         }
     }
 
@@ -474,13 +474,22 @@ public class CompiledFiletypeFilter {
 
     public boolean matches(final String extension, final LinkInfo linkInfo) {
         boolean matches = false;
+        final String ext;
         if (StringUtils.isNotEmpty(extension)) {
-            for (final ExtensionsFilterInterface filterInterfaces : this.filterInterfaces) {
-                if (!matches) {
+            ext = extension;
+        } else {
+            ext = linkInfo.getExtension().name();
+        }
+        for (final ExtensionsFilterInterface filterInterfaces : this.filterInterfaces) {
+            if (!matches) {
+                if (linkInfo.getExtension().isSameExtensionGroup(filterInterfaces)) {
+                    matches = true;
+                    break;
+                } else {
                     for (final ExtensionsFilterInterface filterInterface : filterInterfaces.listSameGroup()) {
                         final Pattern pattern = filterInterface.getPattern();
                         try {
-                            if (pattern != null && pattern.matcher(extension).matches()) {
+                            if (pattern != null && pattern.matcher(ext).matches()) {
                                 matches = true;
                                 break;
                             }
@@ -488,20 +497,20 @@ public class CompiledFiletypeFilter {
                             e.printStackTrace();
                         }
                     }
-                } else {
-                    break;
                 }
+            } else {
+                break;
             }
-            if (matches == false) {
-                for (final Pattern pattern : this.list) {
-                    try {
-                        if (pattern != null && pattern.matcher(extension).matches()) {
-                            matches = true;
-                            break;
-                        }
-                    } catch (Throwable e) {
-                        e.printStackTrace();
+        }
+        if (matches == false) {
+            for (final Pattern pattern : this.list) {
+                try {
+                    if (pattern != null && pattern.matcher(ext).matches()) {
+                        matches = true;
+                        break;
                     }
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 }
             }
         }
