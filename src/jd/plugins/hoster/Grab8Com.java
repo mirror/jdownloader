@@ -62,7 +62,6 @@ public class Grab8Com extends antiDDoSForHost {
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS      = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS   = 20;
 
-    private int                                            statuscode                     = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                        = null;
     private DownloadLink                                   currDownloadLink               = null;
@@ -231,8 +230,7 @@ public class Grab8Com extends antiDDoSForHost {
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 br.followConnection();
-                updatestatuscode(br);
-                handleAPIErrors(this.br);
+                handleErrors(br);
                 handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
             }
             try {
@@ -518,8 +516,7 @@ public class Grab8Com extends antiDDoSForHost {
         ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         postPage(ajax, accesslink, postdata);
-        // updatestatuscode(br);
-        // handleAPIErrors(br);
+        handleErrors(ajax);
     }
 
     private void submitFormAPISafe(final Browser br, final Form form) throws Exception {
@@ -527,69 +524,77 @@ public class Grab8Com extends antiDDoSForHost {
         ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         submitForm(ajax, form);
-        // updatestatuscode(br);
-        // handleAPIErrors(br);
+        handleErrors(ajax);
     }
 
     /**
-     * 0 = everything ok, 1-99 = "htmlerror"-errors
+     * Handles API and old html error for failover (might be needed for download servers)
+     *
+     * @throws PluginException
      */
-    private void updatestatuscode(final Browser br) {
-        final String error = br.getRegex("class=\"htmlerror\"><b>(.*?)</b></span>").getMatch(0);
+    private void handleErrors(final Browser br) throws PluginException {
+        final String error = "error".equals(PluginJSonUtils.getJson(br, "status")) ? PluginJSonUtils.getJson(br, "message") : br.getRegex("class=\"htmlerror\"><b>(.*?)</b></span>").getMatch(0);
         if (error != null) {
             if (StringUtils.containsIgnoreCase(error, "No premium account working")) {
-                statuscode = 1;
-            } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid")) {
-                statuscode = 2;
-            } else if (StringUtils.containsIgnoreCase(error, "Files not found")) {
-                statuscode = 3;
-            } else if (StringUtils.containsIgnoreCase(error, "the daily download limit of")) {
-                statuscode = 4;
-            } else if (StringUtils.containsIgnoreCase(error, "Get link download error")) {
-                statuscode = 5;
-            } else {
-                /* Do not set any error-errorcode here as the "htmlerror"-class sometimes simply returns red texts which are no errors! */
-                statuscode = 0;
-                logger.info("Possibly unhandled error");
-            }
-        }
-    }
-
-    private void handleAPIErrors(final Browser br) throws PluginException {
-        String statusMessage = null;
-        try {
-            switch (statuscode) {
-            case 0:
-                /* Everything ok */
-                break;
-            case 1:
-                statusMessage = "'No premium account working' --> Host is temporarily disabled";
+                logger.warning("'No premium account working' --> Host is temporarily disabled");
                 tempUnavailableHoster(1 * 60 * 60 * 1000l);
-            case 2:
+            } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid")) {
                 /* Invalid logindata */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-            case 3:
+            } else if (StringUtils.containsIgnoreCase(error, "Files not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            case 4:
-                statusMessage = "Exceeded daily limit of host";
+            } else if (StringUtils.containsIgnoreCase(error, "the daily download limit of")) {
+                logger.warning("Exceeded daily limit of host");
                 tempUnavailableHoster(1 * 60 * 60 * 1000l);
-            case 5:
-                statusMessage = "'Get link' error";
+            } else if (StringUtils.containsIgnoreCase(error, "Host limit of")) {
+                final String time = new Regex(error, "\\((.*?) remaining to get next link").getMatch(0);
+                if (time != null) {
+                    tempUnavailableHoster(parseTime(time));
+                }
+                logger.warning("Handling broken!");
+                tempUnavailableHoster(20 * 60 * 1000l);
+            } else if (StringUtils.containsIgnoreCase(error, "Error generating link") || StringUtils.containsIgnoreCase(error, "Get link download error")) {
+                logger.warning("'Get link' error");
                 handleErrorRetries("getlinkerror", 20, 2 * 60 * 1000l);
-            default:
+            } else {
                 /* Unknown error */
-                statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
+                logger.warning("Unknown API error");
                 handleErrorRetries("unknownAPIerror", 50, 2 * 60 * 1000l);
             }
-        } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
-            throw e;
         }
+    }
+
+    private long parseTime(final String time) throws PluginException {
+        if (time == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String tmpYears = new Regex(time, "(\\d+)\\s+years?").getMatch(0);
+        String tmpdays = new Regex(time, "(\\d+)\\s+days?").getMatch(0);
+        String tmphrs = new Regex(time, "(\\d+)\\s+hours?").getMatch(0);
+        String tmpmin = new Regex(time, "(\\d+)\\s+minutes?").getMatch(0);
+        String tmpsec = new Regex(time, "(\\d+)\\s+seconds?").getMatch(0);
+        long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+        if (!inValidate(tmpYears)) {
+            years = Integer.parseInt(tmpYears);
+        }
+        if (!inValidate(tmpdays)) {
+            days = Integer.parseInt(tmpdays);
+        }
+        if (!inValidate(tmphrs)) {
+            hours = Integer.parseInt(tmphrs);
+        }
+        if (!inValidate(tmpmin)) {
+            minutes = Integer.parseInt(tmpmin);
+        }
+        if (!inValidate(tmpsec)) {
+            seconds = Integer.parseInt(tmpsec);
+        }
+        final long expires = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
+        return expires;
     }
 
     /**
