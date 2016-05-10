@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 3, names = { "mfs_shorturlscript", "lourl.us", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?lourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 3, names = { "mfs_shorturlscript", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }, flags = { 0 })
 public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
 
     /**
@@ -61,10 +61,6 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         final String host = Browser.getHost(link.toString());
         if (host == null || "".equalsIgnoreCase(host)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if ("lourl.us".equalsIgnoreCase(host)) {
-            supportsHTTPS = false;
-            hasCaptcha = false;
         }
     }
 

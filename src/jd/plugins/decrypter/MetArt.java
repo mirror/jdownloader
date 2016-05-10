@@ -38,7 +38,9 @@ public class MetArt extends PluginForDecrypt {
                 }
             }
         }
-        if (useAcc == null) return ret;
+        if (useAcc == null) {
+            return ret;
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(useAcc.getUser() + ":" + useAcc.getPass()));
@@ -68,7 +70,6 @@ public class MetArt extends PluginForDecrypt {
             fp.setName(title);
             fp.addLinks(ret);
         }
-        int wtf = 1;
         return ret;
     }
 

@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -27,11 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.com", "filefront.com" }, urls = { "http://(www\\.)?(filefront\\.com|gamefront\\.com/files)/\\d+", "blablablaUNUSED_REGEXfh65887iu4ren" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https?://(www\\.)?(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" }, flags = { 0 })
 public class GameFrontCom extends PluginForHost {
 
     public GameFrontCom(PluginWrapper wrapper) {
@@ -39,15 +39,12 @@ public class GameFrontCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        String fKey = new Regex(link.getDownloadURL(), "filefront\\.com/(\\d+)").getMatch(0);
-        if (fKey != null) {
-            link.setUrlDownload("http://www.gamefront.com/files/" + fKey);
-        }
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(?:filefront\\.com/|gamefront\\.com/files/)", "gamefront.online/files/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.gamefront.com/tos/";
+        return "http://www.gamefront.online/tos/";
     }
 
     @Override
@@ -62,14 +59,8 @@ public class GameFrontCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setReadTimeout(3 * 60 * 1000);
 
-        String agent = null;
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
+        final String agent = UserAgents.stringUserAgent();
         br.getHeaders().put("User-Agent", agent);
 
         for (int i = 0; i <= 3; i++) {
@@ -94,21 +85,15 @@ public class GameFrontCom extends PluginForHost {
             if (br.getRedirectLocation().contains("errno=ERROR_CONTENT_QUICKKEY_INVALID")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (br.getRedirectLocation().matches(".*?gamefront\\.com/\\d+/.+")) {
+            if (br.getRedirectLocation().matches(".*?gamefront\\.online/\\d+/.+")) {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        String filename = br.getRegex("<dt>File Name:</dt>[\t\n\r ]+<dd>(<span title=\")?(.*?)(\"|</dd>)").getMatch(1);
-        if (filename == null) {
-            filename = br.getRegex("Lucida Grande\\',\\'Lucida Sans Unicode\\',Arial,sans-serif; font\\-size: 28px; font\\-weight: normal;\">(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\| Game Front</title>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("\">File size:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("<dt>File Name:</dt>\\s*(?:<!--.*?-->)?\\s*<dd>(.*?)</dd>").getMatch(0);
+        String filesize = br.getRegex("<dt>File size:</dt>\\s*<dd>(.*?)</dd>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("File Size:<.*?<.*?>(.*?)<").getMatch(0);
         }
@@ -132,7 +117,7 @@ public class GameFrontCom extends PluginForHost {
         if (AVAILABLECHECKFAILED) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         }
-        String fileID = new Regex(downloadLink.getDownloadURL(), "gamefront\\.com/files/(\\d+)").getMatch(0);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "gamefront\\.online/files/(\\d+)").getMatch(0);
         if (fileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -145,21 +130,18 @@ public class GameFrontCom extends PluginForHost {
         // "token=iicJfwAa6vKSUZA%2BU0OqkjHqyTItn8RdRHUCAqeD%2FgtbGsw6vFV9piu7ordQeZSJxiOlJUxQIi5PIl1PpDHvoRATQa2VYXcT7CyftiNYFuE21taC4FkYYKa6i005wTgcgfCI2C2oKTc%2Fxtijzz4ya3SEXYMHpvlrlvLmY0gI2VgNbWBQXPLaKzb6hVkGDS1W");
         // }
 
-        br.getPage("http://www.gamefront.com/files/service/thankyou?id=" + fileID);
+        br.getPage("/files/service/thankyou?id=" + fileID);
         String finallink = br.getRegex("If it does not, <a href=\"(http://.*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("downloadURL\\s*=\\s*'(http.*?)'").getMatch(0);
+        }
         if (finallink == null) {
             finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(http://.*?)\"").getMatch(0);
         }
         if (finallink == null) {
-            finallink = br.getRegex("(\"|')(http://media\\d+\\.gamefront\\.com/personal/\\d+/\\d+/[a-z0-9]+/.*?)(\"|')").getMatch(1);
-        }
-        if (finallink == null) {
-            finallink = br.getRegex("downloadURL.*?(http://media\\d+\\.gamefront\\.com/.*?)'").getMatch(0);
-        }
-        if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String waittime = br.getRegex("var downloadCount = (\\d+);").getMatch(0);
+        final String waittime = br.getRegex("var downloadCount\\s*=\\s*(\\d+);").getMatch(0);
         int wait = 5;
         if (waittime != null) {
             wait = Integer.parseInt(waittime);

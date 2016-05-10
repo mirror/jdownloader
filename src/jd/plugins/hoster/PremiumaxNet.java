@@ -23,6 +23,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,11 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UnavailableHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -107,7 +107,6 @@ public class PremiumaxNet extends antiDDoSForHost {
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
         getPage("/hosts.html");
-        final String[] possible_domains = { "al", "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "org" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomainsInfo = br.getRegex("(<img src=\"/assets/images/hosts/.*?)</tr>").getColumn(0);
         for (String hinfo : hostDomainsInfo) {
@@ -115,16 +114,10 @@ public class PremiumaxNet extends antiDDoSForHost {
             if (crippledhost == null) {
                 logger.warning("WTF");
             }
-            crippledhost = crippledhost.trim();
-            crippledhost = crippledhost.toLowerCase();
             final String[] imgs = new Regex(hinfo, "src=\"(tmpl/images/[^<>\"]*?)\"").getColumn(0);
             /* Apply supported hosts depending on account type */
             if (imgs != null && imgs.length >= 4 && imgs[3].equals("tmpl/images/ico_yes.png") && (!is_freeaccount && imgs[2].equals("tmpl/images/ico_yes.png") || is_freeaccount && imgs[1].equals("tmpl/images/ico_yes.png"))) {
-                /* Go insane */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
-                }
+                supportedHosts.add(crippledhost);
             }
         }
         ac.setMultiHostSupport(this, supportedHosts);

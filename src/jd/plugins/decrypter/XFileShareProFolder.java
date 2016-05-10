@@ -32,20 +32,19 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = {
-        "https?://(www\\.)?(24uploading\\.com|cloudsix\\.me|subyshare\\.com|brupload\\.net|(exclusivefaile\\.com|exclusiveloader\\.com)|sharesix\\.com|ex-load\\.com|hulkload\\.com|sharingmaster\\.com|mediafire\\.bz|anafile\\.com|koofile\\.com|bestreams\\.net|vodlocker\\.com|powvideo\\.net|vidspot\\.net|filewe\\.com|videopremium\\.(net|tv)|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|filepurpose\\.com|livecloudz\\.com|treefiles\\.com|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|interfile\\.net|restfile\\.(ws|ca|co|com)|storagely\\.com|mightyupload\\.com|free\\-uploading\\.com|rapidfileshare\\.net|rd\\-fs\\.com|fireget\\.com|ishareupload\\.com|gorillavid\\.in|your\\-filehosting\\.com|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|ufile\\.eu|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|uploadbaz\\.com|lafiles\\.com|downloadani\\.me|movdivx\\.com|filenuke\\.com|filesabc\\.com|filesabc\\.com|faststore\\.org)/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|http?://(www\\.)?musickapoz\\.se/users/[a-z0-9]+|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?" }, flags = {
+        "https?://(www\\.)?(cloudsix\\.me|subyshare\\.com|brupload\\.net|(exclusivefaile\\.com|exclusiveloader\\.com)|sharesix\\.com|ex-load\\.com|hulkload\\.com|sharingmaster\\.com|mediafire\\.bz|anafile\\.com|koofile\\.com|bestreams\\.net|vodlocker\\.com|powvideo\\.net|vidspot\\.net|filewe\\.com|videopremium\\.(net|tv)|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|livecloudz\\.com|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|interfile\\.net|restfile\\.(ws|ca|co|com)|storagely\\.com|mightyupload\\.com|free\\-uploading\\.com|rapidfileshare\\.net|rd\\-fs\\.com|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|uploadbaz\\.com|lafiles\\.com|downloadani\\.me|movdivx\\.com|filenuke\\.com|filesabc\\.com|filesabc\\.com|faststore\\.org)/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|http?://(www\\.)?musickapoz\\.se/users/[a-z0-9]+|https?://(?:www\\.)?imgtiger\\.org/g/[a-z0-9]+|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?" }, flags = {
                 0 })
 @SuppressWarnings("deprecation")
-public class XFileShareProFolder extends PluginForDecrypt {
+public class XFileShareProFolder extends antiDDoSForDecrypt {
 
     // DONT FORGET TO MAINTAIN HERE ALSO!
 
     public String[] siteSupportedNames() {
-        return new String[] { "24uploading.com", "usersfiles.com", "cloudsix.me", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "sharesix.com", "ex-load.com", "hulkload.com", "sharingmaster.com", "mediafire.bz", "anafile.com", "koofile.com", "bestreams.net", "vodlocker.com", "powvideo.net", "vidspot.net", "filewe.com", "videopremium.tv", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "filepurpose.com", "livecloudz.com", "treefiles.com", "up.media1fire.com", "salefiles.com", "ortofiles.com", "interfile.net", "restfile.ws", "restfile.ca", "restfile.co", "restfile.com", "storagely.com", "mightyupload.com", "free-uploading.com", "rapidfileshare.net", "rd-fs.com", "fireget.com", "ishareupload.com", "gorillavid.in", "your-filehosting.com", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "ufile.eu", "qtyfiles.com",
-                "free-uploading.com", "free-uploading.com", "uppit.com", "uploadbaz.com", "lafiles.com", "downloadani.me", "movdivx.com", "filenuke.com", "filesabc.com", "filesabc.com", "faststore.org" };
+        return new String[] { "usersfiles.com", "cloudsix.me", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "sharesix.com", "ex-load.com", "hulkload.com", "sharingmaster.com", "mediafire.bz", "anafile.com", "koofile.com", "bestreams.net", "vodlocker.com", "powvideo.net", "vidspot.net", "filewe.com", "videopremium.tv", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "livecloudz.com", "up.media1fire.com", "salefiles.com", "ortofiles.com", "interfile.net", "restfile.ws", "restfile.ca", "restfile.co", "restfile.com", "storagely.com", "mightyupload.com", "free-uploading.com", "rapidfileshare.net", "rd-fs.com", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "uploadbaz.com", "lafiles.com",
+                "downloadani.me", "movdivx.com", "filenuke.com", "filesabc.com", "filesabc.com", "faststore.org", "imgtiger.org" };
     }
 
     @Override
@@ -59,7 +58,7 @@ public class XFileShareProFolder extends PluginForDecrypt {
     // maintenance.
     // TODO: remove old xfileshare folder plugins after next major update.
 
-    private String                        HOST           = null;
+    private String                        host           = null;
     private String                        parameter      = null;
     private final HashSet<String>         dupe           = new HashSet<String>();
     private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -75,16 +74,14 @@ public class XFileShareProFolder extends PluginForDecrypt {
         dupe.clear();
         decryptedLinks.clear();
         parameter = param.toString();
-        HOST = new Regex(parameter, "https?://(www\\.)?([^:/]+)").getMatch(1);
-        if (HOST == null) {
+        host = new Regex(parameter, "https?://(www\\.)?([^:/]+)").getMatch(1);
+        if (host == null) {
             logger.warning("Failure finding HOST : " + parameter);
             return null;
         }
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie("http://" + HOST, "lang", "english");
+        br.setCookie("http://" + host, "lang", "english");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML("No such user exist")) {
             logger.warning("Incorrect URL or Invalid user : " + parameter);
             return decryptedLinks;
@@ -98,7 +95,9 @@ public class XFileShareProFolder extends PluginForDecrypt {
                 if (fpName == null) {
                     fpName = new Regex(parameter, "users/[a-z0-9_]+/(.+)").getMatch(0); // id
                     if (fpName == null) {
-                        if (parameter.matches(".+users(?:files|cloud)\\.com/.+")) {
+                        if (parameter.matches(".+imgtiger\\.org/.+")) {
+                            fpName = br.getRegex("<H1[^>]*>(.*?)</H1>").getMatch(0);
+                        } else if (parameter.matches(".+users(?:files|cloud)\\.com/.+")) {
                             fpName = br.getRegex("<title>\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
                         }
 
@@ -108,12 +107,13 @@ public class XFileShareProFolder extends PluginForDecrypt {
             }
         }
         dupe.add(parameter);
-        parsePage();
-        parseNextPage();
+        do {
+            parsePage();
+        } while (parseNextPage());
 
         if (fpName != null) {
             fpName = "Folder - " + Encoding.htmlDecode(fpName);
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }
@@ -121,7 +121,7 @@ public class XFileShareProFolder extends PluginForDecrypt {
     }
 
     private void parsePage() throws PluginException {
-        final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(HOST) + "/[a-z0-9]{12})(?:/.*?)?\\1").getColumn(1);
+        final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(host) + "/[a-z0-9]{12})(?:/.*?)?\\1").getColumn(1);
         if (links != null && links.length > 0) {
             for (String dl : links) {
                 if (dupe.add(dl)) {
@@ -129,7 +129,7 @@ public class XFileShareProFolder extends PluginForDecrypt {
                 }
             }
         }
-        String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(HOST) + "[^\"]+users/[^\"]+)").getColumn(0);
+        final String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(host) + "[^\"]+users/[^\"]+)").getColumn(0);
         if (folders != null && folders.length > 0) {
             for (String dl : folders) {
                 if (dupe.add(dl)) {
@@ -148,8 +148,6 @@ public class XFileShareProFolder extends PluginForDecrypt {
             nextPage = Request.getLocation(nextPage, br.getRequest());
             if (dupe.add(nextPage)) {
                 br.getPage(nextPage);
-                parsePage();
-                parseNextPage();
                 return true;
             }
         }
