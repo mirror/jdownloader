@@ -34,7 +34,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sx566.com", "72bbb.com" }, urls = { "https?://(?:www\\.)?sx566\\.com/(?:file|view)\\-\\d+\\.html", "https?://(?:www\\.)?72bbb\\.com/(?:file|view)\\-\\d+\\.html" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "72bbb.com" }, urls = { "https?://(?:www\\.)?72bbb\\.com/(?:file|view)\\-\\d+\\.html" }, flags = { 0 })
 public class Sx566Com extends PluginForHost {
 
     public Sx566Com(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class Sx566Com extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://sx566.com/";
+        return "http://" + getHost() + "/";
     }
 
     /* Connection stuff */
@@ -51,7 +51,6 @@ public class Sx566Com extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
-    private static final String  TYPE_sx566        = "https?://(?:www\\.)?sx566\\.com/file\\-\\d+\\.html";
     private static final String  TYPE_72bbb        = "https?://(?:www\\.)?72bbb\\.com/file\\-\\d+\\.html";
 
     private String               fuid              = null;
@@ -78,23 +77,14 @@ public class Sx566Com extends PluginForHost {
         }
         String filename = null;
         String filesize = null;
-        if (link.getDownloadURL().matches(TYPE_sx566)) {
-            if (this.br.containsHTML("<h1><small>  </small></h1>")) {
-                /* No fileinfo --> Offline! */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Regex finfo = this.br.getRegex("<h1>([^<>\"]*?)<small>([^<>\"]*?)</small></h1>");
-            filename = finfo.getMatch(0);
-            filesize = finfo.getMatch(1);
-        } else {
-            filename = br.getRegex("<h4>([^<>\"]*?)</h4>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"]*?) \\- 免费下载,迅雷下载</title>").getMatch(0);
-            }
-            filesize = br.getRegex(">大小：</span></td>[\t\n\r ]+<td class=\"ftr\" align=\"[^\"]+\">([^<>\"]*?)</td>").getMatch(0);
-            if (filesize != null) {
-                filesize += "b";
-            }
+
+        filename = br.getRegex("<h4>([^<>\"]*?)</h4>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- 免费下载,迅雷下载</title>").getMatch(0);
+        }
+        filesize = br.getRegex(">大小：</span></td>[\t\n\r ]+<td class=\"ftr\" align=\"[^\"]+\">([^<>\"]*?)</td>").getMatch(0);
+        if (filesize != null) {
+            filesize += "b";
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -117,19 +107,7 @@ public class Sx566Com extends PluginForHost {
                 /* TODO: Implement (free) download support! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (downloadLink.getDownloadURL().matches(TYPE_sx566)) {
-                this.br.getPage("/down-" + this.fuid + ".html");
-                final String captchaurl = "/imagecode.php";
-                boolean failed = true;
-                for (int i = 0; i <= 2; i++) {
-
-                }
-                if (failed) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            } else {
-                this.br.getPage("/down-" + this.fuid + ".html");
-            }
+            this.br.getPage("/down-" + this.fuid + ".html");
             dllink = br.getRegex("").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
