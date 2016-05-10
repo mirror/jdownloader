@@ -6402,4 +6402,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     String youtube_add_variants_help(int linksCount);
 
+    @Default(lngs = { "en" }, values = { "Playlist ID e.g. PLD3J3Pup7M00BeAyuplpWoGRFpT3enHPq" })
+
+    String YoutubeHelper_getDescription_playlist_id();
+
+    @Default(lngs = { "en" }, values = { "Playlist Name e.g. Canadian Animals" })
+
+    String YoutubeHelper_getDescription_playlist_name();
 }

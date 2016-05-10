@@ -11,9 +11,9 @@ public enum VideoResolution implements LabelInterface,IntegerInterface {
     // Order is default quality sort order
     P_4320(7680, 4320),
     P_2160(3840, 2160),
+    P_1920(1080, 1920),
     P_1440(2560, 1440),
     P_1080(1920, 1080),
-    P_1920(1080, 1920),
     P_720(1280, 720),
     P_480(640, 480),
     P_360(480, 360),

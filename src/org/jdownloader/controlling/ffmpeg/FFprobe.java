@@ -1,7 +1,6 @@
 package org.jdownloader.controlling.ffmpeg;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.appwork.storage.JSonStorage;
@@ -10,12 +9,17 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.logging.LogController;
 
-public class FFprobe extends AbstractFFmpegBinary {
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
-    public FFprobe() {
+public class FFprobe extends AbstractFFmpegBinary {
+    public FFprobe(Browser br) {
+        super(br);
+
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFprobe.class.getName());
         path = config.getBinaryPathProbe();
@@ -23,6 +27,11 @@ public class FFprobe extends AbstractFFmpegBinary {
             config.setBinaryPath(null);
             path = null;
         }
+    }
+
+    public FFprobe() {
+        this(null);
+
     }
 
     private boolean validatePaths() {
@@ -51,31 +60,40 @@ public class FFprobe extends AbstractFFmpegBinary {
     }
 
     public StreamInfo getStreamInfo(String dllink) {
-        ArrayList<String> commandLine = new ArrayList<String>();
-        commandLine.add(getFullPath());
-        commandLine.add("-loglevel");
-        commandLine.add("48");
-        commandLine.add("-show_format");
-        commandLine.add("-show_streams");
-        commandLine.add("-probesize");
-        commandLine.add("24000");
-        commandLine.add("-of");
-        commandLine.add("json");
-        commandLine.add("-i");
-        commandLine.add(dllink);
+
         try {
+            initPipe();
+            this.processID = new UniqueAlltimeID().getID();
+            ArrayList<String> commandLine = new ArrayList<String>();
+            commandLine.add(getFullPath());
+            commandLine.add("-loglevel");
+            commandLine.add("48");
+            commandLine.add("-show_format");
+            commandLine.add("-show_streams");
+            commandLine.add("-probesize");
+            commandLine.add("24000");
+            commandLine.add("-of");
+            commandLine.add("json");
+            commandLine.add("-i");
+            if (server != null && server.isRunning()) {
+                commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(dllink));
+
+            } else {
+                commandLine.add(dllink);
+            }
+
             String ret = runCommand(null, commandLine);
             StreamInfo data = JSonStorage.restoreFromString(ret, new TypeRef<StreamInfo>() {
             });
             return data;
-        } catch (IOException e) {
+
+        } catch (Throwable e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (FFMpegException e) {
-            e.printStackTrace();
+            return null;
+
+        } finally {
+            closePipe();
         }
-        return null;
     }
 
     public StreamInfo getStreamInfo(File dummy) {

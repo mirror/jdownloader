@@ -3,7 +3,7 @@ package org.jdownloader.plugins.components.youtube.variants.generics;
 import org.appwork.storage.Storable;
 import org.jdownloader.plugins.components.youtube.Projection;
 
-public class GenericVideoInfo extends AbstractGenericVariantInfo implements Storable {
+public class GenericVideoInfo extends GenericAudioInfo implements Storable {
     public GenericVideoInfo(/* Storable */) {
     }
 

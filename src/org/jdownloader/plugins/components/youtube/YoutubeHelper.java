@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -40,6 +41,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
@@ -52,8 +54,15 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
+import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
+import org.jdownloader.controlling.ffmpeg.FFprobe;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.components.youtube.YoutubeReplacer.DataSource;
@@ -64,15 +73,18 @@ import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
+import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.plugins.components.youtube.variants.generics.GenericAudioInfo;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.FilterList.Type;
+import org.jdownloader.updatev2.UpdateController;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -87,6 +99,7 @@ import org.xml.sax.SAXParseException;
 
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.SingleBasicProxySelectorImpl;
 import jd.http.Browser;
@@ -95,6 +108,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.QueryInfo;
 import jd.http.Request;
+import jd.http.StaticProxySelector;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -414,12 +428,39 @@ public class YoutubeHelper {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                return link.getStringProperty(YoutubeHelper.YT_USER, "");
+                return link.getStringProperty(YoutubeHelper.YT_USER_NAME, "");
             }
 
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_user();
+            }
+
+        });
+
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_ID") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_playlist_id();
+            }
+
+        });
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_NAME") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_TITLE, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_playlist_name();
             }
 
         });
@@ -481,7 +522,7 @@ public class YoutubeHelper {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                return link.getStringProperty(YoutubeHelper.YT_CHANNEL, "");
+                return link.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, "");
             }
 
             @Override
@@ -752,8 +793,8 @@ public class YoutubeHelper {
     public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
     public static final String  YT_ID                            = "YT_ID";
 
-    public static final String  YT_CHANNEL                       = "YT_CHANNEL";
-    public static final String  YT_USER                          = "YT_USER";
+    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+
     public static final String  YT_DATE                          = "YT_DATE";
     public static final String  YT_VARIANTS                      = "YT_VARIANTS";
     public static final String  YT_VARIANT                       = "YT_VARIANT";
@@ -1116,6 +1157,9 @@ public class YoutubeHelper {
             if (StringUtils.isNotEmpty(match)) {
                 // 04 Mai 2016
                 match = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim().replaceAll("<br\\s*/>", "\r\n"));
+                // replace Timelinks
+                match = match.replaceAll("<a href=\"#\" onclick=\"[^\"]+\\((\\d+)\\*60 (\\d+)\\)[^\"]+\">(.*?)</a>", "\r\nJump to $3 https://youtu.be/" + vid.videoID + "?t=$1m$2s");
+
                 match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
                 vid.description = match;
             }
@@ -1123,6 +1167,8 @@ public class YoutubeHelper {
                 // 04 Mai 2016
                 match = br.getRegex("<meta name=\"description\" content=\"([^\"]*)").getMatch(0);
                 match = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim().replaceAll("<br\\s*/>", "\r\n"));
+                match = match.replaceAll("<a href=\"#\" onclick=\"[^\"]+\\((\\d+)\\*60 (\\d+)\\)[^\"]+\">(.*?)</a>", "\r\nJump to $3 https://youtu.be/" + vid.videoID + "?t=$1m$2s");
+
                 match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
                 vid.description = match;
 
@@ -1221,7 +1267,7 @@ public class YoutubeHelper {
 
             }
         }
-        if (StringUtils.isEmpty(vid.channel)) {
+        if (StringUtils.isEmpty(vid.channelTitle)) {
             String match = this.br.getRegex("<div class=\"yt-user-info\"><a [^>]*data-name[^>]*>(.*?)</a>").getMatch(0);
             if (StringUtils.isEmpty(match) && StringUtils.isNotEmpty(vid.channelID)) {
                 // content warning regex.
@@ -1232,7 +1278,7 @@ public class YoutubeHelper {
                 match = this.br.getRegex("\"author\":\\s*\"(.*?)\"").getMatch(0);
             }
             if (StringUtils.isNotEmpty(match)) {
-                vid.channel = Encoding.htmlDecode(match.trim());
+                vid.channelTitle = Encoding.htmlDecode(match.trim());
 
             }
         }
@@ -1242,11 +1288,12 @@ public class YoutubeHelper {
             final String vidWorkAround = this.br.getRegex("&author=(.*?)&").getMatch(0);
             if (StringUtils.isNotEmpty(match)) {
                 vid.user = Encoding.htmlDecode(match.trim());
-            } else if (vid.channel != null) {
-                vid.user = vid.channel;
+            } else if (vid.channelTitle != null) {
+                vid.user = vid.channelTitle;
             } else if (StringUtils.isNotEmpty(vidWorkAround)) {
                 vid.user = vidWorkAround;
             }
+
         }
     }
 
@@ -1321,7 +1368,7 @@ public class YoutubeHelper {
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
 
         this.vid = vid;
-        final Map<YoutubeITAG, List<YoutubeStreamData>> ret = new HashMap<YoutubeITAG, List<YoutubeStreamData>>();
+        final Map<YoutubeITAG, StreamCollection> ret = new HashMap<YoutubeITAG, StreamCollection>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         boolean loggedIn = br.getCookie("https://youtube.com", "LOGIN_INFO") != null;
         this.br.setFollowRedirects(true);
@@ -1522,9 +1569,9 @@ public class YoutubeHelper {
                             continue;
                         }
 
-                        List<YoutubeStreamData> lst = ret.get(match.getItag());
+                        StreamCollection lst = ret.get(match.getItag());
                         if (lst == null) {
-                            lst = new ArrayList<YoutubeStreamData>();
+                            lst = new StreamCollection();
                             ret.put(match.getItag(), lst);
                         }
                         lst.add(match);
@@ -1593,9 +1640,9 @@ public class YoutubeHelper {
                             }
                             final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.width, c.height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
 
-                            List<YoutubeStreamData> lst = ret.get(itag);
+                            StreamCollection lst = ret.get(itag);
                             if (lst == null) {
-                                lst = new ArrayList<YoutubeStreamData>();
+                                lst = new StreamCollection();
                                 ret.put(itag, lst);
                             }
                             YoutubeStreamData vsd;
@@ -1649,9 +1696,9 @@ public class YoutubeHelper {
             }
         }
         for (YoutubeStreamData sd : loadThumbnails()) {
-            List<YoutubeStreamData> lst = ret.get(sd.getItag());
+            StreamCollection lst = ret.get(sd.getItag());
             if (lst == null) {
-                lst = new ArrayList<YoutubeStreamData>();
+                lst = new StreamCollection();
                 ret.put(sd.getItag(), lst);
             }
             lst.add(sd);
@@ -1814,7 +1861,7 @@ public class YoutubeHelper {
      * @throws IOException
      * @throws PluginException
      */
-    private void handleQuery(Element representation, final Map<YoutubeITAG, List<YoutubeStreamData>> ret, String url, final QueryInfo query, StreamMap src) throws IOException, PluginException {
+    private void handleQuery(Element representation, final Map<YoutubeITAG, StreamCollection> ret, String url, final QueryInfo query, StreamMap src) throws IOException, PluginException {
         String r = null;
 
         r = xmlNodeToString(representation);
@@ -1913,9 +1960,9 @@ public class YoutubeHelper {
 
             YoutubeStreamData vsd;
 
-            List<YoutubeStreamData> lst = ret.get(itag);
+            StreamCollection lst = ret.get(itag);
             if (lst == null) {
-                lst = new ArrayList<YoutubeStreamData>();
+                lst = new StreamCollection();
                 ret.put(itag, lst);
             }
             lst.add(vsd = new YoutubeStreamData(src.src, vid, url, itag, query));
@@ -2103,7 +2150,7 @@ public class YoutubeHelper {
     }
 
     private List<YoutubeStreamData> loadThumbnails() {
-        ArrayList<YoutubeStreamData> ret = new ArrayList<YoutubeStreamData>();
+        StreamCollection ret = new StreamCollection();
         String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
         ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null));
         if (best != null && best.equals("default.jpg")) {
@@ -2326,6 +2373,14 @@ public class YoutubeHelper {
     public static final String YT_3D                 = "YT_3D";
 
     public static final String YT_COLLECTION         = "YT_COLLECTION";
+
+    public static final String YT_PLAYLIST_TITLE     = "YT_PLAYLIST_TITLE";
+
+    public static final String YT_PLAYLIST_ID        = "YT_PLAYLIST_ID";
+
+    public static final String YT_USER_ID            = "YT_USER_ID";
+
+    public static final String YT_USER_NAME          = "YT_USER_NAME";
 
     public String createFilename(DownloadLink link) {
 
@@ -2684,6 +2739,120 @@ public class YoutubeHelper {
     public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {
         downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, v);
         downloadLink.setProperty(YoutubeHelper.YT_VARIANT, v.getStorableString());
+
+    }
+
+    public void extendedDataLoading(VariantInfo v, List<VariantInfo> variants) {
+
+        extendedDataLoadingDemuxAudioBitrate(v, variants);
+    }
+
+    protected void checkFFProbe(FFprobe ffmpeg, String reason) throws SkipReasonException, InterruptedException {
+        synchronized (DownloadWatchDog.getInstance()) {
+
+            if (!ffmpeg.isAvailable()) {
+                if (UpdateController.getInstance().getHandler() == null) {
+                    logger.warning("Please set FFMPEG: BinaryPath in advanced options");
+                    throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                }
+                FFmpegProvider.getInstance().install(null, reason);
+                ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
+                if (!ffmpeg.isAvailable()) {
+                    //
+
+                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
+                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+
+                    } else {
+                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                    }
+
+                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+                    // _GUI.T.YoutubeDash_handleFree_ffmpegmissing());
+                }
+            }
+        }
+    }
+
+    public void extendedDataLoading(List<VariantInfo> vs) {
+        for (VariantInfo v : vs) {
+            extendedDataLoading(v, vs);
+        }
+    }
+
+    protected void extendedDataLoadingDemuxAudioBitrate(VariantInfo v, List<VariantInfo> variants) {
+        if (!CFG_YOUTUBE.CFG.isDoExtendedAudioBitrateLookupEnabled()) {
+            return;
+        }
+
+        YoutubeITAG itagVideo = v.getVariant().getiTagVideo();
+        if (itagVideo == null) {
+            return;
+        }
+        switch (itagVideo.getITAG()) {
+        case 22:
+        case 18:
+        case 82:
+        case 84:
+            int bitrate = v.getVideoStreams().getAudioBitrate();
+            if (bitrate <= 0) {
+                logger.info("Load Stream Probe for " + itagVideo + " - " + itagVideo.getITAG());
+                main: for (YoutubeStreamData vStream : v.getVideoStreams()) {
+                    try {
+                        if (vStream.getSegments() != null && vStream.getSegments().length > 0) {
+                            System.out.println("HLS");
+                        } else {
+                            Browser clone = br.cloneBrowser();
+                            List<HTTPProxy> proxies;
+
+                            proxies = br.selectProxies(new URL("https://youtube.com"));
+
+                            if (proxies != null && proxies.size() > 0) {
+                                clone.setProxySelector(new StaticProxySelector(proxies.get(0)));
+                            }
+
+                            FFprobe ffmpeg = new FFprobe(clone);
+                            // probe.isAvailable()
+
+                            checkFFProbe(ffmpeg, "Detect the actual Audio Bitrate");
+
+                            StreamInfo streamInfo = ffmpeg.getStreamInfo(vStream.getUrl());
+                            if (streamInfo != null) {
+                                for (Stream stream : streamInfo.getStreams()) {
+                                    if ("audio".equals(stream.getCodec_type())) {
+                                        int aBitrate = (int) (Double.parseDouble(stream.getBit_rate()) / 1000);
+                                        if (aBitrate > 0) {
+                                            bitrate = aBitrate;
+                                            v.getVideoStreams().setAudioBitrate(aBitrate);
+
+                                            break main;
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            if (bitrate > 0) {
+
+                for (VariantInfo av : variants) {
+                    if (av.getVariant().getiTagVideo() == itagVideo) {
+                        if (av.getVariant().getGenericInfo() instanceof GenericAudioInfo) {
+                            ((GenericAudioInfo) av.getVariant().getGenericInfo()).setaBitrate(bitrate);
+
+                        }
+                    }
+                }
+
+            }
+
+        }
 
     }
 

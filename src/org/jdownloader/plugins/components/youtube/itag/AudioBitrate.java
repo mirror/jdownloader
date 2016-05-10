@@ -20,7 +20,7 @@ public enum AudioBitrate implements IntegerInterface,LabelInterface {
     KBIT_24(24),
     KBIT_12(12);
 
-    private int kbit;
+    private final int kbit;
 
     private AudioBitrate(int kbit) {
         this.kbit = kbit;
@@ -58,6 +58,17 @@ public enum AudioBitrate implements IntegerInterface,LabelInterface {
             return -1;
         }
         return ((Number) intObj).intValue();
+    }
+
+    public static AudioBitrate getByInt(int bitrate) {
+
+        AudioBitrate best = null;
+        for (AudioBitrate b : values()) {
+            if (best == null || Math.abs(best.getKbit() - bitrate) > Math.abs(b.getKbit() - bitrate)) {
+                best = b;
+            }
+        }
+        return best;
     }
 
 }

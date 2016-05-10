@@ -79,6 +79,9 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     @Override
     public AudioBitrate getAudioBitrate() {
+        if (getGenericInfo().getaBitrate() > 0) {
+            return AudioBitrate.getByInt(getGenericInfo().getaBitrate());
+        }
         return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
     }
 

@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.utils.CompareUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -47,31 +46,6 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             if (ret != 0) {
                 return ret;
             }
-        }
-        // if (o1 instanceof AudioVariant && o2 instanceof AudioVariant) {
-        // // demux is worse
-        // ret = CompareUtils.compare(o1.getBaseVariant().getiTagAudio() != null, o2.getBaseVariant().getiTagAudio() != null);
-        // if (ret != 0) {
-        // return ret;
-        // }
-        // }
-
-        if (o1 instanceof SubtitleVariant && o2 instanceof SubtitleVariant) {
-            Integer pref1 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o1).getLanguageCode());
-            Integer pref2 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o2).getLanguageCode());
-            if (pref1 == null) {
-                pref1 = Integer.MAX_VALUE;
-            }
-            if (pref2 == null) {
-                pref2 = Integer.MAX_VALUE;
-            }
-            ret = CompareUtils.compare(pref1, pref2);
-
-            if (ret == 0) {
-                ret = CompareUtils.compare(((SubtitleVariant) o1).getDisplayLanguage(), ((SubtitleVariant) o2).getDisplayLanguage());
-            }
-            return ret;
-
         }
 
         return ret;

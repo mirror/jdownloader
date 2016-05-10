@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.DescriptionVariantInfo;
@@ -29,27 +28,27 @@ public class YoutubeClipData {
      *
      */
 
-    public String                                    user;
-    public String                                    channel;
-    public long                                      date;
-    public String                                    error;
-    public boolean                                   ageCheck;
-    public String                                    title;
-    public String                                    videoID;
-    public int                                       playlistEntryNumber;
-    public int                                       length;
-    public String                                    category;
-    public int                                       duration;
-    public String                                    channelID;
-    public long                                      dateUpdated;
-    public String                                    userGooglePlusID;
-    public VideoVariant                              bestVideoItag;
-    public String                                    description;
-    public Map<YoutubeITAG, List<YoutubeStreamData>> streams;
-    public ArrayList<YoutubeSubtitleStorable>        subtitles;
-    public HashMap<String, String>                   keywords3D;
-    public HashSet<String>                           keywords;
-    public String                                    approxThreedLayout;
+    public String                             user;
+    public String                             channelTitle;
+    public long                               date;
+    public String                             error;
+    public boolean                            ageCheck;
+    public String                             title;
+    public String                             videoID;
+    public int                                playlistEntryNumber = -1;
+    public int                                length;
+    public String                             category;
+    public int                                duration;
+    public String                             channelID;
+    public long                               dateUpdated;
+    public String                             userGooglePlusID;
+    public VideoVariant                       bestVideoItag;
+    public String                             description;
+    public Map<YoutubeITAG, StreamCollection> streams;
+    public ArrayList<YoutubeSubtitleStorable> subtitles;
+    public HashMap<String, String>            keywords3D;
+    public HashSet<String>                    keywords;
+    public String                             approxThreedLayout;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);
@@ -101,7 +100,7 @@ public class YoutubeClipData {
             return Projection.ANAGLYPH_3D;
         }
         int highestProjection = -1;
-        for (Entry<YoutubeITAG, List<YoutubeStreamData>> s : streams.entrySet()) {
+        for (Entry<YoutubeITAG, StreamCollection> s : streams.entrySet()) {
             for (YoutubeStreamData stream : s.getValue()) {
                 highestProjection = Math.max(highestProjection, stream.getProjectionType());
             }
@@ -164,27 +163,37 @@ public class YoutubeClipData {
     }
 
     public void copyToDownloadLink(final DownloadLink thislink) {
-        thislink.setProperty(YoutubeHelper.YT_TITLE, title);
-        thislink.setProperty(YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
+        if (StringUtils.isNotEmpty(title)) {
+            thislink.setProperty(YoutubeHelper.YT_TITLE, title);
+        }
+        if (playlistEntryNumber >= 0) {
+            thislink.setProperty(YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
+        }
         thislink.setProperty(YoutubeHelper.YT_3D, is3D());
-        thislink.setProperty(YoutubeHelper.YT_CHANNEL, channel);
-        thislink.setProperty(YoutubeHelper.YT_USER, user);
+        if (StringUtils.isNotEmpty(channelTitle)) {
+            thislink.setProperty(YoutubeHelper.YT_CHANNEL_TITLE, channelTitle);
+        }
+        if (StringUtils.isNotEmpty(user)) {
+            thislink.setProperty(YoutubeHelper.YT_USER_NAME, user);
+        }
         thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.getBaseVariant().getiTagVideo().name());
         thislink.setProperty(YoutubeHelper.YT_DATE, date);
         thislink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, length);
         thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
-        thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, channelID);
+        if (StringUtils.isNotEmpty(channelID)) {
+            thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, channelID);
+        }
         thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
         thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
         thislink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
 
     }
 
-    public List<YoutubeStreamData> getStreams(YoutubeITAG itag) {
+    public StreamCollection getStreams(YoutubeITAG itag) {
         if (itag == null) {
             return null;
         }
-        List<YoutubeStreamData> ret = streams.get(itag);
+        StreamCollection ret = streams.get(itag);
         if (ret == null) {
             // check alternatives
             List<YoutubeITAG> alternatives = YoutubeITAG.getTagList(itag.getITAG());
@@ -237,15 +246,13 @@ public class YoutubeClipData {
                 continue;
             }
             if (!v.isValidFor(this)) {
-                Log.info("Invalid Variant for: " + v);
-
                 continue;
             }
             // System.out.println("test for " + v);
 
-            List<YoutubeStreamData> audio = null;
-            List<YoutubeStreamData> video = null;
-            List<YoutubeStreamData> data = null;
+            StreamCollection audio = null;
+            StreamCollection video = null;
+            StreamCollection data = null;
             boolean valid = v.getiTagVideo() != null || v.getiTagAudio() != null || v.getiTagData() != null;
 
             if (v.getiTagVideo() != null) {

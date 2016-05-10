@@ -512,4 +512,12 @@ public interface YoutubeConfig extends PluginConfigInterface {
     void setVariantNamePatternVideo(String type);
 
     void setVideoFilenamePattern(String name);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Preload 200kb and use FFProbe to detect the actual Audio Bitrate.")
+
+    boolean isDoExtendedAudioBitrateLookupEnabled();
+
+    void setDoExtendedAudioBitrateLookupEnabled(boolean b);
 }
