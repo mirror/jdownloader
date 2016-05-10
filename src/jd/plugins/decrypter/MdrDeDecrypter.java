@@ -61,18 +61,21 @@ public class MdrDeDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final boolean grab_subtitles = cfg.getBooleanProperty(ALLOW_SUBTITLES, false);
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         final Regex clipinfo = new Regex(parameter, "https?://(?:www\\.)?mdr\\.de/([^<>\"]+)/video((?:\\-)?\\d+)");
         final String url_hostername = new Regex(parameter, "https?://(?:www\\.)?([^/]+)\\.de/.+").getMatch(0);
+        final String full_Host = url_hostername + ".de";
         final String url_clipname = clipinfo.getMatch(0);
         String clip_id = clipinfo.getMatch(1);
+
+        final SubConfiguration cfg = SubConfiguration.getConfig(full_Host);
+        final boolean grab_subtitles = cfg.getBooleanProperty(ALLOW_SUBTITLES, false);
+
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         String player_xml_url;
+
         if (url_clipname != null && clip_id != null) {
             /* Short and safe way --> We can build our XML url */
             player_xml_url = "http://www." + url_hostername + ".de/" + url_clipname + "/video" + clip_id + "-avCustom.xml";
@@ -80,9 +83,9 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             /* Longer way - we have to access the clip url first to find the XML url. */
             this.br.getPage(parameter);
             if (this.br.getHost().equals("mdr.de")) {
-                player_xml_url = this.br.getRegex("\\'playerXml\\':\\'(\\\\/mediathek\\\\/[^<>\"/]+avCustom\\.xml)\\'").getMatch(0);
+                player_xml_url = this.br.getRegex("\\'playerXml\\':\\'(mediathek\\\\/[^<>\"/]+avCustom\\.xml)\\'").getMatch(0);
             } else {
-                player_xml_url = this.br.getRegex("dataURL:\\'(/[^<>\"]+avCustom\\.xml)\\'").getMatch(0);
+                player_xml_url = this.br.getRegex("dataURL:\\'([^<>\"]+avCustom\\.xml)\\'").getMatch(0);
             }
             if (player_xml_url == null) {
                 /* Whatever we have it is probably not a video ... */
