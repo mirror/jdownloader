@@ -21,6 +21,14 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.FFprobe;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
@@ -30,14 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.DailyMotionVariant;
-
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.FFprobe;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
 public class DailyMotionComV2 extends DailyMotionCom {
@@ -167,7 +167,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
                         if (var != null && var.getConvertTo() != null) {
                             if (downloadLink.getProperty("FFP_BITRATE") == null) {
                                 checkFFProbe(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
-                                StreamInfo streamInfo = new FFprobe().getStreamInfo(dllink);
+                                StreamInfo streamInfo = new FFprobe(br.cloneBrowser()).getStreamInfo(dllink);
                                 downloadLink.setProperty("FFP_BITRATE", streamInfo.getFormat().getBit_rate());
                                 downloadLink.setProperty("FFP_DURATION", streamInfo.getFormat().getDuration());
                                 downloadLink.setProperty("FFP_V_HEIGHT", streamInfo.getStreams().get(0).getHeight());

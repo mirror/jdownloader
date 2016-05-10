@@ -224,12 +224,14 @@ public class YoutubeLinkGrabberExtender {
 
                     try {
 
-                        final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
+                        YoutubeHelper helper;
+                        final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
                         if (!videoIDDupe.add(clipData.videoID)) {
                             continue;
                         }
-
-                        aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findVariants());
+                        List<VariantInfo> variants = clipData.findVariants();
+                        helper.extendedDataLoading(variants);
+                        aggregate(cl, matchingLinks, dupeAdd, vs, variants);
                         aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findDescriptionVariant());
 
                         aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findSubtitleVariants());
@@ -326,12 +328,14 @@ public class YoutubeLinkGrabberExtender {
                         if (((AbstractVariant) activeVariant).getGroup() != g) {
                             continue;
                         }
-                        final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
+                        YoutubeHelper helper;
+                        final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
                         if (!videoIDDupe.add(clipData.videoID)) {
                             continue;
                         }
-
-                        aggregate(cl, g, matchingLinks, dupeAdd, vs, clipData.findVariants());
+                        List<VariantInfo> variants = clipData.findVariants();
+                        helper.extendedDataLoading(variants);
+                        aggregate(cl, g, matchingLinks, dupeAdd, vs, variants);
                         aggregate(cl, g, matchingLinks, dupeAdd, vs, clipData.findDescriptionVariant());
 
                         aggregate(cl, g, matchingLinks, dupeAdd, vs, clipData.findSubtitleVariants());
@@ -486,7 +490,8 @@ public class YoutubeLinkGrabberExtender {
 
     private AbstractVariant findBestVariant(final CrawledLink cl, VariantGroup g, final AbstractVariant choosenVariant, final boolean alternativesEnabled) throws Exception {
 
-        final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
+        final YoutubeHelper helper;
+        final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
 
         switch (g) {
         case DESCRIPTION:
@@ -516,7 +521,7 @@ public class YoutubeLinkGrabberExtender {
         case IMAGE:
         case VIDEO:
             List<VariantInfo> variants = clipData.findVariants();
-
+            helper.extendedDataLoading(variants);
             // sorts the best matching variants first. (based on quality rating)
             Collections.sort(variants, new Comparator<VariantInfo>() {
 

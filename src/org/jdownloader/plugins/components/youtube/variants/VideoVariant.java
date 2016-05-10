@@ -257,6 +257,9 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     }
 
     public AudioBitrate getAudioBitrate() {
+        if (getGenericInfo().getaBitrate() > 0) {
+            return AudioBitrate.getByInt(getGenericInfo().getaBitrate());
+        }
         return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
     }
 

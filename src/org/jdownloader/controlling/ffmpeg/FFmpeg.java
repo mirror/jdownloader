@@ -18,6 +18,7 @@ import org.jdownloader.settings.GeneralSettings;
 public class FFmpeg extends AbstractFFmpegBinary {
 
     public FFmpeg() {
+        super(null);
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
         path = config.getBinaryPath();

@@ -1,27 +1,25 @@
 package org.jdownloader.plugins.components.youtube.variants;
 
-import java.util.List;
-
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.StreamCollection;
 
 public class VariantInfo implements Comparable<VariantInfo> {
 
     private final AbstractVariant variant;
-    final List<YoutubeStreamData> audioStream;
-    final List<YoutubeStreamData> videoStream;
+    final StreamCollection        audioStream;
+    final StreamCollection        videoStream;
 
-    public List<YoutubeStreamData> getAudioStreams() {
+    public StreamCollection getAudioStreams() {
         return audioStream;
     }
 
-    public List<YoutubeStreamData> getVideoStreams() {
+    public StreamCollection getVideoStreams() {
         return videoStream;
     }
 
-    public String                 special = "";
-    final List<YoutubeStreamData> dataStreams;
+    public String          special = "";
+    final StreamCollection dataStreams;
 
-    public List<YoutubeStreamData> getDataStreams() {
+    public StreamCollection getDataStreams() {
         return dataStreams;
     }
 
@@ -55,7 +53,7 @@ public class VariantInfo implements Comparable<VariantInfo> {
         return true;
     }
 
-    public VariantInfo(AbstractVariant v, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
+    public VariantInfo(AbstractVariant v, StreamCollection audio, StreamCollection video, StreamCollection data) {
         this.variant = v;
         this.audioStream = audio;
         this.videoStream = video;

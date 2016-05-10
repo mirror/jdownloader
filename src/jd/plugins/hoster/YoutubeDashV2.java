@@ -58,6 +58,7 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.youtube.ClipDataCache;
+import org.jdownloader.plugins.components.youtube.StreamCollection;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
@@ -426,6 +427,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     br.openRequestConnection(new HeadRequest(url)).disconnect();
                                     con = br.getHttpConnection();
                                     if (con.getResponseCode() == 200) {
+
                                         workingVideoStream = cache;
                                         // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
                                         totalSize += con.getLongContentLength();
@@ -672,20 +674,20 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         YoutubeFinalLinkResource data = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_DATA, YoutubeFinalLinkResource.TYPE_REF);
         if (video != null || audio != null || data != null) {
             // seems like we have cached final informations
-            ArrayList<YoutubeStreamData> lstAudio = null;
-            ArrayList<YoutubeStreamData> lstVideo = null;
-            ArrayList<YoutubeStreamData> lstData = null;
+            StreamCollection lstAudio = null;
+            StreamCollection lstVideo = null;
+            StreamCollection lstData = null;
             if (video != null) {
-                lstVideo = new ArrayList<YoutubeStreamData>();
+                lstVideo = new StreamCollection();
                 lstVideo.add(video.toStreamDataObject());
             }
 
             if (audio != null) {
-                lstAudio = new ArrayList<YoutubeStreamData>();
+                lstAudio = new StreamCollection();
                 lstAudio.add(audio.toStreamDataObject());
             }
             if (data != null) {
-                lstData = new ArrayList<YoutubeStreamData>();
+                lstData = new StreamCollection();
                 lstData.add(data.toStreamDataObject());
             }
 
@@ -748,9 +750,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
             return null;
         }
-        List<YoutubeStreamData> audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio());
-        List<YoutubeStreamData> videoStreams = clipData.getStreams(variant.getiTagVideo());
-        List<YoutubeStreamData> dataStreams = clipData.getStreams(variant.getiTagData());
+        StreamCollection audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio());
+        StreamCollection videoStreams = clipData.getStreams(variant.getiTagVideo());
+        StreamCollection dataStreams = clipData.getStreams(variant.getiTagData());
         VariantInfo vi = new VariantInfo(variant, audioStreams, videoStreams, dataStreams);
         // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, vi);
         return vi;
@@ -1999,16 +2001,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
             @Override
             public void run() throws Exception {
-                final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(new Browser(), getLogger()), link.getDownloadLink());
-
+                final YoutubeHelper helper;
+                final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), getLogger()), link.getDownloadLink());
+                final ArrayList<VariantInfo> vs = new ArrayList<VariantInfo>();
+                vs.addAll(clipData.findVariants());
+                vs.addAll(clipData.findDescriptionVariant());
+                vs.addAll(clipData.findSubtitleVariants());
+                helper.extendedDataLoading(vs);
                 new Thread("Choose Youtube Variant") {
                     public void run() {
                         YoutubeVariantSelectionDialog d;
                         try {
-                            ArrayList<VariantInfo> vs = new ArrayList<VariantInfo>();
-                            vs.addAll(clipData.findVariants());
-                            vs.addAll(clipData.findDescriptionVariant());
-                            vs.addAll(clipData.findSubtitleVariants());
+
                             UIOManager.I().show(null, d = new YoutubeVariantSelectionDialog(link, s, clipData, vs)).throwCloseExceptions();
 
                             if (s == null) {
