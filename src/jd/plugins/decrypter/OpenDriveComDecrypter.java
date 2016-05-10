@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,9 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+|https?://od\\.lk/fl/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+|https?://od\\.lk/(?:fl|s)/[A-Za-z0-9]+" }, flags = { 0 })
 public class OpenDriveComDecrypter extends PluginForDecrypt {
 
     public OpenDriveComDecrypter(PluginWrapper wrapper) {
