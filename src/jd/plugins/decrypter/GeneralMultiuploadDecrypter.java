@@ -34,11 +34,11 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-        names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "directmirror.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "shrta.com", "1filesharing.com" },
+names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "directmirror.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "shrta.com" },
 
-        urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}" },
+urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}" },
 
-        flags = { 0 })
+flags = { 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -162,10 +162,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             if (br.containsHTML("<td><img src=/images/Upload\\.gif")) {
                 logger.info("All links are unavailable: " + parameter);
                 return decryptedLinks;
-            } else if (host.contains("1filesharing.com") && br.containsHTML("/images/removed\\.gif")) {
-                logger.info("All links are unavailable (abused): " + parameter);
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -218,9 +214,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     private String decryptLink(Browser brc, final String parameter) throws Exception {
         String dllink = null;
-        if (parameter.contains("1filesharing.com/")) {
-            dllink = brc.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
-        } else if (parameter.contains("go4up.com/")) {
+        if (parameter.contains("go4up.com/")) {
             dllink = brc.getRedirectLocation();
             if (dllink == null) {
                 dllink = brc.getRegex("window\\.location = (\"|\\')(http.*?)\\1").getMatch(1);

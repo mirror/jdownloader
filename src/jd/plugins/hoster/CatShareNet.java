@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -48,7 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -60,19 +60,18 @@ public class CatShareNet extends PluginForHost {
 
     /**
      * API TODO: <br />
-     * -Add support for password protected urls<br />
+     * -2016-05-10: According to admin there are no password protected downloadurls anymore --> Good for us!<br />
      * -Check free/free account/premium account limits<br />
      * -Check free mode (when I implemented the API it did not work via API)<br />
-     * -Remove json workaround in availablecheck<br />
-     * -Add sha1/md5 support if admin does -More testing -Check how long such a session cookie is reusable and how to determine if it
-     * expired<br />
+     * -More testing -Check how long such a session cookie is reusable and how to determine if it expired<br />
      * -check if stored direct urls can be re-used<br />
      */
     private String         brbefore               = "";
     private String         HOSTER                 = "http://catshare.net";
     private static Object  lock                   = new Object();
     protected final String USE_API                = "USE_API";
-    private final boolean  use_api_availablecheck = false;
+    private final boolean  defaultUSE_API         = false;
+    private final boolean  use_api_availablecheck = true;
 
     // private final boolean useAPI = true;
     private String         apiSession             = null;
@@ -96,11 +95,9 @@ public class CatShareNet extends PluginForHost {
         return br;
     }
 
-    // diabled: 2016-05-09 22:00 CET - API call doesn't return JSON response any longer!
-    // @SuppressWarnings({ "deprecation" })
-    // @Override
-
-    public boolean checkLinks_DISABLED(final DownloadLink[] urls) {
+    @SuppressWarnings({ "deprecation", "unchecked" })
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -118,7 +115,7 @@ public class CatShareNet extends PluginForHost {
                 while (true) {
                     /* we test 10 links at once (max = 10) */
                     /* 2016-05-03: API does not work for multiple URLs - limited it to 1! */
-                    if (index == urls.length || links.size() > 0) {
+                    if (index == urls.length || links.size() > 9) {
                         break;
                     }
                     links.add(urls[index]);
@@ -138,17 +135,23 @@ public class CatShareNet extends PluginForHost {
 
                 /* TODO: Implement this correctly once admin fixes json! */
                 br.postPage("https://" + this.getHost() + "/download/json_check", sb.toString());
-                final String[] json_workaround_array = br.toString().split("\\}\\{");
+                LinkedHashMap<String, Object> entries = null;
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final String[] json_workaround_array = br.toString().split("\\},\\{");
                 for (final DownloadLink dl : links) {
-                    final String source;
+                    final String state;
+                    final String filename;
+                    final long filesize;
                     if (tempcounter <= json_workaround_array.length - 1) {
-                        source = json_workaround_array[tempcounter];
+                        entries = (LinkedHashMap<String, Object>) ressourcelist.get(tempcounter);
+                        state = (String) entries.get("status");
+                        filename = (String) entries.get("filename");
+                        filesize = DummyScriptEnginePlugin.toLong(entries.get("filesize"), 0);
                     } else {
-                        source = "WTF_PROBABLY_OFFLINE";
+                        state = null;
+                        filename = null;
+                        filesize = 0;
                     }
-                    final String state = JSonUtils.getJson(source, "status");
-                    final String filename = JSonUtils.getJson(source, "filename");
-                    final String filesize = JSonUtils.getJson(source, "filesize");
                     if ("offline".equals(state) || state == null) {
                         dl.setAvailable(false);
                     } else {
@@ -158,9 +161,7 @@ public class CatShareNet extends PluginForHost {
                     if (filename != null) {
                         dl.setFinalFileName(filename);
                     }
-                    if (filesize != null) {
-                        dl.setDownloadSize(Long.parseLong(filesize));
-                    }
+                    dl.setDownloadSize(filesize);
 
                     tempcounter++;
                 }
@@ -178,7 +179,7 @@ public class CatShareNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
 
         if (use_api_availablecheck) {
-            checkLinks_DISABLED(new DownloadLink[] { downloadLink });
+            checkLinks(new DownloadLink[] { downloadLink });
             if (!downloadLink.isAvailabilityStatusChecked()) {
                 return AvailableStatus.UNCHECKED;
             }
@@ -332,9 +333,11 @@ public class CatShareNet extends PluginForHost {
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                download_post_data += "&challenge=" + Encoding.urlEncode(rc.getChallenge() + "&recaptcha_challenge_field=" + Encoding.urlEncode(c));
+                download_post_data += "&challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_challenge_field=" + Encoding.urlEncode(c);
             }
-            this.sleep(wait * 1001l, downloadLink);
+            if (wait > System.currentTimeMillis()) {
+                this.sleep(wait - System.currentTimeMillis(), downloadLink);
+            }
             postPageAPI("/download/json_download", download_post_data);
             dllink = PluginJSonUtils.getJson(br, "downloadUrl");
             if (dllink == null) {
@@ -775,51 +778,51 @@ public class CatShareNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("WAITTIME", "Waittime detected");
-            put("PREMIUM_ERROR", "CatShare.net Premium Error");
-            put("DAILY_LIMIT", "Daily Limit exceeded!");
-            put("SERVER_ERROR", "Server error");
-            put("PREMIUM_DISABLED", "Premium disabled, will continue downloads as anonymous user");
-            put("LINK_BROKEN", "Link is broken at the server side");
-            put("NO_RECAPTCHA_FORM", "no reCaptcha form!");
-            put("UNKNOWN_RECAPTCHA", "Unknown ReCaptcha method!");
-            put("RECAPTCHA_ERROR", "reCaptcha error or server doesn't accept reCaptcha challenges");
-            put("REGEX_ERROR", "Regex didn't match - no final link found");
-            put("FINAL_LINK_ERROR", "The final dllink seems not to be a file!");
-            put("NO_LINK_DATA", "filename or filesize not found!");
-            put("LOGIN_ERROR", "Login Error");
-            put("LOGIN_FAILED", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct?\r\nSome hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-            put("PREMIUM", "Premium User");
-            put("FREE", "Free User");
-            put("NO_LOGIN_FORM", "no login form");
-            put("ACCOUNT_SHARED", "System detected account violation - account is shared.");
-            put("USE_API", "Use API (recommended!)");
-        }
-    };
+                                                  {
+                                                      put("WAITTIME", "Waittime detected");
+                                                      put("PREMIUM_ERROR", "CatShare.net Premium Error");
+                                                      put("DAILY_LIMIT", "Daily Limit exceeded!");
+                                                      put("SERVER_ERROR", "Server error");
+                                                      put("PREMIUM_DISABLED", "Premium disabled, will continue downloads as anonymous user");
+                                                      put("LINK_BROKEN", "Link is broken at the server side");
+                                                      put("NO_RECAPTCHA_FORM", "no reCaptcha form!");
+                                                      put("UNKNOWN_RECAPTCHA", "Unknown ReCaptcha method!");
+                                                      put("RECAPTCHA_ERROR", "reCaptcha error or server doesn't accept reCaptcha challenges");
+                                                      put("REGEX_ERROR", "Regex didn't match - no final link found");
+                                                      put("FINAL_LINK_ERROR", "The final dllink seems not to be a file!");
+                                                      put("NO_LINK_DATA", "filename or filesize not found!");
+                                                      put("LOGIN_ERROR", "Login Error");
+                                                      put("LOGIN_FAILED", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct?\r\nSome hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("PREMIUM", "Premium User");
+                                                      put("FREE", "Free User");
+                                                      put("NO_LOGIN_FORM", "no login form");
+                                                      put("ACCOUNT_SHARED", "System detected account violation - account is shared.");
+                                                      put("USE_API", "Use API (recommended!)");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("WAITTIME", "Wykryto czas oczekiwania");
-            put("PREMIUM_ERROR", "CatShare.net Błąd Konta Premium");
-            put("DAILY_LIMIT", "Wyczerpano dzienny limit!");
-            put("SERVER_ERROR", "Błąd serwera");
-            put("PREMIUM_DISABLED", "Konto Premium zostanie wyłączone, pobierania będą kontynuowane jako anonimowe");
-            put("LINK_BROKEN", "Plik jest uszkodzony na serwerze");
-            put("NO_RECAPTCHA_FORM", "brak formularza reCaptcha!");
-            put("UNKNOWN_RECAPTCHA", "Nieznany typ ReCaptcha!");
-            put("RECAPTCHA_ERROR", "błąd reCaptcha lub serwer nie akceptuje prób wprowadzenia kodu reCaptcha");
-            put("REGEX_ERROR", "Wyrażenie regularne nie znalazło finalnego linku");
-            put("FINAL_LINK_ERROR", "Finałowy link jest nieprawidłowy");
-            put("NO_LINK_DATA", "Brak nazwy i rozmiaru pliku!");
-            put("LOGIN_ERROR", "Błąd logowania");
-            put("LOGIN_FAILED", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło?\r\nSugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-            put("PREMIUM", "Użytkownik Premium");
-            put("FREE", "Użytkownik darmowy");
-            put("NO_LOGIN_FORM", "brak formularza logowania");
-            put("ACCOUNT_SHARED", "System wykrył naruszenie regulaminu w zakresie dostępu do konta.");
-            put("USE_API", "Używaj API (rekomendowane!)");
-        }
-    };
+                                                  {
+                                                      put("WAITTIME", "Wykryto czas oczekiwania");
+                                                      put("PREMIUM_ERROR", "CatShare.net Błąd Konta Premium");
+                                                      put("DAILY_LIMIT", "Wyczerpano dzienny limit!");
+                                                      put("SERVER_ERROR", "Błąd serwera");
+                                                      put("PREMIUM_DISABLED", "Konto Premium zostanie wyłączone, pobierania będą kontynuowane jako anonimowe");
+                                                      put("LINK_BROKEN", "Plik jest uszkodzony na serwerze");
+                                                      put("NO_RECAPTCHA_FORM", "brak formularza reCaptcha!");
+                                                      put("UNKNOWN_RECAPTCHA", "Nieznany typ ReCaptcha!");
+                                                      put("RECAPTCHA_ERROR", "błąd reCaptcha lub serwer nie akceptuje prób wprowadzenia kodu reCaptcha");
+                                                      put("REGEX_ERROR", "Wyrażenie regularne nie znalazło finalnego linku");
+                                                      put("FINAL_LINK_ERROR", "Finałowy link jest nieprawidłowy");
+                                                      put("NO_LINK_DATA", "Brak nazwy i rozmiaru pliku!");
+                                                      put("LOGIN_ERROR", "Błąd logowania");
+                                                      put("LOGIN_FAILED", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło?\r\nSugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+                                                      put("PREMIUM", "Użytkownik Premium");
+                                                      put("FREE", "Użytkownik darmowy");
+                                                      put("NO_LOGIN_FORM", "brak formularza logowania");
+                                                      put("ACCOUNT_SHARED", "System wykrył naruszenie regulaminu w zakresie dostępu do konta.");
+                                                      put("USE_API", "Używaj API (rekomendowane!)");
+                                                  }
+                                              };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
@@ -842,7 +845,7 @@ public class CatShareNet extends PluginForHost {
     }
 
     private boolean getUseAPI() {
-        return this.getPluginConfig().getBooleanProperty("USE_API", false);
+        return this.getPluginConfig().getBooleanProperty("USE_API", defaultUSE_API);
     }
 
 }
