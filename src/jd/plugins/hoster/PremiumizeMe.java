@@ -40,6 +40,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -431,8 +432,8 @@ public class PremiumizeMe extends UseNet {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        String status = br.getRegex("type\":\"(.*?)\"").getMatch(0);
-
+        final String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
+        String status = type;
         // https://secure.premiumize.me/<extuid>/<port>/proxy.pac
         String extuid = br.getRegex("extuid\":\"(.*?)\"").getMatch(0);
         account.setProperty("extuid", extuid);
@@ -478,7 +479,12 @@ public class PremiumizeMe extends UseNet {
         String HostsJSON = new Regex(hostsSup, "\"tldlist\":\\[([^\\]]+)\\]").getMatch(0);
         String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        supportedHosts.add("usenet");
+        if ("premium".equals(type)) {
+            account.setType(AccountType.PREMIUM);
+            supportedHosts.add("usenet");
+        } else {
+            account.setType(AccountType.FREE);
+        }
         supportedHosts.add("daofile.com");
         ai.setMultiHostSupport(this, supportedHosts);
         ai.setProperty("connection_settings", response.get("connection_settings"));
