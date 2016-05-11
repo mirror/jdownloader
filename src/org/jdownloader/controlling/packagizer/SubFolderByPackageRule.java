@@ -6,6 +6,11 @@ import org.jdownloader.translate._JDT;
 
 public class SubFolderByPackageRule extends PackagizerRule {
 
+    public static enum COUNT {
+        NAMES,
+        ITEMS,
+    }
+
     public static final String ID = "SubFolderByPackageRule";
 
     public SubFolderByPackageRule() {
