@@ -347,4 +347,5 @@ system_download_errors_couldnotdelete=Nije bilo moguće izbrisati postojeći par
 system_download_errors_couldnotrename=Nije bilo moguće preimenovati Dio (Part) dokumenta
 system_download_errors_linkisBlocked=Mirror %s1 se učitava
 video_description=Video dokumenti: mp4, avi, mov,...
+youtube_demux=Razdvoji Audio
 youtube_spatial=Prostorni Višekanalni Audio
