@@ -110,11 +110,6 @@ public class CFG_GENERAL {
     public static final BooleanKeyHandler               FREE_SPACE_CHECK_ENABLED                                         = SH.getKeyHandler("FreeSpaceCheckEnabled", BooleanKeyHandler.class);
 
     /**
-     * if this value is >0, the subfolder option only will be used if the package contains more than subfolderThreshold value links
-     **/
-    public static final IntegerKeyHandler               SUBFOLDER_THRESHOLD                                              = SH.getKeyHandler("SubfolderThreshold", IntegerKeyHandler.class);
-
-    /**
      * Choose which type URLs will be used for 'Copy URL, Browser URL, Tables and Settings'. Valid fields: CONTAINER, CONTENT, CUSTOM,
      * ORIGIN, REFERRER
      **/
