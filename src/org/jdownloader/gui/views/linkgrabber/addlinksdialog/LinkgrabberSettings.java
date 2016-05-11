@@ -13,6 +13,7 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.packagizer.SubFolderByPackageRule;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPath;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
@@ -280,5 +281,20 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setHandleDupesOnConfirmLatestSelection(OnDupesLinksAction handleDupesLoc);
 
     OnDupesLinksAction getHandleDupesOnConfirmLatestSelection();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("if this value is >0, the subfolder option only will be used if the package contains more than subfolderThreshold value links")
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultIntValue(0)
+    int getSubfolderThreshold();
+
+    void setSubfolderThreshold(int i);
+
+    @AboutConfig
+    @DefaultEnumValue("NAMES")
+    @RequiresRestart("A JDownloader Restart is Required")
+    void setSubfolderCount(SubFolderByPackageRule.COUNT count);
+
+    SubFolderByPackageRule.COUNT getSubfolderCount();
 
 }
