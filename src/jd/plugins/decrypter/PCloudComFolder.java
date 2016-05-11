@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -29,6 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|my\\.pcloud\\.com/publink/show\\?code=|pc\\.cd/)[A-Za-z0-9]+" }, flags = { 0 })
 public class PCloudComFolder extends PluginForDecrypt {
@@ -37,19 +40,23 @@ public class PCloudComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
+    private static final String     DOWNLOAD_ZIP   = "DOWNLOAD_ZIP_2";
+    long                            totalSize      = 0;
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private String                  parameter      = null;
+    private String                  foldercode     = null;
 
+    @SuppressWarnings({ "deprecation", "unchecked" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String code = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        parameter = param.toString();
+        foldercode = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         final DownloadLink main = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        main.setProperty("plain_code", code);
+        main.setProperty("plain_code", foldercode);
         main.setProperty("mainlink", parameter);
 
         prepBR();
         br.getPage("http://api.pcloud.com/showpublink?code=" + getFID(parameter));
-        final String result = br.getRegex("\"result\": (\\d+)").getMatch(0);
+        final String result = PluginJSonUtils.getJson(this.br, "result");
         /* 7002 = deleted by the owner, 7003 = abused */
         if (br.containsHTML("\"error\": \"Invalid link") || "7002".equals(result) || "7003".equals(result)) {
             main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
@@ -59,71 +66,68 @@ public class PCloudComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String folderName = getJson("name", br.toString());
-        String linktext = br.getRegex("contents\": \\[(.*?)\\][\t\r\n ]+\\}").getMatch(0);
-        /* Single file */
-        if (linktext == null) {
-            linktext = br.getRegex("metadata\": (\\{.*?\\})").getMatch(0);
-        }
-        if (linktext == null || folderName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        folderName = Encoding.htmlDecode(folderName.trim());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("metadata");
+        final String folderNameMain = (String) entries.get("name");
+        addFolder(entries, null);
 
-        final String[] links = linktext.split("\\},[\t\n\r ]+\\{");
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        long totalSize = 0;
-        for (final String singleinfo : links) {
-            final DownloadLink dl = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String filesize = getJson("size", singleinfo);
-            String filename = getJson("name", singleinfo);
-            final String fileid = getJson("fileid", singleinfo);
-            if (filesize == null || filename == null || fileid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            filename = Encoding.htmlDecode(filename.trim());
-            final long cursize = Long.parseLong(filesize);
-            dl.setDownloadSize(cursize);
-            totalSize += cursize;
-            dl.setFinalFileName(filename);
-            dl.setProperty("plain_name", filename);
-            dl.setProperty("plain_size", filesize);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("plain_fileid", fileid);
-            dl.setProperty("plain_code", code);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-        }
-
-        if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("pcloud.com").getBooleanProperty(DOWNLOAD_ZIP, false)) {
+        if (decryptedLinks.size() > 1 && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
-            final String main_name = folderName + ".zip";
-            main.setFinalFileName(folderName);
+            final String main_name = folderNameMain + ".zip";
+            main.setFinalFileName(folderNameMain);
             main.setProperty("plain_name", main_name);
             main.setProperty("plain_size", Long.toString(totalSize));
             main.setProperty("complete_folder", true);
-            main.setProperty("plain_code", code);
+            main.setProperty("plain_code", foldercode);
             decryptedLinks.add(main);
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(folderName);
-        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }
 
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+    /** Recursive function to crawl all folders/subfolders */
+    @SuppressWarnings("unchecked")
+    private void addFolder(final LinkedHashMap<String, Object> entries, String lastFpname) {
+        ArrayList<Object> ressourcelist_temp = null;
+        final boolean isFolder = ((Boolean) entries.get("isfolder"));
+        if (isFolder) {
+            /* Only update lastFoldername if we actually have a folder ... */
+            lastFpname = (String) entries.get("name");
+            ressourcelist_temp = (ArrayList<Object>) entries.get("contents");
+            for (final Object ressorceo : ressourcelist_temp) {
+                final LinkedHashMap<String, Object> tempmap = (LinkedHashMap<String, Object>) ressorceo;
+                addFolder(tempmap, lastFpname);
+            }
+        } else {
+            addSingleItem(entries, lastFpname);
         }
-        return result;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void addSingleItem(final LinkedHashMap<String, Object> entries, final String fpName) {
+        final DownloadLink dl = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
+        String filename = (String) entries.get("name");
+        final long fileid = DummyScriptEnginePlugin.toLong(entries.get("fileid"), 0);
+        if (filename == null || fileid == 0) {
+            return;
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        totalSize += filesize;
+        dl.setDownloadSize(filesize);
+        dl.setFinalFileName(filename);
+        dl.setProperty("plain_name", filename);
+        dl.setProperty("plain_size", filesize);
+        dl.setProperty("mainlink", parameter);
+        dl.setProperty("plain_fileid", fileid);
+        dl.setProperty("plain_code", foldercode);
+        dl.setAvailable(true);
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            dl._setFilePackage(fp);
+        }
+        decryptedLinks.add(dl);
     }
 
     private String getFID(final String link) {
