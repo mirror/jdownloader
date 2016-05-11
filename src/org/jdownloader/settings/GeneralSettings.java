@@ -3,6 +3,9 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+import jd.utils.JDUtilities;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -24,9 +27,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-import jd.utils.JDUtilities;
 
 public interface GeneralSettings extends ConfigInterface {
 
@@ -423,13 +423,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setFreeSpaceCheckEnabled(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("if this value is >0, the subfolder option only will be used if the package contains more than subfolderThreshold value links")
-    @DefaultIntValue(0)
-    int getSubfolderThreshold();
-
-    void setSubfolderThreshold(int i);
-
-    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Disable this option if you do not want to see the filename in a captchadialog")
     boolean isShowFileNameInCaptchaDialogEnabled();
@@ -458,8 +451,10 @@ public interface GeneralSettings extends ConfigInterface {
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
     public static enum CreateFolderTrigger {
-        @EnumLabel("When the actual Download starts") ON_DOWNLOAD_START,
-        @EnumLabel("When the links are added to the Downloadlist") ON_LINKS_ADDED,
+        @EnumLabel("When the actual Download starts")
+        ON_DOWNLOAD_START,
+        @EnumLabel("When the links are added to the Downloadlist")
+        ON_LINKS_ADDED,
 
     }
 
