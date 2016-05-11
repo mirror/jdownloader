@@ -237,7 +237,7 @@ public class QuickFilterTypeTable extends FilterTable {
 
                             @Override
                             public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-                                return !(extension instanceof Enum);
+                                return extension != null && !(extension.getSource() instanceof Enum);
                             }
 
                             @Override
@@ -263,6 +263,11 @@ public class QuickFilterTypeTable extends FilterTable {
                             @Override
                             public Pattern compiledAllPattern() {
                                 return null;
+                            }
+
+                            @Override
+                            public ExtensionsFilterInterface getSource() {
+                                return this;
                             }
                         };
                         allFilters.add(filter = new ExtensionFilter(other) {

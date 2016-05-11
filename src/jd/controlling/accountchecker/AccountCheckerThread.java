@@ -14,4 +14,13 @@ public class AccountCheckerThread extends BrowserSettingsThread {
         super();
     }
 
+    public static boolean isForced() {
+        final Thread thread = Thread.currentThread();
+        if (thread instanceof AccountCheckerThread) {
+            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            return job.isForce();
+        }
+        return false;
+    }
+
 }

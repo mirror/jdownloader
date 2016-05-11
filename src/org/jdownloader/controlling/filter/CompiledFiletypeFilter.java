@@ -36,6 +36,8 @@ public class CompiledFiletypeFilter {
 
         public ExtensionsFilterInterface[] listSameGroup();
 
+        public ExtensionsFilterInterface getSource();
+
     }
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
@@ -66,6 +68,10 @@ public class CompiledFiletypeFilter {
 
         public Pattern getPattern() {
             return pattern;
+        }
+
+        public ExtensionsFilterInterface getSource() {
+            return this;
         }
 
         private HashExtensions() {
@@ -116,13 +122,18 @@ public class CompiledFiletypeFilter {
         XML,
         CSV,
         RTF,
-        PDF;
+        PDF,
+        NFO;
 
         private final Pattern  pattern;
         private static Pattern allPattern;
 
         public Pattern getPattern() {
             return pattern;
+        }
+
+        public ExtensionsFilterInterface getSource() {
+            return this;
         }
 
         private DocumentExtensions() {
@@ -194,6 +205,10 @@ public class CompiledFiletypeFilter {
             return pattern;
         }
 
+        public ExtensionsFilterInterface getSource() {
+            return this;
+        }
+
         private AudioExtensions() {
             pattern = Pattern.compile(name(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
@@ -262,6 +277,10 @@ public class CompiledFiletypeFilter {
 
         public Pattern getPattern() {
             return pattern;
+        }
+
+        public ExtensionsFilterInterface getSource() {
+            return this;
         }
 
         @Override
@@ -343,6 +362,10 @@ public class CompiledFiletypeFilter {
             return pattern;
         }
 
+        public ExtensionsFilterInterface getSource() {
+            return this;
+        }
+
         private ArchiveExtensions() {
             pattern = Pattern.compile(name(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
@@ -408,6 +431,10 @@ public class CompiledFiletypeFilter {
 
         public String getDesc() {
             return _GUI.T.FilterRuleDialog_createTypeFilter_mime_images();
+        }
+
+        public ExtensionsFilterInterface getSource() {
+            return this;
         }
 
         public Pattern compiledAllPattern() {

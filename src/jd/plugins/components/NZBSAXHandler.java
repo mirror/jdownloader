@@ -16,8 +16,11 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.usenet.UsenetFile;
 import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
@@ -59,15 +62,15 @@ public class NZBSAXHandler extends DefaultHandler {
     private boolean                             isyEnc            = false;
     private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
 
-        public int compare(int x, int y) {
-            return (x < y) ? -1 : ((x == y) ? 0 : 1);
-        }
+                                                                      public int compare(int x, int y) {
+                                                                          return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                      }
 
-        @Override
-        public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
-            return compare(o1.getIndex(), o2.getIndex());
-        }
-    };
+                                                                      @Override
+                                                                      public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
+                                                                          return compare(o1.getIndex(), o2.getIndex());
+                                                                      }
+                                                                  };
 
     public NZBSAXHandler(ArrayList<DownloadLink> downloadLinks) {
         this.downloadLinks = downloadLinks;
@@ -166,7 +169,13 @@ public class NZBSAXHandler extends DefaultHandler {
                 nameBySubject = new Regex(subject, "(.+ |^)(.*?) \\(1/\\d+").getMatch(1);
             }
             if (nameBySubject == null) {
-                nameBySubject = "Unsupported Subject:" + subject;
+                final String fileNameExtension = Files.getExtension(subject);
+                final ExtensionsFilterInterface compiled = CompiledFiletypeFilter.getExtensionsFilterInterface(fileNameExtension);
+                if (compiled != null) {
+                    nameBySubject = subject;
+                } else {
+                    nameBySubject = "Unsupported Subject:" + subject;
+                }
             }
             currentFile.setName(nameBySubject);
             if (subject.contains(" yEnc ")) {
@@ -186,7 +195,7 @@ public class NZBSAXHandler extends DefaultHandler {
                 }
             } else {
                 isyEnc = false;
-                String fileSize = new Regex(subject, "([0-9\\.,]+\\s*?(kb|mb|gb|b))").getMatch(0);
+                String fileSize = new Regex(subject, "([0-9\\.,]+\\s*?(kb|mb|gb))").getMatch(0);
                 if (fileSize != null) {
                     currentFile.setSize(SizeFormatter.getSize(fileSize));
                 }
