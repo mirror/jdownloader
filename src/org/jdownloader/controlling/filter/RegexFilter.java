@@ -1,8 +1,5 @@
 package org.jdownloader.controlling.filter;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.appwork.storage.Storable;
 import org.jdownloader.gui.translate._GUI;
 
@@ -68,20 +65,14 @@ public class RegexFilter extends Filter implements Storable {
     }
 
     public int calcPlaceholderCount() {
-        int i = 0;
         if (isEnabled()) {
             try {
-                Matcher matcher = Pattern.compile("\\(.*?\\)", Pattern.CASE_INSENSITIVE).matcher(LinkgrabberFilterRuleWrapper.createPattern(regex, useRegex).pattern());
-                while (matcher.find()) {
-                    // System.out.println(matcher.group());
-                    i++;
-                }
+                return LinkgrabberFilterRuleWrapper.createPattern(regex, useRegex).matcher("").groupCount();
             } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
-        return i;
+        return 0;
 
     }
-
 }
