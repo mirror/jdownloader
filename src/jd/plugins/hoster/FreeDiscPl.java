@@ -66,11 +66,11 @@ public class FreeDiscPl extends PluginForHost {
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = false;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = false;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String  KNOWN_EXTENSIONS             = "asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm";
 
@@ -139,11 +139,17 @@ public class FreeDiscPl extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            if (br.containsHTML("rel=\"video_src\"")) {
-                /* Stream-downloads have no limits! */
+        final boolean isvideo = downloadLink.getBooleanProperty("isvideo", false);
+        if (dllink != null) {
+            /* Check if directlinks comes from a stream */
+            if (isvideo) {
+                /* Stream-downloads always have no limits! */
                 resumable = true;
                 maxchunks = 0;
+            }
+        } else {
+            if (br.containsHTML("rel=\"video_src\"")) {
+                /* Stream-downloads always have no limits! */
                 dllink = br.getRegex("<iframe src=\"(http://freedisc\\.pl/embed/video/\\d+[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,7 +172,10 @@ public class FreeDiscPl extends PluginForHost {
                         downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
                     }
                 }
+                downloadLink.setProperty("isvideo", true);
             } else {
+                resumable = true;
+                maxchunks = 0;
                 final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
                 br.postPageRaw("http://freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
                 br.getRequest().setHtmlCode(unescape(br.toString()));
@@ -188,6 +197,7 @@ public class FreeDiscPl extends PluginForHost {
                 String downloadUrlJson = getJsonNested(br.toString(), "download_data");
                 dllink = getJson(downloadUrlJson, "download_url") + getJson(downloadUrlJson, "item_id") + "/" + getJson(downloadUrlJson, "time");
                 // dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+                downloadLink.setProperty("isvideo", false);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -200,6 +210,11 @@ public class FreeDiscPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String server_filename = getFileNameFromHeader(dl.getConnection());
+        if (server_filename != null) {
+            server_filename = Encoding.htmlDecode(server_filename);
+            downloadLink.setFinalFileName(server_filename);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
@@ -363,6 +378,11 @@ public class FreeDiscPl extends PluginForHost {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String server_filename = getFileNameFromHeader(dl.getConnection());
+            if (server_filename != null) {
+                server_filename = Encoding.htmlDecode(server_filename);
+                link.setFinalFileName(server_filename);
             }
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();

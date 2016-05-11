@@ -115,7 +115,11 @@ public class SoundcloudCom extends PluginForHost {
     public static final String getAppVersion(final Browser obr) throws PluginException, IOException {
         synchronized (appVersion) {
             if (appVersion.get() == null) {
-                final boolean requiresNewBrowser = obr == null || obr.getURL() == null || !Browser.getHost(obr.getURL()).equals("soundcloud.com") ? true : false;
+                /*
+                 * Important: Whenever the current Browser contains a json response it is definitly necessary to access the mainpage to find
+                 * the appVersion value!
+                 */
+                final boolean requiresNewBrowser = obr == null || obr.getURL() == null || obr.toString().startsWith("{") || !Browser.getHost(obr.getURL()).equals("soundcloud.com") ? true : false;
                 final Browser br = requiresNewBrowser ? new Browser() : obr.cloneBrowser();
                 if (requiresNewBrowser) {
                     br.getPage("https://soundcloud.com/");
