@@ -176,7 +176,11 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 protected Void run() throws RuntimeException {
                     final ArrayList<ChildType> children = getChildrenCopy(pkg);
                     try {
-                        Collections.sort(children, comparator);
+                        try {
+                            Collections.sort(pkg.getChildren(), comparator);
+                        } catch (final Throwable e) {
+                            LogController.CL(true).log(e);
+                        }
                         try {
                             pkg.getModifyLock().writeLock();
                             pkg.setCurrentSorter(comparator);
@@ -188,6 +192,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             pkg.getChildren().addAll(children);
                         } finally {
                             pkg.getModifyLock().writeUnlock();
+                            pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
                         }
                     } catch (final Throwable e) {
                         LogController.CL(true).log(e);
@@ -720,6 +725,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         pkg.getChildren().addAll(children);
                     } finally {
                         pkg.getModifyLock().writeUnlock();
+                        pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
                     }
                     getMapLock().writeLock();
                     try {
@@ -765,6 +771,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         logger.log(new Throwable("NO CONTROLLER!!!"));
                         return null;
                     }
+                    boolean notifyStructureChanges = false;
                     try {
                         pkg.getModifyLock().writeLock();
                         final List<ChildType> pkgchildren = pkg.getChildren();
@@ -776,6 +783,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         while (it.hasPrevious()) {
                             final ChildType dl = it.previous();
                             if (pkgchildren.remove(dl)) {
+                                notifyStructureChanges = true;
                                 /*
                                  * set FilePackage to null if the link was controlled by this FilePackage
                                  */
@@ -791,6 +799,9 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         }
                     } finally {
                         pkg.getModifyLock().writeUnlock();
+                        if (notifyStructureChanges) {
+                            pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
+                        }
                     }
                     if (links.size() > 0) {
                         final long version = backendChanged.incrementAndGet();
@@ -1002,7 +1013,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             for (final PackageType pkg : lpackages) {
                                 final ArrayList<ChildType> children = getChildrenCopy(pkg);
                                 try {
-                                    Collections.sort(pkg.getChildren(), comparator);
+                                    Collections.sort(children, comparator);
                                 } catch (final Throwable e) {
                                     LogController.CL(true).log(e);
                                 }
@@ -1017,6 +1028,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                     pkg.getChildren().addAll(children);
                                 } finally {
                                     pkg.getModifyLock().writeUnlock();
+                                    pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
                                 }
                             }
                         } finally {

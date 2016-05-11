@@ -430,15 +430,20 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
          }
          if (this.controlledby == null) {
              getModifyLock().writeLock();
+             boolean notifyStructureChanges = false;
              try {
                  for (DownloadLink link : links) {
                      if (!this.downloadLinkList.contains(link)) {
+                         notifyStructureChanges = true;
                          link.setParentNode(this);
                          this.downloadLinkList.add(link);
                      }
                  }
              } finally {
                  getModifyLock().writeUnlock();
+                 if (notifyStructureChanges) {
+                     nodeUpdated(this, NOTIFY.STRUCTURE_CHANCE, null);
+                 }
              }
          } else {
              this.controlledby.moveOrAddAt(this, Arrays.asList(links), -1);
@@ -478,10 +483,12 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
              return;
          }
          if (this.controlledby == null) {
+             getModifyLock().writeLock();
+             boolean notifyStructureChanges = false;
              try {
-                 getModifyLock().writeLock();
                  for (DownloadLink link : links) {
                      if ((this.downloadLinkList.remove(link))) {
+                         notifyStructureChanges = true;
                          /*
                           * set FilePackage to null if the link was controlled by this FilePackage
                           */
@@ -492,6 +499,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                  }
              } finally {
                  getModifyLock().writeUnlock();
+                 if (notifyStructureChanges) {
+                     nodeUpdated(this, NOTIFY.STRUCTURE_CHANCE, null);
+                 }
              }
          } else {
              this.controlledby.removeChildren(this, Arrays.asList(links), true);
@@ -704,23 +714,27 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
      @Override
      public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
-         final PackageController<FilePackage, DownloadLink> n = getControlledBy();
-         if (n == null) {
-             return;
-         }
-         final AbstractNode lsource;
-         if (source == null) {
-             lsource = this;
+         if (source == this && NOTIFY.STRUCTURE_CHANCE.equals(notify)) {
+             // nothing to reset
          } else {
-             lsource = source;
-         }
-         if (lsource instanceof AbstractPackageChildrenNode) {
-             final FilePackageView lfpInfo = fpInfo;
-             if (lfpInfo != null) {
-                 lfpInfo.requestUpdate();
+             final PackageController<FilePackage, DownloadLink> n = getControlledBy();
+             if (n == null) {
+                 return;
              }
+             final AbstractNode lsource;
+             if (source == null) {
+                 lsource = this;
+             } else {
+                 lsource = source;
+             }
+             if (lsource instanceof AbstractPackageChildrenNode) {
+                 final FilePackageView lfpInfo = fpInfo;
+                 if (lfpInfo != null) {
+                     lfpInfo.requestUpdate();
+                 }
+             }
+             n.nodeUpdated(lsource, notify, param);
          }
-         n.nodeUpdated(lsource, notify, param);
      }
 
      @Override

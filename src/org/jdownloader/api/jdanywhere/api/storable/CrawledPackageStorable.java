@@ -7,6 +7,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class CrawledPackageStorable implements Storable {
 
@@ -19,12 +20,14 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public String getDirectory() {
-        return pkg.getDownloadFolder();
+        return LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();
     }
 
     public String getComment() {
         String comment = pkg.getComment();
-        if (comment == null || comment.length() == 0) return "";
+        if (comment == null || comment.length() == 0) {
+            return "";
+        }
         return comment;
     }
 
@@ -47,7 +50,9 @@ public class CrawledPackageStorable implements Storable {
     public List<String> getHoster() {
         List<String> links = new ArrayList<String>(pkg.getChildren().size());
         for (CrawledLink link : pkg.getChildren()) {
-            if (!links.contains(link.getHost())) links.add(link.getHost());
+            if (!links.contains(link.getHost())) {
+                links.add(link.getHost());
+            }
         }
         return links;
     }
@@ -55,14 +60,16 @@ public class CrawledPackageStorable implements Storable {
     public String getPassword() {
         String password = "---";
         for (CrawledLink link : pkg.getChildren()) {
-            if (password == null || password.length() == 0 || password.equals("---"))
+            if (password == null || password.length() == 0 || password.equals("---")) {
                 password = link.getDownloadLink().getDownloadPassword();
-            else if (!link.getDownloadLink().getDownloadPassword().equals(password)) {
+            } else if (!link.getDownloadLink().getDownloadPassword().equals(password)) {
                 password = "";
                 break;
             }
         }
-        if (password == null || password.length() == 0 || password.equals("---")) password = "";
+        if (password == null || password.length() == 0 || password.equals("---")) {
+            password = "";
+        }
         return password;
     }
 
