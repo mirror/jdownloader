@@ -337,7 +337,7 @@ public class Grab8Com extends antiDDoSForHost {
         login(false);
         br.setFollowRedirects(true);
         getPage("https://grab8.com/account");
-        final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+ [KMG]{0,1}B)\\s*/\\s*([0-9\\.]+ GB)</p>").getRow(0);
+        final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+ (?:[KMG]{0,1}B)?)\\s*/\\s*([0-9\\.]+ GB)</p>").getRow(0);
         if (traffic == null || traffic.length != 2) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
