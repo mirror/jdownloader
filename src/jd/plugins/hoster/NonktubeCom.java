@@ -68,21 +68,22 @@ public class NonktubeCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         String redirect = this.br.getRedirectLocation();
-        if (redirect.contains("u=")) {
-            redirect = new Regex(redirect, ".*?u=(http.+)").getMatch(0);
-        }
         if (redirect != null && (!redirect.contains("nonktube.com/") || !redirect.contains("/video/") || redirect.contains("out.php"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.br.setFollowRedirects(true);
         if (redirect != null) {
-            this.br.getPage(redirect);
+            if (redirect.contains("u=")) {
+                redirect = new Regex(redirect, ".*?u=(http.+)").getMatch(0);
+            } else {
+                this.br.getPage(redirect);
+            }
         }
         String filename;
         if (true) {
             /* Faster way */
             br.getPage("http://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
-            if (br.containsHTML("Invalid video") || br.getHttpConnection().getResponseCode() == 404) {
+            if (br.containsHTML("Invalid video|<title>NONK Tube<") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]></title>").getMatch(0);
