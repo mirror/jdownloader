@@ -59,7 +59,7 @@ public class ClipHunterCom extends PluginForHost {
     /**
      * sync with decrypter
      */
-    public static final String[][] qualities     = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "p720.mp4" }, { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" }, { "unknown", "_s.flv", "_p.mp4" } };
+    public static final String[][] qualities     = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "p720.mp4" }, { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4", "_p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" }, { "unknown", "_s.flv", "_p.mp4" } };
 
     @Override
     public String getAGBLink() {
@@ -210,18 +210,21 @@ public class ClipHunterCom extends PluginForHost {
                 if (currentSr == null) {
                     continue;
                 }
+                boolean foundFittingQuality = false;
                 for (final String quality[] : qualities) {
-                    if (quality.length == 3) {
-                        if (tmpUrl.contains(quality[1]) || tmpUrl.contains(quality[2])) {
+                    /* Now go through the different check-strings of that particular quality */
+                    for (int counter = 1; counter <= quality.length - 1; counter++) {
+                        final String checkString = quality[counter];
+                        if (tmpUrl.contains(checkString)) {
                             foundQualities.put(quality[0], tmpUrl);
-                            break;
-                        }
-                    } else {
-                        if (tmpUrl.contains(quality[0])) {
-                            foundQualities.put(quality[0], tmpUrl);
+                            foundFittingQuality = true;
                             break;
                         }
                     }
+                    if (foundFittingQuality) {
+                        break;
+                    }
+
                 }
             }
         }

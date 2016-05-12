@@ -338,7 +338,9 @@ public class CatShareNet extends PluginForHost {
             }
             /* TODO: Add a check before captcha: If waittime > 240 seconds, throw reconnect wait! */
             if (wait > System.currentTimeMillis()) {
-                this.sleep(wait - System.currentTimeMillis(), downloadLink);
+                wait = wait - System.currentTimeMillis();
+                logger.info("We have the captcha answer of the user, waiting " + wait + " milliseconds until json_download request");
+                this.sleep(wait, downloadLink);
             }
             postPageAPI("/download/json_download", download_post_data);
             dllink = PluginJSonUtils.getJson(br, "downloadUrl");
