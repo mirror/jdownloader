@@ -183,7 +183,7 @@ public class ClipHunterCom extends PluginForHost {
                 ext = (String) videoinfo.get("fmt");
                 final String url = (String) videoinfo.get("url");
                 tmpUrl = decryptUrl(decryptAlgo, url);
-                currentSr = new Regex(videoname, "(_[A-Za-z]\\.mp4)$").getMatch(0);
+                currentSr = new Regex(videoname, "(_[A-Za-z0-9]+\\.mp4)$").getMatch(0);
                 if (currentSr == null || tmpUrl == null) {
                     continue;
                 }
