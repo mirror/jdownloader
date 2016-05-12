@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" }, flags = { 2 })
 public class ClipHunterCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public ClipHunterCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -59,7 +59,7 @@ public class ClipHunterCom extends PluginForHost {
     /**
      * sync with decrypter
      */
-    public static final String[][] qualities     = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "p720.mp4" }, { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
+    public static final String[][] qualities     = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "p720.mp4" }, { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" }, { "unknown", "_s.flv", "_p.mp4" } };
 
     @Override
     public String getAGBLink() {
@@ -79,7 +79,7 @@ public class ClipHunterCom extends PluginForHost {
         if (downloadLink.getBooleanProperty("offline")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = downloadLink.getStringProperty("directlink");
+        dllink = downloadLink.getStringProperty("directlink");
 
         if (!linkOk(downloadLink)) {
             br.getPage(downloadLink.getStringProperty("originallink"));
@@ -91,8 +91,8 @@ public class ClipHunterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String selectedQuality = downloadLink.getStringProperty("selectedquality");
-            DLLINK = foundQualities.get(selectedQuality);
-            if (DLLINK == null) {
+            dllink = foundQualities.get(selectedQuality);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!linkOk(downloadLink)) {
@@ -105,7 +105,7 @@ public class ClipHunterCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -117,7 +117,7 @@ public class ClipHunterCom extends PluginForHost {
         boolean linkOk = false;
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK);
+            con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 dl.setDownloadSize(con.getLongContentLength());
                 linkOk = true;
@@ -153,7 +153,7 @@ public class ClipHunterCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     public static LinkedHashMap<String, String> findAvailableVideoQualities(final Browser br) throws Exception {
         // parse decryptalgo
-        final String jsUrl = br.getRegex("<script.*src=\"(http://.*?gexo.*?player[_a-z\\d]+\\.js)\"").getMatch(0);
+        final String jsUrl = br.getRegex("<script.*?src=\"(https?://\\S+gexo\\S+player[_a-z\\d]+\\.js)\"").getMatch(0);
         final String[] encryptedUrls = br.getRegex("\"url\":\"([^<>\"]*?)\"").getColumn(0);
         final String json_full = br.getRegex("var gexoFiles = (\\{.+\\});").getMatch(0);
         if (jsUrl == null || ((encryptedUrls == null || encryptedUrls.length == 0) && json_full == null)) {
@@ -183,7 +183,7 @@ public class ClipHunterCom extends PluginForHost {
                 ext = (String) videoinfo.get("fmt");
                 final String url = (String) videoinfo.get("url");
                 tmpUrl = decryptUrl(decryptAlgo, url);
-                currentSr = new Regex(videoname, "(_[A-Za-z0-9]+\\.mp4)$").getMatch(0);
+                currentSr = new Regex(videoname, "(_[A-Za-z0-9]+\\.(?:mp4|flv))$").getMatch(0);
                 if (currentSr == null || tmpUrl == null) {
                     continue;
                 }
@@ -193,6 +193,7 @@ public class ClipHunterCom extends PluginForHost {
                             foundQualities.put(quality[0], tmpUrl);
                             break;
                         }
+
                     } else {
                         if (currentSr.contains(quality[0])) {
                             foundQualities.put(quality[0], tmpUrl);
