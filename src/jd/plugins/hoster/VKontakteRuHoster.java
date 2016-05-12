@@ -434,7 +434,7 @@ public class VKontakteRuHoster extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (free) User");
+        ai.setStatus("Free Account");
         return ai;
     }
 
@@ -497,14 +497,7 @@ public class VKontakteRuHoster extends PluginForHost {
             this.requestFileInformation(downloadLink);
             this.doFree(downloadLink);
         } else {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
     }
 
@@ -808,14 +801,10 @@ public class VKontakteRuHoster extends PluginForHost {
         int links_count = 0;
         final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         for (final String q : qs) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("User stopped downloads --> Stepping out of getHighestQualityPic to avoid 'freeze' of the current DownloadLink");
-                    /* Avoid unnecessary 'plugin defect's in the logs. */
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
-                }
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
+            if (this.isAbort()) {
+                logger.info("User stopped downloads --> Stepping out of getHighestQualityPic to avoid 'freeze' of the current DownloadLink");
+                /* Avoid unnecessary 'plugin defect's in the logs. */
+                throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
             }
             final String srcstring = q + "src";
             final Object picobject = sourcemap.get(srcstring);
