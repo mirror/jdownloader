@@ -155,6 +155,11 @@ public class PanBaiduCom extends PluginForDecrypt {
         ArrayList<Object> ressourcelist = null;
 
         do {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return decryptedLinks;
+            }
+            currentlinksnum = 0;
             if (currentpage > 1 || is_subfolder) {
                 br.getPage(getFolder(parameter, dir, currentpage));
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
@@ -235,7 +240,9 @@ public class PanBaiduCom extends PluginForDecrypt {
                     }
                 }
                 decryptedLinks.add(dl);
+                currentlinksnum++;
             }
+            currentpage++;
         } while (currentlinksnum >= maxlinksperpage && currentpage <= maxpages);
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

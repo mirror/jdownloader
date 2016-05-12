@@ -177,6 +177,8 @@ public class PowVideoNet extends antiDDoSForHost {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
+            /* 2016-05-12: Our standard-UA is blocked - let's see how long this one will work / or if they will block current FF version :) */
+            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0");
         }
         return prepBr;
     }
@@ -284,6 +286,9 @@ public class PowVideoNet extends antiDDoSForHost {
                     }
                 }
             }
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("<Title>Watch ([^<>\"]+)</Title>").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);

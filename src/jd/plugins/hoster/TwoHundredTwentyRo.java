@@ -102,7 +102,10 @@ public class TwoHundredTwentyRo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = br.getRegex("url[\t\n\r ]+:[\t\n\r ]+\\'(http[^<>\"]*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("videoSrc[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

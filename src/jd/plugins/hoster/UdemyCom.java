@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|.+/#/lecture/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|.+/[^<>\"]+/lecture/\\d+)" }, flags = { 2 })
 public class UdemyCom extends PluginForHost {
 
     public UdemyCom(PluginWrapper wrapper) {
@@ -61,7 +61,7 @@ public class UdemyCom extends PluginForHost {
     private String               dllink               = null;
 
     private static final String  TYPE_SINGLE_FREE_OLD = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
-    public static final String   TYPE_SINGLE_PREMIUM  = "https?://(?:www\\.)?udemy\\.com/.+/#/lecture/\\d+";
+    public static final String   TYPE_SINGLE_PREMIUM  = ".+/lecture/\\d+$";
 
     @Override
     public String getAGBLink() {

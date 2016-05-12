@@ -78,7 +78,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = new Regex(parameter, "udemy\\.com/([^/]+)").getMatch(0);
-        final String[] links = br.getRegex("\"(/[^/]+/learn/#/lecture/\\d+)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(/[^/]+/learn/[^<>\"]+/lecture/\\d+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" }, flags = { 0 })
@@ -159,6 +160,9 @@ public class PornerBrosCom extends PluginForHost {
                     break;
                 }
             }
+            if (DLLINK == null) {
+                DLLINK = PluginJSonUtils.getJson(this.br, "token");
+            }
             // String paramXml = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)?(http://.*?)\"").getMatch(1);
             // if (paramXml == null) {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -170,7 +174,7 @@ public class PornerBrosCom extends PluginForHost {
             // }
             //
             // DLLINK = decryptUrl(urlCipher);
-            if (DLLINK == null) {
+            if (DLLINK == null || !DLLINK.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String ext = new Regex(DLLINK, "\\&format=([A-Za-z0-9]{1,5})").getMatch(0);

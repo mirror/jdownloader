@@ -104,7 +104,7 @@ public class TnaFlixCom extends PluginForHost {
             downloadLink.setUrlDownload(newlink);
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String redirect = br.getRedirectLocation();
