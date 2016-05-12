@@ -20,9 +20,14 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,11 +35,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4" }, flags = { 0, 2 })
 public class AventertainmentsCom extends PluginForHost {
 
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.aventertainments.com/register.aspx?languageID=1&VODTypeID=1&Site=PPV");
     }
 
     /* DEV NOTES */
@@ -44,6 +50,8 @@ public class AventertainmentsCom extends PluginForHost {
 
     private final String         TYPE_IMAGE              = "https?://imgs\\.aventertainments\\.com/.+";
     private final String         TYPE_VIDEO              = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
+
+    public static String         html_loggedin           = "aventertainments.com/logout\\.aspx";
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension_Video = ".mp4";
@@ -134,6 +142,11 @@ public class AventertainmentsCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -174,6 +187,80 @@ public class AventertainmentsCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return free_maxdownloads;
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.setCookie("aventertainments.com", "IPCountry", "EN");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    private static Object LOCK = new Object();
+
+    public static void login(Browser br, final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                br.setCookiesExclusive(true);
+                prepBR(br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(account.getHoster(), cookies);
+                    br.getPage("https://www.aventertainments.com/");
+                    if (br.containsHTML(html_loggedin)) {
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
+                    }
+                    br = prepBR(new Browser());
+                }
+                br.getPage("https://www.aventertainments.com/login.aspx?languageID=1&VODTypeID=1&Site=PPV");
+                final Form loginform = br.getFormbyKey("__EVENTTARGET");
+                loginform.put("ctl00$ContentPlaceHolder1$uid", Encoding.urlEncode(account.getUser()));
+                loginform.put("ctl00$ContentPlaceHolder1$passwd", Encoding.urlEncode(account.getPass()));
+                loginform.put("ctl00$ContentPlaceHolder1$SavedLoginBox", "on");
+                br.submitForm(loginform);
+                if (!br.containsHTML(html_loggedin)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(br.getCookies(account.getHoster()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(this.br, account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(free_maxdownloads);
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        /* No need to login - account is really only needed for decrypter. */
+        doFree(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return free_maxdownloads;
     }
 

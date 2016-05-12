@@ -104,7 +104,8 @@ public class SharingZone extends PluginForHost {
     private static final int               account_FREE_MAXCHUNKS                       = 1;
     private static final int               account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    /* 2016-05-12: More chunks possible but this can cause issues */
+    private static final int               account_PREMIUM_MAXCHUNKS                    = -2;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
 
     private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);

@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,8 +30,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "http://(www\\.|en\\.)?workupload\\.com/file/[A-Za-z0-9]+" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "http://(?:www\\.|en\\.)?workupload\\.com/file/[A-Za-z0-9]+" }, flags = { 0 })
 public class WorkuploadCom extends PluginForHost {
 
     public WorkuploadCom(PluginWrapper wrapper) {
@@ -50,35 +51,38 @@ public class WorkuploadCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private String               fid               = null;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        link.setLinkID(fid);
+        br.getPage("https://workupload.com/file/" + fid);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<td>Dateiname:</td><td>([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"intro\">[\n\t\r ]*?<b>([^<>\"]+)</b>").getMatch(0);
+        }
         String filesize = br.getRegex("<td>Dateigröße:</td><td>([^<>\"]*?)<").getMatch(0);
         if (filename == null || filesize == null) {
-            Regex filenameSize = br.getRegex("<p class=\"intro\"><b>(.*?)</b>\\s*\\((.*?)\\)");
+            Regex filenameSize = br.getRegex("<p class=\"intro\">[\n\t\r ]*?<b>(.*?)</b>[^\n\t\r <>\"]*?(\\d+(?:\\.\\d+)? ?(KB|MB|GB))[^\n\t\r <>\"]*?");
             if (filename == null) {
                 filename = filenameSize.getMatch(0);
             }
             if (filesize == null) {
                 filesize = filenameSize.getMatch(1);
             }
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,10 +106,11 @@ public class WorkuploadCom extends PluginForHost {
         // String dllink = checkDirectLink(downloadLink, directlinkproperty);
         String dllink = null;
         if (dllink == null) {
-            final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
+            this.br.getPage("/start/" + fid);
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.postPage("/file/api/getDownloadServer/" + fid, "");
-            dllink = getJson("server");
+            this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            this.br.getPage("/api/file/getDownloadServer/" + fid);
+            dllink = PluginJSonUtils.getJson(this.br, "url");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }

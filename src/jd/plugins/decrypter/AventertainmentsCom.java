@@ -19,13 +19,16 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample).+" }, flags = { 0 })
 public class AventertainmentsCom extends PluginForDecrypt {
@@ -37,12 +40,15 @@ public class AventertainmentsCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        if (aa != null) {
+            jd.plugins.hoster.AventertainmentsCom.login(this.br, aa, false);
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        this.br.setFollowRedirects(false);
         String fpName;
         final String title_part1 = this.br.getRegex("class=\"top\\-title\">Item #:([^<>\"]+)</div>").getMatch(0);
         final String title_part2 = this.br.getRegex("<h2>([^<>\"]+)(?:\\&nbsp;)?<").getMatch(0);
@@ -54,7 +60,7 @@ public class AventertainmentsCom extends PluginForDecrypt {
 
         boolean foundScreenshot = false;
         final String screenshot_url_part = this.br.getRegex("imgs\\.aventertainments\\.com/new/bigcover/([A-Za-z0-9\\-_]+\\.jpg)\"").getMatch(0);
-        final String[] screenshotRegexes = { "(https?://imgs\\.aventertainments\\.com/new/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\.aventertainments\\.com//?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
+        final String[] screenshotRegexes = { "(https?://imgs\\.aventertainments\\.com/[^/]+/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\.aventertainments\\.com//?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
         final String[] galleryRegexes = { "(https?://imgs\\.aventertainments\\.com//?vodimages/gallery/large/[^<>\"\\']+\\.jpg)" };
         final String[] coverRegexes = { "\"(https?://imgs\\.aventertainments\\.com/archive/bigcover/[^/]+\\.jpg)\"" };
 
