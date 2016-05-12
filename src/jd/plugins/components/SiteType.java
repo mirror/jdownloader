@@ -15,10 +15,14 @@ public class SiteType {
          * examples <a href="http:/palcomix.com/">palcomix.com</a>
          */
         ArlesImageWebPageCreator,
-
         /**
          * Open source image board: <a href="https://github.com/r888888888/danbooru">danbooru github project</a><br />
          * example: <a href="http://danbooru.donmai.us/">danbooru.donmai.us</a>
+         */
+        DaddyScriptsDaddysFileHostV2,
+        /**
+         * File host script: <a href="http://www.daddyscripts.com/products.php?name=daddys_file_host">Daddy's File Host</a><br />
+         * example: <a href="http://dosya.tc/">dosya.tc</a>
          */
         Danbooru,
 
