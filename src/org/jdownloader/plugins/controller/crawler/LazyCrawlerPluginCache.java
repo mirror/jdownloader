@@ -20,7 +20,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyCrawlerPluginCache {
 
-    private static final int CACHEVERSION = 8;
+    private static final int CACHEVERSION = 1205201601;
 
     private static ByteArrayOutputStream readFile(File file) throws IOException {
         final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
@@ -62,6 +62,7 @@ public class LazyCrawlerPluginCache {
                     for (int lazyHostPluginIndex = 0; lazyHostPluginIndex < lazyCrawlerPluginSize; lazyHostPluginIndex++) {
                         final LazyCrawlerPlugin lazyCrawlerPlugin = new LazyCrawlerPlugin(lazyPluginClass, is.readString(stringBuffer), is.readString(stringBuffer), null, null);
                         lazyCrawlerPlugin.setPluginUsage(is.readLongOptimized());
+                        lazyCrawlerPlugin.setMaxConcurrentInstances((int) is.readLongOptimized());
                         final int flags = is.ensureRead();
                         lazyCrawlerPlugin.setHasConfig((flags & (1 << 1)) != 0);
                         if ((flags & (1 << 4)) != 0) {
@@ -115,6 +116,7 @@ public class LazyCrawlerPluginCache {
                     os.writeString(plugin.getPatternSource());
                     os.writeString(plugin.getDisplayName());
                     os.writeLongOptimized(plugin.getPluginUsage());
+                    os.writeLongOptimized(plugin.getMaxConcurrentInstances());
                     byte flags = 0;
                     if (plugin.isHasConfig()) {
                         flags |= (1 << 1);
