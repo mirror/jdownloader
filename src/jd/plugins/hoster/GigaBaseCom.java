@@ -18,8 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -29,17 +30,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabase.com" }, urls = { "http://(www\\.)?gigabase\\.com/getfile/[^<>\"\\'/]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabase.com" }, urls = { "http://(www\\.)?gigabase\\.com/getfile/[^<>\"\\'/]+/?" }, flags = { 0 })
 public class GigaBaseCom extends PluginForHost {
 
     public GigaBaseCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static String       AGENT           = RandomUserAgent.generate();
     private static final String SECURITYCAPTCHA = "text from the image and click \"Continue\" to access the website";
 
     @Override
@@ -56,7 +55,7 @@ public class GigaBaseCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", AGENT);
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<h3>\\s*File not found\\s*</h3>|>File not found or removed<|<title>Gigabase\\.com</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -65,14 +64,16 @@ public class GigaBaseCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
         }
-        final Regex fileInfo = br.getRegex("<small>Download file:</small><br/>([^<>\"]*?)<small>\\(([^<>\"]*?)\\)</small>");
+        final Regex fileInfo = br.getRegex("<small>Download file:</small><br/>\\s*([^<>\"]*?)\\s*<small>\\(([^<>\"]*?)\\)</small>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -91,14 +92,17 @@ public class GigaBaseCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        String dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
+        // final link!
+        String dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/dfile/[^\"<>]+)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("href=\"/getfile/[^\"<>]*?(/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
-            dllink = downloadLink.getDownloadURL() + dllink;
-
+            // not final links.
+            dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("href=\"/getfile/[^\"<>]*?(/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
+                }
+            }
             /* workaround for old stable bug */
             dllink = dllink.replaceAll("\\/\\/", "/");
             dllink = dllink.replaceAll("http:\\/", "http://");
@@ -116,21 +120,22 @@ public class GigaBaseCom extends PluginForHost {
 
                 br.getPage(dllink);
             }
+            // final link!
             dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/dfile/[^\"<>]+)").getMatch(0);
-        }
-        if (dllink == null) {
-            Form dlForm = br.getForm(2);
-            if (dlForm != null) {
-                br.submitForm(dlForm);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download, maybe your country is blocked?!");
+                Form dlForm = br.getForm(2);
+                if (dlForm != null) {
+                    br.submitForm(dlForm);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
+                }
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download, maybe your country is blocked?!");
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
