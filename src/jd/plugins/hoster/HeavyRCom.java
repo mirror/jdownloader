@@ -28,7 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "http://(www\\.)?heavy-r\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "https?://(?:www\\.)?heavy\\-r\\.com/video/\\d+(?:/.+)?" }, flags = { 0 })
 public class HeavyRCom extends antiDDoSForHost {
 
     public HeavyRCom(PluginWrapper wrapper) {
@@ -57,10 +57,10 @@ public class HeavyRCom extends antiDDoSForHost {
             url = url + "/x/";
         }
         getPage(url);
-        if (br.containsHTML("404 - Not Found")) {
+        if (br.containsHTML("404 \\- Not Found")) {
             getPage(url);
         }
-        if (br.containsHTML("Video not found!")) {
+        if (br.containsHTML("Video not found\\!") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("id=\"videotitle\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
