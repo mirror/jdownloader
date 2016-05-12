@@ -59,15 +59,15 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>(.*?) \\-.*?</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h1 style=\"font\\-size: 2em;\">(.*?) </h1>").getMatch(0);
+        String title = br.getRegex("<title>(.*?) \\-.*?</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<h1 style=\"font\\-size: 2em;\">(.*?) </h1>").getMatch(0);
         }
-        if (filename == null) {
+        if (title == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        filename = Encoding.htmlDecode(filename.trim());
+        title = Encoding.htmlDecode(title.trim());
 
         final LinkedHashMap<String, String> foundQualities = jd.plugins.hoster.ClipHunterCom.findAvailableVideoQualities(this.br);
         if (foundQualities == null) {
@@ -122,8 +122,17 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                 dllink = foundQualities.get(quality[0]);
                 if (dllink != null) {
                     final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    String thisfilename = title + "_" + quality[1];
+                    if (!thisfilename.endsWith(".mp4") && !thisfilename.endsWith(".flv")) {
+                        /* Add extension if necessary */
+                        if (dllink.contains(".mp4")) {
+                            thisfilename += ".mp4";
+                        } else {
+                            thisfilename += ".flv";
+                        }
+                    }
                     dl.setContentUrl(parameter);
-                    dl.setFinalFileName(filename + "_" + quality[1]);
+                    dl.setFinalFileName(thisfilename);
                     dl.setProperty("directlink", dllink);
                     dl.setProperty("originallink", parameter);
                     dl.setProperty("selectedquality", quality[0]);
@@ -141,8 +150,17 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                     final String currentQualityValue = quality[0];
                     if ((currentQualityValue == selectedQuality) && dllink != null) {
                         final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                        String thisfilename = title + "_" + quality[1];
+                        if (!thisfilename.endsWith(".mp4") && !thisfilename.endsWith(".flv")) {
+                            /* Add extension if necessary */
+                            if (dllink.contains(".mp4")) {
+                                thisfilename += ".mp4";
+                            } else {
+                                thisfilename += ".flv";
+                            }
+                        }
                         dl.setContentUrl(parameter);
-                        dl.setFinalFileName(filename + "_" + quality[1]);
+                        dl.setFinalFileName(thisfilename);
                         dl.setProperty("directlink", dllink);
                         dl.setProperty("originallink", parameter);
                         dl.setProperty("selectedquality", quality[0]);
@@ -156,7 +174,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(filename);
+        fp.setName(title);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
