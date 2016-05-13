@@ -1,6 +1,7 @@
 package jd.plugins.components;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -159,7 +160,7 @@ public class UserAgents {
         Chrome(
                 " Chrome/"),
         Firefox(
-                " FireFox/"),
+                " Firefox/"),
         Safari(
                 " Version/[0-9]\\.[0-9]\\.[0-9] Safari/[0-9]{3}\\.[0-9]\\.[0-9]");
 
@@ -211,6 +212,7 @@ public class UserAgents {
      * @author raztoki
      */
     public static String stringUserAgent() {
+        Collections.shuffle(stringAgent);
         final Random rand = new Random();
         final int i = rand.nextInt(stringAgent.size());
         final String ret = stringAgent.get(i);
@@ -228,12 +230,10 @@ public class UserAgents {
         if (browser == null) {
             throw new WTFException();
         }
-        final Random rand = new Random();
         String ret = null;
-        while (ret == null || !new Regex(ret, browser.pattern).matches()) {
-            final int i = rand.nextInt(stringAgent.size());
-            ret = stringAgent.get(i);
-        }
+        do {
+            ret = stringUserAgent();
+        } while (!new Regex(ret, browser.getPattern()).matches());
         return ret;
     }
 
