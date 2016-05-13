@@ -17,8 +17,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Base64;
@@ -29,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:///#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]{16,}((!|%21)[a-zA-Z0-9]+)?" }, flags = { 0 })
 public class MegaConz extends PluginForDecrypt {
@@ -88,19 +88,19 @@ public class MegaConz extends PluginForDecrypt {
         final String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
@@ -118,7 +118,7 @@ public class MegaConz extends PluginForDecrypt {
             if (nodeAttr == null) {
                 continue;
             }
-            final String nodeName = new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
+            final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
             final String nodeType = getField("t", node);
             if ("1".equals(nodeType)) {
                 /* folder */
@@ -169,6 +169,13 @@ public class MegaConz extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private String removeEscape(String match) {
+        if (match != null) {
+            return match.replaceAll("\\\\", "");
+        }
+        return null;
     }
 
     private String getRelPath(MegaFolder folder, HashMap<String, MegaFolder> folders) {

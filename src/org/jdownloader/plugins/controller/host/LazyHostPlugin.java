@@ -1,5 +1,7 @@
 package org.jdownloader.plugins.controller.host;
 
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -8,12 +10,9 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.translate._JDT;
 
-import jd.plugins.PluginForHost;
-
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
-    public static enum FEATURE
-            implements LabelInterface, TooltipInterface {
+    public static enum FEATURE implements LabelInterface, TooltipInterface {
 
         USENET {
             @Override
@@ -68,7 +67,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         CONFIG,
         PREMIUM,
         REWRITE,
-        ALLOW
+        ALLOW,
+        SITESUPPORT
     }
 
     private String        premiumUrl;
@@ -134,6 +134,14 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     protected void setHasConfig(boolean hasConfig) {
         setProperty(hasConfig, PROPERTY.CONFIG);
+    }
+
+    public boolean isSitesSupported() {
+        return getProperty(PROPERTY.SITESUPPORT);
+    }
+
+    protected void setSitesSupported(boolean b) {
+        setProperty(b, PROPERTY.SITESUPPORT);
     }
 
     protected synchronized final void setProperty(final boolean b, final PROPERTY property) {

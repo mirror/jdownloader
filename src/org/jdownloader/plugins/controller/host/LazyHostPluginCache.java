@@ -21,7 +21,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 public class LazyHostPluginCache {
 
-    private static final long CACHEVERSION = 19042016001l + LazyHostPlugin.FEATURE.CACHEVERSION;
+    private static final long CACHEVERSION = 13052016001l + LazyHostPlugin.FEATURE.CACHEVERSION;
 
     private static ByteArrayOutputStream readFile(File file) throws IOException {
         final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
@@ -66,6 +66,7 @@ public class LazyHostPluginCache {
                         final int flags = is.ensureRead();
                         lazyHostPlugin.setPremium((flags & (1 << 0)) != 0);
                         lazyHostPlugin.setHasConfig((flags & (1 << 1)) != 0);
+                        lazyHostPlugin.setSitesSupported((flags & (1 << 3)) != 0);
                         if ((flags & (1 << 5)) != 0) {
                             lazyHostPlugin.setPremiumUrl(is.readString(stringBuffer));
                         }
@@ -146,9 +147,9 @@ public class LazyHostPluginCache {
                     if (features != null && features.length > 0) {
                         flags |= (1 << 2);
                     }
-                    /**
-                     * 3 is unused
-                     */
+                    if (plugin.isSitesSupported()) {
+                        flags |= (1 << 3);
+                    }
                     if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         flags |= (1 << 4);
                     }
