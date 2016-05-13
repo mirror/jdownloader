@@ -315,7 +315,7 @@ public class AccountInfo extends Property {
                 // lets do some preConfiguring, and match hosts which do not contain tld
                 for (final String host : multiHostSupportList) {
                     final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
-                    if (cleanup.matches("file|up|upload|video|torrent")) {
+                    if (cleanup.matches("http|https|file|up|upload|video|torrent")) {
                         // we need to ignore/blacklist common phrases, else too many false positives
                         continue;
                     } else if ("usenet".equals(cleanup) && !"genericusenet".equals(cleanup)) {

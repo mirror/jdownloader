@@ -351,6 +351,13 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                         lazyHostPlugin.setHasRewrite(false);
                                     }
 
+                                    try {
+                                        lazyHostPlugin.setSitesSupported(plg.siteSupportedNames() != null);
+                                    } catch (Throwable e) {
+                                        logger.log(e);
+                                        lazyHostPlugin.setSitesSupported(false);
+                                    }
+
                                     lazyHostPlugin.setFeatures(plg.getFeatures());
                                 } catch (Throwable e) {
                                     if (e instanceof UpdateRequiredClassNotFoundException) {

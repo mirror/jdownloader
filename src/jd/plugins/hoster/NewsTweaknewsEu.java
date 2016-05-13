@@ -21,7 +21,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "hec.eu" }, urls = { "" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "tweaknews.eu" }, urls = { "" }, flags = { 0 })
 public class NewsTweaknewsEu extends UseNet {
     public NewsTweaknewsEu(PluginWrapper wrapper) {
         super(wrapper);
