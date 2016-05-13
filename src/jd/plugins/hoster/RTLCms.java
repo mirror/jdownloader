@@ -15,7 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
-import java.io.IOException;
+
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,8 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtl.de", "gzsz.rtl.de", "vox.de", "frauenzimmer.de", "vip.de", "wetter.de", "sport.de", "kochbar.de" }, urls = { "https://(?:www\\.)?rtl\\.de/[a-z0-9\\-/]+\\.html", "https?://gzsz\\.rtl\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vox\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?frauenzimmer\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vip\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?wetter\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?sport\\.de/.+", "https?://(?:www\\.)?kochbar\\.de/[a-z0-9\\-/]+\\.html" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtl.de", "vox.de", "frauenzimmer.de", "vip.de", "wetter.de", "sport.de", "kochbar.de" }, urls = { "https?://(?:[a-z0-9]+\\.)?rtl\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vox\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?frauenzimmer\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vip\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?wetter\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?sport\\.de/.+", "https?://(?:www\\.)?kochbar\\.de/[a-z0-9\\-/]+\\.html" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
 public class RTLCms extends PluginForHost {
 
     public RTLCms(PluginWrapper wrapper) {
@@ -38,6 +38,11 @@ public class RTLCms extends PluginForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
+    /* 2016-05-13, psp: #varufake */
+    /*
+     * 2016-05-13, psp: TODO: Consider adding a decrypter to parse all "videoinfo" json's of rtlcms pages - example:
+     * http://www.rtl.de/cms/videos.html
+     */
     private static final String  default_Extension   = ".mp4";
     /* Connection stuff */
     private static final boolean free_http_resume    = true;
