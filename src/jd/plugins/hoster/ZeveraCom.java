@@ -537,9 +537,6 @@ public class ZeveraCom extends antiDDoSForHost {
                         }
                     }
                 }
-                if (StringUtils.containsIgnoreCase(br.getURL(), "GetOrExtendPremium")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", fetchCookies(mProt + mName));
