@@ -160,7 +160,7 @@ public class GenericUseNet extends UseNet {
             @Override
             public boolean validateInputs() {
                 final String host = this.host.getText();
-                return super.validateInputs() && StringUtils.isNotEmpty(host);
+                return StringUtils.isNotEmpty(host);
             }
 
             @Override
