@@ -20,9 +20,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.config.Property;
@@ -34,7 +36,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -330,53 +331,29 @@ public class AccountInfo extends Property {
                     }
                 }
                 if (!nonTldHosts.isEmpty()) {
-                    // since there's more host plugins than supported hosts, its faster to process this in this manner
-                    fastSearch: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
-                        if (nonTldHosts.isEmpty()) {
-                            break;
-                        }
-                        if (lazyHostPlugin.isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
+                    final HashMap<String, List<LazyHostPlugin>> map = new HashMap<String, List<LazyHostPlugin>>();
+                    for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
+                        if (lazyHostPlugin.isFallbackPlugin()) {
                             continue;
                         }
+                        final String pattern = lazyHostPlugin.getPatternSource();
                         for (final String nonTldHost : nonTldHosts) {
-                            if (StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), nonTldHost) || StringUtils.containsIgnoreCase(lazyHostPlugin.getHost().replace("-", ""), nonTldHost)) {
-                                supportedHostsSet.add(lazyHostPlugin.getHost());
-                                nonTldHosts.remove(nonTldHost);
-                                continue fastSearch;
+                            if (StringUtils.containsIgnoreCase(pattern, nonTldHost)) {
+                                List<LazyHostPlugin> list = map.get(nonTldHost);
+                                if (list == null) {
+                                    list = new ArrayList<LazyHostPlugin>();
+                                    map.put(nonTldHost, list);
+                                }
+                                list.add(lazyHostPlugin);
                             }
                         }
                     }
-                    slowSearch: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
-                        if (nonTldHosts.isEmpty()) {
-                            break;
-                        }
-                        if (lazyHostPlugin.isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
-                            continue;
-                        }
-                        try {
-                            final PluginForHost plugin = lazyHostPlugin.getPrototype(null);
-                            if (plugin == null || plugin.getLazyP().isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
-                                continue;
+                    for (Entry<String, List<LazyHostPlugin>> entry : map.entrySet()) {
+                        final List<LazyHostPlugin> list = entry.getValue();
+                        for (final LazyHostPlugin lazyHostPlugin : list) {
+                            if (!lazyHostPlugin.isOfflinePlugin()) {
+                                supportedHostsSet.add(lazyHostPlugin.getHost());
                             }
-                            final String[] moreHosts = plugin.siteSupportedNames();
-                            if (moreHosts != null) {
-                                for (final String nonTldHost : nonTldHosts) {
-                                    /*
-                                     * because they might add a wrong name (not primary), siteSupportedNames provides array of _ALL_
-                                     * supported siteNames. moreHosts contains plugin.gethost, so process this first!
-                                     */
-                                    for (final String moreHost : moreHosts) {
-                                        if (StringUtils.containsIgnoreCase(moreHost, nonTldHost) || StringUtils.containsIgnoreCase(moreHost.replace("-", ""), nonTldHost)) {
-                                            supportedHostsSet.add(lazyHostPlugin.getHost());
-                                            nonTldHosts.remove(nonTldHost);
-                                            continue slowSearch;
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (UpdateRequiredClassNotFoundException e) {
-                            LogController.CL().log(e);
-                            continue;
                         }
                     }
                 }
