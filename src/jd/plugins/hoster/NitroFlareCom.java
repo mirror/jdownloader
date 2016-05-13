@@ -65,7 +65,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(baseURL + "/payment");
+        this.enablePremium(null);
         setConfigElement();
     }
 
@@ -268,9 +268,9 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private final void doFree(final Account account, final DownloadLink downloadLink) throws Exception {
-        if (checkShowFreeDialog(getHost())) {
-            showFreeDialog(getHost());
-        }
+        // if (checkShowFreeDialog(getHost())) {
+        // showFreeDialog(getHost());
+        // }
         freedl = true;
         br = new Browser();
         dllink = checkDirectLink(downloadLink, directlinkproperty);
