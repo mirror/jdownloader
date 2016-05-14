@@ -136,6 +136,10 @@ public class InCloudDriveCom extends PluginForHost {
                 // folder, not supported as of yet...
                 return AvailableStatus.FALSE;
             }
+            // tokens are never shown as error when invalid
+            if (link.getDownloadURL().matches(".+/link_download/\\?token=[A-Za-z0-9=_]+")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return AvailableStatus.TRUE;

@@ -84,10 +84,11 @@ public class GameFrontCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("errno=ERROR_CONTENT_QUICKKEY_INVALID")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.getRedirectLocation().matches(".*?gamefront\\.online/\\d+/.+")) {
+            } else if (br.getRedirectLocation().matches(".*?gamefront\\.online/\\d+/.+")) {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
+            } else if (br.getRedirectLocation().endsWith("/files/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
