@@ -47,7 +47,7 @@ public class JavhdCom extends PluginForHost {
             return AvailableStatus.FALSE;
         }
         datacode = datacode.substring(0, datacode.length() - 2);
-        dllink = "http://wpc.4def.alphacdn.net/802D70B/OriginJHVD/contents/" + datacode + "/videos/" + datacode + "_hq.mp4";
+        dllink = "http://wpc.4def.alphacdn.net/802D70B/OriginJHVD/contents/" + datacode + "/videos/" + datacode + "_sh.mp4";
         long filesize = getFileSize(new URL(dllink));
         downloadLink.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
