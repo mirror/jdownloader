@@ -1,5 +1,11 @@
 NONE=无
+ON_DOWNLOADS_PAUSE=下载控制器已暂停
+ON_DOWNLOADS_RUNNING=下载控制器已开始
+ON_DOWNLOADS_STOPPED=下载控制器已停止
 ON_DOWNLOAD_CONTROLLER_START=一个下载开始
 ON_DOWNLOAD_CONTROLLER_STOPPED=一个下载停止
 RECONNECT_AFTER=重连接之后
 allow=允许
+editor_autoformat=自动格式
+example_script_name=范例
+title=事件脚本器

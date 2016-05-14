@@ -1,4 +1,5 @@
 jd_plugins_optional_jdchat_jdchat=聊天
 settings_nick=你的名字
+settings_userlist_position=用户列表位置
 settings_userlist_position_left=左边
 settings_userlist_position_right=右边
