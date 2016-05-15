@@ -51,6 +51,7 @@ public class XXXBlg extends antiDDoSForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final ArrayList<String> pwList = new ArrayList<String>();
@@ -58,6 +59,8 @@ public class XXXBlg extends antiDDoSForDecrypt {
         pwList.add("xxx-blog.org");
         pwList.add("xxx-blog.to");
         br.setFollowRedirects(true);
+        // crapola
+        br.setCookie(Browser.getHost(parameter), "hasVsitedSite", "yes");
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
             decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "xxx-blog\\.to/(.+)").getMatch(0), null));

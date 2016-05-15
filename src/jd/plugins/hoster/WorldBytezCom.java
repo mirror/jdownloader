@@ -479,6 +479,9 @@ public class WorldBytezCom extends antiDDoSForHost {
 
     public String getDllink() {
         String dllink = br.getRedirectLocation();
+        if (dllink != null && !dllink.matches("https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files\\d*|d|cgi\\-bin/dl\\.cgi|[a-z0-9\\.]+/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?")) {
+            dllink = null;
+        }
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files\\d*|d|cgi\\-bin/dl\\.cgi|[a-z0-9\\.]+/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\\1").getMatch(1);
             if (dllink == null) {

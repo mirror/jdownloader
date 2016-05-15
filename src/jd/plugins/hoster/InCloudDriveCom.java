@@ -123,12 +123,16 @@ public class InCloudDriveCom extends PluginForHost {
         }
 
         if (filename != null) {
-            link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
+            // this is what the filename is detected at for offline content. Don't set as url can contain say filename.rar and core will set
+            // that!
+            if (!"Content Unavailable".equals(filename)) {
+                link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
+            }
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (br.containsHTML(">A Database Error Occurred<|This link has been removed from system\\.|>The requested file isn't anymore!</p>|>Content you have requested is unavailable|The file you are trying to download is no longer available!</h1>")) {
+        if (br.containsHTML(">A Database Error Occurred<|This link has been removed from system\\.|>The requested file isn't anymore!</p>|>Content you have requested is unavailable|The file you are trying to download is no longer available!</h1>|The file you are trying to download is no longer available\\.<|>The file has been removed because of a ToS/AUP violation\\.<|>Invalid URL - the link you are trying to access does not exist<|>The file has been deleted by the user\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null) {
