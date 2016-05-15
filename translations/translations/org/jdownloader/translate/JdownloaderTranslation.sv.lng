@@ -120,6 +120,7 @@ ImportAction_tt=Importera regler från *.jdfilter (*.jdregexfilter) filer
 IncludedSelectionSetup_getTranslationForIncludeSelectedLinks=Inkludera valda länkar
 IncludedSelectionSetup_getTranslationForIncludeUnselectedLinks=Inkludera icke valda länkar
 LazyHostPlugin_FEATURE_GENERIC=Generisk
+LazyHostPlugin_FEATURE_GENERIC_TOOLTIP=Detta tillägg implementerar generiskt stöd. ar god använd dediceradt tillägg istället.
 LazyHostPlugin_FEATURE_MULTIHOST=Multihoster
 LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP=Denna service stöder nerladdningar från multipla hosters.
 LazyHostPlugin_FEATURE_USENET=Usenet
