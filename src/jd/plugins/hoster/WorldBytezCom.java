@@ -891,6 +891,9 @@ public class WorldBytezCom extends antiDDoSForHost {
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
+                    if (br.getRedirectLocation() != null) {
+                        getPage(br.getRedirectLocation());
+                    }
                     final Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
