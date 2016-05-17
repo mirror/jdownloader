@@ -51,6 +51,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})" }, flags = { 0 })
@@ -71,10 +72,7 @@ public class FileCryptCc extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br = new Browser();
-        String agent = UserAgents.stringUserAgent();
-        while (!agent.contains(" Chrome/")) {
-            agent = UserAgents.stringUserAgent();
-        }
+        final String agent = UserAgents.stringUserAgent(BrowserName.Chrome);
         br.getHeaders().put("User-Agent", agent);
         br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
         br.getHeaders().put("Accept-Language", "en");
@@ -377,10 +375,10 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     private final boolean containsPassword() {
-        return new Regex(cleanHTML, "<h2>Passwort erforderlich</h2>").matches();
+        return new Regex(cleanHTML, "<h2>(?:Passwort erforderlich|Password required)</h2>").matches();
     }
 
-    private final String containsCaptcha = "<h2>Sicherheitsüberprüfung</h2>";
+    private final String containsCaptcha = "<h2>(?:Sicherheitsüberprüfung|Security prompt)</h2>";
 
     private String       cleanHTML       = null;
 
