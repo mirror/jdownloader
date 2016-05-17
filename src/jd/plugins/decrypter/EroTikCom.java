@@ -56,7 +56,7 @@ public class EroTikCom extends PluginForDecrypt {
             logger.info("fpName: " + fpName);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            final String[] items = br.getRegex("<h3><a href=\"([^<>\"].+?)\" class=\"pm-title-link ?\"").getColumn(0);
+            final String[] items = br.getRegex("<h3><a href=\"([^<>\"]+?)\" class=\"pm-title-link ?\"").getColumn(0);
             if ((items == null || items.length == 0) && crawledLinks.isEmpty()) {
                 logger.warning("Decrypter broken (items regex) for link: " + parameter);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -110,7 +110,12 @@ public class EroTikCom extends PluginForDecrypt {
         }
         if (externID.contains("freemix")) {
             // logger.info("Not supported yet: " + externID);
-            br.getPage(externID);
+            try {
+                br.getPage(externID);
+            } catch (Throwable e) {
+                crawledLinks.add(this.createOfflinelink(parameter));
+                return;
+            }
             String config = br.getRegex("config:.*?(http[^<>\"]*?)(\'|\")").getMatch(0);
             br.getPage(config);
             externID = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
