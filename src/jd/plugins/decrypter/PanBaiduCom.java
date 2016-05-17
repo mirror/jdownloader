@@ -137,7 +137,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         String dirName = null;
         boolean is_subfolder = false;
         // Jump into folder or get content of the main link
-        if (param.toString().matches(TYPE_FOLDER_SUBFOLDER)) {
+        if (param.toString().matches(TYPE_FOLDER_SUBFOLDER) || param.toString().matches(TYPE_FOLDER_GENERAL)) {
             dirName = new Regex(param.toString(), "(?:dir/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
             dir = "%2F" + dirName;
             is_subfolder = true;
@@ -196,11 +196,21 @@ public class PanBaiduCom extends PluginForDecrypt {
                 final long isdir = DummyScriptEnginePlugin.toLong(entries.get("isdir"), 0);
                 if (isdir == 1) {
                     final String path = (String) entries.get("path");
-                    if (path == null || shorturl == null) {
+                    String subdir_link = null;
+                    if (path == null) {
                         continue;
                     }
                     /* Subfolder --> Goes back into decrypter */
-                    String subdir_link = "http://pan.baidu.com/s/" + shorturl + "#dir/path=" + Encoding.urlEncode(path);
+                    if (shorturl == null) {
+                        String general_folder = parameter;
+                        String folder_path = new Regex(general_folder, "(#dir/path=.*?)$").getMatch(0);
+                        if (folder_path != null) {
+                            general_folder = general_folder.replace(folder_path, "");
+                        }
+                        subdir_link = general_folder + "#dir/path=" + Encoding.urlEncode(path);
+                    } else {
+                        subdir_link = "http://pan.baidu.com/s/" + shorturl + "#dir/path=" + Encoding.urlEncode(path);
+                    }
                     if (link_password != null) {
                         /*
                          * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password
