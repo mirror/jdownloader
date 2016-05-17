@@ -4,7 +4,6 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
@@ -19,9 +18,13 @@ import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
 public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<LAFSettings> {
 
+    private static boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
+    }
+
     @Override
     public StorageHandler<LAFSettings> create(File path, Class<LAFSettings> configInterface) {
-        StorageHandler<LAFSettings> ret = new StorageHandler<LAFSettings>(path, configInterface) {
+        final StorageHandler<LAFSettings> ret = new StorageHandler<LAFSettings>(path, configInterface) {
 
             @Override
             protected void preInit(File path, Class<LAFSettings> configInterfac) {
@@ -41,18 +44,18 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
                 });
             }
         };
-        for (Entry<Method, KeyHandler<?>> e : ret.getMap().entrySet()) {
+        for (final Entry<Method, KeyHandler<?>> e : ret.getMap().entrySet()) {
             e.getValue().setAllowWriteDefaultObjects(false);
         }
         // restore old storage
         try {
-            File oldLafSettingsFile = Application.getResource("cfg/org.appwork.swing.synthetica.SyntheticaSettings.json");
+            final File oldLafSettingsFile = Application.getResource("cfg/org.appwork.swing.synthetica.SyntheticaSettings.json");
             if (oldLafSettingsFile.exists()) {
-                JsonKeyValueStorage prim = (JsonKeyValueStorage) JsonConfig.create(SyntheticaSettings.class)._getStorageHandler().getPrimitiveStorage();
-                for (String s : prim.getKeys()) {
-                    KeyHandler<Object> keyH = ret.getKeyHandler(s.toLowerCase(Locale.ENGLISH));
-                    Object oldValue = prim.get(s, null);
-                    if (keyH != null && !Objects.equals(oldValue, keyH.getDefaultValue())) {
+                final JsonKeyValueStorage prim = (JsonKeyValueStorage) JsonConfig.create(SyntheticaSettings.class)._getStorageHandler().getPrimitiveStorage();
+                for (final String s : prim.getKeys()) {
+                    final KeyHandler<Object> keyH = ret.getKeyHandler(s.toLowerCase(Locale.ENGLISH));
+                    final Object oldValue = prim.get(s, null);
+                    if (keyH != null && !equals(oldValue, keyH.getDefaultValue())) {
                         keyH.setValue(oldValue);
                     }
                 }

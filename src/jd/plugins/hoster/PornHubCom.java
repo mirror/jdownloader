@@ -178,7 +178,7 @@ public class PornHubCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = this.br.openHeadConnection(dlUrl);
-            if (isVideo && !con.getContentType().contains("html") && con.getResponseCode() == 400) {
+            if (con.getResponseCode() != 200) {
                 if (fresh_directurls == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -190,7 +190,7 @@ public class PornHubCom extends PluginForHost {
                 con.disconnect();
                 /* Last chance */
                 con = this.br.openHeadConnection(dlUrl);
-                if (con.getContentType().contains("html") && con.getResponseCode() == 401) {
+                if (con.getResponseCode() != 200) {
                     con.disconnect();
                     br.getPage(source_url);
                     this.dlUrl = fresh_directurls.get(quality);
@@ -199,6 +199,9 @@ public class PornHubCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     con = this.br.openHeadConnection(dlUrl);
+                }
+                if (con.getResponseCode() != 200) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             if (con.getContentType().contains("html")) {
@@ -209,7 +212,9 @@ public class PornHubCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } finally {
             try {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             } catch (final Throwable e) {
                 logger.info("e: " + e);
             }
