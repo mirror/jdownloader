@@ -38,7 +38,7 @@ public class RTLCms extends PluginForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    /* 2016-05-13, psp: #varufake */
+    /* 2016-05-13, psp: #varoufake #verafake */
     /*
      * 2016-05-13, psp: TODO: Consider adding a decrypter to parse all "videoinfo" json's of rtlcms pages - example:
      * http://www.rtl.de/cms/videos.html
@@ -110,18 +110,34 @@ public class RTLCms extends PluginForHost {
             br.getPage(player_url);
             json = br.toString();
         }
-        final String headline1 = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "headline1");
-        final String headline2 = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "headline2");
+        String headline1 = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "headline1");
+        String headline2 = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "headline2");
         DLLINK = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "mp4url");
         if (headline2 == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (headline1 != null && (headline1.equals("null") || headline1.equals(""))) {
+            headline1 = null;
+        }
+        if (headline2 != null && (headline2.equals("null") || headline2.equals(""))) {
+            headline2 = null;
+        }
+
         DLLINK = Encoding.htmlDecode(DLLINK);
         String filename;
-        if (headline1 != null) {
+        /* Verify our json data ... */
+        if (headline1 != null && headline2 != null) {
             filename = Encoding.htmlDecode(headline1).trim() + " - " + Encoding.htmlDecode(headline2).trim();
-        } else {
+        } else if (headline2 != null) {
             filename = Encoding.htmlDecode(headline2).trim();
+        } else if (headline1 != null) {
+            filename = Encoding.htmlDecode(headline1).trim();
+        } else {
+            /* Last chance - fallback to url-filename */
+            filename = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+\\.de/(.+)").getMatch(0);
+            /* Remove nonsense */
+            filename = filename.replace("cms/", "");
+            filename = filename.replace(".html", "");
         }
         filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
