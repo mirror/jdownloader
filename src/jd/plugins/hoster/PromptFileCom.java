@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -29,6 +31,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -38,8 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promptfile.com" }, urls = { "http://(www\\.)?promptfile\\.com/l/[A-Z0-9]+\\-[A-Z0-9]+" }, flags = { 2 })
 public class PromptFileCom extends PluginForHost {
@@ -95,11 +96,21 @@ public class PromptFileCom extends PluginForHost {
         final boolean failed_once = downloadLink.getBooleanProperty("failed_once", false);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String cHash = br.getRegex("name=\"chash\" value=\"([a-z0-9]+)\"").getMatch(0);
-            if (cHash == null) {
+            // use form
+            final Form chash = br.getForm(0);
+            // final String cHash = br.getRegex("(?:id|name)\\s*=\\s*\"chash\"\\s+value\\s*=\\s*\"([a-z0-9]+)\"").getMatch(0);
+            // if (cHash == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // br.postPage(br.getURL(), "chash=" + cHash);
+            if (chash == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.postPage(br.getURL(), "chash=" + cHash);
+            final String obstruction = chash.getRegex("onclick='\\$\\(\"#chash\"\\)\\.val\\(\"(.*?)\"\\+\\$\\(\"#chash\"\\)\\.val\\(\\)\\)").getMatch(0);
+            if (obstruction != null) {
+                chash.put(chash.getInputFields().get(0).getKey(), obstruction + chash.getInputFields().get(0).getValue());
+            }
+            br.submitForm(chash);
             if (failed_once) {
                 /*
                  * It failed once via downloadlink ? Sometimes the downloadlink is broken but if we have a stream, we might be able to
