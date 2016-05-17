@@ -24,6 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,10 +49,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flash-x.tv" }, urls = { "https?://(?:www\\.)?(?:flashx\\.(?:tv|pw)|flash-x\\.tv)/(?:(?:vid)?embed\\-|dl\\?)?[a-z0-9]{12}" }, flags = { 2 })
 public class FlashxTv extends antiDDoSForHost {
@@ -112,9 +112,9 @@ public class FlashxTv extends antiDDoSForHost {
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         String lnk = link.getDownloadURL();
         if (!SUPPORTSHTTPS) {
-            lnk = "http://www.flash-x.tv/" + fid;
+            lnk = COOKIE_HOST.replace("https://", "http://") + "/" + fid;
         } else if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
-            lnk = "https://www.flash-x.tv/" + fid;
+            lnk = COOKIE_HOST.replace("http://", "https://") + "/" + fid;
         }
         lnk = lnk.replaceAll("/((vid)?embed\\-)", "/");
         link.setUrlDownload(lnk);
@@ -273,7 +273,7 @@ public class FlashxTv extends antiDDoSForHost {
                         getPage(br.getRedirectLocation());
                     }
                     // could be other crap here
-                    final String playthis = br.getRegex("/playthis-" + fuid + "\\.html").getMatch(-1);
+                    final String playthis = br.getRegex("/play(?:this|it)-" + fuid + "\\.html").getMatch(-1);
                     if (playthis != null) {
                         getPage(playthis);
                     }
@@ -289,7 +289,9 @@ public class FlashxTv extends antiDDoSForHost {
                 }
                 if (stream_dllink == null) {
                     /* If failed, go back to the beginning */
+                    br.setFollowRedirects(true);
                     getPage(downloadLink.getDownloadURL());
+                    br.setFollowRedirects(false);
                 }
             }
             try {
