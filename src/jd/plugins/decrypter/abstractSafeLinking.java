@@ -125,6 +125,23 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             }
                         }
                         nextPost = ammendJson(nextPost, "password", psw);
+                        if (!JSonUtils.parseBoolean(useCaptcha)) {
+                            nextPost = ammendJson(nextPost, "hash", uid);
+                            ajaxPostPageRaw("/v1/captcha", nextPost);
+                            if (ajax.getHttpConnection().getResponseCode() == 200) {
+                                break;
+                            } else if (ajax.getHttpConnection().getResponseCode() == 422) {
+                                if ("true".equalsIgnoreCase(getJson(ajax, "passwordFail"))) {
+                                    if (i + 1 > tries) {
+                                        throw new DecrypterException(DecrypterException.PASSWORD);
+                                    }
+                                    continue;
+                                } else {
+                                    // unknown error
+                                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                                }
+                            }
+                        }
                     }
                     if (JSonUtils.parseBoolean(useCaptcha)) {
                         // captchas:[
@@ -223,17 +240,27 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         }
                         nextPost = ammendJson(nextPost, "hash", uid);
                         ajaxPostPageRaw("/v1/captcha", nextPost);
-                        if (ajax.getHttpConnection().getResponseCode() == 422 && "true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
-                            if (i + 1 > tries) {
-                                throw new DecrypterException(DecrypterException.CAPTCHA);
-                            }
-                            // {"message":"SolveMedia response is not valid (checksum error).","captchaFail":true}
-                            // {"message":"puzzle expired","captchaFail":true}
-                            // session timed out (due to dialog been open for too long) or captcha solution is wrong!
-                            continue;
-                        } else if (ajax.getHttpConnection().getResponseCode() == 200) {
+                        if (ajax.getHttpConnection().getResponseCode() == 200) {
                             // this seems good. be aware that the security string is still presence in the successful task
                             break;
+                        } else if (ajax.getHttpConnection().getResponseCode() == 422) {
+                            if (JSonUtils.parseBoolean(usePassword) && "true".equalsIgnoreCase(getJson(ajax, "passwordFail"))) {
+                                if (i + 1 > tries) {
+                                    throw new DecrypterException(DecrypterException.PASSWORD);
+                                }
+                                continue;
+                            } else if ("true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
+                                if (i + 1 > tries) {
+                                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                                }
+                                // {"message":"SolveMedia response is not valid (checksum error).","captchaFail":true}
+                                // {"message":"puzzle expired","captchaFail":true}
+                                // session timed out (due to dialog been open for too long) or captcha solution is wrong!
+                                continue;
+                            } else {
+                                // unknown error
+                                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                            }
                         }
                     }
                 }
