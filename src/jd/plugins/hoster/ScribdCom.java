@@ -448,11 +448,8 @@ public class ScribdCom extends PluginForHost {
 
     private void prepBRGeneral() {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
-        try {
-            br.setAllowedResponseCodes(new int[] { 400, 410 });
-            br.setLoadLimit(br.getLoadLimit() * 3);
-        } catch (Throwable e) {
-        }
+        br.setAllowedResponseCodes(new int[] { 400, 410 });
+        br.setLoadLimit(br.getLoadLimit() * 5);
         br.setCookie("https://www.scribd.com/", "lang", "en");
     }
 

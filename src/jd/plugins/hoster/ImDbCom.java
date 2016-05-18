@@ -67,6 +67,9 @@ public class ImDbCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String downloadURL = downloadLink.getDownloadURL();
         br.getPage(downloadURL);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String ending = null;
         String filename = null;
         if (downloadURL.matches(TYPE_PHOTO)) {
@@ -75,6 +78,10 @@ public class ImDbCom extends PluginForHost {
             }
             DLLINK = br.getRegex("id=\"primary\\-img\"[^\t\n\r]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
             filename = br.getRegex("<div id=\"photo\\-caption\">([^<>\"]*?)</div>").getMatch(0);
+            if (filename == null) {
+                /* Fallback to url-filename */
+                filename = new Regex(downloadURL, "/media/(.+)").getMatch(0).replace("/", "_");
+            }
             if (filename == null || DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

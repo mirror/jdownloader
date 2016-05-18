@@ -66,7 +66,7 @@ public class CrhyRllCom extends PluginForDecrypt {
     static private final Pattern RTMP_FILE      = Pattern.compile("<file>(.*?)</file>", Pattern.CASE_INSENSITIVE);
     static private final Pattern RTMP_HOST      = Pattern.compile("<host>(rtmp.*)</host>", Pattern.CASE_INSENSITIVE);
     static private final Pattern RTMP_QUAL      = Pattern.compile("<video_encode_quality>(.*?)</video_encode_quality>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern RTMP_SWF       = Pattern.compile("<default:chromelessPlayerUrl>(ChromelessPlayerApp\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern RTMP_SWF       = Pattern.compile("<default:chromelessPlayerUrl>([^<>\"]+\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
     /* 2016-04-29: http://static.ak.crunchyroll.com/versioned_assets/StandardVideoPlayer.cc7e8515.swf */
     // http://static.ak.crunchyroll.com/versioned_assets/StandardVideoPlayer.cc7e8515.swf
     static private final Pattern SWF_URL        = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:\\.[A-Za-z0-9]+)?\\.swf)", Pattern.CASE_INSENSITIVE);

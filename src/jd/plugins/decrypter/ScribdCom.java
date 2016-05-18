@@ -75,10 +75,9 @@ public class ScribdCom extends PluginForDecrypt {
                 if (br.containsHTML("\"objects\":null")) {
                     break;
                 }
-                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
+                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/(doc|book)/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
                 if (uplInfo == null || uplInfo.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    break;
                 }
                 for (final String[] docinfo : uplInfo) {
                     final String link = docinfo[0];
@@ -98,6 +97,10 @@ public class ScribdCom extends PluginForDecrypt {
                 has_more = this.br.containsHTML("\"has_more\":true");
             } while (decryptedLinksNum < documentsNum);
             if (decryptedLinksNum == 0) {
+                if (this.br.containsHTML("/book/")) {
+                    logger.info("Collection only contains unsupported urls");
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
