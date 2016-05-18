@@ -19,8 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.regex.Pattern;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -37,9 +36,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -233,13 +233,9 @@ public class FlickrCom extends PluginForDecrypt {
         final int totalpages = Integer.parseInt(getJson("pages"));
         for (int i = 1; i <= totalpages; i++) {
             logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return;
             }
             if (i > 1) {
                 api_getPage(apilink.replace("GETJDPAGE", Integer.toString(i)));
@@ -328,14 +324,10 @@ public class FlickrCom extends PluginForDecrypt {
         final int totalpages = Integer.parseInt(getJson("pages"));
         for (int i = 1; i <= totalpages; i++) {
             logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    decryptedLinks = null;
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                decryptedLinks = null;
+                return;
             }
             if (i > 1) {
                 api_getPage(apilink.replace("GETJDPAGE", Integer.toString(i)));
@@ -460,14 +452,11 @@ public class FlickrCom extends PluginForDecrypt {
     /**
      * Handles decryption via site.
      *
-     * @throws IOException
-     * @throws DecrypterException
-     * @throws ParseException
+     * @throws Exception
      */
-    @SuppressWarnings("deprecation")
-    private void site_handleSite() throws IOException, DecrypterException, ParseException {
+    @SuppressWarnings({ "deprecation", "unchecked" })
+    private void site_handleSite() throws Exception {
         ArrayList<String[]> addLinks = new ArrayList<String[]>();
-        HashSet<String> dupeCheckMap = new HashSet<String>();
         int lastPage = 1;
         int maxEntriesPerPage;
         String fpName;
@@ -486,11 +475,13 @@ public class FlickrCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = "favourites of user " + username;
         }
-        if (picCount == null) {
-            throw new DecrypterException("Decrypter broken for link: " + parameter);
+        final int totalEntries;
+        if (picCount != null) {
+            picCount = picCount.replaceAll("(,|\\.)", "");
+            totalEntries = Integer.parseInt(picCount);
+        } else {
+            totalEntries = 0;
         }
-
-        final int totalEntries = Integer.parseInt(picCount.replace(",", ""));
 
         /**
          * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link
@@ -512,30 +503,37 @@ public class FlickrCom extends PluginForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             getPage = parameter + "page%s/?fragment=1";
         }
+
         for (int i = 1; i <= lastPage; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return;
             }
             int addedLinksCounter = 0;
             if (i != 1) {
                 br.getPage(String.format(getPage, i));
             }
-            String[] links = br.getRegex("data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)").getColumn(0);
-            if (links != null && links.length != 0) {
-                for (String singleLink : links) {
-                    // Regex catches links twice, correct that here
-                    if (dupeCheckMap.add(singleLink)) {
-                        String pattern = Pattern.quote(singleLink) + "[^\"]*\"[^>]+title=\"([^\"]+)";
-                        String name = trimFilename(br.getRegex(pattern).getMatch(0));
-                        addLinks.add(new String[] { name, singleLink });
-                        addedLinksCounter++;
-                    }
+            final String json = this.br.getRegex("modelExport[\n\t\r ]*?:[\n\t\r ]*?(\\{.+\\}),").getMatch(0);
+            if (json == null) {
+                /* This should never happen but if we found links before, lets return them. */
+                break;
+            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) DummyScriptEnginePlugin.walkJson(entries, "favorite-models/{0}/photoPageList/_data");
+            for (final Object pico : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) pico;
+                if (entries == null) {
+                    continue;
                 }
+                final String title = (String) entries.get("title");
+                final String pic_id = (String) entries.get("id");
+                final String pathAlias = (String) DummyScriptEnginePlugin.walkJson(entries, "owner/pathAlias");
+                if (title == null || pic_id == null || pathAlias == null) {
+                    continue;
+                }
+                final String url = "https://www.flickr.com/photos/" + pathAlias + "/" + pic_id;
+                addLinks.add(new String[] { title, url });
+                addedLinksCounter++;
             }
             logger.info("Found " + addedLinksCounter + " links on page " + i + " of approximately " + lastPage + " pages.");
             logger.info("Found already " + addLinks.size() + " of " + totalEntries + " entries, so we still have to decrypt " + (totalEntries - addLinks.size()) + " entries!");
@@ -571,18 +569,8 @@ public class FlickrCom extends PluginForDecrypt {
 
             fina.setAvailable(true);
             /* No need to hide decrypted single links */
-            try {
-                /* JD2 only */
-                fina.setContentUrl("http://www.flickr.com" + aLink);
-            } catch (Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                fina.setBrowserUrl("http://www.flickr.com" + aLink);
-            }
-            try {
-                distribute(fina);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            fina.setContentUrl("http://www.flickr.com" + aLink);
+            distribute(fina);
             decryptedLinks.add(fina);
         }
         if (fpName != null) {

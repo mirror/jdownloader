@@ -82,8 +82,14 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            username = br.getRegex("<a href=\"/([^<>\"/]*?)\" class=\"mr2\">« Back to Profile</a>").getMatch(0);
+            username = br.getRegex("<a[^<>]*?href=\"/([^<>\"/]*?)\"[^<>]*?>« Back to Profile</a>").getMatch(0);
             title = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<title>([^<>\"]+) \\| ReverbNation</title>").getMatch(0);
+            }
+            if (title == null) {
+                title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+            }
             artist = br.getRegex("property=\"reverbnation_fb:musician\" content=\"([^<>\"]*?)\"").getMatch(0);
             artistsID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
             if (artistsID == null) {

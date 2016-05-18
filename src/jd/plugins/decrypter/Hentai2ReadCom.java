@@ -89,6 +89,14 @@ public class Hentai2ReadCom extends PluginForDecrypt {
                 // old method
                 final Regex linkStructure = br.getRegex("(http://hentai2read\\.com/wp\\-content/[a-z0-9\\-_]+/\\d+/\\d+/p)\\d{3}\\.jpg");
                 final String lastpage = br.getRegex("value=\"(\\d+)\">\\d+</option></select></li><li>").getMatch(0);
+                if (linkStructure == null || lastpage == null) {
+                    if (this.br.containsHTML("Chapter \\d+: Coming soon<")) {
+                        logger.info("Unreleased content");
+                        decryptedLinks.add(createOfflinelink(parameter));
+                        return decryptedLinks;
+                    }
+                    return null;
+                }
                 final String mainpart = linkStructure.getMatch(0);
                 final DecimalFormat df = new DecimalFormat("000");
                 for (int i = 1; i <= Integer.parseInt(lastpage); i++) {

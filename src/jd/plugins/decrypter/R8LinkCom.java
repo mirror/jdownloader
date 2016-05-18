@@ -47,8 +47,7 @@ public class R8LinkCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">NOT FOUND<")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML(">NOT FOUND<|This link does not exist or was deleted") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
