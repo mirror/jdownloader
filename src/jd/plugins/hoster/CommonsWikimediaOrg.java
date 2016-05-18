@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/[^/]+/media/File:.+" }, flags = { 0 })
 public class CommonsWikimediaOrg extends PluginForHost {
 
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
@@ -57,6 +57,11 @@ public class CommonsWikimediaOrg extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://wikimediafoundation.org/wiki/Terms_of_Use";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid = new Regex(link.getDownloadURL(), "/File:(.+)").getMatch(0);
+        link.setUrlDownload("https://commons.wikimedia.org/wiki/File:" + fid);
     }
 
     @SuppressWarnings("deprecation")
