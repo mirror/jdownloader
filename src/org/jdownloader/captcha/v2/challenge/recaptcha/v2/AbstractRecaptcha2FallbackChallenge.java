@@ -104,8 +104,8 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
             final ArrayList<String> images = new ArrayList<String>();
             data.put("images", images);
             final BufferedImage img = ImageIO.read(getImageFile());
-            int columnWidth = img.getWidth() / 3;
-            int rowHeight = img.getHeight() / 3;
+            final int columnWidth = img.getWidth() / 3;
+            final int rowHeight = img.getHeight() / 3;
             final Font font = new Font("Arial", 0, 12).deriveFont(Font.BOLD);
             for (int yslot = 0; yslot < 3; yslot++) {
                 for (int xslot = 0; xslot < 3; xslot++) {
@@ -114,15 +114,34 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                     int num = xslot + yslot * 3 + 1;
                     final BufferedImage jpg = new BufferedImage(columnWidth, rowHeight, BufferedImage.TYPE_INT_RGB);
                     final Graphics g = jpg.getGraphics();
-                    // g.drawImage(img, xx, yy, columnWidth, rowHeight, null);
-                    g.setFont(font);
-                    g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
-                    g.setColor(Color.WHITE);
-                    g.fillRect(columnWidth - 20, 0, 20, 20);
-                    g.setColor(Color.BLACK);
-                    g.drawString(num + "", columnWidth - 20 + 5, 0 + 15);
-                    g.dispose();
-                    images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
+                    try {
+                        // g.drawImage(img, xx, yy, columnWidth, rowHeight, null);
+                        g.setFont(font);
+                        g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
+                        g.setColor(Color.WHITE);
+                        g.fillRect(columnWidth - 20, 0, 20, 20);
+                        g.setColor(Color.BLACK);
+                        g.drawString(num + "", columnWidth - 20 + 5, 0 + 15);
+                        images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
+                    } catch (NullPointerException e) {
+                        // java.lang.NullPointerException
+                        // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
+                        // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
+                        // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
+                        if (Application.isHeadless()) {
+                            g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
+                            g.setColor(Color.WHITE);
+                            g.fillRect(columnWidth - 20, 0, 20, 20);
+                            images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
+                        } else {
+                            throw e;
+                        }
+                    } finally {
+                        if (g != null) {
+                            g.dispose();
+                        }
+                    }
+
                 }
             }
             return data;
@@ -192,7 +211,6 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 }
                 int afterIconX = x;
                 x = afterIconX;
-                boolean keyPrinted = false;
                 for (int i = 0; i < ex.length; i++) {
 
                     g.setFont(font);
