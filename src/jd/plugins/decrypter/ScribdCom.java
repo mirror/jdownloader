@@ -75,7 +75,7 @@ public class ScribdCom extends PluginForDecrypt {
                 if (br.containsHTML("\"objects\":null")) {
                     break;
                 }
-                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/(doc|book)/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
+                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
                 if (uplInfo == null || uplInfo.length == 0) {
                     break;
                 }
