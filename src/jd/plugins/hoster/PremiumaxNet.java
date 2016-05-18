@@ -90,22 +90,27 @@ public class PremiumaxNet extends antiDDoSForHost {
         br.setReadTimeout(60 * 1000);
         // check if account is valid
         boolean is_freeaccount = false;
-        login(account, true);
-        getPage("/profile/");
-        final String expire = br.getRegex("<span>Premium until: </span><strong>([^<>\"]*?)</strong>").getMatch(0);
-        if (expire != null) {
-            ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm", Locale.ENGLISH));
-            ac.setStatus("Premium Account");
-            account.setMaxSimultanDownloads(-1);
-            account.setConcurrentUsePossible(true);
+        if (true) {
+            login(account, true);
+            getPage("/profile/");
+            final String expire = br.getRegex("<span>Premium until: </span><strong>([^<>\"]*?)</strong>").getMatch(0);
+            if (expire != null) {
+                ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm", Locale.ENGLISH));
+                ac.setStatus("Premium Account");
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } else {
+                ac.setStatus("Free Account");
+                is_freeaccount = true;
+                account.setMaxSimultanDownloads(20);
+                account.setConcurrentUsePossible(true);
+            }
+            ac.setUnlimitedTraffic();
+            // now let's get a list of all supported hosts:
         } else {
-            ac.setStatus("Free Account");
-            is_freeaccount = true;
-            account.setMaxSimultanDownloads(20);
-            account.setConcurrentUsePossible(true);
+            // just for testing Account.setMultiHostSupport
+            getPage("http://www.premiumax.net/");
         }
-        ac.setUnlimitedTraffic();
-        // now let's get a list of all supported hosts:
         getPage("/hosts.html");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomainsInfo = br.getRegex("(<img src=\"/assets/images/hosts/.*?)</tr>").getColumn(0);
