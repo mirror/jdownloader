@@ -21,6 +21,7 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.captcha.SkipRequest;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
@@ -136,130 +137,140 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     @Override
     public BufferedImage getAnnotatedImage() throws IOException {
         final BufferedImage img = ImageIO.read(getImageFile());
-        final Font font = new Font("Arial", 0, 12);
-
-        String exeplain = getExplain();
-        Icon icon = getExplainIcon(exeplain);
-        String key = getHighlightedExplain();
-
-        ArrayList<String> lines = new ArrayList<String>();
-        String[] ex = getExplain().replaceAll("<.*?>", "").split(Pattern.quote(key));
-        if (getChooseAtLeast() > 0) {
-            lines.add(_GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast()));
-        }
-        if (getType() != null && getType().startsWith("TileSelection")) {
-            lines.add(_GUI.T.RECAPTCHA_2_Dialog_help_tile());
-        }
-        lines.add("Example answer: 2,5,6");
-        FontMetrics fmBold = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD));
-        FontMetrics fm = img.getGraphics().getFontMetrics(font);
-        int y = 0;
-        int width = 0;
-        for (String p : ex) {
-            width += fm.stringWidth(p + "");
-        }
-        y += LINE_HEIGHT;
-        width += fmBold.stringWidth(key);
-
-        for (String line : lines) {
-            width = Math.max(width, fm.stringWidth(line));
-            y += LINE_HEIGHT;
-        }
-        y += 15;
-        if (icon != null) {
-            y = Math.max(y, icon.getIconHeight() + 10);
-
-        }
-        y += 7;
-        width += 10;
-
-        final BufferedImage newImage = IconIO.createEmptyImage(Math.max((icon == null ? 0 : (icon.getIconWidth() + 5)) + width, img.getWidth()), img.getHeight() + y);
-        final Graphics2D g = (Graphics2D) newImage.getGraphics();
         try {
-            int x = 5;
-            y = LINE_HEIGHT;
-
-            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
-            g.setColor(Color.WHITE);
-            g.setFont(font.deriveFont(Font.BOLD));
-            if (icon != null) {
-                icon.paintIcon(null, g, x, 5);
-
-                g.drawRect(x, 5, icon.getIconWidth(), icon.getIconHeight());
-                x += icon.getIconWidth() + 5;
+            final Font font = new Font("Arial", 0, 12);
+            final FontMetrics fmBold = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD));// check for missing fonts/headless java
+            final FontMetrics fm = img.getGraphics().getFontMetrics(font);
+            final String exeplain = getExplain();
+            final Icon icon = getExplainIcon(exeplain);
+            final String key = getHighlightedExplain();
+            final ArrayList<String> lines = new ArrayList<String>();
+            String[] ex = getExplain().replaceAll("<.*?>", "").split(Pattern.quote(key));
+            if (getChooseAtLeast() > 0) {
+                lines.add(_GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast()));
             }
-            int afterIconX = x;
-            x = afterIconX;
-            boolean keyPrinted = false;
-            for (int i = 0; i < ex.length; i++) {
-
-                g.setFont(font);
-                g.drawString(ex[i], x, y);
-                x += g.getFontMetrics().stringWidth(ex[i]);
-
-                if (ex.length == 1 || i < ex.length - 1) {
-                    g.setFont(font.deriveFont(Font.BOLD));
-                    g.drawString("" + key + "", x, y);
-                    x += g.getFontMetrics().stringWidth("" + key + "");
-                }
+            if (getType() != null && getType().startsWith("TileSelection")) {
+                lines.add(_GUI.T.RECAPTCHA_2_Dialog_help_tile());
             }
+            lines.add("Example answer: 2,5,6");
+            int y = 0;
+            int width = 0;
+            for (String p : ex) {
+                width += fm.stringWidth(p + "");
+            }
+            y += LINE_HEIGHT;
+            width += fmBold.stringWidth(key);
 
-            g.setFont(font);
-            x = afterIconX;
             for (String line : lines) {
+                width = Math.max(width, fm.stringWidth(line));
                 y += LINE_HEIGHT;
-                g.drawString(line, x, y);
-
             }
             y += 15;
             if (icon != null) {
                 y = Math.max(y, icon.getIconHeight() + 10);
 
             }
-            g.setColor(Color.WHITE);
-            g.drawLine(0, y, newImage.getWidth(), y);
-            y += 5;
+            y += 7;
+            width += 10;
 
-            Rectangle bounds = new Rectangle((newImage.getWidth() - img.getWidth()) / 2, y, img.getWidth(), img.getHeight());
-            g.drawImage(img, bounds.x, bounds.y, null);
-            g.setFont(new Font("Arial", 0, 16).deriveFont(Font.BOLD));
-            double columnWidth = bounds.getWidth() / getSplitWidth();
-            double rowHeight = bounds.getHeight() / getSplitHeight();
-            for (int yslot = 0; yslot < getSplitHeight(); yslot++) {
-                for (int xslot = 0; xslot < getSplitWidth(); xslot++) {
-                    double xx = (xslot) * columnWidth;
-                    double yy = (yslot) * rowHeight;
-                    int num = xslot + yslot * getSplitWidth() + 1;
-                    int xOff = xslot < (getSplitWidth() - 1) ? 2 : 0;
-                    int yOff = yslot > 0 ? 2 : 0;
-                    g.setColor(Color.WHITE);
-                    g.fillRect(ceil(xx + columnWidth - 20 + bounds.x - xOff), ceil(yy + bounds.y + yOff), 20, 20);
-                    g.setColor(Color.BLACK);
+            final BufferedImage newImage = IconIO.createEmptyImage(Math.max((icon == null ? 0 : (icon.getIconWidth() + 5)) + width, img.getWidth()), img.getHeight() + y);
+            final Graphics2D g = (Graphics2D) newImage.getGraphics();
+            try {
+                int x = 5;
+                y = LINE_HEIGHT;
 
-                    g.drawString(num + "", ceil(xx + columnWidth - 20 + bounds.x + 5 - xOff - (num >= 10 ? 4 : 0)), ceil(yy + bounds.y + 15 + yOff));
+                g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
+                g.setColor(Color.WHITE);
+                g.setFont(font.deriveFont(Font.BOLD));
+                if (icon != null) {
+                    icon.paintIcon(null, g, x, 5);
+
+                    g.drawRect(x, 5, icon.getIconWidth(), icon.getIconHeight());
+                    x += icon.getIconWidth() + 5;
                 }
-            }
-            // g.setColor(Color.WHITE);
-            int splitterWidth = 3;
-            g.setStroke(new BasicStroke(splitterWidth));
-            for (int yslot = 0; yslot < getSplitHeight() - 1; yslot++) {
-                y = ceil((1 + yslot) * rowHeight);
+                int afterIconX = x;
+                x = afterIconX;
+                boolean keyPrinted = false;
+                for (int i = 0; i < ex.length; i++) {
 
-                g.drawLine(bounds.x, bounds.y + y, bounds.x + bounds.width, bounds.y + y);
+                    g.setFont(font);
+                    g.drawString(ex[i], x, y);
+                    x += g.getFontMetrics().stringWidth(ex[i]);
 
-            }
-            for (int xslot = 0; xslot < getSplitWidth() - 1; xslot++) {
-                x = ceil((1 + xslot) * columnWidth);
+                    if (ex.length == 1 || i < ex.length - 1) {
+                        g.setFont(font.deriveFont(Font.BOLD));
+                        g.drawString("" + key + "", x, y);
+                        x += g.getFontMetrics().stringWidth("" + key + "");
+                    }
+                }
 
-                g.drawLine(bounds.x + x, bounds.y, bounds.x + x, bounds.y + bounds.height);
+                g.setFont(font);
+                x = afterIconX;
+                for (String line : lines) {
+                    y += LINE_HEIGHT;
+                    g.drawString(line, x, y);
+
+                }
+                y += 15;
+                if (icon != null) {
+                    y = Math.max(y, icon.getIconHeight() + 10);
+
+                }
+                g.setColor(Color.WHITE);
+                g.drawLine(0, y, newImage.getWidth(), y);
+                y += 5;
+
+                Rectangle bounds = new Rectangle((newImage.getWidth() - img.getWidth()) / 2, y, img.getWidth(), img.getHeight());
+                g.drawImage(img, bounds.x, bounds.y, null);
+                g.setFont(new Font("Arial", 0, 16).deriveFont(Font.BOLD));
+                double columnWidth = bounds.getWidth() / getSplitWidth();
+                double rowHeight = bounds.getHeight() / getSplitHeight();
+                for (int yslot = 0; yslot < getSplitHeight(); yslot++) {
+                    for (int xslot = 0; xslot < getSplitWidth(); xslot++) {
+                        double xx = (xslot) * columnWidth;
+                        double yy = (yslot) * rowHeight;
+                        int num = xslot + yslot * getSplitWidth() + 1;
+                        int xOff = xslot < (getSplitWidth() - 1) ? 2 : 0;
+                        int yOff = yslot > 0 ? 2 : 0;
+                        g.setColor(Color.WHITE);
+                        g.fillRect(ceil(xx + columnWidth - 20 + bounds.x - xOff), ceil(yy + bounds.y + yOff), 20, 20);
+                        g.setColor(Color.BLACK);
+
+                        g.drawString(num + "", ceil(xx + columnWidth - 20 + bounds.x + 5 - xOff - (num >= 10 ? 4 : 0)), ceil(yy + bounds.y + 15 + yOff));
+                    }
+                }
+                // g.setColor(Color.WHITE);
+                int splitterWidth = 3;
+                g.setStroke(new BasicStroke(splitterWidth));
+                for (int yslot = 0; yslot < getSplitHeight() - 1; yslot++) {
+                    y = ceil((1 + yslot) * rowHeight);
+
+                    g.drawLine(bounds.x, bounds.y + y, bounds.x + bounds.width, bounds.y + y);
+
+                }
+                for (int xslot = 0; xslot < getSplitWidth() - 1; xslot++) {
+                    x = ceil((1 + xslot) * columnWidth);
+
+                    g.drawLine(bounds.x + x, bounds.y, bounds.x + x, bounds.y + bounds.height);
+                }
+            } finally {
+                g.dispose();
             }
-        } finally {
-            g.dispose();
+            // Dialog.getInstance().showImage(newImage);
+            return newImage;
+        } catch (NullPointerException e) {
+            // java.lang.NullPointerException
+            // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
+            // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
+            // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
+            if (Application.isHeadless()) {
+                return img;
+            } else {
+                throw e;
+            }
         }
-        // Dialog.getInstance().showImage(newImage);
-        return newImage;
     }
 
     private int ceil(double d) {
