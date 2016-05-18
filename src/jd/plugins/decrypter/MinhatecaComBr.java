@@ -22,7 +22,6 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -54,23 +53,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
-            return decryptedLinks;
-        }
+        br.getPage(parameter);
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
         /* No permission to see file/folder */{
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
@@ -118,20 +104,12 @@ public class MinhatecaComBr extends PluginForDecrypt {
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         /* Password protected link --> Not yet supported */
         if (br.containsHTML(">Digite senha:</label>")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
@@ -215,7 +193,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     } else {
                         content_url = parameter;
                     }
-                    final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
+                    String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
+                    if (fid == null && url_filename != null) {
+                        fid = new Regex(url_filename, ",(\\d+)\\..+$").getMatch(0);
+                    }
                     final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
                     String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
                     if (filesize == null) {

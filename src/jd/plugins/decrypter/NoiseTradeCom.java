@@ -47,18 +47,16 @@ public class NoiseTradeCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null || br.getURL().contains("noisetrade.com/info/error") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"feature_image_artist\"")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        String album_name = br.getRegex("class=\"artist\">([^<>\"]*?)</h1>").getMatch(0);
-        final Regex info = br.getRegex("<h2 class=\"album\"><a href=\"/([a-z0-9\\-]+)\">([^<>\"]*?)</a></h2>");
-        final String username = info.getMatch(0);
-        String artist = info.getMatch(1);
+        String album_name = br.getRegex("property=\"og:title\" content=\"[^:]+:([^<>\"]+)\"").getMatch(0);
+        final String username = this.br.getRegex("class=\"album\"><a[^<>]+>([^<>\"]+)<").getMatch(0);
+        String artist = br.getRegex("var artist_query = \"([^<>\"]+)\";").getMatch(0);
+        if (artist == null) {
+            artist = this.br.getRegex("class=\"album\"><a[^<>]+>([^<>\"]+)<").getMatch(0);
+        }
         if (fpName == null || artist == null || username == null || album_name == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -78,11 +76,8 @@ public class NoiseTradeCom extends PluginForDecrypt {
             decryptedLinks.add(main);
         } else {
             if (br.containsHTML(">This album is not currently available")) {
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
             final String[] links = br.getRegex("<Track(.*?) />").getColumn(0);
             if (links == null || links.length == 0) {

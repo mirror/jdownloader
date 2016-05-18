@@ -214,7 +214,7 @@ public class FourSexFourCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return;
         }
-        externID = br.getRegex("file:\"(http://[^<>\"]*?\\d+\\.mp4)\"").getMatch(0);
+        externID = br.getRegex("file[\n\r\t ]*?:[\n\r\t ]*?\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".mp4");

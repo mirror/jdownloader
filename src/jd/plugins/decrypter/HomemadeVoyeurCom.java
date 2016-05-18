@@ -21,13 +21,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "http://(www\\.)?homemade\\-voyeur\\.com/(tube/video/|tube/gallery/|\\d+/)[A-Za-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "http://(?:www\\.)?homemade\\-voyeur\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[A-Za-z0-9\\-]+\\.html" }, flags = { 0 })
 public class HomemadeVoyeurCom extends PluginForDecrypt {
 
     public HomemadeVoyeurCom(PluginWrapper wrapper) {
@@ -44,13 +45,13 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
         // Invalid link
-        if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">404 Not Found<")) {
-            logger.info("Invalid link: " + parameter);
+        if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">404 Not Found<") || this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         // Offline link
-        if (br.containsHTML("This video does not exist\\!< || >\\s+Video Not Found\\s+<")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("This video does not exist\\!< | >\\s+Video Not Found\\s+<")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (tempID != null) {
@@ -64,6 +65,10 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             if (filename == null) {
                 filename = br.getRegex("<div class=\"titlerr\"[^>]+>([^\r\n]+)</div>").getMatch(0);
             }
+        }
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = new Regex(parameter, "([A-Za-z0-9\\-]+)\\.html$").getMatch(0);
         }
 
         if (parameter.contains("/tube/gallery/")) {

@@ -56,6 +56,7 @@ public class BitvideoIo extends PluginForHost {
         return "http://www.bitporno.sx/?c=tos";
     }
 
+    /** 2016-05-18: playernaut.com uses crypted js, bitporno.sx doesn't! */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -73,7 +74,7 @@ public class BitvideoIo extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        final String json_source = this.br.getRegex("sources:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+        final String json_source = this.br.getRegex("sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
         if (json_source == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

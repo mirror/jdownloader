@@ -51,6 +51,14 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter + "?enterAgree=1&size=0");
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (this.br.containsHTML("class=\"empty\"")) {
+            /* User has not uploaded any content */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         final String fpName = new Regex(parameter, "/user/(.+)").getMatch(0);
         int page = 1;
         String next = null;
