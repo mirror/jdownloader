@@ -199,7 +199,7 @@ public class ZdfDeMediathek extends PluginForHost {
                 in.close();
             }
             /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek, NdrDe */
-            final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
+            final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\"[^<>]*?>(.*?)</p>").getMatches();
             try {
                 final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
                 for (String[] match : matches) {

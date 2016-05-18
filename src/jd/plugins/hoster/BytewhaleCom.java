@@ -173,6 +173,12 @@ public class BytewhaleCom extends PluginForHost {
         } else if (this.br.getHttpConnection().getResponseCode() == 403 || this.br.getHttpConnection().getResponseCode() == 404) {
             /** 2016-05-16: Apache Server 403 - this OCH seems to be offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (correctedBR.contains("name=\"id\" value=\"\"")) {
+            /*
+             * 2016-05-18: Seems to be the only way to determine offline status. I failed to find ANY online urls and was not able to upload
+             * testfiles, not even via premium account!
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);

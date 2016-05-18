@@ -28,17 +28,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+|title/tt\\d+/videogallery)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+|title/tt\\d+/videogallery)" }, flags = { 0 })
 public class ImdbCom extends PluginForDecrypt {
 
     public ImdbCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ARTIST = "http://(www\\.)?imdb\\.com/media/index/rg\\d+";
-    private static final String TYPE_TITLE  = "http://(www\\.)?imdb\\.com/name|title/tt\\d+/mediaindex";
-    private static final String TYPE_NAME   = "http://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex";
-    private static final String TYPE_VIDEO  = "http://(www\\.)?imdb\\.com/title/tt\\d+/videogallery";
+    private static final String TYPE_ARTIST = "https?://(www\\.)?imdb\\.com/media/index/rg\\d+";
+    private static final String TYPE_TITLE  = "https?://(www\\.)?imdb\\.com/name|title/tt\\d+/mediaindex";
+    private static final String TYPE_NAME   = "https?://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex";
+    private static final String TYPE_VIDEO  = "https?://(www\\.)?imdb\\.com/title/tt\\d+/videogallery";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,7 +46,10 @@ public class ImdbCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (this.br.containsHTML("id=\"no_content\"")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         int maxpage = 1;
