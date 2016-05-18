@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -36,6 +37,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -315,10 +317,10 @@ public class AccountInfo extends Property {
                 // lets do some preConfiguring, and match hosts which do not contain tld
                 for (final String host : multiHostSupportList) {
                     final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
-                    if (cleanup.matches("http|https|file|up|upload|video|torrent")) {
+                    if (cleanup.matches("http|https|file|up|upload|video|torrent|ftp")) {
                         // we need to ignore/blacklist common phrases, else too many false positives
                         continue;
-                    } else if ("usenet".equals(cleanup) && !"genericusenet".equals(cleanup)) {
+                    } else if ("usenet".equals(cleanup)) {
                         // special cases
                         supportedHostsSet.add(cleanup);
                     } else if (cleanup.indexOf('.') == -1) {
@@ -332,9 +334,33 @@ public class AccountInfo extends Property {
                 }
                 if (!nonTldHosts.isEmpty()) {
                     final HashMap<String, List<LazyHostPlugin>> map = new HashMap<String, List<LazyHostPlugin>>();
-                    for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
+                    loop: for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
                         if (lazyHostPlugin.isFallbackPlugin()) {
                             continue;
+                        }
+                        if (lazyHostPlugin.isSitesSupported()) {
+                            try {
+                                final PluginForHost plugin = lazyHostPlugin.getPrototype(null);
+                                if (plugin == null || plugin.getLazyP().isFallbackPlugin()) {
+                                    continue;
+                                }
+                                final String[] siteSupportedNames = plugin.siteSupportedNames();
+                                if (siteSupportedNames != null) {
+                                    final Iterator<String> it = nonTldHosts.iterator();
+                                    while (it.hasNext()) {
+                                        final String nonTldHost = it.next();
+                                        for (final String siteSupportedName : siteSupportedNames) {
+                                            if (StringUtils.containsIgnoreCase(siteSupportedName, nonTldHost)) {
+                                                supportedHostsSet.add(lazyHostPlugin.getHost());
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    continue loop;
+                                }
+                            } catch (UpdateRequiredClassNotFoundException e) {
+                                LogController.CL().log(e);
+                            }
                         }
                         final String pattern = lazyHostPlugin.getPatternSource();
                         for (final String nonTldHost : nonTldHosts) {
