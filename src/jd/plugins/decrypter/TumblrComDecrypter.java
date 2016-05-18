@@ -224,7 +224,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 final String hd_final_url_part = new Regex(externID, "/(tumblr_[^/]+)/\\d+$").getMatch(0);
                 if (hd_final_url_part != null) {
                     /* Yey we have an HD url ... */
-                    externID = "https://vt.tumblr.com/" + externID + ".mp4";
+                    externID = "https://vt.tumblr.com/" + hd_final_url_part + ".mp4";
                 } else {
                     /* Let's download the stream ... */
                     br.getPage(externID);
