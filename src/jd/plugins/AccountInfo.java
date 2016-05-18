@@ -351,7 +351,12 @@ public class AccountInfo extends Property {
                                         final String nonTldHost = it.next();
                                         for (final String siteSupportedName : siteSupportedNames) {
                                             if (StringUtils.containsIgnoreCase(siteSupportedName, nonTldHost)) {
-                                                supportedHostsSet.add(lazyHostPlugin.getHost());
+                                                List<LazyHostPlugin> list = map.get(nonTldHost);
+                                                if (list == null) {
+                                                    list = new ArrayList<LazyHostPlugin>();
+                                                    map.put(nonTldHost, list);
+                                                }
+                                                list.add(lazyHostPlugin);
                                                 break;
                                             }
                                         }
