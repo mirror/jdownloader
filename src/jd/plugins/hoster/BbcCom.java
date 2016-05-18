@@ -151,7 +151,7 @@ public class BbcCom extends PluginForHost {
                 this.rtmp_authString = Encoding.htmlDecode(this.rtmp_authString);
                 rtmpurl += "?" + this.rtmp_authString;
                 if (rtmp_app.equals("ondemand")) {
-                    rtmp_app += "?auth=" + this.rtmp_authString;
+                    rtmp_app += "?" + this.rtmp_authString;
                 }
             }
             try {

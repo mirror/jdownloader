@@ -140,7 +140,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) segmento;
                     final LinkedHashMap<String, Object> playlist_data = (LinkedHashMap<String, Object>) entry.get("playlist_data");
                     final ArrayList<Object> sources_video = (ArrayList) playlist_data.get("sources");
-                    ArrayList<Object> subtitle_list = (ArrayList) playlist_data.get("sources");
+                    ArrayList<Object> subtitle_list = null;
                     final Object sources_subtitle_o = playlist_data.get("subtitles");
 
                     final String encrypted_id = (String) entry.get("encrypted_id");
