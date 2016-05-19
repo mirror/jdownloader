@@ -94,8 +94,7 @@ public class BcVc extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         }
-
-        if (br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
+        if (StringUtils.endsWithCaseInsensitive(redirect, "//bc.vc/7") || br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
