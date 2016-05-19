@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -24,6 +27,8 @@ import javax.script.ScriptEngineManager;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -69,7 +74,7 @@ public class Shareplacecom extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             if (iframe != null) {
-                br.getPage("http://shareplace.com/" + iframe);
+                br.getPage(iframe);
             }
             if (br.containsHTML("Your requested file is not found") || !br.containsHTML("Filename:<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -147,20 +152,39 @@ public class Shareplacecom extends PluginForHost {
     private String rhino(final String s) {
         final String cleanup = new Regex(s, "(var.*?)var zzipitime").getMatch(0);
         final String[] vars = new Regex(s, "<a href=\"'\\s*\\+\\s*(.*?)\\s*\\+\\s*'\"").getColumn(0);
-        for (final String var : vars) {
-            String result = null;
-            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            try {
-                engine.eval(cleanup);
-                result = (String) engine.get(var);
-            } catch (final Throwable e) {
-                continue;
+        if (vars != null) {
+            final ArrayList<String> vrrs = new ArrayList<String>(Arrays.asList(vars));
+            Collections.reverse(vrrs);
+            for (final String var : vrrs) {
+                String result = null;
+                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                try {
+                    engine.eval(cleanup);
+                    result = (String) engine.get(var);
+                } catch (final Throwable e) {
+                    continue;
+                }
+                if (result == null || (result.contains("jdownloader") && !result.startsWith("http"))) {
+                    continue;
+                }
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = null;
+                try {
+                    con = br2.openHeadConnection(result);
+                    if (con.getContentType().contains("html")) {
+                        continue;
+                    }
+                } catch (final Exception e) {
+                    // e.printStackTrace();
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable t) {
+                    }
+                }
+                return result;
             }
-            if (result == null || (result.contains("jdownloader") && !result.startsWith("http"))) {
-                continue;
-            }
-            return result;
         }
         return null;
     }
