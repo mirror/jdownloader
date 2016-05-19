@@ -49,6 +49,14 @@ public class NoiseTradeCom extends PluginForDecrypt {
         if (br.getRedirectLocation() != null || br.getURL().contains("noisetrade.com/info/error") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"feature_image_artist\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (this.br.containsHTML(">No Albums Currently Favorited<")) {
+            /* E.g. http://noisetrade.com/fan/houstoncust */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (this.br.containsHTML(">This album is not currently available")) {
+            /* E.g. http://noisetrade.com/felicelazae/give-it-away-ep */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         final String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         String album_name = br.getRegex("property=\"og:title\" content=\"[^:]+:([^<>\"]+)\"").getMatch(0);

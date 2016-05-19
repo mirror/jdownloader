@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileload\\.io/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileload\\.io/[A-Za-z0-9]+(/[^/]+)?" }, flags = { 0 })
 public class FileloadIo extends PluginForDecrypt {
 
     public FileloadIo(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class FileloadIo extends PluginForDecrypt {
             logger.info("There is nothing to download YET ...");
             return decryptedLinks;
         }
-        final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        final String folderid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
         final String[] fileids = br.getRegex("data\\-fileid=\"(\\d+)\"").getColumn(0);
         if (fileids == null || fileids.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

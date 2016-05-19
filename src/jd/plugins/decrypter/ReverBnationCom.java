@@ -83,6 +83,9 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             username = br.getRegex("<a[^<>]*?href=\"/([^<>\"/]*?)\"[^<>]*?>« Back to Profile</a>").getMatch(0);
+            if (username == null) {
+                username = br.getRegex("property=\"og:url\" content=\"https?://(?:www\\.)?reverbnation\\.com/([^/]+)/song/").getMatch(0);
+            }
             title = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (title == null) {
                 title = br.getRegex("<title>([^<>\"]+) \\| ReverbNation</title>").getMatch(0);
@@ -91,12 +94,21 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
                 title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
             }
             artist = br.getRegex("property=\"reverbnation_fb:musician\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (artist == null) {
+                artist = this.br.getRegex("class=\"profile\\-header__info__title qa\\-artist-name\">([^<>\"]+)<").getMatch(0);
+            }
             artistsID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
             if (artistsID == null) {
                 artistsID = br.getRegex("\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
-                if (artistsID == null) {
-                    artistsID = br.getRegex("artist/artist_songs/(\\d+)\\?").getMatch(0);
-                }
+            }
+            if (artistsID == null) {
+                artistsID = br.getRegex("playSongNow\\(\\&#39;all_artist_songs_(\\d+)").getMatch(0);
+            }
+            if (artistsID == null) {
+                artistsID = br.getRegex("artist/artist_songs/(\\d+)\\?").getMatch(0);
+            }
+            if (artistsID == null) {
+                artistsID = br.getRegex("artist_id=(\\d+)").getMatch(0);
             }
             if (username == null || songID == null || artistsID == null || title == null || artist == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
