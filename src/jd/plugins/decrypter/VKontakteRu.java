@@ -812,7 +812,7 @@ public class VKontakteRu extends PluginForDecrypt {
             this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_FUNCTIONAL.replaceAll("vk\\.com/(?:photos|id)(?:\\-)?", "vk.com/album") + "_0";
         }
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
-        if (br.containsHTML(FILEOFFLINE) || br.containsHTML("(В альбоме нет фотографий|<title>DELETED</title>)")) {
+        if (br.containsHTML(FILEOFFLINE) || br.containsHTML("В альбоме нет фотографий|<title>DELETED</title>")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         if (br.containsHTML("There are no photos in this album")) {
@@ -837,10 +837,10 @@ public class VKontakteRu extends PluginForDecrypt {
             return;
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album|tag)(.+)").getMatch(1));
+        fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
         fp.setProperty("CLEANUP_NAME", false);
-        final String[][] regexesPage1 = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
-        final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
+        final String[][] regexesPage1 = { { "><a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
+        final String[][] regexesAllOthers = { { "><a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album.+)").getMatch(0);
         for (final String content_id : decryptedData) {
@@ -900,8 +900,8 @@ public class VKontakteRu extends PluginForDecrypt {
             return;
         }
         /** Photos are placed in different locations, find them all */
-        final String[][] regexesPage1 = { { "class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "0" } };
-        final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "1" } };
+        final String[][] regexesPage1 = { { "class=\"photo_row\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" } };
+        final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album-?\\d+_\\d+)", "1" } };
         final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         if (decryptedData != null && decryptedData.size() != 0) {
             for (String element : decryptedData) {
@@ -1123,7 +1123,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
                     dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
                     /*
-                     * Ovverride previously set content URL as this really is the direct link to the picture which works fine via browser.
+                     * Override previously set content URL as this really is the direct link to the picture which works fine via browser.
                      */
                     dl.setContentUrl(wall_single_photo_content_url);
                     dl.setProperty("postID", id);
@@ -1350,13 +1350,9 @@ public class VKontakteRu extends PluginForDecrypt {
         int addedLinks = 0;
 
         for (int i = 0; i <= maxLoops; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user, stopping...");
-                    break;
-                }
-            } catch (final Throwable e) {
-                // Not available in 0.9.851 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user, stopping...");
+                break;
             }
             if (i > 0) {
                 postPageSafe(postPage, postData + offset);
@@ -1388,7 +1384,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
             if (addedLinks < increase || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {
-                logger.info("Fail safe #1 activated, stopping page parsing at page " + i + " of " + maxLoops);
+                logger.info("Fail safe #1 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1) + ", returned " + decryptedData.size() + " results.");
                 break;
             }
             if (decryptedData.size() > Integer.parseInt(numberOfEntries)) {
@@ -1396,8 +1392,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
-            Thread.sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL));
-            logger.info("Parsing page " + i + " of " + maxLoops);
+            sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
+            logger.info("Parsing page " + (i + 1) + " of " + maxLoops);
         }
 
         return decryptedData;
@@ -1449,11 +1445,11 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
             if (addedLinks < increase || decryptedData.size() == Integer.parseInt(numberOfEntries)) {
-                logger.info("Fail safe #1 activated, stopping page parsing at page " + i + " of " + maxLoops);
+                logger.info("Fail safe #1 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1));
                 break;
             }
             if (addedLinks > increase) {
-                logger.info("Fail safe #2 activated, stopping page parsing at page " + i + " of " + maxLoops);
+                logger.info("Fail safe #2 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1));
                 break;
             }
             if (decryptedData.size() > Integer.parseInt(numberOfEntries)) {
@@ -1461,8 +1457,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
-            Thread.sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO));
-            logger.info("Parsing page " + i + " of " + maxLoops);
+            sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO), this.CRYPTEDLINK);
+            logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
         }
         if (decryptedData == null || decryptedData.size() == 0) {
             logger.warning("Decrypter couldn't find theData for linktype: " + type + "\n");
@@ -1480,10 +1476,6 @@ public class VKontakteRu extends PluginForDecrypt {
         while (true) {
             getPage(br, parameter);
             i++;
-            // If our current url is already the one we want to access here, break dance!
-            if (br.getURL().equals(parameter)) {
-                break;
-            }
             // what ever this is.. -raz
             if (br.containsHTML("server number not set \\(0\\)")) {
                 logger.info("Server says 'server number not set' --> Retrying");
@@ -1500,6 +1492,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Trying to avoid block " + i + " / 10");
                 sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_TOO_MANY_REQUESTS), CRYPTEDLINK);
                 continue;
+            } else if (br.getURL().equals(parameter)) {
+                // If our current url is already the one we want to access here, break dance!
+                break;
             } else if (!parameter.equals(br.getURL()) && i > 3) {
                 // for this type we only want to retry x times!
                 throw new DecrypterException("Url isn't what we want! And we have exausted retry!");
@@ -1515,6 +1510,10 @@ public class VKontakteRu extends PluginForDecrypt {
         for (int counter = 1; counter <= 10; counter++) {
             br.postPage(page, postData);
             if (br.containsHTML(TEMPORARILYBLOCKED)) {
+                if (counter + 1 > 10) {
+                    logger.warning("Failed to avoid block!");
+                    throw new DecrypterException("Blocked");
+                }
                 failed = true;
                 logger.info("Trying to avoid block " + counter + " / 10");
                 sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_TOO_MANY_REQUESTS), CRYPTEDLINK);
@@ -1524,10 +1523,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Successfully avoided block!");
             }
             return;
-        }
-        if (failed) {
-            logger.warning("Failed to avoid block!");
-            throw new DecrypterException("Blocked");
         }
     }
 
