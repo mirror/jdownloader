@@ -85,7 +85,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     // can be url encoded
-    private static final String         COMPONENT_USERNAME              = "(?:[a-zA-Z0-9\\-]+)";
+    private static final String         COMPONENT_USERNAME              = "(?:[\\%a-zA-Z0-9\\-]+)";
     private static final String         TYPE_FBSHORTLINK                = "https?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String         TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
     private static final String         TYPE_SINGLE_PHOTO               = "https?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
@@ -194,28 +194,28 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
             /* temporarily unavailable (or forever, or permission/rights needed) || empty album */
             if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"") || /*
-             * problem
-             * is
-             * with
-             * this
-             * is
-             * ,
-             * plugin
-             * would
-             * have
-             * to
-             * work
-             * with
-             * multiple
-             * languages
-             * !
-             * so
-             * ">Sorry, this content isn&#039;t available right now</h2>"
-             * would
-             * fail
-             * .
-             */
-                    br.containsHTML("<h2 class=\"accessible_elem\">[^<]+</h2>")) {
+                                                                                                                                           * problem
+                                                                                                                                           * is
+                                                                                                                                           * with
+                                                                                                                                           * this
+                                                                                                                                           * is
+                                                                                                                                           * ,
+                                                                                                                                           * plugin
+                                                                                                                                           * would
+                                                                                                                                           * have
+                                                                                                                                           * to
+                                                                                                                                           * work
+                                                                                                                                           * with
+                                                                                                                                           * multiple
+                                                                                                                                           * languages
+                                                                                                                                           * !
+                                                                                                                                           * so
+                                                                                                                                           * ">Sorry, this content isn&#039;t available right now</h2>"
+                                                                                                                                           * would
+                                                                                                                                           * fail
+                                                                                                                                           * .
+                                                                                                                                           */
+            br.containsHTML("<h2 class=\"accessible_elem\">[^<]+</h2>")) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             } else if (br.getURL().matches("https?://(?:www\\.)facebook\\.com/login\\.php.*?")) {
                 // login required to perform task
