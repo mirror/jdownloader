@@ -245,9 +245,10 @@ public class PanBaiduCom extends PluginForDecrypt {
                     } else {
                         dl.setAvailable(true);
                     }
-                    if (md5 != null) {
-                        dl.setMD5Hash(md5);
-                    }
+                    // if (md5 != null) {
+                    // they provide wrong md5 values
+                    // dl.setMD5Hash(md5);
+                    // }
                 }
                 decryptedLinks.add(dl);
                 currentlinksnum++;
