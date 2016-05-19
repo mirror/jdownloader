@@ -29,28 +29,29 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "https?://(?:www\\.)?megabooru\\.com/post/list/[^/]+/\\d+" }, flags = { 0 })
-public class MegabooruCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "https?://(?:www\\.)?hard55\\.com/post/list/[^/]+/\\d+" }, flags = { 0 })
+public class Hard55Com extends PluginForDecrypt {
 
-    public MegabooruCom(PluginWrapper wrapper) {
+    public Hard55Com(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        jd.plugins.hoster.Hard55Com.prepBR(this.br);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = new Regex(parameter, "megabooru\\.com/post/list/([^/]+)/").getMatch(0);
+        final String fpName = new Regex(parameter, "hard55\\.com/post/list/([^/]+)/").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
 
-        final String url_part = new Regex(parameter, "(https?://(?:www\\.)?megabooru\\.com/post/list/[^/]+/)\\d+").getMatch(0);
+        final String url_part = new Regex(parameter, "(https?://(?:www\\.)?hard55\\.com/post/list/[^/]+/)\\d+").getMatch(0);
         int counter = 1;
-        final int max_entries_per_page = 40;
+        final int max_entries_per_page = 100;
         int entries_per_page_current = 0;
         do {
             if (this.isAbort()) {
@@ -72,7 +73,7 @@ public class MegabooruCom extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(link);
                 dl.setLinkID(linkid);
                 dl.setAvailable(true);
-                dl.setName(linkid + ".jpg");
+                dl.setName(linkid + ".jpeg");
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);

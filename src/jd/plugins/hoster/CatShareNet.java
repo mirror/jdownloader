@@ -61,9 +61,9 @@ public class CatShareNet extends PluginForHost {
     /**
      * API TODO: <br />
      * -2016-05-10: According to admin there are no password protected downloadurls anymore --> Good for us!<br />
-     * -Check free/free account/premium account limits<br />
-     * -Check free mode (when I implemented the API it did not work via API)<br />
+     * -Check/Fix free account/premium account modes AND limits<br />
      * -More testing -Check how long such a session cookie is reusable and how to determine if it expired<br />
+     * -Do errorcodes 0-7 exist? <br />
      * -check if stored direct urls can be re-used<br />
      */
     private String         brbefore               = "";
@@ -114,7 +114,6 @@ public class CatShareNet extends PluginForHost {
                 links.clear();
                 while (true) {
                     /* we test 10 links at once (max = 10) */
-                    /* 2016-05-03: API does not work for multiple URLs - limited it to 1! */
                     if (index == urls.length || links.size() > 9) {
                         break;
                     }
@@ -133,8 +132,7 @@ public class CatShareNet extends PluginForHost {
                 /* Reset tempcounter */
                 tempcounter = 0;
 
-                /* TODO: Implement this correctly once admin fixes json! */
-                br.postPage("https://" + this.getHost() + "/download/json_check", sb.toString());
+                br.postPage(getAPIProtocol() + this.getHost() + "/download/json_check", sb.toString());
                 LinkedHashMap<String, Object> entries = null;
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final String[] json_workaround_array = br.toString().split("\\},\\{");
@@ -317,14 +315,23 @@ public class CatShareNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             String download_post_data = "linkid=" + getLinkid(downloadLink);
-            postPageAPI("https://" + this.getHost() + "/download/json_wait", "");
+            postPageAPI(getAPIProtocol() + this.getHost() + "/download/json_wait", "");
             long wait = 0;
             String wait_str = PluginJSonUtils.getJson(br, "wait_time");
             if (wait_str != null) {
                 wait = Long.parseLong(wait_str) * 1000;
+                if (wait > System.currentTimeMillis()) {
+                    /* Hm just in case they switch back to the old wait time format */
+                    wait = wait - System.currentTimeMillis();
+                }
+                if (wait > 240000l) {
+                    /* Reconnect wait */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+                }
             }
             if (!premium) {
-                postPageAPI("/download/json_challenge", "");
+                /* 2016-05-19: json_challenge-call is not needed anymore as json_wait will return waittime AND reCaptcha key */
+                // postPageAPI("/download/json_challenge", "");
                 final String rcID = PluginJSonUtils.getJson(br, "key");
                 if (rcID == null) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
@@ -334,21 +341,18 @@ public class CatShareNet extends PluginForHost {
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                download_post_data += "&challenge=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge());
+                download_post_data += "&challenge=" + System.currentTimeMillis() + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
             }
-            /* TODO: Add a check before captcha: If waittime > 240 seconds, throw reconnect wait! */
-            if (wait > System.currentTimeMillis()) {
-                wait = wait - System.currentTimeMillis();
+            if (wait > 0) {
                 logger.info("We have the captcha answer of the user, waiting " + wait + " milliseconds until json_download request");
                 this.sleep(wait, downloadLink);
             }
             postPageAPI("/download/json_download", download_post_data);
             dllink = PluginJSonUtils.getJson(br, "downloadUrl");
             if (dllink == null || !dllink.startsWith("http")) {
-                /* E.g. 6719{"downloadUrl":false}6719 */
                 wait_str = this.br.getRegex("(\\d+)\\{").getMatch(0);
                 if (wait_str != null) {
-                    wait = Long.parseLong(wait_str);
+                    wait = System.currentTimeMillis() - Long.parseLong(wait_str);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
@@ -369,8 +373,11 @@ public class CatShareNet extends PluginForHost {
         dl.startDownload();
     }
 
+    private static String getAPIProtocol() {
+        return "https://";
+    }
+
     public void doFreeWebsite(final DownloadLink downloadLink, final boolean resumable, final int maxChunks) throws Exception, PluginException {
-        String passCode = null;
         checkErrorsWebsite(downloadLink, true);
 
         String dllink = null;
@@ -438,9 +445,6 @@ public class CatShareNet extends PluginForHost {
             doSomething();
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("FINAL_LINK_ERROR"));
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
@@ -650,7 +654,6 @@ public class CatShareNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void handlePremiumWebsite(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
-        String passCode = null;
         loginWebsite(account, true);
 
         br.getPage(downloadLink.getDownloadURL());
@@ -700,9 +703,6 @@ public class CatShareNet extends PluginForHost {
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("FINAL_LINK_ERROR"));
         }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
         dl.startDownload();
     }
 
@@ -716,6 +716,7 @@ public class CatShareNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -735,7 +736,7 @@ public class CatShareNet extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void postPageAPI(final String url, String postData) throws IOException {
+    private void postPageAPI(final String url, String postData) throws IOException, PluginException {
         if (apiSession != null) {
             if (postData == null || postData.equals("")) {
                 postData = "";
@@ -745,10 +746,56 @@ public class CatShareNet extends PluginForHost {
             postData += "session=" + Encoding.urlEncode(apiSession);
         }
         br.postPage(url, postData);
+        handleErrorsAPI();
     }
 
-    private void handleErrorsAPI() {
-
+    private void handleErrorsAPI() throws PluginException {
+        int code = 0;
+        final String code_str = PluginJSonUtils.getJson(this.br, "code");
+        String msg = PluginJSonUtils.getJson(this.br, "msg");
+        if (code_str != null) {
+            if (msg == null) {
+                msg = "Unknown API error";
+            }
+            code = Integer.parseInt(code_str);
+        }
+        switch (code) {
+        case 0:
+            /* Everything ok */
+            break;
+        case 8:
+            /* Daily downloadlimit reached (usually happens for premium accounts) */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        case 9:
+            /* Not enough traffic available */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        case 10:
+            /* WTF - "U didnt follow the rules!" */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL API error: " + msg);
+        case 11:
+            /* Wrong captcha input */
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA, msg);
+        case 12:
+            /* "You have to wait" --> (Free) limit reached */
+            long wait = 3 * 60 * 60 * 1001l;
+            final String wait_str = PluginJSonUtils.getJson(this.br, "wait_time");
+            /* wait_time can also be of type Boolean! */
+            if (wait_str != null && wait_str.matches("\\d+")) {
+                wait = 1001 * Long.parseLong(wait_str);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, wait);
+        case 13:
+            /* File offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
+        case 14:
+            /*
+             * Too many links (if someone tried to check more than X(see CheckLinks mass-linkchecker-function) links per request - this
+             * should NEVER happen!
+             */
+            throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+        default:
+            throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+        }
     }
 
     @SuppressWarnings("deprecation")
