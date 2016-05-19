@@ -63,7 +63,6 @@ public class CatShareNet extends PluginForHost {
      * -2016-05-10: According to admin there are no password protected downloadurls anymore --> Good for us!<br />
      * -Check/Fix free account/premium account modes AND limits<br />
      * -More testing -Check how long such a session cookie is reusable and how to determine if it expired<br />
-     * -Do errorcodes 0-7 exist? <br />
      * -check if stored direct urls can be re-used<br />
      */
     private String         brbefore               = "";
@@ -581,13 +580,14 @@ public class CatShareNet extends PluginForHost {
                 // br.setCookies(this.getHost(), cookies);
                 // return;
                 // }
-                postPageAPI("https://" + this.getHost() + "/login/json", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                postPageAPI(getAPIProtocol() + this.getHost() + "/login/json", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 this.apiSession = PluginJSonUtils.getJson(br, "session");
                 if (this.apiSession == null) {
+                    /* Actually this should not happen as errorhandling is done inside postPageAPI() */
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
@@ -750,7 +750,7 @@ public class CatShareNet extends PluginForHost {
     }
 
     private void handleErrorsAPI() throws PluginException {
-        int code = 0;
+        int code = -1;
         final String code_str = PluginJSonUtils.getJson(this.br, "code");
         String msg = PluginJSonUtils.getJson(this.br, "msg");
         if (code_str != null) {
@@ -760,9 +760,18 @@ public class CatShareNet extends PluginForHost {
             code = Integer.parseInt(code_str);
         }
         switch (code) {
-        case 0:
+        case -1:
             /* Everything ok */
             break;
+        case 0:
+            /* Fatal API error - this should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+        case 1:
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         case 8:
             /* Daily downloadlimit reached (usually happens for premium accounts) */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
