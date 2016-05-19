@@ -115,11 +115,18 @@ public class YounowCom extends PluginForHost {
         }
         if (hls_master != null) {
             br.getPage(hls_master);
-            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String url_hls;
+            if (this.br.containsHTML("0.ts")) {
+                /* Okay seems like there is no master so we already had the correct url */
+                url_hls = hls_master;
+            } else {
+                /* Find BEST hls url containing .ts video segments */
+                final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+                if (hlsbest == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                url_hls = hlsbest.downloadurl;
             }
-            final String url_hls = hlsbest.downloadurl;
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();

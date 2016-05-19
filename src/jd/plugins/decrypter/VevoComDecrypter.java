@@ -34,6 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vevo.com" }, urls = { "https?://www\\.vevo\\.com/watch/([A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+|[A-Z0-9]+)|http://vevo\\.ly/[A-Za-z0-9]+|http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+" }, flags = { 32 })
@@ -132,29 +133,15 @@ public class VevoComDecrypter extends PluginForDecrypt {
                 }
                 videoinfo = (LinkedHashMap<String, Object>) videos.get(0);
             } else {
-                /* New */
-                apijson = br.getRegex("(\\{\"vevo\":.*?)\\};<").getMatch(0);
+                /* New 2016-05-19 */
+                apijson = br.getRegex("window\\.__INITIAL_STORE__[\t\n\r ]*?=[\t\n\r ]*?(\\{.+);").getMatch(0);
                 if (apijson == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
-                entries = (LinkedHashMap<String, Object>) entries.get("vevo");
-                final ArrayList<Object> videos = (ArrayList) entries.get("items");
-                if (videos == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                /* Make sure that we find the correct source (index []) here! */
-                for (final Object videoobject : videos) {
-                    final LinkedHashMap<String, Object> check = (LinkedHashMap<String, Object>) videoobject;
-                    final String key = (String) check.get("key");
-                    if (key != null && !key.contains("related-videos")) {
-                        videoinfo = check;
-                        break;
-                    }
-                }
-                videoinfo = (LinkedHashMap<String, Object>) videoinfo.get("data");
+                entries = (LinkedHashMap<String, Object>) entries.get("default");
+                videoinfo = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "videos/" + fid);
             }
             if (videoinfo == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -178,9 +165,13 @@ public class VevoComDecrypter extends PluginForDecrypt {
 
         /** Decrypt qualities START */
         if (!geoblock_1) {
-            final String videoid = br.getRegex("\"isrc\":\"([^<>\"]*?)\"").getMatch(0);
+            String videoid = (String) videoinfo.get("isrc");
             if (videoid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Very very old fallback! */
+                videoid = br.getRegex("\"isrc\":\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (videoid == null) {
+                return null;
             }
             br.getHeaders().put("Referer", player);
             br.postPage("http://www.vevo.com/auth", "");
