@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,64 +31,65 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "http://(?:www\\.)?megabooru\\.com/post/view/\\d+" }, flags = { 0 })
-public class MegabooruCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "http://(?:www\\.)?hard55\\.com/post/view/\\d+" }, flags = { 0 })
+public class Hard55Com extends PluginForHost {
 
-    public MegabooruCom(PluginWrapper wrapper) {
+    public Hard55Com(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other:
+    // other: 2016-05-19: IMPORTANT: Needs US IP and English browser-language-setting - otherwise you might get redirected to random
+    // advertising
+    // websites instead of hard55.com! This site contains hentai stuff!
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
+    private static final String  default_Extension = ".jpeg";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
-        return "http://megabooru.com/contact";
+        return "http://hard55.com/ext_doc/index";
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        prepBR(this.br);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) Hentai</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+)Hentai</title>").getMatch(0);
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
             filename = url_filename;
         }
-        DLLINK = br.getRegex("name=\\'html_full-image\\'[\t\n\r ]*?value=\\'(?:\\&lt;img src=\\&quot;)?(http[^<>\"\\&]+)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("name=\\'text_image-src\\'[\t\n\r ]*?value=\\'\\&lt;img src=\\&quot;(http[^<>\"\\&]+)").getMatch(0);
+        dllink = br.getRegex("id=\\'main_image\\' src=\\'([^<>\"\\']+)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'(/_images[^<>\"\\']+)\\'").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = null;
-        if (DLLINK.contains(".")) {
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        }
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -99,21 +99,15 @@ public class MegabooruCom extends PluginForHost {
         }
         link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
+                link.setProperty("directlink", dllink);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issues = true;
             }
-            link.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -126,7 +120,12 @@ public class MegabooruCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -141,6 +140,13 @@ public class MegabooruCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public static Browser prepBR(final Browser br) {
+        /* Language header is VERY IMPORTANT here!! */
+        br.getHeaders().put("Accept-Language", "en,en-US;q=0.7,de;q=0.3");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */

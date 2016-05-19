@@ -110,12 +110,7 @@ public class EroTikCom extends PluginForDecrypt {
         }
         if (externID.contains("freemix")) {
             // logger.info("Not supported yet: " + externID);
-            try {
-                br.getPage(externID);
-            } catch (Throwable e) {
-                crawledLinks.add(this.createOfflinelink(parameter));
-                return;
-            }
+            br.getPage(externID);
             String config = br.getRegex("config:.*?(http[^<>\"]*?)(\'|\")").getMatch(0);
             br.getPage(config);
             externID = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
