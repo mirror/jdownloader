@@ -245,6 +245,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                     } else {
                         dl.setAvailable(true);
                     }
+                    /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them */
                     // if (md5 != null) {
                     // they provide wrong md5 values
                     // dl.setMD5Hash(md5);

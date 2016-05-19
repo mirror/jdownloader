@@ -97,10 +97,18 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             }
             tempID = br.getRegex("var playlist = \\[ \\{ url: escape\\(\\'(http://[^<>\"]*?)\\'\\) \\} \\]").getMatch(0);
             if (tempID == null) {
+                tempID = br.getRegex("var playlist = \\[ [^\\]]+(http://[^<>\"\\]\\}]+)").getMatch(0);
+            }
+            if (tempID == null) {
                 tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
             }
             if (tempID == null) {
                 tempID = br.getRegex("file=(http[^&\"]+)").getMatch(0);
+            }
+            if (tempID != null && tempID.contains(".jpg")) {
+                logger.info("This url is only advertising --> Offline");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
             if (tempID == null || filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

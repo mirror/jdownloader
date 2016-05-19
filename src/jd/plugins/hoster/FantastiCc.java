@@ -63,9 +63,16 @@ public class FantastiCc extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        br.setFollowRedirects(false);
+        int counter = 0;
+        String redirecturl = downloadLink.getDownloadURL();
+        downloadLink.setName(new Regex(redirecturl, "videos/upload/(.+)").getMatch(0));
+        do {
+            this.br.getPage(redirecturl);
+            redirecturl = this.br.getRedirectLocation();
+            counter++;
+        } while (redirecturl != null && counter < 3);
+        if (br.getHttpConnection().getResponseCode() == 404 || redirecturl != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("lass=\"title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
