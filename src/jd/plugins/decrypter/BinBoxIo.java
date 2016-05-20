@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(?:www\\.)?binbox\\.io/\\w+(?:#\\w+)?" }, flags = { 0 })
 public class BinBoxIo extends PluginForDecrypt {
 
     private String sjcl, uid, salt, token, paste;
@@ -49,7 +49,7 @@ public class BinBoxIo extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://");
         br.getPage(parameter);
         if (br.containsHTML(">Page Not Found<|<h2 id=('|\"|)title\\1>Access Denied</h2>")) {
@@ -123,6 +123,16 @@ public class BinBoxIo extends PluginForDecrypt {
                     continue;
                 }
                 decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        }
+        // doesn't always have salt etc.
+        if (parameter.equals(salt)) {
+            final String pasteText = br.getRegex("<div id=\"paste-text\".*?</div>").getMatch(-1);
+            if (pasteText != null) {
+                final String[] links = HTMLParser.getHttpLinks(pasteText, null);
+                for (final String link : links) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
             }
         }
 

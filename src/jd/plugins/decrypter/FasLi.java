@@ -24,20 +24,22 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 /**
  *
+ * variant of OuoIo
+ *
  * @author raztoki
- * @author psp
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.io/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})" }, flags = { 0 })
-public class OuoIo extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li" }, urls = { "http://fas\\.li/[A-Za-z0-9]{4,}" }, flags = { 0 })
+public class FasLi extends antiDDoSForDecrypt {
 
-    public OuoIo(PluginWrapper wrapper) {
+    public FasLi(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -61,13 +63,15 @@ public class OuoIo extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (!br.containsHTML("class=\"content\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        // form
+        final Form form = br.getForm(0);
+        if (form != null) {
+            if (form.containsHTML("g-recaptcha")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
+            br.submitForm(form);
         }
-        final String token = br.getRegex("name=\"_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        postPage("/go/" + fuid, "_token=" + Encoding.urlEncode(token) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
         final String finallink = getFinalLink();
         if (finallink == null) {
             return null;
@@ -78,14 +82,14 @@ public class OuoIo extends antiDDoSForDecrypt {
     }
 
     private String getFinalLink() {
-        final String finallink = br.getRegex("\"\\s*([^\r\n]+)\\s*\"\\s+id=\"btn-main\"").getMatch(0);
+        final String finallink = br.getRegex("\\s+id=(\"|'|)btn-main\\1[^>]+href=(\"|')\\s*([^\r\n]+)\\s*\\2").getMatch(2);
         return finallink;
     }
 
     private void set(final String downloadLink) {
         parameter = downloadLink;
-        fuid = new Regex(parameter, ".+\\.io/([A-Za-z0-9]{4,})$").getMatch(0);
-        slink = new Regex(parameter, "\\.io/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
+        fuid = new Regex(parameter, ".+/([A-Za-z0-9]{4,})$").getMatch(0);
+        slink = new Regex(parameter, "/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
