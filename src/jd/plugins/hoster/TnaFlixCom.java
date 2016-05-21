@@ -91,17 +91,8 @@ public class TnaFlixCom extends PluginForHost {
         br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
         if (downloadLink.getDownloadURL().matches(TYPE_embedding_player)) {
             /* Convert embed urls --> Original urls */
-            br.getPage(downloadLink.getDownloadURL().replace("http://", "https://"));
-            String videoID = br.getRegex("start_thumb>https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
-            if (videoID == null) {
-                videoID = br.getRegex("<start_thumb><\\!\\[CDATA\\[https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg\\]\\]></start_thumb>").getMatch(0);
-            }
-            if (videoID == null) {
-                /* Either plugin broken or link offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String newlink = "http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + videoID;
-            downloadLink.setUrlDownload(newlink);
+            downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace("http://", "https://").replace("embedding_player/embedding_feed", "view_video"));
+            downloadLink.setContentUrl(downloadLink.getDownloadURL());
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
@@ -133,12 +124,14 @@ public class TnaFlixCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        // This link doesn't have quality choice: https://www.tnaflix.com/view_video.php?viewkey=b5a6fcf68b48e6dd6734
+        String dllink1 = br.getRegex("itemprop=\"contentUrl\" content=\"([^\"]+?)\"").getMatch(0);
         final String download = br.getRegex("<div class=\"playlist_listing\" data-loaded=\"true\">(.*?)</div>").getMatch(0);
         String configLink = br.getRegex("addVariable\\(\\'config\\', \\'(http.*?)\\'").getMatch(0);
         if (configLink == null) {
             configLink = br.getRegex("flashvars.config.*?escape\\(.*?(cdn.*?)\"").getMatch(0);
         }
-        if (configLink == null && download == null) {
+        if (configLink == null && download == null && dllink1 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dllink = null;
@@ -154,7 +147,7 @@ public class TnaFlixCom extends PluginForHost {
                     break;
                 }
             }
-        } else {
+        } else if (download != null) {
             // download support
             final String[] qualities = { "720", "480", "360", "240", "144" };
             for (final String quality : qualities) {
@@ -172,7 +165,7 @@ public class TnaFlixCom extends PluginForHost {
             dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);
         }
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink1;
         }
         dllink = Encoding.htmlDecode(dllink);
         Browser brc = br.cloneBrowser();
