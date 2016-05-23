@@ -98,6 +98,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
         }
+        String customFileName = null;
         if (parameter.contains("uploadmirrors.com")) {
             getPage(br, parameter);
             String status = br.getRegex("ajaxRequest\\.open\\(\"GET\", \"(/[A-Za-z0-9]+\\.php\\?uid=" + id + "&name=[^<>\"/]*?)\"").getMatch(0);
@@ -113,15 +114,17 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             // we apparently need a filename
-            final String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
+            customFileName = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
             // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
-            getPage(br, "http://go4up.com/download/gethosts/" + id + "/" + filename);
+            getPage(br, "http://go4up.com/download/gethosts/" + id + "/" + customFileName);
             br.getRequest().setHtmlCode(br.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
             final String urls[] = this.br.getRegex("\"link\":\"(.*?)\",\"button\"").getColumn(0);
             final String urls_broken[] = this.br.getRegex("\"link\":\"(File currently in queue\\.|Error occured)\"").getColumn(0);
             if (urls.length == urls_broken.length) {
+                final DownloadLink link;
                 /* No ne of these mirrors was successfully uploaded --> Link offline! */
-                decryptedLinks.add(createOfflinelink(parameter));
+                decryptedLinks.add(link = createOfflinelink(parameter));
+                link.setName(customFileName);
                 return decryptedLinks;
             }
         } else if (parameter.matches("(?i).+multiupfile\\.com/.+")) {
@@ -175,6 +178,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             if (fileName != null) {
                 fileName = fileName.trim();
             }
+        } else {
+            fileName = customFileName;
         }
         for (String singleLink : redirectLinks) {
             if (!dupeList.add(singleLink)) {

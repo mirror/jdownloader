@@ -178,7 +178,6 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
                 final DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
                     dlLink.setArchiveID(archiveID);
-                    dlLink.setPartOfAnArchive(Boolean.TRUE);
                     if (dlLink.getOldPluginPasswordList() != null) {
                         hasOldPasswords = true;
                     }
