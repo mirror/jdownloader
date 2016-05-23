@@ -211,10 +211,15 @@ public class FreeDiscPl extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String server_filename = getFileNameFromHeader(dl.getConnection());
+        String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
         if (server_filename != null) {
             server_filename = Encoding.htmlDecode(server_filename);
             downloadLink.setFinalFileName(server_filename);
+        } else {
+            final String urlName = getFileNameFromURL(dl.getConnection().getURL());
+            if (downloadLink.getFinalFileName() == null && urlName != null && org.appwork.utils.Files.getExtension(urlName) != null) {
+                downloadLink.setFinalFileName(downloadLink.getName() + org.appwork.utils.Files.getExtension(urlName));
+            }
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
@@ -406,7 +411,7 @@ public class FreeDiscPl extends PluginForHost {
     /*
      * *
      * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      */
     private String getJson(final String key) {

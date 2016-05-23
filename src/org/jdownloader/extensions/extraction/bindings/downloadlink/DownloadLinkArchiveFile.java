@@ -284,7 +284,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             boolean hasOldPasswords = false;
             for (final DownloadLink downloadLink : getDownloadLinks()) {
                 downloadLink.setArchiveID(archiveID);
-                downloadLink.setPartOfAnArchive(Boolean.TRUE);
                 if (downloadLink.getOldPluginPasswordList() != null) {
                     hasOldPasswords = true;
                 }

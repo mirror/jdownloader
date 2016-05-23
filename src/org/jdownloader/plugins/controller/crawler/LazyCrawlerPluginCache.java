@@ -20,7 +20,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyCrawlerPluginCache {
 
-    private static final int CACHEVERSION = 1205201601;
+    private static final long CACHEVERSION = 1205201601l;
 
     private static ByteArrayOutputStream readFile(File file) throws IOException {
         final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
@@ -49,7 +49,7 @@ public class LazyCrawlerPluginCache {
             final CountingInputStream bis = new CountingInputStream(new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size()));
             try {
                 final AWFCUtils is = new AWFCUtils(bis);
-                if (CACHEVERSION != is.readShort()) {
+                if (CACHEVERSION != is.readLong()) {
                     throw new IOException("Outdated CacheVersion");
                 }
                 final long lastModified = is.readLong();
@@ -98,7 +98,7 @@ public class LazyCrawlerPluginCache {
             fos = new FileOutputStream(file);
             final BufferedOutputStream bos = new BufferedOutputStream(fos, 32767);
             final AWFCUtils os = new AWFCUtils(bos);
-            os.writeShort(CACHEVERSION);
+            os.writeLong(CACHEVERSION);
             final long lastModified = lastModification != null ? lastModification.get() : 0;
             os.writeLong(lastModified);
             os.writeShort(lazyPluginsMap.size());

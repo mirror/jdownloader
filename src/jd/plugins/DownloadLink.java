@@ -52,6 +52,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -206,8 +207,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return partOfAnArchive;
     }
 
-    public void setPartOfAnArchive(Boolean notAnArchive) {
-        this.partOfAnArchive = notAnArchive;
+    public void setPartOfAnArchive(final Boolean notAnArchive) {
+        if (!Boolean.FALSE.equals(notAnArchive) || Files.getExtension(getName()) != null) {
+            this.partOfAnArchive = notAnArchive;
+        }
     }
 
     public FilePackage getLastValidFilePackage() {
@@ -1209,6 +1212,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
+        if (param instanceof DownloadLinkProperty && DownloadLinkProperty.Property.NAME.equals(((DownloadLinkProperty) param).getProperty())) {
+            setArchiveID(null);
+        }
         final AbstractNodeNotifier pl = propertyListener;
         if (pl != null) {
             pl.nodeUpdated(this, notify, param);
@@ -2075,6 +2081,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ARCHIVE_ID, id));
+            }
+        } else {
+            if (StringUtils.isNotEmpty(id)) {
+                setPartOfAnArchive(Boolean.TRUE);
+            } else {
+                setPartOfAnArchive(null);
             }
         }
     }
