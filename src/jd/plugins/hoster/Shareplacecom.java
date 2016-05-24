@@ -24,8 +24,6 @@ import java.util.Collections;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -39,6 +37,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" }, flags = { 0 })
 public class Shareplacecom extends PluginForHost {
@@ -63,14 +63,23 @@ public class Shareplacecom extends PluginForHost {
         return 10;
     }
 
+    private Browser prepBR(final Browser br) {
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+        br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    private String correctedBR = null;
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         String url = downloadLink.getDownloadURL();
         setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        br.getPage(url);
+        prepBR(this.br);
+        getPage(url);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         if (br.getRedirectLocation() == null) {
             final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             if (iframe != null) {
@@ -79,15 +88,26 @@ public class Shareplacecom extends PluginForHost {
             if (br.containsHTML("Your requested file is not found") || !br.containsHTML("Filename:<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0);
+            String filename = new Regex(this.br.toString(), "Filename:</font></b>(.*?)<b><br>").getMatch(0);
             String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
             }
-            if (filename == null || filesize == null) {
+            if (filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setFinalFileName(filename.trim());
+            if (filename != null) {
+                /* Let's check if we can trust the results ... */
+                filename = Encoding.htmlDecode(filename.trim());
+                if (filename.toLowerCase().contains("jdownloader")) {
+                    filename = null;
+                }
+            }
+            if (filename != null) {
+                downloadLink.setFinalFileName(filename);
+            } else {
+                downloadLink.setName(fid);
+            }
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             return AvailableStatus.TRUE;
         } else {
@@ -187,6 +207,33 @@ public class Shareplacecom extends PluginForHost {
             }
         }
         return null;
+    }
+
+    private void getPage(final String url) throws IOException, NumberFormatException, PluginException {
+        br.getPage(url);
+        correctBR();
+    }
+
+    /* Removes HTML code which could break the plugin */
+    private void correctBR() throws NumberFormatException, PluginException {
+        correctedBR = br.toString();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+
+        /* generic cleanup */
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+
+        for (String aRegex : regexStuff) {
+            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            if (results != null) {
+                for (String result : results) {
+                    correctedBR = correctedBR.replace(result, "");
+                }
+            }
+        }
     }
 
 }

@@ -118,7 +118,20 @@ public class UlozTo extends PluginForHost {
             br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
             handleRedirect(downloadLink);
         } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
+            /* 2016-05-24: This might be outdated */
             br.setFollowRedirects(true);
+            final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
+            br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
+            br.setFollowRedirects(false);
+        } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
+            /*
+             * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and
+             * link-ID.
+             */
+            this.br.setFollowRedirects(true);
+            /* Agree to redirect from uloz.to to pornfile.cz */
+            br.postPage(this.br.getURL(), "agree=Souhlas%C3%ADm&do=askAgeForm-submit");
+            /* Agree to porn disclaimer */
             final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
             br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
             br.setFollowRedirects(false);
@@ -140,9 +153,11 @@ public class UlozTo extends PluginForHost {
             filename = getFilename();
             // For video links
             String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
-            // For video links
             if (filesize == null) {
                 filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
+            }
+            if (filesize == null) {
+                filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
             }
             // For file links
             if (filesize == null) {

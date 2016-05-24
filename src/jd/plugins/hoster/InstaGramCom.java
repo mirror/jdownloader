@@ -38,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
 
@@ -107,7 +108,7 @@ public class InstaGramCom extends PluginForHost {
             /* This will also happen if a user tries to access private urls without being logged in! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("\"video_url\":\"(http[^<>\"]*?)\"").getMatch(0);
+        DLLINK = PluginJSonUtils.getJson(this.br, "video_url");
         // Maybe we have a picture
         if (DLLINK == null) {
             DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);

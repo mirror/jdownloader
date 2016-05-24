@@ -39,6 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
@@ -57,7 +58,7 @@ public class TransloadMe extends PluginForHost {
     /* How long do we want to wait until the file is on their servers so we can download it? */
     private int                                            maxreloads                   = 200;
     private int                                            wait_between_reload          = 3;
-    private static final String                            default_UA                   = "JDownloader";
+    private static final String                            default_UA                   = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0";
 
     private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
@@ -80,6 +81,7 @@ public class TransloadMe extends PluginForHost {
         br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", default_UA);
+        br.getHeaders().put("Accept-Language", "de,en;q=0.7,en-US;q=0.3");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         return br;
@@ -259,7 +261,7 @@ public class TransloadMe extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     if (force) {
                         /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                        br.getPage("http://en.transload.me/");
+                        br.getPage("http://en." + this.getHost() + "/");
                         if (br.containsHTML(HTML_LOGGEDIN)) {
                             return;
                         }
@@ -273,8 +275,15 @@ public class TransloadMe extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
 
-                this.getAPISafe("http://transload.me/?lang=en&action=setlang");
-                this.postAPISafe("/user.php", "action=login&redir=&login=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass()));
+                this.getAPISafe("http://transload.me/?p=login");
+                String postData = "action=login&r=0&redir=&login=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass());
+                if (this.br.containsHTML("g\\-recaptcha")) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), DOMAIN, true);
+                    this.setDownloadLink(dummyLink);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                }
+                this.postAPISafe("/user.php", postData);
                 if (!this.br.containsHTML(HTML_LOGGEDIN)) {
                     if (System.getProperty("user.language").equals("de")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

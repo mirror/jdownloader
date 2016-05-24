@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -48,7 +49,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imgtwyti.com", "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com", "imageon.org", "gogoimage.org", "dimtus.com" };
+        return new String[] { "imgtwyti.com", "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com", "imageon.org", "gogoimage.org", "dimtus.com", "imagedecode.com" };
     }
 
     /**
@@ -111,6 +112,10 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
 
     public static String getFinallink(final Browser br, final String sourcelink) {
         return br.getRegex("(\\'|\")(https?://([\\w\\-]+\\.)?" + Pattern.quote(Browser.getHost(sourcelink)) + "((?:/upload)?/big/|(?:/uploads)?/images/)[^<>\"]*?)\\1").getMatch(1);
+    }
+
+    public static String getFid(final String sourcelink) {
+        return new Regex(sourcelink, "/img\\-([a-z0-9]+)").getMatch(0);
     }
 
     /* NO OVERRIDE!! */
