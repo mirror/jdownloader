@@ -160,7 +160,7 @@ public class MvpdjCom extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception {
         if (serverissues) {
-
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
