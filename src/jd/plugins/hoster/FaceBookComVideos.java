@@ -21,8 +21,6 @@ import java.io.File;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +42,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?(facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+|facebook\\.com/download/\\d+)" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
@@ -395,7 +395,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     public void handleVideo(final DownloadLink downloadLink) throws Exception {
-        boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD);
+        boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD, true);
         if (preferHD) {
             dllink = getHigh();
             if (dllink == null || "null".equals(dllink)) {
