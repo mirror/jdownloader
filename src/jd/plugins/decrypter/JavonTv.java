@@ -20,61 +20,74 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javon.tv" }, urls = { "http://(www\\.)?javon\\.tv/[a-z0-9\\-/]*?(video/\\d+/|embed/\\d+)[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvidx.tv" }, urls = { "http://sexvidx.tv/[a-z0-9\\-/]*?/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class JavonTv extends PluginForDecrypt {
 
     public JavonTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_embed = "http://(www\\.)?javon\\.tv/embed/\\d+[a-z0-9\\-]+\\.html";
+    // javon.tv is back to sexvidx.tv
+    private String filename = null;
+    private String externID = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(false);
         br.getPage(parameter);
-        br.setFollowRedirects(true);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            crawledLinks.add(createOfflinelink(parameter));
+            return crawledLinks;
         }
-        final String redirect = br.getRedirectLocation();
-        if (redirect != null && !redirect.contains("javon.tv/")) {
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
-        } else if (redirect != null) {
-            br.getPage(redirect);
+        if (parameter.contains("/info-movie/")) {
+            String watchLink = br.getRegex("(https?://sexvidx.tv/watch/movie.*?)\"").getMatch(0);
+            br.getPage(watchLink);
         }
-        /* iframe which usually contains extern links to embedded content. */
-        final String iframe = br.getRegex("(<iframe (?:width|style).*?</iframe>)").getMatch(0);
-        if (iframe == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        filename = br.getRegex("top-title\">(?:Watch Online \\[Full Dvd\\] )?([^<>|]+)").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim());
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(filename);
+        final String[] watchLinks = br.getRegex("<a href=\"(/watch/movie[^\"]+)\"").getColumn(0);
+        for (final String watchLink : watchLinks) {
+            logger.info("watchLink: " + watchLink);
+            br.getPage(watchLink);
+            crawlWatchLink(crawledLinks, parameter);
+            fp.addLinks(crawledLinks);
         }
-        final String finallink = new Regex(iframe, "src=(?:\"|\\')(https?://[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (watchLinks.length == 0) {
+            crawlWatchLink(crawledLinks, parameter);
         }
-        /* This should never happen */
-        if (finallink.contains("javon.tv/") && !finallink.matches(type_embed)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        decryptedLinks.add(createDownloadlink(finallink));
-
-        return decryptedLinks;
+        return crawledLinks;
     }
 
+    private void crawlWatchLink(final ArrayList<DownloadLink> crawledLinks, final String parameter) throws Exception {
+        if (br.containsHTML("<iframe")) {
+            externID = br.getRegex("<iframe.*? src=(\"|\')(https?.*?)(\"|\')").getMatch(1);
+        }
+        if (externID == null) {
+            if (!br.containsHTML("s1\\.addParam\\(\\'flashvars\\'")) {
+                logger.info("Link offline: " + parameter);
+                return;
+            }
+            logger.warning("Decrypter broken for link: " + parameter);
+            return;
+        }
+        if (externID.contains("cloudtime.to/embed/")) {
+            String vid = br.getRegex("https?://(www.)?cloudtime.to/embed/\\?v=(.*)").getMatch(1);
+            externID = "http://www.cloudtime.to/video/" + vid;
+        }
+        logger.info("externID: " + externID);
+        externID = Encoding.htmlDecode(externID);
+        DownloadLink dl = createDownloadlink(externID);
+        dl.setFinalFileName(filename + ".mp4");
+        crawledLinks.add(dl);
+        return;
+    }
 }
