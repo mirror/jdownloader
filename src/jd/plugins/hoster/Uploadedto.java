@@ -40,12 +40,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,6 +49,7 @@ import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -72,6 +67,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -151,12 +152,12 @@ public class Uploadedto extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.correctDownloadLink(downloadLink);
-        String id = getID(downloadLink);
+        final String id = getID(downloadLink);
         boolean red = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         try {
             getPage(br, getProtocol() + "uploaded.net/file/" + id + "/status");
-            String ret = br.getRedirectLocation();
+            final String ret = br.getRedirectLocation();
             if (ret != null) {
                 if (ret.contains("/404")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -170,8 +171,15 @@ public class Uploadedto extends PluginForHost {
                 }
                 br.getPage(ret);
             }
+            final Request request = br.getRequest();
+            if (!StringUtils.endsWithCaseInsensitive(request.getUrl(), "/status") || request.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
-            String size = br.getRegex("[\r\n]([0-9\\, TGBMK]+)").getMatch(0);
+            if (StringUtils.startsWithCaseInsensitive(name, "<!DOCTYPE html PUBLIC")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String size = br.getRegex("[\r\n]([0-9\\, TGBMK]+)").getMatch(0);
             if (name == null || size == null) {
                 checkGeneralErrors();
                 return AvailableStatus.UNCHECKABLE;

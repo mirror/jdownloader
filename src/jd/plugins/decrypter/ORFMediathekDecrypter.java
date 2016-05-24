@@ -67,7 +67,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("/index.php/", "/");
         this.br.setAllowedResponseCodes(500);
-        this.br.setLoadLimit(this.br.getLoadLimit() * 2);
+        this.br.setLoadLimit(this.br.getLoadLimit() * 4);
         final SubConfiguration cfg = SubConfiguration.getConfig("orf.at");
         BEST = cfg.getBooleanProperty(Q_BEST, false);
         br.getPage(parameter);
