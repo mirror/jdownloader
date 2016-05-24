@@ -182,6 +182,10 @@ public class ImgoutletCom extends PluginForHost {
         prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
+        final String jsredirect = new Regex(correctedBR, "window\\.location = \"((?:http|/)[^<>\"]+)\"").getMatch(0);
+        if (jsredirect != null) {
+            getPage(jsredirect);
+        }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

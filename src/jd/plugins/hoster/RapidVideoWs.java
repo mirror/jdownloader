@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.ws" }, urls = { "https?://(www\\.)?rapidvideo\\.ws/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.ws", "xvidstage.com" }, urls = { "https?://(www\\.)?rapidvideo\\.ws/(embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?xvidstage\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0, 0 })
 public class RapidVideoWs extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -60,7 +60,7 @@ public class RapidVideoWs extends PluginForHost {
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(rapidvideo\\.ws)";
+    private static final String            DOMAINS                      = "(rapidvideo\\.ws|xvidstage\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -100,6 +100,16 @@ public class RapidVideoWs extends PluginForHost {
     // other: Related domains: faststream.in
     // TODO: Add case maintenance + alternative filesize check
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("xvidstage.com".equals(getHost())) {
+            if (host == null || "xvidstage.com".equals(host)) {
+                return "rapidvideo.ws";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -133,6 +143,14 @@ public class RapidVideoWs extends PluginForHost {
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
+
+        /* 2016-05-24: Domainchange from xvidstage.com to rapidvideo.ws (xvidstage.com had its own plugin as well as rapidvideo.ws) */
+        final String newURL = new Regex(correctedBR, "<frame src=\"(https?://(?:www\\.)?rapidvideo\\.ws/[a-z0-9]{12})\"").getMatch(0);
+        if (newURL != null && link.getDownloadURL().contains("xvidstage.com")) {
+            getPage(newURL);
+            link.setUrlDownload(newURL);
+        }
+
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
