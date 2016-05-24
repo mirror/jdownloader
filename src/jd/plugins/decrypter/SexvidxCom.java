@@ -28,13 +28,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvidx.tv" }, urls = { "http://sexvidx.tv/[a-z0-9\\-/]*?/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
-public class JavonTv extends PluginForDecrypt {
+public class SexvidxCom extends PluginForDecrypt {
 
-    public JavonTv(PluginWrapper wrapper) {
+    public SexvidxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // javon.tv is back to sexvidx.tv
     private String filename = null;
     private String externID = null;
 

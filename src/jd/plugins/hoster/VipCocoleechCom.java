@@ -436,7 +436,7 @@ public class VipCocoleechCom extends PluginForHost {
         synchronized (CTRLLOCK) {
             final String currentHost = correctHost(this.currDownloadLink.getHost());
             int was = maxPrem.get();
-            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), this.currAcc.getIntegerProperty("account_maxdls", defaultMAXDOWNLOADS)));
+            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), defaultMAXDOWNLOADS));
             logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
             AtomicInteger currentRunningDls = new AtomicInteger(0);
             if (hostRunningDlsNumMap.containsKey(currentHost)) {
@@ -558,14 +558,11 @@ public class VipCocoleechCom extends PluginForHost {
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_failed_to_generate_final_downloadlink", 30, 10 * 60 * 1000l);
             case 666:
                 // /* Unknown error */
-                // statusMessage = "Unknown error";
-                // logger.info(NICE_HOST + ": Unknown API error");
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
-                /** TODO: Remove this once this plugin is in a stable state */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF");
+                statusMessage = "Unknown error";
+                logger.info(NICE_HOST + ": Unknown API error");
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
             default:
-                /** TODO: Remove this once this plugin is in a stable state */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF");
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
