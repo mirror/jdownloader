@@ -75,7 +75,7 @@ public class YoutubeClipData {
             }
 
             String str = sb.toString();
-            if (str.contains("3d")) {
+            if (title.contains("3d")) {
                 if (str.contains("sbs")) {
                     return true;
                 }
