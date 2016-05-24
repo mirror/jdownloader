@@ -108,9 +108,15 @@ public class IwaraTv extends PluginForHost {
             }
         }
         this.br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = fid;
+        final String uploadername = this.br.getRegex("class=\"username\">([^<>]+)<").getMatch(0);
+        String filename = "";
+        if (uploadername != null) {
+            filename += uploadername + "_";
+        }
+        filename += fid + "_";
+        final String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        if (title != null) {
+            filename += title;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();

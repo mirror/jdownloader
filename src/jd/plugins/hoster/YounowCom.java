@@ -113,7 +113,7 @@ public class YounowCom extends PluginForHost {
         if ((server == null || stream == null) && hls_master == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (hls_master != null) {
+        if (hls_master != null && !hls_master.equals("")) {
             br.getPage(hls_master);
             final String url_hls;
             if (this.br.containsHTML("0.ts")) {
