@@ -29,28 +29,35 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/folder/\\d+/[^\"<>\\' ]+" }, flags = { 0 })
 public class EuroShareEuFolder extends PluginForDecrypt {
-    
+
     public EuroShareEuFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("euroshare.sk/", "euroshare.eu/");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
         String id = new Regex(parameter, "euroshare\\.eu/folder/(\\d+)/").getMatch(0);
-        if (br.containsHTML(">error 404<")) return null;
+        if (br.containsHTML(">error 404<")) {
+            return null;
+        }
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("href=\"(/file/\\d+/[^\"]+)").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(https?://euroshare\\.eu/file/[a-zA-Z0-9]+/[^\"]+").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            links = br.getRegex("\"(https?://euroshare\\.eu/file/[a-zA-Z0-9]+/[^\"]+)").getColumn(0);
+        }
+        if (links == null || links.length == 0) {
+            return null;
+        }
         if (links != null && links.length != 0) {
             for (String dl : links) {
-                if (dl.matches("/file/[a-zA-Z0-9]+/[^\"]+"))
+                if (dl.matches("/file/[a-zA-Z0-9]+/[^\"]+")) {
                     decryptedLinks.add(createDownloadlink("http://euroshare.eu" + dl));
-                else
+                } else {
                     decryptedLinks.add(createDownloadlink(dl));
+                }
             }
         }
         if (fpName != null) {
@@ -60,10 +67,10 @@ public class EuroShareEuFolder extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-    
+
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-    
+
 }
