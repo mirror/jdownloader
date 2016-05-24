@@ -148,52 +148,51 @@ public class FreeDiscPl extends PluginForHost {
                 maxchunks = 0;
             }
         } else {
-            if (br.containsHTML("rel=\"video_src\"")) {
-                /* Stream-downloads always have no limits! */
-                dllink = br.getRegex("<iframe src=\"(http://freedisc\\.pl/embed/video/\\d+[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getPage(dllink);
-                dllink = br.getRegex("data\\-video\\-url=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("player\\.swf\\?file=(http://[^<>\"]*?)\"").getMatch(0);
-                }
-                String ext = null;
-                final String currentFname = downloadLink.getName();
-                if (currentFname.contains(".")) {
-                    ext = currentFname.substring(currentFname.lastIndexOf("."));
-                }
-                if (ext == null || (ext != null && ext.length() <= 5)) {
-                    downloadLink.setFinalFileName(downloadLink.getName() + ".mp4");
-                } else if (ext.length() > 5) {
-                    ext = dllink.substring(dllink.lastIndexOf(".") + 1);
-                    if (ext.matches(KNOWN_EXTENSIONS)) {
-                        downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
+            final boolean videostreamIsAvailable = br.containsHTML("rel=\"video_src\"");
+            final String videoEmbedUrl = br.getRegex("<iframe src=\"(http://freedisc\\.pl/embed/video/\\d+[^<>\"]*?)\"").getMatch(0);
+            resumable = true;
+            maxchunks = 0;
+            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            br.postPageRaw("http://freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
+            br.getRequest().setHtmlCode(unescape(br.toString()));
+            if (br.containsHTML("Pobranie plików większych jak [0-9\\.]+ (MB|GB|TB), wymaga opłacenia kosztów transferu")) {
+                logger.info("File is premiumonly --> Maybe stream download is possible!");
+                /* Premiumonly --> But maybe we can download the video-stream */
+                if (videostreamIsAvailable && videoEmbedUrl != null) {
+                    logger.info("Seems like a stream is available --> Trying to find downloadlink");
+                    /* Stream-downloads always have no limits! */
+                    resumable = true;
+                    maxchunks = 0;
+                    br.getPage(videoEmbedUrl);
+                    dllink = br.getRegex("data\\-video\\-url=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("player\\.swf\\?file=(http://[^<>\"]*?)\"").getMatch(0);
                     }
-                }
-                downloadLink.setProperty("isvideo", true);
-            } else {
-                resumable = true;
-                maxchunks = 0;
-                final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-                br.postPageRaw("http://freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
-                br.getRequest().setHtmlCode(unescape(br.toString()));
-                if (br.containsHTML("Pobranie plików większych jak [0-9\\.]+ (MB|GB|TB), wymaga opłacenia kosztów transferu")) {
-                    try {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                    } catch (final Throwable e) {
-                        if (e instanceof PluginException) {
-                            throw (PluginException) e;
+                    if (dllink != null) {
+                        logger.info("Stream download handling seems to have worked successfully");
+                        String ext = null;
+                        final String currentFname = downloadLink.getName();
+                        if (currentFname.contains(".")) {
+                            ext = currentFname.substring(currentFname.lastIndexOf("."));
                         }
-                    }
-                    final String lang = System.getProperty("user.language");
-                    if ("pl".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Pobieranie wybranego pliku dozwolone jedynie dla użytkowników Premium");
+                        if (ext == null || (ext != null && ext.length() <= 5)) {
+                            downloadLink.setFinalFileName(downloadLink.getName() + ".mp4");
+                        } else if (ext.length() > 5) {
+                            ext = dllink.substring(dllink.lastIndexOf(".") + 1);
+                            if (ext.matches(KNOWN_EXTENSIONS)) {
+                                downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
+                            }
+                        }
+                        downloadLink.setProperty("isvideo", true);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                        logger.info("Stream download handling seems to have failed");
                     }
                 }
+                if (dllink == null) {
+                    /* We failed to find a stream downloadlink so the file must be premium/free-account only! */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
+            } else {
                 String downloadUrlJson = getJsonNested(br.toString(), "download_data");
                 dllink = getJson(downloadUrlJson, "download_url") + getJson(downloadUrlJson, "item_id") + "/" + getJson(downloadUrlJson, "time");
                 // dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -411,7 +410,7 @@ public class FreeDiscPl extends PluginForHost {
     /*
      * *
      * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      */
     private String getJson(final String key) {

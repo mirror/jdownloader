@@ -31,11 +31,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" }, flags = { 2 })
 public class EuroShareEu extends PluginForHost {
 
     /** API documentation: http://euroshare.eu/euroshare-api/ */
+    /**
+     * Possible undocumented API responses: <br />
+     * Chyba! Nelze se pripojit k databazi.<br />
+     * <br />
+     * <br />
+     */
     private static final String  containsPassword         = "ERR: Password protected file \\(wrong password\\)\\.";
     private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
@@ -88,13 +95,13 @@ public class EuroShareEu extends PluginForHost {
         }
         // end of password handling
 
-        filename = getJson("file_name");
-        final String description = getJson("file_description");
+        filename = PluginJSonUtils.getJson(this.br, "file_name");
+        final String description = PluginJSonUtils.getJson(this.br, "file_description");
         if (description != null && downloadLink.getComment() == null) {
             downloadLink.setComment(description);
         }
-        final String filesize = getJson("file_size");
-        final String md5 = getJson("md5_hash");
+        final String filesize = PluginJSonUtils.getJson(this.br, "file_size");
+        final String md5 = PluginJSonUtils.getJson(this.br, "md5_hash");
         downloadLink.setFinalFileName(filename);
         downloadLink.setDownloadSize(Long.parseLong(filesize));
         downloadLink.setMD5Hash(md5);
@@ -138,9 +145,9 @@ public class EuroShareEu extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        final String expire = getJson("unlimited_download_until");
+        final String expire = PluginJSonUtils.getJson(this.br, "unlimited_download_until");
         // Not sure if this behaviour is correct
-        final String availableTraffic = getJson("credit");
+        final String availableTraffic = PluginJSonUtils.getJson(this.br, "credit");
         if (expire.equals("0") && availableTraffic.equals("0")) {
             ai.setStatus("Registered User");
             maxPrem.set(1);
@@ -192,11 +199,10 @@ public class EuroShareEu extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        String dllink = getJson("free_link");
+        final String dllink = PluginJSonUtils.getJson(this.br, "free_link");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -218,10 +224,13 @@ public class EuroShareEu extends PluginForHost {
             //
             // 403 Forbidden<br><br>Server overloaded. Use PREMIUM downloading.
             if (br.containsHTML("Server overloaded")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server Busy. Try again later", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "403 Server Busy. Try again later", 5 * 60 * 1000l);
+            } else if (this.br.getHttpConnection().getResponseCode() == 403) {
+                /* 403 Forbidden<br><br>Z Vasej IP uz prebieha stahovanie. Ako free uzivatel mozete stahovat iba jeden subor. */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "403 Too many free downloads active, try again later", 5 * 60 * 1000l);
             }
 
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -237,16 +246,15 @@ public class EuroShareEu extends PluginForHost {
             doFree(link);
         } else {
             br.getPage("http://euroshare.eu/euroshare-api/?sub=premiumdownload&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(link.getDownloadURL()));
-            String dllink = getJson("link");
+            final String dllink = PluginJSonUtils.getJson(this.br, "link");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = dllink.replace("\\", "");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
             dl.startDownload();
         }
@@ -259,16 +267,6 @@ public class EuroShareEu extends PluginForHost {
         if (br.containsHTML("(ERR: User does not exist|ERR: Invalid password)")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

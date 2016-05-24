@@ -79,7 +79,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", jd.plugins.components.UserAgents.stringUserAgent());
+        prepBR(br);
         br.getPage(parameter);
         if (isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -116,6 +116,11 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
 
     public static String getFid(final String sourcelink) {
         return new Regex(sourcelink, "/img\\-([a-z0-9]+)").getMatch(0);
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.getHeaders().put("User-Agent", jd.plugins.components.UserAgents.stringUserAgent());
+        return br;
     }
 
     /* NO OVERRIDE!! */

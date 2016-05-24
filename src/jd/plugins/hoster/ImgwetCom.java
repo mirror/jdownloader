@@ -47,10 +47,10 @@ public class ImgwetCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        jd.plugins.decrypter.ImgShotDecrypt.prepBR(this.br);
         final String fid = jd.plugins.decrypter.ImgShotDecrypt.getFid(link.getDownloadURL());
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/noimage.php")) {
+        if (jd.plugins.decrypter.ImgShotDecrypt.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setName(fid + ".jpg");

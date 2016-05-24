@@ -25,11 +25,13 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -37,6 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 
@@ -65,6 +68,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         decryptedLinks = new ArrayList<DownloadLink>();
         dupe = new LinkedHashSet<String>();
         parameter = param.toString().replace("www.", "");
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        if (aa != null) {
+            /* Login whenever possible to be able to download account-only-stuff */
+            jd.plugins.hoster.TumblrCom.login(this.br, aa, false);
+        }
         try {
             if (parameter.matches(TYPE_FILE)) {
                 decryptFile();

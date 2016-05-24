@@ -42,8 +42,9 @@ public class MvpdjCom extends PluginForHost {
         this.enablePremium("https://www.mvpdj.com/user/register");
     }
 
-    private String dllink = null;
-    private String fid    = null;
+    private String  dllink       = null;
+    private boolean serverissues = false;
+    private String  fid          = null;
 
     @Override
     public String getAGBLink() {
@@ -64,6 +65,7 @@ public class MvpdjCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
+        serverissues = false;
         fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         br = new Browser();
         this.setBrowserExclusive();
@@ -78,12 +80,27 @@ public class MvpdjCom extends PluginForHost {
             this.login(aa, false);
             loggedIN = true;
         }
+        String filename_html = null;
         String filename = null;
         if (loggedIN) {
             /* Download via download button --> Higher quality */
-            /* Number at the end seems to be a server/mirror number. Possibilities: 1,2 */
-            dllink = "https://www.mvpdj.com/song/purchase/" + fid + "/2";
-        } else {
+            this.br.postPage("https://www.mvpdj.com/song/download", "id=" + fid);
+            filename_html = this.br.getRegex("class=\"dt_tc_big\"[^<>]*?>([^<>]+)<").getMatch(0);
+            if (this.br.containsHTML(">账户余额不足，请先充值")) {
+                /* Hmm something like "No traffic left" --> But let's not temp-disable the account - let's simply download the stream then! */
+                logger.info("Account traffic exhausted or track not downloadable!");
+            } else {
+                /* Number at the end seems to be a server/mirror number. Possibilities: 1,2 */
+                logger.info("Track should be downloadable fine via account");
+                dllink = "https://www.mvpdj.com/song/purchase/" + fid + "/2";
+            }
+        }
+        if (dllink == null) {
+            if (loggedIN) {
+                logger.info("Official track download via account failed --> Trying stream download");
+            } else {
+                logger.info("Trying stream download");
+            }
             br.getPage(downloadLink.getDownloadURL());
             if (!br.containsHTML("<title>") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -113,19 +130,26 @@ public class MvpdjCom extends PluginForHost {
             con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 if (filename == null) {
-                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                    /* Especially for official account-downloads, server-filenames might be crippled! */
+                    final String filename_server = getFileNameFromHeader(con);
+                    if (filename_server != null && filename_html != null && filename_html.length() > filename_server.length()) {
+                        filename = Encoding.htmlDecode(filename_html) + ".mp3";
+                    } else {
+                        filename = filename_server;
+                    }
+                    downloadLink.setFinalFileName(filename);
                 }
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                serverissues = true;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -135,7 +159,9 @@ public class MvpdjCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+        if (serverissues) {
+
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -164,9 +190,7 @@ public class MvpdjCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        /* No need to log in as we're already logged in */
         doFree(link);
     }
 
