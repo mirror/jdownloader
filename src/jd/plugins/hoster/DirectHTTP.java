@@ -912,6 +912,8 @@ public class DirectHTTP extends antiDDoSForHost {
                 br.getHeaders().put("Referer", link);
             } else if (link.contains("imagezilla.net")) {
                 br.getHeaders().put("Referer", link);
+            } else if (link.contains("project-gxs.com")) {
+                br.getHeaders().put("Referer", "http://sh.st/");
             }
         }
     }
