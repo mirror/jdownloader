@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -30,8 +31,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?(8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+|8trx\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?(8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+|8trx\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
 public class EightTracksCom extends PluginForDecrypt {
 
     private static final String  MAINPAGE          = "http://8tracks.com/";
@@ -50,6 +52,7 @@ public class EightTracksCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
@@ -114,12 +117,7 @@ public class EightTracksCom extends PluginForDecrypt {
             single_track.setProperty("tracknumber", -1);
             single_track.setProperty("single_link", true);
             single_track.setAvailable(true);
-            try {
-                single_track.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                single_track.setBrowserUrl(parameter);
-            }
+            single_track.setContentUrl(parameter);
             decryptedLinks.add(single_track);
         } else {
             String mixid = br.getRegex("mix_id=(\\d+)\"").getMatch(0);
@@ -158,7 +156,7 @@ public class EightTracksCom extends PluginForDecrypt {
             } else {
                 // /* Get token */
                 clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
-                playToken = getClipData("play_token");
+                playToken = PluginJSonUtils.getJson(this.br, "play_token");
                 if (playToken == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -173,11 +171,34 @@ public class EightTracksCom extends PluginForDecrypt {
                 // "&format=jsonh");
             }
 
+            /*
+             * For GEO-blocked playlists, users cannot listen to them from 8tracks but they can watch YouTube videos --> This way WE can get
+             * the track-names :)
+             */
+            this.br.getPage("/mixes/" + mixid + "/tracks_for_international.jsonh");
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("tracks");
+            final int listmax = ressourcelist.size() - 1;
+
             final int tracks_in_mix = Integer.parseInt(tracksInMix);
             final DecimalFormat df = (tracks_in_mix < 100 ? new DecimalFormat("00") : new DecimalFormat("000"));
             for (int i = 1; i <= tracks_in_mix; i++) {
+
+                final String formatted_tracknumber = df.format(i);
+                String temp_name = null;
+                if (i - 1 <= listmax) {
+                    entries = (LinkedHashMap<String, Object>) ressourcelist.get(i - 1);
+                    final String artist = (String) entries.get("performer");
+                    final String title = (String) entries.get("name");
+                    if (artist != null && !artist.equals("") && title != null && !title.equals("")) {
+                        temp_name = formatted_tracknumber + "." + artist + " - " + title;
+                    }
+                }
+                if (temp_name == null) {
+                    temp_name = fpName + "_track" + formatted_tracknumber;
+                }
+
                 final DownloadLink dl = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                final String temp_name = fpName + "_track" + df.format(i);
                 dl.setName(temp_name.concat(TEMP_EXT));
                 dl.setProperty("playtoken", playToken);
                 dl.setProperty("mixid", mixid);
@@ -192,12 +213,7 @@ public class EightTracksCom extends PluginForDecrypt {
                     dl.setProperty("savedlink", dllink);
                     dl.setProperty("final_filename", filename);
                 }
-                try {
-                    dl.setContentUrl(parameter);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    dl.setBrowserUrl(parameter);
-                }
+                dl.setContentUrl(parameter);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
@@ -209,12 +225,8 @@ public class EightTracksCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getClipData(final String tag) {
-        return new Regex(clipData, "\"" + tag + "\"\\s?:\\s?\"?(.*?)\"?,").getMatch(0);
-    }
-
     private String updateTrackID() throws PluginException {
-        final String currenttrackid = getClipData("id");
+        final String currenttrackid = PluginJSonUtils.getJson(this.br, "id");
         return currenttrackid;
     }
 
@@ -224,7 +236,7 @@ public class EightTracksCom extends PluginForDecrypt {
         if (soundcloud_trackID != null) {
             dllink = "https://api.soundcloud.com/tracks/" + soundcloud_trackID + "/stream?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
         } else {
-            dllink = getClipData("track_file_stream_url");
+            dllink = PluginJSonUtils.getJson(this.br, "track_file_stream_url");
         }
         return dllink;
     }
@@ -232,7 +244,7 @@ public class EightTracksCom extends PluginForDecrypt {
     private String getFilename() {
         String filename = null;
         final Regex name_and_artist = new Regex(clipData, "\"name\":\"([^<>\"]*?)\",\"performer\":\"([^<>\"]*?)\"");
-        String album = getClipData("release_name");
+        String album = PluginJSonUtils.getJson(this.br, "release_name");
         String title = name_and_artist.getMatch(0);
         String artist = name_and_artist.getMatch(1);
         if (album == null || title == null) {

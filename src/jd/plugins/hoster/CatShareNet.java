@@ -60,16 +60,15 @@ public class CatShareNet extends PluginForHost {
 
     /**
      * API TODO: <br />
-     * -2016-05-10: According to admin there are no password protected downloadurls anymore --> Good for us!<br />
      * -Check/Fix free account/premium account modes AND limits<br />
      * -More testing -Check how long such a session cookie is reusable and how to determine if it expired<br />
-     * -check if stored direct urls can be re-used<br />
+     * -2016-05-24: Check FREE ACCOUNT limits - API is now implemented and should work --> Enabled it so our users can test!<br />
      */
     private String         brbefore               = "";
     private String         HOSTER                 = "http://catshare.net";
     private static Object  lock                   = new Object();
-    protected final String USE_API                = "USE_API";
-    private final boolean  defaultUSE_API         = false;
+    protected final String USE_API                = "USE_API_33827";
+    private final boolean  defaultUSE_API         = true;
     private final boolean  use_api_availablecheck = true;
 
     // private final boolean useAPI = true;
@@ -309,51 +308,49 @@ public class CatShareNet extends PluginForHost {
         }
     }
 
+    /** Handles Free, Free-Account and Premium-Account download via API */
     public void handleDownloadAPI(final DownloadLink downloadLink, final boolean resumable, final int maxChunks, final boolean premium, final String directlinkproperty) throws Exception, PluginException {
         String passCode = downloadLink.getDownloadPassword();
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            String download_post_data = "linkid=" + getLinkid(downloadLink);
+            String download_post_data = "linkid=" + getLinkid(downloadLink) + "&challenge=" + System.currentTimeMillis();
+            /*
+             * Premium users could skip this step but I left it in so in case a Premium Account just switches to Free or the admin wants
+             * premium users to enter captchas/wait too --> Everything is possible ;)
+             */
             postPageAPI(getAPIProtocol() + this.getHost() + "/download/json_wait", "");
+            /* E.g. response for premium users: {"wait_time":0,"key":null} */
+
             long wait = 0;
             String wait_str = PluginJSonUtils.getJson(br, "wait_time");
             if (wait_str != null) {
                 wait = Long.parseLong(wait_str) * 1000;
-                if (wait > System.currentTimeMillis()) {
-                    /* Hm just in case they switch back to the old wait time format */
-                    wait = wait - System.currentTimeMillis();
-                }
                 if (wait > 240000l) {
                     /* Reconnect wait */
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
                 }
             }
-            if (!premium) {
-                /* 2016-05-19: json_challenge-call is not needed anymore as json_wait will return waittime AND reCaptcha key */
-                // postPageAPI("/download/json_challenge", "");
-                final String rcID = PluginJSonUtils.getJson(br, "key");
-                if (rcID == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
-                }
+            /* 2016-05-19: json_challenge-call is not needed anymore as json_wait will return waittime AND reCaptcha key */
+            // postPageAPI("/download/json_challenge", "");
+            final String rcID = PluginJSonUtils.getJson(br, "key");
+            if (rcID != null && rcID.length() > 6) {
+                /* Usually free users do have to enter captchas */
                 final Recaptcha rc = new Recaptcha(br, this);
                 rc.setId(rcID);
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                download_post_data += "&challenge=" + System.currentTimeMillis() + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                download_post_data += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
             }
             if (wait > 0) {
+                /* Usually free users do have to wait before they can start the download */
                 logger.info("We have the captcha answer of the user, waiting " + wait + " milliseconds until json_download request");
                 this.sleep(wait, downloadLink);
             }
             postPageAPI("/download/json_download", download_post_data);
+
             dllink = PluginJSonUtils.getJson(br, "downloadUrl");
             if (dllink == null || !dllink.startsWith("http")) {
-                wait_str = this.br.getRegex("(\\d+)\\{").getMatch(0);
-                if (wait_str != null) {
-                    wait = System.currentTimeMillis() - Long.parseLong(wait_str);
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
             }
         }
@@ -646,10 +643,11 @@ public class CatShareNet extends PluginForHost {
     }
 
     public void handlePremiumAPI(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
+        loginAPI(account);
         if (account.getType() == AccountType.FREE) {
             handleDownloadAPI(downloadLink, true, 0, false, "directlink_freeaccount");
         } else {
-            handleDownloadAPI(downloadLink, true, 0, true, "directlink_premiumaccount");
+            handleDownloadAPI(downloadLink, true, -4, true, "directlink_premiumaccount");
         }
     }
 

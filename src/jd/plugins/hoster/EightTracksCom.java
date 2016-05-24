@@ -193,7 +193,7 @@ public class EightTracksCom extends antiDDoSForHost {
                         }
                         /* Check if we got a higher amount of the tracks than the track-number we need */
                         if (list_length >= tracknumber) {
-                            /* Yes -> Set information for the track w need */
+                            /* Yes -> Set information for the track we need */
                             clipData = ids[tracknumber - 1];
                             currenttrackid = updateTrackID();
                             i = tracknumber;
