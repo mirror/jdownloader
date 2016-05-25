@@ -17,13 +17,10 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -38,10 +35,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com", "dbank.com" }, urls = { "http://(www\\.)?vmalldecrypted\\.com/\\d+", "vgt5ui6trbevf6ijmnbdli94DELETEME" }, flags = { 2, 0 })
-public class DBankCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(?:www\\.)?vmalldecrypted\\.com/\\d+" }, flags = { 2 })
+public class VmallCom extends PluginForHost {
 
-    public DBankCom(PluginWrapper wrapper) {
+    public VmallCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
     }
@@ -49,6 +46,16 @@ public class DBankCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return MAINPAGE;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("dbank.com".equals(getHost())) {
+            if (host == null || "dbank.com".equals(host)) {
+                return "vmall.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     private static Object       LOCK     = new Object();
@@ -60,9 +67,9 @@ public class DBankCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
@@ -190,44 +197,44 @@ public class DBankCom extends PluginForHost {
         doFree(downloadLink);
     }
 
-    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
+                this.br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /* Always try to re-use cookies to prevent login captcha */
+                    this.br.setCookies(this.getHost(), cookies);
+                    this.br.getPage("http://www." + this.getHost() + "/");
+                    final String cookie_username = this.br.getCookie(MAINPAGE, "name");
+                    if (cookie_username != null && !"deleted".equalsIgnoreCase(cookie_username)) {
+                        logger.info("Successfully re-used cookies");
+                        /* Save new cookie-checked-timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
-                br.postPage("http://login.vmall.com/accounts/loginAuth", "userDomain.rememberme=true&ru=http%3A%2F%2Fwww.vmall.com%2FServiceLogin.action&forward=&relog=&client=&userDomain.user.email=" + Encoding.urlEncode(account.getUser()) + "&userDomain.user.password=" + Encoding.urlEncode(account.getPass()));
-                if (!"normal".equals(br.getCookie(MAINPAGE, "login_type"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                this.br.getPage("http://www.vmall.com/account/login");
+                String postData = "submit=true&loginUrl=https%3A%2F%2Fhwid1.vmall.com%2Foauth2%2Fportal%2Flogin.jsp&service=http%3A%2F%2Fwww.vmall.com%2Faccount%2Fcaslogin&loginChannel=26000000&reqClientType=26&deviceID=&adUrl=&lang=zh-cn&inviterUserID=&inviter=&viewType=0&quickAuth=&userAccount=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_name=on";
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), MAINPAGE, true);
+                final String code = getCaptchaCode("https://hwid1.vmall.com/casserver/randomcode", dummyLink);
+                postData += "&authcode=" + Encoding.urlEncode(code);
+
+                this.br.postPage("https://hwid1.vmall.com/casserver/remoteLogin", postData);
+                if (!"1".equals(br.getCookie(MAINPAGE, "logintype"))) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }

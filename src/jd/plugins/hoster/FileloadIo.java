@@ -86,6 +86,10 @@ public class FileloadIo extends PluginForHost {
         // this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid +
         // "&download=false");
         this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid + "&download=true");
+        final String status = PluginJSonUtils.getJson(this.br, "status");
+        if ("too_many_requests".equalsIgnoreCase(status)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 3 * 60 * 1000l);
+        }
         dllink = PluginJSonUtils.getJson(this.br, "link");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

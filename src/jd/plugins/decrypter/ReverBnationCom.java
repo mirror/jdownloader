@@ -43,7 +43,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         /* Load host plugin */
-        JDUtilities.getPluginForHost("reverbnation.com");
+        JDUtilities.getPluginForHost(this.getHost());
         String username = null;
         String title = null;
         String artist = null;
@@ -179,7 +179,10 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             for (final String singleInfo : allInfo) {
                 artistsID = artistID;
                 songID = new Regex(singleInfo, "data-song-id=\"(\\d+)\"").getMatch(0);
-                title = new Regex(singleInfo, "title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatch(0);
+                if (songID == null) {
+                    songID = new Regex(singleInfo, "download_song/(\\d+)").getMatch(0);
+                }
+                title = new Regex(singleInfo, "title=\"(?:Play \\&quot;)?([^<>\"]*?)(?:\\&quot;)?\"").getMatch(0);
                 artist = new Regex(singleInfo, "<em>by <a href=\"/[^<>\"]*?\">([^<>\"]*?)</a>").getMatch(0);
                 /* Maybe the whole user/playlist/whatever has only a single artist. */
                 if (artist == null) {

@@ -32,10 +32,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(www\\.)?dl\\.(dbank|vmall)\\.com/[a-z0-9]+" }, flags = { 0 })
-public class DBankComFolder extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "https?://(?:www\\.)?dl\\.(?:dbank|vmall)\\.com/[a-z0-9]+" }, flags = { 0 })
+public class VmallComFolder extends PluginForDecrypt {
 
-    public DBankComFolder(PluginWrapper wrapper) {
+    public VmallComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 

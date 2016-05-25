@@ -35,6 +35,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -83,27 +84,36 @@ public class FilEarnCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        ai.setUnlimitedTraffic();
-        Regex damnExpireStuff = br.getRegex("<p>Premuim account will expire on <b>([A-Za-z]+ \\d+)[a-z]{0,5} (\\d{4}), at (\\d+:\\d+) CET</b>");
-        String monthAndDay = damnExpireStuff.getMatch(0);
-        String year = damnExpireStuff.getMatch(1);
-        String time = damnExpireStuff.getMatch(2);
-        if (monthAndDay == null && year == null && time == null) {
-            account.setValid(false);
-            return ai;
+        if (br.containsHTML("<b>Account Type</b>: Premium</p>")) {
+            ai.setUnlimitedTraffic();
+            Regex damnExpireStuff = br.getRegex("<p>Premuim account will expire on <b>([A-Za-z]+ \\d+)[a-z]{0,5} (\\d{4}), at (\\d+:\\d+) CET</b>");
+            String monthAndDay = damnExpireStuff.getMatch(0);
+            String year = damnExpireStuff.getMatch(1);
+            String time = damnExpireStuff.getMatch(2);
+            if (monthAndDay == null && year == null && time == null) {
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(monthAndDay + " " + year + " " + time, "MMMM dd yyyy hh:mm", null));
+            }
+            account.setValid(true);
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium User");
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(monthAndDay + " " + year + " " + time, "MMMM dd yyyy hh:mm", null));
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Free Account");
+            /* Free accounts are unsupported */
+            ai.setTrafficLeft(0);
+            account.setConcurrentUsePossible(false);
         }
-        account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -265,14 +275,14 @@ public class FilEarnCom extends PluginForHost {
                 }
             }
             br.setFollowRedirects(false);
-            br.postPage("http://www.filearn.com/user/login", "submit1=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            br.getPage("http://www.filearn.com/user/homepage");
-            if (!br.containsHTML("<b>Account Type</b>: Premium</p>")) {
-                final String lang = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.getPage("http://www.filearn.com/user/login");
+            br.postPage("/user/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            br.getPage("/user/homepage");
+            if (!this.br.containsHTML("/user/logout\"")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
             // Save cookies
