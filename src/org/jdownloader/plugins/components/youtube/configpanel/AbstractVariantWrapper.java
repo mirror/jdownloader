@@ -15,6 +15,19 @@ public class AbstractVariantWrapper {
         blackListEntry = new VariantIDStorable(variant);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof AbstractVariantWrapper)) {
+            return false;
+        }
+        return ((AbstractVariantWrapper) obj).blackListEntry.createUniqueID().equals(blackListEntry.createUniqueID());
+    }
+
+    @Override
+    public int hashCode() {
+        return blackListEntry.createUniqueID().hashCode();
+    }
+
     private boolean enabled = true;
 
     public boolean isEnabled() {
