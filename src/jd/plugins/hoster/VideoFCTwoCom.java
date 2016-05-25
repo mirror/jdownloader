@@ -19,10 +19,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.Invocable;
@@ -32,10 +30,8 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -115,6 +111,7 @@ public class VideoFCTwoCom extends PluginForHost {
      * IMPORTANT NOTE: Free (unregistered) Users can watch (&download) videos up to 2 hours in length - if videos are longer, users can only
      * watch the first two hours of them - afterwards they will get this message: http://i.snag.gy/FGl1E.jpg
      */
+    @SuppressWarnings("deprecation")
     private AccountInfo login(Account account, boolean force, final AccountInfo iai) throws Exception {
         synchronized (LOCK) {
             this.account = account;
@@ -123,18 +120,10 @@ public class VideoFCTwoCom extends PluginForHost {
                 // Load cookies
                 prepareBrowser(br);
                 br.setCookiesExclusive(true);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser()))) && Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass()))) && !force;
-                Object ret = account.getProperty("cookies", null);
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            String key = cookieEntry.getKey();
-                            String value = cookieEntry.getValue();
-                            br.setCookie(cookieHost, key, value);
-                        }
-                        return ai;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return ai;
                 }
                 // for debug purposes
                 // br = prepareBrowser(new Browser());
@@ -142,8 +131,9 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://fc2.com/en/login.php");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                // Thread.sleep(4000l);
                 br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&done=");
-                String loginDone = br.getRegex("(http://id\\.fc2\\.com/\\?.*?login=done.*?)").getMatch(0);
+                String loginDone = br.getRegex("(http://id\\.fc2\\.com/.*?\\?.*?login=done.*?)").getMatch(0);
                 if (loginDone == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -168,20 +158,10 @@ public class VideoFCTwoCom extends PluginForHost {
                     account.setProperty("free", true);
                 }
                 account.setValid(true);
-                // Save cookies
-                HashMap<String, String> cookies = new HashMap<String, String>();
-                Cookies add = br.getCookies(cookieHost);
-                for (Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
                 br.setFollowRedirects(ifr);
             } catch (PluginException e) {
-                account.setProperty("name", Property.NULL);
-                account.setProperty("pass", Property.NULL);
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
             return ai;
