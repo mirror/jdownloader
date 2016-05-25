@@ -84,7 +84,7 @@ public class DiskSpaceManager {
                     }
                 }
             } else {
-                // simple fallback support for \\netshares without assigned drive letter
+                // simple unc support (netshares without assigned drive letter)
                 File existingFile = reservation.getDestination();
                 while (existingFile != null) {
                     if (existingFile.exists()) {
