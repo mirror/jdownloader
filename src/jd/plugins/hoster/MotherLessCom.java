@@ -67,7 +67,7 @@ public class MotherLessCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         // reset comment/message
         if ("video".equals(parameter.getStringProperty("dltype", null))) {
-            notOnlineYet(parameter, true);
+            notOnlineYet(parameter, true, true);
         }
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
@@ -86,7 +86,7 @@ public class MotherLessCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML(html_notOnlineYet)) {
-                notOnlineYet(parameter, false);
+                notOnlineYet(parameter, false, true);
                 return AvailableStatus.FALSE;
             } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberOnly)) {
                 // requires account!
@@ -321,7 +321,7 @@ public class MotherLessCom extends PluginForHost {
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
         URLConnectionAdapter con;
-        if (true || isJDStable()) {
+        if (true) {
             con = br.openGetConnection(directlink);
         } else {
             con = br.openHeadConnection(directlink);
@@ -329,20 +329,15 @@ public class MotherLessCom extends PluginForHost {
         return con;
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
-    public static DownloadLink notOnlineYet(DownloadLink downloadLink, boolean reset) {
+    public static DownloadLink notOnlineYet(final DownloadLink downloadLink, final boolean reset, final boolean hostPlugin) {
         String msg = null;
         if (!reset) {
             msg = "Not online yet... check again later";
         }
-        downloadLink.getLinkStatus().setStatusText(msg);
-        try {
-            downloadLink.setComment(msg);
-        } catch (Throwable e) {
+        if (hostPlugin) {
+            downloadLink.getLinkStatus().setStatusText(msg);
         }
+        downloadLink.setComment(msg);
         return downloadLink;
     }
 

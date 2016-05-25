@@ -82,9 +82,14 @@ public class CommonsWikimediaOrg extends PluginForHost {
         }
         final String filesize_str = this.br.getRegex("file size: (\\d+(?:\\.\\d{1,2})? [A-Za-z]+)").getMatch(0);
         DLLINK = br.getRegex("id=\"file\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
-        // if (DLLINK == null) {
-        // DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        // }
+        if (DLLINK == null) {
+            /* E.g. https://commons.wikimedia.org/wiki/File:BBH_gravitational_lensing_of_gw150914.webm */
+            DLLINK = br.getRegex("<a href=\"(https?://[^<>\"]+)\"[^<>]+>Original file</a>").getMatch(0);
+        }
+        if (DLLINK == null) {
+            /* E.g. https://commons.wikimedia.org/wiki/File:Sintel_movie_720x306.ogv */
+            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]+)\"[^<>]+data\\-title=\"Original").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

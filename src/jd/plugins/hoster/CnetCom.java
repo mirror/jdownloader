@@ -45,8 +45,9 @@ public class CnetCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.setAllowedResponseCodes(500);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getURL().contains("/most-popular/")) {
+        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500 || br.getURL().contains("/most-popular/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.containsHTML("class=\"download-now floating-button-dln\"")) {
             /* No downloadable content */

@@ -66,7 +66,11 @@ public class CoubCom extends PluginForHost {
         this.setBrowserExclusive();
         final String fid = getFID(link);
         this.br.getPage("https://coub.com/api/v2/coubs/" + fid);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 403) {
+            /* {"error":"You are not authorized to access this page.","exc":"CanCan::AccessDenied"} */
+            logger.info("Possible private content --> Not sure but probably offline");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());

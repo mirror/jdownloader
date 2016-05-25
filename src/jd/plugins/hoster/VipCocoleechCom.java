@@ -82,8 +82,7 @@ public class VipCocoleechCom extends PluginForHost {
         return "http://vip.cocoleech.com/";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
@@ -207,7 +206,7 @@ public class VipCocoleechCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        prepBR(this.br);
 
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -288,12 +287,12 @@ public class VipCocoleechCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.setConstants(account, null);
-        this.br = newBrowser();
+        prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
 
-        login(true);
-        /* As long asa we always perform a full login, this call is never needed as full login will return account type and expire date too. */
-        // this.getAPISafe(API_ENDPOINT + "/info.php");
+        login(false);
+        /* As long as we always perform a full login, this call is never needed as full login will return account type and expire date too. */
+        // accessUserInfo();
 
         final String premiumstatus = getJson("premium_status");
         final String validuntil = getJson("expire_date");
@@ -341,8 +340,21 @@ public class VipCocoleechCom extends PluginForHost {
         return ai;
     }
 
+    private void accessUserInfo() throws IOException, PluginException {
+        this.getAPISafe(API_ENDPOINT + "/info.php");
+    }
+
     private void login(final boolean force) throws IOException, PluginException {
-        /* TODO: Maybe change this to not always perform a full login. */
+        if (currLogintoken != null && !force) {
+            try {
+                accessUserInfo();
+                logger.info("Successfully re-used previous login token");
+                return;
+            } catch (final PluginException e) {
+                logger.info("Failed to re-use previous login token - performing full login!");
+                prepBR(new Browser());
+            }
+        }
         this.getAPISafe(API_ENDPOINT + "/login.php?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
         currLogintoken = getJson("token");
         if (currLogintoken == null) {
@@ -546,7 +558,7 @@ public class VipCocoleechCom extends PluginForHost {
                 statusMessage = "Filehost is under maintenance";
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_maintenance", 5, 10 * 60 * 1000l);
             case 205:
-                /* TODO: Find a solution for this */
+                /* TODO: Find a solution for this - this should never happen! */
                 statusMessage = "Token expired";
                 throw new PluginException(LinkStatus.ERROR_FATAL, statusMessage);
             case 206:

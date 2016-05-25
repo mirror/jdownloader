@@ -134,7 +134,7 @@ public class CloudSixMe extends antiDDoSForHost {
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches() || this.br.getHttpConnection().getResponseCode() == 403 || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

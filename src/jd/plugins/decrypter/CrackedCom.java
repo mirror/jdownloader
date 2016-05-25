@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 25939 $", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(www\\.)?cracked\\.com/video_\\d+.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 25939 $", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_\\d+.*?\\.html" }, flags = { 0 })
 public class CrackedCom extends PluginForDecrypt {
 
     public CrackedCom(PluginWrapper wrapper) {
@@ -45,23 +44,19 @@ public class CrackedCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
-        String finallink = null;
-        // they have youtube links within iframe
-        String iframe = br.getRegex("<iframe [^>]+(/\\s*>|>.*?</\\s*iframe\\s*>)").getMatch(-1);
-        if (iframe != null) {
-            finallink = new Regex(iframe, "src=('|\"|)(.*?)\\1").getMatch(1);
-            if (finallink != null) {
-                if (finallink.startsWith("//")) {
-                    finallink = new Regex(br.getURL(), "^https?:").getMatch(-1) + finallink;
-                }
-                decryptedLinks.add(createDownloadlink(parameter));
+        // they have youtube sometimes
+        String finallink = br.getRegex("id=youtubePlayer src=\"//(?:www\\.)?(youtube\\.com/embed/[^<>\"]+)\"").getMatch(0);
+        if (finallink != null) {
+            finallink = "http://www." + finallink;
+            decryptedLinks.add(createDownloadlink(finallink));
+            /* A check for future embedded content */
+            if (finallink.contains("youtube.com/")) {
                 return decryptedLinks;
             }
         }
-        // when nothing is found lets just throw back to hoster plugin, error handling there can pick it up!
-        if (finallink == null) {
-            decryptedLinks.add(createDownloadlink(parameter.replace("cracked.com/", "crackeddecrypted.com/")));
-        }
+        // when nothing is found or result was not a youtube video lets just throw back to hoster plugin, error handling there can pick it
+        // up!
+        decryptedLinks.add(createDownloadlink(parameter.replace("cracked.com/", "crackeddecrypted.com/")));
 
         return decryptedLinks;
     }

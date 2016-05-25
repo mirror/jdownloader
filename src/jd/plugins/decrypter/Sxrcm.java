@@ -94,11 +94,13 @@ public class Sxrcm extends PluginForDecrypt {
                     pwList = new ArrayList<String>(Arrays.asList(new String[] { password.trim() }));
                 }
                 Thread.sleep(1000);
+                this.br.setFollowRedirects(true);
                 br.getPage(parameter);
+                this.br.setFollowRedirects(false);
                 final String links[] = br.getRegex(PATTERN_REDIRECT_LINKS).getColumn(0);
                 if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    logger.info("Seems like there is nothing to decrypt ...");
+                    return decryptedLinks;
                 }
                 for (String link : links) {
                     try {
@@ -114,11 +116,7 @@ public class Sxrcm extends PluginForDecrypt {
                     br.getPage(link);
                     final String finallink = br.getRedirectLocation();
                     if (finallink == null && br.getHttpConnection().getResponseCode() == 302) {
-                        try {
-                            decryptedLinks.add(this.createOfflinelink(parameter));
-                        } catch (final Throwable e) {
-                            // Not available in old 0.9.581 Stable
-                        }
+                        decryptedLinks.add(this.createOfflinelink(parameter));
                         return decryptedLinks;
                     }
                     if (finallink == null || finallink.contains("sexuria.com/")) {

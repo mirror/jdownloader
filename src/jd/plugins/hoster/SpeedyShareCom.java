@@ -180,9 +180,12 @@ public class SpeedyShareCom extends PluginForHost {
             finallink = br.getRegex("class=downloadfilename href=\\'(.*?)\\'").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<a href=('|\")([^>]+)\\1><img[^>]+(src=/gf/slowdownload\\.png|alt='Slow Download'|class=dlimg2)").getMatch(1);
-                if (finallink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            }
+            if (finallink == null) {
+                finallink = br.getRegex("\\'(/[^<>\"\\']+/download/[^<>\"\\']+)").getMatch(0);
+            }
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         if (finallink == null) {

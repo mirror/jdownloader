@@ -128,7 +128,7 @@ public class MotherLessCom extends PluginForDecrypt {
                 final DownloadLink dlink = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
                 dlink.setContentUrl(parameter);
                 if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_notOnlineYet)) {
-                    jd.plugins.hoster.MotherLessCom.notOnlineYet(dlink, false);
+                    jd.plugins.hoster.MotherLessCom.notOnlineYet(dlink, false, false);
                     dlink.setAvailable(false);
                 }
                 dlink.setProperty("dltype", "video");
