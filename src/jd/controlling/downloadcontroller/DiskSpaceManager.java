@@ -75,9 +75,8 @@ public class DiskSpaceManager {
                 while (existingFile != null) {
                     if (existingFile.exists()) {
                         bestRootMatch = existingFile.getAbsolutePath();
-                    } else {
-                        existingFile = existingFile.getParentFile();
                     }
+                    existingFile = existingFile.getParentFile();
                 }
             }
         }
