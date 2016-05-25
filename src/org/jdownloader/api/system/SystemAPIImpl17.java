@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.FileStoreHacks;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
@@ -26,7 +28,7 @@ public class SystemAPIImpl17 {
             customPath = false;
         }
         if (roots.size() == 0) {
-            if (!CrossSystem.isWindows()) {
+            if (CrossSystem.isUnix()) {
                 try {
                     final List<ProcMounts> procMounts = ProcMounts.list();
                     if (procMounts != null) {
@@ -43,8 +45,11 @@ public class SystemAPIImpl17 {
                 }
             }
             if (roots.size() == 0) {
-                for (final Path root : FileSystems.getDefault().getRootDirectories()) {
-                    roots.add(root);
+                for (final FileStore fileStore : FileSystems.getDefault().getFileStores()) {
+                    final Path fileStorePath = FileStoreHacks.getPath(fileStore);
+                    if (fileStorePath != null) {
+                        roots.add(fileStorePath);
+                    }
                 }
             }
         }

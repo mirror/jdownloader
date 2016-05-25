@@ -75,7 +75,6 @@ public class DiskSpaceManager {
                 while (existingFile != null) {
                     if (existingFile.exists()) {
                         bestRootMatch = existingFile.getAbsolutePath();
-                        break;
                     } else {
                         existingFile = existingFile.getParentFile();
                     }
@@ -102,7 +101,7 @@ public class DiskSpaceManager {
             return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
         }
         String bestRootMatch = null;
-        if (Application.getJavaVersion() >= Application.JAVA17) {
+        if (Application.getJavaVersion() >= Application.JAVA17 && CrossSystem.isUnix()) {
             try {
                 bestRootMatch = FileStoreHacks.getRootFor(reservation.getDestination());
             } catch (final IOException e) {

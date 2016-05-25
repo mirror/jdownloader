@@ -97,15 +97,11 @@ public class SystemAPIImpl implements SystemAPI {
         } else {
             final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
             final List<File> roots = new ArrayList<File>();
-            final boolean customPath;
             if (StringUtils.isNotEmpty(path)) {
                 roots.add(new File(path));
-                customPath = true;
-            } else {
-                customPath = false;
             }
             if (roots.size() == 0) {
-                if (!CrossSystem.isWindows()) {
+                if (CrossSystem.isUnix()) {
                     try {
                         final List<ProcMounts> procMounts = ProcMounts.list();
                         if (procMounts != null) {
