@@ -348,4 +348,5 @@ system_download_errors_couldnotrename=Não foi possível renomear parte do arqui
 system_download_errors_linkisBlocked=Mirror %s1 está carregando
 video_description=Arquivos de Vídeo: mp4, avi, mov...
 youtube_demux=Áudio demultiplexado
+youtube_segment=Stream do segmento
 youtube_spatial=Áudio multicanal espacial
