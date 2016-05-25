@@ -1,13 +1,17 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.api.system.ProcMounts;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DiskSpaceManager {
@@ -38,56 +42,66 @@ public class DiskSpaceManager {
         }
         if (!SUPPORTED) {
             /*
-             * File.getUsableSpace is 1.6 only
+             * File.getUsableSpace is >=1.6 only
              */
             return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
         }
         if (!config.isFreeSpaceCheckEnabled()) {
             return DISKSPACERESERVATIONRESULT.OK;
         }
-        final HashSet<File> reservationPaths = new HashSet<File>();
-        int mb = config.getForcedFreeSpaceOnDisk();
-        long requestedDiskSpace = Math.max(0, reservation.getSize()) + Math.max(0l, mb * 1024l * 1024l);
-        File destinationPath = reservation.getDestination();
-        File checkPath = null;
-        long freeSpace = -1;
-        if (destinationPath != null && destinationPath.isFile()) {
-            destinationPath = destinationPath.getParentFile();
-        }
-        if (destinationPath != null) {
-            reservationPaths.add(destinationPath);
-        }
-        while (destinationPath != null) {
-            if (destinationPath.exists() && checkPath == null) {
-                checkPath = destinationPath;
-                freeSpace = checkPath.getUsableSpace();
-                if (freeSpace < requestedDiskSpace) {
-                    return DISKSPACERESERVATIONRESULT.FAILED;
-                }
-            }
-            destinationPath = destinationPath.getParentFile();
-            if (destinationPath != null) {
-                reservationPaths.add(destinationPath);
-            }
-        }
-        if (checkPath == null) {
+        if (reservation.getDestination() == null) {
             return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
         }
-
-        for (DiskSpaceReservation reserved : reservations.keySet()) {
-            destinationPath = reserved.getDestination();
-            if (destinationPath != null && destinationPath.isFile()) {
-                destinationPath = destinationPath.getParentFile();
-            }
-            while (destinationPath != null) {
-                if (reservationPaths.contains(destinationPath)) {
-                    requestedDiskSpace += Math.max(0, reserved.getSize());
-                    if (freeSpace < requestedDiskSpace) {
-                        return DISKSPACERESERVATIONRESULT.FAILED;
+        String bestRootMatch = null;
+        if (CrossSystem.isWindows()) {
+            final String destination = reservation.getDestination().getAbsolutePath();
+            if (!destination.startsWith("\\")) {
+                final File[] roots = File.listRoots();
+                if (roots != null) {
+                    for (final File root : roots) {
+                        final String rootString = root.getAbsolutePath();
+                        if (destination.startsWith(rootString)) {
+                            bestRootMatch = rootString;
+                            break;
+                        }
                     }
-                    break;
                 }
-                destinationPath = destinationPath.getParentFile();
+            } else {
+                // fallback support for \\netshares without assigned drive letter
+                bestRootMatch = destination;
+            }
+        } else {
+            try {
+                final List<ProcMounts> procMounts = ProcMounts.list();
+                if (procMounts != null) {
+                    final String destination = reservation.getDestination().getAbsolutePath();
+                    for (final ProcMounts procMount : procMounts) {
+                        if (!procMount.isReadOnly() && destination.startsWith(procMount.getMountPoint())) {
+                            if (bestRootMatch == null || (procMount.getMountPoint().length() > bestRootMatch.length())) {
+                                bestRootMatch = procMount.getMountPoint();
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                LogController.CL().log(e);
+            }
+        }
+        if (bestRootMatch == null || !new File(bestRootMatch).exists()) {
+            return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
+        }
+        final long forcedFreeSpaceOnDisk = Math.max(0l, config.getForcedFreeSpaceOnDisk() * 1024l * 1024l);
+        long requestedDiskSpace = Math.max(0, reservation.getSize()) + forcedFreeSpaceOnDisk;
+        final long freeDiskSpace = new File(bestRootMatch).getUsableSpace();
+        if (freeDiskSpace < requestedDiskSpace) {
+            return DISKSPACERESERVATIONRESULT.FAILED;
+        }
+        for (final DiskSpaceReservation reserved : reservations.keySet()) {
+            if (reserved.getDestination().getAbsolutePath().startsWith(bestRootMatch)) {
+                requestedDiskSpace += Math.max(0, reserved.getSize());
+                if (freeDiskSpace < requestedDiskSpace) {
+                    return DISKSPACERESERVATIONRESULT.FAILED;
+                }
             }
         }
         if (requestor != null) {
@@ -97,7 +111,7 @@ public class DiskSpaceManager {
     }
 
     public synchronized boolean free(DiskSpaceReservation reservation, Object requestor) {
-        Object currentHolder = getRequestor(reservation);
+        final Object currentHolder = getRequestor(reservation);
         if (currentHolder != null && requestor == currentHolder) {
             reservations.remove(reservation);
             return true;
@@ -118,9 +132,9 @@ public class DiskSpaceManager {
     }
 
     public synchronized void freeAllReservationsBy(Object requestor) {
-        Iterator<Entry<DiskSpaceReservation, Object>> it = reservations.entrySet().iterator();
+        final Iterator<Entry<DiskSpaceReservation, Object>> it = reservations.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<DiskSpaceReservation, Object> next = it.next();
+            final Entry<DiskSpaceReservation, Object> next = it.next();
             if (next.getValue() == requestor) {
                 it.remove();
             }
