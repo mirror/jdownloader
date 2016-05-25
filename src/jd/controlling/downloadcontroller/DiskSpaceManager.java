@@ -36,6 +36,55 @@ public class DiskSpaceManager {
         return checkAndReserve(reservation, null);
     }
 
+    public static String getRootFor(File file) {
+        String bestRootMatch = null;
+        if (CrossSystem.isUnix()) {
+            try {
+                final List<ProcMounts> procMounts = ProcMounts.list();
+                if (procMounts != null) {
+                    final String destination = file.getAbsolutePath();
+                    for (final ProcMounts procMount : procMounts) {
+                        if (!procMount.isReadOnly() && destination.startsWith(procMount.getMountPoint())) {
+                            if (bestRootMatch == null || (procMount.getMountPoint().length() > bestRootMatch.length())) {
+                                bestRootMatch = procMount.getMountPoint();
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                LogController.CL().log(e);
+            }
+        }
+        if (bestRootMatch == null) {
+            // fallback to File.listRoots
+            final String destination = file.getAbsolutePath();
+            if (!destination.startsWith("\\")) {
+                final File[] roots = File.listRoots();
+                if (roots != null) {
+                    for (final File root : roots) {
+                        final String rootString = root.getAbsolutePath();
+                        if (destination.startsWith(rootString)) {
+                            bestRootMatch = rootString;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // simple unc support (netshares without assigned drive letter)
+                File existingFile = file;
+                while (existingFile != null) {
+                    if (existingFile.exists()) {
+                        bestRootMatch = existingFile.getAbsolutePath();
+                        break;
+                    } else {
+                        existingFile = existingFile.getParentFile();
+                    }
+                }
+            }
+        }
+        return bestRootMatch;
+    }
+
     public synchronized DISKSPACERESERVATIONRESULT checkAndReserve(DiskSpaceReservation reservation, Object requestor) {
         if (reservation == null) {
             throw new IllegalArgumentException("reservation must not be null!");
@@ -53,48 +102,15 @@ public class DiskSpaceManager {
             return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
         }
         String bestRootMatch = null;
-        if (CrossSystem.isUnix()) {
+        if (Application.getJavaVersion() >= Application.JAVA17) {
             try {
-                final List<ProcMounts> procMounts = ProcMounts.list();
-                if (procMounts != null) {
-                    final String destination = reservation.getDestination().getAbsolutePath();
-                    for (final ProcMounts procMount : procMounts) {
-                        if (!procMount.isReadOnly() && destination.startsWith(procMount.getMountPoint())) {
-                            if (bestRootMatch == null || (procMount.getMountPoint().length() > bestRootMatch.length())) {
-                                bestRootMatch = procMount.getMountPoint();
-                            }
-                        }
-                    }
-                }
-            } catch (IOException e) {
+                bestRootMatch = FileStoreHacks.getRootFor(reservation.getDestination());
+            } catch (final IOException e) {
                 LogController.CL().log(e);
             }
         }
         if (bestRootMatch == null) {
-            final String destination = reservation.getDestination().getAbsolutePath();
-            if (!destination.startsWith("\\")) {
-                final File[] roots = File.listRoots();
-                if (roots != null) {
-                    for (final File root : roots) {
-                        final String rootString = root.getAbsolutePath();
-                        if (destination.startsWith(rootString)) {
-                            bestRootMatch = rootString;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // simple unc support (netshares without assigned drive letter)
-                File existingFile = reservation.getDestination();
-                while (existingFile != null) {
-                    if (existingFile.exists()) {
-                        bestRootMatch = existingFile.getAbsolutePath();
-                        break;
-                    } else {
-                        existingFile = existingFile.getParentFile();
-                    }
-                }
-            }
+            bestRootMatch = getRootFor(reservation.getDestination());
         }
         if (bestRootMatch == null || !new File(bestRootMatch).exists()) {
             return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
