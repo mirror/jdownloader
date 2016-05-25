@@ -1084,4 +1084,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     String youtube_demux();
 
+    @Default(lngs = { "en" }, values = { "Segment Stream" })
+
+    String youtube_segment();
+
 }

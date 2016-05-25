@@ -114,9 +114,11 @@ public enum YoutubeITAG {
     MP4_VIDEO_1080P_H264_AUDIO_AAC_3D(85, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
     // not sure
     MP4_VIDEO_240P_H264_AUDIO_AAC_3D(83, StreamContainer.MP4, VideoResolution.P_240, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_96),
-
-    MP4_VIDEO_360P_H264_AUDIO_AAC(18, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
-    MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
+    // seams like there are no 96 kbit versions any more.
+    // MP4_VIDEO_360P_H264_AUDIO_AAC(18, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC,
+    // AudioBitrate.KBIT_128),
+    // MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30,
+    // AudioCodec.AAC, AudioBitrate.KBIT_128),
     MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1(82, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_96),
     MP4_VIDEO_360P_H264_AUDIO_AAC_V1(18, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_96),
     // 192 kbits aac
@@ -277,16 +279,16 @@ public enum YoutubeITAG {
                 return THREEGP_VIDEO_240P_H263_AUDIO_AAC;
             }
 
-        case 18:
-            if (version == null) {
-                version = YoutubeITAGVersion.getByDate(uploadDate);
-            }
-            switch (version) {
-            case V1:
-                return MP4_VIDEO_360P_H264_AUDIO_AAC_V1;
-            default:
-                return MP4_VIDEO_360P_H264_AUDIO_AAC;
-            }
+            // case 18:
+            // if (version == null) {
+            // version = YoutubeITAGVersion.getByDate(uploadDate);
+            // }
+            // switch (version) {
+            // case V1:
+            // return MP4_VIDEO_360P_H264_AUDIO_AAC_V1;
+            // default:
+            // return MP4_VIDEO_360P_H264_AUDIO_AAC;
+            // }
         case 22:
             if (version == null) {
                 version = YoutubeITAGVersion.getByDate(uploadDate);
@@ -299,16 +301,6 @@ public enum YoutubeITAG {
                 return MP4_VIDEO_720P_H264_AUDIO_AAC_V3;
             default:
                 return MP4_VIDEO_720P_H264_AUDIO_AAC;
-            }
-        case 82:
-            if (version == null) {
-                version = YoutubeITAGVersion.getByDate(uploadDate);
-            }
-            switch (version) {
-            case V1:
-                return MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1;
-            default:
-                return MP4_VIDEO_360P_H264_AUDIO_AAC_3D;
             }
 
         case 84:

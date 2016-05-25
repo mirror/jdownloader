@@ -611,29 +611,6 @@ public enum YoutubeVariantOld {
         }
     },
 
-    DEMUX_AAC_128_360P_3D_V4("AAC_128", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
-
-        public String _getName(Object caller) {
-            return _GUI.T.YoutubeVariant_name_AAC_128();
-        }
-
-        public String getQualityExtension(Object caller) {
-            return _GUI.T.YoutubeVariant_filenametag_AAC_128();
-        }
-
-    },
-    DEMUX_AAC_128_360P_V4("AAC_128", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
-
-        public String _getName(Object caller) {
-            return _GUI.T.YoutubeVariant_name_AAC_128();
-        }
-
-        public String getQualityExtension(Object caller) {
-            return _GUI.T.YoutubeVariant_filenametag_AAC_128();
-        }
-
-    },
-
     DEMUX_AAC_128_720P_3D_V1("AAC_128", VariantGroup.AUDIO, DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, YoutubeConverterMP4ToAACAudio.getInstance()) {
 
         public String _getName(Object caller) {
@@ -723,34 +700,6 @@ public enum YoutubeVariantOld {
 
     },
 
-    DEMUX_M4A_128_360P_3D_V4("M4A_128", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
-
-        public String _getName(Object caller) {
-            return _GUI.T.YoutubeVariant_name_M4A_128();
-        }
-
-        public String getQualityExtension(Object caller) {
-            return _GUI.T.YoutubeVariant_filenametag_M4A_128();
-        }
-
-        // public double getQualityRating() {
-        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() + 0.00000360;
-        // }
-    },
-    DEMUX_M4A_128_360P_V4("M4A_128", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
-
-        public String _getName(Object caller) {
-            return _GUI.T.YoutubeVariant_name_M4A_128();
-        }
-
-        public String getQualityExtension(Object caller) {
-            return _GUI.T.YoutubeVariant_filenametag_M4A_128();
-        }
-
-        // public double getQualityRating() {
-        // return AudioCodec.M4A.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000360;
-        // }
-    },
     DEMUX_M4A_128_720P_3D_V1("M4A_128", VariantGroup.AUDIO, DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()) {
 
         public String _getName(Object caller) {
@@ -1042,16 +991,6 @@ public enum YoutubeVariantOld {
         }
     },
 
-    MP4_360("MP4_360", VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null) {
-
-        public String _getName(Object caller) {
-            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
-        }
-
-        public String getQualityExtension(Object caller) {
-            return _GUI.T.YoutubeVariant_filenametag_MP4_360();
-        }
-    },
     MP4_360_AAC96("MP4_360", VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null) {
 
         public String _getName(Object caller) {
@@ -1085,16 +1024,6 @@ public enum YoutubeVariantOld {
         }
     },
 
-    MP4_3D_360(null, VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null) {
-
-        public String _getName(Object caller) {
-            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(null), getVideoCodec(), getAudioQuality(), getAudioCodec());
-        }
-
-        public String getQualityExtension(Object caller) {
-            return _GUI.T.YoutubeVariant_filenametag_MP4_3D_360();
-        }
-    },
     MP4_3D_720(null, VariantGroup.VIDEO, DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null) {
 
         public String _getName(Object caller) {

@@ -6213,9 +6213,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Subtitle language. *lng*->EN *lng[display]* -> English" })
     String YoutubeHelper_getDescription_language();
 
-    @Default(lngs = { "en" }, values = { "Stream name/id *itag[audio]*->DASH_AUDIO_128K_AAC *itag[audioid]*->140" })
-    String YoutubeHelper_getDescription_itag();
-
     @Default(lngs = { "en" }, values = { "Hoster Logo" })
     String HosterChooserTableModel_column_icon();
 
@@ -6409,4 +6406,31 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Playlist Name e.g. Canadian Animals" })
 
     String YoutubeHelper_getDescription_playlist_name();
+
+    @Default(lngs = { "en" }, values = { "Audio Stream name. e.g. DASH_AUDIO_128K_AAC" })
+
+    String YoutubeHelper_getDescription_itag_audio_name();
+
+    @Default(lngs = { "en" }, values = { "Video Stream name. e.g. DASH_WEBM_VIDEO_240P_VP9" })
+
+    String YoutubeHelper_getDescription_itag_video_name();
+
+    @Default(lngs = { "en" }, values = { "Audio Stream id. e.g. 140" })
+
+    String YoutubeHelper_getDescription_itag_audio_id();
+
+    @Default(lngs = { "en" }, values = { "Video Stream id. e.g. 242" })
+
+    String YoutubeHelper_getDescription_itag_video_id();
+
+    @Default(lngs = { "en" }, values = { "Edit Dropdown column entries" })
+
+    String youtube_edit_variant_dropdown_list();
+
+    @Default(lngs = { "en" }, values = { "'%s2' Variants dropdown entries" })
+
+    String youtube_choose_quick_selection_dropdown_table(String string);
+
+    @Default(lngs = { "en" }, values = { "Choose all Variant that should be in the linkgrabber variants column dropdown list for the selected collections" })
+    String youtube_choose_dropdown_list();
 }

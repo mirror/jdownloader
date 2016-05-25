@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
@@ -145,6 +146,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     private VariantBase baseVariant;
     // private YoutubeBasicVariantStorable storable;
     private Data        genericInfo;
+    private VariantInfo variantInfo;
 
     // public YoutubeBasicVariant(YoutubeBasicVariantStorable base, YoutubeVariant baseVariant) {
     // this.baseVariant = baseVariant;
@@ -253,17 +255,23 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         if (ret instanceof SubtitleVariant) {
             String old = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
             if (old != null) {
-                try {
-                    QueryInfo q = Request.parseQuery(old);
-                    ((SubtitleVariant) ret).getGenericInfo().setBase(null);
-                    ((SubtitleVariant) ret).getGenericInfo().setLanguage(q.get("lng"));
-                    ((SubtitleVariant) ret).getGenericInfo().setSourceLanguage(q.get("src"));
-                    ((SubtitleVariant) ret).getGenericInfo().setKind(q.get("kind"));
+                if (old.length() == 2) {
+                    ((SubtitleVariant) ret).getGenericInfo().setLanguage(old);
                     downloadLink.removeProperty(YoutubeHelper.YT_SUBTITLE_CODE);
                     YoutubeHelper.writeVariantToDownloadLink(downloadLink, ret);
+                } else {
+                    try {
+                        QueryInfo q = Request.parseQuery(old);
+                        ((SubtitleVariant) ret).getGenericInfo().setBase(null);
+                        ((SubtitleVariant) ret).getGenericInfo().setLanguage(q.get("lng"));
+                        ((SubtitleVariant) ret).getGenericInfo().setSourceLanguage(q.get("src"));
+                        ((SubtitleVariant) ret).getGenericInfo().setKind(q.get("kind"));
+                        downloadLink.removeProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+                        YoutubeHelper.writeVariantToDownloadLink(downloadLink, ret);
 
-                } catch (Throwable e) {
-                    Log.log(e);
+                    } catch (Throwable e) {
+                        throw new WTFException(e);
+                    }
                 }
 
             }
@@ -397,6 +405,14 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     public String getStandardGroupingID() {
 
         return getGroup().name();
+    }
+
+    public void setVariantInfo(VariantInfo variantInfo) {
+        this.variantInfo = variantInfo;
+    }
+
+    public VariantInfo getVariantInfo() {
+        return variantInfo;
     }
 
     // public abstract void setAlternatives(List<String> altIds);

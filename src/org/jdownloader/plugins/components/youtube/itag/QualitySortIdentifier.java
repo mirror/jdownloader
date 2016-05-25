@@ -78,6 +78,19 @@ public enum QualitySortIdentifier implements LabelInterface {
             return CompareUtils.compare(FileContainer.getSortId(o1), FileContainer.getSortId(o2));
         }
     },
+    SEGMENT_STREAM {
+        @Override
+        public String getLabel() {
+            return _JDT.T.youtube_segment();
+        }
+
+        public int compare(AbstractVariant o1, AbstractVariant o2) {
+
+            boolean b1 = o1.getVariantInfo() != null && o1.getVariantInfo().hasDefaultSegmentsStream();
+            boolean b2 = o2.getVariantInfo() != null && o2.getVariantInfo().hasDefaultSegmentsStream();
+            return CompareUtils.compare(b2, b1);
+        }
+    },
     DEMUX_AUDIO {
         @Override
         public String getLabel() {

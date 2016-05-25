@@ -492,6 +492,7 @@ public class AbstractFFmpegBinary {
                     logger.info("ExitCode:" + exitCode);
                     final boolean okay = exitCode == 0;
                     if (!okay) {
+
                         throw new FFMpegException("FFmpeg Failed", sdtStream.toString(), errorStreamString);
                     } else {
                         return sdtStream.toString();

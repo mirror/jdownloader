@@ -9,6 +9,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.NullInputStream;
+import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
@@ -25,18 +37,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.NullInputStream;
-import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.translate._JDT;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class SegmentDownloader extends DownloadInterface {
@@ -118,12 +118,20 @@ public class SegmentDownloader extends DownloadInterface {
                 connectionHandler.addThrottledConnection(meteredThrottledInputStream);
             }
             for (final Segment seg : segments) {
+                if (abort.get()) {
+                    return;
+                }
                 final Browser br = obr.cloneBrowser();
+
                 final Request getRequest = createSegmentRequest(seg);
+
                 try {
                     currentConnection = br.openRequestConnection(getRequest);
                     meteredThrottledInputStream.setInputStream(currentConnection.getInputStream());
                     while (true) {
+                        if (abort.get()) {
+                            return;
+                        }
                         final int len = meteredThrottledInputStream.read(readWriteBuffer);
                         if (len > 0) {
                             localIO = true;
@@ -148,7 +156,8 @@ public class SegmentDownloader extends DownloadInterface {
             }
             throw e;
         } catch (Throwable e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage());
+
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
         } finally {
             close(outputStream);
             if (connectionHandler != null && meteredThrottledInputStream != null) {
@@ -158,7 +167,9 @@ public class SegmentDownloader extends DownloadInterface {
     }
 
     private GetRequest createSegmentRequest(Segment seg) throws IOException {
-        return new GetRequest(seg.getUrl());
+        GetRequest ret = new GetRequest(seg.getUrl());
+
+        return ret;
     }
 
     public long getBytesLoaded() {
@@ -333,6 +344,9 @@ public class SegmentDownloader extends DownloadInterface {
                 logger.info("externalStop recieved");
             }
             terminate();
+        }
+        if (currentConnection != null) {
+            currentConnection.disconnect();
         }
     }
 
