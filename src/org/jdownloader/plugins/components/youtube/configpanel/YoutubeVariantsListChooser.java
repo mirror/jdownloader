@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.components.youtube.configpanel;
 
+import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
@@ -12,23 +13,31 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.JTableHeader;
 
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.components.youtube.Projection;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.choosevariantdialog.CustomVariantsMapTable;
@@ -103,6 +112,8 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
 
     private YoutubeVariantCollection            collection;
 
+    private HashSet<AbstractVariantWrapper>     selected;
+
     @Override
     public ModalityType getModalityType() {
         return ModalityType.MODELESS;
@@ -116,17 +127,19 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
         this.collection = collection;
 
         initVariants();
+        selected = new HashSet<AbstractVariantWrapper>();
+        HashSet<String> idSet = collection.createUniqueIDSet();
+        for (AbstractVariantWrapper v : variantWrapperList) {
+            String id = v.getVariableIDStorable().createUniqueID();
+            if (idSet.contains(id)) {
+                selected.add(v);
+            } else if (StringUtils.equals(v.getVariableIDStorable().getContainer(), collection.getGroupingID())) {
+                selected.add(v);
+            } else if (StringUtils.equals(v.getVariableIDStorable().createGroupingID(), collection.getGroupingID())) {
+                selected.add(v);
+            }
 
-        // for (AbstractVariantWrapper v : getModel().getTableData()) {
-        // if (idSet.contains(v.getVariableIDStorable().createUniqueID())) {
-        // selection.add(v);
-        // } else if (StringUtils.equals(v.getVariableIDStorable().getContainer(), link.getGroupingID())) {
-        // selection.add(v);
-        // } else if (StringUtils.equals(v.getVariableIDStorable().createGroupingID(), link.getGroupingID())) {
-        // selection.add(v);
-        // }
-        //
-        // }
+        }
 
     }
 
@@ -235,7 +248,48 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
     }
 
     protected CustomVariantsMapTableModel createTableModel() {
-        return new CustomVariantsMapTableModel(variantWrapperList, null);
+        return new CustomVariantsMapTableModel(variantWrapperList, null) {
+            @Override
+            protected void initColumns() {
+                addColumn(new ExtCheckColumn<AbstractVariantWrapper>("") {
+
+                    public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+                        final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+                            private final Icon ok = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
+
+                            @Override
+                            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                                setIcon(ok);
+                                setHorizontalAlignment(CENTER);
+                                setText(null);
+                                return this;
+                            }
+
+                        };
+
+                        return ret;
+                    }
+
+                    @Override
+                    public int getMaxWidth() {
+
+                        return 30;
+                    }
+
+                    @Override
+                    protected boolean getBooleanValue(AbstractVariantWrapper value) {
+                        return selected.contains(value);
+                    }
+
+                    @Override
+                    protected void setBooleanValue(boolean value, AbstractVariantWrapper object) {
+                    }
+                });
+                super.initColumns();
+            }
+        };
     }
 
     protected String getDescriptionText() {
