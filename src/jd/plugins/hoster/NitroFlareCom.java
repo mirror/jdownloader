@@ -261,7 +261,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             br.setFollowRedirects(true);
             requestFileInformationApi(downloadLink);
             if (downloadLink.getBooleanProperty("premiumRequired", false)) {
-                throwPremiumRequiredException(downloadLink);
+                throwPremiumRequiredException(downloadLink, true);
             }
             doFree(null, downloadLink);
         }
@@ -372,7 +372,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
         }
         if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
-            throwPremiumRequiredException(this.getDownloadLink());
+            throwPremiumRequiredException(this.getDownloadLink(), false);
         }
         if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
             // ﻿Free downloading is not possible. You have to wait 178 minutes to download your next file.
@@ -765,7 +765,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (inValidate(dllink)) {
             // links that require premium...
             if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
-                throwPremiumRequiredException(downloadLink);
+                throwPremiumRequiredException(downloadLink, true);
             }
             String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null ? "&" + validateAccount(account) : "");
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
@@ -904,9 +904,11 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private void throwPremiumRequiredException(DownloadLink link) throws PluginException {
+    private void throwPremiumRequiredException(DownloadLink link, boolean setProperty) throws PluginException {
         try {
-            link.setProperty("premiumRequired", Boolean.TRUE);
+            if (setProperty) {
+                link.setProperty("premiumRequired", Boolean.TRUE);
+            }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
             if (e instanceof PluginException) {
@@ -995,6 +997,8 @@ public class NitroFlareCom extends antiDDoSForHost {
             link.setProperty("freelink2", Property.NULL);
             link.setProperty("freelink", Property.NULL);
             link.setProperty("premlink", Property.NULL);
+            link.setProperty("premiumRequired", Property.NULL);
+            link.setProperty("passwordRequired", Property.NULL);
         }
     }
 
