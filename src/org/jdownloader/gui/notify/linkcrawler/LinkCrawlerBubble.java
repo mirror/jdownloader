@@ -5,6 +5,7 @@ import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkOrigin;
@@ -21,56 +22,65 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleContent> {
-    
+
     @Override
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
         JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-        
+
     }
-    
+
     protected void onSettings() {
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
-        
+
     }
-    
+
     private final WeakReference<LinkCollectorCrawler> crawler;
-    
+
     public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, LinkCollectorCrawler crawler) {
         super(linkCrawlerBubbleSupport, _GUI.T.balloon_new_links(), new LinkCrawlerBubbleContent());
         this.crawler = new WeakReference<LinkCollectorCrawler>(crawler);
     }
-    
+
     @Override
     protected int getTimeout() {
         return 0;
     }
-    
+
     public int getSuperTimeout() {
         return super.getTimeout();
     }
-    
+
     protected void update() {
-        LinkCollectorCrawler crwl = crawler.get();
+        final LinkCollectorCrawler crwl = crawler.get();
         if (crwl != null) {
             if (crwl instanceof JobLinkCrawler) {
-                JobLinkCrawler jlc = (JobLinkCrawler) crwl;
-                
-                LinkOrigin src = jlc.getJob().getOrigin().getOrigin();
-                
+                final JobLinkCrawler jlc = (JobLinkCrawler) crwl;
+                final LinkCollectingJob job = jlc.getJob();
+                final LinkOrigin src;
+                if (job != null) {
+                    src = job.getOrigin().getOrigin();
+                } else {
+                    src = null;
+                }
                 if (src == null) {
                     setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
                 } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
                     setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
                 } else if (src == LinkOrigin.CLIPBOARD) {
-                    String txt = jlc.getJob().getText();
+                    final String txt;
+                    if (job != null) {
+                        txt = job.getText();
+                    } else {
+                        txt = null;
+                    }
                     if (StringUtils.isNotEmpty(txt)) {
                         try {
-                            URL url = new URL(txt);
+                            final URL url = new URL(txt);
                             setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard_url(url.getHost()));
                         } catch (MalformedURLException e) {
                             setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
@@ -78,16 +88,15 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
                     } else {
                         setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
                     }
-                    
+
                 } else {
                     setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
                 }
                 getContentComponent().update(jlc);
-                
+
                 pack();
                 BubbleNotify.getInstance().relayout();
             }
         }
     }
-    
 }

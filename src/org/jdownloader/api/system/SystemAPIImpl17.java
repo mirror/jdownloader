@@ -12,7 +12,6 @@ import java.util.List;
 import jd.controlling.downloadcontroller.FileStoreHacks;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 
 public class SystemAPIImpl17 {
@@ -28,28 +27,10 @@ public class SystemAPIImpl17 {
             customPath = false;
         }
         if (roots.size() == 0) {
-            if (CrossSystem.isUnix()) {
-                try {
-                    final List<ProcMounts> procMounts = ProcMounts.list();
-                    if (procMounts != null) {
-                        for (final ProcMounts procMount : procMounts) {
-                            if (!procMount.isReadOnly()) {
-                                final String mountPoint = procMount.getMountPoint();
-                                if ("/".equals(mountPoint) || mountPoint.startsWith("/home") || mountPoint.startsWith("/mnt") || mountPoint.startsWith("/media")) {
-                                    roots.add(new File(mountPoint).toPath());
-                                }
-                            }
-                        }
-                    }
-                } catch (final IOException e) {
-                }
-            }
-            if (roots.size() == 0) {
-                for (final FileStore fileStore : FileSystems.getDefault().getFileStores()) {
-                    final Path fileStorePath = FileStoreHacks.getPath(fileStore);
-                    if (fileStorePath != null) {
-                        roots.add(fileStorePath);
-                    }
+            for (final FileStore fileStore : FileSystems.getDefault().getFileStores()) {
+                final Path fileStorePath = FileStoreHacks.getPath(fileStore);
+                if (fileStorePath != null) {
+                    roots.add(fileStorePath);
                 }
             }
         }

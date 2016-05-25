@@ -100,7 +100,7 @@ public class DiskSpaceManager {
             return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
         }
         String bestRootMatch = null;
-        if (Application.getJavaVersion() >= Application.JAVA17 && CrossSystem.isUnix()) {
+        if (Application.getJavaVersion() >= Application.JAVA17 && (CrossSystem.isUnix() || CrossSystem.isMac())) {
             try {
                 bestRootMatch = FileStoreHacks.getRootFor(reservation.getDestination());
             } catch (final IOException e) {
