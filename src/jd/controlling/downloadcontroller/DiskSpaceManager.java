@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.api.system.ProcMounts;
 import org.jdownloader.logging.LogController;
@@ -63,7 +64,13 @@ public class DiskSpaceManager {
                 if (roots != null) {
                     for (final File root : roots) {
                         final String rootString = root.getAbsolutePath();
-                        if (destination.startsWith(rootString)) {
+                        final boolean startsWith;
+                        if (CrossSystem.isWindows()) {
+                            startsWith = StringUtils.startsWithCaseInsensitive(destination, rootString);
+                        } else {
+                            startsWith = destination.startsWith(rootString);
+                        }
+                        if (startsWith) {
                             bestRootMatch = rootString;
                             break;
                         }
@@ -120,7 +127,13 @@ public class DiskSpaceManager {
             return DISKSPACERESERVATIONRESULT.FAILED;
         }
         for (final DiskSpaceReservation reserved : reservations.keySet()) {
-            if (reserved.getDestination().getAbsolutePath().startsWith(bestRootMatch)) {
+            final boolean startsWith;
+            if (CrossSystem.isWindows()) {
+                startsWith = StringUtils.startsWithCaseInsensitive(reserved.getDestination().getAbsolutePath(), bestRootMatch);
+            } else {
+                startsWith = reserved.getDestination().getAbsolutePath().startsWith(bestRootMatch);
+            }
+            if (startsWith) {
                 requestedDiskSpace += Math.max(0, reserved.getSize());
                 if (freeDiskSpace < requestedDiskSpace) {
                     return DISKSPACERESERVATIONRESULT.FAILED;
