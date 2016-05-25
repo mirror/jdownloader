@@ -22,6 +22,69 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.Log;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
+import org.jdownloader.controlling.DownloadLinkView;
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.youtube.ClipDataCache;
+import org.jdownloader.plugins.components.youtube.StreamCollection;
+import org.jdownloader.plugins.components.youtube.YoutubeClipData;
+import org.jdownloader.plugins.components.youtube.YoutubeConfig;
+import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
+import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeHostPluginInterface;
+import org.jdownloader.plugins.components.youtube.YoutubeLinkGrabberExtender;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialog;
+import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
+import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
+import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleVariantOld;
+import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
+import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
+import org.jdownloader.plugins.components.youtube.variants.DownloadType;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
+import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
+import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
+import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
+import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
@@ -59,66 +122,6 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.action.BasicAction;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.logging2.extmanager.Log;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.ProgressDialog;
-import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
-import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.segment.SegmentDownloader;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.youtube.ClipDataCache;
-import org.jdownloader.plugins.components.youtube.StreamCollection;
-import org.jdownloader.plugins.components.youtube.YoutubeClipData;
-import org.jdownloader.plugins.components.youtube.YoutubeConfig;
-import org.jdownloader.plugins.components.youtube.YoutubeFinalLinkResource;
-import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeHostPluginInterface;
-import org.jdownloader.plugins.components.youtube.YoutubeLinkGrabberExtender;
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
-import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialog;
-import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
-import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
-import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleVariantOld;
-import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
-import org.jdownloader.plugins.components.youtube.variants.DownloadType;
-import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
-import org.jdownloader.plugins.components.youtube.variants.SubtitleVariantInfo;
-import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
-import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
-import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -383,9 +386,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             HashSet<LinkVariant> checkedAlternatives = new HashSet<LinkVariant>();
             AbstractVariant orgVariant = getVariant(downloadLink);
             try {
-                int maxAlternativesChecks = 10;
-                boolean triedToResetTheCache = false;
-                test: while (maxAlternativesChecks-- > 0) {
+                int maxAlternativesChecks = CFG_YOUTUBE.CFG.getAutoAlternativeSearchDepths();
+                boolean hasCache = ClipDataCache.hasCache(helper, downloadLink);
+                boolean triedToResetTheCache = !hasCache;
+                test: while (maxAlternativesChecks-- >= 0) {
 
                     AbstractVariant vv;
                     checkedAlternatives.add(vv = getVariant(downloadLink));
@@ -562,19 +566,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             // do not check alternatives
                             throw e;
                         }
-                        List<LinkVariant> alternatives = getVariantsByLink(downloadLink);
-                        if (alternatives != null) {
-                            for (LinkVariant v : alternatives) {
 
-                                if (!checkedAlternatives.contains(v)) {
-                                    logger.info("Try next alternative variant: " + v);
+                        LinkVariant alternative = getAlternatives(downloadLink, orgVariant, checkedAlternatives);
 
-                                    downloadLink.getTempProperties().setProperty(YT_ALTERNATE_VARIANT, v);
-                                    continue test;
+                        if (alternative != null) {
+                            logger.info("Try next alternative variant: " + alternative);
 
-                                }
-                            }
+                            downloadLink.getTempProperties().setProperty(YT_ALTERNATE_VARIANT, alternative);
+                            continue test;
+
                         }
+
                         downloadLink.getTempProperties().removeProperty(YT_ALTERNATE_VARIANT);
                         throw e;
                     }
@@ -631,6 +633,134 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return AvailableStatus.TRUE;
 
     }
+
+    private LinkVariant getAlternatives(DownloadLink downloadLink, AbstractVariant variant, HashSet<LinkVariant> blacklisted) throws Exception {
+
+        final YoutubeHelper helper;
+        final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), downloadLink);
+
+        switch (variant.getGroup()) {
+        case DESCRIPTION:
+            return null;
+        case SUBTITLES:
+            List<VariantInfo> subtitles = clipData.findSubtitleVariants();
+            if (subtitles != null) {
+
+                for (VariantInfo v : subtitles) {
+                    if (StringUtils.equals(v.getVariant()._getUniqueId(), variant._getUniqueId())) {
+                        if (!blacklisted.contains(v.getVariant())) {
+                            return v.getVariant();
+                        }
+                    }
+                }
+
+                Locale choosenLocale = ((SubtitleVariant) variant).getGenericInfo()._getLocale();
+                for (VariantInfo v : subtitles) {
+                    Locale vLocale = ((SubtitleVariant) v.getVariant()).getGenericInfo()._getLocale();
+                    if (StringUtils.equals(vLocale.getLanguage(), choosenLocale.getLanguage())) {
+                        if (!blacklisted.contains(v.getVariant())) {
+                            return v.getVariant();
+                        }
+                    }
+
+                }
+
+            }
+            break;
+        case AUDIO:
+        case IMAGE:
+        case VIDEO:
+            List<VariantInfo> variants = clipData.findVariants();
+            helper.extendedDataLoading(variants);
+            // sorts the best matching variants first. (based on quality rating)
+            Collections.sort(variants, new Comparator<VariantInfo>() {
+
+                @Override
+                public int compare(VariantInfo o1, VariantInfo o2) {
+                    return o2.compareTo(o1);
+                }
+            });
+
+            for (VariantInfo v : variants) {
+                if (StringUtils.equals(v.getVariant()._getUniqueId(), variant._getUniqueId())) {
+                    if (!blacklisted.contains(v.getVariant())) {
+                        return v.getVariant();
+                    }
+                }
+            }
+
+            VariantInfo vCur = null;
+            VariantInfo vLast = null;
+
+            for (int i = 0; i < variants.size(); i++) {
+                vCur = variants.get(i);
+                int comCur = variant.compareTo(vCur.getVariant());
+                if (comCur == 0) {
+
+                    if (!blacklisted.contains(vCur.getVariant())) {
+                        return vCur.getVariant();
+                    }
+
+                } else if (comCur > 0) {
+                    if (vLast != null) {
+                        return vLast.getVariant();
+                    } else {
+                        return vCur.getVariant();
+                    }
+                }
+
+                vLast = vCur;
+            }
+
+            for (VariantInfo v : variants) {
+                if (StringUtils.equals(v.getVariant().getTypeId(), variant.getTypeId())) {
+                    if (!blacklisted.contains(v.getVariant())) {
+                        return v.getVariant();
+                    }
+                }
+            }
+
+            for (VariantInfo v : variants) {
+                if (v.getVariant().getGroup() == variant.getGroup()) {
+                    if (v.getVariant().getContainer() == variant.getContainer()) {
+                        if (variant instanceof VideoVariant && v.getVariant() instanceof VideoVariant) {
+                            if (((VideoVariant) v.getVariant()).getVideoCodec() == ((VideoVariant) variant).getVideoCodec()) {
+                                if (((VideoVariant) v.getVariant()).getAudioCodec() == ((VideoVariant) variant).getAudioCodec()) {
+                                    if (!blacklisted.contains(v.getVariant())) {
+                                        return v.getVariant();
+                                    }
+                                }
+                            }
+                        } else if (variant instanceof AudioVariant && v.getVariant() instanceof AudioVariant) {
+                            if (v.getVariant().getContainer() == variant.getContainer()) {
+                                if (((AudioVariant) v.getVariant()).getAudioCodec() == ((AudioVariant) variant).getAudioCodec()) {
+                                    if (!blacklisted.contains(v.getVariant())) {
+                                        return v.getVariant();
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+
+                }
+
+            }
+
+            for (VariantInfo v : variants) {
+                if (v.getVariant().getGroup() == variant.getGroup()) {
+                    if (v.getVariant().getContainer() == variant.getContainer()) {
+                        if (!blacklisted.contains(v.getVariant())) {
+                            return v.getVariant();
+                        }
+                    }
+                }
+
+            }
+
+        }
+        return null;
+    };
 
     private AvailableStatus requestFileInformationDescription(DownloadLink downloadLink, String id, YoutubeHelper helper) throws Exception, UnsupportedEncodingException {
         String description = downloadLink.getTempProperties().getStringProperty(YoutubeHelper.YT_DESCRIPTION);
@@ -737,11 +867,36 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
 
             }
+
+            for (YoutubeSubtitleStorable si : clipData.subtitles) {
+
+                if (StringUtils.equals(stVariant.getGenericInfo().getLanguage(), si.getLanguage())) {
+
+                    stVariant.setGenericInfo(si);
+                    SubtitleVariantInfo vi = new SubtitleVariantInfo(stVariant, clipData);
+                    // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, vi);
+
+                    return vi;
+                }
+
+            }
             return null;
         }
         StreamCollection audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio());
         StreamCollection videoStreams = clipData.getStreams(variant.getiTagVideo());
         StreamCollection dataStreams = clipData.getStreams(variant.getiTagData());
+        if (variant.getBaseVariant().getiTagAudio() != null && audioStreams == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid Audio Stream");
+            // return null;
+        }
+        if (variant.getiTagVideo() != null && videoStreams == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid Video Stream");
+            // return null;
+        }
+        if (variant.getiTagData() != null && dataStreams == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid Data Stream");
+            // return null;
+        }
         VariantInfo vi = new VariantInfo(variant, audioStreams, videoStreams, dataStreams);
         // downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT_INFO, vi);
         return vi;
@@ -803,13 +958,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         YoutubeFinalLinkResource streamData = null;
         if (isVideoStream) {
             streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-            if (streamData == null) {
-                requestFileInformation(downloadLink);
-                streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
-                if (streamData == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            // if (streamData == null) {
+            // requestFileInformation(downloadLink);
+            // streamData = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
+            // if (streamData == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // }
             dashName = getDashVideoFileName(downloadLink);
             dashChunksProperty = DASH_VIDEO_CHUNKS;
             chunkOffset = 0;
@@ -1075,7 +1230,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         if (segments != null) {
 
             dl = new SegmentDownloader(dashLink, dashDownloadable, br, request.getUrl(), segments);
-            return dl.startDownload();
+            boolean ret = dl.startDownload();
+            if (dl.externalDownloadStop()) {
+                return null;
+            }
+
+            return ret;
 
         }
         List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());

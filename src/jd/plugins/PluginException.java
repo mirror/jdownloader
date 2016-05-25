@@ -32,10 +32,14 @@ public class PluginException extends Exception {
         this(linkStatus, null, -1);
     }
 
-    public PluginException(int linkStatus, String errorMessage, long value) {
-        super(errorMessage);
+    public PluginException(int linkStatus, String errorMessage, long value, Throwable cause) {
+        super(errorMessage, cause);
         this.linkStatus = linkStatus;
         this.value = value;
+    }
+
+    public PluginException(int linkStatus, String errorMessage, long value) {
+        this(linkStatus, errorMessage, value, null);
     }
 
     public PluginException(int linkStatus, String errorMessage) {

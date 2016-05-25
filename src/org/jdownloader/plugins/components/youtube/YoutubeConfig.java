@@ -520,4 +520,20 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isDoExtendedAudioBitrateLookupEnabled();
 
     void setDoExtendedAudioBitrateLookupEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultIntValue(5)
+    @DescriptionForConfigEntry("If a Variant is not available, JD will try up to * alternatives")
+
+    int getAutoAlternativeSearchDepths();
+
+    void setAutoAlternativeSearchDepths(int i);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If disabled, JD will ignore the Youtube Collections, but create an extra link for every variant")
+
+    boolean isCollectionMergingEnabled();
+
+    void setCollectionMergingEnabled(boolean b);
 }

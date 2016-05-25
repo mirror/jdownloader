@@ -58,7 +58,7 @@ public class VariantInfo implements Comparable<VariantInfo> {
         this.audioStream = audio;
         this.videoStream = video;
         this.dataStreams = data;
-
+        v.setVariantInfo(this);
     }
 
     public AbstractVariant getVariant() {
@@ -70,7 +70,24 @@ public class VariantInfo implements Comparable<VariantInfo> {
 
     @Override
     public int compareTo(VariantInfo o) {
+
         return variant.compareTo(o.variant);
+    }
+
+    public boolean hasDefaultSegmentsStream() {
+        StreamCollection audio = getAudioStreams();
+        if (audio != null && audio.size() > 0) {
+            if (audio.get(0).getSegments() != null) {
+                return true;
+            }
+        }
+        StreamCollection video = getVideoStreams();
+        if (video != null && video.size() > 0) {
+            if (video.get(0).getSegments() != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

@@ -241,4 +241,15 @@ public class ClipDataCache {
         }
     }
 
+    public static boolean hasCache(YoutubeHelper helper, DownloadLink downloadLink) {
+        String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
+
+        synchronized (LOCK) {
+            String cachedID = videoID;
+            MinTimeWeakReference<CachedClipData> ref = CACHE.get(cachedID);
+            CachedClipData cachedData = ref == null ? null : ref.get();
+            return cachedData != null;
+        }
+    }
+
 }

@@ -64,13 +64,15 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
 
     private String kind;
     private String base;
+    private String name;
 
-    public YoutubeSubtitleStorable(String base, String language, String source, String kind) {
+    public YoutubeSubtitleStorable(String base, String name, String language, String source, String kind) {
 
         this.base = base;
         setLanguage(language);
         this.sourceLanguage = source;
         this.kind = kind;
+        this.name = name;
 
     }
 
@@ -84,7 +86,9 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
         if (StringUtils.isNotEmpty(kind)) {
             url += "&kind=" + encode(kind);
         }
-        ;
+        if (StringUtils.isNotEmpty(name)) {
+            url += "&name=" + encode(name);
+        }
         return url;
     }
 

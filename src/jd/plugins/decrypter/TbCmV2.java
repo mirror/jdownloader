@@ -525,44 +525,90 @@ public class TbCmV2 extends PluginForDecrypt {
             }
 
             // HashMap<Link, List<VariantInfo>> linkMap = new HashMap<Link, List<VariantInfo>>();
-            for (YoutubeVariantCollection l : links) {
-                if (!l.isEnabled()) {
-                    continue;
+            if (CFG_YOUTUBE.CFG.isCollectionMergingEnabled()) {
+                for (YoutubeVariantCollection l : links) {
+                    if (!l.isEnabled()) {
+                        continue;
+                    }
+                    ArrayList<VariantInfo> linkVariants = new ArrayList<VariantInfo>();
+                    if (StringUtils.isNotEmpty(l.getGroupingID())) {
+
+                        for (VariantInfo v : variants) {
+                            VariantIDStorable vi = storables.get(v);
+                            if (StringUtils.equals(l.getGroupingID(), vi.createGroupingID())) {
+                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
+                                    linkVariants.add(v);
+                                    helper.extendedDataLoading(v, variants);
+                                }
+                            } else if (StringUtils.equals(l.getGroupingID(), vi.getContainer())) {
+                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
+                                    linkVariants.add(v);
+                                    helper.extendedDataLoading(v, variants);
+                                }
+                            }
+                        }
+
+                    } else if (l.getVariants() != null && l.getVariants().size() > 0) {
+
+                        HashSet<String> idSet = l.createUniqueIDSet();
+                        for (VariantInfo v : variants) {
+                            VariantIDStorable vi = storables.get(v);
+                            if (idSet.contains(vi.createUniqueID())) {
+                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
+                                    linkVariants.add(v);
+                                    helper.extendedDataLoading(v, variants);
+
+                                }
+                            }
+                        }
+
+                    } else {
+                        continue;
+                    }
+
+                    Collections.sort(linkVariants, new Comparator<VariantInfo>() {
+
+                        @Override
+                        public int compare(VariantInfo o1, VariantInfo o2) {
+                            return o2.compareTo(o1);
+                        }
+                    });
+                    // remove dupes
+                    // System.out.println("Link " + l.getName());
+                    VariantInfo last = null;
+                    for (final Iterator<VariantInfo> it = linkVariants.iterator(); it.hasNext();) {
+                        VariantInfo cur = it.next();
+                        if (last != null) {
+                            if (StringUtils.equals(cur.getVariant().getTypeId(), last.getVariant().getTypeId())) {
+                                it.remove();
+                                continue;
+                            }
+                        }
+                        last = cur;
+                    }
+                    // for (final Iterator<VariantInfo> it = linkVariants.iterator(); it.hasNext();) {
+                    // VariantInfo cur = it.next();
+                    // System.out.println(cur.getVariant().getBaseVariant() + "\t" + cur.getVariant().getQualityRating());
+                    // }
+                    if (linkVariants.size() > 0) {
+                        DownloadLink lnk = createLink(l, linkVariants.get(0), linkVariants);
+
+                        decryptedLinks.add(lnk);
+                    }
+
                 }
+            } else {
                 ArrayList<VariantInfo> linkVariants = new ArrayList<VariantInfo>();
-                if (StringUtils.isNotEmpty(l.getGroupingID())) {
 
-                    for (VariantInfo v : variants) {
-                        VariantIDStorable vi = storables.get(v);
-                        if (StringUtils.equals(l.getGroupingID(), vi.createGroupingID())) {
-                            if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                                linkVariants.add(v);
-                                helper.extendedDataLoading(v, variants);
-                            }
-                        } else if (StringUtils.equals(l.getGroupingID(), vi.getContainer())) {
-                            if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                                linkVariants.add(v);
-                                helper.extendedDataLoading(v, variants);
-                            }
-                        }
+                for (VariantInfo v : variants) {
+                    VariantIDStorable vi = storables.get(v);
+
+                    if (allowedVariantsSet.contains(vi.createUniqueID())) {
+                        linkVariants.add(v);
+                        helper.extendedDataLoading(v, variants);
+
                     }
 
-                } else if (l.getVariants() != null && l.getVariants().size() > 0) {
-
-                    HashSet<String> idSet = l.createUniqueIDSet();
-                    for (VariantInfo v : variants) {
-                        VariantIDStorable vi = storables.get(v);
-                        if (idSet.contains(vi.createUniqueID())) {
-                            if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                                linkVariants.add(v);
-                                helper.extendedDataLoading(v, variants);
-
-                            }
-                        }
-                    }
-
-                } else {
-                    continue;
                 }
 
                 Collections.sort(linkVariants, new Comparator<VariantInfo>() {
@@ -589,12 +635,13 @@ public class TbCmV2 extends PluginForDecrypt {
                 // VariantInfo cur = it.next();
                 // System.out.println(cur.getVariant().getBaseVariant() + "\t" + cur.getVariant().getQualityRating());
                 // }
-                if (linkVariants.size() > 0) {
-                    DownloadLink lnk = createLink(l, linkVariants.get(0), linkVariants);
+                for (VariantInfo vi : linkVariants) {
 
+                    ArrayList<VariantInfo> lst = new ArrayList<VariantInfo>();
+                    lst.add(vi);
+                    DownloadLink lnk = createLink(new YoutubeVariantCollection(), vi, lst);
                     decryptedLinks.add(lnk);
                 }
-
             }
 
         }

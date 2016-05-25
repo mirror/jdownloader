@@ -13,24 +13,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -61,6 +43,24 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
@@ -219,32 +219,25 @@ public class HLSDownloader extends DownloadInterface {
                 }
             }
 
-            ArrayList<String> l = new ArrayList<String>();
-            l.add(ffmpeg.getFullPath());
-            l.add("-i");
-            l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(m3uUrl));
-            // l.add(m3uUrl);
-            // 2.1 aac_adtstoasc
-            // Convert MPEG-2/4 AAC ADTS to MPEG-4 Audio Specific Configuration bitstream filter.
-            //
-            // This filter creates an MPEG-4 AudioSpecificConfig from an MPEG-2/4 ADTS header and removes the ADTS header.
-            //
-            // This is required for example when copying an AAC stream from a raw ADTS AAC container to a FLV or a MOV/MP4 file.
-            //
-            //
-            if ("mp4".equalsIgnoreCase(extension) || "m4v".equalsIgnoreCase(extension) || "m4a".equalsIgnoreCase(extension) || "mov".equalsIgnoreCase(extension) || "flv".equalsIgnoreCase(extension)) {
-                l.add("-bsf:a");
-                l.add("aac_adtstoasc");
+            String out = outputPartFile.getAbsolutePath();
+            try {
+                runFF(set, extension, format, ffmpeg, out);
+
+            } catch (FFMpegException e) {
+                // some systems have problems with special chars to find the in or out file.
+                if (e.getError() != null && e.getError().contains("No such file or directory")) {
+
+                    File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+
+                    runFF(set, extension, format, ffmpeg, tmpOut.getAbsolutePath());
+
+                    outputPartFile.delete();
+                    tmpOut.renameTo(outputPartFile);
+
+                } else {
+                    throw e;
+                }
             }
-            l.add("-c");
-            l.add("copy");
-            l.add("-f");
-            l.add(format);
-            l.add(outputPartFile.getAbsolutePath());
-            l.add("-y");
-            l.add("-progress");
-            l.add("http://127.0.0.1:" + server.getPort() + "/progress?id=" + processID);
-            ffmpeg.runCommand(set, l);
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -264,6 +257,35 @@ public class HLSDownloader extends DownloadInterface {
             // link.removePluginProgress(set);
             server.stop();
         }
+    }
+
+    protected void runFF(FFMpegProgress set, String extension, String format, FFmpeg ffmpeg, String out) throws IOException, InterruptedException, FFMpegException {
+        ArrayList<String> l = new ArrayList<String>();
+        l.add(ffmpeg.getFullPath());
+        l.add("-i");
+        l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(m3uUrl));
+        // l.add(m3uUrl);
+        // 2.1 aac_adtstoasc
+        // Convert MPEG-2/4 AAC ADTS to MPEG-4 Audio Specific Configuration bitstream filter.
+        //
+        // This filter creates an MPEG-4 AudioSpecificConfig from an MPEG-2/4 ADTS header and removes the ADTS header.
+        //
+        // This is required for example when copying an AAC stream from a raw ADTS AAC container to a FLV or a MOV/MP4 file.
+        //
+        //
+        if ("mp4".equalsIgnoreCase(extension) || "m4v".equalsIgnoreCase(extension) || "m4a".equalsIgnoreCase(extension) || "mov".equalsIgnoreCase(extension) || "flv".equalsIgnoreCase(extension)) {
+            l.add("-bsf:a");
+            l.add("aac_adtstoasc");
+        }
+        l.add("-c");
+        l.add("copy");
+        l.add("-f");
+        l.add(format);
+        l.add(out);
+        l.add("-y");
+        l.add("-progress");
+        l.add("http://127.0.0.1:" + server.getPort() + "/progress?id=" + processID);
+        ffmpeg.runCommand(set, l);
     }
 
     private void initPipe() throws IOException {
@@ -328,7 +350,7 @@ public class HLSDownloader extends DownloadInterface {
                     }
                     String id = request.getParameterbyKey("id");
                     if (id == null) {
-                        
+
                         return false;
                     }
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {

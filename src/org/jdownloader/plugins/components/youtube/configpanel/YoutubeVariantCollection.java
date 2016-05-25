@@ -55,6 +55,15 @@ public class YoutubeVariantCollection implements Storable {
 
     private String                  name;
     private List<VariantIDStorable> variants;
+    private List<VariantIDStorable> dropdown;
+
+    public List<VariantIDStorable> getDropdown() {
+        return dropdown;
+    }
+
+    public void setDropdown(List<VariantIDStorable> dropdown) {
+        this.dropdown = dropdown;
+    }
 
     public YoutubeVariantCollection(String name, List<VariantIDStorable> variants) {
         enabled = true;

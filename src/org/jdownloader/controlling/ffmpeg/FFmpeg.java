@@ -9,9 +9,11 @@ import java.util.List;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -78,8 +80,31 @@ public class FFmpeg extends AbstractFFmpegBinary {
         }
         final long lastModifiedAudio = new File(audioIn).lastModified();
         final File outFile = new File(out);
-        final ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, demuxCommand);
-        if (runCommand(progress, commandLine) != null && outFile.exists() && outFile.isFile()) {
+
+        String stdOut = null;
+        try {
+            stdOut = runCommand(progress, fillCommand(out, null, audioIn, null, demuxCommand));
+
+        } catch (FFMpegException e) {
+            // some systems have problems with special chars to find the in or out file.
+            if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                try {
+                    IO.copyFile(new File(audioIn), tmpAudioIn);
+                    stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), null, demuxCommand));
+                    outFile.delete();
+                    tmpOut.renameTo(outFile);
+
+                } finally {
+                    tmpAudioIn.delete();
+
+                }
+            } else {
+                throw e;
+            }
+        }
+        if (stdOut != null && outFile.exists() && outFile.isFile()) {
             try {
                 if (lastModifiedAudio > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     outFile.setLastModified(lastModifiedAudio);
@@ -89,6 +114,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
             }
             return true;
         }
+
         return false;
     }
 
@@ -100,8 +126,36 @@ public class FFmpeg extends AbstractFFmpegBinary {
         final long lastModifiedVideo = new File(videoIn).lastModified();
         final long lastModifiedAudio = new File(audioIn).lastModified();
         final File outFile = new File(out);
-        final ArrayList<String> commandLine = fillCommand(out, videoIn, audioIn, null, demuxCommand);
-        if (runCommand(progress, commandLine) != null && outFile.exists() && outFile.isFile()) {
+
+        String stdOut = null;
+        try {
+            stdOut = runCommand(progress, fillCommand(out, videoIn, audioIn, null, demuxCommand));
+
+        } catch (FFMpegException e) {
+            // some systems have problems with special chars to find the in or out file.
+            if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                File tmpVideoIn = Application.getTempResource("ffmpeg_video_in_" + UniqueAlltimeID.create());
+
+                File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                try {
+                    IO.copyFile(new File(videoIn), tmpVideoIn);
+                    IO.copyFile(new File(audioIn), tmpAudioIn);
+                    stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), tmpVideoIn.getAbsolutePath(), tmpAudioIn.getAbsolutePath(), null, demuxCommand));
+                    outFile.delete();
+                    tmpOut.renameTo(outFile);
+
+                } finally {
+                    tmpAudioIn.delete();
+                    tmpVideoIn.delete();
+
+                }
+            } else {
+                throw e;
+            }
+        }
+
+        if (stdOut != null && outFile.exists() && outFile.isFile()) {
             try {
                 final long lastModified = Math.max(lastModifiedAudio, lastModifiedVideo);
                 if (lastModified > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
@@ -138,9 +192,33 @@ public class FFmpeg extends AbstractFFmpegBinary {
                 map.put("%map", new String[] { "-map", "0:" + audioStream[0] });
                 audioStream[1] = codecToContainer(audioStream[1]);
                 String tempout = out + "." + i + "." + audioStream[1];
-                ArrayList<String> commandLine = fillCommand(tempout, null, audioIn, map, config.getDemuxGenericCommand());
-                String command = runCommand(progress, commandLine);
-                //
+
+                String command = null;
+
+                try {
+                    command = runCommand(progress, fillCommand(tempout, null, audioIn, map, config.getDemuxGenericCommand()));
+
+                } catch (FFMpegException e1) {
+                    // some systems have problems with special chars to find the in or out file.
+                    if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                        File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                        File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                        File outFile = new File(tempout);
+                        try {
+                            IO.copyFile(new File(audioIn), tmpAudioIn);
+                            command = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), map, config.getDemuxGenericCommand()));
+                            outFile.delete();
+                            tmpOut.renameTo(outFile);
+
+                        } finally {
+                            tmpAudioIn.delete();
+
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
+
                 if (command != null) {
 
                     if (i > 1) {

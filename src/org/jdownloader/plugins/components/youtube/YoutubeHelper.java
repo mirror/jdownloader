@@ -213,24 +213,15 @@ public class YoutubeHelper {
             }
 
         });
-
-        REPLACER.add(new YoutubeReplacer("ITAG") {
+        REPLACER.add(new YoutubeReplacer("ITAG_AUDIO_NAME") {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
 
                 try {
-                    if ("audio".equalsIgnoreCase(mod)) {
 
-                        return variant.getiTagAudioOrVideoItagEquivalent().name();
-                    } else if ("audioID".equalsIgnoreCase(mod)) {
-                        return variant.getiTagAudioOrVideoItagEquivalent().getITAG() + "";
-                    } else if ("video".equalsIgnoreCase(mod)) {
-                        return variant.getiTagVideo().name();
-                    } else if ("videoID".equalsIgnoreCase(mod)) {
-                        return variant.getiTagVideo().getITAG() + "";
-                    }
+                    return variant.getiTagAudioOrVideoItagEquivalent().name();
 
                 } catch (Throwable e) {
                 }
@@ -239,11 +230,75 @@ public class YoutubeHelper {
 
             @Override
             public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_itag();
+                return _GUI.T.YoutubeHelper_getDescription_itag_audio_name();
             }
 
         });
 
+        REPLACER.add(new YoutubeReplacer("ITAG_VIDEO_NAME") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+
+                try {
+
+                    return variant.getiTagVideo().name();
+
+                } catch (Throwable e) {
+                }
+                return "";
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_itag_video_name();
+            }
+
+        });
+
+        REPLACER.add(new YoutubeReplacer("ITAG_VIDEO_ID") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+
+                try {
+                    return variant.getiTagVideo().getITAG() + "";
+
+                } catch (Throwable e) {
+                }
+                return "";
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_itag_video_id();
+            }
+
+        });
+
+        REPLACER.add(new YoutubeReplacer("ITAG_AUDIO_ID") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                AbstractVariant variant = AbstractVariant.get(link);
+
+                try {
+
+                    return variant.getiTagAudioOrVideoItagEquivalent().getITAG() + "";
+
+                } catch (Throwable e) {
+                }
+                return "";
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_itag_audio_id();
+            }
+
+        });
         REPLACER.add(new YoutubeReplacer("VARIANT", "V") {
 
             @Override
@@ -2564,7 +2619,7 @@ public class YoutubeHelper {
 
         for (String ttsUrl : subtitleUrls) {
             String xml = br.getPage(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"));
-
+            String name = null;
             DocumentBuilder docBuilder = createXMLParser();
             InputSource is = new InputSource(new StringReader(xml));
 
@@ -2577,7 +2632,7 @@ public class YoutubeHelper {
 
                 String trackID = track.getAttribute("id");
                 String lang = track.getAttribute("lang_code");
-                String name = track.getAttribute("name");
+                name = track.hasAttribute("name") ? track.getAttribute("name") : name;
                 String kind = track.getAttribute("kind");
                 String langOrg = track.getAttribute("lang_original");
                 String langTrans = track.getAttribute("lang_translated");
@@ -2598,14 +2653,14 @@ public class YoutubeHelper {
                 YoutubeSubtitleStorable old = urls.get(lang);
                 if (old != null) {
                     // speech recognition
-                    // if ("asr".equalsIgnoreCase(old.getKind())) {
-                    // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
-                    //
-                    // }
+                    if ("asr".equalsIgnoreCase(old.getKind())) {
+                        urls.put(lang, new YoutubeSubtitleStorable(ttsUrl, name, lang, null, kind));
+
+                    }
                     continue;
                 }
                 YoutubeSubtitleStorable info;
-                info = new YoutubeSubtitleStorable(ttsUrl, lang, null, kind);
+                info = new YoutubeSubtitleStorable(ttsUrl, name, lang, null, kind);
                 if (info._getLocale() == null) {
                     // unknown language
                     logger.info("Unknown Subtitle Language: " + JSonStorage.serializeToJson(info));
@@ -2624,7 +2679,7 @@ public class YoutubeHelper {
 
                     String targetID = target.getAttribute("id");
                     String lang = target.getAttribute("lang_code");
-                    String name = target.getAttribute("name");
+
                     String kind = target.getAttribute("kind");
                     String langOrg = target.getAttribute("lang_original");
                     String langTrans = target.getAttribute("lang_translated");
@@ -2653,7 +2708,9 @@ public class YoutubeHelper {
                         continue;
                     }
 
-                    YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(ttsUrl, lang, defaultLanguage.getLanguage(), defaultLanguage.getKind());
+                    YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(ttsUrl, name, lang, defaultLanguage.getLanguage(), defaultLanguage.getKind());
+                    // br.getPage(new GetRequest(info.createUrl()));
+
                     if (info._getLocale() == null) {
                         // unknown language
                         logger.info("Unknown Subtitle Language: " + JSonStorage.serializeToJson(info));
@@ -2665,6 +2722,7 @@ public class YoutubeHelper {
             }
         }
         return new ArrayList<YoutubeSubtitleStorable>(urls.values());
+
     }
 
     // public List<YoutubeBasicVariant> getVariantByIds(String... extra) {
