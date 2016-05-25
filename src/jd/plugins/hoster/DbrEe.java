@@ -59,6 +59,7 @@ public class DbrEe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"tab_file\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
