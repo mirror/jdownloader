@@ -53,24 +53,7 @@ public class DiskSpaceManager {
             return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
         }
         String bestRootMatch = null;
-        if (CrossSystem.isWindows()) {
-            final String destination = reservation.getDestination().getAbsolutePath();
-            if (!destination.startsWith("\\")) {
-                final File[] roots = File.listRoots();
-                if (roots != null) {
-                    for (final File root : roots) {
-                        final String rootString = root.getAbsolutePath();
-                        if (destination.startsWith(rootString)) {
-                            bestRootMatch = rootString;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // fallback support for \\netshares without assigned drive letter
-                bestRootMatch = destination;
-            }
-        } else {
+        if (CrossSystem.isUnix()) {
             try {
                 final List<ProcMounts> procMounts = ProcMounts.list();
                 if (procMounts != null) {
@@ -85,6 +68,32 @@ public class DiskSpaceManager {
                 }
             } catch (IOException e) {
                 LogController.CL().log(e);
+            }
+        }
+        if (bestRootMatch == null) {
+            final String destination = reservation.getDestination().getAbsolutePath();
+            if (!destination.startsWith("\\")) {
+                final File[] roots = File.listRoots();
+                if (roots != null) {
+                    for (final File root : roots) {
+                        final String rootString = root.getAbsolutePath();
+                        if (destination.startsWith(rootString)) {
+                            bestRootMatch = rootString;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // simple fallback support for \\netshares without assigned drive letter
+                File existingFile = reservation.getDestination();
+                while (existingFile != null) {
+                    if (existingFile.exists()) {
+                        bestRootMatch = existingFile.getAbsolutePath();
+                        break;
+                    } else {
+                        existingFile = existingFile.getParentFile();
+                    }
+                }
             }
         }
         if (bestRootMatch == null || !new File(bestRootMatch).exists()) {
