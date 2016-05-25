@@ -72,7 +72,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final String username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
         final String json = br.getRegex(">window\\._sharedData = (\\{.*?);</script>").getMatch(0);
-        final String id_owner = br.getRegex("\"owner\":\\{\"id\":\"(\\d+)\"\\}").getMatch(0);
+        final String id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
         if (json == null) {
             return null;
         }
