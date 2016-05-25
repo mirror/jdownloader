@@ -28,7 +28,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin/\\d+/|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+/|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+)" }, flags = { 0 })
 public class SexCom extends PornEmbedParser {
 
     public SexCom(PluginWrapper wrapper) {
@@ -38,24 +38,36 @@ public class SexCom extends PornEmbedParser {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    private static final String TYPE_VIDEO     = "http://(www\\.)?sex\\.com/video/\\d+.*?";
+    private static final String TYPE_VIDEO           = "https?://(www\\.)?sex\\.com/video/\\d+.*?";
+    private static final String TYPE_EXTERN_REDIRECT = "https?://(?:www\\.)?sex\\.com/link/out\\?id=\\d+";
 
-    ArrayList<DownloadLink>     decryptedLinks = new ArrayList<DownloadLink>();
-    private String              PARAMETER      = null;
+    ArrayList<DownloadLink>     decryptedLinks       = new ArrayList<DownloadLink>();
+    private String              PARAMETER            = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         PARAMETER = param.toString().replace("/pin/", "/picture/");
-        br.setFollowRedirects(true);
         String externID;
         String filename;
         br.setAllowedResponseCodes(502);
+        String redirect = null;
+        if (PARAMETER.matches(TYPE_EXTERN_REDIRECT)) {
+            br.setFollowRedirects(false);
+            br.getPage(PARAMETER);
+            redirect = this.br.getRedirectLocation();
+            if (redirect.contains("sex.com/")) {
+                return null;
+            }
+            decryptedLinks.add(this.createDownloadlink(redirect));
+            return decryptedLinks;
+        }
+        br.setFollowRedirects(true);
         br.getPage(PARAMETER);
         final int responseCode = br.getHttpConnection().getResponseCode();
         if (responseCode == 404 || responseCode == 502) {
             decryptedLinks.add(createOfflinelink(PARAMETER));
             return decryptedLinks;
         }
-        final String redirect = br.getRegex("onclick=\"window\\.location\\.href=\\'(/[^<>\"]*?)\\'").getMatch(0);
+        redirect = br.getRegex("onclick=\"window\\.location\\.href=\\'(/[^<>\"]*?)\\'").getMatch(0);
         if (redirect != null) {
             br.getPage(redirect);
         }
@@ -119,17 +131,22 @@ public class SexCom extends PornEmbedParser {
         if (externID == null) {
             externID = br.getRegex("file:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (externID == null) {
-            logger.warning("Decrypter broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+        if (externID != null) {
+            if (externID.startsWith("/")) {
+                externID = "http://www.sex.com" + externID;
+            }
+            final DownloadLink fina = createDownloadlink("directhttp://" + externID);
+            fina.setFinalFileName(filename + ".mp4");
+            decryptedLinks.add(fina);
+            return;
         }
-        if (externID.startsWith("/")) {
+        externID = br.getRegex("\"(/link/out\\?id=\\d+)\" data\\-hostname").getMatch(0);
+        if (externID != null) {
             externID = "http://www.sex.com" + externID;
+            decryptedLinks.add(this.createDownloadlink(externID));
+            return;
         }
-        final DownloadLink fina = createDownloadlink("directhttp://" + externID);
-        fina.setFinalFileName(filename + ".mp4");
-        decryptedLinks.add(fina);
-        return;
+        throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
     }
 
     /* NO OVERRIDE!! */

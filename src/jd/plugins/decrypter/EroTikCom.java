@@ -109,11 +109,9 @@ public class EroTikCom extends PluginForDecrypt {
             }
         }
         if (externID.contains("freemix")) {
-            // logger.info("Not supported yet: " + externID);
-            br.getPage(externID);
-            String config = br.getRegex("config:.*?(http[^<>\"]*?)(\'|\")").getMatch(0);
-            br.getPage(config);
-            externID = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
+            /* 2016-05-25: xxx.freemixporn.com is down - if it comes back online we can add a full plugin for it. */
+            crawledLinks.add(this.createDownloadlink(externID));
+            return;
         }
         if (externID == null) {
             logger.warning("Decrypter broken (externID == null) for link: " + parameter);

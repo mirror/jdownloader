@@ -40,7 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -48,8 +47,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daclips.in" }, urls = { "https?://(www\\.)?daclips\\.(in|com)/[a-z0-9]{12}" }, flags = { 0 })
-public class DaClipsIn extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daclips.in" }, urls = { "https?://(?:www\\.)?daclips\\.(?:in|com)/[a-z0-9]{12}" }, flags = { 0 })
+public class DaClipsIn extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -207,7 +206,7 @@ public class DaClipsIn extends PluginForHost {
         // Try to get stream link
         if (dllink == null && VIDEOHOSTER) {
             final Browser brv = br.cloneBrowser();
-            brv.getPage(COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            super.getPage(brv, COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = getDllink(brv);
         }
 
@@ -447,13 +446,13 @@ public class DaClipsIn extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 

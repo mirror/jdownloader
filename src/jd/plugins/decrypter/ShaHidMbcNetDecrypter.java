@@ -105,8 +105,11 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("shahid.mbc.net"));
         if ("bluefishtv.com".equals(PROVIDER)) {
-            if (br.containsHTML(">That product is not available at this time<")) {
-                logger.info("Link offline: " + parameter);
+            if (br.containsHTML(">That product is not available at this time<") || this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createDownloadlink(parameter));
+                return decryptedLinks;
+            } else if (aa == null && this.br.containsHTML("id=\"buyButton\"")) {
+                logger.info("Paid content --> Account needed");
                 return decryptedLinks;
             }
             fpName = br.getRegex("<span class=\"ProductDetails_Title\">(.*?)</span>").getMatch(0);
