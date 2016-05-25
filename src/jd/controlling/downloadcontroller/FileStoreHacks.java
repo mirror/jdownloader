@@ -45,6 +45,12 @@ public class FileStoreHacks {
             } catch (ClassNotFoundException e) {
                 // Probably not running on SOLARIS.
             }
+            try {
+                final Class<? extends FileStore> fileStoreClass = Class.forName("sun.nio.fs.BsdFileStore").asSubclass(FileStore.class);
+                hacksMap.put(fileStoreClass, new UnixFileStoreHacks(fileStoreClass));
+            } catch (ClassNotFoundException e) {
+                // Probably not running on BSD.
+            }
         }
     }
 
