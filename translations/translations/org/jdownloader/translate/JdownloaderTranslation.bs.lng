@@ -348,4 +348,5 @@ system_download_errors_couldnotrename=Nije bilo moguće preimenovati Dio (Part) 
 system_download_errors_linkisBlocked=Mirror %s1 se učitava
 video_description=Video dokumenti: mp4, avi, mov,...
 youtube_demux=Razdvoji Audio
+youtube_segment=Segmentni Stream
 youtube_spatial=Prostorni Višekanalni Audio
