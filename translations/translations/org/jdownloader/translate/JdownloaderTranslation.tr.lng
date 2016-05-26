@@ -348,4 +348,5 @@ system_download_errors_couldnotrename=Parça dosyası yeniden adlandırılamadı
 system_download_errors_linkisBlocked=%s1 yansısı yükleniyor
 video_description=Görüntü Dosyaları: mp4, avi, mov,...
 youtube_demux=Ses Çoklamayı Çöz
+youtube_segment=Parça Akışı
 youtube_spatial=Uzamsal Çok Kanallı Ses
