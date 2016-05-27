@@ -348,4 +348,5 @@ system_download_errors_couldnotrename=分割部品をリネーム出来ません
 system_download_errors_linkisBlocked=ミラー %s1 を読込中
 video_description=動画ファイル: mp4, avi, mov,...
 youtube_demux=多重化音声
+youtube_segment=セグメントストリーム
 youtube_spatial=空間多チャンネル音声
