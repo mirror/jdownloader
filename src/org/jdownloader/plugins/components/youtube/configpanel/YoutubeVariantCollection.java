@@ -113,6 +113,16 @@ public class YoutubeVariantCollection implements Storable {
         return ret;
     }
 
+    public HashSet<String> createUniqueIDSetForDropDownList() {
+        HashSet<String> ret = new HashSet<String>();
+        if (dropdown != null) {
+            for (VariantIDStorable v : dropdown) {
+                ret.add(v.createUniqueID());
+            }
+        }
+        return ret;
+    }
+
     public static List<YoutubeVariantCollection> getDefaults() {
         ArrayList<YoutubeVariantCollection> ret = new ArrayList<YoutubeVariantCollection>();
 

@@ -531,6 +531,20 @@ public class TbCmV2 extends PluginForDecrypt {
                         continue;
                     }
                     ArrayList<VariantInfo> linkVariants = new ArrayList<VariantInfo>();
+                    ArrayList<VariantInfo> cutLinkVariantsDropdown = new ArrayList<VariantInfo>();
+                    HashSet<String> customAlternateSet = l.createUniqueIDSetForDropDownList();
+                    if (customAlternateSet.size() > 0) {
+                        for (VariantInfo v : variants) {
+                            VariantIDStorable vi = storables.get(v);
+                            if (customAlternateSet.contains(vi.createUniqueID())) {
+                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
+                                    cutLinkVariantsDropdown.add(v);
+                                    helper.extendedDataLoading(v, variants);
+
+                                }
+                            }
+                        }
+                    }
                     if (StringUtils.isNotEmpty(l.getGroupingID())) {
 
                         for (VariantInfo v : variants) {
@@ -565,7 +579,13 @@ public class TbCmV2 extends PluginForDecrypt {
                     } else {
                         continue;
                     }
+                    Collections.sort(cutLinkVariantsDropdown, new Comparator<VariantInfo>() {
 
+                        @Override
+                        public int compare(VariantInfo o1, VariantInfo o2) {
+                            return o2.compareTo(o1);
+                        }
+                    });
                     Collections.sort(linkVariants, new Comparator<VariantInfo>() {
 
                         @Override
@@ -586,12 +606,24 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                         last = cur;
                     }
+
+                    last = null;
+                    for (final Iterator<VariantInfo> it = cutLinkVariantsDropdown.iterator(); it.hasNext();) {
+                        VariantInfo cur = it.next();
+                        if (last != null) {
+                            if (StringUtils.equals(cur.getVariant().getTypeId(), last.getVariant().getTypeId())) {
+                                it.remove();
+                                continue;
+                            }
+                        }
+                        last = cur;
+                    }
                     // for (final Iterator<VariantInfo> it = linkVariants.iterator(); it.hasNext();) {
                     // VariantInfo cur = it.next();
                     // System.out.println(cur.getVariant().getBaseVariant() + "\t" + cur.getVariant().getQualityRating());
                     // }
                     if (linkVariants.size() > 0) {
-                        DownloadLink lnk = createLink(l, linkVariants.get(0), linkVariants);
+                        DownloadLink lnk = createLink(l, linkVariants.get(0), cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
 
                         decryptedLinks.add(lnk);
                     }

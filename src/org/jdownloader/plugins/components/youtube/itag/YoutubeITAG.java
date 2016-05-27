@@ -25,7 +25,8 @@ public enum YoutubeITAG {
     DASH_AUDIO_256K_AAC_SPATIAL(327, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_256),
     DASH_AUDIO_256K_AAC(141, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_256),
     DASH_AUDIO_48K_AAC(139, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_48),
-    DASH_AUDIO_OPUS_160KBIT(251, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_160),
+    // Opus Audio (ID 251) was changed from 160 kbit to 128 kbit https://board.jdownloader.org/showpost.php?p=371689&postcount=2238
+    DASH_AUDIO_OPUS_160KBIT(251, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_128),
     DASH_AUDIO_OPUS_48KBIT(249, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_48),
     DASH_AUDIO_OPUS_64KBIT(250, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_64),
     DASH_VIDEO_1080_H264_FPS60(299, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_60),
