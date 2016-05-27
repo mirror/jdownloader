@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -49,6 +47,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?\\&]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1874,6 +1874,9 @@ public class VKontakteRu extends PluginForDecrypt {
     private DownloadLink createOffline(final String parameter) {
         final DownloadLink offline = createOfflinelink(parameter, new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0), null);
         offline.setContentUrl(parameter);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(offline.getName());
+        fp.add(offline);
         return offline;
     }
 

@@ -97,7 +97,10 @@ public class ImgChiliCom extends PluginForDecrypt {
             }
             String finallink = br.getRegex("onclick=\"scale\\(this\\);\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("\"(http://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_]+\\.[a-z]{1,5})\"").getMatch(0);
+                finallink = br.getRegex("id=\"show_image\"\\s*?src=\"(https?://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.]+)\"").getMatch(0);
+            }
+            if (finallink == null) {
+                finallink = br.getRegex("\"(https?://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.]+)\"").getMatch(0);
             }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

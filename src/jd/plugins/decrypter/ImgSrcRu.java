@@ -37,6 +37,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" }, flags = { 2 })
 public class ImgSrcRu extends PluginForDecrypt {
 
@@ -209,6 +211,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 String upid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
                 final DownloadLink img = createDownloadlink("http://decryptedimgsrc.ru" + dl);
                 img.setProperty("Referer", currentLink);
+                img.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
                 img.setFinalFileName(upid);
                 img.setAvailable(true);
                 if (password != null) {
