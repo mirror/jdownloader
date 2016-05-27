@@ -236,7 +236,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.startsWith("http://ax-d.pixfuture.net")) {
+        if (link.startsWith("http://ax-d.pixfuture.net") || link.startsWith("http://www.friendlyduckaffiliates.com/")) {
             return null;
         }
 
