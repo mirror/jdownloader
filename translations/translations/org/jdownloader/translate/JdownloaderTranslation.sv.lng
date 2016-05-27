@@ -348,3 +348,5 @@ system_download_errors_couldnotrename=Kunde inte byta namn på filen
 system_download_errors_linkisBlocked=Mirror %s1 laddar
 video_description=Videofiler: mp4, avi, mov,...
 youtube_demux=Demux Audio
+youtube_segment=Segmentström
+youtube_spatial=Spatial multikanals ljud
