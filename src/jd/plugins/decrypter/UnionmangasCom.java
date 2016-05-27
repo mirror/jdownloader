@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.com/leitor/[^/]+/\\d+(\\.\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(com|net)/leitor/[^/]+/\\d+(\\.\\d+)?" }, flags = { 0 })
 public class UnionmangasCom extends PluginForDecrypt {
 
     public UnionmangasCom(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class UnionmangasCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "unionmangas\\.com/leitor/([^/]+)/(\\d+(\\.\\d+)?)");
+        final Regex urlinfo = new Regex(parameter, "unionmangas\\.(?:com|net)/leitor/([^/]+)/(\\d+(\\.\\d+)?)");
         final String chapter_str = urlinfo.getMatch(1);
         final String url_name = urlinfo.getMatch(0);
         final String url_fpname = url_name + "_chapter_" + chapter_str;
