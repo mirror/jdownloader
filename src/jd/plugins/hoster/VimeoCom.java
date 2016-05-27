@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,6 +52,8 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
@@ -434,37 +434,39 @@ public class VimeoCom extends PluginForHost {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
             configURL = PluginJSonUtils.getJson(ibr, "config_url");
         }
-        if (ibr.containsHTML("download_config")) {
+        if (ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
             // new//
             Browser gq = ibr.cloneBrowser();
             /* With dl button */
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String json = gq.getPage("/" + ID + "?action=load_download_config");
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-            final List<Object> files = (List<Object>) entries.get("files");
-            if (files != null) {
-                qualities = new String[files.size()][quality_info_length];
-                int i = 0;
-                for (final Object file : files) {
-                    final int index = i++;
-                    final Map<String, Object> info = (Map<String, Object>) file;
-                    qualities[index][0] = String.valueOf(info.get("download_url"));
-                    final String ext = String.valueOf(info.get("extension"));
-                    if (StringUtils.isNotEmpty(ext)) {
-                        qualities[index][1] = "." + ext;
+            if (entries != null) {
+                final List<Object> files = (List<Object>) entries.get("files");
+                if (files != null) {
+                    qualities = new String[files.size()][quality_info_length];
+                    int i = 0;
+                    for (final Object file : files) {
+                        final int index = i++;
+                        final Map<String, Object> info = (Map<String, Object>) file;
+                        qualities[index][0] = String.valueOf(info.get("download_url"));
+                        final String ext = String.valueOf(info.get("extension"));
+                        if (StringUtils.isNotEmpty(ext)) {
+                            qualities[index][1] = "." + ext;
+                        }
+                        if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "sd")) {
+                            qualities[index][2] = "sd";
+                        } else if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "hd")) {
+                            qualities[index][2] = "hd";
+                        }
+                        qualities[index][3] = String.valueOf(info.get("width")) + "x" + String.valueOf(info.get("height"));
+                        qualities[index][4] = null;
+                        qualities[index][5] = String.valueOf(info.get("size"));
+                        /* No codec given */
+                        qualities[index][6] = null;
+                        /* ID */
+                        qualities[index][7] = null;
                     }
-                    if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "sd")) {
-                        qualities[index][2] = "sd";
-                    } else if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "hd")) {
-                        qualities[index][2] = "hd";
-                    }
-                    qualities[index][3] = String.valueOf(info.get("width")) + "x" + String.valueOf(info.get("height"));
-                    qualities[index][4] = null;
-                    qualities[index][5] = String.valueOf(info.get("size"));
-                    /* No codec given */
-                    qualities[index][6] = null;
-                    /* ID */
-                    qualities[index][7] = null;
                 }
             }
         } else if (ibr.containsHTML("iconify_down_b")) {
