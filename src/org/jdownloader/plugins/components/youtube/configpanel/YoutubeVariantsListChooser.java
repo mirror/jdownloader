@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.youtube.configpanel;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -16,6 +17,7 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -27,6 +29,8 @@ import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
+import org.appwork.swing.components.CheckBoxIcon;
+import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.StringUtils;
@@ -34,6 +38,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -66,11 +71,7 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-            if (selectedVariant != null) {
-                okButton.doClick();
-            }
-        }
+
     }
 
     @Override
@@ -80,14 +81,6 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
 
     @Override
     public void valueChanged(ListSelectionEvent e) {
-        List<AbstractVariantWrapper> selectedObject = table.getModel().getSelectedObjects(1);
-        if (selectedObject == null || selectedObject.size() == 0) {
-            selectedVariant = null;
-            okButton.setEnabled(false);
-        } else {
-            selectedVariant = selectedObject.get(0);
-            okButton.setEnabled(true);
-        }
 
     }
 
@@ -112,7 +105,9 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
 
     private YoutubeVariantCollection            collection;
 
-    private HashSet<AbstractVariantWrapper>     selected;
+    private HashSet<AbstractVariantWrapper>     defaultSelection;
+
+    private HashSet<AbstractVariantWrapper>     selection;
 
     @Override
     public ModalityType getModalityType() {
@@ -127,20 +122,55 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
         this.collection = collection;
 
         initVariants();
-        selected = new HashSet<AbstractVariantWrapper>();
+        defaultSelection = new HashSet<AbstractVariantWrapper>();
+
         HashSet<String> idSet = collection.createUniqueIDSet();
         for (AbstractVariantWrapper v : variantWrapperList) {
             String id = v.getVariableIDStorable().createUniqueID();
             if (idSet.contains(id)) {
-                selected.add(v);
+                defaultSelection.add(v);
             } else if (StringUtils.equals(v.getVariableIDStorable().getContainer(), collection.getGroupingID())) {
-                selected.add(v);
+                defaultSelection.add(v);
             } else if (StringUtils.equals(v.getVariableIDStorable().createGroupingID(), collection.getGroupingID())) {
-                selected.add(v);
+                defaultSelection.add(v);
             }
 
         }
 
+        selection = new HashSet<AbstractVariantWrapper>();
+        if (collection.getDropdown() != null && collection.getDropdown().size() > 0) {
+            idSet = collection.createUniqueIDSetForDropDownList();
+            for (AbstractVariantWrapper v : variantWrapperList) {
+
+                String id = v.getVariableIDStorable().createUniqueID();
+
+                if (idSet.contains(id)) {
+                    selection.add(v);
+                }
+
+            }
+
+        }
+        if (selection.size() == 0) {
+            selection.addAll(defaultSelection);
+        }
+
+    }
+
+    public List<VariantIDStorable> getSelection() {
+        HashSet<AbstractVariantWrapper> checkChanges = new HashSet<AbstractVariantWrapper>(defaultSelection);
+        if (defaultSelection.size() == selection.size()) {
+            checkChanges.removeAll(selection);
+            if (checkChanges.size() == 0) {
+                // no changes
+                return null;
+            }
+        }
+        List<VariantIDStorable> ret = new ArrayList<VariantIDStorable>();
+        for (AbstractVariantWrapper s : selection) {
+            ret.add(new VariantIDStorable(s.variant));
+        }
+        return ret;
     }
 
     protected void initVariants() {
@@ -213,7 +243,7 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
             }
 
         };
-        okButton.setEnabled(false);
+
         int height = new JLabel("Test").getPreferredSize().height;
         ret.setLayout(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[]"));
         CustomVariantsMapTableModel model = createTableModel();
@@ -239,12 +269,51 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
         // table.getModel().setSelectedObject(current);
         // table.scrollToSelection(0);
         // }
-        okButton.setEnabled(false);
+
         return ret;
     }
 
     protected CustomVariantsMapTable createTable(CustomVariantsMapTableModel model) {
-        return new CustomVariantsMapTable(model);
+        return new CustomVariantsMapTable(model) {
+            @Override
+            protected JPopupMenu onContextMenu(JPopupMenu popup, AbstractVariantWrapper contextObject, final List<AbstractVariantWrapper> s, ExtColumn<AbstractVariantWrapper> column, MouseEvent mouseEvent) {
+                popup = new JPopupMenu();
+                popup.add(new AppAction() {
+                    {
+                        setSmallIcon(new CheckBoxIcon(true));
+                        setName(_GUI.T.lit_enable());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        for (AbstractVariantWrapper w : s) {
+                            selection.add(w);
+                        }
+
+                        table.getModel().refreshSort();
+                    }
+
+                });
+
+                popup.add(new AppAction() {
+                    {
+                        setSmallIcon(new CheckBoxIcon(false));
+                        setName(_GUI.T.lit_disable());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        for (AbstractVariantWrapper w : s) {
+                            selection.remove(w);
+                        }
+                        table.getModel().refreshSort();
+                    }
+
+                });
+                return popup;
+            }
+        };
+
     }
 
     protected CustomVariantsMapTableModel createTableModel() {
@@ -279,12 +348,23 @@ public class YoutubeVariantsListChooser extends AbstractDialog<Object> implement
                     }
 
                     @Override
+                    public boolean isEditable(AbstractVariantWrapper obj) {
+                        return true;
+                    }
+
+                    @Override
                     protected boolean getBooleanValue(AbstractVariantWrapper value) {
-                        return selected.contains(value);
+                        return selection.contains(value);
                     }
 
                     @Override
                     protected void setBooleanValue(boolean value, AbstractVariantWrapper object) {
+                        if (value) {
+                            selection.add(object);
+                        } else {
+                            selection.remove(object);
+                        }
+                        table.getModel().refreshSort();
                     }
                 });
                 super.initColumns();

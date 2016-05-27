@@ -6427,7 +6427,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     String youtube_edit_variant_dropdown_list();
 
-    @Default(lngs = { "en" }, values = { "'%s2' Variants dropdown entries" })
+    @Default(lngs = { "en" }, values = { "'%s1' Variants dropdown entries" })
 
     String youtube_choose_quick_selection_dropdown_table(String string);
 

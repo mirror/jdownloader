@@ -11,7 +11,6 @@ import javax.swing.JPopupMenu;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.CounterMap;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -19,6 +18,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -66,51 +66,54 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
             }
 
         });
-        if (!Application.isJared(null)) {
-            popup.add(new AppAction() {
-                {
-                    setSmallIcon(new AbstractIcon(IconKey.ICON_POPDOWNLARGE, 20));
-                    setName(_GUI.T.youtube_edit_variant_dropdown_list());
 
-                }
+        popup.add(new AppAction() {
+            {
+                setSmallIcon(new AbstractIcon(IconKey.ICON_POPDOWNLARGE, 20));
+                setName(_GUI.T.youtube_edit_variant_dropdown_list());
 
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    new Thread("Choose Youtube Variant") {
-                        public void run() {
-                            YoutubeVariantsListChooser d;
-                            try {
+            }
 
-                                UIOManager.I().show(null, d = new YoutubeVariantsListChooser(contextObject)).throwCloseExceptions();
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Thread("Choose Youtube Variant") {
+                    public void run() {
+                        YoutubeVariantsListChooser d;
+                        try {
 
-                                // boolean alternativesEnabled = d.isAutoAlternativesEnabled();
-                                // final AbstractVariant choosenVariant = (AbstractVariant) d.getVariant();
-                                // HashSet<String> dupe = new HashSet<String>();
-                                // for (CrawledLink cl : pv.getChildren()) {
-                                //
-                                // if (!dupe.add(cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID))) {
-                                // continue;
-                                // }
-                                // AbstractVariant found = findBestVariant(cl, g, choosenVariant, alternativesEnabled);
-                                // if (found != null) {
-                                // LinkCollector.getInstance().setActiveVariantForLink(cl, found);
-                                // }
-                                // }
+                            UIOManager.I().show(null, d = new YoutubeVariantsListChooser(contextObject)).throwCloseExceptions();
 
-                            } catch (DialogClosedException e) {
-                                e.printStackTrace();
-                            } catch (DialogCanceledException e) {
-                                e.printStackTrace();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                            List<VariantIDStorable> newList = d.getSelection();
+                            contextObject.setDropdown(newList);
+                            CFG_YOUTUBE.CFG.setCollections(getModel().getElements());
+                            // boolean alternativesEnabled = d.isAutoAlternativesEnabled();
+                            // final AbstractVariant choosenVariant = (AbstractVariant) d.getVariant();
+                            // HashSet<String> dupe = new HashSet<String>();
+                            // for (CrawledLink cl : pv.getChildren()) {
+                            //
+                            // if (!dupe.add(cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID))) {
+                            // continue;
+                            // }
+                            // AbstractVariant found = findBestVariant(cl, g, choosenVariant, alternativesEnabled);
+                            // if (found != null) {
+                            // LinkCollector.getInstance().setActiveVariantForLink(cl, found);
+                            // }
+                            // }
+
+                        } catch (DialogClosedException e) {
+                            e.printStackTrace();
+                        } catch (DialogCanceledException e) {
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
+                    }
 
-                    }.start();
-                }
+                }.start();
+            }
 
-            });
-        }
+        });
+
         return popup;
     }
 
