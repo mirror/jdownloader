@@ -179,16 +179,21 @@ public class VimeoCom extends PluginForHost {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        {
-            final String downloadlinkId = downloadLink.getLinkID().replace("_ORIGINAL", "");
-            for (String quality[] : qualities) {
-                final String linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "");
-                // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
-                // over!
-                if (StringUtils.equalsIgnoreCase(linkdupeid, downloadlinkId)) {
-                    finalURL = quality[0];
-                    break;
-                }
+        final String downloadlinkId = downloadLink.getLinkID().replace("_ORIGINAL", "");
+        final boolean hasType = downloadLink.hasProperty("videoType");
+        for (String quality[] : qualities) {
+            final String linkdupeid;
+            if (hasType) {
+                linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "") + quality[8];
+            } else {
+                linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "");
+            }
+
+            // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
+            // over!
+            if (StringUtils.equalsIgnoreCase(linkdupeid, downloadlinkId)) {
+                finalURL = quality[0];
+                break;
             }
         }
         if (finalURL == null) {
@@ -408,7 +413,7 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public static final int quality_info_length = 8;
+    public static final int quality_info_length = 9;
 
     @SuppressWarnings({ "unchecked", "unused" })
     public static String[][] getQualities(final Browser ibr, final String ID) throws Exception {
@@ -416,8 +421,6 @@ public class VimeoCom extends PluginForHost {
          * little pause needed so the next call does not return trash
          */
         Thread.sleep(1000);
-        // process the different page layouts
-        String qualities[][] = null;
         boolean debug = false;
 
         // qx[0] = url
@@ -428,12 +431,14 @@ public class VimeoCom extends PluginForHost {
         // qx[5] = fileSize (\d [a-zA-Z]{2})
         // qx[6] = Codec
         // qx[7] = ID
+        // qx[8] = DOWNLOAD/STREAM
 
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (configURL == null) {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
             configURL = PluginJSonUtils.getJson(ibr, "config_url");
         }
+        final ArrayList<String[]> results = new ArrayList<String[]>();
         if (ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
             // new//
             Browser gq = ibr.cloneBrowser();
@@ -444,28 +449,28 @@ public class VimeoCom extends PluginForHost {
             if (entries != null) {
                 final List<Object> files = (List<Object>) entries.get("files");
                 if (files != null) {
-                    qualities = new String[files.size()][quality_info_length];
-                    int i = 0;
                     for (final Object file : files) {
-                        final int index = i++;
+                        final String[] result = new String[quality_info_length];
+                        results.add(result);
                         final Map<String, Object> info = (Map<String, Object>) file;
-                        qualities[index][0] = String.valueOf(info.get("download_url"));
+                        result[0] = String.valueOf(info.get("download_url"));
                         final String ext = String.valueOf(info.get("extension"));
                         if (StringUtils.isNotEmpty(ext)) {
-                            qualities[index][1] = "." + ext;
+                            result[1] = "." + ext;
                         }
                         if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "sd")) {
-                            qualities[index][2] = "sd";
+                            result[2] = "sd";
                         } else if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "hd")) {
-                            qualities[index][2] = "hd";
+                            result[2] = "hd";
                         }
-                        qualities[index][3] = String.valueOf(info.get("width")) + "x" + String.valueOf(info.get("height"));
-                        qualities[index][4] = null;
-                        qualities[index][5] = String.valueOf(info.get("size"));
+                        result[3] = String.valueOf(info.get("width")) + "x" + String.valueOf(info.get("height"));
+                        result[4] = null;
+                        result[5] = String.valueOf(info.get("size"));
                         /* No codec given */
-                        qualities[index][6] = null;
+                        result[6] = null;
                         /* ID */
-                        qualities[index][7] = null;
+                        result[7] = null;
+                        result[8] = "DOWNLOAD";
                     }
                 }
             }
@@ -480,24 +485,26 @@ public class VimeoCom extends PluginForHost {
             /* german accept language will effect the language of this response, Datei instead of file. */
             String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / ((?:\\d+\\.)?\\d+MB)\\)</span>").getMatches();
             if (q != null) {
-                qualities = new String[q.length][quality_info_length];
                 for (int i = 0; i < q.length; i++) {
+                    final String[] result = new String[quality_info_length];
+                    results.add(result);
                     // does not have reference to bitrate here.
-                    qualities[i][0] = q[i][0]; // download button link expires just like the rest!
-                    qualities[i][1] = new Regex(q[i][1], ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
-                    qualities[i][2] = q[i][2];
-                    qualities[i][3] = q[i][3];
-                    qualities[i][4] = null;
-                    qualities[i][5] = q[i][4];
+                    result[0] = q[i][0]; // download button link expires just like the rest!
+                    result[1] = new Regex(q[i][1], ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                    result[2] = q[i][2];
+                    result[3] = q[i][3];
+                    result[4] = null;
+                    result[5] = q[i][4];
                     /* No codec given */
-                    qualities[i][6] = null;
+                    result[6] = null;
                     /* ID */
-                    qualities[i][7] = null;
+                    result[7] = null;
+                    result[8] = "DOWNLOAD";
                 }
             }
         }
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
-        if (configURL != null && (qualities == null || (qualities != null && qualities.length == 0)) || ibr.getURL().contains("player.vimeo.com/")) {
+        if (configURL != null || ibr.getURL().contains("player.vimeo.com/")) {
             // iconify_down_b could fail, revert to the following if statements.
             final Browser gq = ibr.cloneBrowser();
             gq.getHeaders().put("Accept", "*/*");
@@ -514,7 +521,6 @@ public class VimeoCom extends PluginForHost {
             }
             /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
             if (json != null) {
-                int foundqualities = 0;
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
                 final LinkedHashMap<String, Object> request = (LinkedHashMap<String, Object>) entries.get("request");
                 final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) request.get("files");
@@ -522,10 +528,9 @@ public class VimeoCom extends PluginForHost {
                 if (files.containsKey("progressive")) {
                     final ArrayList<Object> progressive = (ArrayList<Object>) files.get("progressive");
                     // atm they only have one object in array [] and then wrapped in {}
-                    qualities = new String[progressive.size()][quality_info_length];
                     for (final Object obj : progressive) {
                         // todo some code to map...
-                        final LinkedHashMap<String, Object> abc = (LinkedHashMap<String, Object>) progressive.get(foundqualities);
+                        final LinkedHashMap<String, Object> abc = (LinkedHashMap<String, Object>) obj;
                         final String url = (String) abc.get("url");
                         Integer.toString(((Number) abc.get("height")).intValue());
                         final String height = Integer.toString(((Number) abc.get("height")).intValue());
@@ -541,20 +546,22 @@ public class VimeoCom extends PluginForHost {
                             ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
                         }
                         final String quality = (String) abc.get("quality");
-                        qualities[foundqualities][0] = url;
-                        qualities[foundqualities][1] = ext;
-                        qualities[foundqualities][2] = Integer.parseInt(height) >= 720 ? "hd" : "sd";
+                        final String[] result = new String[quality_info_length];
+                        results.add(result);
+                        result[0] = url;
+                        result[1] = ext;
+                        result[2] = Integer.parseInt(height) >= 720 ? "hd" : "sd";
                         if (StringUtils.containsIgnoreCase(quality, "720") || StringUtils.containsIgnoreCase(quality, "1080")) {
-                            qualities[foundqualities][2] = "hd";
+                            result[2] = "hd";
                         }
-                        qualities[foundqualities][3] = (height == null || width == null ? null : width + "x" + height);
-                        qualities[foundqualities][4] = bitrate;
+                        result[3] = (height == null || width == null ? null : width + "x" + height);
+                        result[4] = bitrate;
                         /* No filesize given */
-                        qualities[foundqualities][5] = null;
-                        qualities[foundqualities][6] = ".mp4".equalsIgnoreCase(ext) ? "h264" : "vp5";
+                        result[5] = null;
+                        result[6] = ".mp4".equalsIgnoreCase(ext) ? "h264" : "vp5";
                         /* ID */
-                        qualities[foundqualities][7] = String.valueOf(abc.get("id"));
-                        foundqualities++;
+                        result[7] = String.valueOf(abc.get("id"));
+                        result[8] = "STREAM";
                     }
                 }
                 /*
@@ -566,7 +573,6 @@ public class VimeoCom extends PluginForHost {
                     final LinkedHashMap<String, Object> codecmap = (LinkedHashMap<String, Object>) files.get(codec);
                     if (codecmap != null) {
                         final String[] possibleQualities = { "mobile", "hd", "sd" };
-                        qualities = new String[3][quality_info_length];
                         int counter = 0;
                         for (final String currentQuality : possibleQualities) {
                             final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) codecmap.get(currentQuality);
@@ -585,58 +591,26 @@ public class VimeoCom extends PluginForHost {
                                 if (ext == null) {
                                     ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
                                 }
-                                qualities[counter][0] = url;
-                                qualities[counter][1] = ext;
-                                qualities[counter][2] = currentQuality;
-                                qualities[counter][3] = (height == null || width == null ? null : width + "x" + height);
-                                qualities[counter][4] = bitrate;
+                                final String[] result = new String[quality_info_length];
+                                results.add(result);
+                                result[0] = url;
+                                result[1] = ext;
+                                result[2] = currentQuality;
+                                result[3] = (height == null || width == null ? null : width + "x" + height);
+                                result[4] = bitrate;
                                 /* No filesize given */
-                                qualities[counter][5] = null;
-                                qualities[counter][6] = codec;
+                                result[5] = null;
+                                result[6] = codec;
                                 /* ID */
-                                qualities[counter][7] = null;
-                                foundqualities++;
+                                result[7] = null;
                             }
                             counter++;
                         }
                     }
-                    if (foundqualities > 0) {
-                        /*
-                         * We only decrypt one coded at the moment - if needed this can be changed to support more/all codecs in the future.
-                         */
-                        break;
-                    }
-                }
-            }
-        } else if (configURL == null || (qualities == null || (qualities != null && qualities.length == 0))) {
-            // TODO: Find out of we still need this - this function is probably not needed anymore.
-            // best bet todo the above is to throw exception. someone will report error.
-            if (true) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please report this to JDownloader Development Team");
-            }
-            String sig = ibr.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
-            String time = ibr.getRegex("\"timestamp\":(\\d+)").getMatch(0);
-            if (sig != null && time != null) {
-                String fmts = ibr.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
-                if (fmts != null) {
-                    String quality[] = fmts.replaceAll("\"", "").split(",");
-                    qualities = new String[quality.length][quality_info_length];
-                    for (int i = 0; i < quality.length; i++) {
-                        qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
-                        qualities[i][2] = quality[i];
-                        qualities[i][3] = null;
-                    }
-                } else {
-                    // Nothing found so SD should be available at least...
-                    qualities = new String[1][quality_info_length];
-                    qualities[0][0] = ibr.getRegex("").getMatch(0);
-                    qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
-                    qualities[0][2] = "sd";
-                    qualities[0][3] = null;
                 }
             }
         }
-        return qualities;
+        return results.toArray(new String[][] {});
     }
 
     @SuppressWarnings("deprecation")
@@ -658,6 +632,7 @@ public class VimeoCom extends PluginForHost {
         final String videoID = downloadLink.getStringProperty("videoID", null);
         final String videoFrameSize = downloadLink.getStringProperty("videoFrameSize", "");
         final String videoBitrate = downloadLink.getStringProperty("videoBitrate", "");
+        final String videoType = downloadLink.getStringProperty("videoType", null);
 
         String formattedDate = null;
         if (date != null) {
@@ -696,11 +671,19 @@ public class VimeoCom extends PluginForHost {
             }
         }
         // quality
+        if (videoType != null) {
+            formattedFilename = formattedFilename.replace("*type*", videoType);
+        } else {
+            formattedFilename = formattedFilename.replace("*type*", "");
+        }
+
+        // quality
         if (videoQuality != null) {
             formattedFilename = formattedFilename.replace("*quality*", videoQuality);
         } else {
             formattedFilename = formattedFilename.replace("*quality*", "");
         }
+
         // file extension
         if (videoExt != null) {
             formattedFilename = formattedFilename.replace("*ext*", videoExt);
@@ -797,7 +780,7 @@ public class VimeoCom extends PluginForHost {
         return "JDownloader's Vimeo Plugin helps downloading videoclips from vimeo.com. Vimeo provides different video qualities.";
     }
 
-    private final static String defaultCustomFilename = "*videoname*_*quality**ext*";
+    private final static String defaultCustomFilename = "*videoname*_*quality*_*type**ext*";
     private final static String defaultCustomDate     = "dd.MM.yyyy";
 
     private void setConfigElements() {
@@ -823,6 +806,7 @@ public class VimeoCom extends PluginForHost {
         sb.append("*videoid* = id of the video\r\n");
         sb.append("*videoFrameSize* = size of video eg. 640x480 (not always available)\r\n");
         sb.append("*videoBitrate* = bitrate of video eg. xxxkbits (not always available)\r\n");
+        sb.append("*type* = STREAM or DOWNLOAD\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }

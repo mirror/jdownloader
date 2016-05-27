@@ -22,10 +22,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -48,6 +44,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+)|https?://player\\.vimeo.com/(video|external)/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?" }, flags = { 0 })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -326,7 +326,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
                 // there can be multiple hd/sd etc need to identify with framesize.
-                final String linkdupeid = ID + "_" + fmt + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "");
+                final String linkdupeid = ID + "_" + fmt + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "") + quality[8];
                 final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin" + format + "://"));
                 link.setProperty("directURL", url);
                 // videoTitle is required!
@@ -337,6 +337,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 link.setProperty("videoFrameSize", quality[3]);
                 link.setProperty("videoBitrate", quality[4]);
                 link.setProperty("videoCodec", quality[6]);
+                link.setProperty("videoType", quality[8]);
                 link.setLinkID(linkdupeid);
                 link.setContentUrl(cleanVimeoURL);
                 if (password != null) {
