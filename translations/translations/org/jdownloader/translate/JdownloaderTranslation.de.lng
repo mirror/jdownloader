@@ -348,4 +348,5 @@ system_download_errors_couldnotrename=Konnte Part-Datei nicht umbenennen
 system_download_errors_linkisBlocked=Mirror %s1 lädt
 video_description=Videodateien: mp4, avi, mov,...
 youtube_demux=Audio demuxen
+youtube_segment=Segmentstream
 youtube_spatial=Räumliches Mehrfachkanal-Audio
