@@ -122,7 +122,25 @@ public class DiskSpaceManager {
         }
         final long forcedFreeSpaceOnDisk = Math.max(0l, config.getForcedFreeSpaceOnDisk() * 1024l * 1024l);
         long requestedDiskSpace = Math.max(0, reservation.getSize()) + forcedFreeSpaceOnDisk;
-        final long freeDiskSpace = new File(bestRootMatch).getUsableSpace();
+        long freeDiskSpace = new File(bestRootMatch).getUsableSpace();
+        if (freeDiskSpace == 0) {
+            switch (CrossSystem.getOSFamily()) {
+            case WINDOWS:
+                // File.getUsableSpace fails for subst drives, workaround is to call File.getUsableSpace on one of its directories
+                final File[] checks = new File(bestRootMatch).listFiles();
+                if (checks != null) {
+                    for (final File check : checks) {
+                        if (check.isDirectory()) {
+                            freeDiskSpace = check.getUsableSpace();
+                            break;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+        }
         if (freeDiskSpace < requestedDiskSpace) {
             return DISKSPACERESERVATIONRESULT.FAILED;
         }
