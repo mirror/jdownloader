@@ -122,7 +122,7 @@ public class InstaGramCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK.replace("\\", ""));
-        final String username = br.getRegex("\"owner\".*?\"username\":\"([^<>\"]*?)\"").getMatch(0);
+        final String username = br.getRegex("\"owner\".*?\"username\": ?\"([^<>\"]*?)\"").getMatch(0);
         final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_-]+)$").getMatch(0);
         String filename = null;
         if (StringUtils.isNotEmpty(username)) {
