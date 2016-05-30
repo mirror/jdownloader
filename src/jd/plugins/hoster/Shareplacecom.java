@@ -17,12 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,8 +39,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" }, flags = { 0 })
 public class Shareplacecom extends PluginForHost {
@@ -88,22 +88,20 @@ public class Shareplacecom extends PluginForHost {
             if (br.containsHTML("Your requested file is not found") || !br.containsHTML("Filename:<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = new Regex(this.br.toString(), "Filename:</font></b>(.*?)<b><br>").getMatch(0);
+            String filename = new Regex(correctedBR, "Filename:</font></b>(.*?)<b><br>").getMatch(0);
             String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
+            if (inValidate(filename)) {
+                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            }
             if (filesize == null) {
                 filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
             }
             if (filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (filename != null) {
+            if (!inValidate(filename)) {
                 /* Let's check if we can trust the results ... */
                 filename = Encoding.htmlDecode(filename.trim());
-                if (filename.toLowerCase().contains("jdownloader")) {
-                    filename = null;
-                }
-            }
-            if (filename != null) {
                 downloadLink.setFinalFileName(filename);
             } else {
                 downloadLink.setName(fid);
@@ -112,6 +110,14 @@ public class Shareplacecom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("") || s.toLowerCase().contains("jdownloader")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -171,10 +177,10 @@ public class Shareplacecom extends PluginForHost {
 
     private String rhino(final String s) {
         final String cleanup = new Regex(s, "(var.*?)var zzipitime").getMatch(0);
-        final String[] vars = new Regex(s, "<a href=\"'\\s*\\+\\s*(.*?)\\s*\\+\\s*'\"").getColumn(0);
+        final String[] vars = new Regex(s, "<a href=\"[a-z0-9 \\+]*'\\s*\\+\\s*(.*?)\\s*\\+\\s*'\"").getColumn(0);
         if (vars != null) {
             final ArrayList<String> vrrs = new ArrayList<String>(Arrays.asList(vars));
-            Collections.reverse(vrrs);
+            // Collections.reverse(vrrs);
             for (final String var : vrrs) {
                 String result = null;
                 final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
@@ -183,6 +189,16 @@ public class Shareplacecom extends PluginForHost {
                     engine.eval(cleanup);
                     result = (String) engine.get(var);
                 } catch (final Throwable e) {
+                    continue;
+                }
+                // crap here
+                final String crap = new Regex(s, "<a href=\"([a-z]+)'\\s*\\+\\s*" + var).getMatch(0);
+                if (crap != null) {
+                    result = crap + result;
+                }
+                try {
+                    new URL(result);
+                } catch (Exception e) {
                     continue;
                 }
                 if (result == null || (result.contains("jdownloader") && !result.startsWith("http"))) {
