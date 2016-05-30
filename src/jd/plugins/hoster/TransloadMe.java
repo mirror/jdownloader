@@ -257,7 +257,7 @@ public class TransloadMe extends PluginForHost {
                 br.setCookiesExclusive(true);
                 this.br = newBrowser();
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     if (force) {
                         /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
@@ -270,6 +270,7 @@ public class TransloadMe extends PluginForHost {
                             br.clearCookies(DOMAIN);
                         }
                     } else {
+                        /* Trust cookies! */
                         return;
                     }
                 }

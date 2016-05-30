@@ -173,6 +173,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             // Get the link to the SWF file
             final Regex swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"");
             if (!swfUrlSearch.matches()) {
+                logger.warning("WTF");
                 throw new DecrypterException("Failed to get SWF url");
             }
 

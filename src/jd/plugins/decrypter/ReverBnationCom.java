@@ -95,7 +95,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             }
             artist = br.getRegex("property=\"reverbnation_fb:musician\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (artist == null) {
-                artist = this.br.getRegex("class=\"profile\\-header__info__title qa\\-artist-name\">([^<>\"]+)<").getMatch(0);
+                artist = this.br.getRegex("class=\"profile\\-header__info__title qa\\-artist-name[^\"]*?\">([^<>\"]+)<").getMatch(0);
             }
             artistsID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
             if (artistsID == null) {
@@ -216,26 +216,24 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    @SuppressWarnings("deprecation")
     private DownloadLink getSongDownloadlink(final String songID, final String artistID) {
         final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + songID + "reverbnationcomartist" + artistID);
         dlLink.setProperty("directsongid", songID);
         dlLink.setProperty("directartistid", artistID);
-        final String content_url = createContentURL(songID);
-        try {
-            dlLink.setContentUrl(content_url);
-            dlLink.setLinkID(songID);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            dlLink.setBrowserUrl(content_url);
-            dlLink.setProperty("LINKDUPEID", songID);
-        }
+        final String content_url = createPlayUrl(songID);
+        dlLink.setContentUrl(content_url);
+        dlLink.setLinkID(songID);
         return dlLink;
     }
 
     private String createContentURL(final String songID) {
-        final String content_url = "http://www.reverbnation.com/controller/audio_player/download_song/" + songID + "?modal=true";
+        final String content_url = "https://www." + this.getHost() + "/controller/audio_player/download_song/" + songID + "?modal=true";
         return content_url;
+    }
+
+    private String createPlayUrl(final String songID) {
+        final String play_url = "https://www." + this.getHost() + "/play_now/song_" + songID;
+        return play_url;
     }
 
     /* NO OVERRIDE!! */

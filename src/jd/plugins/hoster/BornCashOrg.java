@@ -54,12 +54,16 @@ public class BornCashOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        final String redirect = this.br.getRegex("<META HTTP\\-EQUIV=\\'Refresh\\' CONTENT=\\'\\d+; URL=(https?://(?:www\\.)?borncash\\.org/[^<>\"\\']+)\\'>").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
         if (br.containsHTML("borncash\\.org/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("file\"><b>([^<>]+)</b> \\([\\d\\.]+ [K|M|G]B\\)<").getMatch(0);
+        final String filename = br.getRegex("file\"><b>([^<>]+)</b>").getMatch(0);
         final String filesize = br.getRegex("file\"><b>[^<>]+</b> \\(([\\d\\.]+ [K|M|G]B)\\)<").getMatch(0);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
