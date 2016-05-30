@@ -22,9 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,6 +38,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "https?://(www\\.)?load\\.to/[A-Za-z0-9]+/" }, flags = { 2 })
 public class LoadTo extends PluginForHost {
@@ -161,6 +161,10 @@ public class LoadTo extends PluginForHost {
                 }
                 final String code = getCaptchaCode(cf, downloadLink);
                 final String chid = sm.getChallenge(code);
+                if (chid == null) {
+                    logger.info("Invalid captcha answer");
+                    continue;
+                }
 
                 final String postData = "adcopy_response=" + code + "&adcopy_challenge=" + Encoding.urlEncode(chid) + "&returnUrl=" + Encoding.urlEncode(br.getURL());
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, FREE_RESUME, FREE_MAXCHUNKS);
@@ -171,6 +175,7 @@ public class LoadTo extends PluginForHost {
                         br.clearCookies("http://load.to/");
                         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
                         br.getPage(downloadLink.getDownloadURL());
+                        logger.info("Invalid captcha answer");
                         continue;
                     }
                 }
