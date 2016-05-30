@@ -1375,6 +1375,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private List<DownloadLinkCandidate> nextDownloadLinkCandidates(DownloadLinkCandidateSelector selector) {
         final DownloadSession currentSession = selector.getSession();
         final boolean skipAllCaptchas = CaptchaSettings.MODE.SKIP_ALL.equals(selector.getSession().getCaptchaMode());
+        final HashMap<String, Boolean> destinationValidationCache = new HashMap<String, Boolean>();
         while (!selector.isStopMarkReached() && newDLStartAllowed(currentSession)) {
             final DownloadLinkCandidate nextSelectedCandidate = nextDownloadLinkCandidate(selector);
             if (nextSelectedCandidate == null) {
@@ -1385,10 +1386,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (!nextSelectedCandidate.isForced() && selector.isMirrorManagement()) {
                 nextSelectedCandidates.addAll(findDownloadLinkCandidateMirrors(selector, nextSelectedCandidate));
             }
+            final String destination = nextSelectedCandidate.getLink().getFilePackage().getDownloadDirectory();
             boolean validationOk = false;
             try {
-                validateDestination(new File(nextSelectedCandidate.getLink().getFilePackage().getDownloadDirectory()));
-                validationOk = true;
+                final Boolean cachedValidationResult = destinationValidationCache.get(destination);
+                if (cachedValidationResult == null) {
+                    validateDestination(new File(destination));
+                    validationOk = true;
+                } else {
+                    if (cachedValidationResult.booleanValue() == true) {
+                        validationOk = true;
+                    } else {
+                        for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
+                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
+                        }
+                    }
+                }
             } catch (PathTooLongException e) {
                 for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
@@ -1397,6 +1410,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
                 }
+            } finally {
+                destinationValidationCache.put(destination, Boolean.valueOf(validationOk));
             }
             if (!validationOk) {
                 //
