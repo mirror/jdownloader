@@ -27,6 +27,7 @@ import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.socketconnection.SocketConnection;
@@ -151,7 +152,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         }
         final RandomAccessFile raf;
         try {
-            raf = new RandomAccessFile(file, "rw");
+            raf = IO.open(file, "rw");
         } catch (final IOException e) {
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }

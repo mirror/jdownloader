@@ -17,7 +17,6 @@
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,7 +26,7 @@ import jd.plugins.download.raf.FileBytesCacheFlusher;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
-import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.IO;
 import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -49,7 +48,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
     private final AtomicBoolean      fileOpen          = new AtomicBoolean(true);
     private volatile IOException     ioException       = null;
 
-    MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws FileNotFoundException {
+    MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws IOException {
         final CPUPriority priority = config.getCPUPriority();
         if (priority == null || CPUPriority.HIGH.equals(priority)) {
             this.priority = null;
@@ -57,25 +56,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
             this.priority = priority;
         }
         this.file = file;
-        RandomAccessFile fos = null;
-        try {
-            fos = new RandomAccessFile(file, "rw");
-        } catch (final FileNotFoundException e) {
-            if (CrossSystem.isWindows()) {
-                /**
-                 * too fast file opening/extraction (eg image gallery) can result in "access denied" exception
-                 */
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e1) {
-                    throw e;
-                }
-                fos = new RandomAccessFile(file, "rw");
-            } else {
-                throw e;
-            }
-        }
-        this.fos = fos;
+        this.fos = IO.open(file, "rw");
         cache = con.getFileBytesCache();
     }
 
