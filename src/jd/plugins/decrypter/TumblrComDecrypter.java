@@ -39,6 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -63,15 +64,22 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private LinkedHashSet<String>   dupe           = null;
     private String                  parameter      = null;
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         decryptedLinks = new ArrayList<DownloadLink>();
         dupe = new LinkedHashSet<String>();
         parameter = param.toString().replace("www.", "");
+        boolean loggedin = false;
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa != null) {
             /* Login whenever possible to be able to download account-only-stuff */
-            jd.plugins.hoster.TumblrCom.login(this.br, aa, false);
+            try {
+                jd.plugins.hoster.TumblrCom.login(this.br, aa, false);
+                loggedin = true;
+            } catch (final Throwable e) {
+
+            }
         }
         try {
             if (parameter.matches(TYPE_FILE)) {
@@ -81,7 +89,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             } else if (parameter.matches(TYPE_IMAGE)) {
                 decryptedLinks.addAll(processImage(parameter, null, null));
             } else {
-                decryptUser();
+                if (loggedin) {
+                    decryptUserLoggedIn();
+                } else {
+                    decryptUser();
+                }
             }
         } catch (final BrowserException e) {
             logger.info("Server error, couldn't decrypt link: " + parameter);
@@ -500,6 +512,63 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             nextPage = parameter.contains("/archive") ? br.getRegex("\"(/archive(?:/[^\"]*)?\\?before_time=\\d+)\">Next Page").getMatch(0) : br.getRegex("\"(/page/" + ++counter + ")\"").getMatch(0);
         } while (nextPage != null);
         logger.info("Decryption done - last 'nextPage' value was: " + nextPage);
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void decryptUserLoggedIn() throws Exception {
+        final int limit = 10;
+        int offset = 0;
+        boolean decryptSingle = parameter.matches("/page/\\d+");
+        br.getPage(parameter);
+        if (br.containsHTML(GENERALOFFLINE) || this.br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline: " + parameter);
+            return;
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        final String username = new Regex(parameter, "//(.+?)\\.tumblr").getMatch(0);
+        String fpName = username;
+        fp.setName(fpName);
+        LinkedHashMap<String, Object> entries = null;
+        ArrayList<Object> ressourcelist = null;
+        do {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return;
+            }
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            /* Not needed! */
+            // br.getHeaders().put("X-tumblr-form-key", "bla");
+            br.getPage("/svc/indash_blog/posts?tumblelog_name_or_id=" + username + "&post_id=&limit=" + limit + "&offset=" + offset);
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            ressourcelist = (ArrayList<Object>) DummyScriptEnginePlugin.walkJson(entries, "response/posts");
+            for (final Object posto : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) posto;
+                final String type = (String) entries.get("type");
+                final String post_url = (String) entries.get("post_url");
+                String directlink = null;
+                if (type.equals("photo")) {
+                    directlink = (String) DummyScriptEnginePlugin.walkJson(entries, "photos/{0}/original_size/url");
+                } else {
+                    /* TODO: There is type "text" and there might be type "video" too! */
+                    logger.warning("WTF unsupported type!");
+                }
+                if (directlink != null) {
+                    final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);
+                    dl.setAvailable(true);
+                    dl.setContentUrl(post_url);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+                offset++;
+            }
+
+            if (decryptSingle) {
+                break;
+            }
+        } while (ressourcelist.size() >= limit);
+        logger.info("Decryption done");
 
     }
 

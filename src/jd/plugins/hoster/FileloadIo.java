@@ -41,7 +41,7 @@ public class FileloadIo extends PluginForHost {
 
     public FileloadIo(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("https://fileload.io/premium");
     }
 
     @Override

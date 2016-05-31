@@ -39,11 +39,12 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblrdecrypted\\.com/post/\\d+" }, flags = { 2 })
 public class TumblrCom extends PluginForHost {
 
-    private String dllink = null;
+    public static final long trust_cookie_age = 300000l;
+    private String           dllink           = null;
 
     public TumblrCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://www.tumblr.com/register");
+        this.enablePremium("https://www.tumblr.com/register");
     }
 
     @Override
@@ -177,19 +178,41 @@ public class TumblrCom extends PluginForHost {
 
     private static Object LOCK = new Object();
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    @SuppressWarnings("deprecation")
+    public static void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    return;
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    /* Check cookies */
+                    br.getPage("https://www." + account.getHoster() + "/dashboard");
+                    if ("1".equals(br.getCookie(account.getHoster(), "logged_in"))) {
+                        /* Refresh timestamp */
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
+                    }
+                    /* Delete cookies / Headers to perform a full login */
+                    br = new Browser();
                 }
-                br.setFollowRedirects(false);
-                br.getPage("");
-                br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(account.getHoster(), "") == null) {
+                br.getPage("https://www." + account.getHoster() + "/login");
+                final String formkey = br.getRegex("name=\"form_key\" value=\"([^\"]+)\"").getMatch(0);
+                if (formkey == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final String postData = "determine_email=" + Encoding.urlEncode(account.getUser()) + "&user%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&tumblelog%5Bname%5D=&user%5Bage%5D=&context=home_signup&version=STANDARD&follow=&http_referer=https%3A%2F%2Fwww.tumblr.com%2F&form_key=" + Encoding.urlEncode(formkey) + "&seen_suggestion=0&used_suggestion=0&used_auto_suggestion=0&about_tumblr_slide=&random_username_suggestions=%5B%5D";
+                br.postPage("/login", postData);
+                if (!"1".equals(br.getCookie(account.getHoster(), "logged_in"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
