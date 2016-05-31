@@ -453,7 +453,7 @@ public class RealDebridCom extends antiDDoSForHost {
             if ("-1".equals(chunks) || getPluginConfig().getBooleanProperty(IGNOREMAXCHUNKS, false)) {
                 maxChunks = 0;
             } else if ("1".equals(chunks)) {
-                resumes = false;
+                resumes = true;// why was it false?
                 maxChunks = 1;
             } else {
                 maxChunks = -Integer.parseInt(chunks);
