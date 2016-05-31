@@ -69,7 +69,6 @@ public class BatoTo extends PluginForHost {
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         this.br.getHeaders().put("Referer", "http://bato.to/reader");
         this.br.setAllowedResponseCodes(503);
-        br.getPage(link.getDownloadURL());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
@@ -77,6 +76,7 @@ public class BatoTo extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+        br.getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getHttpConnection().getResponseCode() == 503) {
