@@ -49,6 +49,7 @@ public class FileloadIo extends PluginForHost {
     private final boolean FREE_RESUME       = true;
     private final int     FREE_MAXCHUNKS    = 0;
     private final int     FREE_MAXDOWNLOADS = 20;
+    private final boolean USE_API           = false;
     // private final boolean ACCOUNT_FREE_RESUME = true;
     // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -61,6 +62,11 @@ public class FileloadIo extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("fileloaddecrypted.io/", "fileload.io/"));
+    }
+
+    public static Browser prepBRAPI(final Browser br) {
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
     }
 
     /*
@@ -76,41 +82,46 @@ public class FileloadIo extends PluginForHost {
         br.setFollowRedirects(true);
         final String folderid = getFolderid(link.getDownloadURL());
         final String linkid = getLinkid(link.getDownloadURL());
-        /* First let's see if the main folder is still online! */
-        this.br.getPage("https://fileload.io/" + folderid);
-        if (mainlinkIsOffline(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* Main folder is online --> Check if the individual file is downloadable */
-        /* Skip that pre-download-step as it does not help us in any way */
-        // this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid +
-        // "&download=false");
-        this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid + "&download=true");
-        final String status = PluginJSonUtils.getJson(this.br, "status");
-        if ("too_many_requests".equalsIgnoreCase(status)) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 3 * 60 * 1000l);
-        }
-        dllink = PluginJSonUtils.getJson(this.br, "link");
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        URLConnectionAdapter con = null;
-        try {
-            /* Do NOT user HEAD connection here! */
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(getFileNameFromHeader(con));
-            } else {
-                server_issues = true;
+        if (USE_API) {
+            /* TODO! */
+            prepBRAPI(this.br);
+        } else {
+            /* First let's see if the main folder is still online! */
+            this.br.getPage("https://fileload.io/" + folderid);
+            if (mainlinkIsOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
-        } finally {
+            /* Main folder is online --> Check if the individual file is downloadable */
+            /* Skip that pre-download-step as it does not help us in any way */
+            // this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid +
+            // "&download=false");
+            this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid + "&download=true");
+            final String status = PluginJSonUtils.getJson(this.br, "status");
+            if ("too_many_requests".equalsIgnoreCase(status)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 3 * 60 * 1000l);
+            }
+            dllink = PluginJSonUtils.getJson(this.br, "link");
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                /* Do NOT user HEAD connection here! */
+                con = br.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     public static boolean mainlinkIsOffline(final Browser br) {
@@ -149,6 +160,12 @@ public class FileloadIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
+            if (this.br.containsHTML("class=\"block\"")) {
+                /*
+                 * <h1>Oops! No premium...</h1> <h2>You can't download more than one file without an premium account. Hang tight.</h2>
+                 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before more downloads can be started", 3 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
