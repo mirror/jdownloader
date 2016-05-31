@@ -49,18 +49,19 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+)|https?://player\\.vimeo.com/(video|external)/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" }, flags = { 0 })
 public class VimeoComDecrypter extends PluginForDecrypt {
 
-    private static final String type_player_private_external = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
-    private static final String type_player_private          = "https?://player\\.vimeo.com/video/\\d+\\&forced_referer=[A-Za-z0-9=]+";
-    public static final String  type_player                  = "https?://player\\.vimeo.com/video/\\d+";
-    private static final String Q_MOBILE                     = "Q_MOBILE";
-    private static final String Q_ORIGINAL                   = "Q_ORIGINAL";
-    private static final String Q_HD                         = "Q_HD";
-    private static final String Q_SD                         = "Q_SD";
-    private static final String Q_BEST                       = "Q_BEST";
-    private String              password                     = null;
+    private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
+    private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
+    private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+\\&forced_referer=[A-Za-z0-9=]+";
+    public static final String  type_player                         = "https?://player\\.vimeo.com/video/\\d+";
+    private static final String Q_MOBILE                            = "Q_MOBILE";
+    private static final String Q_ORIGINAL                          = "Q_ORIGINAL";
+    private static final String Q_HD                                = "Q_HD";
+    private static final String Q_SD                                = "Q_SD";
+    private static final String Q_BEST                              = "Q_BEST";
+    private String              password                            = null;
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,9 +74,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http://", "https://");
-        if (parameter.matches(type_player_private_external)) {
+        if (parameter.matches(type_player_private_external_direct)) {
+            decryptedLinks.add(this.createDownloadlink("directhttp://" + parameter));
+            return decryptedLinks;
+        } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
-        } else if (!parameter.matches(type_player_private) && parameter.matches(type_player)) {
+        } else if (!parameter.matches(type_player_private_forced_referer) && parameter.matches(type_player)) {
             parameter = "https://vimeo.com/" + parameter.substring(parameter.lastIndexOf("/") + 1);
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
@@ -167,7 +171,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
              * our video would be a private video.
              */
             final String orgParam = param.toString();
-            if ((orgParam.matches(type_player_private) || orgParam.matches(type_player)) && new_way_allowed) {
+            if ((orgParam.matches(type_player_private_forced_referer) || orgParam.matches(type_player)) && new_way_allowed) {
                 if (vimeo_forced_referer != null) {
                     br.getHeaders().put("Referer", vimeo_forced_referer);
                 }
@@ -343,7 +347,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (password != null) {
                     link.setProperty("pass", password);
                 }
-                if (parameter.matches(type_player_private)) {
+                if (parameter.matches(type_player_private_forced_referer)) {
                     link.setProperty("private_player_link", true);
                 }
                 if (vimeo_forced_referer != null) {

@@ -27,8 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "izlesene.com" }, urls = { "http://(www\\.)?izlesene\\.com/video/[a-z0-9\\-]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "izlesene.com" }, urls = { "https?://(?:www\\.)?izlesene\\.com/video/[a-z0-9\\-]+/\\d+" }, flags = { 0 })
 public class IzleSeneCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,37 +49,65 @@ public class IzleSeneCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        DLLINK = br.getRegex("<videosec>(.*?)</videosec>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = "http://dcdn.nokta.com/" + DLLINK + "_1_2_1.xml";
-        br.getPage(DLLINK);
-        DLLINK = br.getRegex("<server durl=\"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://istr\\d+\\.izlesene\\.com/data/videos/\\d+/\\d+\\-\\d+.{1,5})\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String ext = ".mp4";
-        if (br.containsHTML("flv")) ext = ".flv";
-        downloadLink.setFinalFileName(downloadLink.getName().replace(downloadLink.getName().substring(downloadLink.getName().length() - 4, downloadLink.getName().length()), ext));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.izlesene.com/player_xml/izlesene/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        if (!br.containsHTML("videoname")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String name_url = new Regex(downloadLink.getDownloadURL(), "/video/([a-z0-9\\-]+)/").getMatch(0);
+        if (!br.containsHTML("videoname") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<videoname>(.*?)</videoname>").getMatch(0);
-        filename = filename.trim();
-        downloadLink.setName(Encoding.htmlDecode(filename) + ".mp4");
+        if (filename == null) {
+            /* Fallback! */
+            filename = name_url;
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        downloadLink.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        final boolean useOldWay = false;
+        if (useOldWay) {
+            DLLINK = br.getRegex("<videosec>(.*?)</videosec>").getMatch(0);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            DLLINK = "http://dcdn.nokta.com/" + DLLINK + "_1_2_1.xml";
+            br.getPage(DLLINK);
+            DLLINK = br.getRegex("<server durl=\"(http://.*?)\"").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\"(http://istr\\d+\\.izlesene\\.com/data/videos/\\d+/\\d+\\-\\d+.{1,5})\"").getMatch(0);
+            }
+        } else {
+            /* Since 2016-05-31 */
+            /*
+             * E.g. https://istr.izlesene.com/data/videos/9351/9351615-360_2-135k.mp4?token=QQkqNta87oqV-AAUEliyzw&ts=1464792401 (token is
+             * NEEDED!)
+             */
+            this.br.getPage(downloadLink.getDownloadURL());
+            DLLINK = PluginJSonUtils.getJson(this.br, "streamurl");
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String ext = ".mp4";
+        if (br.containsHTML("flv")) {
+            ext = ".flv";
+        }
+        downloadLink.setFinalFileName(downloadLink.getName().replace(downloadLink.getName().substring(downloadLink.getName().length() - 4, downloadLink.getName().length()), ext));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

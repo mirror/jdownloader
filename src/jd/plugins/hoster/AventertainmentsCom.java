@@ -77,10 +77,6 @@ public class AventertainmentsCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
         String filename = null;
         if (filename == null) {

@@ -22,7 +22,12 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,12 +36,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileloaddecrypted\\.io/[A-Za-z0-9]+/s/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileloaddecrypted\\.io/[A-Za-z0-9]+/s/\\d+" }, flags = { 2 })
 public class FileloadIo extends PluginForHost {
 
     public FileloadIo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        this.enablePremium("");
     }
 
     @Override
@@ -45,20 +50,25 @@ public class FileloadIo extends PluginForHost {
     }
 
     /* Notes: Also known as/before: netload.in, dateisenden.de */
+    private static final String API_BASE                     = "https://api.fileload.io/";
+    private static final String API_AUTH_TOKEN               = "test_nullified";
     /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 0;
-    private final int     FREE_MAXDOWNLOADS = 20;
-    private final boolean USE_API           = false;
-    // private final boolean ACCOUNT_FREE_RESUME = true;
-    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean       FREE_RESUME                  = true;
+    private final int           FREE_MAXCHUNKS               = 0;
+    private final int           FREE_MAXDOWNLOADS            = 20;
+    private final boolean       USE_API_LINKCHECK            = true;
+    private final boolean       ACCOUNT_FREE_RESUME          = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
+    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private String        dllink            = null;
-    private boolean       server_issues     = false;
+    private String              account_auth_token           = null;
+    private String              dllink                       = null;
+    private boolean             server_issues                = false;
+    private String              folderid                     = null;
+    private String              linkid                       = null;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("fileloaddecrypted.io/", "fileload.io/"));
@@ -66,6 +76,10 @@ public class FileloadIo extends PluginForHost {
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
+    }
+
+    public static Browser prepBRWebsite(final Browser br) {
         return br;
     }
 
@@ -80,14 +94,14 @@ public class FileloadIo extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String folderid = getFolderid(link.getDownloadURL());
-        final String linkid = getLinkid(link.getDownloadURL());
-        if (USE_API) {
-            /* TODO! */
+        folderid = getFolderid(link.getDownloadURL());
+        linkid = getLinkid(link.getDownloadURL());
+        if (USE_API_LINKCHECK) {
+            /* 2016-05-31: There is no free API available (yet). */
             prepBRAPI(this.br);
         } else {
             /* First let's see if the main folder is still online! */
-            this.br.getPage("https://fileload.io/" + folderid);
+            this.br.getPage("https://" + this.getHost() + "/" + folderid);
             if (mainlinkIsOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -95,15 +109,7 @@ public class FileloadIo extends PluginForHost {
             /* Skip that pre-download-step as it does not help us in any way */
             // this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid +
             // "&download=false");
-            this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid + "&download=true");
-            final String status = PluginJSonUtils.getJson(this.br, "status");
-            if ("too_many_requests".equalsIgnoreCase(status)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 3 * 60 * 1000l);
-            }
-            dllink = PluginJSonUtils.getJson(this.br, "link");
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            getDllinkWebsite();
             URLConnectionAdapter con = null;
             try {
                 /* Do NOT user HEAD connection here! */
@@ -122,6 +128,18 @@ public class FileloadIo extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void getDllinkWebsite() throws IOException, PluginException {
+        this.br.getPage("https://" + this.getHost() + "/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid + "&download=true");
+        final String status = PluginJSonUtils.getJson(this.br, "status");
+        if ("too_many_requests".equalsIgnoreCase(status)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 3 * 60 * 1000l);
+        }
+        dllink = PluginJSonUtils.getJson(this.br, "link");
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     public static boolean mainlinkIsOffline(final Browser br) {
@@ -144,9 +162,16 @@ public class FileloadIo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (USE_API_LINKCHECK) {
+            /* API */
+            getDllinkWebsite();
+        } else {
+            /* Website */
+            if (server_issues) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
+        }
+        if (dllink == null) {
             dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -201,122 +226,107 @@ public class FileloadIo extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    //
-    // private static Object LOCK = new Object();
-    //
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // br.setCookiesExclusive(true);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // this.br.setCookies(this.getHost(), cookies);
-    // return;
-    // }
-    // br.setFollowRedirects(false);
-    // br.getPage("");
-    // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-    // if (br.getCookie(this.getHost(), "") == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(account, true);
-    // } catch (PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // String space = br.getRegex("").getMatch(0);
-    // if (space != null) {
-    // ai.setUsedSpace(space.trim());
-    // }
-    // ai.setUnlimitedTraffic();
-    // if (account.getBooleanProperty("free", false)) {
-    // account.setType(AccountType.FREE);
-    // /* free accounts can still have captcha */
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(false);
-    // ai.setStatus("Registered (free) user");
-    // } else {
-    // final String expire = br.getRegex("").getMatch(0);
-    // if (expire == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // } else {
-    // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-    // }
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(true);
-    // ai.setStatus("Premium account");
-    // }
-    // account.setValid(true);
-    // return ai;
-    // }
-    //
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // login(account, false);
-    // br.setFollowRedirects(false);
-    // br.getPage(link.getDownloadURL());
-    // if (account.getType() == AccountType.FREE) {
-    // doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    // } else {
-    // String dllink = this.checkDirectLink(link, "premium_directlink");
-    // if (dllink == null) {
-    // dllink = br.getRegex("").getMatch(0);
-    // if (dllink == null) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // if (dl.getConnection().getResponseCode() == 403) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-    // } else if (dl.getConnection().getResponseCode() == 404) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-    // }
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // link.setProperty("premium_directlink", dllink);
-    // dl.startDownload();
-    // }
-    // }
-    //
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // return ACCOUNT_FREE_MAXDOWNLOADS;
-    // }
+    private static Object LOCK = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            br.setFollowRedirects(false);
+            getAuthToken(account);
+            if (this.account_auth_token != null) {
+                br.getPage(API_BASE + "accountinfo/" + Encoding.urlEncode(this.account_auth_token));
+                if (PluginJSonUtils.getJson(this.br, "email") != null) {
+                    /* Saved account_auth_token is still valid! */
+                    return;
+                }
+            }
+            br.getPage(API_BASE + "login/" + Encoding.urlEncode(account.getUser()) + "/" + JDHash.getMD5(account.getPass()));
+            account_auth_token = PluginJSonUtils.getJson(this.br, "auth_token");
+            if (br.containsHTML("login_failed") || account_auth_token == null) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            saveAuthToken(account);
+        }
+    }
+
+    private void getAuthToken(final Account acc) {
+        this.account_auth_token = acc.getStringProperty("account_auth_token", null);
+    }
+
+    private void saveAuthToken(final Account acc) {
+        acc.setProperty("account_auth_token", this.account_auth_token);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        final boolean isPremium = "1".equals(PluginJSonUtils.getJson(this.br, "premium"));
+        if (!isPremium) {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+        } else {
+            final String valid_millisecs = PluginJSonUtils.getJson(this.br, "valid_millisecs");
+            ai.setValidUntil(Long.parseLong(valid_millisecs));
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium account");
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        if (account.getType() == AccountType.FREE) {
+            getDllinkWebsite();
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            String dllink = this.checkDirectLink(link, "premium_directlink");
+            if (dllink == null) {
+                br.getPage(API_BASE + "download/" + API_AUTH_TOKEN + "/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(link.getFinalFileName()));
+                dllink = PluginJSonUtils.getJson(this.br, "download_link");
+                if (dllink == null) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty("premium_directlink", dllink);
+            dl.startDownload();
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
+    }
 
     @Override
     public void reset() {
