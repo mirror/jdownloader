@@ -16,11 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,11 +44,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://www(\\d+)?\\.speedyshare\\.com/remote/[A-Za-z0-9]+/d\\d+\\-[A-Za-z0-9]+|http://(www\\.)?(speedyshare\\.com|speedy\\.sh)/(files?/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class SpeedyShareCom extends PluginForHost {
@@ -82,7 +85,7 @@ public class SpeedyShareCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36");
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
         br.getHeaders().put("Accept-Charset", null);
         // br.getHeaders().put("Connection", "keep-alive");
     }
@@ -187,6 +190,35 @@ public class SpeedyShareCom extends PluginForHost {
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (finallink != null && finallink.contains("onClick='solvemedia_init()") && br.containsHTML("solvemedia\\.com/papi/")) {
+                // finallink is base64 encoded.. dont find this, we shouldn't ask the user for captcha..
+                final String dataHref = new Regex(finallink, "data-href\\s*=\\s*('|\")([a-z0-9=/\\+]+)").getMatch(1);
+                if (dataHref == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                finallink = Encoding.Base64Decode(dataHref);
+                logger.info("Detected captcha method \"solvemedia\" for this host");
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final Exception e) {
+                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                    }
+                    throw e;
+                }
+                final String code = getCaptchaCode(cf, downloadLink);
+                final String chid = sm.getChallenge(code);
+                Browser captcha = br.cloneBrowser();
+                captcha.getHeaders().put("Accept", "*/*");
+                captcha.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                captcha.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                captcha.postPage("/solvemedia_check.php", "adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid));
+                if (!captcha.toString().equals("ok")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
         }
         if (finallink == null) {
             final long timeBefore = System.currentTimeMillis();
@@ -212,7 +244,7 @@ public class SpeedyShareCom extends PluginForHost {
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (finallink.matches("/" + fuid + "/download/.+")) {
+        if (finallink.matches("/" + fuid + "/(?:[a-f0-9]{8}/)?download/.+")) {
             br.getPage(finallink);
             finallink = br.getRedirectLocation();
             doMagic();
