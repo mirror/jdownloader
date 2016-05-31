@@ -123,11 +123,14 @@ public class BbcCom extends PluginForHost {
         }
 
         link.setFinalFileName(title + ".mp4");
-        link.setDownloadSize(filesize_max);
+        if (filesize_max > 0) {
+            link.setDownloadSize(filesize_max);
+        }
 
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -150,9 +153,8 @@ public class BbcCom extends PluginForHost {
             if (this.rtmp_authString != null) {
                 this.rtmp_authString = Encoding.htmlDecode(this.rtmp_authString);
                 rtmpurl += "?" + this.rtmp_authString;
-                if (rtmp_app.equals("ondemand")) {
-                    rtmp_app += "?" + this.rtmp_authString;
-                }
+                /* 2016-05-31: (Sometimes) needed for app "ondemand" and "a5999/e1" */
+                rtmp_app += "?" + this.rtmp_authString;
             }
             try {
                 dl = new RTMPDownload(this, downloadLink, rtmpurl);
@@ -161,10 +163,15 @@ public class BbcCom extends PluginForHost {
             }
             /* Setup rtmp connection */
             jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setSwfUrl("http://emp.bbci.co.uk/emp/SMPf/1.16.6/StandardMediaPlayerChromelessFlash.swf");
+            /* 2016-05-31: tcUrl is very important for some urls e.g. http://www.bbc.co.uk/programmes/b01s5cdn */
+            rtmp.setTcUrl(rtmpurl);
             rtmp.setUrl(rtmpurl);
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
             rtmp.setPlayPath(this.rtmp_playpath);
             rtmp.setApp(this.rtmp_app);
-            rtmp.setFlashVer("WIN 19,0,0,245");
+            /* Last update: 2016-05-31 */
+            rtmp.setFlashVer("WIN 21,0,0,242");
             rtmp.setResume(false);
             ((RTMPDownload) dl).startDownload();
         }
