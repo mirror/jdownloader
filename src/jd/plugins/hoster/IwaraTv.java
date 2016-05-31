@@ -219,6 +219,7 @@ public class IwaraTv extends PluginForHost {
         dl.startDownload();
     }
 
+    /** TODO: Improve this */
     public static String getFID(final String url) {
         String fid = new Regex(url, "/videos/(.+)").getMatch(0);
         if (fid == null) {
