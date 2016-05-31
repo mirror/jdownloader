@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -35,6 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 /**
  * @author raztoki
@@ -81,13 +81,13 @@ public class BatoTo extends PluginForDecrypt {
         br.getPage(url + 1);
 
         if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"https?://[\\w\\.]*(?:batoto\\.net|bato\\.to)/images/404-Error\\.jpg\" alt=\"File not found\" /></div>|The page you were looking for is no longer available") || this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(url));
+            decryptedLinks.add(this.createOfflinelink(parameter.toString()));
             return decryptedLinks;
         } else if (this.br.getHttpConnection().getResponseCode() == 405) {
-            decryptedLinks.add(this.createOfflinelink(url));
+            decryptedLinks.add(this.createOfflinelink(parameter.toString()));
             return decryptedLinks;
         } else if (br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
-            decryptedLinks.add(this.createOfflinelink(url));
+            decryptedLinks.add(this.createOfflinelink(parameter.toString()));
             return decryptedLinks;
         }
 

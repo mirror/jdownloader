@@ -13,27 +13,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.NullInputStream;
-import org.appwork.utils.net.socketconnection.SocketConnection;
-import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
-import org.appwork.utils.net.usenet.SimpleUseNet;
-import org.appwork.utils.net.usenet.YEncInputStream;
-import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.FileCreationManager.DeleteOption;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.translate._JDT;
-
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
@@ -52,6 +31,28 @@ import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.SparseFile;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.NullInputStream;
+import org.appwork.utils.net.socketconnection.SocketConnection;
+import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
+import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.appwork.utils.net.usenet.YEncInputStream;
+import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.translate._JDT;
 
 public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
@@ -215,7 +216,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     protected void download() throws Exception {
         final RandomAccessFile raf;
         try {
-            raf = new RandomAccessFile(outputPartFile, "rw");
+            raf = IO.open(outputPartFile, "rw");
         } catch (final IOException e) {
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
