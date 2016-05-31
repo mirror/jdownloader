@@ -39,12 +39,13 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "kika.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://kikadecrypted\\.de/\\d+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://kikadecrypted\\.de/\\d+", "http://sputnikdecrypted\\.de/\\d+" }, flags = { 2, 2, 2 })
 public class MdrDe extends PluginForHost {
 
     /** Settings stuff */
     private static final String ALLOW_SUBTITLES      = "ALLOW_SUBTITLES";
     private static final String ALLOW_BEST           = "ALLOW_BEST";
+    private static final String ALLOW_AUDIO_256      = "ALLOW_AUDIO_256000";
     private static final String ALLOW_1280x720       = "ALLOW_1280x7";
     private static final String ALLOW_720x576        = "ALLOW_720x5";
     private static final String ALLOW_960x544        = "ALLOW_960x5";
@@ -263,6 +264,8 @@ public class MdrDe extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.MdrDe.grabsubtitles", "Grab subtitles whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AUDIO_256, JDL.L("plugins.hoster.MdrDe.loadAudio256kbps", "Load audio 256 kbps (e.g. available for sputnik.de)")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.MdrDe.best", "Load best version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);

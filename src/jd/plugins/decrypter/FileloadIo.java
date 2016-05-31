@@ -44,8 +44,10 @@ public class FileloadIo extends PluginForDecrypt {
         jd.plugins.hoster.FileloadIo.prepBRAPI(this.br);
         final String specific_file = new Regex(parameter, "https?://[^/]+/[A-Za-z0-9]+/(.+)").getMatch(0);
         final String folderid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
+        jd.plugins.hoster.FileloadIo.prepBRWebsite(this.br);
         br.getPage(parameter);
         if (jd.plugins.hoster.FileloadIo.mainlinkIsOffline(this.br)) {
+            /* Folder offline */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (this.br.containsHTML("Please wait a moment while the files are being prepared for download|The page will reload automatically once the files are ready")) {
@@ -64,6 +66,11 @@ public class FileloadIo extends PluginForDecrypt {
         br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folderid);
         LinkedHashMap<String, Object> entries = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        if (ressourcelist.size() == 0) {
+            /* Folder offline */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         for (final Object linko : ressourcelist) {
             if (counter > fileids.length - 1) {
                 /* Last element of API-array is .zip for complete folder --> Ignore that! */
@@ -81,7 +88,11 @@ public class FileloadIo extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(link);
             /* No single links aavailable for users! */
             dl.setContentUrl(parameter);
-            dl.setName(filename);
+            if (filename != null) {
+                dl.setFinalFileName(filename);
+            } else {
+                dl.setName(linkid);
+            }
             dl.setDownloadSize(filesize);
             dl.setLinkID(internal_linkid);
             if ("online".equalsIgnoreCase(status)) {

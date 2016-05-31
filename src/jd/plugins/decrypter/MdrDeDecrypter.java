@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mdr.de", "kika.de" }, urls = { "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html" }, flags = { 0, 0, 0 })
 public class MdrDeDecrypter extends PluginForDecrypt {
 
     public MdrDeDecrypter(PluginWrapper wrapper) {
@@ -49,6 +49,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
     private LinkedHashMap<String, DownloadLink> FOUNDQUALITIES       = new LinkedHashMap<String, DownloadLink>();
     /** Settings stuff */
     private static final String                 ALLOW_SUBTITLES      = "ALLOW_SUBTITLES";
+    private static final String                 ALLOW_AUDIO_256      = "ALLOW_AUDIO_256000";
     private static final String                 ALLOW_BEST           = "ALLOW_BEST";
     private static final String                 ALLOW_1280x720       = "ALLOW_1280x7";
     private static final String                 ALLOW_720x576        = "ALLOW_720x5";
@@ -82,8 +83,8 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         } else {
             /* Longer way - we have to access the clip url first to find the XML url. */
             this.br.getPage(parameter);
-            if (this.br.getHost().equals("mdr.de")) {
-                player_xml_url = this.br.getRegex("\\'playerXml\\':\\'(mediathek\\\\/[^<>\"/]+avCustom\\.xml)\\'").getMatch(0);
+            if (this.br.getHost().equals("mdr.de") || this.br.getHost().equals("sputnik.de")) {
+                player_xml_url = this.br.getRegex("\\'playerXml\\':\\'([^<>\"]+avCustom\\.xml)\\'").getMatch(0);
             } else {
                 player_xml_url = this.br.getRegex("dataURL:\\'([^<>\"]+avCustom\\.xml)\\'").getMatch(0);
             }
@@ -132,20 +133,28 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             final String sizewidth = getXML(qualityinfo, "frameWidth");
             final String sizeheight = getXML(qualityinfo, "frameHeight");
             final String bitrateVideo = getXML(qualityinfo, "bitrateVideo");
-            if (url == null || fsize == null || sizewidth == null || sizeheight == null || bitrateVideo == null) {
+            final String bitrateAudio = getXML(qualityinfo, "bitrateAudio");
+            if (url == null || fsize == null || ((sizewidth == null || sizeheight == null || bitrateVideo == null) && bitrateAudio == null)) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String sizeheight_cut = sizeheight.substring(0, 1);
             String qualityString_full;
             String qualityString;
-            if (sizewidth.equals("480")) {
-                /* Workaround for two different 480p videobitrates */
-                qualityString = sizewidth + "x" + sizeheight_cut + "x" + bitrateVideo;
-                qualityString_full = sizewidth + "x" + sizeheight + "x" + bitrateVideo;
+            if (sizewidth == null || sizeheight == null || bitrateVideo == null) {
+                /* Audio */
+                qualityString = "audio_" + bitrateAudio;
+                qualityString_full = "audio_" + bitrateAudio;
             } else {
-                qualityString = sizewidth + "x" + sizeheight_cut;
-                qualityString_full = sizewidth + "x" + sizeheight;
+                /* Video */
+                final String sizeheight_cut = sizeheight.substring(0, 1);
+                if (sizewidth.equals("480")) {
+                    /* Workaround for two different 480p videobitrates */
+                    qualityString = sizewidth + "x" + sizeheight_cut + "x" + bitrateVideo;
+                    qualityString_full = sizewidth + "x" + sizeheight + "x" + bitrateVideo;
+                } else {
+                    qualityString = sizewidth + "x" + sizeheight_cut;
+                    qualityString_full = sizewidth + "x" + sizeheight;
+                }
             }
             String filename = date_formatted + "_" + url_hostername + "_" + title;
             final String ext = ".mp4";
@@ -181,6 +190,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             }
         } else {
             /** User selected nothing -> Decrypt everything */
+            boolean audio_256 = cfg.getBooleanProperty(ALLOW_AUDIO_256, false);
             boolean q1280x720 = cfg.getBooleanProperty(ALLOW_1280x720, false);
             boolean q720x576 = cfg.getBooleanProperty(ALLOW_720x576, false);
             boolean q960x544 = cfg.getBooleanProperty(ALLOW_960x544, false);
@@ -189,7 +199,8 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             boolean q480x272_higher = cfg.getBooleanProperty(ALLOW_480x272_higher, false);
             boolean q480x272_lower = cfg.getBooleanProperty(ALLOW_480x272_lower, false);
             boolean q256x144 = cfg.getBooleanProperty(ALLOW_256x144, false);
-            if (q1280x720 == false && q720x576 == false && q960x544 == false && q640x360 == false && q512x288 == false && q480x272_higher == false && q480x272_lower == false && q256x144 == false) {
+            if (audio_256 == false && q1280x720 == false && q720x576 == false && q960x544 == false && q640x360 == false && q512x288 == false && q480x272_higher == false && q480x272_lower == false && q256x144 == false) {
+                audio_256 = true;
                 q1280x720 = true;
                 q720x576 = true;
                 q960x544 = true;
@@ -200,6 +211,9 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                 q256x144 = true;
             }
 
+            if (audio_256) {
+                selectedQualities.add("audio_256000");
+            }
             if (q1280x720) {
                 selectedQualities.add("1280x7");
             }
