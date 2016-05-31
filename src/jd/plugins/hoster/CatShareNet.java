@@ -75,8 +75,13 @@ public class CatShareNet extends PluginForHost {
     private String         apiSession             = null;
 
     // DEV NOTES
-    // captchatype: recaptcha
+    // captchatype: reCaptchaV1
     // non account: 1 * 1
+
+    @Override
+    public String getAGBLink() {
+        return HOSTER + "/regulamin";
+    }
 
     public CatShareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -173,7 +178,6 @@ public class CatShareNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-
         if (use_api_availablecheck) {
             checkLinks(new DownloadLink[] { downloadLink });
             if (!downloadLink.isAvailabilityStatusChecked()) {
@@ -269,12 +273,7 @@ public class CatShareNet extends PluginForHost {
         }
     }
 
-    @Override
-    public String getAGBLink() {
-        return HOSTER + "/regulamin";
-    }
-
-    public String getDllink() {
+    public String getDllinkWebsite() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
@@ -325,6 +324,11 @@ public class CatShareNet extends PluginForHost {
             String wait_str = PluginJSonUtils.getJson(br, "wait_time");
             if (wait_str != null) {
                 wait = Long.parseLong(wait_str) * 1000;
+
+                if (wait > System.currentTimeMillis()) {
+                    /* Change from timestamp of current time + wait TO Remaining wait */
+                    wait -= System.currentTimeMillis();
+                }
                 if (wait > 240000l) {
                     /* Reconnect wait */
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
@@ -429,7 +433,7 @@ public class CatShareNet extends PluginForHost {
 
         doSomething();
         checkErrorsWebsite(downloadLink, false);
-        dllink = getDllink();
+        dllink = getDllinkWebsite();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("REGEX_ERROR"));
@@ -663,7 +667,7 @@ public class CatShareNet extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL());
         doSomething();
-        String dllink = getDllink();
+        String dllink = getDllinkWebsite();
         if (dllink == null) {
             if (br.containsHTML("Twój dzienny limit transferu")) {
                 UserIO.getInstance().requestMessageDialog(0, getPhrase("PREMIUM_ERROR"), getPhrase("DAILY_LIMIT") + "\r\n" + getPhrase("PREMIUM_DISABLED"));
