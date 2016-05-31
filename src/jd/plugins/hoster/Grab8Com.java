@@ -167,50 +167,49 @@ public class Grab8Com extends antiDDoSForHost {
             getPage("https://" + getHost() + "/");
             postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = PluginJSonUtils.getJson(ajax, "linkdown");
-            // TODO: transload/api error handling.
             final boolean transload = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(ajax, "use_transload"));
-            if (transload) {
+            if (dllink == null && transload) {
+                // TODO: transload/api error handling.
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
+                // final String transloadUrl = PluginJSonUtils.getJson(ajax, "tstatus_url");
+                // getPage(transloadUrl);
+                // final Form transloadform = br.getFormbyKey("saveto");
+                // if (transloadform != null) {
+                // logger.info("Found transloadform --> Submitting it");
+                // // submitFormAPISafe(transloadform);
+                // } else {
+                // logger.warning("Could not find transloadform --> Possible failure");
+                // }
+                // /*
+                // * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we
+                // will
+                // * not see the transferID in the html although it exists and hasn't changed. In this case we should still have it saved
+                // from
+                // * the first download attempt.
+                // */
+                // final String newtransferID = br.getRegex("name=\"files\\[\\]\" value=\"(\\d+)\"").getMatch(0);
+                // if (newtransferID != null) {
+                // logger.info("Successfully found updated transferID");
+                // link.setProperty("transferID", newtransferID);
+                // }
+                // /* Normal case: Requested file is downloaded to the multihost and downloadable via the multihost. */
+                // dllink = br.getRegex("File <b><a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
+                // /*
+                // * If we try an already existing link many times we'll get a site asking us if the download is broken thus it looks
+                // * different so we need another RegEx.
+                // */
+                // if (dllink == null) {
+                // dllink = br.getRegex("<b>Download: <a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
+                // }
+                // if (dllink == null) {
+                // /* Should never happen */
+                // handleErrorRetries("dllinknull", 10, 2 * 60 * 1000l);
+                // }
+                // // /* Happens sometimes - in the tests it frequently happened with share-online.biz links */
+                // // if (dllink.equals("files/ip")) {
+                // // handleErrorRetries("dllink_invalid_ip", 10, 2 * 60 * 1000l);
+                // // }
             }
-            // final Form transloadform = br.getFormbyKey("saveto");
-            // if (transloadform != null) {
-            // logger.info("Found transloadform --> Submitting it");
-            // submitFormAPISafe(transloadform);
-            // } else {
-            // logger.warning("Could not find transloadform --> Possible failure");
-            // }
-            // /*
-            // * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we will
-            // not
-            // * see the transferID in the html although it exists and hasn't changed. In this case we should still have it saved from the
-            // * first download attempt.
-            // */
-            // final String newtransferID = br.getRegex("name=\"files\\[\\]\" value=\"(\\d+)\"").getMatch(0);
-            // if (newtransferID != null) {
-            // transferID = newtransferID;
-            // logger.info("Successfully found transferID");
-            // link.setProperty("transferID", transferID);
-            // } else {
-            // logger.warning("Failed to find transferID");
-            // }
-            // /* Normal case: Requested file is downloaded to the multihost and downloadable via the multihost. */
-            // dllink = br.getRegex("File <b><a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
-            // /*
-            // * If we try an already existing link many times we'll get a site asking us if the download is broken thus it looks different
-            // so
-            // * we need another RegEx.
-            // */
-            // if (dllink == null) {
-            // dllink = br.getRegex("<b>Download: <a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
-            // }
-            if (dllink == null) {
-                /* Should never happen */
-                handleErrorRetries("dllinknull", 10, 2 * 60 * 1000l);
-            }
-            // /* Happens sometimes - in the tests it frequently happened with share-online.biz links */
-            // if (dllink.equals("files/ip")) {
-            // handleErrorRetries("dllink_invalid_ip", 10, 2 * 60 * 1000l);
-            // }
         }
         handleDL(account, link, dllink);
     }
@@ -361,8 +360,8 @@ public class Grab8Com extends antiDDoSForHost {
         // they show traffic used not left.
         ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
         ai.setTrafficMax(SizeFormatter.getSize(traffic[1]));
-        final String expire = br.getRegex("<p><b>Expiry</b>:&nbsp;(\\d{2}-\\d{2}-\\d{4})</p>").getMatch(0);
-        if (expire != null && ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", Locale.ENGLISH), br) && !ai.isExpired()) {
+        final Long expire = getExpire();
+        if (expire != null && ai.setValidUntil(expire, br) && !ai.isExpired()) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
         } else {
@@ -398,6 +397,20 @@ public class Grab8Com extends antiDDoSForHost {
         ai.setMultiHostSupport(this, supportedHosts);
 
         return ai;
+    }
+
+    private Long getExpire() {
+        String expire = br.getRegex("<p><b>Expiry</b>:&nbsp;(\\d{2}-\\d{2}-\\d{4})</p>").getMatch(0);
+        Long time = TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", Locale.ENGLISH);
+        if (time != null && time != -1) {
+            return time;
+        }
+        expire = br.getRegex("<p><b>Expiry</b>:&nbsp;(\\w+ \\w+, \\d{4})</p>").getMatch(0);
+        if (expire != null) {
+            expire = expire.replaceAll("(\\d+)(st|nd|rd|th) ", "$1 ");
+        }
+        time = TimeFormatter.getMilliSeconds(expire, "dd MMM, yyyy", Locale.ENGLISH);
+        return time;
     }
 
     /**
