@@ -286,7 +286,7 @@ public class UlozTo extends PluginForHost {
 
                 // If captcha fails, throrotws exception
                 // If in automatic mode, clears saved data
-                if (br.containsHTML("\"errors\":\\[\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)")) {
+                if (br.containsHTML("\"errors\":\\[\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while|Chyba při ověření uživatele, zkus to znovu)")) {
                     if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
                         getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
                         getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);
@@ -348,7 +348,11 @@ public class UlozTo extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 // 503 with nginx means no more connections allow, it doesn't mean server error!
                 synchronized (CTRLLOCK) {
                     totalMaxSimultanFreeDownload.set(Math.min(Math.max(1, maxFree.get() - 1), totalMaxSimultanFreeDownload.get()));
@@ -447,9 +451,9 @@ public class UlozTo extends PluginForHost {
                     /*
                      * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                      * 1800542995541.log; 2422576; jdlog://1800542995541
-                     *
+                     * 
                      * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                     *
+                     * 
                      * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                      */
                     // logger.info("No traffic available!");
@@ -460,6 +464,11 @@ public class UlozTo extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

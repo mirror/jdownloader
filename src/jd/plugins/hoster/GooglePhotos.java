@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -27,12 +29,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photos.google.com" }, urls = { "https?://photos\\.google\\.com/share/[A-Za-z0-9\\-_]+/photo/[A-Za-z0-9\\-_]+\\?key=[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photos.google.com" }, urls = { "https?://photos\\.google\\.com/share/[A-Za-z0-9\\-_]+/photo/[A-Za-z0-9\\-_]+\\?key=[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class GooglePhotos extends PluginForHost {
 
     public GooglePhotos(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     /* DEV NOTES */
@@ -40,13 +44,16 @@ public class GooglePhotos extends PluginForHost {
     // protocol: https
     // other:
 
-    /* Connection stuff */
-    private boolean   free_resume       = true;
-    private int       free_maxchunks    = 0;
-    private final int free_maxdownloads = -1;
+    /** Settings stuff */
+    public static final String FAST_LINKCHECK    = "FAST_LINKCHECK";
 
-    private String    dllink            = null;
-    private boolean   serverissue       = false;
+    /* Connection stuff */
+    private boolean            free_resume       = true;
+    private int                free_maxchunks    = 0;
+    private final int          free_maxdownloads = -1;
+
+    private String             dllink            = null;
+    private boolean            serverissue       = false;
 
     @Override
     public String getAGBLink() {
@@ -198,6 +205,10 @@ public class GooglePhotos extends PluginForHost {
             filename += "." + defaultExtension;
         }
         return filename;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.GooglePhotos.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
     }
 
     @Override
