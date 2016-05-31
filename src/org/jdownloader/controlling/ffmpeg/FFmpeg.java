@@ -73,100 +73,106 @@ public class FFmpeg extends AbstractFFmpegBinary {
         return demux(progress, out, audioIn, config.getDemux2Mp3Command());
     }
 
+    private static final Object LOCK = new Object();
+
     private boolean demux(FFMpegProgress progress, String out, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
-        logger.info("Demux:Input=" + audioIn + "|Output=" + out);
-        if (StringUtils.equals(out, audioIn)) {
-            throw new FFMpegException("demux failed because input file equals output file!");
-        }
-        final long lastModifiedAudio = new File(audioIn).lastModified();
-        final File outFile = new File(out);
-
-        String stdOut = null;
-        try {
-            stdOut = runCommand(progress, fillCommand(out, null, audioIn, null, demuxCommand));
-
-        } catch (FFMpegException e) {
-            // some systems have problems with special chars to find the in or out file.
-            if (e.getError() != null && e.getError().contains("No such file or directory")) {
-                File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
-                File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
-                try {
-                    IO.copyFile(new File(audioIn), tmpAudioIn);
-                    stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), null, demuxCommand));
-                    outFile.delete();
-                    tmpOut.renameTo(outFile);
-
-                } finally {
-                    tmpAudioIn.delete();
-
-                }
-            } else {
-                throw e;
+        synchronized (LOCK) {
+            logger.info("Demux:Input=" + audioIn + "|Output=" + out);
+            if (StringUtils.equals(out, audioIn)) {
+                throw new FFMpegException("demux failed because input file equals output file!");
             }
-        }
-        if (stdOut != null && outFile.exists() && outFile.isFile()) {
+            final long lastModifiedAudio = new File(audioIn).lastModified();
+            final File outFile = new File(out);
+
+            String stdOut = null;
             try {
-                if (lastModifiedAudio > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    outFile.setLastModified(lastModifiedAudio);
-                }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
-            }
-            return true;
-        }
+                stdOut = runCommand(progress, fillCommand(out, null, audioIn, null, demuxCommand));
 
-        return false;
+            } catch (FFMpegException e) {
+                // some systems have problems with special chars to find the in or out file.
+                if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                    File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                    File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                    try {
+                        IO.copyFile(new File(audioIn), tmpAudioIn);
+                        stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), null, demuxCommand));
+                        outFile.delete();
+                        tmpOut.renameTo(outFile);
+
+                    } finally {
+                        tmpAudioIn.delete();
+
+                    }
+                } else {
+                    throw e;
+                }
+            }
+            if (stdOut != null && outFile.exists() && outFile.isFile()) {
+                try {
+                    if (lastModifiedAudio > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                        outFile.setLastModified(lastModifiedAudio);
+                    }
+                } catch (final Throwable e) {
+                    LoggerFactory.log(logger, e);
+                }
+                return true;
+            }
+
+            return false;
+        }
     }
 
     private boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
-        logger.info("Mux:Video=" + videoIn + "|Audio=" + audioIn + "|Output=" + out);
-        if (StringUtils.equals(out, videoIn) || StringUtils.equals(out, audioIn)) {
-            throw new FFMpegException("demux failed because input file equals output file!");
-        }
-        final long lastModifiedVideo = new File(videoIn).lastModified();
-        final long lastModifiedAudio = new File(audioIn).lastModified();
-        final File outFile = new File(out);
-
-        String stdOut = null;
-        try {
-            stdOut = runCommand(progress, fillCommand(out, videoIn, audioIn, null, demuxCommand));
-
-        } catch (FFMpegException e) {
-            // some systems have problems with special chars to find the in or out file.
-            if (e.getError() != null && e.getError().contains("No such file or directory")) {
-                File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
-                File tmpVideoIn = Application.getTempResource("ffmpeg_video_in_" + UniqueAlltimeID.create());
-
-                File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
-                try {
-                    IO.copyFile(new File(videoIn), tmpVideoIn);
-                    IO.copyFile(new File(audioIn), tmpAudioIn);
-                    stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), tmpVideoIn.getAbsolutePath(), tmpAudioIn.getAbsolutePath(), null, demuxCommand));
-                    outFile.delete();
-                    tmpOut.renameTo(outFile);
-
-                } finally {
-                    tmpAudioIn.delete();
-                    tmpVideoIn.delete();
-
-                }
-            } else {
-                throw e;
+        synchronized (LOCK) {
+            logger.info("Mux:Video=" + videoIn + "|Audio=" + audioIn + "|Output=" + out);
+            if (StringUtils.equals(out, videoIn) || StringUtils.equals(out, audioIn)) {
+                throw new FFMpegException("demux failed because input file equals output file!");
             }
-        }
+            final long lastModifiedVideo = new File(videoIn).lastModified();
+            final long lastModifiedAudio = new File(audioIn).lastModified();
+            final File outFile = new File(out);
 
-        if (stdOut != null && outFile.exists() && outFile.isFile()) {
+            String stdOut = null;
             try {
-                final long lastModified = Math.max(lastModifiedAudio, lastModifiedVideo);
-                if (lastModified > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    outFile.setLastModified(lastModified);
+                stdOut = runCommand(progress, fillCommand(out, videoIn, audioIn, null, demuxCommand));
+
+            } catch (FFMpegException e) {
+                // some systems have problems with special chars to find the in or out file.
+                if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                    File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                    File tmpVideoIn = Application.getTempResource("ffmpeg_video_in_" + UniqueAlltimeID.create());
+
+                    File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                    try {
+                        IO.copyFile(new File(videoIn), tmpVideoIn);
+                        IO.copyFile(new File(audioIn), tmpAudioIn);
+                        stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), tmpVideoIn.getAbsolutePath(), tmpAudioIn.getAbsolutePath(), null, demuxCommand));
+                        outFile.delete();
+                        tmpOut.renameTo(outFile);
+
+                    } finally {
+                        tmpAudioIn.delete();
+                        tmpVideoIn.delete();
+
+                    }
+                } else {
+                    throw e;
                 }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
             }
-            return true;
+
+            if (stdOut != null && outFile.exists() && outFile.isFile()) {
+                try {
+                    final long lastModified = Math.max(lastModifiedAudio, lastModifiedVideo);
+                    if (lastModified > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                        outFile.setLastModified(lastModified);
+                    }
+                } catch (final Throwable e) {
+                    LoggerFactory.log(logger, e);
+                }
+                return true;
+            }
+            return false;
         }
-        return false;
     }
 
     public boolean demuxM4a(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
@@ -174,83 +180,84 @@ public class FFmpeg extends AbstractFFmpegBinary {
     }
 
     public List<File> demuxAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
-        long lastModifiedAudio = new File(audioIn).lastModified();
-        ArrayList<File> ret = null;
-        ArrayList<String> infoCommand = fillCommand(out, null, audioIn, null, "-i", "%audio");
-        try {
-            String res = runCommand(null, infoCommand);
-            //
-        } catch (FFMpegException e) {
-
-            String[][] audioStreams = new Regex(e.getError(), "Stream \\#0\\:(\\d+)[^\\:]*\\: Audio\\: ([\\w\\d]+)").getMatches();
-            int i = 0;
-            ret = new ArrayList<File>();
-            for (String[] audioStream : audioStreams) {
+        synchronized (LOCK) {
+            long lastModifiedAudio = new File(audioIn).lastModified();
+            ArrayList<File> ret = null;
+            ArrayList<String> infoCommand = fillCommand(out, null, audioIn, null, "-i", "%audio");
+            try {
+                String res = runCommand(null, infoCommand);
                 //
-                i++;
-                HashMap<String, String[]> map = new HashMap<String, String[]>();
-                map.put("%map", new String[] { "-map", "0:" + audioStream[0] });
-                audioStream[1] = codecToContainer(audioStream[1]);
-                String tempout = out + "." + i + "." + audioStream[1];
+            } catch (FFMpegException e) {
 
-                String command = null;
+                String[][] audioStreams = new Regex(e.getError(), "Stream \\#0\\:(\\d+)[^\\:]*\\: Audio\\: ([\\w\\d]+)").getMatches();
+                int i = 0;
+                ret = new ArrayList<File>();
+                for (String[] audioStream : audioStreams) {
+                    //
+                    i++;
+                    HashMap<String, String[]> map = new HashMap<String, String[]>();
+                    map.put("%map", new String[] { "-map", "0:" + audioStream[0] });
+                    audioStream[1] = codecToContainer(audioStream[1]);
+                    String tempout = out + "." + i + "." + audioStream[1];
 
-                try {
-                    command = runCommand(progress, fillCommand(tempout, null, audioIn, map, config.getDemuxGenericCommand()));
+                    String command = null;
 
-                } catch (FFMpegException e1) {
-                    // some systems have problems with special chars to find the in or out file.
-                    if (e.getError() != null && e.getError().contains("No such file or directory")) {
-                        File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
-                        File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
-                        File outFile = new File(tempout);
-                        try {
-                            IO.copyFile(new File(audioIn), tmpAudioIn);
-                            command = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), map, config.getDemuxGenericCommand()));
-                            outFile.delete();
-                            tmpOut.renameTo(outFile);
+                    try {
+                        command = runCommand(progress, fillCommand(tempout, null, audioIn, map, config.getDemuxGenericCommand()));
 
-                        } finally {
-                            tmpAudioIn.delete();
+                    } catch (FFMpegException e1) {
+                        // some systems have problems with special chars to find the in or out file.
+                        if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                            File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                            File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                            File outFile = new File(tempout);
+                            try {
+                                IO.copyFile(new File(audioIn), tmpAudioIn);
+                                command = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), map, config.getDemuxGenericCommand()));
+                                outFile.delete();
+                                tmpOut.renameTo(outFile);
 
-                        }
-                    } else {
-                        throw e;
-                    }
-                }
+                            } finally {
+                                tmpAudioIn.delete();
 
-                if (command != null) {
-
-                    if (i > 1) {
-                        File f;
-                        ret.add(f = new File(tempout));
-
-                        try {
-                            if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                                f.setLastModified(lastModifiedAudio);
                             }
-                        } catch (final Throwable e1) {
-                            LoggerFactory.log(logger, e1);
-                        }
-                    } else {
-                        File f;
-                        ret.add(f = new File(out + "." + audioStream[1]));
-                        new File(tempout).renameTo(f);
-                        try {
-                            if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                                f.setLastModified(lastModifiedAudio);
-                            }
-                        } catch (final Throwable e1) {
-                            LoggerFactory.log(logger, e1);
+                        } else {
+                            throw e;
                         }
                     }
 
-                }
+                    if (command != null) {
 
+                        if (i > 1) {
+                            File f;
+                            ret.add(f = new File(tempout));
+
+                            try {
+                                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                                    f.setLastModified(lastModifiedAudio);
+                                }
+                            } catch (final Throwable e1) {
+                                LoggerFactory.log(logger, e1);
+                            }
+                        } else {
+                            File f;
+                            ret.add(f = new File(out + "." + audioStream[1]));
+                            new File(tempout).renameTo(f);
+                            try {
+                                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                                    f.setLastModified(lastModifiedAudio);
+                                }
+                            } catch (final Throwable e1) {
+                                LoggerFactory.log(logger, e1);
+                            }
+                        }
+
+                    }
+
+                }
             }
+            return ret;
         }
-
-        return ret;
     }
 
     private String codecToContainer(String codec) {
