@@ -742,49 +742,85 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private DownloadLinkCandidate next(DownloadLinkCandidateSelector selector) {
         final DownloadSession currentSession = selector.getSession();
+        final HashMap<String, Boolean> destinationValidationCache = new HashMap<String, Boolean>();
         while (newDLStartAllowed(currentSession)) {
             final List<DownloadLinkCandidate> nextCandidates = nextDownloadLinkCandidates(selector);
             if (nextCandidates != null && nextCandidates.size() > 0) {
                 DownloadLinkCandidate nextCandidate = findFinalCandidate(selector, nextCandidates);
                 if (nextCandidate != null) {
+                    final String destination = nextCandidate.getLink().getFilePackage().getDownloadDirectory();
+                    boolean validationOk = false;
                     try {
-                        if (PluginForHost.implementsSortDownloadLink(nextCandidate.getCachedAccount().getPlugin())) {
-                            final ArrayList<DownloadLink> mirrors = new ArrayList<DownloadLink>();
-                            mirrors.add(0, nextCandidate.getLink());
-                            for (final DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink(), MirrorDetectionDecision.SAFE, false)) {
-                                if (nextCandidate.getCachedAccount().canHandle(mirror) && (mirror.getFinalLinkState() == null || !FinalLinkState.OFFLINE.equals(mirror.getFinalLinkState()))) {
-                                    final DownloadLinkCandidate candidate = new DownloadLinkCandidate(nextCandidate.getLink(), nextCandidate.isForced(), nextCandidate.getCachedAccount(), nextCandidate.getProxySelector(), nextCandidate.isCustomizedAccount());
-                                    final DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
-                                    switch (permission) {
-                                    case OK:
-                                    case OK_FORCED:
-                                    case OK_SPEED_EXTENSION:
-                                        if (selector.validateDownloadLinkCandidate(candidate)) {
-                                            mirrors.add(mirror);
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                    }
+                        final Boolean cachedValidationResult = destinationValidationCache.get(destination);
+                        if (cachedValidationResult == null) {
+                            validateDestination(new File(destination));
+                            validationOk = true;
+                        } else {
+                            if (cachedValidationResult.booleanValue() == true) {
+                                validationOk = true;
+                            } else {
+                                for (final DownloadLinkCandidate candidate : nextCandidates) {
+                                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
                                 }
                             }
-                            final List<DownloadLink> sortedMirrors = nextCandidate.getCachedAccount().getPlugin().sortDownloadLinks(nextCandidate.getCachedAccount().getAccount(), mirrors);
-                            if (sortedMirrors != null && sortedMirrors.size() > 0 && sortedMirrors.get(0) != nextCandidate.getLink()) {
-                                nextCandidate = new DownloadLinkCandidate(sortedMirrors.get(0), nextCandidate.isForced(), nextCandidate.getCachedAccount(), nextCandidate.getProxySelector(), nextCandidate.isCustomizedAccount());
+                        }
+                    } catch (PathTooLongException e) {
+                        for (final DownloadLinkCandidate candidate : nextCandidates) {
+                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
+                        }
+                    } catch (BadDestinationException e) {
+                        for (final DownloadLinkCandidate candidate : nextCandidates) {
+                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
+                        }
+                    } finally {
+                        destinationValidationCache.put(destination, Boolean.valueOf(validationOk));
+                    }
+                    if (validationOk) {
+                        if (DISKSPACERESERVATIONRESULT.FAILED.equals(validateDiskFree(nextCandidates))) {
+                            for (final DownloadLinkCandidate candidate : nextCandidates) {
+                                selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.DISK_FULL, null, null));
                             }
+                        } else {
+                            try {
+                                if (PluginForHost.implementsSortDownloadLink(nextCandidate.getCachedAccount().getPlugin())) {
+                                    final ArrayList<DownloadLink> mirrors = new ArrayList<DownloadLink>();
+                                    mirrors.add(0, nextCandidate.getLink());
+                                    for (final DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink(), MirrorDetectionDecision.SAFE, false)) {
+                                        if (nextCandidate.getCachedAccount().canHandle(mirror) && (mirror.getFinalLinkState() == null || !FinalLinkState.OFFLINE.equals(mirror.getFinalLinkState()))) {
+                                            final DownloadLinkCandidate candidate = new DownloadLinkCandidate(nextCandidate.getLink(), nextCandidate.isForced(), nextCandidate.getCachedAccount(), nextCandidate.getProxySelector(), nextCandidate.isCustomizedAccount());
+                                            final DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
+                                            switch (permission) {
+                                            case OK:
+                                            case OK_FORCED:
+                                            case OK_SPEED_EXTENSION:
+                                                if (selector.validateDownloadLinkCandidate(candidate)) {
+                                                    mirrors.add(mirror);
+                                                }
+                                                break;
+                                            default:
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    final List<DownloadLink> sortedMirrors = nextCandidate.getCachedAccount().getPlugin().sortDownloadLinks(nextCandidate.getCachedAccount().getAccount(), mirrors);
+                                    if (sortedMirrors != null && sortedMirrors.size() > 0 && sortedMirrors.get(0) != nextCandidate.getLink()) {
+                                        nextCandidate = new DownloadLinkCandidate(sortedMirrors.get(0), nextCandidate.isForced(), nextCandidate.getCachedAccount(), nextCandidate.getProxySelector(), nextCandidate.isCustomizedAccount());
+                                    }
+                                }
+                            } catch (final Throwable e) {
+                                logger.log(e);
+                            }
+                            selector.setExcluded(nextCandidate.getLink());
+                            final MirrorLoading condition = new MirrorLoading(nextCandidate.getLink());
+                            for (DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink(), config.getMirrorDetectionDecision(), true)) {
+                                selector.setExcluded(mirror);
+                                if (mirror.getFinalLinkState() == null || FinalLinkState.CheckFailed(mirror.getFinalLinkState())) {
+                                    mirror.setConditionalSkipReason(condition);
+                                }
+                            }
+                            return nextCandidate;
                         }
-                    } catch (final Throwable e) {
-                        logger.log(e);
                     }
-                    selector.setExcluded(nextCandidate.getLink());
-                    final MirrorLoading condition = new MirrorLoading(nextCandidate.getLink());
-                    for (DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink(), config.getMirrorDetectionDecision(), true)) {
-                        selector.setExcluded(mirror);
-                        if (mirror.getFinalLinkState() == null || FinalLinkState.CheckFailed(mirror.getFinalLinkState())) {
-                            mirror.setConditionalSkipReason(condition);
-                        }
-                    }
-                    return nextCandidate;
                 }
             } else {
                 break;
@@ -1375,7 +1411,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private List<DownloadLinkCandidate> nextDownloadLinkCandidates(DownloadLinkCandidateSelector selector) {
         final DownloadSession currentSession = selector.getSession();
         final boolean skipAllCaptchas = CaptchaSettings.MODE.SKIP_ALL.equals(selector.getSession().getCaptchaMode());
-        final HashMap<String, Boolean> destinationValidationCache = new HashMap<String, Boolean>();
         while (!selector.isStopMarkReached() && newDLStartAllowed(currentSession)) {
             final DownloadLinkCandidate nextSelectedCandidate = nextDownloadLinkCandidate(selector);
             if (nextSelectedCandidate == null) {
@@ -1386,148 +1421,115 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (!nextSelectedCandidate.isForced() && selector.isMirrorManagement()) {
                 nextSelectedCandidates.addAll(findDownloadLinkCandidateMirrors(selector, nextSelectedCandidate));
             }
-            final String destination = nextSelectedCandidate.getLink().getFilePackage().getDownloadDirectory();
-            boolean validationOk = false;
-            try {
-                final Boolean cachedValidationResult = destinationValidationCache.get(destination);
-                if (cachedValidationResult == null) {
-                    validateDestination(new File(destination));
-                    validationOk = true;
-                } else {
-                    if (cachedValidationResult.booleanValue() == true) {
-                        validationOk = true;
-                    } else {
-                        for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
-                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
-                        }
+
+            /**
+             * filter captcha stuff and canHandle==false
+             */
+            final List<DownloadLinkCandidate> checkNextCandidatesStage1 = new ArrayList<DownloadLinkCandidate>();
+            for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
+                final DownloadLink link = candidate.getLink();
+                selector.addExcluded(link);
+                final AccountCache accountCache = currentSession.getAccountCache(link);
+                boolean ok = false;
+                CachedAccount tempDisabledCachedAccount = null;
+                for (final CachedAccount cachedAccount : accountCache) {
+                    if (!cachedAccount.canHandle(link)) {
+                        continue;
                     }
-                }
-            } catch (PathTooLongException e) {
-                for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
-                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
-                }
-            } catch (BadDestinationException e) {
-                for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
-                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
-                }
-            } finally {
-                destinationValidationCache.put(destination, Boolean.valueOf(validationOk));
-            }
-            if (!validationOk) {
-                //
-            } else if (DISKSPACERESERVATIONRESULT.FAILED.equals(validateDiskFree(nextSelectedCandidates))) {
-                for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
-                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.DISK_FULL, null, null));
-                }
-            } else {
-                /**
-                 * filter captcha stuff and canHandle==false
-                 */
-                final List<DownloadLinkCandidate> checkNextCandidatesStage1 = new ArrayList<DownloadLinkCandidate>();
-                for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
-                    final DownloadLink link = candidate.getLink();
-                    selector.addExcluded(link);
-                    final AccountCache accountCache = currentSession.getAccountCache(link);
-                    boolean ok = false;
-                    CachedAccount tempDisabledCachedAccount = null;
-                    for (final CachedAccount cachedAccount : accountCache) {
-                        if (!cachedAccount.canHandle(link)) {
+                    final CachedAccountPermission permission = selector.getCachedAccountPermission(cachedAccount);
+                    if (CachedAccountPermission.OK.equals(permission)) {
+                        final DownloadLinkCandidate checkNextCandidate = new DownloadLinkCandidate(candidate, cachedAccount, accountCache.isCustomizedCache());
+                        ok = true;
+                        if (cachedAccount.hasCaptcha(link) && (skipAllCaptchas || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(link)) != null)) {
+                            if (selector.validateDownloadLinkCandidate(checkNextCandidate)) {
+                                selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
+                            }
                             continue;
                         }
-                        final CachedAccountPermission permission = selector.getCachedAccountPermission(cachedAccount);
-                        if (CachedAccountPermission.OK.equals(permission)) {
-                            final DownloadLinkCandidate checkNextCandidate = new DownloadLinkCandidate(candidate, cachedAccount, accountCache.isCustomizedCache());
-                            ok = true;
-                            if (cachedAccount.hasCaptcha(link) && (skipAllCaptchas || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(link)) != null)) {
-                                if (selector.validateDownloadLinkCandidate(checkNextCandidate)) {
-                                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
-                                }
-                                continue;
-                            }
-                            checkNextCandidatesStage1.add(checkNextCandidate);
-                        } else if (CachedAccountPermission.TEMP_DISABLED.equals(permission)) {
-                            if (tempDisabledCachedAccount == null || tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
-                                tempDisabledCachedAccount = cachedAccount;
-                            }
-                        }
-                    }
-                    if (!ok) {
-                        /* candidate does not have a cachedAccount yet, so validation possible */
-                        if (tempDisabledCachedAccount != null) {
-                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, null));
-                        } else {
-                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, null, null));
+                        checkNextCandidatesStage1.add(checkNextCandidate);
+                    } else if (CachedAccountPermission.TEMP_DISABLED.equals(permission)) {
+                        if (tempDisabledCachedAccount == null || tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
+                            tempDisabledCachedAccount = cachedAccount;
                         }
                     }
                 }
-                if (checkNextCandidatesStage1.size() > 0) {
-                    /**
-                     * find all possible proxySelectors
-                     */
-                    final List<DownloadLinkCandidate> checkNextCandidatesStage2 = new ArrayList<DownloadLinkCandidate>();
-                    final boolean[][] flags = new boolean[][] { { false, false }, { true, false }, { true, true } };
-                    for (boolean[] flag : flags) {
-                        final Iterator<DownloadLinkCandidate> it = checkNextCandidatesStage1.iterator();
-                        while (it.hasNext()) {
-                            final DownloadLinkCandidate candidate = it.next();
-                            final List<AbstractProxySelectorImpl> proxySelectors = selector.getProxies(candidate, flag[0], flag[1]);
-                            if (proxySelectors.size() > 0) {
-                                it.remove();
-                                for (AbstractProxySelectorImpl proxySelector : proxySelectors) {
-                                    checkNextCandidatesStage2.add(new DownloadLinkCandidate(candidate, proxySelector));
-                                }
-                            }
-                        }
-                        if (checkNextCandidatesStage2.size() > 0) {
-                            /**
-                             * skip next flagset because we have already found possible proxySelectors
-                             */
-                            break;
-                        }
+                if (!ok) {
+                    /* candidate does not have a cachedAccount yet, so validation possible */
+                    if (tempDisabledCachedAccount != null) {
+                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, null));
+                    } else {
+                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, null, null));
                     }
-                    /**
-                     * handle all candidates without a proxySelector
-                     */
-                    for (final DownloadLinkCandidate notPossibleCandidate : checkNextCandidatesStage1) {
-                        try {
-                            if (selector.validateDownloadLinkCandidate(notPossibleCandidate)) {
-                                selector.addExcluded(notPossibleCandidate, new DownloadLinkCandidateResult(SkipReason.CONNECTION_UNAVAILABLE, null, null));
-                            }
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                            selector.addExcluded(notPossibleCandidate, new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, null, null));
-                        }
-                    }
-                    final List<DownloadLinkCandidate> nextCandidates = new ArrayList<DownloadLinkCandidate>();
-                    final Iterator<DownloadLinkCandidate> it = checkNextCandidatesStage2.iterator();
+                }
+            }
+            if (checkNextCandidatesStage1.size() > 0) {
+                /**
+                 * find all possible proxySelectors
+                 */
+                final List<DownloadLinkCandidate> checkNextCandidatesStage2 = new ArrayList<DownloadLinkCandidate>();
+                final boolean[][] flags = new boolean[][] { { false, false }, { true, false }, { true, true } };
+                for (boolean[] flag : flags) {
+                    final Iterator<DownloadLinkCandidate> it = checkNextCandidatesStage1.iterator();
                     while (it.hasNext()) {
                         final DownloadLinkCandidate candidate = it.next();
-                        try {
-                            final DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
-                            switch (permission) {
-                            case OK:
-                            case OK_FORCED:
-                            case OK_SPEED_EXTENSION:
-                                if (selector.validateDownloadLinkCandidate(candidate)) {
-                                    nextCandidates.add(candidate);
-                                }
-                                break;
-                            case CONCURRENCY_FORBIDDEN:
-                            case CONCURRENCY_LIMIT:
-                                if (selector.validateDownloadLinkCandidate(candidate)) {
-                                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_TEMP_UNAVAILABLE, null, null));
-                                }
-                                break;
+                        final List<AbstractProxySelectorImpl> proxySelectors = selector.getProxies(candidate, flag[0], flag[1]);
+                        if (proxySelectors.size() > 0) {
+                            it.remove();
+                            for (AbstractProxySelectorImpl proxySelector : proxySelectors) {
+                                checkNextCandidatesStage2.add(new DownloadLinkCandidate(candidate, proxySelector));
                             }
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, null, null));
                         }
                     }
-                    if (nextCandidates.size() > 0) {
-                        return nextCandidates;
+                    if (checkNextCandidatesStage2.size() > 0) {
+                        /**
+                         * skip next flagset because we have already found possible proxySelectors
+                         */
+                        break;
                     }
                 }
+                /**
+                 * handle all candidates without a proxySelector
+                 */
+                for (final DownloadLinkCandidate notPossibleCandidate : checkNextCandidatesStage1) {
+                    try {
+                        if (selector.validateDownloadLinkCandidate(notPossibleCandidate)) {
+                            selector.addExcluded(notPossibleCandidate, new DownloadLinkCandidateResult(SkipReason.CONNECTION_UNAVAILABLE, null, null));
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        selector.addExcluded(notPossibleCandidate, new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, null, null));
+                    }
+                }
+                final List<DownloadLinkCandidate> nextCandidates = new ArrayList<DownloadLinkCandidate>();
+                final Iterator<DownloadLinkCandidate> it = checkNextCandidatesStage2.iterator();
+                while (it.hasNext()) {
+                    final DownloadLinkCandidate candidate = it.next();
+                    try {
+                        final DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
+                        switch (permission) {
+                        case OK:
+                        case OK_FORCED:
+                        case OK_SPEED_EXTENSION:
+                            if (selector.validateDownloadLinkCandidate(candidate)) {
+                                nextCandidates.add(candidate);
+                            }
+                            break;
+                        case CONCURRENCY_FORBIDDEN:
+                        case CONCURRENCY_LIMIT:
+                            if (selector.validateDownloadLinkCandidate(candidate)) {
+                                selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_TEMP_UNAVAILABLE, null, null));
+                            }
+                            break;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, null, null));
+                    }
+                }
+                if (nextCandidates.size() > 0) {
+                    return nextCandidates;
+                }
+
             }
         }
         return null;
