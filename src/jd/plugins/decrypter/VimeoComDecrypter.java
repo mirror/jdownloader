@@ -236,7 +236,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     br.getPage("//player.vimeo.com/config/" + ID);
                 }
 
-                if (br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|This video does not exist|>We couldn't find that page|>Sorry, there is no video here\\.<|>Either it was deleted or it never existed in the first place")) {
+                if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|This video does not exist|>We couldn't find that page|>Sorry, there is no video here\\.<|>Either it was deleted or it never existed in the first place")) {
                     decryptedLinks.add(createOfflinelink(parameter, ID, null));
                     return decryptedLinks;
                 }
