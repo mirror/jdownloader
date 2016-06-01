@@ -90,6 +90,7 @@ public class FileloadIo extends PluginForDecrypt {
             dl.setContentUrl(parameter);
             if (filename != null) {
                 dl.setFinalFileName(filename);
+                dl.setProperty("directfilename", filename);
             } else {
                 dl.setName(linkid);
             }

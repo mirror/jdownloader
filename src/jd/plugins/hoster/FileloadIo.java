@@ -96,10 +96,13 @@ public class FileloadIo extends PluginForHost {
         folderid = getFolderid(link.getDownloadURL());
         linkid = getLinkid(link.getDownloadURL());
         if (USE_API_LINKCHECK) {
-            /* 2016-05-31: There is no free API available (yet). */
+            /* TODO: Implement this! */
             prepBRAPI(this.br);
         } else {
             /* First let's see if the main folder is still online! */
+            if (getFilenameProperty(link) == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             this.br.getPage("https://" + this.getHost() + "/" + folderid);
             if (mainlinkIsOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -141,6 +144,10 @@ public class FileloadIo extends PluginForHost {
         }
     }
 
+    private String getFilenameProperty(final DownloadLink dl) {
+        return dl.getStringProperty("directfilename", null);
+    }
+
     public static boolean mainlinkIsOffline(final Browser br) {
         final boolean isOffline = br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Not Found|The requested page was not found");
         return isOffline;
@@ -154,6 +161,7 @@ public class FileloadIo extends PluginForHost {
         return new Regex(url, "(\\d+)$").getMatch(0);
     }
 
+    /** TODO: 2016-06-02: Fix free mode!! */
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -270,6 +278,7 @@ public class FileloadIo extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
+        /* TODO: Set Free + Premium limits once they are available serverside */
         final boolean isPremium = "1".equals(PluginJSonUtils.getJson(this.br, "premium"));
         if (!isPremium) {
             account.setType(AccountType.FREE);
@@ -293,39 +302,50 @@ public class FileloadIo extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        if (account.getType() == AccountType.FREE) {
-            getDllinkWebsite();
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                br.getPage(API_BASE + "download/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(link.getFinalFileName()));
-                dllink = PluginJSonUtils.getJson(this.br, "download_link");
+        /* TODO: Set Free + Premium limits once they are available serverside */
+        // if (account.getType() == AccountType.FREE) {
+        // } else {
+        // }
+        String dllink = this.checkDirectLink(link, "premium_directlink");
+        if (dllink == null) {
+            br.getPage(API_BASE + "download/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(getFilenameProperty(link)));
+            dllink = PluginJSonUtils.getJson(this.br, "download_link");
 
-                /* TODO: Try to find a way to get the sha1 hash for unregistered users too! */
-                final String sha1 = PluginJSonUtils.getJson(this.br, "sha1");
-                if (sha1 != null) {
-                    link.setSha1Hash(sha1);
-                }
-
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            /* TODO: Try to find a way to get the sha1 hash for unregistered users too! */
+            final String sha1 = PluginJSonUtils.getJson(this.br, "sha1");
+            if (sha1 != null) {
+                link.setSha1Hash(sha1);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+
+            if (dllink == null) {
+                handleErrorsAPI();
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("premium_directlink", dllink);
-            dl.startDownload();
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("premium_directlink", dllink);
+        dl.startDownload();
+    }
+
+    private void handleErrorsAPI() throws PluginException {
+        final String error = PluginJSonUtils.getJson(this.br, "error");
+        if (error != null) {
+            if (error.equals("file_not_found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            logger.warning("Unknown API error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 

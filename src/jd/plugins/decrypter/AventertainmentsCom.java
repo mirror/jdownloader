@@ -131,6 +131,7 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 logger.info("Stream download available");
                 /* Replace '.m3u8' with '.m3u9' to prevent generic HLS decrypter from picking this up first! */
                 final DownloadLink dl = this.createDownloadlink(url_stream.replace(".m3u8", ".m3u9"));
+                dl.setContentUrl(url_stream);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("type", "video_stream");
                 dl.setFinalFileName(fpName + ".mp4");
