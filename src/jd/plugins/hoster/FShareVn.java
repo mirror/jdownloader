@@ -26,12 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,6 +47,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" }, flags = { 2 })
 public class FShareVn extends PluginForHost {
@@ -150,12 +150,15 @@ public class FShareVn extends PluginForHost {
         String filename = br.getRegex("file\" title=\"(.*?)\">").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<i class=\"fa fa-file-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>Fshare - (.*?)</title>").getMatch(0);
-                }
-            }
+        }
+        if (filename == null) {
+            filename = br.getRegex("<i class=\"fa fa\\-file[^\"]*?\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>Fshare \\- (.*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<i class=\"fa fa\\-file\\-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
         }
         String filesize = br.getRegex("<i class=\"fa fa-hdd-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
         if (filesize == null) {

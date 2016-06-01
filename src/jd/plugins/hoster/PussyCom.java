@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangyoulater.com" }, urls = { "http://(www\\.)?bangyoulater\\.com/(embed\\.php\\?id=\\d+|[a-z0-9]+/\\d+/.{1})" }, flags = { 0 })
-public class BangYouLaterCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pussy.com" }, urls = { "http://(www\\.)?bangyoulater\\.com/(embed\\.php\\?id=\\d+|[a-z0-9]+/\\d+/.{1})|https?://(?:www\\.)?pussy\\.com/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+public class PussyCom extends PluginForHost {
 
-    public BangYouLaterCom(PluginWrapper wrapper) {
+    public PussyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,28 +44,44 @@ public class BangYouLaterCom extends PluginForHost {
         return "http://www.bangyoulater.com/dmca/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().contains("embed.php?id=")) {
-            link.setUrlDownload("http://www.bangyoulater.com/milf/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/x");
+    @Override
+    public String rewriteHost(String host) {
+        if ("bangyoulater.com".equals(getHost())) {
+            if (host == null || "bangyoulater.com".equals(host)) {
+                return "pussy.com";
+            }
         }
+        return super.rewriteHost(host);
     }
+
+    private static final String type_old = "http://(?:www\\.)?bangyoulater\\.com/(?:embed\\.php\\?id=\\d+|[a-z0-9]+/\\d+/.{1})";
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "bangyoulater\\.com/(.+)").getMatch(0));
+        if (downloadLink.getDownloadURL().matches(type_old)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String name_url = new Regex(downloadLink.getDownloadURL(), "pussy\\.com/(.+)").getMatch(0);
+
+        downloadLink.setName(name_url);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // ">This video is no longer available" is always in the html
-        if (br.getURL().equals("http://www.bangyoulater.com/") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"thumbnail err\"")) {
+        if (br.getURL().equals("http://pussy.com/") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"thumbnail err\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- BangYouLater\\.com</title>").getMatch(0);
+            /* Fallback */
+            filename = name_url;
         }
-        DLLINK = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
         if (DLLINK == null) {
             DLLINK = br.getRegex("videoUrl = \\'(http://[^<>\"]*?)\\'").getMatch(0);
         }
@@ -76,7 +92,7 @@ public class BangYouLaterCom extends PluginForHost {
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
-            ext = ".flv";
+            ext = ".mp4";
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
@@ -84,7 +100,7 @@ public class BangYouLaterCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

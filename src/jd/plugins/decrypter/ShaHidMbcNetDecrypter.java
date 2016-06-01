@@ -108,7 +108,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             if (br.containsHTML(">That product is not available at this time<") || this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createDownloadlink(parameter));
                 return decryptedLinks;
-            } else if (aa == null && this.br.containsHTML("id=\"buyButton\"")) {
+            } else if (aa == null && this.br.containsHTML("id=\"buyButton1?\"")) {
                 logger.info("Paid content --> Account needed");
                 return decryptedLinks;
             }

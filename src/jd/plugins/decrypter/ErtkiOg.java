@@ -59,31 +59,25 @@ public class ErtkiOg extends PluginForDecrypt {
                 fpName = br.getRegex("<meta name=\"description\" content=\"NUDolls (.*?)\" />").getMatch(0);
             }
             // now we find
-            boolean b64 = true;
-            String[] finallink = br.getRegex("url=([^<>\"\\']+)").getColumn(0);
-            if (finallink == null || finallink.length == 0) {
-                finallink = br.getRegex("<a href=\"([^\"\\'<>]+)\" target=\"_blank\"><b>").getColumn(0);
-            }
-            if (finallink == null || finallink.length == 0) {
-                b64 = false;
-                finallink = br.getRegex("href=\"(http://(www\\.)?erotelki\\.org/uploads/posts/[^<>\"]*?)\" onclick=\"return hs\\.expand").getColumn(0);
-                if (finallink == null || finallink.length == 0) {
-                    finallink = br.getRegex("\"(http://(www\\.)?erotelki\\.org/uploads/posts/[^<>\"]*?)\"").getColumn(0);
+            final String[] regexes = { "url=([^<>\"\\']+)", "<a href=\"([^\"\\'<>]+)\" target=\"_blank\">", "href=\"(http://(www\\.)?erotelki\\.org/uploads/posts/[^<>\"]*?)\" onclick=\"return hs\\.expand", "\"(http://(www\\.)?erotelki\\.org/uploads/posts/[^<>\"]*?)\"" };
+            for (final String regex : regexes) {
+                final String[] finallinks = br.getRegex(regex).getColumn(0);
+                if (finallinks != null) {
+                    for (final String link : finallinks) {
+                        /* Skip these as we get them directly via RegEx already */
+                        if (link.contains("engine/")) {
+                            continue;
+                        }
+                        String final_link;
+                        if (!link.startsWith("http")) {
+                            final_link = Encoding.Base64Decode(Encoding.htmlDecode(link));
+                        } else {
+                            final_link = link;
+                            final_link = "directhttp://" + final_link;
+                        }
+                        decryptedLinks.add(createDownloadlink(final_link));
+                    }
                 }
-            }
-            if (finallink == null || finallink.length == 0) {
-                logger.warning("erotelki Decrypter: Can't find links for " + parameter);
-                return null;
-            }
-            for (String link : finallink) {
-                String final_link;
-                if (b64) {
-                    final_link = Encoding.Base64Decode(Encoding.htmlDecode(link));
-                } else {
-                    final_link = link;
-                    final_link = "directhttp://" + final_link;
-                }
-                decryptedLinks.add(createDownloadlink(final_link));
             }
 
             if (fpName != null) {

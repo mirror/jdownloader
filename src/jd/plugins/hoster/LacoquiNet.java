@@ -49,18 +49,22 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lacoqui.net" }, urls = { "https?://(www\\.)?lacoqui\\.net/[a-z0-9]{12}" }, flags = { 0 })
 public class LacoquiNet extends PluginForHost {
 
-    private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://lacoqui.net";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private String               correctedBR                   = "";
+    private static final String  PASSWORDTEXT                  = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST                   = "http://lacoqui.net";
+    private static final String  NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  MAINTENANCE                   = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT           = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT                 = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE = false;
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload  = new AtomicInteger(20);
     // don't touch
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxFree                       = new AtomicInteger(1);
+
+    private String               fuid                          = null;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -99,14 +103,16 @@ public class LacoquiNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         prepBrowser();
+        setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final Browser altbr = this.br.cloneBrowser();
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -114,16 +120,17 @@ public class LacoquiNet extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
-        if (fileInfo[0] == null) {
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                sendForm(download1);
-                scanInfo(fileInfo);
-            }
+
+        /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
+        if (fileInfo[0] != null && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        } else if (fileInfo[0] == null && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
+            logger.info("Failed to find filename, trying getFnameViaAbuseLink");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
+
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -154,6 +161,9 @@ public class LacoquiNet extends PluginForHost {
                 }
             }
         }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]+)<").getMatch(0);
+        }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
@@ -167,6 +177,28 @@ public class LacoquiNet extends PluginForHost {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
+    }
+
+    private void setFUID(final DownloadLink dl) {
+        fuid = getFUIDFromURL(dl);
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFUIDFromURL(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+    }
+
+    /**
+     * Get filename via abuse-URL.<br />
+     * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
+     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ABUSE</u></b> is <b>true</b>!<br />
+     *
+     * @throws Exception
+     */
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
+        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     @Override
@@ -304,6 +336,9 @@ public class LacoquiNet extends PluginForHost {
             correctBR();
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (downloadLink.getFinalFileName().endsWith("&#133;")) {
+            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) {
