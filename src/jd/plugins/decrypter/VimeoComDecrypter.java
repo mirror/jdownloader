@@ -44,7 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -77,12 +76,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         String parameter = param.toString().replace("http://", "https://");
         if (parameter.matches(type_player_private_external_direct)) {
             final DownloadLink link;
-            decryptedLinks.add(link = this.createDownloadlink("directhttp://" + parameter));
+            decryptedLinks.add(link = this.createDownloadlink("directhttp://" + parameter.replaceFirst("%20.+$", "")));
             final String fileName = Plugin.getFileNameFromURL(new URL(parameter));
             link.setForcedFileName(fileName);
             link.setFinalFileName(fileName);
-            link.setProperty(DirectHTTP.FORCE_NORESUME, true);
-            link.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);
             return decryptedLinks;
         } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
