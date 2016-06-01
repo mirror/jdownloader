@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "erotelki.org" }, urls = { "http://(www\\.)?erotelki\\.org/([\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html|engine/go\\.php\\?url=[^<>\"\\']+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "erotelki.org" }, urls = { "http://(www\\.)?erotelki\\.org/([\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html|engine/go\\.php\\?url=[^<>\"\\']+)" }, flags = { 0 })
 public class ErtkiOg extends PluginForDecrypt {
 
     public ErtkiOg(PluginWrapper wrapper) {
@@ -46,8 +46,8 @@ public class ErtkiOg extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         if (parameter.matches("http://(www\\.)?erotelki\\.org/[\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html")) {
             br.getPage(parameter);
-            if (br.containsHTML(">К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена\\.")) {
-                logger.warning("erotelki Decrypter: Invalid URL " + parameter);
+            if (br.containsHTML(">К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена\\.") || this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             // set packagename
@@ -73,7 +73,9 @@ public class ErtkiOg extends PluginForDecrypt {
                             final_link = Encoding.Base64Decode(Encoding.htmlDecode(link));
                         } else {
                             final_link = link;
-                            final_link = "directhttp://" + final_link;
+                            if (final_link.matches(".+erotelki\\.org/uploads/.+")) {
+                                final_link = "directhttp://" + final_link;
+                            }
                         }
                         decryptedLinks.add(createDownloadlink(final_link));
                     }
