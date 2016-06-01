@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[a-zA-Z0-9]+/(?!\\s+).+", "http://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[a-zA-Z0-9]+/(?!\\s+).+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
 
     private boolean              passwordProtected            = false;
@@ -451,9 +451,9 @@ public class UlozTo extends PluginForHost {
                     /*
                      * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                      * 1800542995541.log; 2422576; jdlog://1800542995541
-                     * 
+                     *
                      * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                     * 
+                     *
                      * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                      */
                     // logger.info("No traffic available!");
