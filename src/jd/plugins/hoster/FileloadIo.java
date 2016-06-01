@@ -239,7 +239,7 @@ public class FileloadIo extends PluginForHost {
                 }
             }
             br.getPage(API_BASE + "login/" + Encoding.urlEncode(account.getUser()) + "/" + JDHash.getMD5(account.getPass()));
-            account_auth_token = PluginJSonUtils.getJson(this.br, "auth_token");
+            account_auth_token = PluginJSonUtils.getJson(this.br, "login_token");
             if (br.containsHTML("login_failed") || account_auth_token == null) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -273,7 +273,7 @@ public class FileloadIo extends PluginForHost {
         final boolean isPremium = "1".equals(PluginJSonUtils.getJson(this.br, "premium"));
         if (!isPremium) {
             account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
+            /* Free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
