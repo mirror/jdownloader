@@ -60,10 +60,11 @@ public class BbcCom extends PluginForHost {
         String title = link.getStringProperty("decrypterfilename");
         /* HLS - try that first as it will give us higher bitrates */
         this.br.getPage("http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/" + vpid);
-        /* RTMP */
         if (!this.br.getHttpConnection().isOK()) {
+            /* RTMP #1 */
             /* 403 or 404 == geoblocked|offline|needsRTMP */
-            /* Fallback to rtmp is sometimes needed e.g. vpids: p01dvmbh, b06s1fj9 */
+            /* Fallback e.g. vpids: p01dvmbh, b06s1fj9 */
+            /* Possible "device" strings: "pc", "iptv-all", "journalism-pc" */
             this.br.getPage("http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/pc/vpid/" + vpid);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -135,6 +136,7 @@ public class BbcCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (hls_master != null) {
+            hls_master = Encoding.htmlDecode(hls_master);
             br.getPage(hls_master);
             final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
             if (hlsbest == null) {
