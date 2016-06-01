@@ -74,7 +74,8 @@ public class AventertainmentsCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace(".m3u9", ".m3u8"));
+        final String newurl = link.getDownloadURL().replace(".m3u9", ".m3u8");
+        link.setUrlDownload(newurl);
     }
 
     @SuppressWarnings("deprecation")
