@@ -51,7 +51,6 @@ public class FileloadIo extends PluginForHost {
 
     /* Notes: Also known as/before: netload.in, dateisenden.de */
     private static final String API_BASE                     = "https://api.fileload.io/";
-    private static final String API_AUTH_TOKEN               = "test_nullified";
     /* Connection stuff */
     private final boolean       FREE_RESUME                  = true;
     private final int           FREE_MAXCHUNKS               = 0;
@@ -300,8 +299,15 @@ public class FileloadIo extends PluginForHost {
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
-                br.getPage(API_BASE + "download/" + API_AUTH_TOKEN + "/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(link.getFinalFileName()));
+                br.getPage(API_BASE + "download/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(link.getFinalFileName()));
                 dllink = PluginJSonUtils.getJson(this.br, "download_link");
+
+                /* TODO: Try to find a way to get the sha1 hash for unregistered users too! */
+                final String sha1 = PluginJSonUtils.getJson(this.br, "sha1");
+                if (sha1 != null) {
+                    link.setSha1Hash(sha1);
+                }
+
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
