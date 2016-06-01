@@ -145,6 +145,7 @@ public class YounowCom extends PluginForHost {
             rtmp.setFlashVer("WIN 11,8,800,94");
             rtmp.setSwfUrl("http://cdn2.younow.com/js/jwplayer6/jwplayer.flash.swf");
             rtmp.setResume(false);
+            rtmp.setLive(true);
             ((RTMPDownload) dl).startDownload();
         }
     }

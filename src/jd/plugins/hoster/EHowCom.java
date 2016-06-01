@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ehow.com" }, urls = { "http://[\\w\\.]*?\\.ehow\\.com/video_\\d+_.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ehow.com" }, urls = { "https?://(?:www\\.)?ehowdecrypted\\.com/video_\\d+_.*?\\.html" }, flags = { 0 })
 public class EHowCom extends PluginForHost {
 
     private String  dllink = null;
@@ -44,41 +44,55 @@ public class EHowCom extends PluginForHost {
         return "http://www.ehow.com/terms_use.aspx";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("ehowdecrypted.com/", "ehow.com/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("Error.aspx\\?404=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRedirectLocation().contains("Error.aspx\\?404=true")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(br.getRedirectLocation());
         }
-        if (br.containsHTML("(<title>eHow \\| How to Videos, Articles \\&amp; More \\- Trusted Advice for the Curious Life \\| eHow\\.com</title>|>Oh no\\! It looks like the page you\\'re trying to find isn\\'t around anymore\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>eHow \\| How to Videos, Articles \\&amp; More \\- Trusted Advice for the Curious Life \\| eHow\\.com</title>|>Oh no\\! It looks like the page you\\'re trying to find isn\\'t around anymore\\.<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1 id=\"nointelliTXT\" class=\"articleTitle Heading1\">(.*?)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex(",\"video_title\":\"(.*?)\"").getMatch(0);
-                if (filename == null) filename = br.getRegex("<title>(.*?) \\| eHow\\.com</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<title>(.*?) \\| eHow\\.com</title>").getMatch(0);
+                }
             }
 
         }
         getDllink();
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = br2.openGetConnection(Encoding.htmlDecode(dllink));
-        if (!con.getContentType().contains("html"))
+        if (!con.getContentType().contains("html")) {
             downloadLink.setDownloadSize(con.getLongContentLength());
-        else
+        } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (hd)
+        }
+        if (hd) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.EHowCom.hdAvailable", "Download is available in HD"));
-        else
+        } else {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.EHowCom.hdNotAvailable", "Download is only available in SD"));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -87,7 +101,9 @@ public class EHowCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

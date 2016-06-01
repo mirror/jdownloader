@@ -38,6 +38,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("/embed\\d-album/", "/album/");
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Offline or not yet released */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"countdown\\-clock\"|This song has been removed due to a DMCA Complaint")) {

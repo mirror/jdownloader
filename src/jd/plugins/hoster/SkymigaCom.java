@@ -278,6 +278,9 @@ public class SkymigaCom extends PluginForHost {
                 }
             }
         }
+        // if (fileInfo[0] == null) {
+        // fileInfo[0] = new Regex(correctedBR, ">File Name</td>[\t\n\r ]*?<td>([^<>\"]+)</").getMatch(0);
+        // }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
@@ -742,7 +745,7 @@ public class SkymigaCom extends PluginForHost {
     }
 
     private boolean preferSSL() {
-        return this.getPluginConfig().getBooleanProperty(PREFER_SSL, default_prefer_ssl);
+        return this.getPluginConfig().getBooleanProperty(PREFER_SSL, default_prefer_ssl) && (SUPPORTSHTTPS_FORCED || SUPPORTSHTTPS);
     }
 
     /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */

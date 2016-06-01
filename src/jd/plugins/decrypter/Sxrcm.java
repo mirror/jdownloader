@@ -56,13 +56,11 @@ public class Sxrcm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         synchronized (LOCK) {
             if (new Regex(parameter, PATTEREN_SUPPORTED_MAIN).matches()) {
+                br.setFollowRedirects(true);
                 br.getPage(parameter);
-                if (br.getRedirectLocation() != null) {
-                    try {
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
-                    }
+                br.setFollowRedirects(false);
+                if (!this.br.containsHTML("melden\\.php")) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
                 final String[] final_links = br.getRegex("onclick=\"this\\.className\\+=\\' disabled\\'\" href=\"(http[^<>\"]*?)\"").getColumn(0);
