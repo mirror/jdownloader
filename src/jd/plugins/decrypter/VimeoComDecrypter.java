@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,6 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -74,7 +76,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http://", "https://");
         if (parameter.matches(type_player_private_external_direct)) {
-            decryptedLinks.add(this.createDownloadlink("directhttp://" + parameter));
+            final DownloadLink link;
+            decryptedLinks.add(link = this.createDownloadlink("directhttp://" + parameter));
+            final String fileName = Plugin.getFileNameFromURL(new URL(parameter));
+            link.setForcedFileName(fileName);
+            link.setFinalFileName(fileName);
+            link.setProperty(DirectHTTP.FORCE_NORESUME, true);
+            link.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);
             return decryptedLinks;
         } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
