@@ -64,7 +64,7 @@ public class PussyCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(type_old)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getDownloadURL().matches("http://pussy.com/([\\d]+|categories|dmca|favorites|myuploads|privacypolicy|search|terms|upload|view-2257)")) {
+        if (downloadLink.getDownloadURL().matches("http://pussy.com/([\\d]+|categories|dmca|favorites|myuploads|privacypolicy|search|terms|There|upload|view-2257)")) {
             logger.info("Unsupported/invalid link: " + downloadLink.getDownloadURL());
             return AvailableStatus.FALSE;
         }
