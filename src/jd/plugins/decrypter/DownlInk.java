@@ -23,6 +23,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.envjs.EnvJSBrowser;
+import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
+import org.jdownloader.scripting.envjs.PermissionFilter;
+import org.jdownloader.scripting.envjs.XHRResponse;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -34,15 +43,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storable;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.envjs.EnvJSBrowser;
-import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
-import org.jdownloader.scripting.envjs.PermissionFilter;
-import org.jdownloader.scripting.envjs.XHRResponse;
 
 /**
  * HAHAHAHA
@@ -59,6 +59,13 @@ public class DownlInk extends antiDDoSForDecrypt {
     }
 
     private String parameter = null;
+
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        super.prepBrowser(prepBr, host);
+        prepBr.addAllowedResponseCodes(401);
+        return prepBr;
+    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -77,12 +84,14 @@ public class DownlInk extends antiDDoSForDecrypt {
             captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             // no need for runPostRequestTask. usually cloudflare event is on FIRST request, so lets bypass.
             br.submitForm(captcha);
+            // they will respond with 401 here which can throw exception without response code adding.
+
             // then another get here, here comes the JS we need
             getPage(br.getURL());
         }
         // the single download link, returned in iframe
         final String[] iframes = envJs.getRegex("<\\s*iframe\\s+[^>]+>").getColumn(-1);
-        if (iframes != null) {
+        if (iframes != null && iframes.length > 0) {
             for (final String iframe : iframes) {
                 String link = new Regex(iframe, "src\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
                 if (inValidate(link)) {
@@ -92,6 +101,11 @@ public class DownlInk extends antiDDoSForDecrypt {
                     decryptedLinks.add(createDownloadlink(link));
                 }
             }
+        } else {
+            // try this
+            // envJs.eval("var result1 = b73b6d();");
+            // String result = envJs.getDocument();
+            // envJS doesn't decode base64 nor evaulate (it seems).
         }
         return decryptedLinks;
     }
