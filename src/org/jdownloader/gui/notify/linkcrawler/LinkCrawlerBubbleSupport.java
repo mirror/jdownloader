@@ -106,7 +106,6 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
         @Override
         public void onProcessingCrawlerPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
-            register();
         }
 
         @Override
@@ -116,7 +115,6 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
         @Override
         public void onProcessingContainerPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
-            register();
         }
 
     }
