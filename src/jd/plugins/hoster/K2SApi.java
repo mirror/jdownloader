@@ -1579,7 +1579,7 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, message);
                 } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section
-                    final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                    final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                     String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                     StringBuilder sb = new StringBuilder();
                     sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
