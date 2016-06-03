@@ -117,7 +117,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @author raztoki
      */
     protected void getPage(final Browser ibr, final String page) throws Exception {
-        if (page == null) {
+        if (ibr == null || page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -149,7 +149,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     protected void postPage(final Browser ibr, String page, final String postData) throws Exception {
-        if (page == null || postData == null) {
+        if (ibr == null || page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -183,7 +183,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     protected void postPage(final Browser ibr, String page, final LinkedHashMap<String, String> param) throws Exception {
-        if (page == null || param == null) {
+        if (ibr == null || page == null || param == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -217,6 +217,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
+        if (ibr == null || page == null || post == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final PostRequest request = ibr.createPostRequest(page, new QueryInfo(), null);
         request.setPostDataString(post);
         setContentType(request, isJson);
@@ -270,7 +273,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     protected void submitForm(final Browser ibr, final Form form) throws Exception {
-        if (form == null) {
+        if (ibr == null || form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -587,7 +590,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, message);
         } else if (responseCode == 503 && cloudflare != null) {
             // 503 response code with javascript math section && with 5 second pause
-            final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+            final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
             String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
             StringBuilder sb = new StringBuilder();
             sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");

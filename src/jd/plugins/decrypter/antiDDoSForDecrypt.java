@@ -64,12 +64,14 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         return false;
     }
 
-    public static final String                    cfRequiredCookies = "__cfduid|cf_clearance";
-    public static final String                    icRequiredCookies = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
-    public static final String                    suRequiredCookies = "sucuri_cloudproxy_uuid_[a-f0-9]+";
+    private static final String                   cfRequiredCookies     = "__cfduid|cf_clearance";
+    private static final String                   icRequiredCookies     = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
+    private static final String                   suRequiredCookies     = "sucuri_cloudproxy_uuid_[a-f0-9]+";
     protected static HashMap<String, Cookies>     antiDDoSCookies   = new HashMap<String, Cookies>();
     protected static AtomicReference<String>      userAgent         = new AtomicReference<String>(null);
     protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
+
+    public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies;
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -117,7 +119,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      */
     protected void getPage(final Browser ibr, final String page) throws Exception {
-        if (page == null) {
+        if (ibr == null || page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -149,7 +151,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void postPage(final Browser ibr, String page, final String postData) throws Exception {
-        if (page == null || postData == null) {
+        if (ibr == null || page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -183,7 +185,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void postPage(final Browser ibr, String page, final LinkedHashMap<String, String> param) throws Exception {
-        if (page == null || param == null) {
+        if (ibr == null || page == null || param == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -217,6 +219,9 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
+        if (ibr == null || page == null || post == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final PostRequest request = ibr.createPostRequest(page, new QueryInfo(), null);
         request.setPostDataString(post);
         setContentType(request, isJson);
@@ -270,7 +275,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void submitForm(final Browser ibr, final Form form) throws Exception {
-        if (form == null) {
+        if (ibr == null || form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -584,7 +589,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FATAL, message);
         } else if (responseCode == 503 && cloudflare != null) {
             // 503 response code with javascript math section && with 5 second pause
-            final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+            final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
             String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
             StringBuilder sb = new StringBuilder();
             sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
@@ -713,7 +718,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // slow!
         final Form[] forms = ibr.getForms();
         for (final Form form : forms) {
-            if (form.getStringProperty("id") != null && (form.getStringProperty("id").equalsIgnoreCase("challenge-form") || form.getStringProperty("id").equalsIgnoreCase("ChallengeForm"))) {
+            if (form.getStringProperty("id") != null && form.getStringProperty("id").matches("challenge-form|ChallengeForm")) {
                 return form;
             }
         }
