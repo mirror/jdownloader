@@ -101,11 +101,6 @@ public class DownlInk extends antiDDoSForDecrypt {
                     decryptedLinks.add(createDownloadlink(link));
                 }
             }
-        } else {
-            // try this
-            // envJs.eval("var result1 = b73b6d();");
-            // String result = envJs.getDocument();
-            // envJS doesn't decode base64 nor evaulate (it seems).
         }
         return decryptedLinks;
     }
