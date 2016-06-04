@@ -85,7 +85,7 @@ public class Shareplacecom extends PluginForHost {
             if (iframe != null) {
                 br.getPage(iframe);
             }
-            if (br.containsHTML("Your requested file is not found") || !br.containsHTML("Filename:<")) {
+            if (new Regex(correctedBR, "Your requested file is not found").matches() || !br.containsHTML("Filename:<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = new Regex(correctedBR, "Filename:</font></b>(.*?)<b><br>").getMatch(0);
