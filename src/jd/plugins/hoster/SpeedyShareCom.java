@@ -400,6 +400,8 @@ public class SpeedyShareCom extends PluginForHost {
                 finallink = br.getRedirectLocation();
                 doMagic();
                 sleep(3000, link);
+            } else {
+                sleep(3000, link);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, -8);
