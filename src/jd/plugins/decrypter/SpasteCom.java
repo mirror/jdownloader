@@ -45,7 +45,7 @@ import jd.plugins.PluginException;
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:site/checkPasteUrl|p/)\\?c=((?-i)[a-zA-Z0-9]{10})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6})" }, flags = { 0 })
 public class SpasteCom extends antiDDoSForDecrypt {
 
     public SpasteCom(PluginWrapper wrapper) {
@@ -56,7 +56,6 @@ public class SpasteCom extends antiDDoSForDecrypt {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         getPage(parameter);
         /* Error handling */
@@ -133,8 +132,24 @@ public class SpasteCom extends antiDDoSForDecrypt {
             form.put("pasteUrlForm%5Bsubmit%5D", "submit");
             submitForm(form);
         }
-        // look for content! within '/p/c=? + uid', by the way you cant just jump to it.
-        final String plaintxt = br.getRegex("class=\"required input-block-level pasteContent\"(.*?)(?:</div>\\s*){3}").getMatch(0);
+        final String plaintxt;
+        // /s links have a different format
+        if (parameter.contains("spaste.com/s/")) {
+            // we need some info
+            final String id = br.getRegex("\\$\\.post\\(\"/site/getRedirectLink\",\\{id:'(\\d+)'\\}").getMatch(0);
+            if (id == null) {
+                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            }
+            // ajax request
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            br.getHeaders().put("Accept", "*/*");
+            br.postPage("/site/getRedirectLink", "id=" + Encoding.urlEncode(id));
+            plaintxt = br.toString();
+        } else {
+            // look for content! within '/p/c=? + uid', by the way you cant just jump to it.
+            plaintxt = br.getRegex("class=\"required input-block-level pasteContent\"(.*?)(?:</div>\\s*){3}").getMatch(0);
+        }
         if (plaintxt == null) {
             // this isn't always an error! there might not be any links!
             logger.info("Could not find 'plaintxt' : " + parameter);
