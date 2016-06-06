@@ -45,6 +45,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -2795,8 +2796,7 @@ public class YoutubeHelper {
     }
 
     public static String createLinkID(String videoID, AbstractVariant variant, List<String> variants) {
-        final String v = "youtubev2://" + videoID + "/" + variant.getBaseVariant().name();
-        return v;
+        return "youtubev2://" + videoID + "/" + Hash.getMD5(Encoding.urlEncode(variant._getUniqueId()));
     }
 
     public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {
