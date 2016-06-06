@@ -45,7 +45,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -176,7 +175,7 @@ public class YoutubeHelper {
 
     private final LogInterface          logger;
     private String                      base;
-                                        // private List<YoutubeBasicVariant> variants;
+    // private List<YoutubeBasicVariant> variants;
 
     // public List<YoutubeBasicVariant> getVariants() {
     // return variants;
@@ -1581,6 +1580,11 @@ public class YoutubeHelper {
                 // Sorry about that. .:. 7BN5H7AVHUIE8 invalid uid.
                 String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
                 if (subError != null && !subError.matches("\\s*")) {
+                    if (vid.error != null) {
+                        subError = vid.error;
+                        logger.warning(unavailableReason + " :: " + subError);
+                        return;
+                    }
                     subError = subError.trim();
                     logger.warning(unavailableReason + " :: " + subError);
                     vid.error = unavailableReason;
@@ -2791,7 +2795,8 @@ public class YoutubeHelper {
     }
 
     public static String createLinkID(String videoID, AbstractVariant variant, List<String> variants) {
-        return "youtubev2://" + videoID + "/" + Hash.getMD5(Encoding.urlEncode(variant._getUniqueId()));
+        final String v = "youtubev2://" + videoID + "/" + variant.getBaseVariant().name();
+        return v;
     }
 
     public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {
