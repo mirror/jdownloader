@@ -144,6 +144,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("Accept", "*/*");
+            sleep(5000, param);
             br.postPage("/site/getRedirectLink", "id=" + Encoding.urlEncode(id));
             plaintxt = br.toString();
         } else {
