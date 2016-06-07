@@ -179,7 +179,7 @@ public class UlozTo extends PluginForHost {
     }
 
     private String getFilename() {
-        final String filename = br.getRegex("<title>\\s*([^<>/]*?)\\s*(\\|\\s*PORNfile.cz\\s*)?</title>").getMatch(0);
+        final String filename = br.getRegex("<title>\\s*([^<>/]*?)\\s*(\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
         return filename;
     }
 
