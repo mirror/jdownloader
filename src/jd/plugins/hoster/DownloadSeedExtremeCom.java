@@ -11,6 +11,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -94,14 +95,17 @@ public class DownloadSeedExtremeCom extends PluginForHost {
         final String status = br.getRegex("<div class=\"number\">\\s*<span>\\s*([^<]*?)\\s*</span>\\s*</div>\\s*<div class=\"desc\">\\s*Status\\s*</div>").getMatch(0);
         final String trafficAvailable = br.getRegex("<div class=\"number\">\\s*<span>\\s*([^<]*?)\\s*</span>\\s*</div>\\s*<div class=\"desc\">\\s*Bandwidth Package Available\\s*</div>").getMatch(0);
         if ("premium".equalsIgnoreCase(status)) {
-            // free trial
             ai.setStatus("premium");
+            account.setType(AccountType.PREMIUM);
             if ("-".equals(trafficAvailable)) {
                 ai.setUnlimitedTraffic();
             } else {
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficAvailable));
             }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy'-'MM'-'dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
+        } else if ("free".equalsIgnoreCase(status)) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("free");
         } else {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -156,6 +160,9 @@ public class DownloadSeedExtremeCom extends PluginForHost {
             final Map<String, Object> response = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP, null);
             if (response == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (response.get("error") != null && ((Number) response.get("error")).intValue() == 10) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
             }
             final String message = (String) response.get("message");
             if (!"OK".equalsIgnoreCase(message)) {
