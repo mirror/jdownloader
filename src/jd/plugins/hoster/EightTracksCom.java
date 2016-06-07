@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,7 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://8tracksdecrypted\\.com/\\d+" }, flags = { 0 })
@@ -115,7 +117,8 @@ public class EightTracksCom extends antiDDoSForHost {
         if (filename == null) {
             filename = downloadLink.getStringProperty("tempname", null);
         }
-        final int tracknumber = (int) getLongProperty(downloadLink, "tracknumber", -1);
+        final int tracknumber = downloadLink.getIntegerProperty("tracknumber", -1);
+        final int lasttracknumber = downloadLink.getIntegerProperty("lasttracknumber", -1);
         /* http://8tracks.com/tracks/TRACKID */
         currenttrackid = downloadLink.getStringProperty("trackid", null);
         /* Only go in this handling if the user added a single tracks, otherwise we will get low quality 30 seconds preview files */
@@ -149,8 +152,7 @@ public class EightTracksCom extends antiDDoSForHost {
                 playToken = TEST_MODE_TOKEN;
             }
             final String mixid = downloadLink.getStringProperty("mixid", null);
-            final int last_track_number = (int) getLongProperty(downloadLink, "lasttracknumber", 0);
-            final boolean NEED_LAST_TRACK = (tracknumber == last_track_number);
+            final boolean NEED_LAST_TRACK = (tracknumber == lasttracknumber);
             if (br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").matches()) {
                 br.getHeaders().put("X-CSRF-Token", br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").getMatch(0));
             }
@@ -182,7 +184,7 @@ public class EightTracksCom extends antiDDoSForHost {
                     if (ids != null && ids.length != 0) {
                         final int list_length = ids.length;
                         synchronized (LOCK) {
-                            final int old_list_length = (int) getLongPropertyPluginCfg("tracks_played_list_length", -1);
+                            final int old_list_length = this.getPluginConfig().getIntegerProperty("tracks_played_list_length", -1);
                             logger.info("Old list length: " + old_list_length + " // current list length: " + list_length);
                             if (list_length < old_list_length) {
                                 logger.info("List length doesn't match (too small) -> Maybe reset token to retry from the beginning?");
@@ -232,24 +234,24 @@ public class EightTracksCom extends antiDDoSForHost {
                      * If skip track fails because of too short waittime, even multiple times, we simply wait a minute and try again till we
                      * can finally get to the next track
                      */
-                    if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                    if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"") || clipData.contains("doesn’t allow more than 3 skips within a playlist per hour")) {
                         for (int skip_block = 1; skip_block <= 10; skip_block++) {
                             this.sleep(WAITTIME_SECONDS_SKIPLIMIT * 1000l, downloadLink);
                             // Maybe listened to the track -> Next track
                             clipData = pageGet(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                            if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                            if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"") || clipData.contains("doesn’t allow more than 3 skips within a playlist per hour")) {
                                 continue;
                             }
                             break;
 
                         }
                         /* In case it fails after 10 minutes */
-                        if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                        if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"") || clipData.contains("doesn’t allow more than 3 skips within a playlist per hour")) {
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
                         }
                     }
                 }
-                logger.info("current track: " + i + " // looking for track: " + tracknumber + " // last tracknumber: " + last_track_number);
+                logger.info("current track: " + i + " // looking for track: " + tracknumber + " // last tracknumber: " + lasttracknumber);
                 AT_END = Boolean.parseBoolean(getClipData("at_end"));
                 AT_LAST_TRACK = Boolean.parseBoolean(getClipData("at_last_track"));
                 dllink = getDllink();
@@ -289,7 +291,7 @@ public class EightTracksCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This is not the last track", 5 * 60 * 1000l);
                 } else if (!NEED_LAST_TRACK && AT_LAST_TRACK) {
                     /* Hmm maybe we're too far - next try we should be able to download the track we were looking for */
-                    logger.info(NICE_HOST + ": Reached the last track of the playlist // failed to get track: " + tracknumber + " // last tracknumber: " + last_track_number);
+                    logger.info(NICE_HOST + ": Reached the last track of the playlist // failed to get track: " + tracknumber + " // last tracknumber: " + lasttracknumber);
                     int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_toofar2", 0);
                     downloadLink.getLinkStatus().setRetryCount(0);
                     if (timesFailed <= 2) {
@@ -335,8 +337,9 @@ public class EightTracksCom extends antiDDoSForHost {
             ext = "m4a";
         }
         downloadLink.setProperty("final_filename", filename);
+        final DecimalFormat df = (lasttracknumber < 100 ? new DecimalFormat("00") : new DecimalFormat("000"));
         if (tracknumber != -1) {
-            filename = tracknumber + "." + filename;
+            filename = df.format(tracknumber) + "." + filename;
             downloadLink.setFinalFileName(filename + "." + ext);
         } else {
             downloadLink.setFinalFileName(filename + "." + ext);
@@ -367,9 +370,10 @@ public class EightTracksCom extends antiDDoSForHost {
 
     private long handleLongWait(final String dllink) throws PluginException {
         long waitSeconds = 0;
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
         try {
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
             if (dllink.contains("soundcloud.com/")) {
                 accessSoundcloudLink(br2, dllink);
                 final String track_duration_millisecs = br2.getRegex("\"duration\":(\\d+)").getMatch(0);
@@ -378,7 +382,7 @@ public class EightTracksCom extends antiDDoSForHost {
                 }
                 waitSeconds = Long.parseLong(track_duration_millisecs) / 1000;
             } else {
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getResponseCode() == 404) {
                     /* No downloadable content or server error -> Unknown bitrate & waittime */
                     waitSeconds = WAITTIME_SECONDS_DEFAULT;
@@ -393,10 +397,14 @@ public class EightTracksCom extends antiDDoSForHost {
                         }
                     }
                 }
-                con.disconnect();
             }
         } catch (final Throwable e) {
             waitSeconds = WAITTIME_SECONDS_DEFAULT;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable t) {
+            }
         }
         waitSeconds = waitSeconds / WAITTIME_DIVISOR + WAITTIME_SECONDS_EXTRA;
         /* Maybe needed if they change their system */
@@ -417,19 +425,27 @@ public class EightTracksCom extends antiDDoSForHost {
         if (dllink == null) {
             return null;
         }
-        br2.getPage(dllink);
-        dllink = getFinalDirectlink(br2.toString());
+        // why are we opening page?? if it works you will get load limit issues here.. and encoded media within browser!
+        if (!(dllink.endsWith(".m4a") || dllink.endsWith(".mp3") || dllink.endsWith(".mp3"))) {
+            br2.getPage(dllink);
+            dllink = getFinalDirectlink(br2.toString());
+        }
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                final URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable t) {
+                }
             }
         }
         return dllink;
@@ -488,7 +504,7 @@ public class EightTracksCom extends antiDDoSForHost {
         if (album != null && album.contains(":")) {
             album = album.substring(0, album.indexOf(":"));
         }
-        if (album != null && (album.equals(title) || isEmpty(album))) {
+        if (album != null && (album.equals(title) || StringUtils.isEmpty(album))) {
             album = null;
         }
 
@@ -567,61 +583,6 @@ public class EightTracksCom extends antiDDoSForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
-    }
-
-    private boolean isEmpty(final String ip) {
-        return ip == null || ip.trim().length() == 0;
-    }
-
-    private long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
-    }
-
-    private long getLongPropertyPluginCfg(final String key, final long def) {
-        try {
-            return this.getPluginConfig().getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = this.getPluginConfig().getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override
