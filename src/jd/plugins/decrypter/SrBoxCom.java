@@ -108,7 +108,7 @@ public class SrBoxCom extends PluginForDecrypt {
         // Number of pictures
         int iImage = (TabImage1 != null ? TabImage1.length : 0) + (TabImage2 != null ? TabImage2.length : 0);
 
-        // Added Image
+        // Array for added Images as DownloadLink
         DownloadLink[] tabImageLink = new DownloadLink[iImage];
         int iImageFinal = 0;
         int iImageIndex = 0;
@@ -134,7 +134,12 @@ public class SrBoxCom extends PluginForDecrypt {
 
                     final DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
-                        tabImageLink[iImageIndex++] = DLLink;
+                        iImageIndex++;
+                        if (iImageIndex > tabImageLink.length - 1) {
+                            /* Index-Fail-Safe */
+                            break;
+                        }
+                        tabImageLink[iImageIndex] = DLLink;
                         iImageFinal++;
                     }
                 }
