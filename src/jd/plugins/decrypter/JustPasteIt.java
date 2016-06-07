@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Set;
 
+import org.jdownloader.controlling.PasswordUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
@@ -27,13 +29,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 /**
  *
  * @version raz_Template-pastebin-201503051556
  * @author raztoki
- * */
+ */
 @DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "justpaste.it" }, urls = { "https?://(?:www\\.)?(justpaste\\.it/[A-Za-z0-9\\-_]+|jpst\\.it/[A-Za-z0-9]+)" }, flags = { 0 })
 public class JustPasteIt extends PluginForDecrypt {
 
@@ -42,8 +42,9 @@ public class JustPasteIt extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        br.setLoadLimit(3 * br.getLoadLimit());
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling */
