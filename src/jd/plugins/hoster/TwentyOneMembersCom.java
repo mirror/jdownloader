@@ -20,12 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.logging.LogController;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -44,6 +38,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.TwentyOneMembersVariantInfo;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.logging.LogController;
 
 @HostPlugin(revision = "$Revision: 28758 $", interfaceVersion = 3, names = { "21members.com" }, urls = { "http://21members\\.com/dummy/file/\\d+" }, flags = { 0 })
 public class TwentyOneMembersCom extends PluginForHost {
@@ -84,7 +84,7 @@ public class TwentyOneMembersCom extends PluginForHost {
         synchronized (account) {
 
             final boolean followRedirect = br.isFollowingRedirects();
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -109,6 +109,9 @@ public class TwentyOneMembersCom extends PluginForHost {
                 br.getPage("http://21members.com/login");
                 final String relCaptchaUrl = br.getRegex("<span>Auth code\\:</span><img src='([^']+)\' .*?alt='captcha'").getMatch(0);
                 final Form login = br.getFormBySubmitvalue("Login");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 if (relCaptchaUrl != null) {
                     // cookie appears after at least one bad login
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "21members.com", "http://21members.com", true);

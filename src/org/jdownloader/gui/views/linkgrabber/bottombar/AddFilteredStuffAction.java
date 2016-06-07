@@ -1,8 +1,19 @@
 package org.jdownloader.gui.views.linkgrabber.bottombar;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.JComponent;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.QueueAction;
@@ -15,13 +26,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.bottombar.SelfComponentFactoryInterface;
 import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorCrawler;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.controlling.linkcrawler.CrawledLink;
 
 public class AddFilteredStuffAction extends CustomizableAppAction implements ActionContext, SelfComponentFactoryInterface, SelfLayoutInterface {
 
@@ -58,8 +62,22 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
 
             @Override
             protected Void run() throws RuntimeException {
-                java.util.List<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
-                LinkCollector.getInstance().addCrawlerJob(filteredStuff, null);
+                final List<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
+                final HashMap<LinkCollectingJob, List<CrawledLink>> jobs = new HashMap<LinkCollectingJob, List<CrawledLink>>();
+                if (filteredStuff != null && filteredStuff.size() > 0) {
+                    for (final CrawledLink link : filteredStuff) {
+                        final LinkCollectingJob job = link.getSourceJob();
+                        List<CrawledLink> list = jobs.get(job);
+                        if (list == null) {
+                            list = new ArrayList<CrawledLink>();
+                            jobs.put(job, list);
+                        }
+                        list.add(link);
+                    }
+                    for (Entry<LinkCollectingJob, List<CrawledLink>> entry : jobs.entrySet()) {
+                        LinkCollector.getInstance().addCrawlerJob(entry.getValue(), entry.getKey());
+                    }
+                }
                 return null;
             }
         });
