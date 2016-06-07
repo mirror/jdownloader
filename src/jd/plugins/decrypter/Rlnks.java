@@ -91,101 +91,104 @@ public class Rlnks extends antiDDoSForDecrypt {
     }
 
     @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        synchronized (LOCK) {
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            final String parameter = correctCryptedLink(param.toString());
-            setBrowserExclusive();
-            br.setFollowRedirects(true);
-            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = correctCryptedLink(param.toString());
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
 
-            /* Handle Captcha and/or password */
-            handleCaptchaAndPassword(parameter, param);
-            if (!new Regex(br.getURL(), domains).matches()) {
-                validateLastChallengeResponse();
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (br.containsHTML("<title>404</title>") || br.getURL().endsWith("/notfound.php")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            if (allForm != null && allForm.getRegex("password").matches()) {
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            }
-            if (allForm != null && allForm.getRegex("captcha").matches()) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-
-            final String page = br.toString();
-            final String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);
-            FilePackage fp = null;
-            if (title != null && title.trim().length() > 0) {
-                fp = FilePackage.getInstance();
-                fp.setName(title);
-                fp.setProperty("ALLOW_MERGE", true);
-            }
-
-            /* use cnl2 button if available */
-            final String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
-            if (br.containsHTML(cnlUrl)) {
-                final Browser cnlbr = br.cloneBrowser();
-
-                Form cnlForm = null;
-                for (Form f : cnlbr.getForms()) {
-                    if (f.containsHTML(cnlUrl)) {
-                        cnlForm = f;
-                        break;
-                    }
-                }
-                if (cnlForm != null) {
-                    String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
-                    HashMap<String, String> infos = new HashMap<String, String>();
-                    infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
-                    infos.put("jk", jk);
-                    String source = cnlForm.getInputField("source").getValue();
-                    if (StringUtils.isEmpty(source)) {
-                        source = parameter.toString();
-                    } else {
-                        source = Encoding.urlDecode(source, true);
-                    }
-                    infos.put("source", source);
-                    String json = JSonStorage.toString(infos);
-                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                    if (fp != null) {
-                        fp.add(dl);
-                    }
-                    distribute(dl);
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
-                }
-            }
-            if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) {
-                return null;
-            }
-            if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
-                if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
-                    decryptContainer(page, parameter, "rsdf", decryptedLinks);
-                }
-            }
-            /* Webdecryption */
-            if (decryptedLinks.isEmpty()) {
-                decryptLinks(decryptedLinks, param);
-                final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
-                for (final String link : more_links) {
-                    getPage(link);
-                    decryptLinks(decryptedLinks, param);
-                }
-            }
-            if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) {
-                throw new DecrypterException("CNL2 only, open this link in Browser");
-            }
+        /* Handle Captcha and/or password */
+        handleCaptchaAndPassword(parameter, param);
+        if (!new Regex(br.getURL(), domains).matches()) {
             validateLastChallengeResponse();
-            if (fp != null) {
-                fp.addLinks(decryptedLinks);
-            }
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("<title>404</title>") || br.getURL().endsWith("/notfound.php")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        if (allForm != null && allForm.getRegex("password").matches()) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+        if (allForm != null && allForm.getRegex("captcha").matches()) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+
+        final String page = br.toString();
+        final String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);
+        FilePackage fp = null;
+        if (title != null && title.trim().length() > 0) {
+            fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.setProperty("ALLOW_MERGE", true);
+        }
+
+        /* use cnl2 button if available */
+        final String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
+        if (br.containsHTML(cnlUrl)) {
+            final Browser cnlbr = br.cloneBrowser();
+
+            Form cnlForm = null;
+            for (Form f : cnlbr.getForms()) {
+                if (f.containsHTML(cnlUrl)) {
+                    cnlForm = f;
+                    break;
+                }
+            }
+            if (cnlForm != null) {
+                String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
+                HashMap<String, String> infos = new HashMap<String, String>();
+                infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
+                infos.put("jk", jk);
+                String source = cnlForm.getInputField("source").getValue();
+                if (StringUtils.isEmpty(source)) {
+                    source = parameter.toString();
+                } else {
+                    source = Encoding.urlDecode(source, true);
+                }
+                infos.put("source", source);
+                String json = JSonStorage.toString(infos);
+                final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                if (fp != null) {
+                    fp.add(dl);
+                }
+                distribute(dl);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+        }
+        if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) {
+            return null;
+        }
+        if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
+            if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
+                decryptContainer(page, parameter, "rsdf", decryptedLinks);
+            }
+        }
+        /* Webdecryption */
+        if (decryptedLinks.isEmpty()) {
+            decryptLinks(decryptedLinks, param);
+            final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            for (final String link : more_links) {
+                getPage(link);
+                decryptLinks(decryptedLinks, param);
+            }
+        }
+        if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) {
+            throw new DecrypterException("CNL2 only, open this link in Browser");
+        }
+        validateLastChallengeResponse();
+        if (fp != null) {
+            fp.addLinks(decryptedLinks);
+        }
+        return decryptedLinks;
     }
 
     private void decryptLinks(final ArrayList<DownloadLink> decryptedLinks, final CryptedLink param) throws Exception {
@@ -246,7 +249,7 @@ public class Rlnks extends antiDDoSForDecrypt {
 
         if (b) {
             allForm = br.getForm(0);
-            allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?" + domains + "/container_password\\.php.*") ? allForm : null;
+            allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?" + domains + "/container_password\\d*\\.php.*") ? allForm : null;
         }
         if (allForm != null) {
             for (int i = 0; i < 5; i++) {
