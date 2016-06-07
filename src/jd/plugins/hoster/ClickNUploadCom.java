@@ -273,6 +273,9 @@ public class ClickNUploadCom extends antiDDoSForHost {
                     }
                 }
                 /* end of backward compatibility */
+                if (!download1.hasInputFieldByName("method_free") || !"Free+Download".equals(download1.getInputField("method_free"))) {
+                    download1.put("method_free", "Free+Download");
+                }
                 submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
