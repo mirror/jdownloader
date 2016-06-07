@@ -16,11 +16,23 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,6 +42,8 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,13 +51,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" }, flags = { 2 })
 public class EmuParadiseMe extends PluginForHost {
 
     public EmuParadiseMe(PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium();
     }
 
     @Override
@@ -88,22 +101,22 @@ public class EmuParadiseMe extends PluginForHost {
         String filesize = null;
         if (br.containsHTML(HTML_TYPE_DIRECT)) {
             filename = br.getRegex("\"http://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/([^<>\"/]*?)\"").getMatch(0);
-            filesize = br.getRegex("Size: (\\d+(?:\\.\\d+)?(?:K|M|G))<br>").getMatch(0);
-            if (filesize != null) {
-                filesize += "b";
-            }
+            filesize = br.getRegex("Size:\\s*(\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})<br>").getMatch(0);
         } else {
             if (!br.containsHTML("id=\"Download\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
-            filesize = br.getRegex("\\((\\d+(?:\\.\\d+)?(?:K|M|G))\\)").getMatch(0);
+            filesize = br.getRegex("\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (filesize != null && !filesize.trim().endsWith("B")) {
+            filesize = filesize.trim() + "B";
+        }
         link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".zip");
-        link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -175,14 +188,6 @@ public class EmuParadiseMe extends PluginForHost {
         }
         /* Without this the directlink won't be accepted! */
         br.getHeaders().put("Referer", this.br.getURL());
-        br.setFollowRedirects(false);
-        this.br.getPage(dllink);
-        dllink = this.br.getRedirectLocation();
-        /* Fix small space-encoding issue */
-        dllink = dllink.replace(" ", "%20");
-        br.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-        br.getHeaders().put("Referer", null);
-        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             final long responsecode = dl.getConnection().getResponseCode();
@@ -236,6 +241,160 @@ public class EmuParadiseMe extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        super.handlePremium(link, account);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+
+        return ai;
+    }
+
+    public static class EmuParadiseMeAccountFactory extends MigPanel implements AccountBuilderInterface {
+
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+
+        private final String      userHelp         = "Enter in your Username";
+        private final String      passwordHelp     = "Enter in your Password";
+        private final String      txnIdHelp        = "Enter in your TxnId";
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
+
+        private String getUsername() {
+            if (userHelp.equals(this.name.getText())) {
+                return null;
+            }
+            return this.name.getText();
+        }
+
+        private String getTxnId() {
+            if (txnIdHelp.equals(this.txnId.getText())) {
+                return null;
+            }
+            return this.txnId.getText();
+        }
+
+        private ExtTextField     name;
+        private ExtPasswordField pass;
+        private ExtTextField     txnId;
+
+        private static String    EMPTYPW = "                 ";
+        private final JLabel     jlUsername;
+        private final JLabel     jlPassword;
+        private final JLabel     jlTxnId;
+
+        public EmuParadiseMeAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(jlUsername = new JLabel("Username:"));
+            add(this.name = new ExtTextField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+
+            });
+
+            name.setHelpText(userHelp);
+
+            add(jlPassword = new JLabel("Password:"));
+            add(this.pass = new ExtPasswordField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+
+            }, "");
+            pass.setHelpText(passwordHelp);
+
+            // txnid
+            add(jlTxnId = new JLabel("TxnId: (must be 9 digits)"));
+            add(this.txnId = new ExtTextField() {
+
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+
+            });
+
+            txnId.setHelpText(txnIdHelp);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+                txnId.setText(defaultAccount.getStringProperty("txnId", null));
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            // username cant be invalid
+            final String username = getUsername();
+            if (StringUtils.isEmpty(username)) {
+                jlUsername.setForeground(Color.RED);
+                return false;
+            }
+            jlUsername.setForeground(Color.BLACK);
+            // password can not be invalid
+            final String password = getPassword();
+            if (StringUtils.isEmpty(password)) {
+                jlPassword.setForeground(Color.RED);
+                return false;
+            }
+            jlPassword.setForeground(Color.BLACK);
+            // txnid cant be invalid
+            final String txnId = getTxnId();
+            if (txnId == null || !txnId.trim().matches("^\\d{9}$")) {
+                jlTxnId.setForeground(Color.RED);
+                return false;
+            }
+            jlTxnId.setForeground(Color.BLACK);
+            return true;
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(getUsername(), getPassword());
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
     }
 
     @Override
