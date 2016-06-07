@@ -59,7 +59,7 @@ public class SomeImageCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
 
-        String imageInfo[][] = new Regex(br, "<img src='https?://[^<>\"]+\\.someimage\\.com/" + imageId + "\\.([A-z0-9]+)' id='viewimage' align='center' title='([^<>\"]+)' style='cursor: pointer; width: 950px;'><br>").getMatches();
+        String imageInfo[][] = new Regex(br, "<img src='https?://[^<>\"]+\\.someimage\\.com/" + imageId + "\\.([A-z0-9]+)' id='viewimage' align='center' title='([^<>\"]+)' style='cursor:").getMatches();
         if (imageInfo.length == 0) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
             return AvailableStatus.UNCHECKABLE;
@@ -87,7 +87,7 @@ public class SomeImageCom extends PluginForHost {
 
         final String imageId = new Regex(dwnlUrl, "https?://someimage\\.com/([^<>\"]+)").getMatch(0);
 
-        final String dllink = new Regex(br, "<img src='(https?://[^<>\"]+\\.someimage\\.com/" + imageId + "\\.[A-z0-9]+)' id='viewimage' align='center' title='([^<>\"]+)' style='cursor: pointer; width: 950px;'><br>").getMatch(0);
+        final String dllink = new Regex(br, "<img src='(https?://[^<>\"]+\\.someimage\\.com/" + imageId + "\\.[A-z0-9]+)' id='viewimage' align='center' title='([^<>\"]+)' style='cursor:").getMatch(0);
 
         if (imageId == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find final download link!", -1l);
