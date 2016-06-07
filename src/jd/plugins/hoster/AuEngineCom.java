@@ -40,6 +40,12 @@ public class AuEngineCom extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        // assume these are transferable.
+        link.setUrlDownload(link.getDownloadURL().replace("auengine.io", "auengine.com"));
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.auengine.com/";
     }
@@ -56,7 +62,7 @@ public class AuEngineCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         // Offline links should also have nice filenames
         final String offlineFilename = new Regex(downloadLink.getDownloadURL(), "auengine\\.(?:com|io)/embed\\.php\\?file=(.+)").getMatch(0);
-        if (offlineFilename != null) {
+        if (offlineFilename != null && !downloadLink.isNameSet()) {
             downloadLink.setName(offlineFilename);
         }
         br.getPage(downloadLink.getDownloadURL());
@@ -87,7 +93,7 @@ public class AuEngineCom extends PluginForHost {
             }
         }
         if (filename == null || dllink == null) {
-            if (br.containsHTML("<h1>Page not found</h1>|The page you are looking for does not exist\\.")) {
+            if (br.containsHTML("<h1>Page not found</h1>|The page you are looking for does not exist\\.") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
