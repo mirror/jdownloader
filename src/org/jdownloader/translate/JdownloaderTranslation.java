@@ -741,6 +741,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Simple single rename (table)" })
     String RenameAction_getTranslationForSimpleMode();
 
+    @Default(lngs = { "en" }, values = { "Simple input dialog" })
+    String SetDownloadFolder_getTranslationForSimpleMode();
+
     @Default(lngs = { "en" }, values = { "Force change of priority" })
     String PriorityAction_getTranslationForForceMode();
 
@@ -1057,35 +1060,27 @@ public interface JdownloaderTranslation extends TranslateInterface {
     String youtube_spatial();
 
     @Default(lngs = { "en" }, values = { "Video Codec" })
-
     String lit_video_codec();
 
     @Default(lngs = { "en" }, values = { "Video Framerate" })
-
     String lit_video_framerate();
 
     @Default(lngs = { "en" }, values = { "Resolution" })
-
     String lit_resolution();
 
     @Default(lngs = { "en" }, values = { "Audio Bitrate" })
-
     String lit_audio_bitrate();
 
     @Default(lngs = { "en" }, values = { "Audio Codec" })
-
     String lit_audio_codec();
 
     @Default(lngs = { "en" }, values = { "Filetype" })
-
     String lit_file_container();
 
     @Default(lngs = { "en" }, values = { "Demux Audio" })
-
     String youtube_demux();
 
     @Default(lngs = { "en" }, values = { "Segment Stream" })
-
     String youtube_segment();
 
 }
