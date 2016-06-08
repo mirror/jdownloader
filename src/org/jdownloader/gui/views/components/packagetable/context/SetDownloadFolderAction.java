@@ -15,16 +15,19 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 
-public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
+public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> implements ActionContext {
 
     private File path;
 
@@ -64,7 +67,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
         if (file.isDirectory()) {
             return true;
         }
-        File parent = file.getParentFile();
+        final File parent = file.getParentFile();
         if (parent != null && parent.isDirectory() && parent.exists()) {
             return true;
         }
@@ -153,8 +156,27 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
     abstract protected Queue getQueue();
 
+    private boolean simpleDialog = false;
+
+    @Customizer(link = "#getTranslationForSimpleInputDialog")
+    public boolean isSimpleInputDialog() {
+        return simpleDialog;
+    }
+
+    public void setSimpleInputDialog(boolean simpleDialog) {
+        this.simpleDialog = simpleDialog;
+    }
+
+    public static String getTranslationForSimpleInputDialog() {
+        return _JDT.T.SetDownloadFolder_getTranslationForSimpleMode();
+    }
+
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-        return DownloadFolderChooserDialog.open(path, true, _GUI.T.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getFirstPackage().getName()));
+        if (!isSimpleInputDialog()) {
+            return DownloadFolderChooserDialog.open(path, true, _GUI.T.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getFirstPackage().getName()));
+        } else {
+            return new File(Dialog.getInstance().showInputDialog(0, _GUI.T.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getFirstPackage().getName()), _GUI.T.jd_gui_userio_defaulttitle_input(), path.getAbsolutePath(), new AbstractIcon(IconKey.ICON_PASSWORD, 32), null, null));
+        }
     }
 
     abstract protected void move(PackageType pkg, List<ChildrenType> selectedLinksByPackage);
