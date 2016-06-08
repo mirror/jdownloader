@@ -307,12 +307,13 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 this.ajaxGetPagePlayer("http://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
                 // {"token":"{\"user_id\":null,\"vod_id\":3707868,\"expires\":1421924057,\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}","sig":"a73d0354f84e8122d78b14f47552e0f83217a89e"}
                 final String auth = getJson(ajax, "sig");
-                final String expire = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "expires");
+                // final String expire = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "expires");
                 final String privileged = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "privileged");
+                final String tokenString = getJson(ajax, "token");
                 // auth required
                 // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
-                final String a = Encoding.urlEncode("{\"user_id\":" + (userId != null ? userId : "null") + ",\"vod_id\":" + vid + ",\"expires\":" + expire + ",\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":" + privileged + "}") + "&player=twitchweb&nauthsig=" + auth + "&allow_source=true";
-                this.ajaxGetPagePlayer("http://usher.twitch.tv/vod/" + vid + "?nauth=" + a);
+                final String a = Encoding.urlEncode(tokenString);
+                this.ajaxGetPagePlayer("http://usher.twitch.tv/vod/" + vid + ".m3u8?nauth=" + a + "&nauthsig=" + auth + "&player=twitchweb&allow_source=true");
                 // #EXTM3U
                 // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="chunked",NAME="Source",AUTOSELECT=YES,DEFAULT=YES
                 // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3428253,CODECS="avc1.4D4029,mp4a.40.2",VIDEO="chunked"
