@@ -188,6 +188,7 @@ SetDownloadFolderAction_actionPerformed_=Dividir Pacote %s1
 SetDownloadFolderAction_msg=Alterar Pasta de Download para o Pacote %s1 completo, ou somente para link(s) %s2 selecionados
 SetDownloadFolderAction_no=Seleção
 SetDownloadFolderAction_yes=Pacote
+SetDownloadFolder_getTranslationForSimpleMode=Diálogo de entrada simples
 SetProxySetupAction_getTranslationForPath=Caminho A para arquivo *.jdproxies
 SplitPackagesByHost_getTranslationForAskForNewDownloadFolderAndPackageName=Ao combinar, perguntar por nova pasta de download e nome do pacote?
 SplitPackagesByHost_getTranslationForLocation=Adicionar pacote em
