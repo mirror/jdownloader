@@ -697,6 +697,16 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // //]]>
             // </script>
 
+        } else if (responseCode == 200 && ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
+            final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
+            if (phishing == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (request != null) {
+                ibr.openFormConnection(phishing);
+            } else {
+                ibr.submitForm(phishing);
+            }
         } else {
             // nothing wrong, or something wrong (unsupported format)....
             // commenting out return prevents caching of cookies per request

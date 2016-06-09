@@ -56,6 +56,8 @@ public class DropCanVasCom extends antiDDoSForHost {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 dllink = link.getDownloadURL();
                 return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
             }
         } finally {
             try {
