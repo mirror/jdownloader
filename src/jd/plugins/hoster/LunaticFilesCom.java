@@ -253,7 +253,7 @@ public class LunaticFilesCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                download1.put("method_free", "Free Download");
+                download1.put("method_free", "Pobieranie+Darmowe+%28po+darmowej+rejestracji+do+300+kB%2Fs%29");
                 // end of backward compatibility
                 sendForm(download1);
                 checkErrors(downloadLink, false);
@@ -743,6 +743,10 @@ public class LunaticFilesCom extends PluginForHost {
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        }
+        if (new Regex(correctedBR, "Przepraszamy, niestety akceptujemy tylko pobrania z Polski|We are sorry, we allow downloads only from Poland").matches()) {
+            /* 2016-06-09: Special errorhandling - this message will usually appear after entering the (correct) captcha in free mode! */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download from this host are only possible via polish IP (or premium account)");
         }
     }
 
