@@ -56,11 +56,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public void init() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-            Browser.setRequestIntervalLimitGlobal(this.getHost(), 125);
-        } else {
-            Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
-        }
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
     @Override
@@ -129,7 +125,7 @@ public class ImgSrcRu extends PluginForHost {
         if (ddlink != null) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(ddlink);
+                con = br.openHeadConnection(ddlink);
                 if (con.getContentType().contains("html")) {
                     downloadLink.setAvailable(false);
                     return AvailableStatus.FALSE;
@@ -151,7 +147,7 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() throws Exception {
-        String js = br.getRegex("<script(?: type=\"text/javascript\")?>([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
+        String js = br.getRegex("<script(?: type=\"text/javascript\")?>((?:\\s*var [a-z]='[a-zA-Z0-9/]+'[;,]){1,}[^<]+)</script>").getMatch(0);
         if (js == null) {
             logger.warning("Could not find JS!");
         } else {
