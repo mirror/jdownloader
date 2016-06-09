@@ -32,6 +32,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.http.download.DownloadClient;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.phantomjs.PhantomJS;
 
 public class InstallThread extends Thread {
@@ -138,6 +139,7 @@ public class InstallThread extends Thread {
                 installing = true;
                 final File dest = new PhantomJS().getBinaryPath();
                 dest.getParentFile().mkdirs();
+                dest.delete();
                 final File binarySource = new File(extractTo, binaryPath);
                 if (extractTo.exists()) {
                     Files.deleteRecursiv(extractTo);
@@ -153,13 +155,34 @@ public class InstallThread extends Thread {
                         final ExtractionExtension extraction = (ExtractionExtension) extension._getExtension();
                         final Archive archive = extraction.buildArchive(new FileArchiveFactory(file));
                         archive.getSettings().setExtractPath(extractTo.getAbsolutePath());
-                        final ExtractionController controller = extraction.addToQueue(archive, false);
+                        extraction.addToQueue(archive, false);
                         try {
-                            while (!controller.isFinished()) {
-                                Thread.sleep(1000);
+                            boolean wait = true;
+                            while (wait) {
+                                wait = false;
+                                for (final ExtractionController job : extraction.getJobQueue().getJobs()) {
+                                    if (archive == job.getArchive()) {
+                                        wait = true;
+                                        break;
+                                    } else if (archive == job.getArchive().getParentArchive()) {
+                                        wait = true;
+                                        break;
+                                    }
+                                }
+                                if (!wait) {
+                                    Thread.sleep(1000);
+                                    for (final ExtractionController job : extraction.getJobQueue().getJobs()) {
+                                        if (archive == job.getArchive()) {
+                                            wait = true;
+                                            break;
+                                        } else if (archive == job.getArchive().getParentArchive()) {
+                                            wait = true;
+                                            break;
+                                        }
+                                    }
+                                }
                             }
                         } catch (InterruptedException e) {
-                            controller.kill();
                             throw e;
                         }
                     }
@@ -169,7 +192,6 @@ public class InstallThread extends Thread {
                     if (binarySource.renameTo(dest)) {
                         dest.setExecutable(true);
                     }
-                    dest.setExecutable(true);
                 }
             } finally {
                 installing = false;
@@ -177,7 +199,7 @@ public class InstallThread extends Thread {
                 Files.deleteRecursiv(extractTo);
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            LogController.CL(false).log(e);
         }
     }
 
