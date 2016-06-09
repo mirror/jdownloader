@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ebaumsworld.com" }, urls = { "http://(www\\.)?ebaumsworld\\.com/video/watch/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ebaumsworld.com" }, urls = { "https?://(?:www\\.)?ebaumsworld\\.com/(video/watch/\\d+|videos/[^/]+/\\d+)" }, flags = { 0 })
 public class EbaumsWorldCom extends PluginForHost {
 
     public EbaumsWorldCom(PluginWrapper wrapper) {
@@ -40,15 +40,26 @@ public class EbaumsWorldCom extends PluginForHost {
         return "http://www.ebaumsworld.com/pages/terms/";
     }
 
+    private final String TYPE_OLD = "https?://(?:www\\.)?ebaumsworld\\.com/video/watch/\\d+";
+    private final String TYPE_NEW = "https?://(?:www\\.)?ebaumsworld\\.com/videos/[^/]+/\\d+";
+
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("ebaumsworld\\.com/img/errorPage404\\.jpg\\)|<h2>Looks like Pepper Peanut ate that page\\.\\.\\.</h2>") || br.getURL().equals("http://www.ebaumsworld.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* E.g. <li class="alert">Unfortunately, that item no longer exists. Here are some other options for your viewing pleasure!</li> */
+        if (br.containsHTML("ebaumsworld\\.com/img/errorPage404\\.jpg\\)|<h2>Looks like Pepper Peanut ate that page\\.\\.\\.</h2>") || br.getURL().equals("http://www.ebaumsworld.com/") || this.br.containsHTML("class=\"alert\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<a class=\"pw_title\" style=\"display:none\">([^<>\"]*?)</a>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
@@ -58,7 +69,9 @@ public class EbaumsWorldCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage("http://www.ebaumsworld.com/video/player/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "?env=id0");
         final String dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

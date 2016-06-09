@@ -118,12 +118,18 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 /* Previous handling removed AFTER revision 26337 */
                 String lqlink = br.getRegex("\"(http://download\\.[^<>\"]*?)\" type=\"360p\"").getMatch(0);
                 if (lqlink == null) {
+                    lqlink = br.getRegex("\"(http://download\\.[^<>\"]*?)\"[^<>]*?360p\"").getMatch(0);
+                }
+                if (lqlink == null) {
                     logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
                 }
                 lqlink = lqlink.replace("\\", "");
                 FOUNDQUALITIES.put("LQ", lqlink);
                 hqlink = br.getRegex("\"(http://download\\.[^<>\"]*?)\" type=\"480p\"").getMatch(0);
+                if (hqlink == null) {
+                    hqlink = br.getRegex("\"(http://download\\.[^<>\"]*?)\"[^<>]*?480p\"").getMatch(0);
+                }
                 if (hqlink != null) {
                     hqlink = hqlink.replace("\\", "");
                     FOUNDQUALITIES.put("HQ", hqlink);

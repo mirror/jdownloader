@@ -170,7 +170,9 @@ public class VimeoCom extends PluginForHost {
                 }
             }
 
-            handlePW(downloadLink, br, "https://vimeo.com/" + ID + "/password");
+            if (br.containsHTML(containsPass)) {
+                handlePW(downloadLink, br, "https://vimeo.com/" + ID + "/password");
+            }
         }
         // because names can often change by the uploader, like youtube.
         String name = getTitle(br);
@@ -394,7 +396,7 @@ public class VimeoCom extends PluginForHost {
 
     public static final String containsPass = "<title>Private Video on Vimeo</title>|To watch this video, please provide the correct password";
 
-    private void handlePW(DownloadLink downloadLink, Browser br, String url) throws PluginException, IOException {
+    private void handlePW(final DownloadLink downloadLink, final Browser br, final String url) throws PluginException, IOException {
         if (br.containsHTML(containsPass)) {
             final String xsrft = getXsrft(br);
             String passCode = downloadLink.getStringProperty("pass", null);
