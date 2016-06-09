@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropcanvas.com" }, urls = { "http://(www\\.)?dropcanvas\\.com/[a-z0-9]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropcanvas.com" }, urls = { "https?://(?:www\\.)?dropcanvas\\.com/[a-z0-9]+/\\d+" }, flags = { 0 })
 public class DropCanVasCom extends antiDDoSForHost {
 
     public DropCanVasCom(PluginWrapper wrapper) {

@@ -17,11 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eba.gov.tr" }, urls = { "http://(www\\.)?(eba\\.gov\\.tr/(video/izle/[a-z0-9]+|ses/dinle/[a-z0-9]+|gorsel/bak/[a-z0-9]+)|ebadecrypted\\.gov\\.tr/dergi/goster/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eba.gov.tr" }, urls = { "https?://(www\\.)?(eba\\.gov\\.tr/(video/izle/[a-z0-9]+|ses/dinle/[a-z0-9]+|gorsel/bak/[a-z0-9]+)|ebadecrypted\\.gov\\.tr/dergi/goster/\\d+)" }, flags = { 0 })
 public class EbaGovTr extends PluginForHost {
 
     public EbaGovTr(PluginWrapper wrapper) {
@@ -41,10 +43,10 @@ public class EbaGovTr extends PluginForHost {
         return "http://www.eba.gov.tr/";
     }
 
-    private static final String FILELINK    = "http://(www\\.)?eba\\.gov\\.tr/dergi/goster/\\d+";
-    private static final String VIDEOLINK   = "http://(www\\.)?eba\\.gov\\.tr/video/izle/[a-z0-9]+";
-    private static final String AUDIOLINK   = "http://(www\\.)?eba\\.gov\\.tr/ses/dinle/[a-z0-9]+";
-    private static final String PICTURELINK = "http://(www\\.)?eba\\.gov\\.tr/gorsel/bak/[a-z0-9]+";
+    private static final String FILELINK    = "https?://(www\\.)?eba\\.gov\\.tr/dergi/goster/\\d+";
+    private static final String VIDEOLINK   = "https?://(www\\.)?eba\\.gov\\.tr/video/izle/[a-z0-9]+";
+    private static final String AUDIOLINK   = "https?://(www\\.)?eba\\.gov\\.tr/ses/dinle/[a-z0-9]+";
+    private static final String PICTURELINK = "https?://(www\\.)?eba\\.gov\\.tr/gorsel/bak/[a-z0-9]+";
     private String              DLLINK      = null;
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -60,37 +62,53 @@ public class EbaGovTr extends PluginForHost {
         final String addedlink = link.getDownloadURL();
         br.getPage(addedlink);
         String filename = null;
-        if (addedlink.matches(FILELINK)) {
-            if (br.containsHTML(">Aradığınız Sayfa Bulunamadı<|>Bu sayfa kaldırılmış olabilir\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(addedlink, Pattern.compile(FILELINK, Pattern.CASE_INSENSITIVE)).matches()) {
+            if (br.containsHTML(">Aradığınız Sayfa Bulunamadı<|>Bu sayfa kaldırılmış olabilir\\.<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String titlefirst = br.getRegex("class=\"active\">([^<>\"]*?)</li>").getMatch(0);
             filename = br.getRegex("<h3>[^<>\"]+<small>([^<>\"]*?)</small></h3>").getMatch(0);
-            if (titlefirst == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (titlefirst == null || filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             filename = Encoding.htmlDecode(titlefirst.trim() + " - " + Encoding.htmlDecode(filename.trim()));
             DLLINK = br.getRegex("\"(/download\\.php\\?type=[^<>\"]*?)\"").getMatch(0);
             // Maybe pdf link
-            if (DLLINK == null) DLLINK = br.getRegex("<a class=\"btn success\".*?\"(/out\\.php\\?u=http://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK != null) DLLINK = "http://www.eba.gov.tr" + DLLINK;
-        } else if (addedlink.matches(VIDEOLINK)) {
-            if (br.containsHTML(">Video Bulunamamıştır<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<a class=\"btn success\".*?\"(/out\\.php\\?u=http://[^<>\"]*?)\"").getMatch(0);
+            }
+            if (DLLINK != null) {
+                DLLINK = "http://www.eba.gov.tr" + DLLINK;
+            }
+        } else if (new Regex(addedlink, Pattern.compile(VIDEOLINK, Pattern.CASE_INSENSITIVE)).matches()) {
+            if (br.containsHTML(">Video Bulunamamıştır<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("class=\"active\">([^<>\"]*?)</li>").getMatch(0);
             DLLINK = br.getRegex("assets/themes/base/images/download\\.png\" /><br><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        } else if (addedlink.matches(AUDIOLINK)) {
-            if (br.containsHTML(">Ses Bulunamamıştır<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (new Regex(addedlink, Pattern.compile(AUDIOLINK, Pattern.CASE_INSENSITIVE)).matches()) {
+            if (br.containsHTML(">Ses Bulunamamıştır<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<title>([^<>\"]*?)\\- Eğitim Bilişim Ağı</title>").getMatch(0);
             DLLINK = br.getRegex("assets/themes/base/images/download\\.png\" /><br><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        } else if (addedlink.matches(PICTURELINK)) {
-            if (br.containsHTML(">Görsel Bulunamamıştır<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (new Regex(addedlink, Pattern.compile(PICTURELINK, Pattern.CASE_INSENSITIVE)).matches()) {
+            if (br.containsHTML(">Görsel Bulunamamıştır<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("class=\"active\">([^<>\"]*?)</li>").getMatch(0);
             DLLINK = br.getRegex("<div class=\"center\">[\t\n\r ]+<a title=\"[^<>\"/]+\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + DLLINK.substring(DLLINK.lastIndexOf(".")));

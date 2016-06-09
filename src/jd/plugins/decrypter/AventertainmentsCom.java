@@ -63,7 +63,7 @@ public class AventertainmentsCom extends PluginForDecrypt {
         final String screenshot_url_part = this.br.getRegex("imgs\\.aventertainments\\.com/new/bigcover/([A-Za-z0-9\\-_]+\\.jpg)\"").getMatch(0);
         final String[] screenshotRegexes = { "(https?://imgs\\.aventertainments\\.com/[^/]+/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\.aventertainments\\.com/(?:[a-z0-9]+)?/?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
         final String[] galleryRegexes = { "(https?://imgs\\.aventertainments\\.com/(?:[a-z0-9]+)?/vodimages/gallery/large/[^<>\"\\']+\\.jpg)" };
-        final String[] coverRegexes = { "\"(https?://imgs\\.aventertainments\\.com/archive/bigcover/[^/]+\\.jpg)\"" };
+        final String[] coverRegexes = { "\"(https?://imgs\\.aventertainments\\.com/(?:[a-z0-9]+)?/bigcover/[^/]+\\.jpg)\"" };
 
         for (final String screenshotRegex : screenshotRegexes) {
             final String[] screenshots = br.getRegex(screenshotRegex).getColumn(0);
@@ -110,8 +110,15 @@ public class AventertainmentsCom extends PluginForDecrypt {
         }
 
         if (!foundScreenshot && screenshot_url_part != null) {
-            /* E.g. for DVDs these screenshots are officially not available --> We can work around this limitation */
-            decryptedLinks.add(createDownloadlink("http://imgs.aventertainments.com/new/screen_shot/" + screenshot_url_part));
+            /* E.g. for DVDs these screenshots are officially (without logging in) not available --> We can work around this limitation */
+            final String screenshot_directurl = "http://imgs.aventertainments.com/new/screen_shot/" + screenshot_url_part;
+            final DownloadLink dl = createDownloadlink(screenshot_directurl);
+            final String filename_url = getFileNameFromURL(new URL(screenshot_directurl));
+            final String filename = "screenshot_" + filename_url;
+            dl.setFinalFileName(filename);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("type", "screenshot");
+            decryptedLinks.add(dl);
         }
 
         final String[] videos = br.getRegex("(https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx[^<>\"\\']+\\.mp4)").getColumn(0);

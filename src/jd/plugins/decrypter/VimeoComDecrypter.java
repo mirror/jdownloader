@@ -32,6 +32,7 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -184,6 +185,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJson(br, "message"))) {
                     decryptedLinks.add(createOfflinelink(orgParam, ID, null));
                     return decryptedLinks;
+                } else if (br.containsHTML(containsPass())) {
+                    try {
+                        handlePW(param, ID, this.br);
+                    } catch (final DecrypterException edc) {
+                        logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
+                        decryptedLinks.add(createOfflinelink(parameter, ID, null));
+                        return decryptedLinks;
+                    }
                 }
                 parameter = orgParam;
                 final String owner_json = br.getRegex("\"owner\":\\{(.*?)\\}").getMatch(0);
@@ -240,7 +249,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
                 if (br.containsHTML(containsPass())) {
                     try {
-                        handlePW(param, br);
+                        handlePW(param, ID, br);
                     } catch (final DecrypterException edc) {
                         logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
                         decryptedLinks.add(createOfflinelink(parameter, ID, null));
@@ -476,63 +485,69 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void handlePW(CryptedLink param, Browser br) throws Exception {
+    private void handlePW(final CryptedLink param, final String videoID, final Browser br) throws Exception {
         // check for a password. Store latest password in DB
-        Form pwForm = br.getFormbyProperty("id", "pw_form");
-        if (pwForm != null) {
-            password = getPluginConfig().getStringProperty("lastusedpass", null);
-            if (password != null) {
-                pwForm.put("token", getXsrft(br));
-                pwForm.put("password", Encoding.urlEncode(password));
-                try {
-                    br.submitForm(pwForm);
-                } catch (Throwable e) {
-                    if (br.getHttpConnection().getResponseCode() == 401) {
-                        logger.warning("Wrong password for Link: " + param.toString());
-                    }
-                    if (br.getHttpConnection().getResponseCode() == 418) {
-                        // video id not parma.tostring.. this can be a channel page which is then converted internally.
-                        String parameter = param.toString();
-                        if (!parameter.matches("^https?://(?:www\\.)?vimeo\\.com/\\d+$")) {
-                            parameter = new Regex(param.toString(), "https?://[^/]+/").getMatch(-1) + new Regex(param.toString(), "(\\d+)$").getMatch(0);
-                        }
-                        br.getPage(parameter);
-                    }
-                }
+        Form pwForm = null;
+        /* Try stored password first */
+        password = getPluginConfig().getStringProperty("lastusedpass", null);
+        final String videourl = "https://player.vimeo.com/video/" + videoID;
+        boolean failed = true;
+
+        // lastusedpasswd == null, or lastusedpasswd is wrong
+        for (int i = 0; i < 3; i++) {
+            if (i > 0) {
+                br.getPage(videourl);
             }
-            // lastusedpasswd == null, or lastusedpasswd is wrong
-            for (int i = 0; i < 3; i++) {
-                pwForm = br.getFormbyProperty("id", "pw_form");
-                if (pwForm == null) {
-                    break;
-                }
-                pwForm.put("token", getXsrft(br));
+            pwForm = getPasswordForm(br);
+            pwForm.setAction("https://player.vimeo.com/video/" + videoID + "/check-password");
+            /* 2016-06-09: Seems like token is no longer needed! */
+            // pwForm.put("token", getXsrft(br));
+            if (password == null) {
                 password = Plugin.getUserInput("Password for link: " + param.toString() + " ?", param);
-                if (password == null || "".equals(password)) {
-                    // empty pass?? not good...
-                    throw new DecrypterException(DecrypterException.PASSWORD);
-                }
-                pwForm.put("password", Encoding.urlEncode(password));
-                try {
-                    br.submitForm(pwForm);
-                } catch (Throwable e) {
-                    /* HTTP/1.1 418 I'm a teapot --> lol */
-                    if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) {
-                        logger.warning("Wrong password for Link: " + param.toString());
-                        if (i < 2) {
-                            br.getPage(br.getURL());
-                            continue;
-                        } else {
-                            logger.warning("Exausted password retry count. " + param.toString());
-                            throw new DecrypterException(DecrypterException.PASSWORD);
-                        }
+            }
+            if (password == null || "".equals(password)) {
+                // empty pass?? not good...
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            pwForm.put("password", Encoding.urlEncode(password));
+            try {
+                br.submitForm(pwForm);
+            } catch (final Throwable e) {
+                /* HTTP/1.1 418 I'm a teapot --> lol */
+                if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) {
+                    logger.warning("Wrong password for Link: " + param.toString());
+                    if (i < 2) {
+                        password = null;
+                        continue;
+                    } else {
+                        logger.warning("Exausted password retry count. " + param.toString());
+                        throw new DecrypterException(DecrypterException.PASSWORD);
                     }
                 }
-                getPluginConfig().setProperty("lastusedpass", password);
-                getPluginConfig().save();
-                break;
             }
+            if (br.containsHTML(containsPass()) || br.getHttpConnection().getResponseCode() == 405 || "false".equalsIgnoreCase(br.toString())) {
+                password = null;
+                continue;
+            }
+            failed = false;
+            getPluginConfig().setProperty("lastusedpass", password);
+            getPluginConfig().save();
+            break;
         }
+
+        if (failed) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+    }
+
+    private Form getPasswordForm(final Browser br) {
+        Form pwForm = br.getFormbyProperty("id", "pw_form");
+        if (pwForm == null) {
+            pwForm = new Form();
+            pwForm.setMethod(MethodType.POST);
+            pwForm.setAction(br.getURL());
+        }
+        return pwForm;
     }
 
     public static String createPrivateVideoUrlWithReferer(final String vimeo_video_id, final String referer_url) {

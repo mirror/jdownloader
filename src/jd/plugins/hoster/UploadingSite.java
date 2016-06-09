@@ -176,6 +176,9 @@ public class UploadingSite extends PluginForHost {
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!correctedBR.contains("value=\"" + this.fuid + "\"")) {
+            /* 2016-06-09: Advanced offline errorhandling as html does not contain offline message! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         altbr = this.br.cloneBrowser();
