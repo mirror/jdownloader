@@ -27,6 +27,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,11 +54,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.eu" }, urls = { "https?://(www\\.)?rockfile\\.eu/(embed\\-)?[a-z0-9]{12}\\.html" }, flags = { 2 })
 public class RockFileEu extends antiDDoSForHost {
@@ -566,7 +566,7 @@ public class RockFileEu extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
-            prepBr.setCookie(COOKIE_HOST, "langAuto", "0");
+            // prepBr.setCookie(COOKIE_HOST, "langAuto", "0");
         }
         return prepBr;
     }
@@ -1045,8 +1045,6 @@ public class RockFileEu extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                /* Important: Enforce english language! */
-                getPage(COOKIE_HOST + "/?op=change_lang&lang=english");
                 getPage(COOKIE_HOST + "/login.html");
                 br.getRequest().setHtmlCode(correctedBR);
                 final Form loginform = br.getFormbyProperty("name", "FL");
