@@ -124,7 +124,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     private String convertUserToLoggedOutUser() {
-        return "https://" + getUsername(this.parameter) + ".tumblr.com/";
+        return "http://" + getUsername(this.parameter) + ".tumblr.com/";
     }
 
     private String getUsername(final String source) {
@@ -132,7 +132,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         if (source.matches(TYPE_USER_LOGGEDIN)) {
             url_username = new Regex(source, "/([^/]+)$").getMatch(0);
         } else {
-            url_username = new Regex(source, "https?://([^/]+)\\.tumblr\\.com/.+").getMatch(0);
+            url_username = new Regex(source, "https?://([^/]+)\\.tumblr\\.com/").getMatch(0);
         }
         return url_username;
     }
@@ -286,6 +286,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 }
                 dl.setLinkID(getHost() + "://" + puid);
                 dl.setFinalFileName(filename + extension);
+                dl.setAvailable(true);
                 decryptedLinks.add(dl);
             } else {
                 dl = createDownloadlink("directhttp://" + externID);
@@ -402,6 +403,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     // cleanup...
                     final String filename = setFileName(cleanupName(df.format(count) + " - " + fpName), puid) + getFileNameExtensionFromString(url);
                     dl.setFinalFileName(filename);
+                    dl.setAvailable(true);
                     setMD5Hash(dl, url);
                     setImageLinkID(dl, url, puid);
                     decryptedLinks.add(dl);

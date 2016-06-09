@@ -58,16 +58,10 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/[A-Za-z0-9]{15,16}" }, flags = { 2 })
 public class CatShareNet extends PluginForHost {
 
-    /**
-     * API TODO: <br />
-     * -Check/Fix free account/premium account modes AND limits<br />
-     * -More testing -Check how long such a session cookie is reusable and how to determine if it expired<br />
-     * -2016-05-24: Check FREE ACCOUNT limits - API is now implemented and should work --> Enabled it so our users can test!<br />
-     */
     private String          brbefore               = "";
     private String          HOSTER                 = "http://catshare.net";
     private static Object   lock                   = new Object();
-    protected final String  USE_API                = "USE_API_33827";
+    protected final String  USE_API                = "USE_API_33933";
     private final boolean   defaultUSE_API         = true;
     private final boolean   use_api_availablecheck = true;
 
@@ -78,7 +72,6 @@ public class CatShareNet extends PluginForHost {
 
     // DEV NOTES
     // captchatype: reCaptchaV1
-    // non account: 1 * 1
 
     @Override
     public String getAGBLink() {
@@ -948,7 +941,11 @@ public class CatShareNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.CatShareNet.useAPI", getPhrase("USE_API"))).setDefaultValue(false));
+        /*
+         * 2016-06-09: Disabled this setting on admin request - if there are API issues in the future, this can be re-enabled! Keep in mind
+         * that website might change so the website handling might be broken and needs fixing first before it can be used!!
+         */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.CatShareNet.useAPI", getPhrase("USE_API"))).setDefaultValue(false).setEnabled(false));
     }
 
     private boolean getUseAPI() {
