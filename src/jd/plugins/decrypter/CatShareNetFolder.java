@@ -51,13 +51,30 @@ public class CatShareNetFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        HashMap<String, Object> entries = null;
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-        for (final Object fileo : ressourcelist) {
-            entries = (HashMap<String, Object>) fileo;
-            final String linkid = (String) entries.get("linkid");
-            final String filename = (String) entries.get("filename");
-            final long filesize = DummyScriptEnginePlugin.toLong(entries.get("filesize"), 0);
+        /* 2016-06-09: The admin uses json Arrays in a wrong way but this plugin should work ... as long as he doesn't change the json! */
+        // final ArrayList<Object> ressourcelist = (ArrayList<Object>)
+        // jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+
+        HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        HashMap<String, Object> entries_tmp = null;
+        Object entries_tmp_o = null;
+
+        String fpName = (String) entries.get("folder_name");
+        if (fpName == null) {
+            fpName = "catshare.net folder " + folderid;
+        }
+
+        int counter = 0;
+        do {
+            entries_tmp_o = entries.get(Integer.toString(counter));
+            if (entries_tmp_o == null) {
+                break;
+            }
+
+            entries_tmp = (HashMap<String, Object>) entries_tmp_o;
+            final String linkid = (String) entries_tmp.get("linkid");
+            final String filename = (String) entries_tmp.get("filename");
+            final long filesize = DummyScriptEnginePlugin.toLong(entries_tmp.get("filesize"), 0);
             if (linkid == null || filename == null) {
                 /* This should never happen */
                 continue;
@@ -67,10 +84,11 @@ public class CatShareNetFolder extends PluginForDecrypt {
             dl.setDownloadSize(filesize);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
-        }
+            counter++;
+        } while (true);
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName("catshare.net folder " + folderid);
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;

@@ -284,7 +284,7 @@ public class CatShareNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     @SuppressWarnings("deprecation")
@@ -478,6 +478,7 @@ public class CatShareNet extends PluginForHost {
         }
         if ("Free".equals(type) || expire_long < System.currentTimeMillis()) {
             account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(1);
             ai.setStatus(getPhrase("FREE"));
         } else {
             account.setType(AccountType.PREMIUM);
@@ -543,15 +544,12 @@ public class CatShareNet extends PluginForHost {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
                 }
             }
-            try {
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
 
             ai.setStatus(getPhrase("PREMIUM"));
         } else {
+            account.setMaxSimultanDownloads(1);
             ai.setStatus(getPhrase("FREE"));
         }
 
@@ -659,7 +657,7 @@ public class CatShareNet extends PluginForHost {
     public void handlePremiumAPI(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         loginAPI(account);
         if (account.getType() == AccountType.FREE) {
-            handleDownloadAPI(downloadLink, true, 0, false, "directlink_freeaccount");
+            handleDownloadAPI(downloadLink, true, 1, false, "directlink_freeaccount");
         } else {
             handleDownloadAPI(downloadLink, true, -4, true, "directlink_premiumaccount");
         }
@@ -671,7 +669,7 @@ public class CatShareNet extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
-            doFreeWebsite(downloadLink, false, 1);
+            doFreeWebsite(downloadLink, true, 1);
             return;
         }
 
@@ -702,12 +700,7 @@ public class CatShareNet extends PluginForHost {
         }
 
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, getMaxChunksPremiumDownload());
-        } catch (Exception e) {
-            logger.info("Downloading of: " + dllink + " throws exception: " + e.getMessage());
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, e.getMessage());
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
 
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -851,11 +844,6 @@ public class CatShareNet extends PluginForHost {
         return -1;
     }
 
-    /* limit for number of chunks, more cause "service temporarily unavailable" (probably 503) */
-    public int getMaxChunksPremiumDownload() {
-        return -4;
-    }
-
     @Override
     public void reset() {
     }
@@ -870,7 +858,7 @@ public class CatShareNet extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
