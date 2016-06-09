@@ -122,6 +122,10 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
                 /* In some rare cases title will be "" after we remove season- and episodenumbers from it ... */
                 filename += " - " + title;
             }
+
+            /* Even though the data comes from json it might be htmlencoded sometimes - let's fix that! */
+            filename = Encoding.htmlDecode(filename);
+
             filename = encodeUnicode(filename) + ".mp4";
             final DownloadLink dl = this.createDownloadlink("http://7tvdecrypted.de/" + videoid);
             dl.setProperty("decrypter_filename", filename);
