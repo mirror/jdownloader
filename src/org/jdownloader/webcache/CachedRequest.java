@@ -7,6 +7,7 @@ import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 
 public class CachedRequest implements Storable {
@@ -67,7 +68,6 @@ public class CachedRequest implements Storable {
     }
 
     public void setBytes64(String bytes64) {
-
         _bytes = Base64.decode(bytes64);
     }
 
@@ -103,12 +103,10 @@ public class CachedRequest implements Storable {
         this.responseCode = responseCode;
         this.responseMessage = responseMessage;
         this.headers = headers;
-
         String expires = null;
         String cacheControl = null;
         String date = null;
         for (CachedHeader header : headers) {
-
             for (String v : header.getValues()) {
                 if ("Cache-Control".equalsIgnoreCase(header.getKey())) {
                     cacheControl = v;
@@ -133,26 +131,20 @@ public class CachedRequest implements Storable {
             }
         }
         if (maxAge < 0) {
-
             if (expires != null) {
                 long now = System.currentTimeMillis();
-
-                long expiresLong = DateUtil.parseDate(expires).getTime();
+                long expiresLong = TimeFormatter.parseDateString(expires).getTime();
                 if (date != null) {
-                    now = DateUtil.parseDate(date).getTime();
-
+                    now = TimeFormatter.parseDateString(date).getTime();
                 }
                 maxAge = expiresLong - now;
                 System.out.println("Max Age " + maxAge);
             }
-
         }
-
         if (!_isExpired()) {
             System.out.println("Write Cache " + url);
             System.out.println(JSonStorage.serializeToJson(this));
         }
-
     }
 
     public long getMaxAge() {
