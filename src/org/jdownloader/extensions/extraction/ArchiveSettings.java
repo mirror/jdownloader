@@ -3,9 +3,7 @@ package org.jdownloader.extensions.extraction;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
-import org.appwork.storage.TypeRef;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class ArchiveSettings implements Storable {
@@ -76,7 +74,6 @@ public class ArchiveSettings implements Storable {
             archiveController.update(this);
             needsSaving = true;
         }
-
     }
 
     public void setAutoExtract(BooleanStatus overwriteFiles) {
@@ -136,18 +133,8 @@ public class ArchiveSettings implements Storable {
         fireUpdate();
     }
 
-    public static final TypeRef<ArchiveSettings> TYPEREF = new TypeRef<ArchiveSettings>() {
-    };
-
     public boolean needsSaving() {
         return needsSaving;
-    }
-
-    public ArchiveSettings createClone() {
-        ArchiveSettings ret = JSonStorage.restoreFromString(JSonStorage.serializeToJson(this), TYPEREF);
-        ret.needsSaving = needsSaving;
-        ret.archiveController = archiveController;
-        return ret;
     }
 
 }
