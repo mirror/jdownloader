@@ -457,8 +457,11 @@ public class Multi extends IExtraction {
         try {
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
             ctrl.setProcessedBytes(0);
-            if (ArchiveFormat.SEVEN_ZIP == format || ArchiveFormat.BZIP2 == format) {
-                ArrayList<Integer> allItems = new ArrayList<Integer>();
+            final boolean isSolid = Boolean.TRUE.equals(inArchive.getArchiveProperty(PropID.SOLID));// solid archives are much much much
+            // faster in stream extraction to avoid
+            // seeking/extraction of previous data
+            if (ArchiveFormat.SEVEN_ZIP == format || ArchiveFormat.BZIP2 == format || isSolid) {
+                final ArrayList<Integer> allItems = new ArrayList<Integer>();
                 for (int i = 0; i < inArchive.getNumberOfItems(); i++) {
                     final Boolean isFolder = inArchive.isFolder(i);
                     if (Boolean.TRUE.equals(isFolder)) {
@@ -466,7 +469,7 @@ public class Multi extends IExtraction {
                     }
                     allItems.add(i);
                 }
-                final int maxItemsRound = 50;
+                final int maxItemsRound = isSolid ? -1 : 50;
                 final ArrayList<Integer> round = new ArrayList<Integer>();
                 final Iterator<Integer> it = allItems.iterator();
                 while (it.hasNext()) {
@@ -782,6 +785,7 @@ public class Multi extends IExtraction {
         try {
             final Method getArchiveFormat = o.getClass().getMethod("getArchiveFormat");
             final Method getNumberOfItems = o.getClass().getMethod("getNumberOfItems");
+            final Method getArchiveProperty = o.getClass().getMethod("getArchiveProperty", new Class[] { PropID.class });
             final Method getProperty = o.getClass().getMethod("getProperty", new Class[] { int.class, PropID.class });
             final Method getSimpleInterface = o.getClass().getMethod("getSimpleInterface");
             final Method close = o.getClass().getMethod("close");
@@ -904,6 +908,11 @@ public class Multi extends IExtraction {
                 @Override
                 public boolean isSlowDownWorkaroundNeeded() {
                     return slowDownWorkaroundNeeded && ArchiveFormat.SEVEN_ZIP == getArchiveFormat();
+                }
+
+                @Override
+                public Object getArchiveProperty(PropID propID) {
+                    return invoke(getArchiveProperty, propID);
                 }
 
             };
@@ -1104,25 +1113,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

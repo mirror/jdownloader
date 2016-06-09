@@ -4,6 +4,7 @@ import java.util.Date;
 
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
+import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 
@@ -36,4 +37,6 @@ public interface SevenZipArchiveWrapper {
     void extract(int[] indices, boolean testMode, IArchiveExtractCallback extractCallback) throws SevenZipException;
 
     ISimpleInArchive getSimpleInterface();
+
+    Object getArchiveProperty(PropID propID);
 }
