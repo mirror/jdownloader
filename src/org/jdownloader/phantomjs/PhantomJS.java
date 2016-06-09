@@ -65,12 +65,11 @@ public class PhantomJS implements HttpRequestHandler {
     private WebCache             webCache;
 
     public boolean isAvailable() {
-        File bins = getBinaryPath();
+        final File bins = getBinaryPath();
         return bins != null && bins.exists() && bins.canExecute();
     }
 
     public PhantomJS() {
-
     }
 
     protected WebCache initWebCache() {
@@ -96,6 +95,7 @@ public class PhantomJS implements HttpRequestHandler {
             break;
         default:
             exe = Application.getResource("tools/" + CrossSystem.getOS().getFamily().name().toLowerCase(Locale.ENGLISH) + "/phantomjs/" + CrossSystem.getARCHFamily().name() + "_" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "") + "_phantomjs");
+            break;
         }
         return exe;
     }
