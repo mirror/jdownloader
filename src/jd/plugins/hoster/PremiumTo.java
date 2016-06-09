@@ -23,9 +23,6 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +42,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends UseNet {
@@ -125,10 +125,10 @@ public class PremiumTo extends UseNet {
             // because we can not account for separate traffic allocations.
             final long nT = Long.parseLong(traffic[0]);
             final long spT = Long.parseLong(traffic[1]);
-            final long stT = Long.parseLong(traffic[2]);
-            ac.setTrafficLeft(nT + spT + stT + "MiB");
+            // final long stT = Long.parseLong(traffic[2]);//storage
+            ac.setTrafficLeft(nT + spT + "MiB");
             // set both so we can check in canHandle.
-            account.setProperty(normalTraffic, nT + stT);
+            account.setProperty(normalTraffic, nT);
             account.setProperty(specialTraffic, spT);
         }
         {
