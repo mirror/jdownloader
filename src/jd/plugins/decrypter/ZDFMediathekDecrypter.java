@@ -73,6 +73,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
      * TODO: Maybe add support for tivi.de but, similar to phoenix.de, we'd have to use another url to access their XML containing the final
      * video urls - just stupid!
      */
+    /** Related sites: see RegExes, and also: 3sat.de */
     @SuppressWarnings({ "deprecation" })
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {

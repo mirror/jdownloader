@@ -271,8 +271,8 @@ public class InstaGramCom extends PluginForHost {
     public static Browser prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36");
         br.setCookie(MAINPAGE, "ig_pr", "1");
-        // br.setAllowedResponseCodes(429);
         // 429 == too many requests, we need to rate limit requests.
+        br.setAllowedResponseCodes(429);
         br.setRequestIntervalLimit("instagram.com", 250);
         br.setFollowRedirects(true);
         return br;

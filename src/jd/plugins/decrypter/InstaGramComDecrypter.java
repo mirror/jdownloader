@@ -104,32 +104,55 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (page > 0) {
-                final Browser br = this.br.cloneBrowser();
-                final String csrftoken = br.getCookie("instagram.com", "csrftoken");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("X-Instagram-AJAX", "1");
-                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4");
-                // br.getHeaders().put("Origin", "https://www.instagram.com");
-                // br.getHeaders().put("Cache-Control", null);
-                if (csrftoken != null) {
-                    br.getHeaders().put("X-CSRFToken", csrftoken);
-                }
-                if (maxid != null) {
-                    br.getHeaders().put("Referer", "https://www.instagram.com/" + username_url + "/?max_id=" + maxid);
-                }
-                br.setCookie(this.getHost(), "ig_vw", "1680");
+                Browser br = null;
+                // prepBRAjax(br, username_url, maxid);
                 int retrycounter = 1;
+                int errorcounter_403_wtf = 0;
+                int errorcounter_429_ratelimit_reached = 0;
+                boolean failed = true;
+                int responsecode;
 
                 /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
                 do {
-                    final String p = "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++dimensions+%7B%0A++++++height%2C%0A++++++width%0A++++%7D%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%2C%0A++++thumbnail_src%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow";
-                    br.postPage("/query/", p);
-                    retrycounter++;
-                } while (br.getHttpConnection().getResponseCode() == 403 && retrycounter <= 3);
+                    if (this.isAbort()) {
+                        logger.info("User aborted decryption");
+                        return decryptedLinks;
+                    }
 
-                if (br.getHttpConnection().getResponseCode() == 439) {
+                    br = this.br.cloneBrowser();
+                    if (retrycounter > 1) {
+                        /*
+                         * Try to bypass rate-limit - usually kicks in after about 4000 items and it is bound to IP, not User-Agent or
+                         * cookies! Also we need to continue with the cookies we got at the beginning otherwise we'll get a 403! Aftzer
+                         * about 60 seconds wait we should be able to continue but it might happen than we only get one batch of items and
+                         * are blocked again then.
+                         */
+                        this.sleep(30000, param);
+                    }
+                    prepBRAjax(br, username_url, maxid);
+                    final String p = "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++dimensions+%7B%0A++++++height%2C%0A++++++width%0A++++%7D%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%2C%0A++++thumbnail_src%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow";
+                    br.postPage("https://www." + this.getHost() + "/query/", p);
+                    responsecode = br.getHttpConnection().getResponseCode();
+                    if (responsecode == 403 || responsecode == 429) {
+                        failed = true;
+                        if (responsecode == 403) {
+                            errorcounter_403_wtf++;
+                        } else {
+                            errorcounter_429_ratelimit_reached++;
+                        }
+                        logger.info("403 errors so far: " + errorcounter_403_wtf);
+                        logger.info("429 errors so far: " + errorcounter_429_ratelimit_reached);
+                    } else {
+                        failed = false;
+                    }
+                    retrycounter++;
+                    /* Stop on too many 403s as 403 is not a rate limit issue! */
+                } while (failed && retrycounter <= 300 && errorcounter_403_wtf < 20);
+
+                if (failed) {
+                    logger.warning("Failed to bypass rate-limit!");
+                    return decryptedLinks;
+                } else if (responsecode == 439) {
                     logger.info("Seems like user is using an unverified account - cannot grab more items");
                     break;
                 }
@@ -178,5 +201,20 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } while (nextid != null);
 
         return decryptedLinks;
+    }
+
+    private void prepBRAjax(final Browser br, final String username_url, final String maxid) {
+        final String csrftoken = br.getCookie("instagram.com", "csrftoken");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("X-Instagram-AJAX", "1");
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        if (csrftoken != null) {
+            br.getHeaders().put("X-CSRFToken", csrftoken);
+        }
+        if (maxid != null) {
+            br.getHeaders().put("Referer", "https://www.instagram.com/" + username_url + "/?max_id=" + maxid);
+        }
+        br.setCookie(this.getHost(), "ig_vw", "1680");
     }
 }
