@@ -13,7 +13,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.logging.LogController;
 
 public class ArchiveController {
@@ -88,8 +87,7 @@ public class ArchiveController {
                 if (ret != null) {
                     return ret;
                 }
-                final boolean isDeepExtract = (archiveFactory instanceof FileArchiveFactory) && ((FileArchiveFactory) archiveFactory).isDeepExtraction();
-                ret = createSettingsObject(internalID, isDeepExtract);
+                ret = createSettingsObject(internalID, archiveFactory.isDeepExtraction());
                 final BooleanStatus defaultAuto = BooleanStatus.get(archiveFactory.getDefaultAutoExtract());
                 if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
                     /* only set AutoExtract value when it is UNSET */

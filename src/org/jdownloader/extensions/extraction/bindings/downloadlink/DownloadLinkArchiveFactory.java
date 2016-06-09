@@ -36,6 +36,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         super(link);
     }
 
+    public boolean isDeepExtraction() {
+        return false;
+    }
+
     public String createExtractSubPath(String path, Archive archive) {
         final DownloadLink link = getFirstDownloadLinkPart(archive);
         try {

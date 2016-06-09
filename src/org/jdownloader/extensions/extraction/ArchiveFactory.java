@@ -17,6 +17,8 @@ public interface ArchiveFactory extends ArchiveFile {
     // }
     public File getFolder();
 
+    public boolean isDeepExtraction();
+
     // void fireExtractToChange(Archive archive);
 
     Collection<? extends String> getGuessedPasswordList(Archive archive);
