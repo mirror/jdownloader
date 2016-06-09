@@ -7,7 +7,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.http.Browser;
 import jd.plugins.Plugin;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -85,9 +84,7 @@ public class InstallThread extends Thread {
                 break;
             case MAC:
                 url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-macosx.zip";
-                if (true) {
-                    throw new WTFException("FIXME binary");
-                }
+                binaryPath = "/phantomjs-2.1.1-macosx/bin/phantomjs";
                 break;
             case LINUX:
                 switch (CrossSystem.getARCHFamily()) {
@@ -142,6 +139,9 @@ public class InstallThread extends Thread {
                 final File dest = new PhantomJS().getBinaryPath();
                 dest.getParentFile().mkdirs();
                 final File binarySource = new File(extractTo, binaryPath);
+                if (extractTo.exists()) {
+                    Files.deleteRecursiv(extractTo);
+                }
                 switch (CrossSystem.getOSFamily()) {
                 case WINDOWS:
                 case MAC:
@@ -169,6 +169,7 @@ public class InstallThread extends Thread {
                     if (binarySource.renameTo(dest)) {
                         dest.setExecutable(true);
                     }
+                    dest.setExecutable(true);
                 }
             } finally {
                 installing = false;
