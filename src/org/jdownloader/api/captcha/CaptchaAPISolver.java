@@ -32,6 +32,7 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.plugins.SkipReason;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
@@ -73,14 +74,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     public void solve(final SolverJob<Object> job) throws InterruptedException, SolverException, SkipException {
-        // JobRunnable<Object> jr;
-        // jr = new JobRunnable<Object>(this, job);
-        //
-        // synchronized (map) {
-        // map.put(job, jr);
-        //
-        //
-        // }
+        Challenge<?> challenge = job.getChallenge();
+        if (challenge instanceof RecaptchaV2Challenge) {
+            if (((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge() == null) {
+                throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
+            }
+        }
         job.getLogger().info("Fire MyJDownloader Captcha Event");
         eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
 
@@ -213,10 +212,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @SuppressWarnings("unchecked")
     public boolean solve(long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException {
-        // the current webinterface sends an empty result when the user clicks on refresh
-        if (StringUtils.isEmpty(result)) { //
-            return skip(id, SkipRequest.REFRESH);
-        }
+
         final SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();

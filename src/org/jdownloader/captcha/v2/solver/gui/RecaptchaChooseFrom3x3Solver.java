@@ -8,7 +8,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.plugins.SkipReason;
 
 import jd.controlling.captcha.SkipException;
 
@@ -44,25 +44,25 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
     }
 
     private boolean isBrowserSolverEnabled(Challenge<?> c) {
-        try {
-            // not yet
-            // if (!CFG_BROWSER_CAPTCHA_SOLVER.CFG.isRecaptcha2Enabled()) {
-            // return false;
-            // }
-            if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c.getClass().getSimpleName().equals("Recaptcha2FallbackChallengeViaJxBrowser")) {
-                return false;
-            }
-            if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c instanceof RecaptchaV2Challenge) {
-                // Load via reflection until evaluation tests are done
-
-                Class.forName("com.teamdev.jxbrowser.chromium.Browser");
-                if (((RecaptchaV2Challenge) c).createBasicCaptchaChallenge() != null) {
-                    return false;
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        // try {
+        // not yet
+        // if (!CFG_BROWSER_CAPTCHA_SOLVER.CFG.isRecaptcha2Enabled()) {
+        // return false;
+        // }
+        // if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c.getClass().getSimpleName().equals("Recaptcha2FallbackChallengeViaJxBrowser")) {
+        // return false;
+        // }
+        // if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c instanceof RecaptchaV2Challenge) {
+        // // Load via reflection until evaluation tests are done
+        //
+        // Class.forName("com.teamdev.jxbrowser.chromium.Browser");
+        // if (((RecaptchaV2Challenge) c).createBasicCaptchaChallenge() != null) {
+        // return false;
+        // }
+        // }
+        // } catch (ClassNotFoundException e) {
+        // // e.printStackTrace();
+        // }
         if (!BrowserSolver.getInstance().isEnabled()) {
             return false;
         }
@@ -86,7 +86,12 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
                 return;
             }
             if (solverJob.getChallenge() instanceof RecaptchaV2Challenge) {
-
+                Challenge<?> challenge = solverJob.getChallenge();
+                if (challenge instanceof RecaptchaV2Challenge) {
+                    if (((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge() == null) {
+                        throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
+                    }
+                }
                 checkSilentMode(solverJob);
                 AbstractRecaptcha2FallbackChallenge captchaChallenge = (AbstractRecaptcha2FallbackChallenge) ((RecaptchaV2Challenge) solverJob.getChallenge()).createBasicCaptchaChallenge();
                 checkInterruption();

@@ -13,6 +13,7 @@ public enum VideoResolution implements LabelInterface,IntegerInterface {
     P_2160(3840, 2160),
     P_1920(1080, 1920),
     P_1440(2560, 1440),
+    P_1280(2560, 1280),
     P_1080(1920, 1080),
     P_720(1280, 720),
     P_480(640, 480),
@@ -22,7 +23,7 @@ public enum VideoResolution implements LabelInterface,IntegerInterface {
     P_180(320, 180),
     P_144(256, 144),
     P_90(120, 90),
-    P_72(128, 72);
+    P_72(128, 72),;
 
     private int height;
     private int width;

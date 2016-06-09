@@ -3,9 +3,6 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -27,6 +24,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+import jd.utils.JDUtilities;
 
 public interface GeneralSettings extends ConfigInterface {
 
@@ -451,10 +451,8 @@ public interface GeneralSettings extends ConfigInterface {
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
     public static enum CreateFolderTrigger {
-        @EnumLabel("When the actual Download starts")
-        ON_DOWNLOAD_START,
-        @EnumLabel("When the links are added to the Downloadlist")
-        ON_LINKS_ADDED,
+        @EnumLabel("When the actual Download starts") ON_DOWNLOAD_START,
+        @EnumLabel("When the links are added to the Downloadlist") ON_LINKS_ADDED,
 
     }
 
@@ -635,10 +633,10 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setPreferBouncyCastleForTLS(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Enable/Disable JXBrowser usage. JXBrowser Plugin required!")
-    boolean isJxBrowserEnabled();
-
-    void setJxBrowserEnabled(boolean b);
+    // @AboutConfig
+    // @DefaultBooleanValue(true)
+    // @DescriptionForConfigEntry("Enable/Disable JXBrowser usage. JXBrowser Plugin required!")
+    // boolean isJxBrowserEnabled();
+    //
+    // void setJxBrowserEnabled(boolean b);
 }

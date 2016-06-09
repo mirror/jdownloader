@@ -5,6 +5,7 @@ public enum PluginTaskID {
     DOWNLOAD,
     EXTRACTION,
     FFMPEG_INSTALLATION,
+    PHANTOMJS_INSTALLATION,
     FFMPEG,
     FLV_FIXER,
     HASH,

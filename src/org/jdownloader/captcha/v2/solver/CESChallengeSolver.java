@@ -1,8 +1,5 @@
 package org.jdownloader.captcha.v2.solver;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -13,6 +10,10 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.plugins.SkipReason;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
 public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     protected int getDefaultWaitForOthersTimeout() {
@@ -54,6 +55,11 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
         Challenge<?> challenge = job.getChallenge();
         if (challenge instanceof RecaptchaV2Challenge) {
             challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+            if (challenge == null) {
+
+                throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
+
+            }
 
         }
 

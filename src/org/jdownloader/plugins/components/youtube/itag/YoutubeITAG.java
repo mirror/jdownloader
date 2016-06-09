@@ -50,6 +50,10 @@ public enum YoutubeITAG {
     DASH_VIDEO_720_H264_FPS60(298, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_60),
 
     DASH_VIDEO_720P_H264(136, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30),
+
+    DASH_VIDEO_ITAG304_MP4_1280P_60FPS(304, StreamContainer.DASH_VIDEO, VideoResolution.P_1280, VideoCodec.H264, VideoFrameRate.FPS_60),
+    DASH_VIDEO_ITAG305_MP4_1280P_60FPS(305, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.H264, VideoFrameRate.FPS_60),
+
     DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.VP9, VideoFrameRate.FPS_60),
     // https://www.youtube.com/watch?v=kiZse2vZXfw&nohtml5=False
     DASH_VIDEO_ITAG313_VP9_1920P_30FPS(313, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.VP9_WORSE_PROFILE_1, VideoFrameRate.FPS_30),

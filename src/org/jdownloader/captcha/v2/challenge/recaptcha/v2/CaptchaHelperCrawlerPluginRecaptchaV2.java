@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
@@ -67,7 +68,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             jobs.add(ChallengeResponseController.getInstance().handle(c));
             AbstractRecaptcha2FallbackChallenge rcFallback = null;
 
-            while (jobs.size() <= 10) {
+            while (jobs.size() <= 20) {
 
                 if (rcFallback == null && c.getResult() != null) {
                     for (AbstractResponse<String> r : c.getResult()) {
@@ -79,7 +80,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                         }
                     }
                 }
-                if (rcFallback != null && rcFallback.getToken() == null) {
+                if (rcFallback != null && StringUtils.isEmpty(rcFallback.getToken())) {
                     // retry
 
                     try {
@@ -88,9 +89,11 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                         LogSource.exception(logger, e);
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
-                    runDdosPrevention();
+                    if (rcFallback.doRunAntiDDosProtection()) {
+                        runDdosPrevention();
+                    }
                     jobs.add(ChallengeResponseController.getInstance().handle(rcFallback));
-                    if (rcFallback.getToken() != null) {
+                    if (StringUtils.isNotEmpty(rcFallback.getToken())) {
                         break;
                     }
                 } else {
