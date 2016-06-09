@@ -18,9 +18,16 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
+
+import jd.http.Browser;
+import jd.http.ProxySelectorInterface;
+import jd.http.QueryInfo;
+import jd.http.Request;
+import jd.plugins.components.UserAgents;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -50,12 +57,6 @@ import org.jdownloader.webcache.CachedHeader;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
 
-import jd.http.Browser;
-import jd.http.ProxySelectorInterface;
-import jd.http.QueryInfo;
-import jd.http.Request;
-import jd.plugins.components.UserAgents;
-
 public class PhantomJS implements HttpRequestHandler {
     private static final boolean DEBUGGER = false;
     private ConsoleLogImpl       logger;
@@ -77,9 +78,7 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     protected void initBinaries() throws PhantomJSBinariesMissingException {
-        File exe = null;
-        exe = getBinaryPath();
-
+        final File exe = getBinaryPath();
         if (!exe.exists()) {
             throw new PhantomJSBinariesMissingException(exe.getAbsolutePath());
         }
@@ -87,16 +86,16 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     public File getBinaryPath() {
-        File exe;
+        final File exe;
         switch (CrossSystem.getOS().getFamily()) {
         case WINDOWS:
-            exe = Application.getResource("tools/Windows/phantomjs/" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i368") + "/phantomjs.exe");
+            exe = Application.getResource("tools/Windows/phantomjs/phantomjs.exe");
             break;
         case MAC:
-            exe = Application.getResource("tools/mac/phantomjs/" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i368") + "/phantomjs");
+            exe = Application.getResource("tools/mac/phantomjs/phantomjs");
             break;
         default:
-            exe = Application.getResource("tools/linux/phantomjs/" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i368") + "/phantomjs");
+            exe = Application.getResource("tools/" + CrossSystem.getOS().getFamily().name().toLowerCase(Locale.ENGLISH) + "/phantomjs/" + CrossSystem.getARCHFamily().name() + "_" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "") + "_phantomjs");
         }
         return exe;
     }

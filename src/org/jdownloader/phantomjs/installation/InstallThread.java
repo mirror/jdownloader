@@ -166,12 +166,14 @@ public class InstallThread extends Thread {
                     break;
                 }
                 if (binarySource.exists()) {
-                    binarySource.renameTo(dest);
+                    if (binarySource.renameTo(dest)) {
+                        dest.setExecutable(true);
+                    }
                 }
-                Files.deleteRecursiv(extractTo);
-                file.delete();
             } finally {
                 installing = false;
+                file.delete();
+                Files.deleteRecursiv(extractTo);
             }
         } catch (Throwable e) {
             e.printStackTrace();
