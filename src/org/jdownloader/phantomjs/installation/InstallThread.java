@@ -1,6 +1,7 @@
 package org.jdownloader.phantomjs.installation;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -12,6 +13,7 @@ import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.os.CrossSystem;
@@ -41,8 +43,6 @@ public class InstallThread extends Thread {
 
     private boolean             success                  = false;
 
-    private final String        task;
-
     private boolean             downloading;
 
     public boolean isDownloading() {
@@ -64,7 +64,6 @@ public class InstallThread extends Thread {
     private DownloadClient   br;
 
     public InstallThread(String task) {
-        this.task = task;
     }
 
     public boolean isSuccessFul() {
@@ -78,14 +77,20 @@ public class InstallThread extends Thread {
             br.setProgressCallback(this.downloadProgress = new DownloadProgress());
             final String url;
             final String binaryPath;
+            final String sha256;
+            final long size;
             switch (CrossSystem.getOSFamily()) {
             case WINDOWS:
                 url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-windows.zip";
                 binaryPath = "\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe";
+                sha256 = "d9fb05623d6b26d3654d008eab3adafd1f6350433dfd16138c46161f42c7dcc8";
+                size = 18193653;
                 break;
             case MAC:
                 url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-macosx.zip";
                 binaryPath = "/phantomjs-2.1.1-macosx/bin/phantomjs";
+                sha256 = "538cf488219ab27e309eafc629e2bcee9976990fe90b1ec334f541779150f8c1";
+                size = 17148816;
                 break;
             case LINUX:
                 switch (CrossSystem.getARCHFamily()) {
@@ -93,9 +98,13 @@ public class InstallThread extends Thread {
                     if (CrossSystem.is64BitArch()) {
                         url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2";
                         binaryPath = "/phantomjs-2.1.1-linux-x86_64/bin/phantomjs";
+                        sha256 = "86dd9a4bf4aee45f1a84c9f61cf1947c1d6dce9b9e8d2a907105da7852460d2f";
+                        size = 23415665;
                     } else {
                         url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-i686.tar.bz2";
                         binaryPath = "/phantomjs-2.1.1-linux-i686/bin/phantomjs";
+                        sha256 = "80e03cfeb22cc4dfe4e73b68ab81c9fdd7c78968cfd5358e6af33960464f15e3";
+                        size = 24144933;
                     }
                     break;
                 default:
@@ -136,6 +145,13 @@ public class InstallThread extends Thread {
                 downloading = false;
             }
             try {
+                if (file.length() != size) {
+                    throw new IOException("File size missmatch! (" + file.length() + "!=" + size + ")");
+                }
+                final String fileSha256 = Hash.getSHA256(file);
+                if (!sha256.equalsIgnoreCase(fileSha256)) {
+                    throw new IOException("File sha256 missmatch!");
+                }
                 installing = true;
                 final File dest = new PhantomJS().getBinaryPath();
                 dest.getParentFile().mkdirs();
@@ -203,76 +219,70 @@ public class InstallThread extends Thread {
         }
     }
 
-    public static void install(final InstallProgress progress, String task) throws InterruptedException {
+    public static synchronized void install(final InstallProgress progress, String task) throws InterruptedException {
         switch (CrossSystem.getOSFamily()) {
         case LINUX:
-
             switch (CrossSystem.getARCHFamily()) {
             case ARM:
             case PPC:
             case SPARC:
                 return;
-
             }
         }
         final InstallThread thread = new InstallThread(task);
-        synchronized (DownloadWatchDog.getInstance()) {
-            if (DownloadWatchDog.getInstance().getSession().getBooleanProperty(PHANTOM_JS_INSTALL_CHECK, false)) {
-                return;
-            }
-            DownloadWatchDog.getInstance().getSession().setProperty(PHANTOM_JS_INSTALL_CHECK, true);
-            try {
-                UIOManager.I().show(ConfirmDialogInterface.class, new InstallTypeChooserDialog(_GUI.T.phantomjs_usage())).throwCloseExceptions();
-                ProgressGetter pg = new org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter() {
-
-                    @Override
-                    public int getProgress() {
-                        return (int) thread.getTotalProgress();
-                    }
-
-                    @Override
-                    public String getString() {
-                        return thread.getStatusString();
-                    }
-
-                    @Override
-                    public void run() throws Exception {
-                        try {
-                            thread.start();
-
-                            while (thread != null && thread.isAlive()) {
-                                if (progress != null) {
-
-                                    progress.updateValues(thread.getTotalProgress(), 100);
-                                }
-                                thread.join(1000);
-                            }
-                        } finally {
-                            System.out.println(1);
-                        }
-                    }
-
-                    @Override
-                    public String getLabelString() {
-                        return thread.getStatusString();
-                    }
-
-                };
-                ProgressDialog p = new ProgressDialog(pg, 0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message(), new AbstractIcon(IconKey.ICON_LOGO_PHANTOMJS_LOGO, 32), null, null);
-                UIOManager.I().show(ProgressInterface.class, p);
-                if (new PhantomJS().isAvailable()) {
-                    UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message_success(), new AbstractIcon(IconKey.ICON_LOGO_PHANTOMJS_LOGO, 32), _GUI.T.lit_continue()));
-                } else {
-                    UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message_failed(), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI.T.lit_continue()));
-
-                }
-            } catch (DialogClosedException e) {
-                e.printStackTrace();
-            } catch (DialogCanceledException e) {
-                e.printStackTrace();
-            }
+        if (DownloadWatchDog.getInstance().getSession().getBooleanProperty(PHANTOM_JS_INSTALL_CHECK, false)) {
+            return;
         }
+        DownloadWatchDog.getInstance().getSession().setProperty(PHANTOM_JS_INSTALL_CHECK, true);
+        try {
+            UIOManager.I().show(ConfirmDialogInterface.class, new InstallTypeChooserDialog(_GUI.T.phantomjs_usage())).throwCloseExceptions();
+            ProgressGetter pg = new org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter() {
 
+                @Override
+                public int getProgress() {
+                    return (int) thread.getTotalProgress();
+                }
+
+                @Override
+                public String getString() {
+                    return thread.getStatusString();
+                }
+
+                @Override
+                public void run() throws Exception {
+                    try {
+                        thread.start();
+
+                        while (thread != null && thread.isAlive()) {
+                            if (progress != null) {
+
+                                progress.updateValues(thread.getTotalProgress(), 100);
+                            }
+                            thread.join(1000);
+                        }
+                    } finally {
+                        System.out.println(1);
+                    }
+                }
+
+                @Override
+                public String getLabelString() {
+                    return thread.getStatusString();
+                }
+
+            };
+            ProgressDialog p = new ProgressDialog(pg, 0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message(), new AbstractIcon(IconKey.ICON_LOGO_PHANTOMJS_LOGO, 32), null, null);
+            UIOManager.I().show(ProgressInterface.class, p);
+            if (new PhantomJS().isAvailable()) {
+                UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message_success(), new AbstractIcon(IconKey.ICON_LOGO_PHANTOMJS_LOGO, 32), _GUI.T.lit_continue()));
+            } else {
+                UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message_failed(), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI.T.lit_continue()));
+            }
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
     }
 
     protected long getTotalProgress() {

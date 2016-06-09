@@ -4,6 +4,9 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -24,10 +27,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.http.Browser;
-import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
@@ -168,38 +167,17 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (basicChallenge != null || Application.isJared(null)) {
             return basicChallenge;
         }
-        // try {
-        // if (!Application.isHeadless() && CFG_GENERAL.CFG.isJxBrowserEnabled()) {
-        // // Load via reflection until evaluation tests are done
-        // Class.forName("com.teamdev.jxbrowser.chromium.Browser");
-        // Class<?> cl = Class.forName("org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallengeViaJxBrowser");
-        // basicChallenge = (BasicCaptchaChallenge) cl.getConstructor(new Class[] { RecaptchaV2Challenge.class }).newInstance(this);
-        // // basicChallenge = new org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallengeViaJxBrowser(this);
-        // return basicChallenge;
-        // }
-        // } catch (Throwable e) {
-        // // LoggerFactory.getDefaultLogger().log(e);
-        // }
-
-        Plugin plg = getPlugin();
-
         final PhantomJS binding = new PhantomJS();
-        synchronized (DownloadWatchDog.getInstance()) {
-
-            if (!binding.isAvailable()) {
-
-                try {
-                    InstallThread.install(null, _GUI.T.phantomjs_usage());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-            }
-            if (!binding.isAvailable()) {
-                return null;
+        if (!binding.isAvailable()) {
+            try {
+                InstallThread.install(null, _GUI.T.phantomjs_usage());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
+        if (!binding.isAvailable()) {
+            return null;
+        }
         basicChallenge = new Recaptcha2FallbackChallengeViaPhantomJS(this); //
         return basicChallenge;
 
