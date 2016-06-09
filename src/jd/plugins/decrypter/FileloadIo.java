@@ -45,7 +45,8 @@ public class FileloadIo extends PluginForDecrypt {
         final String specific_file = new Regex(parameter, "https?://[^/]+/[A-Za-z0-9]+/(.+)").getMatch(0);
         final String folderid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
         jd.plugins.hoster.FileloadIo.prepBRWebsite(this.br);
-        br.getPage(parameter);
+        /* Important: Access main-folder to find all free_download_fileids!! */
+        br.getPage("https://" + this.getHost() + "/" + folderid);
         if (jd.plugins.hoster.FileloadIo.mainlinkIsOffline(this.br)) {
             /* Folder offline */
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -56,8 +57,8 @@ public class FileloadIo extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String[] fileids = br.getRegex("data\\-fileid=\"(\\d+)\"").getColumn(0);
-        if (fileids == null || fileids.length == 0) {
+        final String[] free_download_fileids = br.getRegex("data\\-fileid=\"(\\d+)\"").getColumn(0);
+        if (free_download_fileids == null || free_download_fileids.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -72,12 +73,12 @@ public class FileloadIo extends PluginForDecrypt {
             return decryptedLinks;
         }
         for (final Object linko : ressourcelist) {
-            if (counter > fileids.length - 1) {
+            if (counter > free_download_fileids.length - 1) {
                 /* Last element of API-array is .zip for complete folder --> Ignore that! */
                 break;
             }
             entries = (LinkedHashMap<String, Object>) linko;
-            final String linkid = fileids[counter];
+            final String linkid = free_download_fileids[counter];
             final String filename = (String) entries.get("filename");
             final String status = (String) entries.get("status");
             final String content_url = (String) entries.get("link_single");

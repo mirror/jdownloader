@@ -49,7 +49,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "http://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "https?://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" }, flags = { 32 })
 public class DreiSatDe extends PluginForHost {
 
     private static final String Q_LOW      = "Q_LOW";
@@ -358,6 +358,8 @@ public class DreiSatDe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /* Make sure that hbbtv-only-streams can be downloaded! */
+        br.getHeaders().put("User-Agent", "Opera/9.80 (Linux armv7l; HbbTV/1.1.1 (; Sony; KDL32W650A; PKG3.211EUA; 2013;); ) Presto/2.12.362 Version/12.11");
         if (downloadLink.getStringProperty("directURL", null) == null) {
             /* fetch fresh directURL */
             setBrowserExclusive();
