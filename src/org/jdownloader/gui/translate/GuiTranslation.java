@@ -3969,6 +3969,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "<html>To %s1, the \"Third party\" application FFmpeg™ is required.FFmpeg™ is a leading multimedia application that can be started by JDownloader to merge video and audio streams and vice versa. Unfortunately, JDownloader could not find FFmpeg™ installed on your system.</html>" })
     String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd_2(String str);
 
+    @Default(lngs = { "en" }, values = { "<html>To %s1, the \"Third party\" application PhantomJS is required. PhantomJS is a commandline browser that is required to automate some steps. Unfortunately, JDownloader could not find PhantomJS installed on your system.</html>" })
+    String PhantomJSInstallTypeChooserDialog_message(String str);
+
     @Default(lngs = { "en" }, values = { "Ok, but what now?" })
     String FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser();
 
@@ -4005,6 +4008,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "<html>If you want JDownloader to download and install the required official FFmpeg™ Package, please click [Install FFmpeg™ now].</html>" })
     String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2();
+
+    @Default(lngs = { "en" }, values = { "<html>If you want JDownloader to download and install the required official (http://phantomjs.org) PhantomJS Package, please click [Install PhantomJS now].</html>" })
+    String Phantom_JS_Explain_download();
 
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Searching for the FFmpeg™ Binary" })
@@ -6063,9 +6069,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose at least %s1 images..." })
     String RECAPTCHA_2_Dialog_help(int num);
 
-    @Default(lngs = { "en" }, values = { "Choose ALL squares that contain any trace if a street sign!" })
-    String RECAPTCHA_2_Dialog_help_tile();
-
     @Default(lngs = { "en" }, values = { "Submenu: %s1" })
     String AddSubMenuAction_getListCellRendererComponent_container(String name);
 
@@ -6433,4 +6436,68 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Choose all Variant that should be in the linkgrabber variants column dropdown list for the selected collections" })
     String youtube_choose_dropdown_list();
+
+    @Default(lngs = { "en" }, values = { "Select all pieces, that contain ANY trace of '%s1'" })
+    String RECAPTCHA_2_Dialog_help_tile_selection(String string);
+
+    @Default(lngs = { "en" }, values = { "Ignore greyed out pieces. Empty selections are valid as well." })
+
+    String RECAPTCHA_2_Dialog_help_dynamic();
+
+    @Default(lngs = { "en" }, values = { "Continue empty" })
+    String RECAPTCHA_2_Dialog_empty_tile_selection();
+
+    @Default(lngs = { "en" }, values = { "You did not select ALL pieces!" })
+    String RECAPTCHA_2_VERIFICATION_ERROR_MORE_REQUIRED();
+
+    @Default(lngs = { "en" }, values = { "You did not select ALL pieces!" })
+    String RECAPTCHA_2_VERIFICATION_ERROR_TILE_MORE();
+
+    @Default(lngs = { "en" }, values = { "Another challenge is required." })
+    String RECAPTCHA_2_VERIFICATION_ERROR_ANOTHER_CHALLENGE();
+
+    @Default(lngs = { "en" }, values = { "PhantomJS Setup" })
+    String phantomjs_setup_progress();
+
+    @Default(lngs = { "en" }, values = { "PhantomJS is missing!" })
+    String phantom_js_installation_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "Install PhantomJS now" })
+
+    String phantom_js_install_now();
+
+    @Default(lngs = { "en" }, values = { "automate Download- and Linkcrawling tasks" })
+
+    String phantomjs_usage();
+
+    @Default(lngs = { "en" }, values = { "Installation" })
+
+    String lit_installation();
+
+    @Default(lngs = { "en" }, values = { "Please wait until JDownloader has downloaded and installed PhantomJS" })
+
+    String phantomjs_installation_message();
+
+    @Default(lngs = { "en" }, values = { "Download: %s2% %s1/s" })
+
+    String phantom_downloading_status(String formatBytes, long progress);
+
+    @Default(lngs = { "en" }, values = { "Installation ..." })
+
+    String phantom_installation_status();
+
+    @Default(lngs = { "en" }, values = { "PhantomJS Installation has been successful" })
+
+    String phantomjs_installation_message_success();
+
+    @Default(lngs = { "en" }, values = { "PhantomJS Installation failed.\r\nPlease contact the support." })
+
+    String phantomjs_installation_message_failed();
+
+    @Default(lngs = { "en" }, values = { "Improve Captcha Solving..." })
+
+    String phantomjs_recaptcha_google_account_title();
+
+    @Default(lngs = { "en" }, values = { "If you get many hard to solve image captchas, \r\nyou should think about adding 'google.com (recaptcha)' account at Settings->Accountmanager.\r\nAfterwards, you will probably get less and easier captcha images." })
+    String phantomjs_recaptcha_google_account_msg();
 }

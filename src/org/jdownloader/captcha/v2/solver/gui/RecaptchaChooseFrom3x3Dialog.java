@@ -37,11 +37,13 @@ import javax.swing.JSeparator;
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Recaptcha2FallbackChallengeViaPhantomJS;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -86,11 +88,8 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
 
         Icon explainIcon = challenge.getExplainIcon(challenge.getExplain());
         String ex = challenge.getExplain().replaceAll("<.*?>", "").replace(key, "<b>" + key + "</b>");
-        if (challenge.getChooseAtLeast() > 0) {
-            ex += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help(challenge.getChooseAtLeast());
-        }
-        if (challenge.getType() != null && challenge.getType().startsWith("TileSelection")) {
-            ex += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help_tile();
+        if (StringUtils.isNotEmpty(challenge.getReloadErrorMessage())) {
+            ex += "<br><b><font color='#ff0000'>" + challenge.getReloadErrorMessage() + "</font></b>";
         }
         if (explainIcon != null) {
             field.add(SwingUtils.setOpaque(new JLabel("<html>" + ex + "</html>", explainIcon, JLabel.LEFT), false), "gapleft 5,gaptop 5");
@@ -100,6 +99,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
         }
 
         field.add(new JSeparator(JSeparator.HORIZONTAL));
+
     }
 
     private Color col = (LAFOptions.getInstance().getColorForPanelBackground());
@@ -184,6 +184,13 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
                     selected.add(num);
 
                 }
+                if (challenge instanceof Recaptcha2FallbackChallengeViaPhantomJS && ((Recaptcha2FallbackChallengeViaPhantomJS) challenge).getReloadCounter() > 0 && selected.size() == 0) {
+                    okButton.setText(_GUI.T.RECAPTCHA_2_Dialog_empty_tile_selection());
+
+                } else {
+                    okButton.setText(_GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_continue());
+                }
+
                 iconPanel.repaint();
 
             }
@@ -204,6 +211,11 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
             public void mouseClicked(MouseEvent e) {
             }
         });
+
+        if (challenge instanceof Recaptcha2FallbackChallengeViaPhantomJS && ((Recaptcha2FallbackChallengeViaPhantomJS) challenge).getReloadCounter() > 0) {
+            okButton.setText(_GUI.T.RECAPTCHA_2_Dialog_empty_tile_selection());
+
+        }
         return ret;
     }
 

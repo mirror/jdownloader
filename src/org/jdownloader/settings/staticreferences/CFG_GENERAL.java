@@ -89,10 +89,10 @@ public class CFG_GENERAL {
      **/
     public static final BooleanKeyHandler               DUPE_MANAGER_ENABLED                                             = SH.getKeyHandler("DupeManagerEnabled", BooleanKeyHandler.class);
 
-    /**
-     * Enable/Disable JXBrowser usage. JXBrowser Plugin required!
-     **/
-    public static final BooleanKeyHandler               JX_BROWSER_ENABLED                                               = SH.getKeyHandler("JxBrowserEnabled", BooleanKeyHandler.class);
+    // /**
+    // * Enable/Disable JXBrowser usage. JXBrowser Plugin required!
+    // **/
+    // public static final BooleanKeyHandler JX_BROWSER_ENABLED = SH.getKeyHandler("JxBrowserEnabled", BooleanKeyHandler.class);
 
     /**
      * Use available Accounts?

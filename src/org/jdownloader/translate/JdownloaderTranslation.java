@@ -1083,4 +1083,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Segment Stream" })
     String youtube_segment();
 
+    @Default(lngs = { "en" }, values = { "PhantomJS is missing!" })
+
+    String DownloadLink_setSkipped_statusmessage_phantom();
+
 }

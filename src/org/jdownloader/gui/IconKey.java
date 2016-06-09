@@ -61,7 +61,7 @@ public class IconKey {
     public static final String ICON_BASICAUTH                   = "basicauth";
     public static final String ICON_DESKTOP                     = "desktop";
     public static final String ICON_WIZARD                      = "wizard";
-
+    public static final String ICON_LOGO_PHANTOMJS_LOGO         = "logo/phantomjs-logo";
     public static final String ICON_LOG                         = "log";
     public static final String ICON_LOGOUT                      = "logout";
     public static final String ICON_EXTENSIONMANAGER            = "extensionmanager";
@@ -316,4 +316,5 @@ public class IconKey {
     public static final String ICON_EXTRACT_OK                  = "extract_ok";
     public static final String ICON_EXTRACT_RUN                 = "extract_run";
     public static final String ICON_PLAY_BREAKUP_FORCED_ONLY    = "play_breakup_forced_only";
+
 }

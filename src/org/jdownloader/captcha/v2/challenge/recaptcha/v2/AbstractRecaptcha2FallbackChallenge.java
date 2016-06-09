@@ -19,8 +19,6 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import jd.controlling.captcha.SkipRequest;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -37,6 +35,8 @@ import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.captcha.SkipRequest;
 
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
@@ -111,34 +111,37 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 for (int xslot = 0; xslot < 3; xslot++) {
                     int xx = (xslot) * columnWidth;
                     int yy = (yslot) * rowHeight;
-                    int num = xslot + yslot * 3 + 1;
-                    final BufferedImage jpg = new BufferedImage(columnWidth, rowHeight, BufferedImage.TYPE_INT_RGB);
-                    final Graphics g = jpg.getGraphics();
-                    try {
-                        // g.drawImage(img, xx, yy, columnWidth, rowHeight, null);
-                        g.setFont(font);
-                        g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
-                        g.setColor(Color.WHITE);
-                        g.fillRect(columnWidth - 20, 0, 20, 20);
-                        g.setColor(Color.BLACK);
-                        g.drawString(num + "", columnWidth - 20 + 5, 0 + 15);
-                        images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
-                    } catch (NullPointerException e) {
-                        // java.lang.NullPointerException
-                        // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
-                        // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
-                        // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
-                        if (Application.isHeadless()) {
+                    if (isSlotAnnotated(xslot, yslot)) {
+
+                        int num = xslot + yslot * 3 + 1;
+                        final BufferedImage jpg = new BufferedImage(columnWidth, rowHeight, BufferedImage.TYPE_INT_RGB);
+                        final Graphics g = jpg.getGraphics();
+                        try {
+                            // g.drawImage(img, xx, yy, columnWidth, rowHeight, null);
+                            g.setFont(font);
                             g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
                             g.setColor(Color.WHITE);
                             g.fillRect(columnWidth - 20, 0, 20, 20);
+                            g.setColor(Color.BLACK);
+                            g.drawString(num + "", columnWidth - 20 + 5, 0 + 15);
                             images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
-                        } else {
-                            throw e;
-                        }
-                    } finally {
-                        if (g != null) {
-                            g.dispose();
+                        } catch (NullPointerException e) {
+                            // java.lang.NullPointerException
+                            // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
+                            // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
+                            // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
+                            if (Application.isHeadless()) {
+                                g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
+                                g.setColor(Color.WHITE);
+                                g.fillRect(columnWidth - 20, 0, 20, 20);
+                                images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
+                            } else {
+                                throw e;
+                            }
+                        } finally {
+                            if (g != null) {
+                                g.dispose();
+                            }
                         }
                     }
 
@@ -151,6 +154,10 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
             final String ret = IconIO.toDataUrl(newImage, IconIO.DataURLFormat.JPG);
             return ret;
         }
+    }
+
+    protected boolean isSlotAnnotated(int xslot, int yslot) {
+        return true;
     }
 
     @Override
@@ -168,9 +175,7 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
             if (getChooseAtLeast() > 0) {
                 lines.add(_GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast()));
             }
-            if (getType() != null && getType().startsWith("TileSelection")) {
-                lines.add(_GUI.T.RECAPTCHA_2_Dialog_help_tile());
-            }
+
             lines.add("Example answer: 2,5,6");
             int y = 0;
             int width = 0;
@@ -247,16 +252,18 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 double rowHeight = bounds.getHeight() / getSplitHeight();
                 for (int yslot = 0; yslot < getSplitHeight(); yslot++) {
                     for (int xslot = 0; xslot < getSplitWidth(); xslot++) {
-                        double xx = (xslot) * columnWidth;
-                        double yy = (yslot) * rowHeight;
-                        int num = xslot + yslot * getSplitWidth() + 1;
-                        int xOff = xslot < (getSplitWidth() - 1) ? 2 : 0;
-                        int yOff = yslot > 0 ? 2 : 0;
-                        g.setColor(Color.WHITE);
-                        g.fillRect(ceil(xx + columnWidth - 20 + bounds.x - xOff), ceil(yy + bounds.y + yOff), 20, 20);
-                        g.setColor(Color.BLACK);
+                        if (isSlotAnnotated(xslot, yslot)) {
+                            double xx = (xslot) * columnWidth;
+                            double yy = (yslot) * rowHeight;
+                            int num = xslot + yslot * getSplitWidth() + 1;
+                            int xOff = xslot < (getSplitWidth() - 1) ? 2 : 0;
+                            int yOff = yslot > 0 ? 2 : 0;
+                            g.setColor(Color.WHITE);
+                            g.fillRect(ceil(xx + columnWidth - 20 + bounds.x - xOff), ceil(yy + bounds.y + yOff), 20, 20);
+                            g.setColor(Color.BLACK);
 
-                        g.drawString(num + "", ceil(xx + columnWidth - 20 + bounds.x + 5 - xOff - (num >= 10 ? 4 : 0)), ceil(yy + bounds.y + 15 + yOff));
+                            g.drawString(num + "", ceil(xx + columnWidth - 20 + bounds.x + 5 - xOff - (num >= 10 ? 4 : 0)), ceil(yy + bounds.y + 15 + yOff));
+                        }
                     }
                 }
                 // g.setColor(Color.WHITE);
@@ -409,5 +416,13 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     }
 
     abstract public void reload(int round) throws Throwable;
+
+    public boolean doRunAntiDDosProtection() {
+        return true;
+    }
+
+    public String getReloadErrorMessage() {
+        return null;
+    }
 
 }
