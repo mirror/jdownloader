@@ -57,8 +57,8 @@ public class DatotekeCom extends antiDDoSForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.6.0-psp
-    // mods:
-    // limit-info: premium untested, set free account limits
+    // mods: fetchAccountInfo
+    // limit-info:
     // protocol: no https
     // captchatype: reCaptchaV2
     // other: using cloudflare
@@ -100,9 +100,9 @@ public class DatotekeCom extends antiDDoSForHost {
     private static final boolean account_FREE_RESUME                          = false;
     private static final int     account_FREE_MAXCHUNKS                       = 1;
     private static final int     account_FREE_MAXDOWNLOADS                    = 1;
-    private static final boolean account_PREMIUM_RESUME                       = false;
+    private static final boolean account_PREMIUM_RESUME                       = true;
     private static final int     account_PREMIUM_MAXCHUNKS                    = 1;
-    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 1;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 10;
 
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
@@ -473,12 +473,6 @@ public class DatotekeCom extends antiDDoSForHost {
                         }
                     }
                 }
-                getPage(loginstart + this.getHost() + "/account_home." + type);
-                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
-                    account.setProperty("free", true);
-                } else {
-                    account.setProperty("free", false);
-                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(mainpage);
@@ -507,47 +501,30 @@ public class DatotekeCom extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        if (account.getBooleanProperty("free", false)) {
-            try {
+        getPage("http://" + this.getHost() + "/upgrade." + type);
+        final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (expire == null) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
+            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            MAXPREM.set(account_FREE_MAXDOWNLOADS);
+            ai.setStatus("Registered (free) account");
+        } else {
+            long expire_milliseconds = 0;
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
+            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+                /* If the premium account is expired we'll simply accept it as a free account. */
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) account");
-        } else {
-            getPage("http://" + this.getHost() + "/upgrade." + type);
-            /* If the premium account is expired we'll simply accept it as a free account. */
-            final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-            if (expire == null) {
-                account.setValid(false);
-                return ai;
-            }
-            long expire_milliseconds = 0;
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
-            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-                account.setProperty("free", true);
-                try {
-                    account.setType(AccountType.FREE);
-                    account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-                    /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-                    account.setConcurrentUsePossible(false);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
                 MAXPREM.set(account_FREE_MAXDOWNLOADS);
                 ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(expire_milliseconds);
-                try {
-                    account.setType(AccountType.PREMIUM);
-                    account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
                 MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
                 ai.setStatus("Premium account");
             }
@@ -562,7 +539,7 @@ public class DatotekeCom extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             if (!available_CHECK_OVER_INFO_PAGE) {
                 getPage(link.getDownloadURL());
             }

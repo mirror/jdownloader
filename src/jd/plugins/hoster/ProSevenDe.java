@@ -28,7 +28,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7tv.de" }, urls = { "http://7tvdecrypted\\.de/\\d+" }, flags = { 32 })
 public class ProSevenDe extends PluginForHost {
@@ -161,13 +164,33 @@ public class ProSevenDe extends PluginForHost {
             }
         }
 
+        boolean failed = false;
         if (json.contains(URLTEXT_COUNTRYBLOCKED_1)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #1");
+            failed = true;
+            /* 2016-06-09: Try hls-fallback instead! */
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #1");
         } else if (json.contains(URLTEXT_COUNTRYBLOCKED_2)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #2");
+            failed = true;
+            /* 2016-06-09: Try hls-fallback instead! */
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #2");
         }
         if (json.startsWith("rtmp")) {
+            /* rtmp */
             downloadRTMP(downloadLink);
+        } else if (failed) {
+            /* hls - try hls fallback! */
+            this.br.setFollowRedirects(true);
+            br.getPage("http://ws.vtc.sim-technik.de/video/playlist.m3u8?ClipID=" + clipID);
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                /* Fallback failed - no way to (legally) download this content! */
+                logger.info("Seems like only encrypted HDS/RTMPE streams are available!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol rtmpe:// not supported");
+            }
+            final String url_hls = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl.startDownload();
         } else {
             /* Happens if usually the clip is streamed via rtmpe --> No HbbTV version available either. */
             if (json.contains(URLTEXT_NO_FLASH)) {
