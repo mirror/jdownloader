@@ -13,6 +13,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.logging.LogController;
 
 public class ArchiveController {
@@ -64,7 +65,7 @@ public class ArchiveController {
             for (Entry<String, ArchiveSettings> e : map.entrySet()) {
                 try {
                     if (e.getValue().needsSaving()) {
-                        File path = getPathByID(e.getKey());
+                        final File path = getPathByID(e.getKey());
                         logger.info("Save " + path);
                         IO.secureWrite(path, JSonStorage.serializeToJson(e.getValue()).getBytes("UTF-8"));
                     }
@@ -79,7 +80,7 @@ public class ArchiveController {
         return Application.getResource("cfg/archives/v2_" + internalID + ".json");
     }
 
-    public ArchiveSettings getArchiveSettings(final String id, final BooleanStatus defaultAutoExtract) {
+    public ArchiveSettings getArchiveSettings(final String id, final ArchiveFactory archiveFactory) {
         if (id != null) {
             synchronized (map) {
                 final String internalID = Hash.getSHA256(id);
@@ -87,8 +88,9 @@ public class ArchiveController {
                 if (ret != null) {
                     return ret;
                 }
-                ret = createSettingsObject(internalID);
-                final BooleanStatus defaultAuto = BooleanStatus.get(defaultAutoExtract);
+                final boolean isDeepExtract = (archiveFactory instanceof FileArchiveFactory) && ((FileArchiveFactory) archiveFactory).isDeepExtraction();
+                ret = createSettingsObject(internalID, isDeepExtract);
+                final BooleanStatus defaultAuto = BooleanStatus.get(archiveFactory.getDefaultAutoExtract());
                 if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
                     /* only set AutoExtract value when it is UNSET */
                     ret.setAutoExtract(defaultAuto);
@@ -100,20 +102,31 @@ public class ArchiveController {
         return null;
     }
 
-    private ArchiveSettings createSettingsObject(String id) {
-        try {
-            final File path = getPathByID(id);
-            if (path.exists()) {
-                final ArchiveSettings instance = JSonStorage.restoreFromString(IO.readFileToString(path), typeRef);
-                instance.assignController(this);
-                return instance;
+    private ArchiveSettings createSettingsObject(final String id, final boolean isDeepExtract) {
+        if (isDeepExtract) {
+            final ArchiveSettings instance = new ArchiveSettings() {
+                @Override
+                public boolean needsSaving() {
+                    return false;
+                }
+            };
+            instance.assignController(this);
+            return instance;
+        } else {
+            try {
+                final File path = getPathByID(id);
+                if (path.exists()) {
+                    final ArchiveSettings instance = JSonStorage.restoreFromString(IO.readFileToString(path), typeRef);
+                    instance.assignController(this);
+                    return instance;
+                }
+            } catch (Throwable e) {
+                logger.log(e);
             }
-        } catch (Throwable e) {
-            logger.log(e);
+            final ArchiveSettings instance = new ArchiveSettings();
+            instance.assignController(this);
+            return instance;
         }
-        final ArchiveSettings instance = new ArchiveSettings();
-        instance.assignController(this);
-        return instance;
     }
 
     public void update(ArchiveSettings archiveSettings) {
