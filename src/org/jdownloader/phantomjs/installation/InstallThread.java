@@ -1,7 +1,13 @@
 package org.jdownloader.phantomjs.installation;
 
 import java.io.File;
+import java.net.URL;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
+import org.appwork.exceptions.WTFException;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -17,14 +23,17 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.swing.dialog.ProgressInterface;
 import org.appwork.utils.zip.ZipIOReader;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.LazyExtension;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.http.download.DownloadClient;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.phantomjs.PhantomJS;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.http.Browser;
 
 public class InstallThread extends Thread {
 
@@ -32,7 +41,7 @@ public class InstallThread extends Thread {
 
     private boolean             success                  = false;
 
-    private String              task;
+    private final String        task;
 
     private boolean             downloading;
 
@@ -55,7 +64,6 @@ public class InstallThread extends Thread {
     private DownloadClient   br;
 
     public InstallThread(String task) {
-
         this.task = task;
     }
 
@@ -66,89 +74,108 @@ public class InstallThread extends Thread {
     @Override
     public void run() {
         try {
-            installing = false;
-            downloading = true;
-
             br = new DownloadClient(new Browser());
             br.setProgressCallback(this.downloadProgress = new DownloadProgress());
-            File file = Application.getTempResource("download/phantomjs_" + CrossSystem.getOS().name() + "_.zip");
-            file.getParentFile().mkdirs();
-
-            br.setOutputFile(file);
-            boolean tryIt = true;
-            boolean tryToResume = file.exists();
-            File extractTo = new File(file.getAbsolutePath() + "_extracted");
-            String url = null;
+            final String url;
+            final String binaryPath;
             switch (CrossSystem.getOSFamily()) {
             case WINDOWS:
                 url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-windows.zip";
-
+                binaryPath = "\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe";
                 break;
             case MAC:
                 url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-macosx.zip";
-                new ZipIOReader(file).extractTo(extractTo);
-                break;
-            case LINUX:
-                if (CrossSystem.is64BitArch()) {
-                    url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2";
-                } else {
-                    url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-i686.tar.bz2";
+                if (true) {
+                    throw new WTFException("FIXME binary");
                 }
                 break;
-            }
-            if (url == null) {
+            case LINUX:
+                switch (CrossSystem.getARCHFamily()) {
+                case X86:
+                    if (CrossSystem.is64BitArch()) {
+                        url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2";
+                        binaryPath = "/phantomjs-2.1.1-linux-x86_64/bin/phantomjs";
+                    } else {
+                        url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-i686.tar.bz2";
+                        binaryPath = "/phantomjs-2.1.1-linux-i686/bin/phantomjs";
+                    }
+                    break;
+                default:
+                    return;
+                }
+                break;
+            default:
                 return;
             }
-            while (tryToResume || tryIt) {
-                try {
-                    tryIt = false;
-                    if (!file.exists() || file.length() == 0) {
-                        tryToResume = false;
-                    }
-                    br.download(url);
-                    break;
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    if (tryToResume) {
-
-                        tryToResume = true;
-                        br.getOutputStream().close();
-                        file.delete();
-                        br.setOutputFile(file);
+            final String fileName = Plugin.getFileNameFromURL(new URL(url));
+            final File file = Application.getTempResource("download/" + fileName);
+            file.getParentFile().mkdirs();
+            final File extractTo = new File(file.getAbsolutePath() + "_extracted");
+            try {
+                br.setOutputFile(file);
+                boolean tryIt = true;
+                boolean tryToResume = file.exists();
+                downloading = true;
+                while (tryToResume || tryIt) {
+                    try {
+                        tryIt = false;
+                        if (!file.exists() || file.length() == 0) {
+                            tryToResume = false;
+                        }
+                        br.download(url);
+                        break;
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        if (tryToResume) {
+                            tryToResume = true;
+                            br.getOutputStream().close();
+                            file.delete();
+                            br.setOutputFile(file);
+                        }
                     }
                 }
+            } finally {
+                downloading = false;
             }
-            downloading = false;
-            installing = true;
-            File dest = new PhantomJS().getBinaryPath();
-            switch (CrossSystem.getOSFamily()) {
-            case WINDOWS:
-                new ZipIOReader(file).extractTo(extractTo);
-                File exe = new File(extractTo, "\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe");
-
+            try {
+                installing = true;
+                final File dest = new PhantomJS().getBinaryPath();
                 dest.getParentFile().mkdirs();
-                exe.renameTo(dest);
-                break;
-            case MAC:
-                new ZipIOReader(file).extractTo(extractTo);
-                File app = new File(extractTo, "\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe");
-
-                dest.getParentFile().mkdirs();
-                app.renameTo(dest);
-                break;
-            case LINUX:
-
-                break;
+                final File binarySource = new File(extractTo, binaryPath);
+                switch (CrossSystem.getOSFamily()) {
+                case WINDOWS:
+                case MAC:
+                    new ZipIOReader(file).extractTo(extractTo);
+                    break;
+                case LINUX:
+                    final LazyExtension extension = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
+                    if (extension != null && extension._isEnabled()) {
+                        final ExtractionExtension extraction = (ExtractionExtension) extension._getExtension();
+                        final Archive archive = extraction.buildArchive(new FileArchiveFactory(file));
+                        archive.getSettings().setExtractPath(extractTo.getAbsolutePath());
+                        final ExtractionController controller = extraction.addToQueue(archive, false);
+                        try {
+                            while (!controller.isFinished()) {
+                                Thread.sleep(1000);
+                            }
+                        } catch (InterruptedException e) {
+                            controller.kill();
+                            throw e;
+                        }
+                    }
+                    break;
+                }
+                if (binarySource.exists()) {
+                    binarySource.renameTo(dest);
+                }
+                Files.deleteRecursiv(extractTo);
+                file.delete();
+            } finally {
+                installing = false;
             }
-
-            Files.deleteRecursiv(extractTo);
-            file.delete();
-            installing = false;
-
         } catch (Throwable e) {
             e.printStackTrace();
         }
-
     }
 
     public static void install(final InstallProgress progress, String task) throws InterruptedException {
@@ -227,19 +254,22 @@ public class InstallThread extends Thread {
         if (isDownloading() && getDownloadProgress().getTotal() > 0) {
             return (int) ((getDownloadProgress().getLoaded() * 100) / getDownloadProgress().getTotal()) - 1;
         }
-
         return -1;
     }
 
     protected String getStatusString() {
-        if (downloading && getTotalProgress() >= 0) {
-            return _GUI.T.phantom_downloading_status(SizeFormatter.formatBytes(br.getSpeedInBps()), getTotalProgress());
-
-        }
-        if (installing) {
+        if (isDownloading()) {
+            final long progress = getTotalProgress();
+            if (progress >= 0) {
+                return _GUI.T.phantom_downloading_status(SizeFormatter.formatBytes(br.getSpeedInBps()), progress);
+            } else {
+                return null;
+            }
+        } else if (isInstalling()) {
             return _GUI.T.phantom_installation_status();
+        } else {
+            return null;
         }
-        return null;
     }
 
 }

@@ -7,12 +7,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 
 public class DownloadClient {
 
@@ -31,14 +31,11 @@ public class DownloadClient {
 
     public DownloadClient(Browser br) {
         this.httpClient = br;
-
     }
 
     public void download(String url) throws IOException, InterruptedException {
-
         jd.http.requests.GetRequest request = httpClient.createGetRequest(url);
         download(request);
-
     }
 
     private void download(jd.http.Request request) throws IOException, InterruptedException {
@@ -62,9 +59,10 @@ public class DownloadClient {
             download(connection);
         } finally {
             try {
-                connection.disconnect();
+                if (connection != null) {
+                    connection.disconnect();
+                }
             } catch (Throwable e) {
-
             }
         }
     }
