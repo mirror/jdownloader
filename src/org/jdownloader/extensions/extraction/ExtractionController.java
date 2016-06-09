@@ -500,7 +500,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     void removeArchiveFiles() {
-        final DeleteOption remove = getExtension().getRemoveFilesAfterExtractAction(getArchive());
+        final DeleteOption remove;
+        if (getArchive().getFactory().isDeepExtraction()) {
+            remove = DeleteOption.NULL;
+        } else {
+            remove = getExtension().getRemoveFilesAfterExtractAction(getArchive());
+        }
         if (remove != null && !DeleteOption.NO_DELETE.equals(remove)) {
             for (ArchiveFile link : archive.getArchiveFiles()) {
                 link.deleteFile(remove);

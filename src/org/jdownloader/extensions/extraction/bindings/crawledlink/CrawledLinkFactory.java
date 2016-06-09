@@ -38,6 +38,10 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         return getLinks().get(0);
     }
 
+    public boolean isDeepExtraction() {
+        return false;
+    }
+
     private static CrawledLink getFirstCrawledLink(Archive archive) {
         for (final ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof CrawledLinkArchiveFile) {
