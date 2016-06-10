@@ -4,14 +4,10 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
-import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
@@ -27,6 +23,9 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
+
+import jd.http.Browser;
+import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
@@ -164,7 +163,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge() {
-        if (basicChallenge != null || Application.isJared(null)) {
+        if (basicChallenge != null) {
             return basicChallenge;
         }
         final PhantomJS binding = new PhantomJS();
