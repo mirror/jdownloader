@@ -223,7 +223,7 @@ public class InstallThread extends Thread {
     }
 
     public static synchronized void install(final InstallProgress progress, String task) throws InterruptedException {
-        StatsManager.I().track("install/started", CollectionName.PJS);
+
         switch (CrossSystem.getOSFamily()) {
         case LINUX:
             switch (CrossSystem.getARCHFamily()) {
@@ -241,6 +241,7 @@ public class InstallThread extends Thread {
         if (DownloadWatchDog.getInstance().getSession().getBooleanProperty(PHANTOM_JS_INSTALL_CHECK, false)) {
             return;
         }
+        StatsManager.I().track("install/started", CollectionName.PJS);
         DownloadWatchDog.getInstance().getSession().setProperty(PHANTOM_JS_INSTALL_CHECK, true);
         try {
             UIOManager.I().show(ConfirmDialogInterface.class, new InstallTypeChooserDialog(_GUI.T.phantomjs_usage())).throwCloseExceptions();
