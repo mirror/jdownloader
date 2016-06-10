@@ -27,7 +27,10 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
 public class ImgShotDecrypt extends antiDDoSForDecrypt {
@@ -91,8 +94,15 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-
+        final DownloadLink link;
+        decryptedLinks.add(link = createDownloadlink("directhttp://" + finallink));
+        if ("img.yt".equals(getHost())) {
+            final String title = br.getRegex("title=(\"|')(.*?)\\1").getMatch(1);
+            if (StringUtils.isNotEmpty(title)) {
+                final String extension = Plugin.getFileNameExtensionFromURL(finallink);
+                link.setForcedFileName(title + extension);
+            }
+        }
         return decryptedLinks;
     }
 

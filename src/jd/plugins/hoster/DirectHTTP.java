@@ -64,6 +64,7 @@ public class DirectHTTP extends antiDDoSForHost {
     public static final String  ENDINGS           = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|lha|lzh|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wmv|wma|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_[_a-z]{2}|\\d{1,4}(?=\\?|$|\"|\r|\n))";
     public static final String  NORESUME          = "nochunkload";
     public static final String  NOCHUNKS          = "nochunk";
+    public static final String  FIXNAME           = "fixName";
     public static final String  FORCE_NORESUME    = "forcenochunkload";
     public static final String  FORCE_NOCHUNKS    = "forcenochunk";
     public static final String  TRY_ALL           = "tryall";
@@ -675,7 +676,7 @@ public class DirectHTTP extends antiDDoSForHost {
             /* if final filename already set, do not change */
             if (downloadLink.getFinalFileName() == null) {
                 /* restore filename from property */
-                String fileName = downloadLink.getStringProperty("fixName", null);
+                String fileName = downloadLink.getStringProperty(FIXNAME, null);
                 if (fileName == null && downloadLink.getBooleanProperty("MOVIE2K", false)) {
                     final String ext = new Regex(this.contentType, "(audio|video)/(x\\-)?(.*?)$").getMatch(2);
                     fileName = downloadLink.getName() + "." + ext;
@@ -704,7 +705,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     }
                     downloadLink.setFinalFileName(fileName);
                     /* save filename in property so we can restore in reset case */
-                    downloadLink.setProperty("fixName", fileName);
+                    downloadLink.setProperty(FIXNAME, fileName);
                 }
             }
             if (length >= 0) {
@@ -834,8 +835,9 @@ public class DirectHTTP extends antiDDoSForHost {
         link.setProperty("lastRefURL", Property.NULL);
         link.setProperty("requestType", Property.NULL);
         link.setProperty("streamMod", Property.NULL);
-        if (link.getStringProperty("fixName", null) != null) {
-            link.setFinalFileName(link.getStringProperty("fixName", null));
+        final String fixName = link.getStringProperty(FIXNAME, null);
+        if (StringUtils.isNotEmpty(fixName)) {
+            link.setFinalFileName(fixName);
         }
     }
 
