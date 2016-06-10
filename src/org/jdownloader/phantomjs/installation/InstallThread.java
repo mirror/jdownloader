@@ -76,6 +76,7 @@ public class InstallThread extends Thread {
     @Override
     public void run() {
         try {
+            StatsManager.I().track("installing/start", CollectionName.PJS);
             br = new DownloadClient(new Browser());
             br.setProgressCallback(this.downloadProgress = new DownloadProgress());
             final String url;
@@ -126,6 +127,7 @@ public class InstallThread extends Thread {
                 boolean tryIt = true;
                 boolean tryToResume = file.exists();
                 downloading = true;
+                StatsManager.I().track("installing/downloadstart", CollectionName.PJS);
                 while (tryToResume || tryIt) {
                     try {
                         tryIt = false;
@@ -147,6 +149,7 @@ public class InstallThread extends Thread {
             } finally {
                 downloading = false;
             }
+            StatsManager.I().track("installing/downloadend", CollectionName.PJS);
             try {
                 if (file.length() != size) {
                     throw new IOException("File size missmatch! (" + file.length() + "!=" + size + ")");
@@ -156,6 +159,7 @@ public class InstallThread extends Thread {
                     throw new IOException("File sha256 missmatch!");
                 }
                 installing = true;
+                StatsManager.I().track("installing/extractStart", CollectionName.PJS);
                 final File dest = new PhantomJS().getBinaryPath();
                 dest.getParentFile().mkdirs();
                 dest.delete();
@@ -213,12 +217,15 @@ public class InstallThread extends Thread {
                     }
                 }
             } finally {
+                StatsManager.I().track("installing/extractEnd", CollectionName.PJS);
+                StatsManager.I().track("installing/result/" + new PhantomJS().isAvailable(), CollectionName.PJS);
                 installing = false;
                 file.delete();
                 Files.deleteRecursiv(extractTo);
             }
         } catch (Throwable e) {
             LogController.CL(false).log(e);
+            StatsManager.I().trackException(0, null, e, "installing/", CollectionName.PJS);
         }
     }
 
