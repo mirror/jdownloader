@@ -41,6 +41,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/(#(!|%21))?[A-Za-z0-9\\-_]+,f\\-\\d+" }, flags = { 2 })
 public class FreeDiscPl extends PluginForHost {
@@ -73,6 +74,11 @@ public class FreeDiscPl extends PluginForHost {
 
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+
+    private Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(410);
+        return br;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -268,14 +274,19 @@ public class FreeDiscPl extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    return;
-                }
+                prepBR(this.br);
                 br.setFollowRedirects(false);
-                br.setAllowedResponseCodes(410);
-                br.getPage("http://freedisc.pl/start");
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /* Always try to re-use cookies. */
+                    this.br.setCookies(this.getHost(), cookies);
+                    this.br.getPage("http://" + this.getHost() + "/start");
+                    if (this.br.containsHTML("id=\"btnLogout\"")) {
+                        return;
+                    }
+                    this.br = prepBR(new Browser());
+                }
+                br.getPage("http://" + this.getHost() + "/start");
                 br.postPageRaw("http://freedisc.pl/account/signin_set", "{\"email_login\":\"" + account.getUser() + "\",\"password_login\":\"" + account.getPass() + "\",\"remember_login\":1,\"provider_login\":\"\"}");
                 if (br.getCookie(MAINPAGE, "login_remember") == null && br.getCookie(MAINPAGE, "cookie_login_remember") == null) {
                     final String lang = System.getProperty("user.language");
@@ -286,6 +297,15 @@ public class FreeDiscPl extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                }
+                if (this.br.containsHTML("g\\-recaptcha\\-response")) {
+                    logger.info("Login captcha / spam protection detected");
+                    if (this.getDownloadLink() == null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), MAINPAGE, true);
+                        this.setDownloadLink(dummyLink);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    this.br.postPage(this.br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                 }
                 /* Only free accounts are supported */
                 account.setType(AccountType.FREE);
