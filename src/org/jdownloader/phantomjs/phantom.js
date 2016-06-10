@@ -3,12 +3,14 @@ var localID = null/* %%%localID%%% */;
 var debuggerEnabled = null/* %%%debugger%%% */;
 var phantomPort = null/* %%%phantomPort%%% */;
 var accessToken = null/* %%%accessToken%%% */;
-
+var logger=function(log){
+	console.log(">>>LOG:" + JSON.stringify(log) + "<<<");
+}
 // kill Phantomjs if jd is not reachable
-console.log("Start PhantomJS port:" + localPort + " ID:" + localID);
+logger("Start PhantomJS port:" + localPort + " ID:" + localID);
 setInterval(function() {
 	if (new Date().getTime() - lastPing > 10000) {
-		console.log("JD Ping Missing. Exit!");
+		logger("JD Ping Missing. Exit!");
 		phantom.exit(1);
 	}
 
@@ -23,15 +25,15 @@ var httpListener = function(request, response) {
 	if (request.method != "POST" || request.post.accessToken != accessToken) {
 		// received a request that is not a post request, or did not contain the
 		// accesstoken
-		console.log(JSON.stringify(request));
-		console.log("Forbidden Access.EXIT");
+		logger(JSON.stringify(request));
+		logger("Forbidden Access.EXIT");
 		response.statusCode = 511;
 		response.write('FORBIDDEN');
 		response.close();
 		phantom.exit(1);
 
 	}
-	console.log(JSON.stringify(request));
+	//logger(JSON.stringify(request));
 	if ("/screenshot" == request.url) {
 	
 		try {
@@ -41,7 +43,7 @@ var httpListener = function(request, response) {
 				endJob(request.post.jobID, base64);
 			})();
 		} catch (err) {
-			console.log(err);
+			logger(err);
 			response.statusCode = 511;
 			response.write('Error ' + JSON.stringify(err));
 			response.close();
@@ -54,10 +56,10 @@ var httpListener = function(request, response) {
 	} else if ("/exec" == request.url) {
 		js = request.post.js;
 		try {
-			console.log("Eval " + js);
+			logger("Eval " + js);
 			eval(js);
 		} catch (err) {
-			console.log(err);
+			logger(err);
 			response.statusCode = 511;
 			response.write('Error ' + JSON.stringify(err));
 			response.close();
@@ -84,22 +86,22 @@ var endJob = function(jobID, result) {
 	console.log(">>>RESULT:" + jobID + ":" + JSON.stringify(result) + "<<<");
 };
 endJob(-1, service);
-console.log("Server " + service + " port " + phantomPort);
+logger("Server " + service + " port " + phantomPort);
 var page = require('webpage').create();
 var system = require('system');
 page.settings.userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36';
 var requestID = 0;
 page.onResourceError = function(resourceError) {
-	console.log('Unable to load resource (#' + resourceError.id + 'URL:' + resourceError.url + ')');
-	console.log('Error code: ' + resourceError.errorCode + '. Description: ' + resourceError.errorString);
+	logger('Unable to load resource (#' + resourceError.id + 'URL:' + resourceError.url + ')');
+	logger('Error code: ' + resourceError.errorCode + '. Description: ' + resourceError.errorString);
 };
 page.onResourceReceived = function(response) {
-	console.log('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(response));
+//	logger('Response (#' + response.id + ', stage "' + response.stage + '"): ' + JSON.stringify(response));
 };
 
 page.onInitialized = function() {
 	// Detect UA Sniffing
-	console.log("Page Init");
+	logger("Page Init");
 
 	// Spoof Plugins:
 	page.evaluate(function() {
@@ -133,12 +135,12 @@ page.onInitialized = function() {
 			phantom.exit(1);
 		};
 		xhr.onerror = function(e) {
-			console.log('Error: ' + JSON.stringify(e));
+			console.log("Access Denied -> Good");
 		};
 		xhr.send();
 	});
 	page.evaluate(function() {
-		console.log("Detect PJS START ");
+		console.log("PJS Selftest Start");
 
 		if (window['callPhantom']) {
 			console.log("PhantomJS environment detected. window['callPhantom'] " + window['callPhantom']);
@@ -168,7 +170,7 @@ page.onInitialized = function() {
 		if (!(navigator.plugins instanceof PluginArray) || navigator.plugins.length == 0) {
 			console.log("PhantomJS environment detected. navigator.plugins= " + navigator.plugins + " Length: " + navigator.plugins.length);
 		}
-		console.log("Detect PJS DONE");
+		console.log("DPJS Selftest Finished");
 
 	});
 };
@@ -176,7 +178,7 @@ page.onResourceRequested = function(requestData, networkRequest) {
 	requestID++;
 	var newUrl = "http://127.0.0.1:" + localPort + "/webproxy?id=" + localID + "&url=" + encodeURIComponent(requestData.url) + "&rid=" + requestID;
 
-	console.log("Redirect " + newUrl);
+	logger("Redirect " + newUrl);
 
 	networkRequest.changeUrl(newUrl);
 
@@ -184,13 +186,13 @@ page.onResourceRequested = function(requestData, networkRequest) {
 
 };
 page.onConsoleMessage = function(msg) {
-	system.stderr.writeLine('console: ' + msg);
+	logger('PageContext> ' + msg);
 };
 
 var loadPage = function(jobID, url) {
-	console.log("Load Page " + page + " " + url);
+	logger("Load Page " + page + " " + url);
 	page.open(url, function(status) {
-		console.log("Page Loaded");
+		logger("Page Loaded");
 		endJob(jobID, status);
 
 	});

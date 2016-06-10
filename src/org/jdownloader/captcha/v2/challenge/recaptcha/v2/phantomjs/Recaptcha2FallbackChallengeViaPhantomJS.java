@@ -27,7 +27,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -51,6 +51,8 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.phantomjs.DebugWindow;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
 
@@ -73,11 +75,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
 
     }
 
-    private File                     userDirectory;
-
     private LogInterface             logger;
-
-    private Throwable                throwable;
 
     private PhantomJS                phantom;
 
@@ -138,28 +136,16 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             debugger = null;
         }
         long started = System.currentTimeMillis();
-        while (this.userDirectory.exists() && System.currentTimeMillis() - started < 5000) {
-            try {
-                Files.deleteRecursiv(this.userDirectory);
-
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
 
     }
 
     @Override
     protected void load() {
         try {
-            this.userDirectory = Application.getTempResource("browser/challenge/" + System.currentTimeMillis());
 
-            while (this.userDirectory.exists()) {
-                this.userDirectory = Application.getTempResource("browser/challenge/" + System.currentTimeMillis());
-            }
+            StatsManager.I().track("challenge", CollectionName.PJS);
             final String dummyUrl = "http://" + this.owner.getSiteDomain() + "/rc2";
-            this.userDirectory.mkdirs();
-            final String userDir = this.userDirectory.getAbsolutePath();
+
             if (phantom != null) {
                 try {
                     // debug only63
@@ -240,7 +226,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 }
 
             };
-
+            phantom.setLogger(LogController.getInstance().getLogger("PhantomJS"));
             Browser br = owner.getPluginBrowser();
             phantom.setBr(br.cloneBrowser());
 
@@ -271,7 +257,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
 
                 phantom.eval(" page.customHeaders = { 'Accept-Language': '" + (useEnglish ? "en" : TranslationFactory.getDesiredLanguage()) + "' };");
                 phantom.loadPage(dummyUrl);
-                if (!Application.isJared(null)) {
+                if (System.getProperty("phantomjsdebug") != null) {
                     debugger = DebugWindow.show(phantom);
                 }
                 phantom.evalInPageContext("console.log(document.getElementsByTagName('iframe')+' - '+document.getElementsByTagName('iframe').length);");
@@ -289,6 +275,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                     phantom.switchFrameToChild(0);
                     token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
                     if (StringUtils.isNotEmpty(token)) {
+                        StatsManager.I().track("direct", CollectionName.PJS);
                         logger.info("Wow");
                         return;
                     }
@@ -313,6 +300,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 // this.browser.loadHTML(new LoadHTMLParams(html, "UTF-8", url));
                 // this.waitWhile(30000, isDone);
                 // }
+
                 if (false) {
                     phantom.evalInPageContext(read("basicsPage.js"));
                     while (true) {
@@ -338,9 +326,27 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         } catch (Throwable e) {
             this.logger.log(e);
 
+            trackException(e);
             throw new WTFException(e);
         }
 
+    }
+
+    protected void trackException(Throwable e) {
+        HashMap<String, String> infos = new HashMap<String, String>();
+        infos.put("stack", Exceptions.getStackTrace(e));
+        StackTraceElement[] stack = e.getStackTrace();
+        StackTraceElement src = stack[0];
+        for (StackTraceElement el : stack) {
+            if (src == stack[0] && el.getLineNumber() > 0 && StringUtils.isNotEmpty(el.getFileName())) {
+                src = el;
+            }
+            if (el.getFileName().contains(Recaptcha2FallbackChallengeViaPhantomJS.class.getSimpleName() + ".java")) {
+                src = el;
+                break;
+            }
+        }
+        StatsManager.I().track(0, null, "exception/" + src.getFileName() + ":" + src.getLineNumber() + "/" + e.getMessage(), infos, CollectionName.PJS);
     }
 
     protected void handlePayload(byte[] bytes, String url) {
@@ -354,7 +360,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                     mainImageUrl = url;
                     ImageIO.write(img, "png", getImageFile());
 
-                } else {
+                } else if (!Application.isJared(null)) {
                     saveTile(bytes, url);
 
                 }
@@ -363,6 +369,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
 
             // BasicWindow.showImage(payloadImage);
         } catch (IOException e) {
+            trackException(e);
             throw new WTFException(e);
         }
     }
@@ -408,7 +415,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         HashMap<String, String> explain = JSonStorage.convert(phantom.evalInPageContext(read("extractExplanation.js")), TypeRef.HASHMAP_STRING);
 
         String decs = explain.get("description");
-
+        StatsManager.I().track("challengeType/" + challengeType, CollectionName.PJS);
         if (TILESELECT.equalsIgnoreCase(challengeType)) {
             decs += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help_tile_selection(explain.get("tag"));
         }
@@ -449,28 +456,29 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 // tileGrid.put(x*y, new Payload(main))
             }
         }
+        if (!Application.isJared(null)) {
+            BufferedImage img = payloads.get(mainImageUrl).image;
+            if (TILESELECT.equalsIgnoreCase(challengeType)) {
+                final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-        BufferedImage img = payloads.get(mainImageUrl).image;
-        if (TILESELECT.equalsIgnoreCase(challengeType)) {
-            final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ImageIO.write(img, "png", bos);
+                saveTile(bos.toByteArray(), mainImageUrl);
+            } else {
+                double tileWidth = (double) img.getWidth() / getSplitWidth();
+                double tileHeight = (double) img.getHeight() / getSplitHeight();
+                for (int x = 0; x < getSplitWidth(); x++) {
+                    for (int y = 0; y < getSplitHeight(); y++) {
 
-            ImageIO.write(img, "png", bos);
-            saveTile(bos.toByteArray(), mainImageUrl);
-        } else {
-            double tileWidth = (double) img.getWidth() / getSplitWidth();
-            double tileHeight = (double) img.getHeight() / getSplitHeight();
-            for (int x = 0; x < getSplitWidth(); x++) {
-                for (int y = 0; y < getSplitHeight(); y++) {
+                        BufferedImage imgnew = IconIO.createEmptyImage((int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight));
+                        Graphics2D g2d = (Graphics2D) imgnew.getGraphics();
+                        g2d.drawImage(img, 0, 0, (int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight), (int) (x * tileWidth), (int) (y * tileHeight), (int) (x * tileWidth) + (int) Math.ceil(tileWidth), (int) (y * tileHeight) + (int) Math.ceil(tileHeight), null);
+                        g2d.dispose();
 
-                    BufferedImage imgnew = IconIO.createEmptyImage((int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight));
-                    Graphics2D g2d = (Graphics2D) imgnew.getGraphics();
-                    g2d.drawImage(img, 0, 0, (int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight), (int) (x * tileWidth), (int) (y * tileHeight), (int) (x * tileWidth) + (int) Math.ceil(tileWidth), (int) (y * tileHeight) + (int) Math.ceil(tileHeight), null);
-                    g2d.dispose();
+                        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-                    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-                    ImageIO.write(imgnew, "png", bos);
-                    saveTile(bos.toByteArray(), mainImageUrl);
+                        ImageIO.write(imgnew, "png", bos);
+                        saveTile(bos.toByteArray(), mainImageUrl);
+                    }
                 }
             }
         }
@@ -694,6 +702,10 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                     String html = (String) phantom.get("page.frameContent");
                     token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
                     if (StringUtils.isNotEmpty(token)) {
+                        HashMap<String, String> infos = new HashMap<String, String>();
+                        infos.put("reloadCount", reloadCounter + "");
+                        StatsManager.I().track("solved", infos, CollectionName.PJS);
+
                         return true;
                     }
                     phantom.switchFrameToChild(0);
@@ -732,13 +744,9 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             // } else {
             return true;
             // }
-        } catch (
-
-        Throwable e1)
-
-        {
+        } catch (Throwable e1) {
             this.logger.log(e1);
-
+            trackException(e1);
             killSession();
             return false;
         } finally
@@ -768,6 +776,11 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             throw new IOException("PhantomJS is not running");
         }
         reloadCounter++;
+
+        HashMap<String, String> infos = new HashMap<String, String>();
+        infos.put("counter", reloadCounter + "");
+
+        StatsManager.I().track(100, "reloadCount", "reload", infos, CollectionName.PJS);
         Payload mainImage = payloads.get(mainImageUrl);
 
         BufferedImage imgnew = IconIO.createEmptyImage(mainImage.image.getWidth(), mainImage.image.getHeight());
@@ -777,15 +790,6 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             double tileWidth = (double) mainImage.image.getWidth() / getSplitWidth();
             double tileHeight = (double) mainImage.image.getHeight() / getSplitHeight();
 
-            // HashMap<Integer, Payload> painted = new HashMap<Integer, Payload>();
-            // synchronized (payloads) {
-            // for (Entry<String, Payload> es : payloads.entrySet()) {
-            //
-            // if (es.getValue().index >= 0) {
-            // painted.put(es.getValue().index, es.getValue());
-            // }
-            // }
-            // }
             BufferedImage grayOriginal = null;
             for (int x = 0; x < getSplitWidth(); x++) {
                 for (int y = 0; y < getSplitHeight(); y++) {
@@ -832,7 +836,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         g2d.dispose();
         getImageFile().delete();
         ImageIO.write(imgnew, "png", getImageFile());
-        System.out.println();
+
     }
 
     public int getReloadCounter() {
