@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.ee" }, urls = { "https?://(www\\.)?upload\\.ee/files/\\d+/[^ ]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.ee" }, urls = { "https?://(?:www\\.)?upload\\.ee/files/\\d+/.*?\\.html" }, flags = { 0 })
 public class UploadEe extends PluginForHost {
 
     // DEV NOTES:
@@ -82,7 +82,9 @@ public class UploadEe extends PluginForHost {
         }
         if (dllink == null) {
             dllink = br.getRegex("(?i)\"(https?://[\\w\\-\\.]+upload\\.ee/download/" + uid + "/\\w+/[^\"> ]+)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -96,20 +98,26 @@ public class UploadEe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie("http://www.upload.ee/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(?i)(>[\r\n\t]+There is no such file\\.[\r\n\t]+<|<title>UPLOAD\\.EE \\- File does not exist</title>|File was deleted by user|File was deleted automatically because of long time after last downloads)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(?i)(>[\r\n\t]+There is no such file\\.[\r\n\t]+<|<title>UPLOAD\\.EE \\- File does not exist</title>|File was deleted by user|File was deleted automatically because of long time after last downloads)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("(?i)File: <b>(.*?)</b>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("(?i)<title>UPLOAD.EE \\- Download (.*?)</title>").getMatch(0);
             if (filename == null) {
-                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         String filesize = br.getRegex("(?i)Size: (.*?)<br />").getMatch(0);
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

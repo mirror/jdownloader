@@ -57,6 +57,7 @@ public class IdowatchNet extends PluginForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
+    private static final String            HTML_VIDEO_PROCESSING              = ">Video is processing now";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
@@ -183,6 +184,9 @@ public class IdowatchNet extends PluginForHost {
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (correctedBR.contains(HTML_VIDEO_PROCESSING)) {
+            /* 2016-06-10: From whart I've seen such urls are offline e.g. http://idowatch.net/wbgtbc2s0646.html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
