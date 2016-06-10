@@ -3,10 +3,7 @@ package org.jdownloader.phantomjs.installation;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.http.Browser;
-import jd.plugins.Plugin;
+import java.util.HashMap;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.MessageDialogInterface;
@@ -36,6 +33,12 @@ import org.jdownloader.http.download.DownloadClient;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.phantomjs.PhantomJS;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.http.Browser;
+import jd.plugins.Plugin;
 
 public class InstallThread extends Thread {
 
@@ -220,12 +223,17 @@ public class InstallThread extends Thread {
     }
 
     public static synchronized void install(final InstallProgress progress, String task) throws InterruptedException {
+        StatsManager.I().track("install/started", CollectionName.PJS);
         switch (CrossSystem.getOSFamily()) {
         case LINUX:
             switch (CrossSystem.getARCHFamily()) {
             case ARM:
             case PPC:
             case SPARC:
+                HashMap<String, String> infos = new HashMap<String, String>();
+                infos.put("arch", CrossSystem.getARCHFamily().name());
+                StatsManager.I().track(0, null, "install/osfail", infos, CollectionName.PJS);
+
                 return;
             }
         }
@@ -274,6 +282,7 @@ public class InstallThread extends Thread {
             ProgressDialog p = new ProgressDialog(pg, 0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message(), new AbstractIcon(IconKey.ICON_LOGO_PHANTOMJS_LOGO, 32), null, null);
             UIOManager.I().show(ProgressInterface.class, p);
             if (new PhantomJS().isAvailable()) {
+                StatsManager.I().track("install/success", CollectionName.PJS);
                 UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message_success(), new AbstractIcon(IconKey.ICON_LOGO_PHANTOMJS_LOGO, 32), _GUI.T.lit_continue()));
             } else {
                 UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(0, _GUI.T.lit_installation(), _GUI.T.phantomjs_installation_message_failed(), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI.T.lit_continue()));

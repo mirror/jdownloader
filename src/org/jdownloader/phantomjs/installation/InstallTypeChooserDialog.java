@@ -14,6 +14,8 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
 
 public class InstallTypeChooserDialog extends AbstractDialog<Object> implements ConfirmDialogInterface {
 
@@ -74,7 +76,7 @@ public class InstallTypeChooserDialog extends AbstractDialog<Object> implements 
 
         // p.add(textField, "gapleft 10,spanx");
         p.add(new JLabel(_GUI.T.Phantom_JS_Explain_download()), "gapleft 10,spanx");
-
+        StatsManager.I().track("install/dialog", CollectionName.PJS);
         return p;
     }
 

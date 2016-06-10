@@ -23,12 +23,6 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
-import jd.http.Browser;
-import jd.http.ProxySelectorInterface;
-import jd.http.QueryInfo;
-import jd.http.Request;
-import jd.plugins.components.UserAgents;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -42,6 +36,7 @@ import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.ConsoleLogImpl;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -52,14 +47,21 @@ import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
+import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.webcache.CachedHeader;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
 
+import jd.http.Browser;
+import jd.http.ProxySelectorInterface;
+import jd.http.QueryInfo;
+import jd.http.Request;
+import jd.plugins.components.UserAgents;
+
 public class PhantomJS implements HttpRequestHandler {
     private static final boolean DEBUGGER = false;
-    private ConsoleLogImpl       logger;
+    private LogInterface         logger;
     private File                 exe;
     private String               accessToken;
     private WebCache             webCache;
@@ -70,6 +72,15 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     public PhantomJS() {
+        logger = new ConsoleLogImpl();
+    }
+
+    public LogInterface getLogger() {
+        return logger;
+    }
+
+    public void setLogger(LogInterface logger) {
+        this.logger = logger;
     }
 
     protected WebCache initWebCache() {
@@ -397,7 +408,7 @@ public class PhantomJS implements HttpRequestHandler {
     public void init() throws IOException, InterruptedException, PhantomJSBinariesMissingException {
 
         accessToken = new BigInteger(130, new SecureRandom()).toString(32);
-        logger = new ConsoleLogImpl();
+
         ipcBrowser = new Browser();
         webCache = initWebCache();
         ipcBrowser.setProxySelector(new ProxySelectorInterface() {
@@ -476,7 +487,20 @@ public class PhantomJS implements HttpRequestHandler {
 
                     }
                 }
+                String[] logs = new Regex(sb, ">>>LOG\\:([^\r\n]*?)<<<\\s*[\r\n]{1,2}").getColumn(0);
+                if (logs != null && logs.length > 0) {
+                    synchronized (results) {
+                        for (String result : logs) {
+                            Object logged = JSonStorage.restoreFromString(result, TypeRef.OBJECT);
+                            if (Clazz.isPrimitiveWrapper(logged.getClass()) || logged instanceof String) {
+                                logger.info("PJS: " + logged);
+                            } else {
+                                logger.info("PJS: " + JSonStorage.serializeToJson(logged));
+                            }
+                        }
 
+                    }
+                }
                 int lastIndex = sb.lastIndexOf("<<<");
                 if (lastIndex > 0) {
                     sb = sb.substring(lastIndex + 3);
@@ -515,7 +539,7 @@ public class PhantomJS implements HttpRequestHandler {
                         }
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    logger.log(e);
                     kill();
                 }
 
