@@ -53,11 +53,11 @@ public class FileloadIo extends PluginForHost {
     private static final String API_BASE                     = "https://api.fileload.io/";
     /* Connection stuff */
     private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = 0;
+    private final int           FREE_MAXCHUNKS               = 1;
     private final int           FREE_MAXDOWNLOADS            = 1;
     private final boolean       USE_API_LINKCHECK            = true;
     private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private final int           ACCOUNT_FREE_MAXCHUNKS       = -2;
     private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
     private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
@@ -302,10 +302,15 @@ public class FileloadIo extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        /* TODO: Set Free + Premium limits once they are available serverside */
-        // if (account.getType() == AccountType.FREE) {
-        // } else {
-        // }
+        int maxchunks;
+        boolean resume;
+        if (account.getType() == AccountType.FREE) {
+            maxchunks = ACCOUNT_FREE_MAXCHUNKS;
+            resume = ACCOUNT_FREE_RESUME;
+        } else {
+            maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
+            resume = ACCOUNT_PREMIUM_RESUME;
+        }
         String dllink = this.checkDirectLink(link, "premium_directlink");
         if (dllink == null) {
             br.getPage(API_BASE + "download/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(getFilenameProperty(link)));
@@ -323,7 +328,7 @@ public class FileloadIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
