@@ -71,6 +71,7 @@ DownloadLink_setSkipped_statusmessage_ffprobe=Ignorado - FFprobe™ faltando
 DownloadLink_setSkipped_statusmessage_file_exists=Ignorado - O arquivo já existe
 DownloadLink_setSkipped_statusmessage_invalid_path=Pasta de downloads inválida
 DownloadLink_setSkipped_statusmessage_noconnectionavailable=Ignorado - Nenhuma conexão disponível
+DownloadLink_setSkipped_statusmessage_phantom=O PhantomJS está faltando!
 DownloadLink_setSkipped_statusmessage_toomanyretries=Ignorado - Muitas tentativas
 DownloadLink_setSkipped_statusmessage_update_restart=Ignorado - Necessário reiniciar
 DownloadWatchDog_onShutdownRequest_=Downloads em progresso!
