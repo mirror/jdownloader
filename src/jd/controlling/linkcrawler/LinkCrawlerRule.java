@@ -72,10 +72,6 @@ public class LinkCrawlerRule {
         return pattern;
     }
 
-    public void _setPattern(Pattern pattern) {
-        this.pattern = pattern;
-    }
-
     public void setPattern(String pattern) {
         if (pattern == null) {
             this.pattern = null;
@@ -101,7 +97,30 @@ public class LinkCrawlerRule {
     }
 
     protected final UniqueAlltimeID id;
-    protected String                name    = null;
-    protected Pattern               pattern = null;
-    protected RULE                  rule    = null;
+    protected String                name               = null;
+    protected Pattern               pattern            = null;
+    protected RULE                  rule               = null;
+
+    protected Pattern               packageNamePattern = null;
+
+    public Pattern _getPackageNamePattern() {
+        return packageNamePattern;
+    }
+
+    public String getPackageNamePattern() {
+        final Pattern lPattern = _getPackageNamePattern();
+        if (lPattern != null) {
+            return lPattern.pattern();
+        } else {
+            return null;
+        }
+    }
+
+    public void setPackageNamePattern(String pattern) {
+        if (pattern == null) {
+            this.packageNamePattern = null;
+        } else {
+            this.packageNamePattern = Pattern.compile(pattern);
+        }
+    }
 }

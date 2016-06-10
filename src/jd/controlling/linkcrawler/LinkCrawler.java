@@ -792,7 +792,7 @@ public class LinkCrawler {
         return connection;
     }
 
-    protected void crawlDeeper(final int generation, final CrawledLink source) {
+    protected void crawlDeeperOrFollowRedirect(final int generation, final CrawledLink source) {
         final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
         source.setCustomCrawledLinkModifier(null);
         source.setBrokenCrawlerHandler(null);
@@ -868,6 +868,7 @@ public class LinkCrawler {
                                 // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
                                 // relative
                                 // path.
+
                                 final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
                                 final String browserContent = br.toString();
                                 final List<CrawledLink> possibleCryptedLinks = find(br.getURL(), null, false);
@@ -886,6 +887,16 @@ public class LinkCrawler {
                                                 /* unhandled url, lets parse the content on it */
                                                 final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
                                                 if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
+                                                    if (matchingRule != null && matchingRule._getPackageNamePattern() != null) {
+                                                        final String packageName = new Regex(browserContent, matchingRule._getPackageNamePattern()).getMatch(0);
+                                                        if (StringUtils.isNotEmpty(packageName)) {
+                                                            final PackageInfo fpi = new PackageInfo();
+                                                            fpi.setName(packageName.trim());
+                                                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
+                                                                possibleCryptedLink.setDesiredPackageInfo(fpi);
+                                                            }
+                                                        }
+                                                    }
                                                     final boolean singleDest = possibleCryptedLinks2.size() == 1;
                                                     for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
                                                         forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
@@ -1170,7 +1181,7 @@ public class LinkCrawler {
                         /* LinkCrawler got aborted! */
                         return false;
                     }
-                    crawlDeeper(generation, link);
+                    crawlDeeperOrFollowRedirect(generation, link);
                 } else {
                     if (checkStartNotify(generation)) {
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
@@ -1186,7 +1197,7 @@ public class LinkCrawler {
 
                             @Override
                             void crawling() {
-                                crawlDeeper(generation, link);
+                                crawlDeeperOrFollowRedirect(generation, link);
                             }
                         });
                     } else {
