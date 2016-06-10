@@ -33,7 +33,7 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
             return false;
         }
 
-        if (isBrowserSolverEnabled(c)) {
+        if (isBrowserSolverEnabled(c) && !(c instanceof AbstractRecaptcha2FallbackChallenge)) {
             return false;
         }
         if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
@@ -82,7 +82,7 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
             if (solverJob.isDone()) {
                 return;
             }
-            if (isBrowserSolverEnabled(solverJob.getChallenge())) {
+            if (!canHandle(solverJob.getChallenge())) {
                 return;
             }
             if (solverJob.getChallenge() instanceof RecaptchaV2Challenge) {
