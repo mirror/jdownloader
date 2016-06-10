@@ -60,10 +60,14 @@ public class VidiVodoCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://vidivodo.com/", "useradult", "1");
         if (downloadLink.getDownloadURL().matches(TYPE_EMBEDDED)) {
-            final String id = new Regex(downloadLink.getDownloadURL(), "\\?u=(.+)").getMatch(0);
+            final String id = new Regex(downloadLink.getDownloadURL(), "\\?u=([^<>\"\\&=]+)").getMatch(0);
             br.getPage("http://www.vidivodo.com/player/getxml?mediaid=" + id + "&publisherid=vidivodoEmbed&type=");
             final String newurl = br.getRegex("<pagelink>(http://[^<>\"]*?)</pagelink>").getMatch(0);
             if (newurl == null) {
+                if (this.br.toString().length() < 10) {
+                    /* E.g. html code "No" --> Offline! */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             downloadLink.setUrlDownload(newurl);

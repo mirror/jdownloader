@@ -117,6 +117,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
             /* Set- and re-use new (correct) URL in case we had a short URL before */
             parameter = br.getURL();
         }
+        ArrayList<Object> ressourcelist = null;
         final String fid = getFID(parameter);
         /* Handling especially for e.g. users from Portugal */
         if (br.containsHTML("THIS PAGE IS CURRENTLY UNAVAILABLE IN YOUR REGION")) {
@@ -141,6 +142,16 @@ public class VevoComDecrypter extends PluginForDecrypt {
                 }
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
                 entries = (LinkedHashMap<String, Object>) entries.get("default");
+
+                /*
+                 * 2016-06-10: For newer videos, we cannot get the streamlinks via apiv2 anymore - so let's get if via json inside html
+                 * whenever possible!
+                 */
+                final Object ressourcelist_o = DummyScriptEnginePlugin.walkJson(entries, "streams/" + fid + "/{0}");
+                if (ressourcelist_o != null && ressourcelist_o instanceof ArrayList) {
+                    ressourcelist = (ArrayList) ressourcelist_o;
+                }
+                /* Finally get LinkedHashMap with remaining video information. */
                 videoinfo = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "videos/" + fid);
             }
             if (videoinfo == null) {
@@ -164,7 +175,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
         }
 
         /** Decrypt qualities START */
-        if (!geoblock_1) {
+        if (!geoblock_1 && ressourcelist == null) {
             String videoid = (String) videoinfo.get("isrc");
             if (videoid == null) {
                 /* Very very old fallback! */
@@ -191,7 +202,9 @@ public class VevoComDecrypter extends PluginForDecrypt {
             }
         }
         if (!geoblock_1 && !geoblock_2) {
-            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            if (ressourcelist == null) {
+                ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            }
             /* Explanation of sourceType: 0=undefined, 1=?RTMP?, 2=HTTP, 3=HLS iOS,4=HLS, 5=HDS, 10=SmoothStreaming, 13=RTMPAkamai */
             /*
              * Explanation of version: Seems to be different vevo data servers as it has no influence on the videoquality: 0==, 1=?,

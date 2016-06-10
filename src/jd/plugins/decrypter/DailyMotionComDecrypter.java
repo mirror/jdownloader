@@ -25,8 +25,6 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -45,6 +43,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }, flags = { 0 })
@@ -76,14 +76,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String                          filename          = null;
     private String                          parameter         = null;
 
-    private static final String             ALLOW_LQ          = "ALLOW_LQ";
-    private static final String             ALLOW_SD          = "ALLOW_SD";
-    private static final String             ALLOW_HQ          = "ALLOW_HQ";
-    private static final String             ALLOW_720         = "ALLOW_720";
-    private static final String             ALLOW_1080        = "ALLOW_1080";
+    private static final String             ALLOW_BEST        = "ALLOW_BEST";
     private static final String             ALLOW_OTHERS      = "ALLOW_OTHERS";
     public static final String              ALLOW_AUDIO       = "ALLOW_AUDIO";
-    private static final String             ALLOW_HDS         = "ALLOW_HDS";
 
     private static final String             TYPE_PLAYLIST     = "https?://(?:www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?";
     private static final String             TYPE_USER         = "https?://(?:www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
@@ -524,52 +519,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         /** Pick qualities, selected by the user START */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
-        if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
-            for (final String quality : new String[] { "1", "2", "7", "6", "3", "4", "5" }) {
-                if (foundQualities.containsKey(quality)) {
-                    selectedQualities.add(quality);
+        final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
+        for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1" }) {
+            if (foundQualities.containsKey(quality) && (best || cfg.getBooleanProperty("ALLOW_" + quality))) {
+                selectedQualities.add(quality);
+                if (best) {
                     break;
                 }
-            }
-        }
-        if (cfg.getBooleanProperty("ALLOW_BEST", false) == false || selectedQualities.size() == 0) {
-            boolean qld = cfg.getBooleanProperty(ALLOW_LQ, false);
-            boolean qsd = cfg.getBooleanProperty(ALLOW_SD, false);
-            boolean qhq = cfg.getBooleanProperty(ALLOW_HQ, false);
-            boolean q720 = cfg.getBooleanProperty(ALLOW_720, false);
-            boolean q1080 = cfg.getBooleanProperty(ALLOW_1080, false);
-            boolean others = cfg.getBooleanProperty(ALLOW_OTHERS, false);
-            boolean hds = cfg.getBooleanProperty(ALLOW_HDS, false);
-            /** User selected nothing -> Decrypt everything */
-            if (qld == false && qsd == false && qhq == false && q720 == false && q1080 == false && others == false && hds == false) {
-                qld = true;
-                qsd = true;
-                qhq = true;
-                q720 = true;
-                q1080 = true;
-                others = true;
-                hds = true;
-            }
-            if (qld) {
-                selectedQualities.add("5");
-            }
-            if (qsd) {
-                selectedQualities.add("4");
-            }
-            if (qhq) {
-                selectedQualities.add("3");
-            }
-            if (q720) {
-                selectedQualities.add("2");
-            }
-            if (q1080) {
-                selectedQualities.add("1");
-            }
-            if (others) {
-                selectedQualities.add("6");
-            }
-            if (hds) {
-                selectedQualities.add("7");
             }
         }
         for (final String selectedQuality : selectedQualities) {
@@ -591,7 +547,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     @SuppressWarnings("unchecked")
     public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
         final LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
-        final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "5" } };
+        final String[][] qualities = { { "hd1080URL", "5" }, { "hd720URL", "4" }, { "hqURL", "3" }, { "sdURL", "2" }, { "ldURL", "1" }, { "video_url", "6" } };
         for (final String quality[] : qualities) {
             final String qualityName = quality[0];
             final String qualityNumber = quality[1];
@@ -611,7 +567,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(videosource);
                 entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "metadata/qualities");
                 /* TODO: Maybe all HLS support in case it gives us more/other formats/qualities */
-                final String[][] qualities_2 = { { "1080", "1" }, { "720", "2" }, { "480", "3" }, { "360", "4" }, { "240", "5" } };
+                final String[][] qualities_2 = { { "2160", "7" }, { "1440", "6" }, { "1080", "5" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" } };
                 for (final String quality[] : qualities_2) {
                     final String qualityName = quality[0];
                     final String qualityNumber = quality[1];
@@ -631,15 +587,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         // List empty or only 1 link found -> Check for (more) links
         if (QUALITIES.isEmpty() || QUALITIES.size() == 1) {
-            final String manifestURL = new Regex(videosource, "\"autoURL\":\"(http://[^<>\"]*?)\"").getMatch(0);
+            final String manifestURL = JSonUtils.getJson(videosource, "autoURL");
             if (manifestURL != null) {
                 /** HDS */
                 final String[] dlinfo = new String[4];
                 dlinfo[0] = manifestURL;
                 dlinfo[1] = "hds";
                 dlinfo[2] = "autoURL";
-                dlinfo[3] = "7";
-                QUALITIES.put("7", dlinfo);
+                dlinfo[3] = "8";
+                QUALITIES.put("8", dlinfo);
             }
 
             // Try to avoid HDS
