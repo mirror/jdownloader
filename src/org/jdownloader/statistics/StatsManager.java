@@ -37,6 +37,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -1588,6 +1589,22 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 CrossSystem.openURLOrShowMessage(refURL);
             }
         }
+    }
+
+    public void trackException(int reducer, String reducerID, Throwable e, String subkey, CollectionName pjs) {
+
+        HashMap<String, String> infos = new HashMap<String, String>();
+        infos.put("stack", Exceptions.getStackTrace(e));
+        StackTraceElement[] stack = e.getStackTrace();
+        StackTraceElement src = stack[0];
+        for (StackTraceElement el : stack) {
+            if (src == stack[0] && el.getLineNumber() > 0 && StringUtils.isNotEmpty(el.getFileName())) {
+                src = el;
+                break;
+            }
+
+        }
+        StatsManager.I().track(0, null, subkey + "exception/" + src.getFileName() + ":" + src.getLineNumber() + "/" + e.getMessage(), infos, pjs);
     }
 
 }
