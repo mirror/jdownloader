@@ -24,12 +24,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -157,11 +159,13 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        return requestFileInformation(link, null, false);
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        br = new Browser();
+        dl = null;
         prepBrowser(br, false);
         setConstants(link);
         int checkstatus = 0;
@@ -177,46 +181,11 @@ public class VKontakteRuHoster extends PluginForHost {
         this.br.setFollowRedirects(false);
         if (link.getDownloadURL().matches(TYPE_DIRECT)) {
             this.finalUrl = link.getDownloadURL();
-            this.br.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
             /* Prefer filename inside url */
             filename = new Regex(this.finalUrl, "/([^<>\"/]+\\.mp[34])$").getMatch(0);
-            try {
-                try {
-                    /* They do not accept HEAD connections */
-                    con = br.openGetConnection(link.getDownloadURL());
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!con.getContentType().contains("html")) {
-                    if (filename == null) {
-                        filename = getFileNameFromHeader(con);
-                    }
-                    if (filename != null) {
-                        try {
-                            final String urlDecoded = URLDecode(filename);
-                            link.setFinalFileName(urlDecoded);
-                        } catch (final Throwable e) {
-                            link.setName(filename);
-                        }
-                    }
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    if (filename != null) {
-                        try {
-                            final String urlDecoded = URLDecode(filename);
-                            link.setFinalFileName(urlDecoded);
-                        } catch (final Throwable e) {
-                            link.setName(filename);
-                        }
-                    }
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+            checkstatus = this.linkOk(link, filename, isDownload);
+            if (checkstatus != 1) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
             if (link.getLinkID() == null || !link.getLinkID().matches("")) {
@@ -247,7 +216,7 @@ public class VKontakteRuHoster extends PluginForHost {
             if (docs_add_unique_id) {
                 filename = link.getLinkID() + filename;
             }
-            checkstatus = this.linkOk(link, filename);
+            checkstatus = this.linkOk(link, filename, isDownload);
             if (checkstatus != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -268,24 +237,31 @@ public class VKontakteRuHoster extends PluginForHost {
                     finalFilename = link.getName();
                 }
                 this.finalUrl = link.getStringProperty("directlink", null);
-                checkstatus = this.linkOk(link, finalFilename);
+                checkstatus = this.linkOk(link, finalFilename, isDownload);
                 if (checkstatus != 1) {
                     String url = null;
-                    this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    final Browser br = this.br.cloneBrowser();
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     final String postID = link.getStringProperty("postID", null);
                     final String fromId = link.getStringProperty("fromId", null);
+                    boolean failed = false;
                     if (postID != null && fromId != null) {
                         logger.info("Trying to refresh audiolink directlink via wall-handling");
                         /* We got the info we need to access our single mp3 relatively directly as it initially came from a 'wall'. */
                         final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
                         br.postPage(getBaseURL() + "/audio", post);
-                        url = br.getRegex("\"0\"\\:\"" + Pattern.quote(this.ownerID) + "\"\\,\"1\"\\:\"" + Pattern.quote(this.contentID) + "\"\\,\"2\"\\:(\"[^\"]+\")").getMatch(0);
+                        url = br.getRegex("\"0\":\"" + Pattern.quote(this.ownerID) + "\",\"1\":\"" + Pattern.quote(this.contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
                         if (url == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            failed = true;
+                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else {
+                            /* Decodes the json string */
+                            url = (String) DummyScriptEnginePlugin.jsonToJavaObject(url);
                         }
-                        /* Decodes the json string */
-                        url = (String) DummyScriptEnginePlugin.jsonToJavaObject(url);
                     } else {
+                        failed = true;
+                    }
+                    if (failed) {
                         logger.info("refreshing audiolink directlink via album-handling");
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
@@ -295,26 +271,31 @@ public class VKontakteRuHoster extends PluginForHost {
                          */
                         this.postPageSafe(aa, link, getBaseURL() + "/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
                         final String[] audioData = getAudioDataArray(this.br);
-                        for (final String singleAudioData : audioData) {
-                            final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
-                            final String content_id = singleAudioDataAsArray[1];
-                            final String directlink = singleAudioDataAsArray[2];
-                            if (content_id == null || directlink == null) {
-                                logger.warning("FATAL error in audiolink refresh directlink handling");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            if (content_id.equals(this.contentID)) {
-                                url = Encoding.htmlDecode(directlink);
-                                break;
+                        if (audioData != null) {
+                            for (final String singleAudioData : audioData) {
+                                final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
+                                final String content_id = singleAudioDataAsArray[1];
+                                final String directlink = singleAudioDataAsArray[2];
+                                if (content_id == null || directlink == null) {
+                                    logger.warning("FATAL error in audiolink refresh directlink handling");
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                if (content_id.equals(this.contentID)) {
+                                    url = Encoding.htmlDecode(directlink);
+                                    break;
+                                }
                             }
                         }
                     }
                     if (url == null) {
+                        if (failed) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
                         logger.warning("Failed to refresh audiolink directlink");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     this.finalUrl = url;
-                    checkstatus = this.linkOk(link, finalFilename);
+                    checkstatus = this.linkOk(link, finalFilename, isDownload);
                     if (checkstatus != 1) {
                         logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -326,7 +307,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 this.br.setFollowRedirects(true);
                 this.finalUrl = link.getStringProperty("directlink", null);
                 // Check if directlink is expired
-                checkstatus = this.linkOk(link, link.getFinalFileName());
+                checkstatus = this.linkOk(link, link.getFinalFileName(), isDownload);
                 if (checkstatus != 1) {
                     final String oid = link.getStringProperty("userid", null);
                     final String id = link.getStringProperty("videoid", null);
@@ -345,7 +326,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                checkstatus = this.linkOk(link, link.getStringProperty("directfilename", null));
+                checkstatus = this.linkOk(link, link.getStringProperty("directfilename", null), isDownload);
                 if (checkstatus != 1) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -390,24 +371,38 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
-            if (this.br.containsHTML("This document is available only to its owner\\.")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
+        if (downloadLink.getDownloadURL().matches(TYPE_PICTURELINK)) {
+            // this is for resume of cached link.
+            if (this.finalUrl != null) {
+                if (!photolinkOk(downloadLink, null, false)) {
+                    // failed, lets nuke cached entry and retry.
+                    downloadLink.setProperty("picturedirectlink", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                return;
             }
-        } else if (downloadLink.getDownloadURL().matches(TYPE_PICTURELINK)) {
+            // virgin download.
             if (this.finalUrl == null) {
                 /*
                  * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is
                  * downloadable!
                  */
                 getHighestQualityPic(downloadLink);
+                return;
             }
-        } else {
-            br.getHeaders().put("Accept-Encoding", "identity");
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
-            handleServerErrors(downloadLink);
-            this.dl.startDownload();
         }
+        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
+            if (this.br.containsHTML("This document is available only to its owner\\.")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
+            }
+        }
+        if (dl == null) {
+            // most if not all components already opened connection via either linkOk or photolinkOk
+            br.getHeaders().put("Accept-Encoding", "identity");
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
+        }
+        handleServerErrors(downloadLink);
+        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -497,10 +492,10 @@ public class VKontakteRuHoster extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Doc-links and other links with permission can be downloaded without login */
         if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK) || downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DIRECT)) {
-            this.requestFileInformation(downloadLink);
+            this.requestFileInformation(downloadLink, null, true);
             this.doFree(downloadLink);
         } else if (checkNoLoginNeeded(downloadLink)) {
-            this.requestFileInformation(downloadLink);
+            this.requestFileInformation(downloadLink, null, true);
             this.doFree(downloadLink);
         } else {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -518,7 +513,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.requestFileInformation(link, account);
+        this.requestFileInformation(link, account, true);
         this.doFree(link);
     }
 
@@ -537,41 +532,46 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>1</b>: Link is valid and can be downloaded, <b>0</b>: Link leads to HTML, times out or other problems occured, <b>404</b>:
      *         Server 404 response
      */
-    private int linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
+    private int linkOk(final DownloadLink downloadLink, final String finalfilename, final boolean isDownload) throws Exception {
+        // invalidate is required!
+        if (StringUtils.isEmpty(this.finalUrl)) {
+            return 0;
+        }
         final Browser br2 = this.br.cloneBrowser();
-        /* In case the link redirects to the finallink */
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
+        br2.getHeaders().put("Accept-Encoding", "identity");
         try {
-            br2.getHeaders().put("Accept-Encoding", "identity");
-            try {
-                con = br2.openGetConnection(this.finalUrl);
-            } catch (final BrowserException ebr) {
-                /* This happens e.g. for temporarily unavailable videos. */
-                throw ebr;
-            } catch (final Throwable e) {
-                return 0;
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
+            if (!dl.getConnection().getContentType().contains("html")) {
+                downloadLink.setDownloadSize(dl.getConnection().getLongContentLength());
                 if (finalfilename == null) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(dl.getConnection())));
                 } else {
                     downloadLink.setFinalFileName(finalfilename);
                 }
+                return 1;
             } else {
-                if (con.getResponseCode() == 404) {
+                // request range fucked
+                if (dl.getConnection().getResponseCode() == 416) {
+                    this.logger.info("Resume failed --> Retrying from zero");
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                if (dl.getConnection().getResponseCode() == 404) {
                     return 404;
                 }
                 return 0;
             }
-            return 1;
+        } catch (final BrowserException ebr) {
+            /* This happens e.g. for temporarily unavailable videos. */
+            throw ebr;
+        } catch (final Throwable e) {
+            return 0;
         } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+            if (!isDownload) {
+                dl.getConnection().disconnect();
             }
         }
+
     }
 
     /**
@@ -592,6 +592,12 @@ public class VKontakteRuHoster extends PluginForHost {
         br2.getHeaders().put("Accept-Encoding", "identity");
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
+            // request range fucked
+            if (dl.getConnection().getResponseCode() == 416) {
+                this.logger.info("Resume failed --> Retrying from zero");
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             if (dl.getConnection().getLongContentLength() <= 100 || dl.getConnection().getResponseCode() == 404 || dl.getConnection().getResponseCode() == 502) {
                 /* Photo is supposed to be online but it's not downloadable */
                 return false;
@@ -630,7 +636,7 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             return false;
         } finally {
-            dl.close();
+            dl.getConnection().disconnect();
         }
     }
 
