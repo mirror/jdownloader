@@ -44,6 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-share.top" }, urls = { "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2 })
 public class FileShareTop extends PluginForHost {
@@ -130,10 +131,19 @@ public class FileShareTop extends PluginForHost {
          * Expire unlimited -> Unlimited traffic for a specified amount of time Normal expire -> Expire date + trafficleft
          *
          */
-        final String expireUnlimited = br.getRegex("<td>Paušální stahování aktivní\\. Vyprší </td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>").getMatch(0);
+        String expireUnlimited = br.getRegex("<td>Paušální stahování aktivní\\. Vyprší </td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>").getMatch(0);
+        if (expireUnlimited != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireUnlimited, "dd.MM.yy - HH:mm", Locale.ENGLISH), br);
+        }
+        if (expireUnlimited == null) {
+            expireUnlimited = br.getRegex("<td>Your unlimited download expires</td>\\s*<td>\\s*in \\d+ days\\s*<small>\\(([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4})\\)").getMatch(0);
+            if (expireUnlimited != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireUnlimited, "dd.MM.yyyy", Locale.ENGLISH), br);
+            }
+
+        }
         if (expireUnlimited != null) {
             /* TODO: Check if this case still exists */
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireUnlimited, "dd.MM.yy - HH:mm", Locale.ENGLISH));
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account - Unlimited Traffic");
@@ -349,8 +359,8 @@ public class FileShareTop extends PluginForHost {
     private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
     private void prepBr(final Browser br) throws IOException {
-        while (agent.get() == null || !agent.get().contains(" Chrome/")) {
-            agent.set(UserAgents.stringUserAgent());
+        if (agent.get() == null) {
+            agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
         }
         br.getHeaders().put("User-Agent", agent.get());
         br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
