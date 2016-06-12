@@ -157,6 +157,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        prepBrowser(br, false);
         setConstants(link);
         int checkstatus = 0;
         String filename = null;
@@ -630,7 +631,7 @@ public class VKontakteRuHoster extends PluginForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
+                prepBrowser(br, false);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(DOMAIN, cookies);
@@ -647,7 +648,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         return;
                     }
                     /* Delete cookies / Headers to perform a full login */
-                    br = prepBrowser(new Browser());
+                    br = prepBrowser(new Browser(), false);
                 }
                 br.setFollowRedirects(true);
                 br.getPage(getBaseURL() + "/login.php");
@@ -730,7 +731,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.generalErrorhandling();
     }
 
-    public static Browser prepBrowser(final Browser br) {
+    public static Browser prepBrowser(final Browser br, final boolean isDecryption) {
         String useragent = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(VKADVANCED_USER_AGENT, default_user_agent);
         if (useragent.equals("") || useragent.length() <= 3) {
             useragent = default_user_agent;
@@ -738,8 +739,12 @@ public class VKontakteRuHoster extends PluginForHost {
         br.getHeaders().put("User-Agent", useragent);
         /* Set English language */
         br.setCookie(DOMAIN, "remixlang", "3");
-        br.setReadTimeout(1 * 60 * 1000);
-        br.setConnectTimeout(2 * 60 * 1000);
+        if (isDecryption) {
+            // this causes epic issues in download tasks not timing out in reasonable time. We should refrain from setting in plugin
+            // timeouts unless its _REALLY_ needed! 20160612-raztoki
+            br.setReadTimeout(1 * 60 * 1000);
+            br.setConnectTimeout(2 * 60 * 1000);
+        }
         /* Loads can be very high. Site sometimes returns more than 10 000 entries with 1 request. */
         br.setLoadLimit(br.getLoadLimit() * 4);
         return br;

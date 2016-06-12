@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -48,9 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?\\&]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -1355,6 +1355,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             if (i > 0) {
                 postPageSafe(postPage, postData + offset);
+                logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
                 for (String regex[] : regexesAllOthers) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
@@ -1369,6 +1370,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 offset += increase;
             } else {
+                logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
                 for (String regex[] : regexesPageOne) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
@@ -1392,7 +1394,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 break;
             }
             sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
-            logger.info("Parsing page " + (i + 1) + " of " + maxLoops);
         }
 
         return decryptedData;
@@ -1416,6 +1417,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             if (i > 0) {
                 br.postPage(postPage, postData + offset);
+                logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
                 for (String regex[] : regexesAllOthers) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
@@ -1430,6 +1432,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 offset += increase;
             } else {
+                logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
                 for (String regex[] : regexesPageOne) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
@@ -1457,7 +1460,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 break;
             }
             sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO), this.CRYPTEDLINK);
-            logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
         }
         if (decryptedData == null || decryptedData.size() == 0) {
             logger.warning("Decrypter couldn't find theData for linktype: " + type + "\n");
@@ -1901,7 +1903,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Sets basic values/cookies */
     private void prepBrowser(final Browser br) {
-        jd.plugins.hoster.VKontakteRuHoster.prepBrowser(br);
+        jd.plugins.hoster.VKontakteRuHoster.prepBrowser(br, true);
     }
 
     /**
