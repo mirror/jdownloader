@@ -21,30 +21,30 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rawfile.co" }, urls = { "http://(?:www\\.)?rawfile\\.co/\\?p=\\d+" }, flags = { 0 })
-public class RawfileCo extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rawfile.co" }, urls = { "http://(?:www\\.)?rawfile\\.co/\\?p=(\\d+)" }, flags = { 0 })
+public class RawfileCo extends antiDDoSForDecrypt {
 
     public RawfileCo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = null;
-        final String fid = parameter.substring(parameter.lastIndexOf("/") - 1);
-        this.br.getPage("/wp-admin/admin-ajax.php?post=" + fid + "&action=get_content");
+        final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        getPage("/wp-admin/admin-ajax.php?post=" + fid + "&action=get_content");
         final String[] links = br.getRegex("<a href=\"(http[^<>\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
