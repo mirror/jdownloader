@@ -157,6 +157,11 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    @SuppressWarnings("deprecation")
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         prepBrowser(br, false);
         setConstants(link);
         int checkstatus = 0;
@@ -249,7 +254,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             /* Check if login is required to check/download */
             final boolean noLogin = checkNoLoginNeeded(link);
-            final Account aa = AccountController.getInstance().getValidAccount(this);
+            final Account aa = account != null ? account : AccountController.getInstance().getValidAccount(this);
             if (!noLogin && aa == null) {
                 link.getLinkStatus().setStatusText("Only downlodable via account!");
                 return AvailableStatus.UNCHECKABLE;
@@ -513,8 +518,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.requestFileInformation(link);
-        login(this.br, account);
+        this.requestFileInformation(link, account);
         this.doFree(link);
     }
 
@@ -894,6 +898,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
         } else {
+            // disabled as it fucks up links - raztoki20160612
+            if (true) {
+                return;
+            }
             logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLED --> changing final link back to standard");
             if (this.finalUrl.matches("http://cs\\d+\\.vk\\.me/v\\d+/.+")) {
                 logger.info("final link is already in desired format --> Doing nothing");
