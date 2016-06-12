@@ -401,13 +401,13 @@ public class VKontakteRuHoster extends PluginForHost {
                  * downloadable!
                  */
                 getHighestQualityPic(downloadLink);
-                downloadLink.setProperty("picturedirectlink", this.finalUrl);
             }
+        } else {
+            br.getHeaders().put("Accept-Encoding", "identity");
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
+            handleServerErrors(downloadLink);
+            this.dl.startDownload();
         }
-        br.getHeaders().put("Accept-Encoding", "identity");
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
-        handleServerErrors(downloadLink);
-        this.dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -581,51 +581,56 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
      *         is not downloadable!
      */
-    private boolean photolinkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
+    private boolean photolinkOk(final DownloadLink downloadLink, final String finalfilename, final boolean isLast) throws Exception {
         final Browser br2 = this.br.cloneBrowser();
-        /* In case the link redirects to the finallink */
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
         /* Correct final URLs according to users' plugin settings. */
         photo_correctLink();
-
         /* Ignore invalid urls. Usually if we have such an url the picture is serverside temporarily unavailable. */
         if (this.finalUrl.contains("_null_")) {
             return false;
         }
+        br2.getHeaders().put("Accept-Encoding", "identity");
         try {
-            br2.getHeaders().put("Accept-Encoding", "identity");
-            try {
-                con = br2.openGetConnection(this.finalUrl);
-            } catch (final BrowserException ebr) {
-                logger.info("BrowserException on directlink: " + this.finalUrl);
-                return false;
-            } catch (final ConnectException ec) {
-                logger.info("Directlink timed out: " + this.finalUrl);
-                return false;
-            } catch (final Throwable e) {
-                return false;
-            }
-            if (con.getLongContentLength() <= 100 || con.getResponseCode() == 404 || con.getResponseCode() == 502) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
+            if (dl.getConnection().getLongContentLength() <= 100 || dl.getConnection().getResponseCode() == 404 || dl.getConnection().getResponseCode() == 502) {
                 /* Photo is supposed to be online but it's not downloadable */
                 return false;
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (!dl.getConnection().getContentType().contains("html")) {
+                downloadLink.setDownloadSize(dl.getConnection().getLongContentLength());
                 if (finalfilename == null) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
                 } else {
                     downloadLink.setFinalFileName(finalfilename);
                 }
+                downloadLink.setProperty("picturedirectlink", this.finalUrl);
+                dl.startDownload();
                 return true;
             } else {
+                if (isLast) {
+                    handleServerErrors(downloadLink);
+                }
                 return false;
             }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+        } catch (final BrowserException ebr) {
+            logger.info("BrowserException on directlink: " + this.finalUrl);
+            if (isLast) {
+                throw ebr;
             }
+            return false;
+        } catch (final ConnectException ec) {
+            logger.info("Directlink timed out: " + this.finalUrl);
+            if (isLast) {
+                throw ec;
+            }
+            return false;
+        } catch (final Throwable e) {
+            if (isLast) {
+                throw e;
+            }
+            return false;
+        } finally {
+            dl.close();
         }
     }
 
@@ -821,9 +826,8 @@ public class VKontakteRuHoster extends PluginForHost {
             if (picobject != null) {
                 this.finalUrl = (String) picobject;
                 links_count++;
-                if (this.photolinkOk(dl, null)) {
-                    success = true;
-                    break;
+                if (this.photolinkOk(dl, null, "m_".equals(q))) {
+                    return;
                 }
             }
         }
@@ -857,9 +861,8 @@ public class VKontakteRuHoster extends PluginForHost {
             if (finurl != null) {
                 links_count++;
                 this.finalUrl = finurl.toString();
-                if (this.photolinkOk(dl, null)) {
-                    success = true;
-                    break;
+                if (this.photolinkOk(dl, null, "src_small".equals(quality))) {
+                    return;
                 }
             } else {
                 continue;
