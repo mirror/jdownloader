@@ -37,6 +37,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -123,13 +124,25 @@ public class BankuploadCom extends PluginForHost {
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.9<br />
      * mods: doFree[Extra errorhandling for missing download button - this is some kind of wait limit]<br />
-     * limit-info:<br />
+     * --see canHandle raztoki20160612 limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
      * captchatype: null<br />
      * other:<br />
      */
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        /**
+         * download button and captcha is missing with downloads over 1gb... this isn't downloadable in browser! This doesn't get evaluated
+         * when user has linkchecking disabled!! so we still need something within download method! -raztoki
+         */
+        if ((account == null || account.getType().equals(AccountType.FREE)) && downloadLink.getDownloadSize() >= 1073741824) {
+            return false;
+        }
+        return true;
+    }
 
     @SuppressWarnings({ "deprecation", "unused" })
     @Override
@@ -482,6 +495,7 @@ public class BankuploadCom extends PluginForHost {
             /* how many forms deep do you want to try? */
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
+                boolean hasCaptcha = false;
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
@@ -516,6 +530,7 @@ public class BankuploadCom extends PluginForHost {
                     }
                     dlForm.put("code", code.toString());
                     logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                    hasCaptcha = true;
                 } else if (correctedBR.contains("/captchas/")) {
                     logger.info("Detected captcha method \"Standard captcha\" for this host");
                     final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
@@ -537,6 +552,7 @@ public class BankuploadCom extends PluginForHost {
                     String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                     dlForm.put("code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                    hasCaptcha = true;
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
                     final Recaptcha rc = new Recaptcha(br, this);
@@ -549,6 +565,7 @@ public class BankuploadCom extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /* wait time is usually skippable for reCaptcha handling */
                     skipWaittime = true;
+                    hasCaptcha = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
 
@@ -566,6 +583,7 @@ public class BankuploadCom extends PluginForHost {
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
+                    hasCaptcha = true;
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
                     String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
@@ -577,6 +595,7 @@ public class BankuploadCom extends PluginForHost {
                     }
                     dlForm.put("capcode", result);
                     skipWaittime = false;
+                    hasCaptcha = true;
                 }
                 /* Captcha END */
                 if (password) {
@@ -584,6 +603,10 @@ public class BankuploadCom extends PluginForHost {
                 }
                 if (!skipWaittime) {
                     waitTime(downloadLink, timeBefore);
+                }
+                if (!hasCaptcha && downloadLink.getDownloadSize() >= 1073741824) {
+                    // captcha (recaptcha) will be null also!
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
