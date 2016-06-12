@@ -50,10 +50,17 @@ import jd.plugins.PluginForDecrypt;
  *
  * I've created jac for this under this name.
  *
+ * ssh.tf<br/>
+ * Name: ssh.tf<br/>
+ * Addresses: 103.39.133.244<br/>
+ * 103.237.33.180<br/>
+ * 111.221.47.171<br/>
+ *
+ *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 3, names = { "click.tf" }, urls = { "http://click\\.tf/[a-zA-Z0-9]{8,}(/.+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 3, names = { "click.tf", "ssh.tf" }, urls = { "http://click\\.tf/[a-zA-Z0-9]{8,}(/.+)?", "http://ssh\\.tf/[a-zA-Z0-9]{8,}(/.+)?" }, flags = { 0 })
 public class ClkTf extends PluginForDecrypt {
 
     public ClkTf(PluginWrapper wrapper) {
