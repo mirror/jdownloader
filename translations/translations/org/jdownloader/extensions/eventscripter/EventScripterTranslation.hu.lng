@@ -1,3 +1,4 @@
+CAPTCHA_CHALLENGE_AFTER=Miután egy képkód
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=Letöltési lista alsó sáv gomb megnyomva
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Amennyiben szeretne hozzáadni egy egyéni esemény scripter gombot a letőltési lista alsó menüsávjához, használja a Felhasználói felület menükezelőjét.
 DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=Letöltési lista helyi menü gomb megnyomva
@@ -32,10 +33,8 @@ TRAY_BUTTON=Tálca menü gomb megnyomva
 TRAY_BUTTON_explain=Amennyiben szeretne hozzáadni egy egyéni esemény scripter gombot az eszköztárhoz, használja a Felhasználói felület menüpont Tálca elnevezésű menükezelőjét.
 allow=Engedélyez
 btnExampleScripts=Példa szkriptek
-classes=/* ===== Osztályok ===== */
 deny=Megtagad
 description=Figyeli a belső JDownloader eseményeket, és lehetővé teszi a megfelelő szkriptek végrehajtását (JavaScript)
-downloadLink=// Letöltési link
 edit_script=Szkript szerkesztése
 editor_autoformat=Automatikus formátumú
 editor_showhelp=Súgó mutatása/elrejtése
@@ -45,8 +44,8 @@ emptyScript=//Itt elkezdhet készíteni egy új scriptet. Nyugodtan használja a
 event_trigger=Programindító esemény
 example_infoFile=Hozzon létre egy Info-fájl a letöltés mappában, részletes információkkal
 example_play_sound=Wav fájl lejátszása
+example_play_sound_when_inactive=Zenelejátszáskor (Wav) a letöltések és a kicsomagolás megállítása
 example_script_name=Példa
-filepackage=// Fájl csomag
 interval_settings=Hívás időközönként ms
 loading_editor_title=Szerkesztő betöltése...
 none_trigger=// Ez az esemény soha nem indul.
