@@ -564,7 +564,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } catch (final BrowserException ebr) {
             /* This happens e.g. for temporarily unavailable videos. */
             throw ebr;
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             return 0;
         } finally {
             if (!isDownload) {
@@ -630,7 +630,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw ec;
             }
             return false;
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             if (isLast) {
                 throw e;
             }
