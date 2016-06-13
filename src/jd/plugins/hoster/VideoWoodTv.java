@@ -22,7 +22,9 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,6 +47,22 @@ public class VideoWoodTv extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/video/", "/embed/"));
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.getHeaders().put("Cache-Control", null);
+            prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+        }
+        return prepBr;
     }
 
     @Override
@@ -75,27 +93,32 @@ public class VideoWoodTv extends antiDDoSForHost {
         if (br.containsHTML("This video is not ready yet")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host says 'This video is not ready yet'", 30 * 60 * 1000l);
         }
-        String dllink = br.getRegex("file:\\s*(\"|')(http.*?)\\1").getMatch(1);
+        final String decoded = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
+        String dllink = decoded != null ? new Regex(decoded, "('|\")(http.*?)\\1").getMatch(1) : null;
         if (dllink == null) {
-            final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\)\\))\\)").getMatch(0);
-            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            String result = null;
-            try {
-                engine.eval("var res = " + js);
-                result = (String) engine.get("res");
-            } catch (final Exception e) {
-                e.printStackTrace();
+            br.getRegex("file:\\s*(\"|')(http.*?)\\1").getMatch(1);
+            if (dllink == null) {
+                // packed at this time is missing components within url structure.
+                final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\)\\))\\)").getMatch(0);
+                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                String result = null;
+                try {
+                    engine.eval("var res = " + js);
+                    result = (String) engine.get("res");
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                }
+                if (result == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // mp4 is under the second file, my simple jsonutils wont work well.
+                final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(result);
+                dllink = (String) entries.get("file");
             }
-            if (result == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // mp4 is under the second file, my simple jsonutils wont work well.
-            final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(result);
-            dllink = (String) entries.get("file");
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

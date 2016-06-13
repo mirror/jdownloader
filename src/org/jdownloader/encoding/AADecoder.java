@@ -1,6 +1,5 @@
-
 //jDownloader - Downloadmanager
-//Copyright (C) 2014  JD-Team support@jdownloader.org
+//Copyright (C) 2016  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -30,6 +29,15 @@ public class AADecoder {
     private static final String[] BYTES              = new String[] { "(c^_^o)", "(ﾟΘﾟ)", "((o^_^o) - (ﾟΘﾟ))", "(o^_^o)", "(ﾟｰﾟ)", "((ﾟｰﾟ) + (ﾟΘﾟ))", "((o^_^o) +(o^_^o))", "((ﾟｰﾟ) + (o^_^o))", "((ﾟｰﾟ) + (ﾟｰﾟ))", "((ﾟｰﾟ) + (ﾟｰﾟ) + (ﾟΘﾟ))", "(ﾟДﾟ) .ﾟωﾟﾉ", "(ﾟДﾟ) .ﾟΘﾟﾉ", "(ﾟДﾟ) ['c']", "(ﾟДﾟ) .ﾟｰﾟﾉ", "(ﾟДﾟ) .ﾟДﾟﾉ", "(ﾟДﾟ) [ﾟΘﾟ]" };
     public static boolean         DEBUG              = false;
 
+    private String                input              = null;
+
+    public AADecoder() {
+    }
+
+    public AADecoder(final String input) {
+        this.input = input;
+    }
+
     public boolean isAAEncoded(String js) {
         if (!js.startsWith("ﾟωﾟﾉ= /｀ｍ´）ﾉ ~┻━┻   //*´∇｀*/ ['_']; o=(ﾟｰﾟ)  =_=3; c=(ﾟΘﾟ) =(ﾟｰﾟ)-(ﾟｰﾟ); ")) {
             return false;
@@ -40,9 +48,27 @@ public class AADecoder {
         return true;
     }
 
+    /** returns the first result */
+    protected String fetchJs() {
+        if (input == null) {
+            throw new WTFException("Problemo, with finding JS");
+        }
+        final String js = new Regex(input, "ﾟωﾟ.*?\\('_'\\);").getMatch(-1);
+        return js;
+    }
+
+    public String decode() throws Exception {
+        return decode(null);
+    }
+
     // Long version. Contains additional info, but lot's of unused variables that may be important for botguard
     public String decode(String js) throws Exception {
-
+        if (StringUtils.isEmpty(js)) {
+            js = fetchJs();
+            if (StringUtils.isEmpty(js)) {
+                return null;
+            }
+        }
         js = js.replace("/*´∇｀*/", "");
         // trim
         js = js.replaceAll("^\\s+|\\s+$", "");

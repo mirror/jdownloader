@@ -70,28 +70,32 @@ public class BitvideoIo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = fid;
-        String filename = null;
+        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (filename == null) {
-            filename = url_filename;
-        }
-        final String json_source = this.br.getRegex("sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
-        if (json_source == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
-        LinkedHashMap<String, Object> entries = null;
-        int maxvalue = 0;
-        int tempvalue = 0;
-        String tempquality = null;
-        for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
-            tempquality = (String) entries.get("label");
-            tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)").getMatch(0));
-            if (tempvalue > maxvalue) {
-                maxvalue = tempvalue;
-                dllink = (String) entries.get("file");
+            filename = br.getRegex("<span itemprop=\"name\" title=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = url_filename;
             }
         }
+        final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
+        final String json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+        if (json_source != null) {
+            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
+            LinkedHashMap<String, Object> entries = null;
+            int maxvalue = 0;
+            int tempvalue = 0;
+            String tempquality = null;
+            for (final Object videoo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoo;
+                tempquality = (String) entries.get("label");
+                tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)").getMatch(0));
+                if (tempvalue > maxvalue) {
+                    maxvalue = tempvalue;
+                    dllink = (String) entries.get("file");
+                }
+            }
+        }
+
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -99,7 +103,7 @@ public class BitvideoIo extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = getFileNameExtensionFromString(dllink, ".flv");
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
