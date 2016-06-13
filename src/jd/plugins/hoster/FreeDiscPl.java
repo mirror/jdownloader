@@ -298,7 +298,7 @@ public class FreeDiscPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (this.br.containsHTML("g\\-recaptcha\\-response")) {
+                if (this.br.containsHTML("\"g\\-recaptcha\"")) {
                     logger.info("Login captcha / spam protection detected");
                     if (this.getDownloadLink() == null) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), MAINPAGE, true);
@@ -408,7 +408,7 @@ public class FreeDiscPl extends PluginForHost {
     /*
      * *
      * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      */
     private String getJson(final String key) {

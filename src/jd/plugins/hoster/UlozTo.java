@@ -46,14 +46,14 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[a-zA-Z0-9]+/(?!\\s+).+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[a-zA-Z0-9]+/(?!\\s+).+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
 
     private boolean              passwordProtected            = false;
     private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
     private static final String  CAPTCHA_TEXT                 = "CAPTCHA_TEXT";
     private static final String  CAPTCHA_ID                   = "CAPTCHA_ID";
-    private static final String  QUICKDOWNLOAD                = "http://(www\\.)?uloz\\.to/quickDownload/\\d+";
+    private static final String  QUICKDOWNLOAD                = "https?://(?:www\\.)?uloz\\.to/quickDownload/\\d+";
     private static final String  PREMIUMONLYUSERTEXT          = JDL.L("plugins.hoster.ulozto.premiumonly", "Only downloadable for premium users!");
     private final String         PASSWORDPROTECTED            = "\"frm\\-passwordProtectedForm\\-password\"";
 

@@ -447,10 +447,10 @@ public class OBoomCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-             * account != null &&
-             */
-        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+         * account != null &&
+         */
+                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }
@@ -621,7 +621,8 @@ public class OBoomCom extends antiDDoSForHost {
             String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
             if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
                 if (br.toString().length() > 200) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    logger.info("Unknown error - probably downloadlimit reached!");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error: " + br.toString());
                 }
