@@ -147,7 +147,7 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() throws Exception {
-        String js = br.getRegex("<script(?: type=\"text/javascript\")?>((?:\\s*var [a-z]='[a-zA-Z0-9/]+'[;,]){1,}[^<]+)</script>").getMatch(0);
+        String js = br.getRegex("<script(?: type=\"text/javascript\")?>((?:\\s*var [a-z]='.*?'[;,]){1,}[^<]+)</script>").getMatch(0);
         if (js == null) {
             logger.warning("Could not find JS!");
         } else {
