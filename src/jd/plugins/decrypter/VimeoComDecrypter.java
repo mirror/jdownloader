@@ -96,7 +96,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         br.setAllowedResponseCodes(new int[] { 400, 410 });
         if (parameter.matches(LINKTYPE_USER)) {
             br.getPage(parameter);
-            if (br.containsHTML(">\\s*We couldn(?:'|&rsquo;)t find that page")) {
+            if (br.containsHTML(">\\s*We couldn(?:'|&rsquo;)t find that page") || this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(createOfflinelink(parameter, "Could not find that page"));
                 return decryptedLinks;
             }
