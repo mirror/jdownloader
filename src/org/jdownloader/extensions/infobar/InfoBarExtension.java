@@ -1,7 +1,7 @@
 package org.jdownloader.extensions.infobar;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
@@ -15,34 +15,22 @@ import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
-import jd.config.SubConfiguration;
+import jd.SecondLevelLaunch;
 import jd.plugins.AddonPanel;
 
 public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> implements MenuExtenderHandler {
 
     @Override
     public boolean isDefaultEnabled() {
-        return true;
+        return false;
     }
-
-    private static final String                    PROPERTY_OPACITY      = "PROPERTY_OPACITY";
-
-    private static final String                    PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
-
-    private static final String                    PROPERTY_DOCKING      = "PROPERTY_DOCKING";
 
     private InfoDialog                             infoDialog;
 
     private ExtensionConfigPanel<InfoBarExtension> configPanel;
-
-    private final SubConfiguration                 subConfig;
 
     public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
         return configPanel;
@@ -54,7 +42,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     public InfoBarExtension() throws StartException {
         setTitle(T.jd_plugins_optional_infobar_jdinfobar());
-        subConfig = SubConfiguration.getConfig("infobarextension");
+
     }
 
     public Class<EnableInfoBarGuiAction> getShowGuiAction() {
@@ -62,40 +50,13 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     }
 
-    private void updateOpacity(Object value) {
-        if (infoDialog == null) {
-            return;
-        }
-        final int newValue;
-        if (value == null) {
-            newValue = subConfig.getIntegerProperty(PROPERTY_OPACITY, 100);
-        } else {
-            newValue = Integer.parseInt(value.toString());
-        }
-        new EDTHelper<Object>() {
-
-            @Override
-            public Object edtRun() {
-                try {
-                    AbstractNotifyWindow.setWindowOpacity(infoDialog, (float) (newValue / 100.0));
-                } catch (final Throwable e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-        }.start();
-    }
-
     public void setGuiEnable(boolean b) {
         if (b) {
+
             if (infoDialog == null) {
                 infoDialog = new InfoDialog(this);
-                infoDialog.setEnableDropLocation(subConfig.getBooleanProperty(PROPERTY_DROPLOCATION, true));
-                infoDialog.setEnableDocking(subConfig.getBooleanProperty(PROPERTY_DOCKING, true));
-                if (Application.getJavaVersion() >= Application.JAVA16) {
-                    updateOpacity(null);
-                }
+                infoDialog.setEnableDropLocation(getSettings().isDragAndDropEnabled());
+
             }
             infoDialog.showDialog();
         } else {
@@ -135,6 +96,23 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             MenuManagerMainmenu.getInstance().registerExtender(this);
             MenuManagerMainToolbar.getInstance().registerExtender(this);
         }
+        if (CFG_INFOBAR.GUI_ENABLED.isEnabled()) {
+            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+                @Override
+                public void run() {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            setGuiEnable(true);
+
+                        }
+
+                    };
+                }
+            });
+        }
     }
 
     @Override
@@ -165,48 +143,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     }
 
-    protected void initSettings(ConfigContainer config) {
-        config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        if (Application.getJavaVersion() >= Application.JAVA16) {
-            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_OPACITY, T.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
-                private static final long serialVersionUID = 1L;
-
-                @Override
-                public void valueChanged(Object newValue) {
-                    updateOpacity(newValue);
-                    super.valueChanged(newValue);
-                }
-            };
-            ce.setDefaultValue(100);
-            config.addEntry(ce);
-            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DROPLOCATION, T.jd_plugins_optional_infobar_dropLocation2()) {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void valueChanged(Object newValue) {
-                if (infoDialog != null) {
-                    infoDialog.setEnableDropLocation((Boolean) newValue);
-                }
-                super.valueChanged(newValue);
-            }
-        }.setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DOCKING, T.jd_plugins_optional_infobar_docking()) {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void valueChanged(Object newValue) {
-                if (infoDialog != null) {
-                    infoDialog.setEnableDocking((Boolean) newValue);
-                }
-                super.valueChanged(newValue);
-            }
-        }.setDefaultValue(true));
-    }
-
     @Override
     public String getDescription() {
         return T.jd_plugins_optional_infobar_jdinfobar_description();
@@ -220,9 +156,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     @Override
     protected void initExtension() throws StartException {
 
-        ConfigContainer cc = new ConfigContainer(getName());
-        initSettings(cc);
-        configPanel = createPanelFromContainer(cc);
+        configPanel = new InfoBarConfigPanel(this);
     }
 
 }

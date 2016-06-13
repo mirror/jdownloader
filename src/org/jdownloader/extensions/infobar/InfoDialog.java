@@ -1,12 +1,13 @@
 package org.jdownloader.extensions.infobar;
 
-import java.awt.DisplayMode;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -14,16 +15,25 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
-import javax.swing.SwingUtilities;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.locator.RememberAbsoluteLocator;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
 
@@ -32,32 +42,33 @@ import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.nutils.Formatter;
 import net.miginfocom.swing.MigLayout;
 
-public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
+public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener, GenericConfigEventListener<Integer>, WindowListener {
 
-    private static final long serialVersionUID = 4715904261105562064L;
+    private static final long               serialVersionUID = 4715904261105562064L;
 
-    private static final int DOCKING_DISTANCE = 25;
+    private static final int                DOCKING_DISTANCE = 25;
 
-    private final DragDropHandler ddh;
-    private boolean               enableDocking;
+    private final DragDropHandler           ddh;
 
-    private NullsafeAtomicReference<Thread> updater = new NullsafeAtomicReference<Thread>(null);
+    private NullsafeAtomicReference<Thread> updater          = new NullsafeAtomicReference<Thread>(null);
     private Point                           point;
 
-    private JDProgressBar prgTotal;
-    private JLabel        lblProgress;
-    private JLabel        lblETA;
-    private JLabel        lblHelp;
+    private JDProgressBar                   prgTotal;
+    private JLabel                          lblProgress;
+    private JLabel                          lblETA;
+    private JLabel                          lblHelp;
 
-    private SpeedMeterPanel speedmeter;
+    private SpeedMeterPanel                 speedmeter;
 
-    private InfoBarExtension extension;
+    private InfoBarExtension                extension;
+
+    private RememberAbsoluteLocator         locator;
 
     public InfoDialog(InfoBarExtension infoBarExtension) {
         super();
         extension = infoBarExtension;
         this.ddh = new DragDropHandler();
-
+        locator = new RememberAbsoluteLocator("InfoDialog");
         this.setName("INFODIALOG");
         this.setAlwaysOnTop(true);
 
@@ -65,7 +76,19 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
+            @Override
+            public void onShutdown(ShutdownRequest shutdownRequest) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        hideDialog();
+                    }
+                };
+            }
+        });
         lblHelp.addMouseMotionListener(this);
         prgTotal.addMouseMotionListener(this);
         lblETA.addMouseMotionListener(this);
@@ -76,7 +99,33 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         lblETA.addMouseListener(this);
         lblProgress.addMouseListener(this);
         speedmeter.addMouseListener(this);
+        addWindowListener(this);
+        updateTransparency();
+        CFG_INFOBAR.TRANSPARENCY.getEventSender().addListener(this, true);
+        Point loc = locator.getLocationOnScreen(this);
+        setLocation(loc);
+    }
 
+    private void updateTransparency() {
+        if (Application.getJavaVersion() >= Application.JAVA16) {
+            AbstractNotifyWindow.setWindowOpacity(this, (float) (CFG_INFOBAR.TRANSPARENCY.getValue() / 100.0));
+        } else {
+            Dialog.getInstance().showErrorDialog("Infobar Extension: Transparent Windows are not supported for your java version. Please update Java to 1.7 or higher.");
+        }
+    }
+
+    @Override
+    public void dispose() {
+        locator.onClose(this);
+        super.dispose();
+    }
+
+    @Override
+    public void setVisible(boolean b) {
+        if (!b) {
+            locator.onClose(this);
+        }
+        super.setVisible(b);
     }
 
     private void initGui() {
@@ -132,12 +181,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         if (!isVisible()) {
             return;
         }
-
+        setVisible(false);
         dispose();
-    }
-
-    public void setEnableDocking(boolean enableDocking) {
-        this.enableDocking = enableDocking;
     }
 
     public void setEnableDropLocation(final boolean enableDropLocation) {
@@ -215,61 +260,14 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     public void mouseDragged(MouseEvent e) {
-        if (enableDocking) {
-            Point drag = e.getPoint();
 
-            /*
-             * Convert coordinate of the component to the whole screen and translate to the dragging-start-point.
-             */
-            Point point = new Point(this.point);
-            System.out.println("1   " + point);
-            SwingUtilities.convertPointToScreen(point, e.getComponent());
-            SwingUtilities.convertPointFromScreen(point, this);
-            System.out.println(point);
-            SwingUtilities.convertPointToScreen(drag, e.getComponent());
-            // drag.translate(-point.x, -point.y);
+        Point window = this.getLocation();
 
-            int x = drag.x;
-            int y = drag.y;
-            int w = getWidth();
-            int h = getHeight();
+        int x = window.x + e.getPoint().x - point.x;
+        int y = window.y + e.getPoint().y - point.y;
 
-            /*
-             * If distance to the upper and left screen border is less than DOCKING_DISTANCE, then dock the InfoDialog to the border.
-             */
-            if (x < DOCKING_DISTANCE) {
-                x = 0;
-            }
-            if (y < DOCKING_DISTANCE) {
-                y = 0;
-            }
+        this.setLocation(x, y);
 
-            DisplayMode dm = getGraphicsConfiguration().getDevice().getDisplayMode();
-            int xMax = dm.getWidth() - w;
-            int yMax = dm.getHeight() - h;
-
-            /*
-             * If distance to the lower and right screen border is less than DOCKING_DISTANCE, then dock the InfoDialog to the border.
-             */
-            if (x > xMax - DOCKING_DISTANCE) {
-                x = xMax;
-            }
-            if (y > yMax - DOCKING_DISTANCE) {
-                y = yMax;
-            }
-
-            /*
-             * Finally set the new location.
-             */
-            this.setLocation(x - point.x, y - point.y);
-        } else {
-            Point window = this.getLocation();
-
-            int x = window.x + e.getPoint().x - point.x;
-            int y = window.y + e.getPoint().y - point.y;
-
-            this.setLocation(x, y);
-        }
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -278,6 +276,51 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     public void actionPerformed(ActionEvent e) {
         extension.setGuiEnable(false);
 
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                updateTransparency();
+            }
+        };
+    }
+
+    @Override
+    public void windowOpened(WindowEvent e) {
+    }
+
+    @Override
+    public void windowClosing(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowClosed(WindowEvent e) {
+        locator.onClose(this);
+    }
+
+    @Override
+    public void windowIconified(WindowEvent e) {
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent e) {
+    }
+
+    @Override
+    public void windowActivated(WindowEvent e) {
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent e) {
     }
 
 }
