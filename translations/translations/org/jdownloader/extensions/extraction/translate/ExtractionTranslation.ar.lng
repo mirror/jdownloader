@@ -17,7 +17,6 @@ contextmenu_autodeletelinks=تفعيل - حذف الروابط من قائمة �
 contextmenu_autoextract=تفعيل فك الضغط التلقائى
 contextmenu_extract=فك الضغط الأن
 contextmenu_extract_to=تحديد مكان فك الضغط
-contextmenu_loading=%s1 تحميل...
 contextmenu_main=مجلدات
 contextmenu_password=كلمة سر الملف
 date=تاريخ
@@ -27,14 +26,12 @@ downloadedok=الملف موجود بالفعل
 dummyarchivedialog_title=الملف %s1
 exists=حالة الرابط
 extract_to2=فك ضغط الملف الى ...
-extracting=تعطيل فك الضغط
 extraction_failed=فشل %s1 فك ضغط
 failed=فشل فك الضغط %s1
 failed_no_details=فشل فك الضغط
 file_exists=ملف موجود
 file_exists_not=ملف غير موجود
 filename=اسم الملف
-files=ملفات
 hoster=المضيف
 local=حالة الملف
 menu_tools_extract_files=فك الملفات
@@ -44,11 +41,8 @@ offline_tt=لايوجد رابط لهذا الجزء فى هذه الحزمة م
 online=الرابط متاح
 online_tt=رابط متاح
 packagename=إسم الحزمة
-plugins_optional_extraction_askForPassword=كلمة سر %s1?
-plugins_optional_extraction_crcerrorin=فشلة عملية الفك - CRC in %s1
 plugins_optional_extraction_error_extrfailedcrc=فشلة عملية فك الضغط
 plugins_optional_extraction_filefilter=كل الملفات المدعومة
-plugins_optional_extraction_filefilter_extractto=مجلد فك الضغط
 plugins_optional_extraction_filenotfound=فك الضغط : فشلة العملية - الملف غير موجود
 plugins_optional_extraction_status_crackingpass_progress=Please translate: فك كلمة السر: %s1 %
 plugins_optional_extraction_status_extractfailedpass=فشل فك الضغط (كلمة المرور)
@@ -56,7 +50,6 @@ plugins_optional_extraction_status_extracting2=فك الضغط
 plugins_optional_extraction_status_extracting_filename=فك %s1
 plugins_optional_extraction_status_extractok=تم فك الضغط
 plugins_optional_extraction_status_notenoughspace=لا توجد مساحة كافية لفك الضغط
-plugins_optional_extraction_status_openingarchive=جاري فتح الأرشيف...
 plugins_optional_extraction_status_passfound=تم ايجاد كلمة السر
 plugins_optional_extraction_status_queued=يتم فك الضغط الان
 properties=خصائص الملف الفرعى
@@ -66,8 +59,6 @@ set_autoremovefiles_false=تعطيل حذف الملفات التلقائى
 set_autoremovefiles_true=تفعيل حذف الملفات التلقائى
 set_autoremovelinks_false=تعطيل حذف الروابط تلقائى
 set_autoremovelinks_true=تفعيل حذف الروابط تلقائى
-settings_blacklist=عدم فك ضغط الملفات التى ينطبق عليها ما يلى - واحد لكل سطر
-settings_cpupriority=CPU حالة
 settings_cpupriority_high=عالية
 settings_cpupriority_low=منخفض
 settings_cpupriority_middle=متوسط
@@ -76,15 +67,11 @@ settings_extract_to_path=فك الضغط الى...
 settings_extractto=فك الضغط فى نفس الملف
 settings_multi=ضبط خاص لملفات rar, 7z, zip
 settings_multi_use_original_file_date=إستخدم تاريخ الملف الأصلي إن أمكن
-settings_overwrite=استبدال الملف الحالى؟
 settings_passwordlist=كلمات السر - واحده لكل سطر
 settings_passwords=قائمة كلمات السر
 settings_remove_after_extract=مسح الملف المضغوط بعد فك الضغط عنه
 settings_remove_after_extract_downloadlink=مسح رابط الملف المضغوط بعد فك الضغط عنه
 settings_subpath=نمط فرعى
-settings_subpath_minnum2=فقط فى حلة الملف المضغوط يحتوى على>
-settings_subpath_no_folder2=فى حلة عدم وجود مجلد رئيسى
-settings_subpath_no_folder_tt=لاتفك الضغط فى ملف جديد فى حلة وجود الملفات فى ملف واحد داخل المجلد المضغوط
 settings_use_subpath=انشاء ملف فرعى
 settings_various=اعدادات اخرى
 subfolder=مكان الملف الفرعى للتحميل
