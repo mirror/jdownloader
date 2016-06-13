@@ -168,6 +168,10 @@ public class PinterestCom extends PluginForHost {
             ext = default_extension;
         }
         filename = pin_id;
+        final String picture_description = getPictureDescription(link);
+        if (this.getPluginConfig().getBooleanProperty(ENABLE_DESCRIPTION_IN_FILENAMES, defaultENABLE_DESCRIPTION_IN_FILENAMES) && picture_description != null) {
+            filename += "_" + picture_description;
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -372,6 +376,10 @@ public class PinterestCom extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String getPictureDescription(final DownloadLink dl) {
+        return dl.getStringProperty("description", null);
     }
 
     @Override

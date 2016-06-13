@@ -220,9 +220,10 @@ public class VevoComDecrypter extends PluginForDecrypt {
                 final String url = (String) tempmap.get("url");
                 int version = 4;
                 int sourceType = 2;
-                if (versiono != null) {
-                    version = ((Number) versiono).intValue();
-                }
+                /* 2016-06-13: version is not needed anymore! */
+                // if (versiono != null) {
+                // version = ((Number) versiono).intValue();
+                // }
                 if (sourceTypeo != null) {
                     sourceType = ((Number) sourceTypeo).intValue();
                 } else {
@@ -246,7 +247,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
                 }
                 type_string = "version_" + version + "_type_" + sourceType;
 
-                if (sourceType == 2 && version == preferredVersion) {
+                if (sourceType == 2) {
                     final Regex finfo = new Regex(url, "(\\d+)x(\\d+)_([a-z0-9]+)_(\\d+)_([a-z0-9]+)_(\\d+)\\.mp4");
                     final String videoCodec = finfo.getMatch(2);
                     final String audioCodec = finfo.getMatch(4);
@@ -278,7 +279,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
                     fina.setLinkID(dupeid);
                     final String format = type_string + "_" + videobitrateint;
                     FOUNDQUALITIES.put(format, fina);
-                } else if (sourceType == 4 && version == preferredVersion) {
+                } else if (sourceType == 4) {
                     br.getPage(url);
                     // http://hls-lvl3.vevo.com/v3/hls/2014/09/GB89B1000240/5c5ed477-0a30-49e7-8e15-34b6df8d3b9d/5200/gb89b1000240_5200k_1920x1080_h264_5200_aac_128.m3u8
                     final String[] medias = br.getRegex("#EXT-X-STREAM-INF:(.*?\\.m3u8)").getColumn(-1);
@@ -288,9 +289,13 @@ public class VevoComDecrypter extends PluginForDecrypt {
                     final String hls_base = br.getBaseURL();
                     for (final String media : medias) {
                         final String m3u8_part = new Regex(media, "(\\d+/[A-Za-z0-9]+_\\d+k_\\d+x\\d+_[^<>\"]*?\\.m3u8)").getMatch(0);
+                        String directlink = new Regex(media, "(http.*?\\.m3u8)").getMatch(0);
+                        if (directlink == null) {
+                            directlink = hls_base + m3u8_part;
+                        }
                         final String hls_filename_part = new Regex(m3u8_part, "(_[0-9]{2,5}k_\\d+x\\d+_[a-z0-9]+_(\\d+)_.+)\\.m3u8$").getMatch(0);
+
                         final String videoBitrate = new Regex(hls_filename_part, "_\\d+k_\\d+x\\d+_[a-z0-9]+_(\\d+)_").getMatch(0);
-                        final String directlink = hls_base + m3u8_part;
                         final String final_filename = title + hls_filename_part + ".mp4";
                         final DownloadLink fina = createDloadlink();
                         fina.setAvailable(true);

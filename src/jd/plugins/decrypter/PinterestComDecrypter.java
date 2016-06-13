@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.uio.UIOManager;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -41,6 +38,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.uio.UIOManager;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/|resource/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -242,9 +242,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         dl.setProperty("source_url", source_url);
         dl.setProperty("username", username);
         dl.setProperty("decryptedfilename", filename);
-        dl.setName(filename);
+        dl.setName(filename + ".jpg");
         dl.setAvailable(true);
-        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
+        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         fp.add(dl);
         decryptedLinks.add(dl);
         distribute(dl);
@@ -293,9 +293,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             filename = encodeUnicode(filename);
 
             dl.setProperty("decryptedfilename", filename);
-            dl.setName(filename);
+            dl.setName(filename + ".jpg");
             dl.setAvailable(true);
-            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
+            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
             decryptedLinks.add(dl);
             distribute(dl);
         }

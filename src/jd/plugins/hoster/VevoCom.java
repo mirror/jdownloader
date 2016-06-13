@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -125,12 +124,7 @@ public class VevoCom extends PluginForHost {
         if (streamtype == streamtype_http) {
             URLConnectionAdapter con = null;
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(dllink);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
@@ -193,7 +187,7 @@ public class VevoCom extends PluginForHost {
 
     /*
      * 2nd way to get http streams: http://smilstream.vevo.com/HDFlash/v1/smil/<videoid>/<videoid>.smil
-     *
+     * 
      * Examplecode: http://bluecop-xbmc-repo.googlecode.com/svn-history/r383/trunk/plugin.video.vevo/default.py
      */
     private void downloadHTTP(final DownloadLink downloadLink) throws Exception {

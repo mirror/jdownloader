@@ -52,7 +52,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imgtwyti.com", "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com", "imageon.org", "gogoimage.org", "dimtus.com", "imagedecode.com", "imageontime.com", "imageteam.org", "fireimg.net" };
+        return new String[] { "imgtwyti.com", "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net", "shotimg.org", "adultimg.org", "imagehorse.com", "imageon.org", "gogoimage.org", "dimtus.com", "imagedecode.com", "imageontime.com", "imageteam.org", "fireimg.net", "imgadult.com" };
     }
 
     /**
@@ -117,6 +117,10 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
         /* general */
         if (br.containsHTML("imgContinue") || br.containsHTML("continue_to_image")) {
             br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
+        } else if (br.getHost().equals("imgadult.com")) {
+            /* Extra handling needed for this one ... */
+            br.postPage(br.getURL(), "cti=1&ref=-&rc=0&bt=0&bw=gecko");
+            br.getPage(br.getURL());
         }
     }
 
