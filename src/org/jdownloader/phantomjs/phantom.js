@@ -100,6 +100,12 @@ page.onResourceReceived = function(response) {
 };
 
 page.onInitialized = function() {
+	
+	
+	
+	
+	
+	
 	// Detect UA Sniffing
 	logger("Page Init");
 
@@ -173,6 +179,60 @@ page.onInitialized = function() {
 		console.log("DPJS Selftest Finished");
 
 	});
+	
+	
+	
+    page.evaluate(function() {
+
+        try {
+            window['document']['orgWrite'] = window['document']['write'];
+            window.document.write = function(){
+                for( var i=0; i < arguments.length; i++ )
+                {
+                    the_line_to_write = arguments[i];
+                    the_line_to_write = the_line_to_write.replace(/([\r\n]){2,}/g, "$1");
+                    console.log("SNIFF write: "+ the_line_to_write );
+                }
+                document.orgWrite.apply( document, arguments );
+            }
+        } catch (e) {
+            console.log( "Error. Substituting document.write. ");
+            console.log( e );
+        }
+
+        try {
+            window['document']['orgWriteLn'] = window['document']['writeln'];
+            window.document.writeln = function(){
+                for( var i=0; i < arguments.length; i++ )
+                {
+                    the_line_to_write = arguments[i];
+                    the_line_to_write = the_line_to_write.replace(/([\r\n]){2,}/g, "$1");
+                    console.log("SNIFF: writln. "+ the_line_to_write );
+                }
+                document.orgWriteLn.apply( document, arguments );
+            }
+
+        } catch (e) {
+            console.log( "Error. Substituting document.writeln. ");
+            console.log( e );
+        }
+
+        try {
+
+            window['orgEval'] = window['eval'];
+            window['eval'] = function(){
+                for( var i=0; i < arguments.length; i++ )
+                {
+                    console.log("SNIFF: "+ "EVAL:" + arguments[i] );
+                }
+                window['orgEval'].apply( window, arguments );
+            }
+
+        } catch (e) {
+            console.log( "Error. Substituting window.eval. ");
+            console.log( e );
+        }
+    });
 };
 page.onResourceRequested = function(requestData, networkRequest) {
 	requestID++;

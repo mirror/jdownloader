@@ -301,7 +301,12 @@ public class PhantomJS implements HttpRequestHandler {
 
         try {
             String id = request.getParameterbyKey("id");
-            if (Long.parseLong(id) != this.id) {
+            try {
+                if (Long.parseLong(id) != this.id) {
+                    return false;
+                }
+            } catch (Throwable e) {
+                // e.printStackTrace();
                 return false;
             }
             String path = request.getRequestedPath();
@@ -410,6 +415,8 @@ public class PhantomJS implements HttpRequestHandler {
         accessToken = new BigInteger(130, new SecureRandom()).toString(32);
 
         ipcBrowser = new Browser();
+        ipcBrowser.setVerbose(false);
+        ipcBrowser.setDebug(false);
         webCache = initWebCache();
         ipcBrowser.setProxySelector(new ProxySelectorInterface() {
             private ArrayList<HTTPProxy> lst = new ArrayList<HTTPProxy>();

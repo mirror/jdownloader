@@ -221,7 +221,9 @@ public class InstallThread extends Thread {
                 StatsManager.I().track("installing/result/" + new PhantomJS().isAvailable(), CollectionName.PJS);
                 installing = false;
                 file.delete();
-                Files.deleteRecursiv(extractTo);
+                if (extractTo.exists()) {
+                    Files.deleteRecursiv(extractTo);
+                }
             }
         } catch (Throwable e) {
             LogController.CL(false).log(e);
