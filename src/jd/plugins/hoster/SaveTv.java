@@ -1417,8 +1417,15 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public static String jsonGetBestQualityId(final ArrayList<Object> sourcelist) {
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
-        return Long.toString(jsonGetRecordingformatid(entries));
+        final String recordingformat;
+        if (sourcelist != null) {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
+            recordingformat = Long.toString(jsonGetRecordingformatid(entries));
+        } else {
+            /* Fallback */
+            recordingformat = Long.toString(API_FORMAT_HQ_L);
+        }
+        return recordingformat;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -1432,7 +1439,13 @@ public class SaveTv extends PluginForHost {
 
     public static long jsonGetRecordingformatid(final LinkedHashMap<String, Object> entries) {
         final long recordingformatid;
-        final Object recordingformatido = entries.get("RECORDINGFORMATID");
+        final Object recordingformatido;
+        if (entries != null) {
+            recordingformatido = entries.get("RECORDINGFORMATID");
+        } else {
+            /* Errorhandling */
+            recordingformatido = null;
+        }
         if (recordingformatido == null) {
             recordingformatid = API_FORMAT_HQ_L;
         } else if (recordingformatido instanceof Double) {

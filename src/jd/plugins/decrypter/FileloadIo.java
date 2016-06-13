@@ -42,7 +42,7 @@ public class FileloadIo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         jd.plugins.hoster.FileloadIo.prepBRAPI(this.br);
-        final String specific_file = new Regex(parameter, "https?://[^/]+/[A-Za-z0-9]+/(.+)").getMatch(0);
+        final String folder_url_part = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
         final String folderid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
         jd.plugins.hoster.FileloadIo.prepBRWebsite(this.br);
         /* Important: Access main-folder to find all free_download_fileids!! */
@@ -64,7 +64,7 @@ public class FileloadIo extends PluginForDecrypt {
         }
 
         int counter = 0;
-        br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folderid);
+        br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folder_url_part);
         LinkedHashMap<String, Object> entries = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         if (ressourcelist.size() == 0) {
@@ -83,6 +83,7 @@ public class FileloadIo extends PluginForDecrypt {
             final String status = (String) entries.get("status");
             final String content_url = (String) entries.get("link_single");
             final long filesize = DummyScriptEnginePlugin.toLong(entries.get("filesize_bytes"), 0);
+            final String sha1 = (String) entries.get("sha1");
 
             final String link = "https://fileloaddecrypted.io/" + folderid + "/s/" + linkid;
             final String internal_linkid = folderid + "_" + linkid;
@@ -105,14 +106,10 @@ public class FileloadIo extends PluginForDecrypt {
             if (content_url != null) {
                 dl.setContentUrl(content_url);
             }
-            if (specific_file != null && specific_file.equals(filename)) {
-                /* Only add specific file of complete folder */
-                decryptedLinks.clear();
-                decryptedLinks.add(dl);
-                break;
-            } else {
-                decryptedLinks.add(dl);
+            if (sha1 != null) {
+                dl.setSha1Hash(sha1);
             }
+            decryptedLinks.add(dl);
             counter++;
         }
 

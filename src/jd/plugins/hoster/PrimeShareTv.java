@@ -43,7 +43,8 @@ public class PrimeShareTv extends PluginForHost {
         return "http://primeshare.tv/help/terms";
     }
 
-    private static final String AGENT = RandomUserAgent.generate();
+    private static final String AGENT                  = RandomUserAgent.generate();
+    private static final long   MINIMUM_FILESIZE_BYTES = 100;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -56,9 +57,14 @@ public class PrimeShareTv extends PluginForHost {
         if (br.containsHTML("(>File not exist<|>The file you have requested does not)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex info = br.getRegex("<h1>(Watch|Download)\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)(\\[\\.\\.\\.\\])?\\)\\&nbsp;<strong>\\((.*?)\\)</strong></h1>");
+        Regex info = br.getRegex("<h1>(Watch|Download)\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)(\\[\\.\\.\\.\\])?\\)\\&nbsp;<strong>\\((.*?)\\)</strong></h1>");
         String filename = info.getMatch(1);
-        final String filesize = info.getMatch(3);
+        String filesize = info.getMatch(3);
+        if (filename == null || filesize == null) {
+            info = br.getRegex("<h1>([^<>\"]+)<strong>\\(([^<>\"]+)\\)</strong></h1>");
+            filename = info.getMatch(0);
+            filesize = info.getMatch(1);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -77,6 +83,9 @@ public class PrimeShareTv extends PluginForHost {
         /* Server-filename might again be a crippled filename so let's use our fixed filename as final filename! */
         link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (link.getDownloadSize() < MINIMUM_FILESIZE_BYTES) {
+            link.getLinkStatus().setStatusText("This file is potentially not downloadable!");
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -111,8 +120,8 @@ public class PrimeShareTv extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.getConnection().getLongContentLength() < 100) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - File is too small (Below 100 bytes)");
+        if (dl.getConnection().getLongContentLength() < MINIMUM_FILESIZE_BYTES) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - File is too small (Below " + MINIMUM_FILESIZE_BYTES + " bytes)");
         }
         /* Do NOT use Header-filename as we might get slightly crippled filenames! */
         // downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
