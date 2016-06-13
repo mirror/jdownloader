@@ -78,26 +78,29 @@ public class FileloadIo extends PluginForDecrypt {
                 break;
             }
             entries = (LinkedHashMap<String, Object>) linko;
-            final String linkid = free_download_fileids[counter];
+            final String free_download_fileid;
+            if (free_download_fileids != null && counter <= free_download_fileids.length - 1) {
+                free_download_fileid = free_download_fileids[counter];
+            } else {
+                /* Free download impossible or our website handling/RegEx above failed ... */
+                free_download_fileid = null;
+            }
             final String filename = (String) entries.get("filename");
             final String status = (String) entries.get("status");
             final String content_url = (String) entries.get("link_single");
             final long filesize = DummyScriptEnginePlugin.toLong(entries.get("filesize_bytes"), 0);
             final String sha1 = (String) entries.get("sha1");
 
-            final String link = "https://fileloaddecrypted.io/" + folderid + "/s/" + linkid;
-            final String internal_linkid = folderid + "_" + linkid;
-            final DownloadLink dl = createDownloadlink(link);
-            /* No single links aavailable for users! */
-            dl.setContentUrl(parameter);
-            if (filename != null) {
-                dl.setFinalFileName(filename);
-                dl.setProperty("directfilename", filename);
-            } else {
-                dl.setName(linkid);
+            if (filename == null || content_url == null) {
+                continue;
             }
+
+            final DownloadLink dl = createDownloadlink(content_url.replace("fileload.io/", "fileloaddecrypted.io/"));
+            dl.setContentUrl(content_url);
+            dl.setFinalFileName(filename);
+            dl.setProperty("directfilename", filename);
             dl.setDownloadSize(filesize);
-            dl.setLinkID(internal_linkid);
+            dl.setLinkID(folderid + "/" + filename);
             if ("online".equalsIgnoreCase(status)) {
                 dl.setAvailable(true);
             } else {
@@ -108,6 +111,9 @@ public class FileloadIo extends PluginForDecrypt {
             }
             if (sha1 != null) {
                 dl.setSha1Hash(sha1);
+            }
+            if (free_download_fileid != null) {
+                dl.setProperty("free_download_fileid", free_download_fileid);
             }
             decryptedLinks.add(dl);
             counter++;

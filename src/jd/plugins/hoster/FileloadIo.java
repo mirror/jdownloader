@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileloaddecrypted\\.io/[A-Za-z0-9]+/s/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileloaddecrypted\\.io/[A-Za-z0-9]+/[^/]+" }, flags = { 2 })
 public class FileloadIo extends PluginForHost {
 
     public FileloadIo(PluginWrapper wrapper) {
@@ -91,7 +91,11 @@ public class FileloadIo extends PluginForHost {
         dllink = null;
         server_issues = false;
         folderid = getFolderid(link.getDownloadURL());
-        linkid = getLinkid(link.getDownloadURL());
+        linkid = getFreeLinkid(link);
+        if (folderid == null) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBRAPI(this.br);
@@ -148,8 +152,14 @@ public class FileloadIo extends PluginForHost {
         return new Regex(url, "fileload\\.io/([A-Za-z0-9]+)").getMatch(0);
     }
 
-    private String getLinkid(final String url) {
-        return new Regex(url, "(\\d+)$").getMatch(0);
+    @SuppressWarnings("deprecation")
+    private String getFreeLinkid(final DownloadLink dl) {
+        String free_linkid = dl.getStringProperty("free_download_fileid", null);
+        if (free_linkid == null) {
+            /* Fallback/Old handling - until 2016-06-13, linkid was RegExed out of downloadurl */
+            free_linkid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        }
+        return free_linkid;
     }
 
     @Override
@@ -159,14 +169,16 @@ public class FileloadIo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        this.br = prepBRWebsite(new Browser());
         getDllinkWebsite();
         /* Website */
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        if (dllink == null) {
+        if (dllink == null || !dllink.startsWith("http")) {
             dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (dllink == null) {
+                handleErrorsAPI();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -332,8 +344,11 @@ public class FileloadIo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (status != null) {
             if (status.equalsIgnoreCase("You have used up your free quota! Please try again later.")) {
-                /* Only for free(account) download. */
+                /* Only for free(account) download as far as I know. */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            } else if (status.equalsIgnoreCase("unavailable")) {
+                /* Only for free(account) download as far as I know. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at the moment");
             }
         }
     }
