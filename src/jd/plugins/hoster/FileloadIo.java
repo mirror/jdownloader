@@ -55,7 +55,6 @@ public class FileloadIo extends PluginForHost {
     private final boolean       FREE_RESUME                  = true;
     private final int           FREE_MAXCHUNKS               = 1;
     private final int           FREE_MAXDOWNLOADS            = 1;
-    private final boolean       USE_API_LINKCHECK            = true;
     private final boolean       ACCOUNT_FREE_RESUME          = true;
     private final int           ACCOUNT_FREE_MAXCHUNKS       = -2;
     private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 1;
@@ -91,48 +90,40 @@ public class FileloadIo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         folderid = getFolderid(link.getDownloadURL());
         linkid = getLinkid(link.getDownloadURL());
-        if (USE_API_LINKCHECK) {
-            /* TODO: Implement this! */
-            prepBRAPI(this.br);
-        } else {
-            /* First let's see if the main folder is still online! */
-            if (getFilenameProperty(link) == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            this.br.getPage("https://" + this.getHost() + "/" + folderid);
-            if (mainlinkIsOffline(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Main folder is online --> Check if the individual file is downloadable */
-            /* Skip that pre-download-step as it does not help us in any way */
-            // this.br.getPage("/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid +
-            // "&download=false");
-            getDllinkWebsite();
-            URLConnectionAdapter con = null;
-            try {
-                /* Do NOT user HEAD connection here! */
-                con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                } else {
-                    server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        prepBRAPI(this.br);
+        final String folder_url_part = folderid + "/" + Encoding.urlEncode(getFilenameProperty(link));
+        br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folder_url_part);
+        final String error = PluginJSonUtils.getJson(this.br, "error");
+        if (error != null) {
+            /* E.g. "{"error":"unknown_transfer_id","action":"You must enter a valid transfer_id"}" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String sha1 = PluginJSonUtils.getJson(this.br, "");
+        final String filesize_bytes = PluginJSonUtils.getJson(this.br, "filesize_bytes");
+        final String status = PluginJSonUtils.getJson(this.br, "status");
+        if (filesize_bytes == null || status == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!"online".equalsIgnoreCase(status)) {
+            /* Double-check */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (sha1 != null) {
+            link.setSha1Hash(sha1);
+        }
+        link.setDownloadSize(Long.parseLong(filesize_bytes));
         return AvailableStatus.TRUE;
     }
 
     private void getDllinkWebsite() throws IOException, PluginException {
+        if (linkid == null) {
+            /* Premiumonly */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         this.br.getPage("https://" + this.getHost() + "/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid + "&download=true");
         final String status = PluginJSonUtils.getJson(this.br, "status");
         if ("too_many_requests".equalsIgnoreCase(status)) {
@@ -161,7 +152,6 @@ public class FileloadIo extends PluginForHost {
         return new Regex(url, "(\\d+)$").getMatch(0);
     }
 
-    /** TODO: 2016-06-02: Fix free mode!! */
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -169,14 +159,10 @@ public class FileloadIo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (USE_API_LINKCHECK) {
-            /* API */
-            getDllinkWebsite();
-        } else {
-            /* Website */
-            if (server_issues) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-            }
+        getDllinkWebsite();
+        /* Website */
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         if (dllink == null) {
             dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -278,7 +264,6 @@ public class FileloadIo extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        /* TODO: Set Free + Premium limits once they are available serverside */
         final boolean isPremium = "1".equals(PluginJSonUtils.getJson(this.br, "premium"));
         if (!isPremium) {
             account.setType(AccountType.FREE);
@@ -315,14 +300,7 @@ public class FileloadIo extends PluginForHost {
         if (dllink == null) {
             br.getPage(API_BASE + "download/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(getFilenameProperty(link)));
             dllink = PluginJSonUtils.getJson(this.br, "download_link");
-
-            /* TODO: Try to find a way to get the sha1 hash for unregistered users too! */
-            final String sha1 = PluginJSonUtils.getJson(this.br, "sha1");
-            if (sha1 != null) {
-                link.setSha1Hash(sha1);
-            }
-
-            if (dllink == null) {
+            if (dllink == null || !dllink.startsWith("http")) {
                 handleErrorsAPI();
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -345,12 +323,18 @@ public class FileloadIo extends PluginForHost {
 
     private void handleErrorsAPI() throws PluginException {
         final String error = PluginJSonUtils.getJson(this.br, "error");
+        final String status = PluginJSonUtils.getJson(this.br, "status");
         if (error != null) {
-            if (error.equals("file_not_found")) {
+            if (error.equalsIgnoreCase("file_not_found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.warning("Unknown API error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (status != null) {
+            if (status.equalsIgnoreCase("You have used up your free quota! Please try again later.")) {
+                /* Only for free(account) download. */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
         }
     }
 
