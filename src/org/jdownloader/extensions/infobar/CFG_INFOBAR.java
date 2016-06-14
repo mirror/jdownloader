@@ -18,6 +18,8 @@ public class CFG_INFOBAR {
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
 
+    public static final BooleanKeyHandler             WINDOW_VISIBLE        = SH.getKeyHandler("WindowVisible", BooleanKeyHandler.class);
+
     public static final BooleanKeyHandler             DRAG_AND_DROP_ENABLED = SH.getKeyHandler("DragAndDropEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler             FRESH_INSTALL         = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
@@ -29,5 +31,4 @@ public class CFG_INFOBAR {
 
     public static final BooleanKeyHandler             ENABLED               = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler             GUI_ENABLED           = SH.getKeyHandler("GuiEnabled", BooleanKeyHandler.class);
 }

@@ -5520,6 +5520,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add Links to JDownloader just by putting Linklist files (*.crawljob) in a special folder on your harddisk." })
     String ExtensionController_initUninstalledExtensions_FolderWatchExtension_description();
 
+    @Default(lngs = { "en" }, values = { "Info Bar" })
+    String ExtensionController_initUninstalledExtensions_INFOBAR();
+
+    @Default(lngs = { "en" }, values = { "Show a tiny transparent overlay window that can be used to check the Download status or to drop links." })
+    String ExtensionController_initUninstalledExtensions_INFOBAR_description();
+
     @Default(lngs = { "en" }, values = { "Scheduler" })
     String ExtensionController_initUninstalledExtensions_SchedulerExtension();
 
