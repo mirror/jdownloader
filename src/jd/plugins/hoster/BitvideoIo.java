@@ -77,6 +77,7 @@ public class BitvideoIo extends PluginForHost {
                 filename = url_filename;
             }
         }
+        String dllink_temp = null;
         final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
         final String json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
         if (json_source != null) {
@@ -88,10 +89,18 @@ public class BitvideoIo extends PluginForHost {
             for (final Object videoo : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) videoo;
                 tempquality = (String) entries.get("label");
-                tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)").getMatch(0));
-                if (tempvalue > maxvalue) {
-                    maxvalue = tempvalue;
-                    dllink = (String) entries.get("file");
+                dllink_temp = (String) entries.get("file");
+                if ("Source File".equalsIgnoreCase(tempquality)) {
+                    /* That IS the highest quality */
+                    dllink = dllink_temp;
+                    break;
+                } else {
+                    /* Look for the highest quality! */
+                    tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)").getMatch(0));
+                    if (tempvalue > maxvalue) {
+                        maxvalue = tempvalue;
+                        dllink = dllink_temp;
+                    }
                 }
             }
         }

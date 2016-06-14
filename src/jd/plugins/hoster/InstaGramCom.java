@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,6 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 
@@ -48,6 +51,7 @@ public class InstaGramCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium(MAINPAGE + "/accounts/login/");
     }
 
@@ -64,16 +68,19 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean RESUME             = true;
+    private static final boolean RESUME                            = true;
     /* Chunkload makes no sense for pictures/small files */
-    private static final int     MAXCHUNKS_pictures = 1;
-    private static final int     MAXCHUNKS_videos   = 0;
-    private static final int     MAXDOWNLOADS       = -1;
+    private static final int     MAXCHUNKS_pictures                = 1;
+    private static final int     MAXCHUNKS_videos                  = 0;
+    private static final int     MAXDOWNLOADS                      = -1;
 
-    private static final String  MAINPAGE           = "https://www.instagram.com";
-    private static Object        LOCK               = new Object();
+    private static final String  MAINPAGE                          = "https://www.instagram.com";
+    public static final String   QUIT_ON_RATE_LIMIT_REACHED        = "QUIT_ON_RATE_LIMIT_REACHED";
+    public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED = false;
 
-    private boolean              is_private_url     = false;
+    private static Object        LOCK                              = new Object();
+
+    private boolean              is_private_url                    = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -276,6 +283,10 @@ public class InstaGramCom extends PluginForHost {
         br.setRequestIntervalLimit("instagram.com", 250);
         br.setFollowRedirects(true);
         return br;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, JDL.L("plugins.hoster.InstaGramCom.quitOnRateLimitReached", "Abort crawl process once rate limit is reached?")).setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
     }
 
     @Override

@@ -27,6 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileload\\.io/[A-Za-z0-9]+(/[^/]+)?" }, flags = { 0 })
@@ -57,14 +58,17 @@ public class FileloadIo extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        /* Find ids needed for free download */
         final String[] free_download_fileids = br.getRegex("data\\-fileid=\"(\\d+)\"").getColumn(0);
-        if (free_download_fileids == null || free_download_fileids.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
 
         int counter = 0;
         br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folder_url_part);
+        final String error = PluginJSonUtils.getJson(this.br, "error");
+        if (error != null) {
+            logger.info("Folder seems to be offline for reason: " + error);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         LinkedHashMap<String, Object> entries = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         if (ressourcelist.size() == 0) {
@@ -73,7 +77,7 @@ public class FileloadIo extends PluginForDecrypt {
             return decryptedLinks;
         }
         for (final Object linko : ressourcelist) {
-            if (counter > free_download_fileids.length - 1) {
+            if (counter > ressourcelist.size() - 1) {
                 /* Last element of API-array is .zip for complete folder --> Ignore that! */
                 break;
             }
