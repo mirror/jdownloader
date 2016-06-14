@@ -16,6 +16,11 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -31,11 +36,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends antiDDoSForHost {
@@ -156,7 +156,7 @@ public class OBoomCom extends antiDDoSForHost {
                     if (account.getPass() == null || account.getPass().trim().length() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    getPage("https://www.oboom.com/1.0/login?auth=" + Encoding.urlEncode(account.getUser()) + "&pass=" + PBKDF2Key(account.getPass()) + "&source=" + APPID);
+                    getPage("https://www.oboom.com/1/login?auth=" + Encoding.urlEncode(account.getUser()) + "&pass=" + PBKDF2Key(account.getPass()) + "&source=" + APPID);
                     final String response = br.toString();
                     if (br.containsHTML("400,\"Invalid Login") || !response.startsWith("[200")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -236,7 +236,7 @@ public class OBoomCom extends antiDDoSForHost {
                 Map<String, String> infos = GUESTSESSION.get(guestIP);
                 if (infos == null || forceNew || forceNewIfSession != null && forceNewIfSession.equals(infos.get("guestSession"))) {
                     br.setFollowRedirects(true);
-                    getPage("https://www.oboom.com/1.0/guestsession?source=" + APPID);
+                    getPage("https://www.oboom.com/1/guestsession?source=" + APPID);
                     String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
                     if (guestSession == null) {
                         if (br.containsHTML("<h1>OBOOM.com is currently under heavy attack</h1>")) {
@@ -283,7 +283,7 @@ public class OBoomCom extends antiDDoSForHost {
                 sb.append(id);
             }
             br.setReadTimeout(60 * 1000);
-            getPage("https://api.oboom.com/1.0/info?items=" + sb.toString() + "&http_errors=0&with_ref_token=true");
+            getPage("https://api.oboom.com/1/info?items=" + sb.toString() + "&http_errors=0&with_ref_token=true");
             final String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
             if (fileInfos != null) {
                 for (String fileInfo : fileInfos) {
@@ -336,10 +336,10 @@ public class OBoomCom extends antiDDoSForHost {
         final String response;
         final String ID = getFileID(link);
         if (session != null) {
-            getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + ID + "&http_errors=0&with_ref_token=true");
+            getPage("https://api.oboom.com/1/info?token=" + session + "&items=" + ID + "&http_errors=0&with_ref_token=true");
             response = br.toString();
         } else {
-            getPage("https://api.oboom.com/1.0/info?items=" + ID + "&http_errors=0&with_ref_token=true");
+            getPage("https://api.oboom.com/1/info?items=" + ID + "&http_errors=0&with_ref_token=true");
             response = br.toString();
         }
 
@@ -388,7 +388,7 @@ public class OBoomCom extends antiDDoSForHost {
             refreshTokenHandling(usedInfos, account, freshInfos);
         }
         final String ID = getFileID(link);
-        getPage("https://api.oboom.com/1.0/dl?token=" + usedInfos.get("session") + "&item=" + ID + "&http_errors=0");
+        getPage("https://api.oboom.com/1/dl?token=" + usedInfos.get("session") + "&item=" + ID + "&http_errors=0");
         downloadErrorHandling(account);
         /* Handling for possible error 400 */
         refreshTokenHandling(usedInfos, account, freshInfos);
@@ -400,7 +400,7 @@ public class OBoomCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error: " + br.toString());
             }
         }
-        String url = "http://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
+        String url = "http://" + urlInfos[0] + "/1/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
@@ -447,10 +447,10 @@ public class OBoomCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-         * account != null &&
-         */
-                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+             * account != null &&
+             */
+        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }
@@ -593,7 +593,7 @@ public class OBoomCom extends antiDDoSForHost {
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String code = getCaptchaCode("recaptcha", cf, link);
-                getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
+                getPage("https://www.oboom.com/1/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
                 if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
                     continue;
                 }
@@ -629,13 +629,13 @@ public class OBoomCom extends antiDDoSForHost {
 
             }
             sleep(30 * 1000l, link);
-            getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
+            getPage("https://api.oboom.com/1/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
             downloadErrorHandling(account);
             urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
             if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
+            dllink = "http://" + urlInfos[0] + "/1/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
