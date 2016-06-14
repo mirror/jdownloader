@@ -28,6 +28,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,12 +55,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends antiDDoSForHost {
@@ -107,6 +108,8 @@ public class RealDebridCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+
+        showDOWNMessage();
         prepBrowser(br);
         URLConnectionAdapter con = null;
         try {
@@ -154,6 +157,7 @@ public class RealDebridCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        showDOWNMessage();
         final AvailableStatus status = requestFileInformation(downloadLink);
         if (AvailableStatus.UNCHECKABLE.equals(status)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
@@ -178,6 +182,7 @@ public class RealDebridCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        showDOWNMessage();
         login(account, false);
         showMessage(link, "Task 1: Check URL validity!");
         final AvailableStatus status = requestFileInformation(link);
@@ -378,7 +383,7 @@ public class RealDebridCom extends antiDDoSForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
+        showDOWNMessage();
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -592,6 +597,13 @@ public class RealDebridCom extends antiDDoSForHost {
         }
     }
 
+    protected void showDOWNMessage() throws PluginException {
+        if (true) {
+            UIOManager.I().showErrorMessage("UUuups!\r\nJDownloader does not support Real-Debrid.com to date.\r\nUnfortunately Real-Debrid.com shut down the API we used and we have to rewrite the plugin.\r\nWe are sorry for any inconvenience and will try to fix the plugin as soon as possible.\r\n\r\n--Best, your JDownloader Team");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
     private void errNoHosterTrafficLeft(Account acc, DownloadLink link) throws Exception {
         logger.info("You have run out of download quota for this hoster");
         tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
@@ -605,6 +617,7 @@ public class RealDebridCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        showDOWNMessage();
         AccountInfo ai = new AccountInfo();
         login(account, true);
         account.setValid(true);
