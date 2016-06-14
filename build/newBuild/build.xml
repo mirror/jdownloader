@@ -456,7 +456,7 @@
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
 		<buildAddon package="FolderWatch" include="folderwatchV2" />
-		<buildAddon package="InfoBar" include="infobar" />
+		<buildAddon package="infobar" include="infobar" />
 
 		<buildAddon package="JDShutdown" include="shutdown" />
 
