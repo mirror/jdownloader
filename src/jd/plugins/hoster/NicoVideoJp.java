@@ -178,6 +178,7 @@ public class NicoVideoJp extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
+        checkWatchableGeneral();
         String accessPOST = null;
         final String linkid_url = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
         /* Most of the times an account is needed to watch/download videos. */
@@ -270,6 +271,7 @@ public class NicoVideoJp extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        checkWatchableGeneral();
         /* Can happen if its not clear whether the video is private or offline */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -330,6 +332,13 @@ public class NicoVideoJp extends PluginForHost {
         } finally {
             /* remove download slot */
             controlPremium(-1);
+        }
+    }
+
+    /* Checks if a video is watch-/downloadable, works for logged in- and unregistered users. */
+    private void checkWatchableGeneral() throws PluginException {
+        if (this.br.containsHTML(">Unable to play video|>You can view this video by join")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
     }
 

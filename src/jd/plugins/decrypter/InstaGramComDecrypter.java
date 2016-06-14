@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -82,6 +83,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username_url);
 
+        final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
         String nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
         final String maxid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
         ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
@@ -121,6 +123,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
                     br = this.br.cloneBrowser();
                     if (retrycounter > 1) {
+                        if (abort_on_rate_limit_reached) {
+                            logger.info("abort_on_rate_limit_reached setting active --> Rate limit has been reached --> Aborting");
+                            return decryptedLinks;
+                        }
                         /*
                          * Try to bypass rate-limit - usually kicks in after about 4000 items and it is bound to IP, not User-Agent or
                          * cookies! Also we need to continue with the cookies we got at the beginning otherwise we'll get a 403! Aftzer
