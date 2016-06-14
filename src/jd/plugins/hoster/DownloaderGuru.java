@@ -364,7 +364,7 @@ public class DownloaderGuru extends PluginForHost {
             this.br = prepBR(new Browser());
         }
         try {
-            this.br.getPage(API_ENDPOINT + "Login.aspx");
+            getAPISafe(API_ENDPOINT + "Login.aspx");
             Form loginform = this.br.getFormbyAction("./Login.aspx");
             if (loginform == null) {
                 loginform = this.br.getForm(0);
@@ -430,12 +430,6 @@ public class DownloaderGuru extends PluginForHost {
         updatestatuscode();
         handleAPIErrors(this.br);
     }
-
-    // private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-    // this.br.postPage(accesslink, postdata);
-    // updatestatuscode();
-    // handleAPIErrors(this.br);
-    // }
 
     /** Performs slight domain corrections. */
     private String correctHost(String host) {
