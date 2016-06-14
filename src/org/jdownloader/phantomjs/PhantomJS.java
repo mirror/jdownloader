@@ -28,6 +28,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -96,6 +97,16 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     public File getBinaryPath() {
+
+        String custom = JsonConfig.create(PhantomJSConfig.class).getCustomBinaryPath();
+        if (StringUtils.isNotEmpty(custom)) {
+            File ret = new File(custom);
+            if (ret.exists()) {
+                return ret;
+            } else {
+                logger.warning("Custom PhantomJS Binary not found: " + ret);
+            }
+        }
         final File exe;
         switch (CrossSystem.getOS().getFamily()) {
         case WINDOWS:

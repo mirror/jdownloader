@@ -26,6 +26,8 @@ import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
@@ -39,6 +41,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.utils.ImagePHash;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -420,7 +423,11 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             decs += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help_tile_selection(explain.get("tag"));
         }
         if (DYNAMIC.equalsIgnoreCase(challengeType) && !googleLoggedIn) {
-            JDGui.help(_GUI.T.phantomjs_recaptcha_google_account_title(), _GUI.T.phantomjs_recaptcha_google_account_msg(), new AbstractIcon(IconKey.ICON_OCR, 32));
+            if (Application.isHeadless()) {
+                UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_OK, _GUI.T.phantomjs_recaptcha_google_account_title(), _GUI.T.phantomjs_recaptcha_google_account_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI.T.lit_close()));
+            } else {
+                JDGui.help(_GUI.T.phantomjs_recaptcha_google_account_title(), _GUI.T.phantomjs_recaptcha_google_account_msg(), new AbstractIcon(IconKey.ICON_OCR, 32));
+            }
 
         }
         setExplain(decs);
