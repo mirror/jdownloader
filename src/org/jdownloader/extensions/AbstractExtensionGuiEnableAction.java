@@ -10,11 +10,11 @@ import org.appwork.storage.config.handler.KeyHandler;
 public abstract class AbstractExtensionGuiEnableAction<T extends AbstractExtension<?, ?>> extends AbstractExtensionAction<T> implements GenericConfigEventListener<Boolean> {
 
     /**
-     * 
+     *
      */
-    private static final long serialVersionUID = 1L;
+    private static final long   serialVersionUID = 1L;
 
-    private BooleanKeyHandler keyHandler;
+    protected BooleanKeyHandler keyHandler;
 
     public AbstractExtensionGuiEnableAction(BooleanKeyHandler guiEnabled) {
 

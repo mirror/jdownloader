@@ -9,10 +9,15 @@ import org.jdownloader.gui.IconKey;
 public class EnableInfoBarGuiAction extends AbstractExtensionGuiEnableAction<InfoBarExtension> {
 
     public EnableInfoBarGuiAction() {
-        super(CFG_INFOBAR.GUI_ENABLED);
+        super(CFG_INFOBAR.WINDOW_VISIBLE);
         setName(T.T.EnableInfoBarGuiAction());
         setIconKey(IconKey.ICON_INFO);
 
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        keyHandler.setValue(isSelected());
     }
 
     public void setSelected(final boolean selected) {
@@ -25,12 +30,6 @@ public class EnableInfoBarGuiAction extends AbstractExtensionGuiEnableAction<Inf
             setTooltipText(_getExtension().getTranslation().InfoBarGuiToggleAction_deselected_tt());
         }
 
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-
-        _getExtension().setGuiEnable(isSelected());
     }
 
 }

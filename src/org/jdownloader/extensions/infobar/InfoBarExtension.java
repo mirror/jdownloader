@@ -1,6 +1,8 @@
 package org.jdownloader.extensions.infobar;
 
-import org.appwork.utils.Application;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -21,7 +23,7 @@ import org.jdownloader.logging.LogController;
 import jd.SecondLevelLaunch;
 import jd.plugins.AddonPanel;
 
-public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> implements MenuExtenderHandler {
+public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> implements MenuExtenderHandler, GenericConfigEventListener<Boolean> {
 
     @Override
     public boolean isDefaultEnabled() {
@@ -65,6 +67,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             }
         }
         getSettings().setGuiEnabled(b);
+
     }
 
     @Override
@@ -77,6 +80,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
         if (infoDialog != null) {
             infoDialog.hideDialog();
         }
+        CFG_INFOBAR.WINDOW_VISIBLE.getEventSender().removeListener(this);
         MenuManagerMainmenu.getInstance().unregisterExtender(this);
         MenuManagerMainToolbar.getInstance().unregisterExtender(this);
     }
@@ -92,27 +96,12 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             throw new StartException("Not available in Headless Mode");
         }
         LogController.CL().info("InfoBar: OK");
-        if (!Application.isHeadless()) {
-            MenuManagerMainmenu.getInstance().registerExtender(this);
-            MenuManagerMainToolbar.getInstance().registerExtender(this);
-        }
-        if (CFG_INFOBAR.GUI_ENABLED.isEnabled()) {
-            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-                @Override
-                public void run() {
-                    new EDTRunner() {
+        MenuManagerMainmenu.getInstance().registerExtender(this);
+        MenuManagerMainToolbar.getInstance().registerExtender(this);
 
-                        @Override
-                        protected void runInEDT() {
-                            setGuiEnable(true);
-
-                        }
-
-                    };
-                }
-            });
-        }
+        CFG_INFOBAR.WINDOW_VISIBLE.getEventSender().addListener(this, true);
+        onConfigValueModified(null, null);
     }
 
     @Override
@@ -157,6 +146,31 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     protected void initExtension() throws StartException {
 
         configPanel = new InfoBarConfigPanel(this);
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        setGuiEnable(CFG_INFOBAR.WINDOW_VISIBLE.isEnabled());
+
+                    }
+
+                };
+            }
+        });
+
     }
 
 }
