@@ -1,3 +1,8 @@
+EnableInfoBarGuiAction=Exibir Barra de Informações
+InfoBarGuiToggleAction_deselected=Abrir a Barra de Informações
+InfoBarGuiToggleAction_deselected_tt=Abre a Barra de Informações
+InfoBarGuiToggleAction_selected=Fechar a Barra de Informações
+InfoBarGuiToggleAction_selected_tt=Fecha a Barra de Informações
 jd_plugins_optional_infobar_InfoDialog_help=Zona de Soltura
 jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Arraste URLs, Links ou arquivos DLC até aqui!
 jd_plugins_optional_infobar_InfoDialog_hideWindow=Ocultar Barra de Informações
