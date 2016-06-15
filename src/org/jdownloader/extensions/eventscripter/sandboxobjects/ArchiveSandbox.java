@@ -9,6 +9,7 @@ import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.ScriptThread;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 
@@ -79,8 +80,13 @@ public class ArchiveSandbox {
         return ArchiveType.RAR_MULTI.name();
     }
 
+    public String getExtractToFolder() {
+        return ExtractionExtension.getInstance().getFinalExtractToFolder(archive, false).toString();
+    }
+
     public String[] getExtractedFiles() {
         if (archive != null && archive.getExtractedFiles() != null && archive.getExtractedFiles().size() > 0) {
+
             final ArrayList<String> lst = new ArrayList<String>();
             for (final File s : archive.getExtractedFiles()) {
                 lst.add(s.getAbsolutePath());
@@ -102,6 +108,7 @@ public class ArchiveSandbox {
 
     public String getFolder() {
         if (archive != null) {
+
             return archive.getFolder().getAbsolutePath();
         } else {
             return null;
