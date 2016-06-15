@@ -61,8 +61,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-util.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-xml.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/proxyVole.jar" sourcepath="/ProxyVole"/>
-	<classpathentry kind="lib" path="ressourcen/libs/htmlunit-core-js.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaAluOxide.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueLight.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaClassy.jar"/>
@@ -76,5 +74,7 @@
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/svgSalamander.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/image4j.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/Filters.jar" sourcepath="ressourcen/code-ressourcen/Filter_src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/htmlunit-core-js.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
