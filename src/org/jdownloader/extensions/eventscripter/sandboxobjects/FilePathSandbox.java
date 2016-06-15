@@ -26,7 +26,8 @@ public class FilePathSandbox {
 
     public boolean exists() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("check if a filepath exists");
-        return file.exists();
+        boolean ret = file.exists();
+        return ret;
     }
 
     public boolean mkdirs() throws EnvironmentException {
@@ -62,7 +63,12 @@ public class FilePathSandbox {
 
         File dest = new File(folder);
         dest = new File(dest, file.getName());
-        return file.renameTo(dest);
+        boolean ret = file.renameTo(dest);
+        return ret;
+    }
+
+    public String getAbsolutePath() {
+        return file.getAbsolutePath();
     }
 
     @Override
