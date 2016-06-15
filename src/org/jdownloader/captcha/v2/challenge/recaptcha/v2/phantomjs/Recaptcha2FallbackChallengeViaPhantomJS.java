@@ -124,6 +124,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         if (this.logger == null) {
             this.logger = LOGGER;
         }
+
         this.load();
 
     }
