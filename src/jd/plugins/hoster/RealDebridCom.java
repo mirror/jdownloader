@@ -17,80 +17,977 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.SocketException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
-import org.appwork.uio.UIOManager;
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.CustomStorageName;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
+import jd.http.QueryInfo;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
-public class RealDebridCom extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+(\\.download)?\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
+public class RealDebridCom extends PluginForHost {
 
+    private static final String CLIENT_SECRET_KEY = "client_secret";
+    private static final String CLIENT_ID_KEY     = "client_id";
+    private static final String CLIENT_SECRET     = "CLIENT_SECRET";
+    private static final String TOKEN             = "TOKEN";
+
+    private static enum Errors {
+        INTERNAL(-1, "Internal error"),
+        MISSING_PARAMETER(1, "Missing parameter"),
+        BAD_PARAMETER_VALUE(2, "Bad parameter value"),
+        UNKNOWN_METHOD(3, "Unknown method"),
+        METHOD_NOT_ALLOWED(4, "Method not allowed"),
+        SLOW_DOWN(5, "Slow down"),
+        RESOURCE_UNREACHABLE(6, "Ressource unreachable"),
+        RESOURCE_NOT_FOUND(7, "Resource not found"),
+        BAD_TOKEN(8, "Bad token"),
+        PERMISSION_DENIED(9, "Permission denied"),
+        AUTH_PENDING(10, "Authorization pending"),
+        TWO_FACTOR_AUTH_REQUIRED(11, "Two-Factor authentication needed"),
+        TWO_FACTOR_AUTH_PENDING(12, "Two-Factor authentication pending"),
+        BAD_LOGIN(13, "Invalid login"),
+        ACCOUNT_LOCKED(14, "Account locked"),
+        ACCOUNT_NOT_ACTIVATED(15, "Account not activated"),
+        UNSUPPORTED_HOSTER(16, "Unsupported hoster"),
+        HOSTER_IN_MAINTENANCE(17, "Hoster in maintenance"),
+        HOSTER_LIMIT_REACHED(18, "Hoster limit reached"),
+        HOSTER_TEMP_UNAVAILABLE(19, "Hoster temporarily unavailable"),
+        HOSTER_PREMIUM_ONLY(20, "Hoster not available for free users"),
+        TOO_MANY_ACTIVE_DOWNLOADS(21, "Too many active downloads"),
+        IP_ADRESS_FORBIDDEN(22, "IP Address not allowed"),
+        TRAFFIC_EXHAUSTED(23, "Traffic exhausted"),
+        FILE_UNAVAILABLE(24, "File unavailable"),
+        SERVICE_UNAVAILABLE(25, "Service unavailable"),
+        UPLOAD_TOO_BIG(26, "Upload too big"),
+        UPLOAD_ERROR(27, "Upload error"),
+        FILE_NOT_ALLOWED(28, "File not allowed"),
+        TORRENT_TOO_BIG(29, "Torrent too big"),
+        TORRENT_FILE_INVALID(30, "Torrent file invalid"),
+
+        ACTION_ALREADY_DONE(31, "Action already done"),
+
+        IMAGE_RESOLUTION_ERROR(32, "Image resolution error"),
+        // DUmmy Code:
+        UNKNOWN(-99, "Unknown Error ID");
+        public static Errors getByCode(int id) {
+            for (Errors e : values()) {
+                if (id == e.code) {
+                    return e;
+                }
+            }
+            return UNKNOWN;
+        };
+
+        private int    code;
+        private String msg;
+
+        Errors(int code, String msg) {
+            this.code = code;
+            this.msg = msg;
+        }
+
+    }
+
+    private static final String AUTHORIZATION = "Authorization";
+
+    private static class Alternative implements Storable {
+
+        private String download;
+        private String filename;
+        private String id;
+
+        private String quality;
+
+        public String getDownload() {
+            return download;
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getQuality() {
+            return quality;
+        }
+
+        public void setDownload(String download) {
+            this.download = download;
+        }
+
+        public void setFilename(String filename) {
+            this.filename = filename;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setQuality(String quality) {
+            this.quality = quality;
+        }
+
+    }
+
+    private static class APIException extends Exception {
+
+        public APIException(Errors error, String msg) {
+            super(msg);
+            this.error = error;
+        }
+
+        private Errors error;
+
+        public Errors getError() {
+            return error;
+        }
+
+    }
+
+    private static class ClientSecret implements Storable {
+
+        private String client_id;
+
+        private String client_secret;
+
+        public ClientSecret(/* Storable */) {
+        }
+
+        public String getClient_id() {
+            return client_id;
+        }
+
+        public String getClient_secret() {
+            return client_secret;
+        }
+
+        public void setClient_id(String client_id) {
+            this.client_id = client_id;
+        }
+
+        public void setClient_secret(String client_secret) {
+            this.client_secret = client_secret;
+        }
+    }
+
+    private static class CodeResponse implements Storable {
+
+        private String device_code;
+
+        private int    expires_in;
+
+        private int    interval;
+
+        private String user_code;
+
+        private String verification_url;
+
+        public CodeResponse(/* Storable */) {
+        }
+
+        public String getDevice_code() {
+            return device_code;
+        }
+
+        public int getExpires_in() {
+            return expires_in;
+        }
+
+        public int getInterval() {
+            return interval;
+        }
+
+        public String getUser_code() {
+            return user_code;
+        }
+
+        public String getVerification_url() {
+            return verification_url;
+        }
+
+        public void setDevice_code(String device_code) {
+            this.device_code = device_code;
+        }
+
+        public void setExpires_in(int expires_in) {
+            this.expires_in = expires_in;
+        }
+
+        public void setInterval(int interval) {
+            this.interval = interval;
+        }
+
+        public void setUser_code(String user_code) {
+            this.user_code = user_code;
+        }
+
+        public void setVerification_url(String verification_url) {
+            this.verification_url = verification_url;
+        }
+    }
+
+    private static class ErrorResponse implements Storable {
+
+        private String error;
+
+        private int    error_code;
+
+        public ErrorResponse(/* Storable */) {
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public int getError_code() {
+            return error_code;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
+
+        public void setError_code(int error_code) {
+            this.error_code = error_code;
+        }
+    }
+
+    private static class HostsResponse implements Storable {
+
+        private String id;
+        private String image;
+
+        private String image_big;
+
+        private String name;
+
+        public HostsResponse(/* Storable */) {
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getImage() {
+            return image;
+        }
+
+        public String getImage_big() {
+            return image_big;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setImage(String image) {
+            this.image = image;
+        }
+
+        public void setImage_big(String image_big) {
+            this.image_big = image_big;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+    }
+
+    private static class TokenResponse implements Storable {
+
+        private String access_token;
+
+        private long   createTime = System.currentTimeMillis();
+
+        private int    expires_in;
+
+        private String refresh_token;
+        private String token_type;
+
+        public TokenResponse(/* Storable */) {
+        }
+
+        public String getAccess_token() {
+            return access_token;
+        }
+
+        public long getCreateTime() {
+            return createTime;
+        }
+
+        public int getExpires_in() {
+            return expires_in;
+        }
+
+        public String getRefresh_token() {
+            return refresh_token;
+        }
+
+        public String getToken_type() {
+            return token_type;
+        }
+
+        public void setAccess_token(String access_token) {
+            this.access_token = access_token;
+        }
+
+        public void setCreateTime(long createTime) {
+            this.createTime = createTime;
+        }
+
+        public void setExpires_in(int expires_in) {
+            this.expires_in = expires_in;
+        }
+
+        public void setRefresh_token(String refresh_token) {
+            this.refresh_token = refresh_token;
+        }
+
+        public void setToken_type(String token_type) {
+            this.token_type = token_type;
+        }
+
+        public boolean validate() {
+            return StringUtils.isNotEmpty(access_token) && StringUtils.isNotEmpty(refresh_token);
+        }
+
+    }
+
+    private static class UnrestrictLinkResponse implements Storable {
+
+        private ArrayList<Alternative> alternative;
+        private int                    chunks;
+        private int                    crc;
+        private String                 download;
+        private String                 filename;
+        private int                    filesize;
+
+        private String                 host;
+
+        private String                 id;
+
+        private String                 link;
+
+        private String                 quality;
+
+        private int                    streamable;
+
+        public ArrayList<Alternative> getAlternative() {
+            return alternative;
+        }
+
+        public int getChunks() {
+            return chunks;
+        }
+
+        public int getCrc() {
+            return crc;
+        }
+
+        public String getDownload() {
+            return download;
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public int getFilesize() {
+            return filesize;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getLink() {
+            return link;
+        }
+
+        public String getQuality() {
+            return quality;
+        }
+
+        public int getStreamable() {
+            return streamable;
+        }
+
+        public void setAlternative(ArrayList<Alternative> alternative) {
+            this.alternative = alternative;
+        }
+
+        public void setChunks(int chunks) {
+            this.chunks = chunks;
+        }
+
+        public void setCrc(int crc) {
+            this.crc = crc;
+        }
+
+        public void setDownload(String download) {
+            this.download = download;
+        }
+
+        public void setFilename(String filename) {
+            this.filename = filename;
+        }
+
+        public void setFilesize(int filesize) {
+            this.filesize = filesize;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setLink(String link) {
+            this.link = link;
+        }
+
+        public void setQuality(String quality) {
+            this.quality = quality;
+        }
+
+        public void setStreamable(int streamable) {
+            this.streamable = streamable;
+        }
+
+    }
+
+    private static class UserResponse implements Storable {
+
+        private String avatar;
+
+        private String email;
+        private String expiration;
+
+        private int    id;
+
+        private String locale;
+
+        private int    points;
+
+        private int    premium;
+
+        private String type;
+
+        private String username;
+
+        public UserResponse(/* Storable */) {
+        }
+
+        public String getAvatar() {
+            return avatar;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getExpiration() {
+            return expiration;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getLocale() {
+            return locale;
+        }
+
+        public int getPoints() {
+            return points;
+        }
+
+        public int getPremium() {
+            return premium;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setAvatar(String avatar) {
+            this.avatar = avatar;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public void setExpiration(String expiration) {
+            this.expiration = expiration;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public void setLocale(String locale) {
+            this.locale = locale;
+        }
+
+        public void setPoints(int points) {
+            this.points = points;
+        }
+
+        public void setPremium(int premium) {
+            this.premium = premium;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+    }
+
+    private static final String                            API                = "https://api.real-debrid.com";
+    private static final String                            CLIENT_ID          = "NJ26PAPGHWGZY";
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2 (but disabled with interfaceVersion 3)
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static Object                                  LOCK               = new Object();
+    private static AtomicInteger                           MAX_DOWNLOADS      = new AtomicInteger(Integer.MAX_VALUE);
+    private static AtomicInteger                           RUNNING_DOWNLOADS  = new AtomicInteger(0);
 
-    private final String                                   mName                 = "real-debrid.com";
-    private final String                                   mProt                 = "https://";
-    private int                                            maxChunks             = 0;
-    private final int                                      repeat                = 3;
-    private boolean                                        resumes               = true;
-    private boolean                                        swapped               = false;
-    private static Object                                  LOCK                  = new Object();
-    private static AtomicInteger                           RUNNING_DOWNLOADS     = new AtomicInteger(0);
-    private static AtomicInteger                           MAX_DOWNLOADS         = new AtomicInteger(Integer.MAX_VALUE);
-    private static final long                              UNKNOWN_ERROR_RETRY_1 = 50;
-    private static final long                              UNKNOWN_ERROR_RETRY_2 = 50;
-    private static final long                              UNKNOWN_ERROR_RETRY_3 = 20;
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap    = new HashMap<Account, HashMap<String, Long>>();
+    private int                                            maxChunks          = 0;
 
-    private final String                                   hash1                 = "23764902a26fbd6345d3cc3533d1d5eb";
-    private final String                                   hash2                 = "058c09bc934061efe763c4712649091f";
+    private final String                                   mName              = "real-debrid.com";
+
+    private final String                                   mProt              = "https://";
+
+    private Browser                                        apiBrowser;
+    private RealDebridConfigPanel                          panel;
+    private TokenResponse                                  token;
+    private Account                                        account;
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
-        setConfigElements();
+
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         Browser.setRequestIntervalLimitGlobal("rdb.so", 500);
         Browser.setRequestIntervalLimitGlobal("rdeb.io", 500);
     }
 
+    private <T> T callRestAPI(String method, QueryInfo query, TypeRef<T> type) throws Exception {
+        Request request;
+        ensureAPIBrowser();
+        login(account, false);
+        try {
+            return callRestAPIInternal(method, query, type);
+        } catch (APIException e) {
+            switch (e.getError()) {
+            case BAD_LOGIN:
+            case BAD_TOKEN:
+                // refresh Token
+
+                login(account, true);
+                return callRestAPIInternal(method, query, type);
+            default:
+                throw e;
+            }
+        }
+    }
+
+    protected <T> T callRestAPIInternal(String method, QueryInfo query, TypeRef<T> type) throws IOException, APIException {
+        Request request;
+        apiBrowser.getHeaders().put(AUTHORIZATION, "Bearer " + token.getAccess_token());
+
+        if (query != null) {
+            request = apiBrowser.createPostRequest("https://api.real-debrid.com/rest/1.0" + method, query);
+        } else {
+            request = apiBrowser.createGetRequest("https://api.real-debrid.com/rest/1.0" + method);
+        }
+        String json = apiBrowser.getPage(request);
+        if (request.getHttpConnection().getResponseCode() != 200) {
+            if (json.trim().startsWith("{")) {
+                ErrorResponse errorResponse = JSonStorage.restoreFromString(json, new TypeRef<ErrorResponse>(ErrorResponse.class) {
+                });
+                throw new APIException(Errors.getByCode(errorResponse.error_code), errorResponse.error);
+            } else {
+                throw new IOException("Unexpected Response: " + json);
+            }
+        }
+        return JSonStorage.restoreFromString(json, type);
+    }
+
+    private void ensureAPIBrowser() {
+        if (apiBrowser == null) {
+            apiBrowser = br.cloneBrowser();
+            for (int i = 200; i < 600; i++) {
+                apiBrowser.addAllowedResponseCodes(i);
+            }
+        }
+    }
+
+    private <T> T callRestAPI(String method, TypeRef<T> type) throws Exception {
+        return callRestAPI(method, null, type);
+
+    }
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (isDirectLink(downloadLink)) {
+            // generated links do not require an account to download
+            return true;
+        } else if (account == null) {
+            // no non account handleMultiHost support.
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        this.account = account;
+        login(account, true);
+        account.setError(null, null);
+        account.setConcurrentUsePossible(true);
+        account.setMaxSimultanDownloads(-1);
+
+        UserResponse user = callRestAPI("/user", new TypeRef<UserResponse>(UserResponse.class) {
+        });
+
+        ai.setValidUntil(TimeFormatter.getTimestampByGregorianTime(user.getExpiration()));
+
+        if ("premium".equalsIgnoreCase(user.getType())) {
+            ai.setStatus("Premium User");
+            account.setType(AccountType.PREMIUM);
+
+        } else {
+            account.setType(AccountType.FREE);
+
+            ai.setProperty("multiHostSupport", Property.NULL);
+            return ai;
+        }
+        HashMap<String, HostsResponse> hosts = callRestAPI("/hosts", new TypeRef<HashMap<String, HostsResponse>>() {
+        });
+
+        ArrayList<String> supportedHosts = new ArrayList<String>();
+        for (Entry<String, HostsResponse> es : hosts.entrySet()) {
+            if (StringUtils.isNotEmpty(es.getKey())) {
+                supportedHosts.add(es.getKey());
+            }
+
+        }
+        ai.setMultiHostSupport(this, supportedHosts);
+
+        return ai;
+    }
+
     @Override
     public String getAGBLink() {
         return mProt + mName + "/terms";
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
+    }
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, final Account account) {
+        return MAX_DOWNLOADS.get();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return MAX_DOWNLOADS.get();
+    }
+
+    private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
+        // real debrid connections are flakey at times! Do this instead of repeating download steps.
+
+        final String host = Browser.getHost(dllink);
+        final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+            @Override
+            public HashInfo getHashInfo() {
+
+                return super.getHashInfo();
+            }
+
+            @Override
+            public String getHost() {
+                return host;
+            }
+        };
+        final Browser br2 = br.cloneBrowser();
+        boolean increment = false;
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(dllink), true, maxChunks);
+            if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
+                /* content disposition, lets download it */
+                RUNNING_DOWNLOADS.incrementAndGet();
+                increment = true;
+                boolean ret = dl.startDownload();
+                if (ret && link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    // download is 100%
+                    return;
+                }
+
+            }
+
+        } finally {
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable t) {
+            }
+            if (increment && RUNNING_DOWNLOADS.decrementAndGet() == 0) {
+                MAX_DOWNLOADS.set(Integer.MAX_VALUE);
+            }
+        }
+
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        showMessage(link, "Task 1: Check URL validity!");
+        final AvailableStatus status = requestFileInformation(link);
+        if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+        }
+        showMessage(link, "Task 2: Download begins!");
+        handleDL(account, link, link.getPluginPatternMatcher());
+    }
+
+    @Override
+    public boolean hasConfig() {
+        return true;
+    }
+
+    /** no override to keep plugin compatible to old stable */
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        this.account = account;
+        try {
+            synchronized (hostUnavailableMap) {
+                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    Long lastUnavailable = unavailableMap.get(link.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        final long wait = lastUnavailable - System.currentTimeMillis();
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    } else if (lastUnavailable != null) {
+                        unavailableMap.remove(link.getHost());
+                        if (unavailableMap.size() == 0) {
+                            hostUnavailableMap.remove(account);
+                        }
+                    }
+                }
+            }
+
+            prepBrowser(br);
+            login(account, false);
+            showMessage(link, "Task 1: Generating Link");
+            /* request Download */
+            String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+            UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new QueryInfo().append("link", dllink, true).append("password", link.getStringProperty("pass", null), true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
+            });
+            maxChunks = linkresp.getChunks();
+            if (maxChunks == -1 || PluginJsonConfig.get(RealDebridComConfig.class).isIgnoreServerSideChunksNum()) {
+                maxChunks = 0;
+            } else {
+                maxChunks = -maxChunks;
+            }
+
+            String genLnk = linkresp.getDownload();
+
+            if (!genLnk.startsWith("http")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
+            }
+
+            showMessage(link, "Task 2: Download begins!");
+            try {
+                handleDL(account, link, genLnk);
+                return;
+            } catch (PluginException e1) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                if (br.containsHTML("An error occurr?ed while generating a premium link, please contact an Administrator")) {
+                    logger.info("Error while generating premium link, removing host from supported list");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                }
+                if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+
+                throw e1;
+            }
+        } catch (APIException e) {
+            switch (e.getError()) {
+
+            case HOSTER_TEMP_UNAVAILABLE:
+            case HOSTER_IN_MAINTENANCE:
+            case HOSTER_LIMIT_REACHED:
+            case HOSTER_PREMIUM_ONLY:
+                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
+                return;
+            default:
+                throw e;
+            }
+
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleFree(link);
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
+    private boolean isDirectLink(final DownloadLink downloadLink) {
+        if (downloadLink.getPluginPatternMatcher().matches(this.getLazyP().getPatternSource())) {
+            return true;
+        }
+        return false;
+    }
+
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            /** Load cookies */
+            if (!force) {
+                String tokenJSon = account.getStringProperty(TOKEN);
+                if (StringUtils.isNotEmpty(tokenJSon)) {
+                    TokenResponse token = JSonStorage.restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
+                    });
+                    // ensure that the token is at elast 5 minutes valid
+                    long expireTime = token.getExpires_in() * 1000 + token.getCreateTime();
+                    long now = System.currentTimeMillis();
+                    if ((expireTime - 5 * 60 * 1000l) > now) {
+
+                        this.token = token;
+
+                        return;
+                    }
+                }
+            }
+            TypeRef<ClientSecret> clientSecretType = new TypeRef<ClientSecret>(ClientSecret.class) {
+            };
+            // frist try refresh
+            String tokenJSon = account.getStringProperty(TOKEN);
+            String clientSecretJson = account.getStringProperty(CLIENT_SECRET);
+            if (StringUtils.isNotEmpty(tokenJSon) && StringUtils.isNotEmpty(clientSecretJson)) {
+                TokenResponse token = JSonStorage.restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
+                });
+                ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, clientSecretType);
+
+                String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new QueryInfo().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", token.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+                TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
+                });
+                if (newToken.validate()) {
+                    this.token = newToken;
+
+                    account.setProperty(TOKEN, JSonStorage.serializeToJson(newToken));
+                    return;
+                }
+
+            }
+            br.setCookiesExclusive(true);
+
+            prepBrowser(br);
+            br.clearCookies(API);
+            CodeResponse code = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes"), new TypeRef<CodeResponse>(CodeResponse.class) {
+            });
+            // TODO: CReate a oauth Challenge instead of doing this inapp
+            String verificationUrl = code.getVerification_url();
+            br.clearCookies(verificationUrl);
+            br.getPage(verificationUrl);
+            Form form = br.getFormbyAction("/device");
+            form.getInputField("usercode").setValue(code.getUser_code());
+            br.submitForm(form);
+            Form loginForm = br.getFormbyActionRegex("/authorize\\?.+");
+            loginForm.getInputField("p").setValue(account.getPass());
+            loginForm.getInputField("u").setValue(account.getUser());
+            br.submitForm(loginForm);
+            Form allow = br.getFormBySubmitvalue("Allow");
+            allow.setPreferredSubmit("Allow");
+            br.submitForm(allow);
+            //
+            ClientSecret clientSecret = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code())), clientSecretType);
+
+            String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new QueryInfo().append(CLIENT_ID_KEY, clientSecret.client_id, true).append(CLIENT_SECRET_KEY, clientSecret.client_secret, true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+            TokenResponse token = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
+            });
+            if (token.validate()) {
+                account.setProperty(TOKEN, JSonStorage.serializeToJson(token));
+                account.setProperty(CLIENT_SECRET, JSonStorage.serializeToJson(clientSecret));
+                this.token = token;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown Error", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     private Browser prepBrowser(Browser prepBr) {
@@ -108,8 +1005,6 @@ public class RealDebridCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
-
-        showDOWNMessage();
         prepBrowser(br);
         URLConnectionAdapter con = null;
         try {
@@ -136,227 +1031,88 @@ public class RealDebridCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (isDirectLink(downloadLink)) {
-            // generated links do not require an account to download
-            return true;
-        } else if (account == null) {
-            // no non account handleMultiHost support.
-            return false;
-        } else {
-            return true;
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+
+    }
+
+    @CustomStorageName("RealDebridCom")
+    public interface RealDebridComConfig extends PluginConfigInterface {
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        void setIgnoreServerSideChunksNum(boolean b);
+
+        boolean isIgnoreServerSideChunksNum();
+
+    }
+
+    @Override
+    public ConfigContainer getConfig() {
+        throw new WTFException("Not implemented");
+    }
+
+    @Override
+    public SubConfiguration getPluginConfig() {
+        throw new WTFException("Not implemented");
+    }
+
+    @Override
+    public Class<? extends ConfigInterface> getConfigInterface() {
+        return RealDebridComConfig.class;
+    }
+
+    // public void setConfigElements() {
+    // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IGNOREMAXCHUNKS, "Ignore max chunks set by
+    // real-debrid.com?").setDefaultValue(false));
+    // }
+    private static class RealDebridConfigPanel extends PluginConfigPanelNG {
+        private RealDebridComConfig cf;
+
+        public RealDebridConfigPanel() {
+            cf = PluginJsonConfig.get(RealDebridComConfig.class);
+
+            addPair("Ignore max chunks set by real-debrid.com?", null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("IgnoreServerSideChunksNum", BooleanKeyHandler.class), null));
+
         }
-    }
 
-    private boolean isDirectLink(final DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
-            return true;
-        }
-        return false;
-    }
+        @Override
+        public void reset() {
+            for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        showDOWNMessage();
-        final AvailableStatus status = requestFileInformation(downloadLink);
-        if (AvailableStatus.UNCHECKABLE.equals(status)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
-        }
-        handleDL(null, downloadLink, downloadLink.getDownloadURL());
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return MAX_DOWNLOADS.get();
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, final Account account) {
-        return MAX_DOWNLOADS.get();
-    }
-
-    @Override
-    public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.MULTIHOST };
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        showDOWNMessage();
-        login(account, false);
-        showMessage(link, "Task 1: Check URL validity!");
-        final AvailableStatus status = requestFileInformation(link);
-        if (AvailableStatus.UNCHECKABLE.equals(status)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
-        }
-        showMessage(link, "Task 2: Download begins!");
-        handleDL(account, link, link.getDownloadURL());
-    }
-
-    private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
-        // real debrid connections are flakey at times! Do this instead of repeating download steps.
-        for (int i = 0; i <= repeat; i++) {
-            final String host = Browser.getHost(dllink);
-            final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
-                @Override
-                public HashInfo getHashInfo() {
-                    if (swapped) {
-                        return null;
-                    }
-                    return super.getHashInfo();
-                }
+                m.setValue(m.getDefaultValue());
+            }
+            new EDTRunner() {
 
                 @Override
-                public String getHost() {
-                    return host;
+                protected void runInEDT() {
+                    updateContents();
                 }
             };
-            final Browser br2 = br.cloneBrowser();
-            boolean increment = false;
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(dllink), resumes, maxChunks);
-                if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
-                    /* content disposition, lets download it */
-                    RUNNING_DOWNLOADS.incrementAndGet();
-                    increment = true;
-                    boolean ret = dl.startDownload();
-                    if (ret && link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        // download is 100%
-                        break;
-                    }
-                    if (link.getLinkStatus().getErrorMessage().contains("Unexpected rangeheader format:")) {
-                        logger.warning("Bad Range Header! Resuming isn't possible without resetting");
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-
-                        // logger.warning("BAD HEADER RANGES!, auto resetting");
-                        // link.reset();
-                    }
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    br2.followConnection();
-                    // $.msgbox("You can not download this file because you have exceeded your traffic on this hoster !", {type: "error"});
-                    String msg = br2.getRegex("msgbox\\(\"([^\"]+)").getMatch(0);
-                    if (msg == null) {
-                        msg = br2.getRegex("<div class=\"alert alert-danger\">(.*?)</div>").getMatch(0);
-                    }
-                    if (msg != null) {
-                        link.getLinkStatus().setErrorMessage(msg);
-                        logger.info(msg);
-                        if (new Regex(msg, "You can not download this file because you already have download\\(s\\) currently downloading and this hoster is limited").matches()) {
-                            // You can not download this file because you already have download(s) currently downloading and this hoster is
-                            // limited.
-                            tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
-                        } else if (new Regex(msg, "You can not download this file because you have too many download\\(s\\) currently downloading").matches()) {
-                            // You can not download this file because you have too many download(s) currently downloading set upper max sim
-                            // dl ?
-                            errTooManySimCon(acc, link);
-                        } else if (new Regex(msg, "You can not download this file because you have exceeded your traffic on this hoster").matches()) {
-                            errNoHosterTrafficLeft(acc, link);
-                        } else if (new Regex(msg, "A Premium account for the hoster is missing or inactive").matches()) {
-                            // short retry?
-                            tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
-                        } else if (new Regex(msg, "The traffic of the Premium account for the hoster is exceeded").matches()) {
-                            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
-                        } else if (new Regex(msg, "An error occurr?ed while generating a premium link").matches()) {
-                            // An error occured while generating a premium link, please contact an Administrator with these following
-                            // informations :<br/><br/>Link: h<br/>Server: 31<br/>Code: 64i4u284w2v293333033", {type: "error"});
-                            // An error occured while generating a premium link, please contact an Administrator with these following
-                            // informations :<br/><br/>Link:<br/>Server: 31<br/>Code: 64i4u284w23383634237", {type: "error"});
-                            tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
-                        } else if (new Regex(msg, "An error occurr?ed while attempting to download the file").matches()) {
-                            // An error occured while attempting to download the file. Too many attempts, please contact an Administrator
-                            // with these following informations :
-                            // An error occured while attempting to download the file. Multiple "Location:" headers, please contact an
-                            // Administrator with these following informations : issue with THIS downloadlink, throw instantly to next
-                            // download routine. ** Using Jiaz new handling..
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                        } else if (new Regex(msg, "An error occurr?ed while read your file on the remote host").matches()) {
-                            // An error occured while read your file on the remote host ! Timeout of 90s exceeded !<br/>The download server
-                            // is down or ban from our server, please contact an Administrator with these following informations
-                            // :<br/><br/>Link:*****)
-                            // An error occured while read your file on the remote host ! Timeout of 15s exceeded (Passive FTP Mode) !
-                            // An error occured while read your file on the remote host ! Timeout of 15s exceeded (FTP Mode) !
-                            tempUnavailableHoster(acc, link, 15 * 60 * 60 * 1000l);
-                        } else if (new Regex(msg, "You are not allowed to download this file !<br/>Your current IP adress is").matches()) {
-                            // You are not allowed to download this file !<br/>Your current IP adress is:
-                            String l = "Dedicated server detected!";
-                            if (acc != null) {
-                                l += " Account Disabled!";
-                                logger.info(l);
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                            } else {
-                                // free dl, without an account (generated by the user)
-                                throw new PluginException(LinkStatus.ERROR_FATAL, l);
-                            }
-                        } else if (new Regex(msg, "You are not allowed to download this file !<br/>Your account is not Premium or your account is suspended\\.").matches()) {
-                            // You are not allowed to download this file !<br/>Your account is not Premium or your account is suspended.
-                            // so free account or suspended account...
-                            if (acc != null) {
-                                logger.info("Suspended Account!");
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                            } else {
-                                // handleFree :: no account in jd account manager.. could be copy paste someone else' generated link, or
-                                // manually import links, without an account
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Premium required, or Account has been disabled");
-                            }
-                        } else if (new Regex(msg, "You can not change your server manually on this hoster").matches()) {
-                            // as title says user changed the premium link server... would only happen if a user manually imports final
-                            // links!
-                            if (new Regex(link.getDownloadURL(), this.getLazyP().getPattern()).matches()) {
-                                // manually imported
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Premium required, or Account has been disabled");
-                            } else {
-                                // should never happen!
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                        } else {
-                            // unhandled error msg type!
-                            logger.warning("Please report this issue to JDownloader Development Team! 'msg doesn't match regex', unknown error type...");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    } else {
-                        // unhandled error!
-                        logger.warning("Please report this issue to JDownloader Development Team! 'msg == null', heeeeeeeeeeeello");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                } else {
-                    /* download is not content disposition. */
-                    br2.followConnection();
-                    if (br2.containsHTML("error\":11,")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    logger.info(this.getHost() + "Unknown Error3");
-                    int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown3", 0);
-                    link.getLinkStatus().setRetryCount(0);
-                    if (timesFailed <= UNKNOWN_ERROR_RETRY_3) {
-                        timesFailed++;
-                        link.setProperty("timesfailedrealdebridcom_unknown3", timesFailed);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error1");
-                    } else {
-                        link.setProperty("timesfailedrealdebridcom_unknown3", Property.NULL);
-                        logger.info(this.getHost() + ": Unknown error3 - disabling current host!");
-                        tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-                    }
-                }
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                } else if (e instanceof InterruptedException) {
-                    throw (InterruptedException) e;
-                }
-                logger.info("Download failed " + i + " of " + repeat);
-                sleep(3000, link);
-                LogSource.exception(logger, e);
-                continue;
-            } finally {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable t) {
-                }
-                if (increment && RUNNING_DOWNLOADS.decrementAndGet() == 0) {
-                    MAX_DOWNLOADS.set(Integer.MAX_VALUE);
-                }
-            }
         }
+
+        @Override
+        public void save() {
+        }
+
+        @Override
+        public void updateContents() {
+        }
+
+    }
+
+    @Override
+    public PluginConfigPanelNG createConfigPanel() {
+        if (panel == null) {
+            panel = new RealDebridConfigPanel();
+        }
+        return panel;
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
@@ -373,461 +1129,6 @@ public class RealDebridCom extends antiDDoSForHost {
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    private final String IGNOREMAXCHUNKS = "IGNOREMAXCHUNKS";
-
-    public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IGNOREMAXCHUNKS, "Ignore max chunks set by real-debrid.com?").setDefaultValue(false));
-    }
-
-    /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        showDOWNMessage();
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
-
-        // work around
-        if (link.getBooleanProperty("hasFailed", false)) {
-            final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
-            // nullify old storeables
-            link.setProperty("hasFailed", Property.NULL);
-            link.setProperty("hasFailedWait", Property.NULL);
-            sleep(hasFailedInt * 1001, link);
-        }
-
-        prepBrowser(br);
-        login(account, false);
-        showMessage(link, "Task 1: Generating Link");
-        /* request Download */
-        String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-        for (int retry = 0; retry < repeat; retry++) {
-            try {
-                if (retry != 0) {
-                    sleep(3000l, link);
-                }
-                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + ((link.getStringProperty("pass", null) != null ? "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : "")));
-                if (hash2.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-                    continue;
-                } else if (br.containsHTML("\"error\":4,")) {
-                    if (retry != 2) {
-                        if (dllink.contains("https://")) {
-                            dllink = dllink.replace("https://", "http://");
-                        } else {
-                            // not likely but lets try anyway.
-                            dllink = dllink.replace("http://", "https://");
-                        }
-                    } else {
-                        logger.warning("Problemo in the old corral");
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
-                    }
-                } else if (br.getHttpConnection().getResponseCode() == 504 || hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-                    if (retry == 2) {
-                        logger.warning(mName + " has problems! Repeated bad gateway!");
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
-                    }
-                    continue;
-                }
-                break;
-            } catch (SocketException e) {
-                if (retry == 2) {
-                    throw e;
-                }
-            }
-        }
-        if (hash2.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
-        // we only ever generate one link at a time, we don't need String[]
-        String genLnk = getJson("main_link");
-        final String chunks = getJson("max_chunks");
-        if (chunks != null) {
-            if ("-1".equals(chunks) || getPluginConfig().getBooleanProperty(IGNOREMAXCHUNKS, false)) {
-                maxChunks = 0;
-            } else if ("1".equals(chunks)) {
-                resumes = true;// 2016-05-31: why was it false?
-                maxChunks = 1;
-            } else {
-                maxChunks = -Integer.parseInt(chunks);
-            }
-        }
-        // switcheroonie
-        final String switcheroonie = getJson("swap");
-        if (switcheroonie != null) {
-            swapped = Boolean.parseBoolean(switcheroonie);
-            if (swapped) {
-                logger.info("Swapped file, do not trust fileSize");
-                link.setVerifiedFileSize(-1);
-            }
-        }
-        if (genLnk == null) {
-            if (br.containsHTML("\"error\":1,")) {
-                // from rd
-                // 1: Happy hours activated BUT the concerned hoster is not included => Upgrade to Premium to use it
-                logger.info("This Hoster isn't supported in Happy Hour!");
-                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("\"error\":2,")) {
-                // from rd
-                // 2: Free account, come back at happy hours
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "It's not happy hour, free account, you need premium!.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else if (br.containsHTML("\"error\":3,")) {
-                // {"error":3,"message":"Ein dedicated Server wurde erkannt, es ist dir nicht erlaubt Links zu generieren"}
-                // dedicated server is detected, it does not allow you to generate links
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Dedicated server detected, account disabled", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (br.containsHTML("\"error\":4,")) {
-                // {"error":4,"message":"This hoster is not included in our free offer"}
-                // {"error":4,"message":"Unsupported link format or unsupported hoster"}
-                logger.info("Unsupported link format or unsupported hoster");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            } else if (br.containsHTML("\"error\":5,")) {
-                // {"error":5,"message":"Non sei utente premium, puoi utilizzare il servizio premium gratuito solo durante la fascia oraria
-                // \"Happy Hours\". Aggiorna il tuo Account acquistando il servizio premium."}
-                /* no happy hour */
-                logger.info("It's not happy hour, free account, you need premium!.");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else if (br.containsHTML("error\":6,")) {
-                // {"error":6,"message":"Ihr Tages-Limit wurde erreicht."}
-                // {"error":6,"message":"Daily limit exceeded."}
-                errNoHosterTrafficLeft(account, link);
-            } else if (br.containsHTML("error\":7,")) {
-                // {"error":7,"message":"F\u00fcr den Hoster ist kein Server vorhanden."} // Für den Hoster ist kein Server vorhanden. //
-                // tempUnavailableHoster(account,
-                // link,
-                // 60
-                // *
-                // 60
-                // *
-                // 1000l);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("error\":10,")) {
-                logger.info("File's hoster is in maintenance. Try again later");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("error\":11,")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("error\":12,")) {
-                /* You have too many simultaneous downloads */
-                errTooManySimCon(account, link);
-            } else if (br.containsHTML("error\":(13|9),")) {
-                String num = "";
-                String err = "";
-                if (br.containsHTML("error\":13,")) {
-                    err = "Unknown error";
-                    num = "13";
-                }
-                // doesn't warrant not retrying! it just means no available host at this point in time! ??
-                if (br.containsHTML("error\":9,")) {
-                    err = "Host is currently not possible because no server is available!";
-                    num = "9";
-                }
-
-                /*
-                 * after x retries we disable this host and retry with normal plugin
-                 */
-                int retry = link.getIntegerProperty("retry_913", 0);
-                if (retry == 3) {
-                    /* reset retry counter */
-                    link.setProperty("retry_913", Property.NULL);
-                    link.setProperty("hasFailedWait", Property.NULL);
-                    // remove host from download method, but don't remove host from array!
-                    logger.warning("Exausted retry count! :: " + err);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                } else {
-                    String msg = (retry + 1) + " / 3";
-                    logger.warning("Error " + num + " : Retry " + msg);
-                    link.setProperty("hasFailed", true);
-                    retry++;
-                    link.setProperty("retry_913", retry);
-                    link.setProperty("hasFailedWait", 120);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Error " + num + " : Retry " + msg);
-                }
-            } else {
-                // unknown error2
-                logger.info(this.getHost() + "Unknown Error1");
-                int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown1", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= UNKNOWN_ERROR_RETRY_1) {
-                    timesFailed++;
-                    link.setProperty("timesfailedrealdebridcom_unknown1", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error1");
-                } else {
-                    link.setProperty("timesfailedrealdebridcom_unknown1", Property.NULL);
-                    logger.info(this.getHost() + ": Unknown error1 - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
-            }
-        }
-        if (!genLnk.startsWith("http")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
-        }
-        // no longer have issues, with above error handling. Next time download starts, error count starts from 0.
-        link.setProperty("retry_913", Property.NULL);
-        showMessage(link, "Task 2: Download begins!");
-        try {
-            handleDL(account, link, genLnk);
-            return;
-        } catch (PluginException e1) {
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            if (br.containsHTML("An error occurr?ed while generating a premium link, please contact an Administrator")) {
-                logger.info("Error while generating premium link, removing host from supported list");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
-            if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-
-            throw e1;
-        }
-    }
-
-    protected void showDOWNMessage() throws PluginException {
-        if (true) {
-            UIOManager.I().showErrorMessage("UUuups!\r\nJDownloader does not support Real-Debrid.com to date.\r\nUnfortunately Real-Debrid.com shut down the API we used and we have to rewrite the plugin.\r\nWe are sorry for any inconvenience and will try to fix the plugin as soon as possible.\r\n\r\n--Best, your JDownloader Team");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
-    private void errNoHosterTrafficLeft(Account acc, DownloadLink link) throws Exception {
-        logger.info("You have run out of download quota for this hoster");
-        tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    private void errTooManySimCon(Account acc, DownloadLink link) throws PluginException {
-        MAX_DOWNLOADS.set(RUNNING_DOWNLOADS.get());
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        showDOWNMessage();
-        AccountInfo ai = new AccountInfo();
-        login(account, true);
-        account.setValid(true);
-        account.setConcurrentUsePossible(true);
-        account.setMaxSimultanDownloads(-1);
-        for (int retry = 0; retry < repeat; retry++) {
-            try {
-                br.getPage(mProt + mName + "/api/account.php");
-                if (br.getHttpConnection().getResponseCode() == 504 || hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-                    if (retry != 2) {
-                        Thread.sleep(3000l);
-                        continue;
-                    } else {
-                        logger.warning(mName + " has problems! Repeated bad gateway!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, mName + " has problems! Repeated bad gateway!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    }
-                }
-                break;
-            } catch (SocketException e) {
-                if (retry == 2) {
-                    throw e;
-                }
-                Thread.sleep(1000);
-            }
-        }
-        String expire = br.getRegex("<premium-left>-?(\\d+)</premium-left>").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 1000));
-        }
-        String acctype = br.getRegex("<type>(\\w+)</type>").getMatch(0).toLowerCase();
-        if (acctype.equals("premium")) {
-            ai.setStatus("Premium User");
-            account.setProperty("free", false);
-        } else if (!acctype.equalsIgnoreCase("premium")) {
-            // free accounts only usable during happy hour!
-            account.setProperty("free", true);
-            // account.setValid(false);
-            ai.setProperty("multiHostSupport", Property.NULL);
-            return ai;
-        }
-        try {
-            String hostsSup = null;
-            for (int retry = 0; retry < repeat; retry++) {
-                try {
-                    hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");
-                    break;
-                } catch (SocketException e) {
-                    if (retry == 2) {
-                        throw e;
-                    }
-                    Thread.sleep(1000);
-                }
-            }
-            String[] hosts = new Regex(hostsSup, "\"([^\"]+)\"").getColumn(0);
-            ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            ai.setMultiHostSupport(this, supportedHosts);
-        } catch (Throwable e) {
-            // continue like previous! no need to nuke existing setter, next update will retry!
-        }
-        return ai;
-    }
-
-    private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(mProt + mName, key, value);
-                        }
-                        return;
-                    }
-                }
-                for (int retry = 0; retry < 3; retry++) {
-                    try {
-                        br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_response=&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
-                        if (hash2.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-                            continue;
-                        } else if (br.containsHTML("\"captcha\":1")) {
-                            DownloadLink dummyLink = new DownloadLink(this, "Account", mProt + mName, mProt + mName, true);
-                            this.setDownloadLink(dummyLink);
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, getJson("recaptcha_public_key")).getToken();
-                            br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_response=" + Encoding.urlEncode(recaptchaV2Response) + "&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
-                            if (br.containsHTML("\"captcha\":1")) {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nError either captcha is incorrect or your user:password is incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                            }
-                        }
-                        if (br.containsHTML("\"message\":\"PIN Code required\"")) {
-                            try {
-                                SwingUtilities.invokeAndWait(new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            String lng = System.getProperty("user.language");
-                                            String message = null;
-                                            String title = null;
-                                            boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                                            if ("de".equalsIgnoreCase(lng)) {
-                                                title = mName + " Zwei-Faktor-Authentifizierung wird benoetigt!";
-                                                message = " Zwei-Faktor-Authentifizierung wird benoetigt!\r\n";
-                                                message = "Oeffne bitte Deinen Webbrowser:\r\n";
-                                                message += " - Melde den Nutzer " + mName + " ab.\r\n";
-                                                message += " - Melde Dich neu an. \r\n";
-                                                message += " - Vervollstaendige die Zwei-Faktor-Authentifizierung.\r\n";
-                                                message += "Nach dem erfolgreichen Login im Browser kannst du deinen Account wieder im JD hinzufuegen.\r\n\r\n";
-                                                if (xSystem) {
-                                                    message += "Klicke -OK- (Oeffnet " + mName + " in deinem Webbrowser)\r\n";
-                                                } else {
-                                                    message += new URL(mProt + mName);
-                                                }
-                                            } else {
-                                                title = mName + " Two Factor Authentication Required";
-                                                message = "Please goto your Browser:\r\n";
-                                                message += " - Logout of " + mName + ".\r\n";
-                                                message += " - Re-Login. \r\n";
-                                                message += " - Complete Two Factor Authentication.\r\n";
-                                                message += "Once completed, you will be able to relogin within JDownloader.\r\n\r\n";
-                                                if (xSystem) {
-                                                    message += "Click -OK- (Opens " + mName + " in your Browser)\r\n";
-                                                } else {
-                                                    message += new URL(mProt + mName);
-                                                }
-                                            }
-                                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                                            if (xSystem && JOptionPane.OK_OPTION == result) {
-                                                CrossSystem.openURL(new URL(mProt + mName));
-                                            }
-                                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                                        } catch (Throwable e) {
-                                        }
-                                    }
-                                });
-                            } catch (Throwable e) {
-                            }
-                        }
-                        break;
-                    } catch (SocketException e) {
-                        if (retry == 2) {
-                            throw e;
-                        }
-                        Thread.sleep(1000);
-                    }
-                }
-                if (hash2.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                if (br.containsHTML("MySQL Connection ERROR")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                if ("1".equals(getJson("error"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + getJson("message"), PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-
-                if (br.getCookie(mProt + mName, "auth") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Could not find Account Cookie", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mProt + mName);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
-    }
-
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("retry_913", Property.NULL);
-        link.setProperty("hasFailed", Property.NULL);
-        link.setProperty("hasFailedWait", Property.NULL);
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return false;
-        }
-        return false;
     }
 
 }
