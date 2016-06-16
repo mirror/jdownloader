@@ -458,7 +458,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
         final Cookies cookies = new Cookies();
         if (ibr.getHttpConnection() != null) {
             // Cloudflare
-            if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+            // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+            if (containsCloudflareCookies(ibr)) {
                 processCloudflare(ibr, request, cookies);
             }
             // Incapsula
@@ -885,6 +886,23 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 cookies.add(c);
             }
         }
+    }
+
+    /**
+     * returns true if browser contains cookies that match expected
+     *
+     * @author raztoki
+     * @param ibr
+     * @return
+     */
+    protected boolean containsCloudflareCookies(final Browser ibr) {
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

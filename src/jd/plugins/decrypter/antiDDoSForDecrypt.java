@@ -67,9 +67,9 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     private static final String                   cfRequiredCookies     = "__cfduid|cf_clearance";
     private static final String                   icRequiredCookies     = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
     private static final String                   suRequiredCookies     = "sucuri_cloudproxy_uuid_[a-f0-9]+";
-    protected static HashMap<String, Cookies>     antiDDoSCookies   = new HashMap<String, Cookies>();
-    protected static AtomicReference<String>      userAgent         = new AtomicReference<String>(null);
-    protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
+    protected static HashMap<String, Cookies>     antiDDoSCookies       = new HashMap<String, Cookies>();
+    protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
+    protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
 
     public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies;
 
@@ -460,7 +460,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         final Cookies cookies = new Cookies();
         if (ibr.getHttpConnection() != null) {
             // Cloudflare
-            if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+            // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+            if (containsCloudflareCookies(ibr)) {
                 processCloudflare(ibr, request, cookies);
             }
             // Incapsula
@@ -883,6 +884,23 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 cookies.add(c);
             }
         }
+    }
+
+    /**
+     * returns true if browser contains cookies that match expected
+     *
+     * @author raztoki
+     * @param ibr
+     * @return
+     */
+    protected boolean containsCloudflareCookies(final Browser ibr) {
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

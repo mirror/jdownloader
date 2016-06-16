@@ -542,7 +542,6 @@ public class VKontakteRuHoster extends PluginForHost {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
             if (!dl.getConnection().getContentType().contains("html")) {
-                downloadLink.setDownloadSize(dl.getConnection().getLongContentLength());
                 if (finalfilename == null) {
                     downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(dl.getConnection())));
                 } else {
@@ -603,7 +602,6 @@ public class VKontakteRuHoster extends PluginForHost {
                 return false;
             }
             if (!dl.getConnection().getContentType().contains("html")) {
-                downloadLink.setDownloadSize(dl.getConnection().getLongContentLength());
                 if (finalfilename == null) {
                     downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
                 } else {
