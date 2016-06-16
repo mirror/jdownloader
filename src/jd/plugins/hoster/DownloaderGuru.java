@@ -63,7 +63,7 @@ public class DownloaderGuru extends PluginForHost {
 
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 20;
-    private static final int                               defaultMAXCHUNKS     = 1;
+    private static final int                               defaultMAXCHUNKS     = 0;
     private static final boolean                           defaultRESUME        = true;
 
     private static Object                                  CTRLLOCK             = new Object();
@@ -318,9 +318,12 @@ public class DownloaderGuru extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             account.setConcurrentUsePossible(false);
+            /*
+             * 2016-06-16: When logged in, top right corner says "No Traffic" while there is a list of "Free Trial Hosters". I've tested 4
+             * of them but when sending the links to download, the error "You are out of Traffic!" will come up. I guess it's safe to say
+             * that Free Accounts have no traffic.
+             */
             ai.setTrafficLeft(0);
-            /* Debug!! */
-            ai.setUnlimitedTraffic();
         }
 
         /* Find- and add free table - this is of course always available (free + premium). */
@@ -471,10 +474,20 @@ public class DownloaderGuru extends PluginForHost {
     }
 
     /**
-     * Keep this for possible API implementation in the future
+     * Errors 1-99 = JDErrors (by psp)
      */
     private void updatestatuscode() {
-        statuscode = 0;
+        final String errormessage = PluginJSonUtils.getJson(this.br, "errormessage");
+        if (errormessage != null) {
+            if (errormessage.equalsIgnoreCase("You are out of Traffic!")) {
+                statuscode = 1;
+            } else {
+                /* Hell - unknown errorcode! */
+                statuscode = 666;
+            }
+        } else {
+            statuscode = 0;
+        }
     }
 
     private void handleAPIErrors(final Browser br) throws PluginException {
@@ -484,17 +497,17 @@ public class DownloaderGuru extends PluginForHost {
             case 0:
                 /* Everything ok */
                 break;
+            case 1:
+                /* No traffic left (e.g. free account) */
+                this.currAcc.getAccountInfo().setTrafficLeft(0);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 666:
-                /* TODO: Remove plugin defect errors once plugin leaves beta state */
                 // /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info("Unknown error");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 50, 5 * 60 * 1000l);
             default:
-                /* TODO: Remove plugin defect errors once plugin leaves beta state */
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
