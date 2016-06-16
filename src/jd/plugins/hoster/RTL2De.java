@@ -29,6 +29,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/sendung/[^/]+/video/\\d+.+" }, flags = { 32 })
 public class RTL2De extends PluginForHost {
 
@@ -113,11 +116,11 @@ public class RTL2De extends PluginForHost {
     private HashMap<String, String> jsonParser() throws Exception {
         String streamUrl = null, name = null, title = null;
         try {
-            final org.codehaus.jackson.map.ObjectMapper mapper = new org.codehaus.jackson.map.ObjectMapper();
-            final org.codehaus.jackson.JsonNode rootNode = mapper.readTree(br.toString());
-            streamUrl = rootNode.path("video").path("streamurl").getTextValue();
-            name = rootNode.path("video").path("vifo_name").getTextValue();
-            title = rootNode.path("video").path("titel").getTextValue();
+            final ObjectMapper mapper = new ObjectMapper();
+            final JsonNode rootNode = mapper.readTree(br.toString());
+            streamUrl = rootNode.path("video").path("streamurl").asText();
+            name = rootNode.path("video").path("vifo_name").asText();
+            title = rootNode.path("video").path("titel").asText();
         } catch (final Throwable e) {
             return null;
         }
