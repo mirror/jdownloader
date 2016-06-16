@@ -139,7 +139,7 @@ public class DownloaderGuru extends PluginForHost {
             br.setFollowRedirects(true);
             /* request creation of downloadlink */
             /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
-            this.postRawAPISafe(API_ENDPOINT + "Transfers.ashx?sendlinks=1", Encoding.urlEncode(link.getDownloadURL()));
+            this.postRawAPISafe(API_ENDPOINT + "Transfers.ashx?sendlinks=1", link.getDownloadURL());
             /* Returns json map "transfers" which contains array with usually only 1 object --> In this map we can find the "GeneratedLink" */
             dllink = PluginJSonUtils.getJson(this.br, "GeneratedLink");
             if (dllink == null || !dllink.startsWith("http")) {
@@ -334,6 +334,9 @@ public class DownloaderGuru extends PluginForHost {
             for (String domain : supportedHostsOfCurrentTable) {
                 domain = Encoding.htmlDecode(domain).trim();
                 domain = correctHost(domain);
+                if (domain.length() <= 3) {
+                    continue;
+                }
                 final int maxdownloads = defaultMAXDOWNLOADS;
                 final int maxchunks = defaultMAXCHUNKS;
                 boolean resumable = defaultRESUME;
