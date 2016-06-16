@@ -72,18 +72,7 @@ public class PornTubeCom extends PluginForHost {
         }
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         final Regex info = br.getRegex("\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
-        String mediaID = info.getMatch(0);
-        if (mediaID == null) {
-            mediaID = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+),").getMatch(0);
-            if (mediaID == null) {
-                // just like 4tube/porntube/fux....<script id="playerembed" src...
-                final String embed = br.getRegex("/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
-                if (embed != null) {
-                    br.getPage(embed);
-                    mediaID = br.getRegex("\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
-                }
-            }
-        }
+        final String mediaID = getMediaid(this.br);
         String availablequalities = info.getMatch(1);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
@@ -150,6 +139,26 @@ public class PornTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = finallink;
+    }
+
+    public static String getMediaid(final Browser br) throws IOException {
+        final Regex info = br.getRegex("\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
+        String mediaID = info.getMatch(0);
+        if (mediaID == null) {
+            mediaID = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+),").getMatch(0);
+        }
+        if (mediaID == null) {
+            mediaID = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
+        }
+        if (mediaID == null) {
+            // just like 4tube/porntube/fux....<script id="playerembed" src...
+            final String embed = br.getRegex("/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
+            if (embed != null) {
+                br.getPage(embed);
+                mediaID = br.getRegex("\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
+            }
+        }
+        return mediaID;
     }
 
     private String checkDirectLink(String directlink) {

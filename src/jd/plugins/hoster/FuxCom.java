@@ -65,15 +65,7 @@ public class FuxCom extends PluginForHost {
             filename = br.getRegex("<title>(.*?) \\- FUX</title>").getMatch(0);
         }
         final Regex info = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+), \\d+, \\[(.*?)\\]\\);");
-        String mediaID = info.getMatch(0);
-        if (mediaID == null) {
-            // just like 4tube....<script id="playerembed" src...
-            final String embed = br.getRegex("/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
-            if (embed != null) {
-                br.getPage(embed);
-                mediaID = br.getRegex("\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
-            }
-        }
+        final String mediaID = jd.plugins.hoster.PornTubeCom.getMediaid(this.br);
         String availablequalities = info.getMatch(1);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");

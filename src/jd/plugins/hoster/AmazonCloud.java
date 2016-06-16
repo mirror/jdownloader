@@ -46,12 +46,15 @@ public class AmazonCloud extends PluginForHost {
         return "https://www.amazon.de/gp/help/customer/display.html/ref=ap_footer_condition_of_use?ie=UTF8&nodeId=505048&pop-up=1";
     }
 
-    public static final String   JSON_KIND_FILE    = "FILE";
+    public static final String   JSON_KIND_FILE     = "FILE";
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = -1;
+    private static final boolean FREE_RESUME        = true;
+    private static final int     FREE_MAXCHUNKS     = 0;
+    private static final int     FREE_MAXDOWNLOADS  = -1;
+
+    /* Don't touch this! */
+    public static int            max_items_per_page = 200;
 
     public AvailableStatus requestFileInformationOld(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -287,18 +290,30 @@ public class AmazonCloud extends PluginForHost {
         br.getPage("https://www." + domain + "/drive/v1/shares/" + plain_folder_id + "?customerId=0&resourceVersion=V2&ContentType=JSON&asset=ALL");
     }
 
-    /* Access nodes/subfolders */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    /* Access nodes/subfolders. Does pagination if needed (e.g. more than max_items_per_page items)! */
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public static ArrayList<Object> getListFromNode(final Browser br, final String domain, final String plain_folder_id, final String nodeid) throws IOException {
-        ArrayList<Object> resource_data_list = null;
-        br.getPage("https://www." + domain + "/drive/v1/nodes/" + nodeid + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&limit=200&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
-        try {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            resource_data_list = (ArrayList) entries.get("data");
-        } catch (final Throwable e) {
-
-        }
-        return resource_data_list;
+        ArrayList<Object> resource_data_list_all = new ArrayList<Object>();
+        ArrayList<Object> resource_data_list_tmp = null;
+        LinkedHashMap<String, Object> entries_tmp = null;
+        int numberof_found_items = 0;
+        int offset = 0;
+        do {
+            numberof_found_items = 0;
+            br.getPage("https://www." + domain + "/drive/v1/nodes/" + nodeid + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&offset=" + offset + "&limit=" + max_items_per_page + "&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
+            try {
+                entries_tmp = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                resource_data_list_tmp = (ArrayList) entries_tmp.get("data");
+                for (final Object fileo : resource_data_list_tmp) {
+                    resource_data_list_all.add(fileo);
+                    numberof_found_items++;
+                    offset++;
+                }
+            } catch (final Throwable e) {
+                break;
+            }
+        } while (numberof_found_items >= max_items_per_page);
+        return resource_data_list_all;
     }
 
     public static boolean isOffline(final Browser br) {

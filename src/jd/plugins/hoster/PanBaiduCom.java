@@ -35,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" }, flags = { 2 })
 public class PanBaiduCom extends PluginForHost {
@@ -417,7 +418,7 @@ public class PanBaiduCom extends PluginForHost {
                 br.getPage("http://pan.baidu.com");
                 /* TODO: Maybe add a value for 'gid' */
                 br.getPage("https://passport.baidu.com/v2/api/?getapi&tpl=netdisk&subpro=netdisk_web&apiver=v3&tt=" + System.currentTimeMillis() + "&class=login&gid=&logintype=basicLogin&callback=bd__cbs__38gea8");
-                final String token = this.br.getRegex("\"token\"[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]+)\"").getMatch(0);
+                String token = this.br.getRegex("\"token\"[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]+)\"").getMatch(0);
                 if (token == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -425,20 +426,43 @@ public class PanBaiduCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                token = Encoding.urlEncode(token);
+
+                boolean failed = true;
+                boolean captchaFailed = false;
                 String errorno = null;
                 for (int i = 0; i <= 1; i++) {
-                    String postData = "staticpage=http%3A%2F%2Fpan.baidu.com%2Fres%2Fstatic%2Fthirdparty%2Fpass_v3_jump.html&charset=utf-8&token=" + Encoding.urlEncode(token) + "&tpl=netdisk&subpro=netdisk_web&apiver=v3&tt=" + System.currentTimeMillis() + "&codestring=&safeflg=0&u=http%3A%2F%2Fpan.baidu.com%2F&isPhone=false&detect=1&gid=&quick_user=0&logintype=basicLogin&logLoginType=pc_loginBasic&idc=&loginmerge=true&foreignusername=&" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&verifycode=&mem_pass=on&ppui_logintime=0&countrycode=&callback=parent.bd__pcbs__22ko42";
+                    String postData = "staticpage=http%3A%2F%2Fpan.baidu.com%2Fres%2Fstatic%2Fthirdparty%2Fpass_v3_jump.html&charset=utf-8&token=" + token + "&tpl=netdisk&subpro=netdisk_web&apiver=v3&tt=" + System.currentTimeMillis() + "&codestring=&safeflg=0&u=http%3A%2F%2Fpan.baidu.com%2F&isPhone=false&detect=1&gid=&quick_user=0&logintype=basicLogin&logLoginType=pc_loginBasic&idc=&loginmerge=true&foreignusername=&" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&verifycode=&mem_pass=on&ppui_logintime=0&countrycode=&callback=parent.bd__pcbs__22ko42";
                     br.postPage("https://passport.baidu.com/v2/api/?login", postData);
-                    if (this.br.containsHTML("blabla_TODO")) {
-                        /* Login captcha needed */
-                        final String captchaurl = "https://passport.baidu.com/cgi-bin/genimage?jxIcaptchaservice";
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
-                        final String c = getCaptchaCode(captchaurl, dummyLink);
-                    }
                     errorno = this.br.getRegex("err_no=(\\d+)").getMatch(0);
+                    if (br.getCookie(this.getHost(), "UBI") == null || "257".equals(errorno)) {
+                        /* TODO: Implement this! */
+                        /* Login captcha needed */
+                        // https://passport.baidu.com/cgi-bin/genimage?njG8d06de9c58a5f5c502791464a601e40057ed5b06ae018a6a
+                        captchaFailed = true;
+                        int captchacounter = 0;
+                        do {
+                            final String captchaurl = "https://passport.baidu.com/cgi-bin/genimage?jxIcaptchaservice";
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
+                            final String code = getCaptchaCode(captchaurl, dummyLink);
+                            br.getPage("https://passport.baidu.com/v2/?checkvcode&token=" + token + "&tpl=netdisk&subpro=netdisk_web&apiver=v3&tt=" + System.currentTimeMillis() + "&verifycode=" + code + "&codestring=&callback=bd__cbs__j2n8lj");
+                            final String msg = PluginJSonUtils.getJson(this.br, "msg");
+                            if (msg.equals("")) {
+                                /* Captcha has been solved correctly! */
+                                captchaFailed = false;
+                                break;
+                            }
+                            captchacounter++;
+                        } while (captchacounter <= 2);
+                        if (captchaFailed) {
+                            break;
+                        }
+                        /* Captcha succeeded? Retry login! */
+                        continue;
+                    }
                     break;
                 }
-                if (br.getCookie(this.getHost(), "UBI") == null || "257".equals(errorno)) {
+                if (failed) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
