@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -70,6 +70,9 @@ public class NicoVideoJp extends PluginForHost {
 
     private static final int     economy_active_wait_minutes          = 30;
     private static final String  html_account_needed                  = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
+
+    public static final long     trust_cookie_age                     = 300000l;
+
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
     private static AtomicInteger totalMaxSimultanFree_AccountDownload = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
@@ -94,15 +97,23 @@ public class NicoVideoJp extends PluginForHost {
     /**
      * IMPORTANT: The site has a "normal" and "economy" mode. Normal mode = Higher video quality - mp4 streams. Economy mode = lower quality
      * - flv streams. Premium users are ALWAYS in the normal mode.
+     *
+     * @throws Exception
      */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, ParseException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String linkid_url = getLID(link);
         link.setProperty("extension", default_extension);
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
+        boolean loggedin = false;
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            this.login(aa, false);
+            loggedin = true;
+        }
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -116,9 +127,17 @@ public class NicoVideoJp extends PluginForHost {
             link.setName(linkid_url);
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+        String filename;
+        if (loggedin) {
+            filename = br.getRegex("class=\"originalVideoTitle\">([^<>\"]+)<").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"videoTitle\">([^<>\"]+)<").getMatch(0);
+            }
+        } else {
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -144,10 +163,8 @@ public class NicoVideoJp extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        br = new Browser();
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -155,6 +172,7 @@ public class NicoVideoJp extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
+        br = new Browser();
         return login(account, true);
     }
 
@@ -366,6 +384,10 @@ public class NicoVideoJp extends PluginForHost {
         return Encoding.urlDecode(dllink, false);
     }
 
+    /**
+     * orce = check cookies and perform a full login if that fails. !force = Accept cookies without checking if they're not older than
+     * trust_cookie_age.
+     */
     private AccountInfo login(final Account account, final boolean force) throws Exception {
         final AccountInfo ai = new AccountInfo();
         synchronized (LOCK) {
@@ -374,8 +396,13 @@ public class NicoVideoJp extends PluginForHost {
             if (cookies != null) {
                 /* 2016-05-04: Avoid full login whenever possible! */
                 br.setCookies(this.getHost(), cookies);
+                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
+                    /* We trust these cookies --> Do not check them */
+                    return ai;
+                }
                 br.getPage("http://www.nicovideo.jp/");
                 if (br.containsHTML("/logout\">Log out</a>")) {
+                    /* Save new cookie timestamp */
                     br.setCookies(this.getHost(), cookies);
                     return null;
                 }

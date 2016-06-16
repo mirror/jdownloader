@@ -32,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" }, flags = { 0, 0 })
 public class BitvideoIo extends PluginForHost {
 
@@ -45,11 +47,13 @@ public class BitvideoIo extends PluginForHost {
     // other:
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private static final boolean free_resume         = true;
+    private static final int     free_maxchunks      = 0;
+    private static final int     free_maxdownloads   = -1;
 
-    private String               dllink            = null;
+    private static final String  html_video_encoding = ">This video is still in encoding progress";
+
+    private String               dllink              = null;
 
     @Override
     public String getAGBLink() {
@@ -64,6 +68,9 @@ public class BitvideoIo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        /* Better filenames for offline case */
+        link.setName(fid + ".mp4");
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         /* Only use one of their domains */
         br.getPage("http://www.bitporno.sx/?v=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -76,6 +83,9 @@ public class BitvideoIo extends PluginForHost {
             if (filename == null) {
                 filename = url_filename;
             }
+        }
+        if (this.br.containsHTML(html_video_encoding)) {
+            return AvailableStatus.TRUE;
         }
         String dllink_temp = null;
         final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
@@ -105,46 +115,65 @@ public class BitvideoIo extends PluginForHost {
             }
         }
 
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
+
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        String extension = null;
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            extension = getFileNameExtensionFromString(dllink, ".mp4");
+        } else {
+            extension = ".mp4";
         }
-        link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        if (!filename.endsWith(extension)) {
+            filename += extension;
         }
+
+        if (dllink != null) {
+            link.setFinalFileName(filename);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    con = br2.openHeadConnection(dllink);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            link.setName(filename);
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (this.br.containsHTML(html_video_encoding)) {
+            /*
+             * 2016-06-16, psp: I guess if this message appears longer than some hours, such videos can never be downloaded/streamed or only
+             * the original file via premium account.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable (yet) because 'This video is still in encoding progress - Please patient'", 60 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
