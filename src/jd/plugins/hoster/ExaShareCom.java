@@ -284,7 +284,8 @@ public class ExaShareCom extends PluginForHost {
         }
         if (dllink == null && VIDEOHOSTER_3) {
             /* They often have multiple embed-redirects until we can finally get the downloadurl */
-
+            final boolean ifr = br.isFollowingRedirects();
+            br.setFollowRedirects(true);
             try {
                 logger.info("Trying to get link via embed");
                 String embed_url = null;
@@ -322,6 +323,7 @@ public class ExaShareCom extends PluginForHost {
                 /* If failed, go back to the beginning */
                 getPage(downloadLink.getDownloadURL());
             }
+            br.setFollowRedirects(ifr);
         }
         // Fourth, continue like normal.
         if (dllink == null) {
