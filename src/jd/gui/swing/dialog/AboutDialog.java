@@ -86,7 +86,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
     public JComponent layoutDialogContent() {
         this.labelHeight = new JLabel("HeightTester").getPreferredSize().height;
         final JPanel contentpane = new JPanel();
-
         JLabel lbl = new JLabel("JDownloader® 2");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
