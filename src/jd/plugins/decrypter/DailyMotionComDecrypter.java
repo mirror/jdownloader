@@ -521,7 +521,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
         for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1" }) {
-            if (foundQualities.containsKey(quality) && (best || cfg.getBooleanProperty("ALLOW_" + quality))) {
+            if (foundQualities.containsKey(quality) && (best || cfg.getBooleanProperty("ALLOW_" + quality, true))) {
                 selectedQualities.add(quality);
                 if (best) {
                     break;

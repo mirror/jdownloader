@@ -218,11 +218,15 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             }
         }
         /* use cnl2 button if available */
-        if (br.containsHTML("/cnl2/")) {
+        if (br.containsHTML("/cnl2/") || this.br.containsHTML("/cnl2_add\\.png")) {
             String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
+            if (flashVars == null) {
+                flashVars = br.getRegex("file[\n\t\r ]*?=[\n\t\r ]*?\"([^<>\"]+)\"").getMatch(0);
+            }
             if (flashVars != null) {
                 final Browser cnlbr = new Browser();
-                getPage(cnlbr, MAINPAGE + "get/cnl2/_" + flashVars);
+                /* 2016-06-16: Change from http to https */
+                getPage(cnlbr, MAINPAGE + "get/cnl2/" + flashVars);
                 String test = cnlbr.toString();
                 String[] encVars = null;
                 if (test != null) {
