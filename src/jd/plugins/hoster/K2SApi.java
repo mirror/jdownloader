@@ -1480,7 +1480,8 @@ public abstract class K2SApi extends PluginForHost {
         final HashMap<String, String> cookies = new HashMap<String, String>();
         if (ibr.getHttpConnection() != null) {
             final int responseCode = ibr.getHttpConnection().getResponseCode();
-            if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+            // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+            if (containsCloudflareCookies(ibr)) {
                 final Form cloudflare = getCloudflareChallengeForm(ibr);
                 if (responseCode == 403 && cloudflare != null) {
                     a_captchaRequirement = true;
@@ -1749,6 +1750,25 @@ public abstract class K2SApi extends PluginForHost {
         }
         if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
             return true;
+        }
+        return false;
+    }
+
+    private static final String cfRequiredCookies = "__cfduid|cf_clearance";
+
+    /**
+     * returns true if browser contains cookies that match expected
+     *
+     * @author raztoki
+     * @param ibr
+     * @return
+     */
+    protected boolean containsCloudflareCookies(final Browser ibr) {
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
+                return true;
+            }
         }
         return false;
     }
