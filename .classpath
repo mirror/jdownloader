@@ -41,7 +41,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
-	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/miglayout.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
@@ -76,5 +75,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/Filters.jar" sourcepath="ressourcen/code-ressourcen/Filter_src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/htmlunit-core-js.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-databind.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-annotations.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

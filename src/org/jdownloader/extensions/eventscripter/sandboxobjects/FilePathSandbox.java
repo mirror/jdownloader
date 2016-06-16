@@ -8,7 +8,7 @@ import org.jdownloader.extensions.eventscripter.EnvironmentException;
 
 public class FilePathSandbox {
 
-    private File file;
+    private final File file;
 
     public FilePathSandbox(String fileOrUrl) {
         file = new File(fileOrUrl);
@@ -26,7 +26,7 @@ public class FilePathSandbox {
 
     public boolean exists() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("check if a filepath exists");
-        boolean ret = file.exists();
+        final boolean ret = file.exists();
         return ret;
     }
 
@@ -40,10 +40,15 @@ public class FilePathSandbox {
     }
 
     public FilePathSandbox[] getChildren() {
-        File[] files = file.listFiles();
-        FilePathSandbox[] ret = new FilePathSandbox[files.length];
-        for (int i = 0; i < files.length; i++) {
-            ret[i] = new FilePathSandbox(files[i].getAbsolutePath());
+        final File[] files = file.listFiles();
+        final FilePathSandbox[] ret;
+        if (files == null || files.length == 0) {
+            ret = new FilePathSandbox[0];
+        } else {
+            ret = new FilePathSandbox[files.length];
+            for (int i = 0; i < files.length; i++) {
+                ret[i] = new FilePathSandbox(files[i].getAbsolutePath());
+            }
         }
         return ret;
     }
@@ -54,16 +59,14 @@ public class FilePathSandbox {
 
     public boolean renameTo(String fileOrUrl) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename or move files or folders");
-
         return file.renameTo(new File(fileOrUrl));
     }
 
     public boolean moveTo(String folder) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("move a file to a new folder");
-
         File dest = new File(folder);
         dest = new File(dest, file.getName());
-        boolean ret = file.renameTo(dest);
+        final boolean ret = file.renameTo(dest);
         return ret;
     }
 
@@ -101,7 +104,6 @@ public class FilePathSandbox {
 
     public long getSize() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("get the size of a file");
-
         return file.length();
     }
 }

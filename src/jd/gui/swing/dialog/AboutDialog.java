@@ -33,6 +33,14 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.Factory;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.io.JDIO;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -55,14 +63,6 @@ import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog<Integer> {
 
@@ -251,6 +251,8 @@ public class AboutDialog extends AbstractDialog<Integer> {
         //
         // }
         // });
+        stats.add(new JLabel("JSON Support:"), "");
+        stats.add(disable("Jackson JSON Processor 2.7.5 (http://wiki.fasterxml.com/JacksonHome/)"));
         stats.add(new JLabel("RTMP Support:"), "");
         stats.add(disable("RtmpDump (http://rtmpdump.mplayerhq.hu)"));
         stats.add(new JLabel("UPNP:"), "");

@@ -66,7 +66,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
 
     /**
      * Erstellt einen neuen GUIConfigEntry
-     * 
+     *
      * @param configEntry
      */
     public GUIConfigEntry(ConfigEntry configEntry) {
@@ -167,7 +167,9 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 group.add(radio);
 
                 Object p = configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName());
-                if (p == null) p = "";
+                if (p == null) {
+                    p = "";
+                }
 
                 if (obj.toString().equals(p.toString())) {
                     radio.setSelected(true);
@@ -211,7 +213,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
 
     /**
      * Gibt den zusstand der Inputkomponente zurück
-     * 
+     *
      * @return
      */
     public Object getText() {
@@ -232,7 +234,9 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             Component[] inputs = input.getComponents();
             for (Component element : inputs) {
                 radio = (JRadioButton) element;
-                if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) return radio.getSelectedObjects()[0];
+                if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) {
+                    return radio.getSelectedObjects()[0];
+                }
             }
             return null;
         case ConfigContainer.TYPE_SPINNER:
@@ -252,7 +256,9 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
     }
 
     private final void enableComponent(JComponent cmp, boolean enabled) {
-        if (cmp == null) return;
+        if (cmp == null) {
+            return;
+        }
         cmp.setEnabled(enabled);
         if (cmp.getComponents() != null) {
             for (Component c : cmp.getComponents()) {
@@ -262,7 +268,9 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
     }
 
     public void dataChanged(ConfigEntry source, Object newData) {
-        if (input == null) return;
+        if (input == null) {
+            return;
+        }
         boolean state = configEntry.isConditionalEnabled(source, newData);
         enableComponent(input, state);
         enableComponent(decoration, state);
@@ -278,7 +286,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
 
     /**
      * Sets data to the input component.
-     * 
+     *
      * @param text
      */
     public void setData(Object text) {
@@ -292,9 +300,21 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             ((JTextComponent) input).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_CHECKBOX:
-            if (text == null) text = false;
+            if (text == null) {
+                text = false;
+            }
             try {
-                ((JCheckBox) input).setSelected((Boolean) text);
+                if (text instanceof String) {
+                    if ("true".equalsIgnoreCase(text.toString())) {
+                        ((JCheckBox) input).setSelected(true);
+                    } else if ("false".equalsIgnoreCase(text.toString())) {
+                        ((JCheckBox) input).setSelected(false);
+                    } else {
+                        throw new Exception("Invalid value: " + text);
+                    }
+                } else {
+                    ((JCheckBox) input).setSelected((Boolean) text);
+                }
             } catch (Exception e) {
                 LogController.CL().severe("Falcher Wert: " + text);
                 LogController.CL().log(e);
