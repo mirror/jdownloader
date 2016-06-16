@@ -539,6 +539,10 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         final Browser br2 = this.br.cloneBrowser();
         br2.getHeaders().put("Accept-Encoding", "identity");
+        final PluginForHost orginalPlugin = downloadLink.getLivePlugin();
+        if (!isDownload) {
+            downloadLink.setLivePlugin(this);
+        }
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
             if (!dl.getConnection().getContentType().contains("html")) {
@@ -567,7 +571,11 @@ public class VKontakteRuHoster extends PluginForHost {
             return 0;
         } finally {
             if (!isDownload) {
-                dl.getConnection().disconnect();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable t) {
+                }
+                downloadLink.setLivePlugin(orginalPlugin);
             }
         }
 
@@ -634,7 +642,10 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             return false;
         } finally {
-            dl.getConnection().disconnect();
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable t) {
+            }
         }
     }
 
