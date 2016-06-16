@@ -225,7 +225,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             }
             if (flashVars != null) {
                 final Browser cnlbr = new Browser();
-                /* 2016-06-16: Change from http to https */
                 getPage(cnlbr, MAINPAGE + "get/cnl2/" + flashVars);
                 String test = cnlbr.toString();
                 String[] encVars = null;
