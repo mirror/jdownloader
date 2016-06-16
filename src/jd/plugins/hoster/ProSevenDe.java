@@ -82,7 +82,7 @@ public class ProSevenDe extends PluginForHost {
         prepareBrowser();
         br.setFollowRedirects(true);
         final String decrypter_filename = downloadLink.getStringProperty("decrypter_filename", null);
-        final String mainlink = downloadLink.getStringProperty("mainlink", null);
+        final String mainlink = getMainlink(downloadLink);
         if (mainlink == null || decrypter_filename == null) {
             /* E.g. for old links! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -94,6 +94,10 @@ public class ProSevenDe extends PluginForHost {
         }
         downloadLink.setFinalFileName(decrypter_filename);
         return AvailableStatus.TRUE;
+    }
+
+    private String getMainlink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
     }
 
     public static boolean isOffline(final Browser br) {
@@ -119,8 +123,8 @@ public class ProSevenDe extends PluginForHost {
         requestFileInformation(downloadLink);
 
         /* Let's find the downloadlink */
-        final String clipID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        if (clipID == null) {
+        final String clip_id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (clip_id == null) {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -137,7 +141,6 @@ public class ProSevenDe extends PluginForHost {
          * http://vodakpsdhls-vh.akamaihd.net/i/clips/09/09/4117599-1o6e6wx-tp,03,04,05,06,.mp4.csmil/master.m3u8?hdnea=st%3D1448240481%
          * 7Eexp%3D1448326881%7Eacl%3D%2Fi%2Fclips%2F09%2F09%2F4117599-1o6e6wx-tp%2C03%2C04%2C05%2C06%2C.mp4%2A%7Ehmac%3Dedb40ef2bc90a159a2fc660e108a8e4ed9f934ee5c2e5376222ecc54bfe47f3a&__a__=off
          */
-        /* Example how to get hls urls: http://ws.vtc.sim-technik.de/video/playlist.m3u8?ClipID=4041141 */
 
         /*
          * First try to get a http stream --> Faster downloadspeed & more reliable/stable connection than rtmp and slightly better
@@ -147,7 +150,7 @@ public class ProSevenDe extends PluginForHost {
         /* User-Agent not necessarily needed */
         br.getHeaders().put("User-Agent", agent_hbbtv.get());
         /* method=6 needed so that the Highest quality-trick works see 'getDllink' method */
-        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=hbbtv&type=1&method=6&callback=video" + clipID);
+        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clip_id + "&app=hbbtv&type=1&method=6&callback=video" + clip_id);
         getDllink();
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -157,7 +160,7 @@ public class ProSevenDe extends PluginForHost {
             /* User-Agent not necessarily needed */
             br.getHeaders().put("User-Agent", agent_normal.get());
             /* http stream not available[via the above method] --> Maybe here --> Or it's either rtmp or rtmpe */
-            br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=6&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
+            br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clip_id + "&app=moveplayer&method=6&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
             getDllink();
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -179,8 +182,21 @@ public class ProSevenDe extends PluginForHost {
             downloadRTMP(downloadLink);
         } else if (failed) {
             /* hls - try hls fallback! */
+            /* 2016-06-16: TODO: Try APIV2 instead to find higher quality hds versions */
+            /* THX: https://github.com/rg3/youtube-dl/blob/f9b1529af8aec98bffd42edb5be15e1ada791a20/youtube_dl/extractor/prosiebensat1.py */
+            // final String access_token = "prosieben";
+            // final String client_name = "kolibri-2.0.19-splec4";
+            // final String client_location = Encoding.urlEncode(getMainlink(downloadLink));
+            // final String videos_api_url = "http://vas.sim-technik.de/vas/live/v2/videos?" + "access_token=" + access_token +
+            // "&client_name=" + client_name + "&client_location=" + client_location + "&ids=" + clip_id;
+            // final String g = "01!8d8F_)r9]4s[qeuXfP%";
+            // final String client_id = "" + JDHash.getSHA1(Encoding.UTF8Encode(clip_id + g + access_token + client_location + g +
+            // client_name));
+            // final String sources_api_url = "http://vas.sim-technik.de/vas/live/v2/videos/" + clip_id + "/sources?" + "access_token=" +
+            // access_token + "&client_name=" + client_name + "&client_location=" + client_location;
+
             this.br.setFollowRedirects(true);
-            br.getPage("http://ws.vtc.sim-technik.de/video/playlist.m3u8?ClipID=" + clipID);
+            br.getPage("http://ws.vtc.sim-technik.de/video/playlist.m3u8?ClipID=" + clip_id);
             final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
             if (hlsbest == null) {
                 /* Fallback failed - no way to (legally) download this content! */
@@ -200,7 +216,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             * 
+             *
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */
