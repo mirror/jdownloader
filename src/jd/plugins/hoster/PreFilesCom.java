@@ -66,7 +66,7 @@ public class PreFilesCom extends PluginForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -75,7 +75,7 @@ public class PreFilesCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:modified download1 form
-    // non account: 1 * 1
+    // non account: 20 * 20
     // free account: untested, set same as free
     // premium account: 20 * 20
     // protocol: no https
@@ -172,9 +172,15 @@ public class PreFilesCom extends PluginForHost {
         // standard traits from base page
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "class=\"filename_bar\"><i></i><h\\d+>([^<>\"]*?)<small>").getMatch(0);
-            if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "<title>Download ([^<>\"]*?) from PreFiles\\.com</title>").getMatch(0);
-            }
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<title>Download ([^<>\"]*?) from PreFiles\\.com</title>").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "/([^<>\"/]+)\">Download File<").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+) \\&lsaquo; Prefiles\\.com</title>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "<small>\\(([^<>\"]*?)\\)</small>").getMatch(0);
@@ -191,7 +197,7 @@ public class PreFilesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, 0, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -216,6 +222,9 @@ public class PreFilesCom extends PluginForHost {
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
+            if (dlForm == null) {
+                dlForm = br.getFormByInputFieldKeyValue("op", "download2");
+            }
             if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -662,13 +671,39 @@ public class PreFilesCom extends PluginForHost {
                         return;
                     }
                 }
-                getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST + "/login");
                 Form loginform = br.getFormbyProperty("name", "FL");
+                if (loginform == null) {
+                    loginform = br.getFormByInputFieldKeyValue("op", "login");
+                }
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+
+                if (correctedBR.contains("/captchas/")) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
+                    String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                    String captchaurl = null;
+                    if (sitelinks == null || sitelinks.length == 0) {
+                        logger.warning("Standard captcha captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (String link : sitelinks) {
+                        if (link.contains("/captchas/")) {
+                            captchaurl = link;
+                            break;
+                        }
+                    }
+                    if (captchaurl == null) {
+                        logger.warning("Standard captcha captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, dummyLink);
+                    loginform.put("code", code);
+                }
+
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -816,7 +851,10 @@ public class PreFilesCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"[a-z0-9]+\">(\\d+)</span> seconds<").getMatch(0);
+        String ttt = new Regex(correctedBR, "id=\"[a-z0-9]+\">(\\d+)</span> seconds<").getMatch(0);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "seconds:[\t\n\r ]*?(\\d+)[\t\n\r ]*?\\}").getMatch(0);
+        }
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

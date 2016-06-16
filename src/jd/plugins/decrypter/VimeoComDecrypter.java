@@ -250,6 +250,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (br.containsHTML(containsPass())) {
                     try {
                         handlePW(param, ID, br);
+                        /*
+                         * After successful password input we'll get json but we want the "normal" html which suits the code below -->
+                         * Access main video url again!
+                         */
+                        br.getPage(parameter);
                     } catch (final DecrypterException edc) {
                         logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
                         decryptedLinks.add(createOfflinelink(parameter, ID, null));

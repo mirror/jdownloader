@@ -43,13 +43,10 @@ public class XHamsterGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> allPages = new ArrayList<String>();
-        allPages.add("1");
         String parameter = param.toString().replace("www.", "");
         /* Force english language */
         final String replace_string = new Regex(parameter, "(http://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/)").getMatch(0);
         parameter = parameter.replace(replace_string, "http://xhamster.com/");
-        final String parameterWihoutHtml = parameter.replace(".html", "");
         br.addAllowedResponseCodes(410);
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Login if possible
@@ -67,42 +64,51 @@ public class XHamsterGallery extends PluginForDecrypt {
         }
 
         if (br.containsHTML(">This gallery needs password<")) {
+            boolean failed = true;
             for (int i = 1; i <= 3; i++) {
                 String passCode = getUserInput("Password?", param);
                 br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
                 if (br.containsHTML(">This gallery needs password<")) {
                     continue;
                 }
+                failed = false;
                 break;
             }
-            if (br.containsHTML(">This gallery needs password<")) {
+            if (failed) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
 
+        final String urlWithoutPageParameter = this.br.getURL();
         String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster\\.com</title>").getMatch(0);
-        String[] pagesTemp = br.getRegex("'" + parameterWihoutHtml + "-\\d+\\.html'>(\\d+)</a>").getColumn(0);
+        int pageMax = 1;
+        final String[] pagesTemp = br.getRegex("\\?page=(\\d+)").getColumn(0);
         if (pagesTemp != null && pagesTemp.length != 0) {
-            for (String aPage : pagesTemp) {
-                if (!allPages.contains(aPage)) {
-                    allPages.add(aPage);
+            int pageTmp = 1;
+            for (final String aPage_str : pagesTemp) {
+                pageTmp = Integer.parseInt(aPage_str);
+                if (pageTmp > pageMax) {
+                    pageMax = pageTmp;
                 }
             }
         }
-        for (String currentPage : allPages) {
-            final String thePage = parameterWihoutHtml + "-" + currentPage + ".html";
-            if (!"1".equals(currentPage)) {
-                br.getPage(thePage);
+        for (int pageCurrent = 1; pageCurrent <= pageMax; pageCurrent++) {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return decryptedLinks;
+            }
+            if (pageCurrent > 1) {
+                br.getPage(urlWithoutPageParameter + "?page=" + pageCurrent);
             }
             final String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
             if (allLinks == null) {
-                logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
+                logger.warning("Decrypter failed on page " + pageCurrent);
                 return null;
             }
             // 'http://ept.xhcdn.com/000/027/563/101_160.jpg'
             final String[][] thumbNails = new Regex(allLinks, "(\"|')(https?://(?:e|u)pt\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_160\\.(je?pg|gif|png))\\1").getMatches();
             if (thumbNails == null || thumbNails.length == 0) {
-                logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
+                logger.warning("Decrypter failed on page " + pageCurrent);
                 return null;
             }
             for (final String[] thumbNail : thumbNails) {
