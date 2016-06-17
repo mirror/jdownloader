@@ -13,6 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
@@ -22,6 +23,17 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import jd.controlling.captcha.SkipException;
 
 public abstract class ChallengeSolver<T> {
+    public static final ChallengeSolver EXTERN = new ChallengeSolver<Object>() {
+
+        @Override
+        public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
+            throw new WTFException("Not Implemented");
+        }
+    };
+
+    private ChallengeSolver() {
+    }
+
     public boolean setInvalid(AbstractResponse<?> response) {
         return false;
     }

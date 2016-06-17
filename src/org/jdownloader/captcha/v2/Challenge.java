@@ -342,4 +342,9 @@ public abstract class Challenge<T> {
         }
         return info;
     }
+
+    // is called in a 1000ms interval while solvers are active. can be used to check for external success (like oauth
+
+    public void poll(SolverJob<T> job2) {
+    }
 }

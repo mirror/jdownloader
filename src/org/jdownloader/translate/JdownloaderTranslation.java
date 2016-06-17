@@ -1087,4 +1087,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     String DownloadLink_setSkipped_statusmessage_phantom();
 
+    @Default(lngs = { "en" }, values = { "Please open the login page in your browser and follow the login steps.\r\nJDownloader will continue as soon as you finished the login." })
+
+    String OAUTH_CHALLENGE_EXPLAIN();
+
 }
