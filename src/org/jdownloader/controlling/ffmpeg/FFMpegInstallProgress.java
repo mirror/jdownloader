@@ -2,13 +2,13 @@ package org.jdownloader.controlling.ffmpeg;
 
 import javax.swing.Icon;
 
+import jd.plugins.PluginProgress;
+
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
-
-import jd.plugins.PluginProgress;
 
 public class FFMpegInstallProgress extends PluginProgress {
 
@@ -22,7 +22,6 @@ public class FFMpegInstallProgress extends PluginProgress {
     public FFMpegInstallProgress() {
         super(0, 100, null);
         setIcon(new AbstractIcon(IconKey.ICON_LOGO_FFMPEG, 18));
-
     }
 
     @Override

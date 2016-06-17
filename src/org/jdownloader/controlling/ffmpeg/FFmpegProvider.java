@@ -13,16 +13,15 @@ public class FFmpegProvider {
 
     /**
      * get the only existing instance of FFmpegProvider. This is a singleton
-     * 
+     *
      * @return
      */
     public static FFmpegProvider getInstance() {
         return FFmpegProvider.INSTANCE;
     }
 
-    private boolean   installing = false;
-    FFMpegInstallThread     installThread;
-    private LogSource logger;
+    protected volatile FFMpegInstallThread installThread;
+    private final LogSource                logger;
 
     /**
      * Create a new instance of FFmpegProvider. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
@@ -42,23 +41,34 @@ public class FFmpegProvider {
         }
     }
 
-    public void install(FFMpegInstallProgress progress, String task) throws InterruptedException {
-        // we do not want to ask twice on one session
-        if (DownloadWatchDog.getInstance().getSession().getBooleanProperty(FFMPEG_INSTALL_CHECK, false)) return;
-        DownloadWatchDog.getInstance().getSession().setProperty(FFMPEG_INSTALL_CHECK, true);
-        synchronized (this) {
-            if (installThread == null || !installThread.isAlive()) {
-                installThread = new FFMpegInstallThread(this, task);
-                installThread.start();
-                logger.info("Started Install process");
+    private final static Object LOCK = new Object();
+
+    public void install(final FFMpegInstallProgress progress, String task) throws InterruptedException {
+        synchronized (LOCK) {
+            // we do not want to ask twice on one session
+            if (DownloadWatchDog.getInstance().getSession().getBooleanProperty(FFMPEG_INSTALL_CHECK, false)) {
+                return;
+            } else {
+                DownloadWatchDog.getInstance().getSession().setProperty(FFMPEG_INSTALL_CHECK, true);
+                FFMpegInstallThread thread = installThread;
+                if (thread == null || !thread.isAlive()) {
+                    thread = new FFMpegInstallThread(this, task);
+                    this.installThread = thread;
+                    thread.start();
+                    logger.info("Started Install process");
+                }
+                while (true) {
+                    thread = installThread;
+                    if (thread == null || !thread.isAlive()) {
+                        break;
+                    }
+                    if (progress != null) {
+                        progress.updateValues(thread.getProgress(), 100);
+                    }
+                    Thread.sleep(1000);
+                }
+                logger.info("Ended Install process");
             }
         }
-
-        while (installThread != null && installThread.isAlive()) {
-
-            progress.updateValues(installThread.getProgress(), 100);
-            Thread.sleep(1000);
-        }
-        logger.info("Ended Install process");
     }
 }

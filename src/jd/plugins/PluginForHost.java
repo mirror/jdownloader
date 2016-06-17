@@ -45,6 +45,34 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.http.Browser;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
@@ -125,34 +153,6 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.http.Browser;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  *
@@ -164,13 +164,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[] PATTERNS       = new Pattern[] {
 
-            /**
-             * these patterns should split filename and fileextension (extension must include the point)
-             */
-            // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin         lazyP          = null;
     /**
@@ -787,29 +788,26 @@ public abstract class PluginForHost extends Plugin {
 
     public void checkFFmpeg(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
         final FFmpeg ffmpeg = new FFmpeg();
-        synchronized (DownloadWatchDog.getInstance()) {
-
+        if (!ffmpeg.isAvailable()) {
+            if (UpdateController.getInstance().getHandler() == null) {
+                getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
+                throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+            }
+            final FFMpegInstallProgress progress = new FFMpegInstallProgress();
+            progress.setProgressSource(this);
+            try {
+                downloadLink.addPluginProgress(progress);
+                FFmpegProvider.getInstance().install(progress, reason);
+            } finally {
+                downloadLink.removePluginProgress(progress);
+            }
+            ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
             if (!ffmpeg.isAvailable()) {
-                if (UpdateController.getInstance().getHandler() == null) {
-                    getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
+                final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
+                    throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+                } else {
                     throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
-                }
-                final FFMpegInstallProgress progress = new FFMpegInstallProgress();
-                progress.setProgressSource(this);
-                try {
-                    downloadLink.addPluginProgress(progress);
-                    FFmpegProvider.getInstance().install(progress, reason);
-                } finally {
-                    downloadLink.removePluginProgress(progress);
-                }
-                ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
-                if (!ffmpeg.isAvailable()) {
-                    final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
-                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
-                    } else {
-                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
-                    }
                 }
             }
         }
@@ -817,30 +815,26 @@ public abstract class PluginForHost extends Plugin {
 
     public void checkFFProbe(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
         final FFprobe ffprobe = new FFprobe();
-        synchronized (DownloadWatchDog.getInstance()) {
-
+        if (!ffprobe.isAvailable()) {
+            if (UpdateController.getInstance().getHandler() == null) {
+                getLogger().warning("Please set FFProbe: BinaryPath in advanced options");
+                throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
+            }
+            final FFMpegInstallProgress progress = new FFMpegInstallProgress();
+            progress.setProgressSource(this);
+            try {
+                downloadLink.addPluginProgress(progress);
+                FFmpegProvider.getInstance().install(progress, reason);
+            } finally {
+                downloadLink.removePluginProgress(progress);
+            }
+            ffprobe.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPathProbe());
             if (!ffprobe.isAvailable()) {
-                if (UpdateController.getInstance().getHandler() == null) {
-                    getLogger().warning("Please set FFProbe: BinaryPath in advanced options");
+                final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
+                    throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+                } else {
                     throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
-                }
-                final FFMpegInstallProgress progress = new FFMpegInstallProgress();
-                progress.setProgressSource(this);
-                try {
-                    downloadLink.addPluginProgress(progress);
-                    FFmpegProvider.getInstance().install(progress, reason);
-                } finally {
-                    downloadLink.removePluginProgress(progress);
-                }
-                ffprobe.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPathProbe());
-                if (!ffprobe.isAvailable()) {
-
-                    final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
-                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
-                    } else {
-                        throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
-                    }
                 }
             }
         }

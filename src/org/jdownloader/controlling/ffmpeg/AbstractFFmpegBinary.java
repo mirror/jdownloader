@@ -13,6 +13,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.utils.Application;
@@ -29,12 +35,6 @@ import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
-
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
 
 public class AbstractFFmpegBinary {
 
@@ -181,11 +181,9 @@ public class AbstractFFmpegBinary {
 
     public String getFullPath() {
         try {
-
             if (StringUtils.isEmpty(path)) {
                 return null;
             }
-
             File file = new File(path);
             if (!file.isAbsolute()) {
                 file = Application.getResource(path);
@@ -202,7 +200,6 @@ public class AbstractFFmpegBinary {
         } catch (Exception e) {
             logger.log(e);
             return null;
-
         }
     }
 
