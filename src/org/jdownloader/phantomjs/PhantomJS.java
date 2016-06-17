@@ -53,6 +53,7 @@ import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -68,7 +69,7 @@ public class PhantomJS implements HttpRequestHandler {
     private WebCache             webCache;
 
     public boolean isAvailable() {
-        final File bins = getBinaryPath();
+        final File bins = getBinaryPath(true);
         return bins != null && bins.exists() && bins.canExecute();
     }
 
@@ -89,28 +90,33 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     protected void initBinaries() throws PhantomJSBinariesMissingException {
-        final File exe = getBinaryPath();
+        final File exe = getBinaryPath(true);
         if (!exe.exists()) {
             throw new PhantomJSBinariesMissingException(exe.getAbsolutePath());
         }
         this.exe = exe;
     }
 
-    public File getBinaryPath() {
-
-        String custom = JsonConfig.create(PhantomJSConfig.class).getCustomBinaryPath();
-        if (StringUtils.isNotEmpty(custom)) {
-            File ret = new File(custom);
-            if (ret.exists()) {
-                return ret;
-            } else {
-                logger.warning("Custom PhantomJS Binary not found: " + ret);
+    public File getBinaryPath(final boolean allowCustomBinaryPath) {
+        if (allowCustomBinaryPath) {
+            final String custom = JsonConfig.create(PhantomJSConfig.class).getCustomBinaryPath();
+            if (StringUtils.isNotEmpty(custom)) {
+                final File ret = new File(custom);
+                if (ret.exists()) {
+                    return ret;
+                } else {
+                    logger.warning("Custom PhantomJS Binary not found: " + ret);
+                }
             }
         }
         final File exe;
         switch (CrossSystem.getOS().getFamily()) {
         case WINDOWS:
-            exe = Application.getResource("tools/Windows/phantomjs/phantomjs.exe");
+            if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_VISTA)) {
+                exe = Application.getResource("tools/Windows/phantomjs/phantomjs.exe");
+            } else {
+                exe = Application.getResource("tools/Windows/phantomjs/phantomjs_prevista.exe");
+            }
             break;
         case MAC:
             exe = Application.getResource("tools/mac/phantomjs/phantomjs");
