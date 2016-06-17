@@ -214,7 +214,6 @@ public class ExtensionController implements MenuExtenderHandler {
                     list.add(ue.getId());
                 }
             }
-
             try {
                 // UpdateController.getInstance().runExtensionUnInstallation(ue.getId());
 
