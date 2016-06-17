@@ -23,6 +23,7 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.JobRunnable;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaCategoryChallenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
+import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
@@ -67,6 +68,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
         if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
 
+            return true;
+        }
+        if (c instanceof AccountLoginOAuthChallenge) {
             return true;
         }
         return c instanceof ImageCaptchaChallenge && super.canHandle(c);
@@ -129,19 +133,34 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             if (entry.isDone()) {
                 continue;
             }
-            if (getChallenge(entry) instanceof ImageCaptchaChallenge) {
+            final Challenge<?> challenge = getChallenge(entry);
+            if (challenge instanceof ImageCaptchaChallenge) {
                 final CaptchaJob job = new CaptchaJob();
-                final Challenge<?> challenge = getChallenge(entry);
+
                 Class<?> cls = challenge.getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
                     job.setType(cls.getSimpleName());
                     cls = cls.getSuperclass();
                 }
-                job.setID(getChallenge(entry).getId().getID());
-                job.setHoster(getChallenge(entry).getPlugin().getHost());
-                job.setCaptchaCategory(getChallenge(entry).getTypeID());
-                job.setTimeout(getChallenge(entry).getTimeout());
-                job.setCreated(getChallenge(entry).getCreated());
+                job.setID(challenge.getId().getID());
+                job.setHoster(challenge.getPlugin().getHost());
+                job.setCaptchaCategory(challenge.getTypeID());
+                job.setTimeout(challenge.getTimeout());
+                job.setCreated(challenge.getCreated());
+                ret.add(job);
+            } else if (challenge instanceof AccountLoginOAuthChallenge) {
+                final CaptchaJob job = new CaptchaJob();
+
+                Class<?> cls = challenge.getClass();
+                while (cls != null && StringUtils.isEmpty(job.getType())) {
+                    job.setType(cls.getSimpleName());
+                    cls = cls.getSuperclass();
+                }
+                job.setID(challenge.getId().getID());
+                job.setHoster(challenge.getPlugin().getHost());
+                job.setCaptchaCategory(challenge.getTypeID());
+                job.setTimeout(challenge.getTimeout());
+                job.setCreated(challenge.getCreated());
                 ret.add(job);
             }
         }

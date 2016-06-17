@@ -19,6 +19,8 @@ import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaDialogSolver;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaJACSolver;
+import org.jdownloader.captcha.v2.challenge.oauth.AccountOAuthSolver;
+import org.jdownloader.captcha.v2.challenge.oauth.OAuthDialogSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
@@ -143,11 +145,12 @@ public class ChallengeResponseController {
 
             if (!Application.isHeadless()) {
                 addSolver(BrowserSolver.getInstance());
+                addSolver(OAuthDialogSolver.getInstance());
             }
             if (!Application.isHeadless()) {
                 addSolver(RecaptchaChooseFrom3x3Solver.getInstance());
             }
-
+            addSolver(AccountOAuthSolver.getInstance());
             addSolver(KeyCaptchaJACSolver.getInstance());
             if (!Application.isHeadless()) {
                 addSolver(KeyCaptchaDialogSolver.getInstance());
@@ -266,8 +269,9 @@ public class ChallengeResponseController {
             logger.info("Wait");
             while (!job.isSolved() && !job.isDone()) {
                 synchronized (job) {
+                    job.getChallenge().poll(job);
                     if (!job.isSolved() && !job.isDone()) {
-                        job.wait(10000);
+                        job.wait(1000);
                     }
                 }
             }

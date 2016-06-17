@@ -6506,4 +6506,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "If you get many hard to solve image captchas, \r\nyou should think about adding 'google.com (recaptcha)' account at Settings->Accountmanager.\r\nAfterwards, you will probably get less and easier captcha images." })
     String phantomjs_recaptcha_google_account_msg();
+
+    @Default(lngs = { "en" }, values = { "Authorization required for %s1" })
+    String OAUTH_DIALOG_TITLE(String tld);
+
+    @Default(lngs = { "en" }, values = { "Browser öffnen" })
+
+    String lit_open_browser();
 }
