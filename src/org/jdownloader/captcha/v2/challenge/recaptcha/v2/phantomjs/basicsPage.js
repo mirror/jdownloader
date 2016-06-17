@@ -1,8 +1,15 @@
 (function() {
+	click = function(el) {
+		var ev = document.createEvent("MouseEvent");
+		ev.initMouseEvent("click", true /* bubble */, true /* cancelable */, window, null, 23, 2, 0, 0, /* coordinates */
+		false, false, false, false, /* modifier keys */
+		0 /* left */, null);
+		el.dispatchEvent(ev);
 
+	}
 	clickBox = function(num) {
-		
-		if(document.getElementsByClassName('rc-image-tile-target')[num].parentNode.className){
+
+		if (document.getElementsByClassName('rc-image-tile-target')[num].parentNode.className) {
 			return;
 		}
 		boxes = document.getElementsByClassName("rc-image-tile-target");
@@ -10,7 +17,7 @@
 		for (i = 0; i < boxes.length; i++) {
 			if (i == num) {
 				console.log("Click Box " + num + " : " + boxes[i]);
-				boxes[i].click();
+				click(boxes[i]);
 				return;
 			}
 		}
