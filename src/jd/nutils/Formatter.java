@@ -33,7 +33,7 @@ public class Formatter {
 
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden returns "~" vor values <0
-     * 
+     *
      * @param eta
      * @return formatierte Zeit
      */
@@ -78,7 +78,7 @@ public class Formatter {
 
     /**
      * FOIrmatiert im format hours:minutes:seconds.ms
-     * 
+     *
      * @param ms
      */
     public static String formatMilliseconds(long ms) {
@@ -135,7 +135,7 @@ public class Formatter {
 
     /**
      * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
-     * 
+     *
      * @param i
      * @param num
      * @param fill
@@ -151,7 +151,7 @@ public class Formatter {
 
     /**
      * GIbt den Integer der sich in src befindet zurück. alle nicht integerzeichen werden ausgefiltert
-     * 
+     *
      * @param src
      * @return Integer in src
      */
@@ -173,7 +173,7 @@ public class Formatter {
 
     /**
      * Extracts the Revision from rev. $Revision: 6506 $
-     * 
+     *
      * @param rev
      * @return
      */
@@ -185,7 +185,6 @@ public class Formatter {
             int ret = 0;
             if (!rev.startsWith("$")) {
                 String base = new Regex(rev, "Base:\\s*(\\d+)").getMatch(0);
-
                 if (base != null) {
                     ret += Long.parseLong(base);
                 }
