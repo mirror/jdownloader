@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
@@ -42,6 +43,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 /**
@@ -76,6 +78,14 @@ public class Keep2ShareCc extends K2SApi {
         return super.rewriteHost(host);
     }
 
+    @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
+            return "http://keep2share.cc/file/" + getFUID(downloadLink);
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        }
+    }
     /* abstract K2SApi class setters */
 
     /**

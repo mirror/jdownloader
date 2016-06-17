@@ -50,6 +50,7 @@ import org.jdownloader.plugins.components.realDebridCom.api.json.UserResponse;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -391,7 +392,10 @@ public class RealDebridCom extends PluginForHost {
             }
         } catch (APIException e) {
             switch (e.getError()) {
-
+            case FILE_UNAVAILABLE:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.downloadlink_status_error_hoster_temp_unavailable(), 10 * 60 * 1000l);
+            case UNSUPPORTED_HOSTER:
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Hoster: " + link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             case HOSTER_TEMP_UNAVAILABLE:
             case HOSTER_IN_MAINTENANCE:
             case HOSTER_LIMIT_REACHED:
