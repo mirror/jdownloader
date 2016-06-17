@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[a-z0-9\\-]+" }, flags = { 2 })
 public class XnXxCom extends PluginForHost {
 
     public XnXxCom(PluginWrapper wrapper) {
