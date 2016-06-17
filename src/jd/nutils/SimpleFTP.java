@@ -99,12 +99,16 @@ public abstract class SimpleFTP {
                 return sb.toString();
             }
 
+            private final boolean isValidHex(char c) {
+                return (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102);
+            }
+
             @Override
             public byte[] toBytes(String string) throws IOException {
                 final ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 for (int index = 0; index < string.length(); index++) {
                     final char c = string.charAt(index);
-                    if (c == '%') {
+                    if (c == '%' && string.length() >= index + 2 && isValidHex(string.charAt(index + 1)) && isValidHex(string.charAt(index + 2))) {
                         final int hexDecoded = Integer.parseInt(string.substring(index + 1, index + 3), 16);
                         bos.write(hexDecoded);
                         index += 2;
@@ -164,6 +168,11 @@ public abstract class SimpleFTP {
                 ignore.printStackTrace();
             }
         }
+        try {
+            results.put("US_ASCII", new String(ENCODING.ASCII7BIT.toBytes(urlCoded), "US-ASCII"));
+        } catch (final Throwable ignore) {
+            ignore.printStackTrace();
+        }
         final List<String> bestMatchRound1 = new ArrayList<String>();
         int bestCountRound1 = -1;
         for (final Entry<String, String> result : results.entrySet()) {
@@ -197,7 +206,11 @@ public abstract class SimpleFTP {
             }
 
         });
-        return bestMatches.get(0);
+        if (bestMatches.size() > 0) {
+            return bestMatches.get(0);
+        } else {
+            return urlCoded;
+        }
     }
 
     private static final int   TIMEOUT            = 20 * 1000;
