@@ -242,7 +242,7 @@ page.onResourceRequested = function(requestData, networkRequest) {
 
 	networkRequest.changeUrl(newUrl);
 
-	networkRequest.setHeader("Host", "127.0.0.1");
+	//networkRequest.setHeader("Host", "127.0.0.1");
 
 };
 page.onConsoleMessage = function(msg) {
