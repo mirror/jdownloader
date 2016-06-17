@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -14,6 +18,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
@@ -35,10 +40,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.http.Browser;
-import jd.plugins.Plugin;
 
 public class InstallThread extends Thread {
 
@@ -85,10 +86,17 @@ public class InstallThread extends Thread {
             final long size;
             switch (CrossSystem.getOSFamily()) {
             case WINDOWS:
-                url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-windows.zip";
-                binaryPath = "\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe";
-                sha256 = "d9fb05623d6b26d3654d008eab3adafd1f6350433dfd16138c46161f42c7dcc8";
-                size = 18193653;
+                if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_VISTA)) {
+                    url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-windows.zip";
+                    binaryPath = "\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe";
+                    sha256 = "d9fb05623d6b26d3654d008eab3adafd1f6350433dfd16138c46161f42c7dcc8";
+                    size = 18193653;
+                } else {
+                    url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.8-windows.zip";
+                    binaryPath = "\\phantomjs-1.9.8-windows\\phantomjs.exe";
+                    sha256 = "da36853ece7d58b6f50813d3e598d8a16bb191b467ac32e1624a239a49de9104";
+                    size = 7467786;
+                }
                 break;
             case MAC:
                 url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-macosx.zip";
@@ -160,7 +168,7 @@ public class InstallThread extends Thread {
                 }
                 installing = true;
                 StatsManager.I().track("installing/extractStart", CollectionName.PJS);
-                final File dest = new PhantomJS().getBinaryPath();
+                final File dest = new PhantomJS().getBinaryPath(false);
                 dest.getParentFile().mkdirs();
                 dest.delete();
                 final File binarySource = new File(extractTo, binaryPath);
