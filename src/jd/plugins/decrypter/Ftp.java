@@ -155,23 +155,24 @@ public class Ftp extends PluginForDecrypt {
                      * name ftp.../file.exe/file.exe -raztoki
                      */
                     SimpleFTPListEntry found = null;
-                    for (final SimpleFTPListEntry entry : entries) {
-                        // we compare bytes because of hex encoding
-                        if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes)) {
-                            found = entry;
-                            break;
-                        }
-                    }
-                    if (found == null) {
+                    if (nameBytes != null && nameBytesUpper != null) {
                         for (final SimpleFTPListEntry entry : entries) {
                             // we compare bytes because of hex encoding
-                            if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytesUpper)) {
+                            if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes)) {
                                 found = entry;
                                 break;
                             }
                         }
+                        if (found == null) {
+                            for (final SimpleFTPListEntry entry : entries) {
+                                // we compare bytes because of hex encoding
+                                if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytesUpper)) {
+                                    found = entry;
+                                    break;
+                                }
+                            }
+                        }
                     }
-
                     if (found != null) {
                         if (found.isFile()) {
                             final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + found.getFullPath());
