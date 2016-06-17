@@ -31,12 +31,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,6 +61,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
@@ -161,7 +161,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * @author raztoki
-     *
+     * 
      * @category 'Experimental', Mods written July 2012 - 2013
      */
     public BackinNet(PluginWrapper wrapper) {
@@ -229,7 +229,9 @@ public class BackinNet extends antiDDoSForHost {
         // abbreviated over x chars long
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;")) {
             logger.warning("filename length is larrrge");
-            altAvailReport(downloadLink, fileInfo);
+            // altAvailReport(downloadLink, fileInfo);
+            fileInfo[0] = cbr.getRegex("<title>Download (.*?)</title>").getMatch(0);
+            fileInfo[0] = fileInfo[0].replace(" ", ".");
         }
 
         // scan the second page. filesize[1] isn't mission critical
@@ -313,7 +315,7 @@ public class BackinNet extends antiDDoSForHost {
     /**
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
-     *
+     * 
      */
     private void altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
@@ -529,7 +531,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
-     *
+     * 
      * @throws Exception
      * @author raztoki
      */
@@ -1073,7 +1075,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * Rules to prevent new downloads from commencing
-     *
+     * 
      */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
@@ -1106,7 +1108,7 @@ public class BackinNet extends antiDDoSForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     *
+     * 
      * @author raztoki
      */
     @SuppressWarnings("unused")
@@ -1207,7 +1209,7 @@ public class BackinNet extends antiDDoSForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     *
+     * 
      * @version 0.2
      * @author raztoki
      */
@@ -1293,7 +1295,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
-     *
+     * 
      * @author raztoki
      */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
@@ -1474,13 +1476,13 @@ public class BackinNet extends antiDDoSForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlSlot
      *            (+1|-1)
      */
@@ -1501,9 +1503,9 @@ public class BackinNet extends antiDDoSForHost {
     /**
      * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
      * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
-     *
+     * 
      * @param account
-     *
+     * 
      * @category 'Experimental', Mod written February 2013
      */
     private void controlSimHost(final Account account) {
@@ -1540,7 +1542,7 @@ public class BackinNet extends antiDDoSForHost {
      * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
      * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
      * hosts/IP setup. This will help with those situations by allowing more connection when possible.
-     *
+     * 
      * @param Account
      *            Account that's been used, can be null
      * @param DownloadLink
@@ -1645,7 +1647,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * Sets Key and Values to respective Account stored within hostMap
-     *
+     * 
      * @param account
      *            Account that's been used, can be null
      * @param x
@@ -1690,7 +1692,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * Returns String key from Account@usedHost from hostMap
-     *
+     * 
      * @param account
      *            Account that's been used, can be null
      */
@@ -1712,7 +1714,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * Returns integer value from Account@usedHost from hostMap
-     *
+     * 
      * @param account
      *            Account that's been used, can be null
      */
@@ -1734,7 +1736,7 @@ public class BackinNet extends antiDDoSForHost {
 
     /**
      * Returns true if hostMap contains 'key'
-     *
+     * 
      * @param account
      *            Account that's been used, can be null
      * @param key
@@ -1760,7 +1762,7 @@ public class BackinNet extends antiDDoSForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     *
+     * 
      * @param key
      *            name
      * @param value
@@ -1790,9 +1792,9 @@ public class BackinNet extends antiDDoSForHost {
     /**
      * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
      * InputField parse(final String data). Affects revision 19688 and earlier!
-     *
+     * 
      * TODO: remove after JD2 goes stable!
-     *
+     * 
      * @author raztoki
      */
     private Form cleanForm(Form form) {
@@ -1822,7 +1824,7 @@ public class BackinNet extends antiDDoSForHost {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     *
+     * 
      * @param ibr
      *            Import Browser
      * @param t
