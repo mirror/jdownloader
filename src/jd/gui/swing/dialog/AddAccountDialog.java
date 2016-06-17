@@ -16,6 +16,7 @@
 
 package jd.gui.swing.dialog;
 
+import java.awt.AWTEvent;
 import java.awt.AlphaComposite;
 import java.awt.Component;
 import java.awt.Composite;
@@ -41,24 +42,15 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.ListFocusTraversalPolicy;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -84,6 +76,17 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
 
@@ -329,6 +332,23 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
 
         hoster = new HosterChooserTable(plugins) {
 
+            @Override
+            protected void processEvent(AWTEvent e) {
+                if (e instanceof KeyEvent) {
+                    if (((KeyEvent) e).getKeyCode() == KeyEvent.VK_TAB) {
+                        content.dispatchEvent(e);
+                        return;
+                    }
+                }
+                super.processEvent(e);
+            }
+
+            @Override
+            protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
+
+                return super.processKeyBinding(stroke, evt, condition, pressed);
+            }
+
             public void valueChanged(javax.swing.event.ListSelectionEvent e) {
                 super.valueChanged(e);
                 if (e.getValueIsAdjusting() || getModel().isTableSelectionClearing()) {
@@ -411,8 +431,11 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
         content.add(header(_GUI.T.AddAccountDialog_layoutDialogContent_choosehoster_()), "gapleft 15,spanx,pushx,growx");
         content.add(filter, "gapleft 32,pushx,growx");
-        content.add(new JScrollPane(hoster), "gapleft 32,pushy,growy");
-
+        JScrollPane sp;
+        content.add(sp = new JScrollPane(hoster), "gapleft 32,pushy,growy");
+        sp.setFocusable(false);
+        sp.getVerticalScrollBar().setFocusable(false);
+        sp.getViewport().setFocusable(false);
         content.add(link, "height 20!,gapleft 32");
         content.add(header2 = header(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
 
@@ -447,6 +470,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             }
         });
         getDialog().setMinimumSize(new Dimension(400, 300));
+
         return content;
     }
 
@@ -496,9 +520,49 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 content.remove(accountBuilderUI.getComponent());
             }
             accountBuilderUI = accountFactory;
-            content.add(accountBuilderUI.getComponent(), "gapleft 32,spanx");
+            final JComponent comp;
+            content.add(comp = accountBuilderUI.getComponent(), "gapleft 32,spanx");
             accountBuilderUI.setAccount(defaultAccount);
-
+            final ArrayList<Component> focusOrder = new ArrayList<Component>();
+            focusOrder.add(filter);
+            focusOrder.addAll(ListFocusTraversalPolicy.getFocusableComponents(comp));
+            focusOrder.add(okButton);
+            focusOrder.add(cancelButton);
+            dialog.setFocusTraversalPolicyProvider(true);
+            dialog.setFocusTraversalPolicy(new ListFocusTraversalPolicy(focusOrder));
+            // content.setFocusTraversalPolicy(new FocusTraversalPolicy() {
+            //
+            // @Override
+            // public Component getLastComponent(Container aContainer) {
+            // return comp;
+            // }
+            //
+            // @Override
+            // public Component getFirstComponent(Container aContainer) {
+            // return filter;
+            // }
+            //
+            // @Override
+            // public Component getDefaultComponent(Container aContainer) {
+            // return filter;
+            // }
+            //
+            // @Override
+            // public Component getComponentBefore(Container aContainer, Component aComponent) {
+            //
+            // return null;
+            // }
+            //
+            // @Override
+            // public Component getComponentAfter(Container aContainer, Component aComponent) {
+            // if (aComponent == filter) {
+            // return hoster;
+            // } else if (aComponent == hoster || aComponent instanceof JViewport) {
+            // return comp.getComponent(0);
+            // }
+            // return filter;
+            // }
+            // });
             onChangedInput(null);
             // getDialog().pack();
             return plugin;

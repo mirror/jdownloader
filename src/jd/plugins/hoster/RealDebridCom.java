@@ -478,6 +478,7 @@ public class RealDebridCom extends PluginForHost {
 
             prepBrowser(br);
             br.clearCookies(API);
+            final Browser autoSolveBr = br.cloneBrowser();
             final CodeResponse code = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes"), new TypeRef<CodeResponse>(CodeResponse.class) {
             });
 
@@ -514,15 +515,15 @@ public class RealDebridCom extends PluginForHost {
                     try {
 
                         String verificationUrl = getUrl();
-                        br.clearCookies(verificationUrl);
-                        br.getPage(verificationUrl);
-                        Form loginForm = br.getFormbyActionRegex("/authorize\\?.+");
+                        autoSolveBr.clearCookies(verificationUrl);
+                        autoSolveBr.getPage(verificationUrl);
+                        Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
                         loginForm.getInputField("p").setValue(getAccount().getPass());
                         loginForm.getInputField("u").setValue(getAccount().getUser());
-                        br.submitForm(loginForm);
-                        Form allow = br.getFormBySubmitvalue("Allow");
+                        autoSolveBr.submitForm(loginForm);
+                        Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
                         allow.setPreferredSubmit("Allow");
-                        br.submitForm(allow);
+                        autoSolveBr.submitForm(allow);
                         clientSecret = checkCredentials(code);
 
                         if (clientSecret != null) {
@@ -550,7 +551,15 @@ public class RealDebridCom extends PluginForHost {
             String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new QueryInfo().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
             TokenResponse token = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
             });
+
             if (token.validate()) {
+
+                this.token = token;
+                UserResponse user = callRestAPIInternal("https://api.real-debrid.com/rest/1.0" + "/user", null, UserResponse.TYPE);
+                if (!StringUtils.equalsIgnoreCase(account.getUser(), user.getEmail()) && !StringUtils.equalsIgnoreCase(account.getUser(), user.getUsername())) {
+                    this.token = null;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "User Mismatch. You try to add the account " + account.getUser() + "\r\nBut in your browser you are logged in as " + user.getUsername() + "\r\nPlease make sure that there is no username mismatch!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 account.setProperty(TOKEN, JSonStorage.serializeToJson(token));
                 account.setProperty(CLIENT_SECRET, JSonStorage.serializeToJson(clientSecret));
                 this.token = token;
