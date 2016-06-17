@@ -508,9 +508,7 @@ public class RealDebridCom extends PluginForHost {
                 @Override
                 public boolean autoSolveChallenge() {
                     try {
-                        if (true) {
-                            throw new WTFException("DEBUG");
-                        }
+
                         String verificationUrl = getUrl();
                         br.clearCookies(verificationUrl);
                         br.getPage(verificationUrl);
