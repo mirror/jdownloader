@@ -23,6 +23,12 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
+import jd.http.Browser;
+import jd.http.ProxySelectorInterface;
+import jd.http.QueryInfo;
+import jd.http.Request;
+import jd.plugins.components.UserAgents;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -53,12 +59,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.webcache.CachedHeader;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
-
-import jd.http.Browser;
-import jd.http.ProxySelectorInterface;
-import jd.http.QueryInfo;
-import jd.http.Request;
-import jd.plugins.components.UserAgents;
 
 public class PhantomJS implements HttpRequestHandler {
     private static final boolean DEBUGGER = false;
@@ -426,6 +426,7 @@ public class PhantomJS implements HttpRequestHandler {
         accessToken = new BigInteger(130, new SecureRandom()).toString(32);
 
         ipcBrowser = new Browser();
+        ipcBrowser.setAllowedResponseCodes(new int[] { 511 });
         ipcBrowser.setVerbose(false);
         ipcBrowser.setDebug(false);
         webCache = initWebCache();
