@@ -75,7 +75,7 @@ public class VidiVodoCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>404\\. That\\'s an error\\.<|The video you have requested is not available<)") || br.containsHTML("<span>404</span>") || br.getURL().contains("arama?q=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!this.br.containsHTML("name=\"allowFullScreen\"")) {
+        } else if (!this.br.containsHTML("allowFullScreen") && !downloadLink.getDownloadURL().contains("/embed/")) {
             /* Probably not a video! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -99,6 +99,9 @@ public class VidiVodoCom extends PluginForHost {
         if (filename == null) {
             /* Last chance fallback */
             filename = filename_url;
+        }
+        if (downloadLink.getDownloadURL().contains("/embed/")) {
+            dllink = br.getRegex("<video .*? src=\"([^\"]+)\"").getMatch(0);
         }
         if (dllink == null) {
             /* Fallback! */
