@@ -118,8 +118,6 @@ public class RealDebridCom extends PluginForHost {
     private static AtomicInteger                           MAX_DOWNLOADS      = new AtomicInteger(Integer.MAX_VALUE);
     private static AtomicInteger                           RUNNING_DOWNLOADS  = new AtomicInteger(0);
 
-    private int                                            maxChunks          = 0;
-
     private final String                                   mName              = "real-debrid.com";
 
     private final String                                   mProt              = "https://";
@@ -271,15 +269,28 @@ public class RealDebridCom extends PluginForHost {
         return MAX_DOWNLOADS.get();
     }
 
-    private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
+    private void handleDL(final Account acc, final DownloadLink link, final String dllink, final UnrestrictLinkResponse linkresp) throws Exception {
         // real debrid connections are flakey at times! Do this instead of repeating download steps.
+        final int maxChunks;
+        if (linkresp == null) {
+            maxChunks = 0;
+        } else {
+            if (linkresp.getChunks() <= 0 || PluginJsonConfig.get(RealDebridComConfig.class).isIgnoreServerSideChunksNum()) {
+                maxChunks = 0;
+            } else {
+                maxChunks = -(int) linkresp.getChunks();
+            }
+        }
 
         final String host = Browser.getHost(dllink);
         final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
             @Override
             public HashInfo getHashInfo() {
-
-                return super.getHashInfo();
+                if (linkresp == null || linkresp.getCrc() == 1) {
+                    return super.getHashInfo();
+                } else {
+                    return null;
+                }
             }
 
             @Override
@@ -323,7 +334,7 @@ public class RealDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
         }
         showMessage(link, "Task 2: Download begins!");
-        handleDL(account, link, link.getPluginPatternMatcher());
+        handleDL(account, link, link.getPluginPatternMatcher(), null);
     }
 
     @Override
@@ -358,22 +369,14 @@ public class RealDebridCom extends PluginForHost {
             String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new QueryInfo().append("link", dllink, true).append("password", link.getStringProperty("pass", null), true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
             });
-            maxChunks = (int) linkresp.getChunks();
-            if (maxChunks == -1 || PluginJsonConfig.get(RealDebridComConfig.class).isIgnoreServerSideChunksNum()) {
-                maxChunks = 0;
-            } else {
-                maxChunks = -maxChunks;
-            }
 
-            String genLnk = linkresp.getDownload();
-
-            if (!genLnk.startsWith("http")) {
+            final String genLnk = linkresp.getDownload();
+            if (StringUtils.isEmpty(genLnk) || !genLnk.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
             }
-
             showMessage(link, "Task 2: Download begins!");
             try {
-                handleDL(account, link, genLnk);
+                handleDL(account, link, genLnk, linkresp);
                 return;
             } catch (PluginException e1) {
                 try {
@@ -485,6 +488,7 @@ public class RealDebridCom extends PluginForHost {
             ensureAPIBrowser();
 
             final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
+
                 private long lastValidation;
 
                 @Override
