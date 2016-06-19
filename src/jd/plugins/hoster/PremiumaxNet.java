@@ -23,6 +23,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,11 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UnavailableHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -210,6 +210,10 @@ public class PremiumaxNet extends antiDDoSForHost {
                         // global issue
                         this.currAcc = null;
                         tempUnavailableHoster(1 * 60 * 60 * 1000l, "Multihoster has no download traffic for " + link.getHost());
+                    } else if (br.containsHTML("<font color=red>\\s*Link Dead\\s*!!!\\s*</font>")) {
+                        // not trust worthy in my opinion. see jdlog://0535035891641
+                        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "They claim file is offline!");
                     } else {
                         // final failover! dllink == null
                         handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
