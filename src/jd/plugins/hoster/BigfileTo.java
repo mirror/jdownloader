@@ -20,6 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,12 +46,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigfile.to" }, urls = { "https?://(?:www\\.)?(uploadable\\.ch|bigfile\\.to)/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class BigfileTo extends PluginForHost {
@@ -139,8 +142,13 @@ public class BigfileTo extends PluginForHost {
         return true;
     }
 
+    private static final AtomicReference<String> agent = new AtomicReference<String>(null);
+
     private Browser prepBr(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36");
+        if (agent.get() == null) {
+            agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
+        }
+        br.getHeaders().put("User-Agent", agent.get());
         return br;
     }
 
@@ -183,7 +191,7 @@ public class BigfileTo extends PluginForHost {
         final String directlinkproperty = "directlink";
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            String reCaptchaPublicKey = this.br.getRegex("var reCAPTCHA_publickey=\\'([^<>\"\\']+)\\';").getMatch(0);
+            String reCaptchaPublicKey = br.getRegex("var reCAPTCHA_publickey=\\'([^<>\"\\']+)\\';").getMatch(0);
             if (reCaptchaPublicKey == null) {
                 /* Fallback to our statically stored recaptchaid */
                 reCaptchaPublicKey = recaptchaid;
@@ -192,56 +200,68 @@ public class BigfileTo extends PluginForHost {
             final String postLink = br.getURL();
             {
                 final Browser json = br.cloneBrowser();
-                json.getHeaders().put("Accept", "application/json, text/javascript, */*");
+                json.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 json.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                json.cloneBrowser().getPage("/now.php");
+                json.getPage("/now.php");
             }
-            br.postPage(postLink, "downloadLink=wait");
-            int wait = 90;
-            final String waittime = br.getRegex("\"waitTime\":(\\d+)").getMatch(0);
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
+            {
+                final Browser json = br.cloneBrowser();
+                json.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                json.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                json.postPage(postLink, "downloadLink=wait");
+                int wait = 90;
+                final String waittime = json.getRegex("\"waitTime\":(\\d+)").getMatch(0);
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
+
+                sleep(wait * 1001l, downloadLink);
             }
-            sleep(wait * 1001l, downloadLink);
-            br.postPage(postLink, "checkDownload=check");
-            if (br.containsHTML("\"fail\":\"timeLimit\"")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
+            {
+                final Browser json = br.cloneBrowser();
+                json.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                json.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                json.postPage(postLink, "checkDownload=check");
+                if (json.containsHTML("\"fail\":\"timeLimit\"")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
+                }
             }
-            boolean captchaFailed = true;
             final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(reCaptchaPublicKey);
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                br.postPage("/checkReCaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_shortencode_field=" + fid);
-                if (br.containsHTML("\"success\":0") || br.toString().trim().equals("[]")) {
-                    rc.reload();
-                    continue;
+                {
+                    final Browser json = br.cloneBrowser();
+                    json.getHeaders().put("Accept", "*/*");
+                    json.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    json.postPage("/checkReCaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_shortencode_field=" + fid);
+                    if (json.containsHTML("\"success\":0") || json.toString().trim().equals("[]")) {
+                        if (i + 1 == 5) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        rc.reload();
+                        continue;
+                    }
                 }
-                captchaFailed = false;
                 break;
             }
-            if (captchaFailed) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            br.getHeaders().put("Referer", postLink);
-            br.postPage("/file/" + fid, "downloadLink=show");
-            if ("fail".equals(br.toString())) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            {
+                final Browser json = br.cloneBrowser();
+                json.getHeaders().put("Accept", "*/*");
+                json.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                json.postPage("/file/" + fid, "downloadLink=show");
+                if ("fail".equals(json.toString())) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                }
             }
             br.postPage("/file/" + fid, "download=normal");
-
             final String reconnect_mins = br.getRegex(">Please wait for (\\d+) minutes  to download the next file").getMatch(0);
             if (reconnect_mins != null) {
                 logger.info("Reconnect limit detected");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnect_mins) * 60 * 1001l);
             }
-
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 handleErrorsWebsite();

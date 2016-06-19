@@ -279,27 +279,25 @@ public class BackinNet extends antiDDoSForHost {
                 if (inValidate(fileInfo[0])) {
                     fileInfo[0] = cbr.getRegex("<h2 class=\"textdown\"> (.*?)<span").getMatch(0);
                     if (inValidate(fileInfo[0])) {
+                        fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // can cause new line finds, so check if it matches.
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // traits from download1 page below.
+                        // next two are details from sharing box
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("<title>Download\\s*(.*?)\\s*</title>").getMatch(0);
-                                if (!inValidate(fileInfo[0])) {
-                                    fileInfo[0] = fileInfo[0].replaceAll("\\s+", ".");
-                                }
-                            }
-                            // next two are details from sharing box
-                            if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
-                                if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                }
+                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                             }
                         }
                     }
                 }
+            }
+        }
+        if (inValidate(fileInfo[0]) || (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;"))) {
+            final String temp = cbr.getRegex("<title>Download\\s*(.*?)\\s*</title>").getMatch(0);
+            if (!inValidate(temp)) {
+                fileInfo[0] = temp.replaceAll("\\s+", ".");
             }
         }
         if (inValidate(fileInfo[1])) {
