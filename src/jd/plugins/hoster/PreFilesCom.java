@@ -27,6 +27,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,16 +50,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision: 31456 $", interfaceVersion = 2, names = { "prefiles.com" }, urls = { "https?://(www\\.)?prefiles\\.com/[a-z0-9]{12}" }, flags = { 2 })
-public class PreFilesCom extends PluginForHost {
+public class PreFilesCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -69,7 +68,6 @@ public class PreFilesCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
@@ -115,17 +113,20 @@ public class PreFilesCom extends PluginForHost {
         return false;
     }
 
-    public void prepBrowser() {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(COOKIE_HOST, "lang", "english");
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
+        return prepBr;
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, ">The file you were looking for could not be found").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -145,7 +146,7 @@ public class PreFilesCom extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 scanInfo(fileInfo);
             }
         }
@@ -215,7 +216,7 @@ public class PreFilesCom extends PluginForHost {
             if (download1 != null) {
                 download1.remove("method_premium");
                 download1.put("method_free", "method_free");
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -310,7 +311,7 @@ public class PreFilesCom extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
@@ -405,18 +406,21 @@ public class PreFilesCom extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void postPage(String page, String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(String page, String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -594,8 +598,6 @@ public class PreFilesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -621,9 +623,8 @@ public class PreFilesCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Free Account");
-            maxPrem.set(1);
             try {
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -636,9 +637,8 @@ public class PreFilesCom extends PluginForHost {
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
-                maxPrem.set(20);
                 try {
-                    account.setMaxSimultanDownloads(maxPrem.get());
+                    account.setMaxSimultanDownloads(20);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
@@ -654,7 +654,6 @@ public class PreFilesCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -704,11 +703,11 @@ public class PreFilesCom extends PluginForHost {
                     loginform.put("code", code);
                 }
 
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getPage(COOKIE_HOST + "/settings");
+                getPage("/settings");
                 if (!new Regex(correctedBR, "<li>Premium until").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
@@ -743,7 +742,7 @@ public class PreFilesCom extends PluginForHost {
             if (download1 != null) {
                 download1.remove("method_premium");
                 download1.put("method_free", "method_free");
-                sendForm(download1);
+                submitForm(download1);
             }
             checkWait(link);
             doFree(link, true, 1, "freelink2");
@@ -761,7 +760,7 @@ public class PreFilesCom extends PluginForHost {
                     if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(passCode, dlform, link);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     dllink = getDllink();
                     checkErrors(link, true, passCode);
                 }
@@ -832,12 +831,6 @@ public class PreFilesCom extends PluginForHost {
                 sleep(waittime * 1l, theLink);
             }
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
