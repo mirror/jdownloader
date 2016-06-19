@@ -24,6 +24,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,12 +52,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -268,9 +268,7 @@ public class DirectHTTP extends antiDDoSForHost {
         final Cookies cookies = br.getCookies(getDownloadURL(downloadLink));
         this.br = new Browser();/* needed to clean referer */
         br.setCookies(getDownloadURL(downloadLink), cookies);
-        if (!raz) {
-            this.br.getHeaders().put("Accept-Encoding", "identity");
-        }
+        this.br.getHeaders().put("Accept-Encoding", "identity");
         br.setDefaultSSLTrustALL(isSSLTrustALL());
         if (auth != null) {
             this.br.getHeaders().put("Authorization", auth);
@@ -459,8 +457,7 @@ public class DirectHTTP extends antiDDoSForHost {
         return new FEATURE[] { FEATURE.GENERIC };
     }
 
-    private boolean       preferHeadRequest = true;
-    private final boolean raz               = false;
+    private boolean preferHeadRequest = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
@@ -480,11 +477,7 @@ public class DirectHTTP extends antiDDoSForHost {
         // if (true) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
         this.setBrowserExclusive();
         this.br.setDefaultSSLTrustALL(isSSLTrustALL());
-        /* disable gzip, because current downloadsystem cannot handle it correct */
-        // identity can have adverse effects also!
-        if (!raz) {
-            this.br.getHeaders().put("Accept-Encoding", "identity");
-        }
+        this.br.getHeaders().put("Accept-Encoding", "identity");
         final String authinURL = new Regex(getDownloadURL(downloadLink), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;
         String authProperty = null;
@@ -528,10 +521,6 @@ public class DirectHTTP extends antiDDoSForHost {
                 } else {
                     basicauth = null;
                     this.br.getHeaders().remove("Authorization");
-                }
-                if (!raz) {
-                    // test, identifying as german will redirect on direct links.
-                    br.getHeaders().put("Accept-Language", "en");
                 }
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 String urlParams = null;
@@ -689,7 +678,10 @@ public class DirectHTTP extends antiDDoSForHost {
                             fileName = null;
                         }
                     }
-                    if (fileName != null && downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)) {
+                    if (fileName != null /*
+                                          * the following setter is NEVER referenced within JD source.. we need to url decode filenames! &&
+                                          * downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)
+                                          */) {
                         fileName = Encoding.urlDecode(fileName, false);
                     }
                 }
