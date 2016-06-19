@@ -896,23 +896,23 @@ public class VKontakteRuHoster extends PluginForHost {
      * not match expected) it won't touch the current finallink at all! Only use this for photo links!
      */
     private void photo_correctLink() {
-        if (this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
-            logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> Correcting finallink");
-            if (this.finalUrl.matches("https://pp\\.vk\\.me/c\\d+/.+")) {
-                logger.info("final link is already in desired format --> Doing nothing");
+        if (true || this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
+            if (finalUrl.matches("https://pp\\.vk\\.me/c\\d+/.+")) {
+                logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> final link is already in desired format ::: " + finalUrl);
             } else {
                 /*
                  * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g.
                  * server returns errorcode 500 instead of the file) but this is a very rare problem.
                  */
-                final String oldserver = new Regex(this.finalUrl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
-                final String serv_id = new Regex(this.finalUrl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
+                final String was = finalUrl;
+                final String oldserver = new Regex(finalUrl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
+                final String serv_id = new Regex(finalUrl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
                 if (oldserver != null && serv_id != null) {
                     final String newserver = "https://pp.vk.me/c" + serv_id + "/";
-                    this.finalUrl = this.finalUrl.replace(oldserver, newserver);
-                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink");
+                    finalUrl = finalUrl.replace(oldserver, newserver);
+                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink ::: Was = " + was + " Now = " + finalUrl);
                 } else {
-                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink");
+                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink ::: " + finalUrl);
                 }
             }
         } else {
@@ -931,9 +931,9 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (oldserver != null && serv_id != null) {
                     final String newserver = "http://cs" + serv_id + ".vk.me/";
                     this.finalUrl = this.finalUrl.replace(oldserver, newserver);
-                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLE --> SUCCEEDED to revert corrected finallink");
+                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS disabled --> SUCCEEDED to revert corrected finallink");
                 } else {
-                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to revert corrected finallink");
+                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS disabled --> FAILED to revert corrected finallink");
                 }
             }
         }
