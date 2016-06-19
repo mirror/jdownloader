@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -232,7 +233,10 @@ public class CloudMailRu extends PluginForHost {
                 this.br.getPage(mainlink);
                 final String web_json = this.br.getRegex("window\\[\"__configObject[^<>\"]+\"\\] =(\\{.*?\\});<").getMatch(0);
                 if (web_json != null) {
-                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(web_json);
+                    // using linkedhashmap here will result in exception
+                    // java.lang.ClassCastException: java.util.HashMap cannot be cast to java.util.LinkedHashMap
+                    // irc report - raztoki20160619
+                    final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(web_json);
                     dataserver = (String) DummyScriptEnginePlugin.walkJson(entries, "dispatcher/weblink_get/{0}/url");
                     pageid = (String) DummyScriptEnginePlugin.walkJson(entries, "params/x-page-id");
                     // final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
