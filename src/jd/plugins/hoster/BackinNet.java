@@ -31,6 +31,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +50,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -61,12 +68,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
@@ -229,9 +230,11 @@ public class BackinNet extends antiDDoSForHost {
         // abbreviated over x chars long
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;")) {
             logger.warning("filename length is larrrge");
-            // altAvailReport(downloadLink, fileInfo);
-            fileInfo[0] = cbr.getRegex("<title>Download\\s*(.*?)\\s*</title>").getMatch(0);
-            fileInfo[0] = fileInfo[0].replaceAll("\\s+", ".");
+            altAvailReport(downloadLink, fileInfo);
+            // sometimes the above mehtod becomes disabled by hoster, and wont work.
+            if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;")) {
+                fileInfo[0] = HTMLEntities.unhtmlentities(fileInfo[0]);
+            }
         }
 
         // scan the second page. filesize[1] isn't mission critical
@@ -281,6 +284,12 @@ public class BackinNet extends antiDDoSForHost {
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
                             fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            if (inValidate(fileInfo[0])) {
+                                fileInfo[0] = cbr.getRegex("<title>Download\\s*(.*?)\\s*</title>").getMatch(0);
+                                if (!inValidate(fileInfo[0])) {
+                                    fileInfo[0] = fileInfo[0].replaceAll("\\s+", ".");
+                                }
+                            }
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
@@ -341,7 +350,14 @@ public class BackinNet extends antiDDoSForHost {
     private void altAvailReport(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         final Browser alt = new Browser();
         getPage(alt, COOKIE_HOST + "/?op=report_file&id=" + fuid);
-        fileInfo[0] = alt.getRegex(">Filename:?</b></td><td>([^<]+)</td>").getMatch(0);
+        if (alt.getRedirectLocation() != null && alt.getRedirectLocation().endsWith("?op=login")) {
+            return;
+        }
+        // use temp so that you don't wipe what already exists.
+        final String result = alt.getRegex(">Filename:?</b></td><td>([^<]+)</td>").getMatch(0);
+        if (!inValidate(result)) {
+            fileInfo[0] = result;
+        }
     }
 
     @SuppressWarnings("unused")
