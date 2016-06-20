@@ -846,7 +846,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
     @Override
     public Window getOwner() {
-        return super.getOwner();
+        return JDGui.getInstance().getMainFrame();
     }
 
     public void pack() {
