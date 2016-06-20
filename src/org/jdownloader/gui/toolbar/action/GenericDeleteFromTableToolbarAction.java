@@ -702,4 +702,8 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
+    @Override
+    public void onLinkCrawlerFinished() {
+    }
+
 }

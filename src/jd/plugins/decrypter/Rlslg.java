@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
 import jd.plugins.CryptedLink;
@@ -53,7 +52,7 @@ public class Rlslg extends PluginForDecrypt {
             String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
             if (links != null) {
                 for (String link : links) {
-                    if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
+                    if (!new Regex(link, this.getSupportedLinks()).matches()) {
                         DownloadLink dLink = createDownloadlink(link);
                         if (pws != null && pws.size() > 0) {
                             dLink.setSourcePluginPasswordList(new ArrayList<String>(pws));
@@ -85,7 +84,7 @@ public class Rlslg extends PluginForDecrypt {
                     String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
                     if (links != null && links.length != 0) {
                         for (String link : links) {
-                            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
+                            if (!new Regex(link, this.getSupportedLinks()).matches()) {
                                 DownloadLink dLink = createDownloadlink(link);
                                 if (pws != null && pws.size() > 0) {
                                     dLink.setSourcePluginPasswordList(new ArrayList<String>(pws));

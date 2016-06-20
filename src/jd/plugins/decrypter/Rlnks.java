@@ -22,12 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,6 +36,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }, flags = { 0 })
 public class Rlnks extends antiDDoSForDecrypt {
@@ -83,7 +83,7 @@ public class Rlnks extends antiDDoSForDecrypt {
             final Browser browser = br.cloneBrowser();
             browser.getHeaders().put("Referer", cryptedLink);
             browser.getDownload(container, Encoding.htmlDecode(containerURL));
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            decryptedLinks.addAll(loadContainerFile(container));
             container.delete();
             return decryptedLinks.isEmpty() ? false : true;
         }

@@ -187,4 +187,8 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
+    @Override
+    public void onLinkCrawlerFinished() {
+    }
+
 }

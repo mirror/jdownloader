@@ -33,15 +33,6 @@ import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -58,6 +49,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+(?:\\?hostid=all&clearing=[a-f0-9]+)?" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
@@ -296,7 +296,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     br.cloneBrowser().getDownload(container, next.getValue());
                     if (container != null) {
                         logger.info("Container found: " + container);
-                        decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                        decryptedLinks.addAll(loadContainerFile(container));
                         container.delete();
                         if (!decryptedLinks.isEmpty()) {
                             return decryptedLinks;

@@ -365,9 +365,9 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             }
 
             if (file != null && file.exists() && file.length() > 100) {
-                final ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                final List<DownloadLink> decryptedLinks = loadContainerFile(file);
                 if (decryptedLinks.size() > 0) {
-                    return decryptedLinks;
+                    return new ArrayList<DownloadLink>(decryptedLinks);
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

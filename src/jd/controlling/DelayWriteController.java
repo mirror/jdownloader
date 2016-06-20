@@ -27,7 +27,6 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.DelayWriteMode;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
@@ -44,190 +43,195 @@ public class DelayWriteController {
 
     private final AtomicBoolean              initialized                = new AtomicBoolean(false);
     private final DelayedRunnable            flushWrites                = new DelayedRunnable(10000l, 120000l) {
-        @Override
-        public String getID() {
-            return "DelayWriteController";
-        }
+                                                                            @Override
+                                                                            public String getID() {
+                                                                                return "DelayWriteController";
+                                                                            }
 
-        @Override
-        public void delayedrun() {
-            StorageHandler.flushWrites();
-        }
+                                                                            @Override
+                                                                            public void delayedrun() {
+                                                                                StorageHandler.flushWrites();
+                                                                            }
 
-    };
+                                                                        };
 
     private final DownloadWatchdogListener   downloadWatchDogListener   = new DownloadWatchdogListener() {
 
-        @Override
-        public void onDownloadWatchdogStateIsStopping() {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadWatchdogStateIsStopping() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadWatchdogStateIsStopped() {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadWatchdogStateIsStopped() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadWatchdogStateIsRunning() {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadWatchdogStateIsRunning() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadWatchdogStateIsPause() {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadWatchdogStateIsPause() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadWatchdogStateIsIdle() {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadWatchdogStateIsIdle() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadWatchdogDataUpdate() {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadWatchdogDataUpdate() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
-            flushWrites.resetAndStart();
-        }
-    };
+                                                                            @Override
+                                                                            public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
+                                                                        };
 
     private final LinkCollectorListener      linkCollectorListener      = new LinkCollectorListener() {
 
-        @Override
-        public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCrawlerStarted(LinkCollectorCrawler crawler) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCrawlerStarted(LinkCollectorCrawler crawler) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCrawlerNewJob(LinkCollectingJob job) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCrawlerAdded(LinkCollectorCrawler crawler) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCrawlerAdded(LinkCollectorCrawler crawler) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onLinkCollectorAbort(LinkCollectorEvent event) {
-            flushWrites.resetAndStart();
-        }
-    };
+                                                                            @Override
+                                                                            public void onLinkCollectorAbort(LinkCollectorEvent event) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
+
+                                                                            @Override
+                                                                            public void onLinkCrawlerFinished() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
+                                                                        };
 
     private final DownloadControllerListener downloadControllerListener = new DownloadControllerListener() {
 
-        @Override
-        public void onDownloadControllerUpdatedData(FilePackage pkg) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerUpdatedData(FilePackage pkg) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerStructureRefresh() {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerStructureRefresh() {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerStructureRefresh(FilePackage pkg) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerRemovedPackage(FilePackage pkg) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
-            flushWrites.resetAndStart();
-        }
+                                                                            @Override
+                                                                            public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
 
-        @Override
-        public void onDownloadControllerAddedPackage(FilePackage pkg) {
-            flushWrites.resetAndStart();
-        }
-    };
+                                                                            @Override
+                                                                            public void onDownloadControllerAddedPackage(FilePackage pkg) {
+                                                                                flushWrites.resetAndStart();
+                                                                            }
+                                                                        };
 
     public void init() {
         if (initialized.compareAndSet(false, true)) {
-            final LogInterface logger =  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger();
+            final LogInterface logger = org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger();
             final DelayWriteMode mode = CFG_GENERAL.CFG.getDelayWriteMode();
             logger.info("DelayWriteMode: " + mode);
             if ((DelayWriteMode.AUTO.equals(mode) && Application.isHeadless())) {

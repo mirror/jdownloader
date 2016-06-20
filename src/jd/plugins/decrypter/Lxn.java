@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -38,11 +39,8 @@ import jd.utils.JDUtilities;
 public class Lxn extends PluginForDecrypt {
 
     static private Object LOCK = new Object(); /*
-                                                * lixin checkt anhand der ip und
-                                                * der globalen phpsessionid,
-                                                * daher müssen parallel zugriffe
-                                                * vermieden werden, sonst ist
-                                                * das captcha imme falsch
+                                                * lixin checkt anhand der ip und der globalen phpsessionid, daher müssen parallel zugriffe
+                                                * vermieden werden, sonst ist das captcha imme falsch
                                                 */
 
     public Lxn(PluginWrapper wrapper) {
@@ -101,7 +99,9 @@ public class Lxn extends PluginForDecrypt {
                     // work
                     ArrayList<DownloadLink> dlclinks = new ArrayList<DownloadLink>();
                     dlclinks = loadcontainer(parameter);
-                    if (dlclinks != null && dlclinks.size() != 0) return dlclinks;
+                    if (dlclinks != null && dlclinks.size() != 0) {
+                        return dlclinks;
+                    }
                     /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
                     Form[] forms = br.getForms();
                     if (forms == null || forms.length == 0) {
@@ -112,7 +112,9 @@ public class Lxn extends PluginForDecrypt {
                     int failcounter = 0;
                     progress.setRange(forms.length);
                     for (Form element : forms) {
-                        if (element.containsHTML("Download")) continue;
+                        if (element.containsHTML("Download")) {
+                            continue;
+                        }
                         element.put("submit", "Link+" + counter);
                         try {
                             br.submitForm(element);
@@ -139,7 +141,7 @@ public class Lxn extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> loadcontainer(String theLink) throws IOException, PluginException {
-        ArrayList<DownloadLink> decryptedLinks = null;
+        List<DownloadLink> decryptedLinks = null;
         Browser brc = br.cloneBrowser();
         String id = new Regex(theLink, "lix\\.in/(.+)").getMatch(0);
         theLink = Encoding.htmlDecode(theLink);
@@ -147,11 +149,13 @@ public class Lxn extends PluginForDecrypt {
         URLConnectionAdapter con = brc.openPostConnection("http://lix.in/download/", "submit=Download+DLC&id=" + id);
         if (con.getResponseCode() == 200) {
             file = JDUtilities.getResourceFile("tmp/lixin/" + theLink.replaceAll("(:|/|=|\\?)", "") + ".dlc");
-            if (file == null) return null;
+            if (file == null) {
+                return null;
+            }
             file.deleteOnExit();
             brc.downloadConnection(file, con);
             if (file != null && file.exists() && file.length() > 100) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                decryptedLinks = loadContainerFile(file);
             }
         } else {
             con.disconnect();
@@ -159,7 +163,9 @@ public class Lxn extends PluginForDecrypt {
         }
 
         if (file != null && file.exists() && file.length() > 100) {
-            if (decryptedLinks.size() > 0) return decryptedLinks;
+            if (decryptedLinks.size() > 0) {
+                return new ArrayList<DownloadLink>(decryptedLinks);
+            }
         } else {
             return null;
         }

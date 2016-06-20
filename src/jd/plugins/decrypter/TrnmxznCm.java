@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -34,6 +32,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TrinimixzoneCom;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision: 31871 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "https?://(www\\.)?trinimixzone\\.com/forum/[^\\s/]+" }, flags = { 0 })
 public class TrnmxznCm extends PluginForDecrypt {
@@ -86,7 +86,7 @@ public class TrnmxznCm extends PluginForDecrypt {
 
     @Override
     public LinkCrawler getCustomNextCrawler() {
-        final LinkCrawler lc = new LinkCrawler();
+        final LinkCrawler lc = new LinkCrawler(true, true);
         lc.setFilter(new LinkCrawlerFilter() {
 
             @Override

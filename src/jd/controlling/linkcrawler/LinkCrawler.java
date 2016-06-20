@@ -145,8 +145,18 @@ public class LinkCrawler {
     private LinkCrawlerDeepInspector                       deepInspector               = null;
     private DirectHTTPPermission                           directHTTPPermission        = DirectHTTPPermission.ALWAYS;
 
+    private final UniqueAlltimeID                          uniqueAlltimeID             = new UniqueAlltimeID();
+
     protected List<LinkCrawlerRule> getLinkCrawlerRules() {
         return listLinkCrawlerRules();
+    }
+
+    public UniqueAlltimeID getUniqueAlltimeID() {
+        return uniqueAlltimeID;
+    }
+
+    public LinkCrawler getParent() {
+        return parentCrawler;
     }
 
     private final static LinkCrawlerConfig CONFIG = JsonConfig.create(LinkCrawlerConfig.class);
@@ -166,8 +176,9 @@ public class LinkCrawler {
     protected final static ScheduledExecutorService TIMINGQUEUE = DelayedRunnable.getNewScheduledExecutorService();
 
     public boolean isDoDuplicateFinderFinalCheck() {
-        if (parentCrawler != null) {
-            parentCrawler.isDoDuplicateFinderFinalCheck();
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.isDoDuplicateFinderFinalCheck();
         }
         return doDuplicateFinderFinalCheck;
     }
@@ -237,18 +248,16 @@ public class LinkCrawler {
         return EVENTSENDER;
     }
 
-    public LinkCrawler() {
-        this(true, true);
-    }
-
     public static LinkCrawler newInstance() {
         final LinkCrawler lc;
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             final LinkCrawlerThread thread = (LinkCrawlerThread) (Thread.currentThread());
-            Object owner = thread.getCurrentOwner();
+            final Object owner = thread.getCurrentOwner();
             final CrawledLink source;
             if (owner instanceof PluginForDecrypt) {
                 source = ((PluginForDecrypt) owner).getCurrentLink();
+            } else if (owner instanceof PluginsC) {
+                source = ((PluginsC) owner).getCurrentLink();
             } else {
                 source = null;
             }
@@ -398,8 +407,9 @@ public class LinkCrawler {
     }
 
     public long getCreated() {
-        if (parentCrawler != null) {
-            return parentCrawler.getCreated();
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.getCreated();
         }
         return created;
     }
@@ -414,8 +424,9 @@ public class LinkCrawler {
      * @return
      */
     public int getCrawlerGeneration(boolean thisGeneration) {
-        if (!thisGeneration && parentCrawler != null) {
-            return Math.max(crawlerGeneration.get(), parentCrawler.getCrawlerGeneration(false));
+        final LinkCrawler parent = getParent();
+        if (!thisGeneration && parent != null) {
+            return Math.max(crawlerGeneration.get(), parent.getCrawlerGeneration(false));
         }
         return crawlerGeneration.get();
     }
@@ -442,14 +453,16 @@ public class LinkCrawler {
     }
 
     public boolean isBlacklisted(LazyCrawlerPlugin plugin) {
-        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) {
+        final LinkCrawler parent = getParent();
+        if (parent != null && parent.isBlacklisted(plugin)) {
             return true;
         }
         return crawlerPluginBlacklist.contains(plugin.getDisplayName());
     }
 
     public boolean isBlacklisted(LazyHostPlugin plugin) {
-        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) {
+        final LinkCrawler parent = getParent();
+        if (parent != null && parent.isBlacklisted(plugin)) {
             return true;
         }
         return hostPluginBlacklist.contains(plugin.getDisplayName());
@@ -640,39 +653,59 @@ public class LinkCrawler {
     protected void checkFinishNotify() {
         if (crawler.decrementAndGet() == 0) {
             /* this LinkCrawler instance stopped, notify static counter */
-            final boolean event;
+            final boolean finished;
+            final boolean stopped;
             synchronized (CRAWLER) {
                 if (crawler.get() == 0 && runningState.compareAndSet(true, false)) {
+                    stopped = true;
                     if (CRAWLER.get() > 0) {
-                        event = CRAWLER.decrementAndGet() == 0;
+                        finished = CRAWLER.decrementAndGet() == 0;
                     } else {
-                        event = false;
+                        finished = false;
                     }
                 } else {
-                    event = false;
+                    stopped = false;
+                    finished = false;
                 }
             }
-            if (event) {
+            if (stopped) {
                 synchronized (this) {
                     this.notifyAll();
                 }
-                /*
-                 * all tasks are done , we can now cleanup our duplicateFinder
-                 */
-                duplicateFinderContainer.clear();
-                duplicateFinderCrawler.clear();
-                duplicateFinderFinal.clear();
-                duplicateFinderDeep.clear();
+                if (getParent() == null) {
+                    cleanupDuplicateFinder();
+                }
                 EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
                 crawlerStopped();
             }
+            if (finished) {
+                synchronized (this) {
+                    this.notifyAll();
+                }
+                cleanupDuplicateFinder();
+                EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.FINISHED));
+                crawlerFinished();
+            }
         }
+    }
+
+    protected void cleanupDuplicateFinder() {
+        /*
+         * all tasks are done , we can now cleanup our duplicateFinder
+         */
+        duplicateFinderContainer.clear();
+        duplicateFinderCrawler.clear();
+        duplicateFinderFinal.clear();
+        duplicateFinderDeep.clear();
     }
 
     protected void crawlerStopped() {
     }
 
     protected void crawlerStarted() {
+    }
+
+    protected void crawlerFinished() {
     }
 
     private boolean checkStartNotify(int generation) {
@@ -1572,8 +1605,9 @@ public class LinkCrawler {
     }
 
     protected List<LazyCrawlerPlugin> getSortedLazyCrawlerPlugins() {
-        if (parentCrawler != null) {
-            return parentCrawler.getSortedLazyCrawlerPlugins();
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.getSortedLazyCrawlerPlugins();
         }
         if (unsortedLazyCrawlerPlugins == null) {
             unsortedLazyCrawlerPlugins = CrawlerPluginController.getInstance().list();
@@ -1619,8 +1653,9 @@ public class LinkCrawler {
     }
 
     protected List<LazyHostPlugin> getSortedLazyHostPlugins() {
-        if (parentCrawler != null) {
-            return parentCrawler.getSortedLazyHostPlugins();
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.getSortedLazyHostPlugins();
         }
         /* sort pHosts according to their usage */
         List<LazyHostPlugin> ret = sortedLazyHostPlugins.get();
@@ -1648,15 +1683,17 @@ public class LinkCrawler {
     }
 
     protected boolean resetSortedLazyCrawlerPlugins(List<LazyCrawlerPlugin> resetSortedLazyCrawlerPlugins) {
-        if (parentCrawler != null) {
-            return parentCrawler.resetSortedLazyCrawlerPlugins(resetSortedLazyCrawlerPlugins);
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.resetSortedLazyCrawlerPlugins(resetSortedLazyCrawlerPlugins);
         }
         return sortedLazyCrawlerPlugins.compareAndSet(resetSortedLazyCrawlerPlugins, null);
     }
 
     protected boolean resetSortedLazyHostPlugins(List<LazyHostPlugin> lazyHostPlugins) {
-        if (parentCrawler != null) {
-            return parentCrawler.resetSortedLazyHostPlugins(lazyHostPlugins);
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.resetSortedLazyHostPlugins(lazyHostPlugins);
         }
         return sortedLazyHostPlugins.compareAndSet(lazyHostPlugins, null);
     }
@@ -2774,8 +2811,9 @@ public class LinkCrawler {
     }
 
     protected boolean isCrawledLinkFiltered(CrawledLink link) {
-        if (parentCrawler != null && getFilter() != parentCrawler.getFilter()) {
-            if (parentCrawler.isCrawledLinkFiltered(link)) {
+        final LinkCrawler parent = getParent();
+        if (parent != null && getFilter() != parent.getFilter()) {
+            if (parent.isCrawledLinkFiltered(link)) {
                 return true;
             }
         }

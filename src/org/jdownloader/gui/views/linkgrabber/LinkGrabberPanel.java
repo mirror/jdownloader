@@ -10,6 +10,18 @@ import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorHighlightListener;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -37,18 +49,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgra
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorCrawler;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorHighlightListener;
-import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import net.miginfocom.swing.MigLayout;
-
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
     /**
      *
@@ -61,13 +61,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         return table;
     }
 
-    private JScrollPane        tableScrollPane;
-    private LinkGrabberSidebar sidebar;
+    private JScrollPane                tableScrollPane;
+    private LinkGrabberSidebar         sidebar;
 
-    private HeaderScrollPane sidebarScrollPane;
+    private HeaderScrollPane           sidebarScrollPane;
 
-    private CustomizeableActionBar rightBar;
-    private CustomizeableActionBar leftBar;
+    private CustomizeableActionBar     rightBar;
+    private CustomizeableActionBar     leftBar;
 
     private JComponent                 sidebarContainer;
     private LinkgrabberWidgetContainer widgetContainer;
@@ -156,6 +156,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+            }
+
+            @Override
+            public void onLinkCrawlerFinished() {
             }
 
         });
@@ -491,6 +495,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     @Override
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+    }
+
+    @Override
+    public void onLinkCrawlerFinished() {
     }
 
 }

@@ -228,6 +228,16 @@ public abstract class PluginsC {
         return true;
     }
 
+    private CrawledLink currentLink = null;
+
+    public CrawledLink getCurrentLink() {
+        return currentLink;
+    }
+
+    public void setCurrentLink(CrawledLink currentLink) {
+        this.currentLink = currentLink;
+    }
+
     public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
         if (source.getURL() == null) {
             return null;
@@ -235,6 +245,7 @@ public abstract class PluginsC {
         ArrayList<CrawledLink> retLinks = null;
         boolean showException = true;
         try {
+            setCurrentLink(source);
             /* extract filename from url */
             final String sourceURL = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
             if (sourceURL != null) {

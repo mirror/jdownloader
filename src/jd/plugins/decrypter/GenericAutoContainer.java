@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
@@ -17,7 +14,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" }, flags = { 0 })
 public class GenericAutoContainer extends PluginForDecrypt {
@@ -50,7 +49,7 @@ public class GenericAutoContainer extends PluginForDecrypt {
                         containerTemp = org.appwork.utils.Application.getResource("tmp/autocontainer/" + System.nanoTime() + "." + type);
                         br.downloadConnection(containerTemp, con);
                         if (containerTemp.exists() && containerTemp.length() > 100) {
-                            ret.addAll(JDUtilities.getController().getContainerLinks(containerTemp));
+                            ret.addAll(loadContainerFile(containerTemp));
                         }
                     }
                 }
