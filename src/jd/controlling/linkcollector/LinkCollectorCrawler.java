@@ -14,7 +14,7 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
 
     private final LinkCollectorCrawlerEventSender eventSender;
 
-    public LinkCollectorCrawler() {
+    protected LinkCollectorCrawler() {
         super(true, true);
         setDirectHTTPPermission(LinkCrawler.getConfig().getDirectHTTPPermission());
         setHostPluginBlacklist(CFG_GENERAL.CFG.getCrawlerHostPluginBlacklist());
@@ -31,7 +31,6 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
             eventSender.fireEvent(new LinkCollectorCrawlerEvent(this, LinkCollectorCrawlerEvent.Type.CRAWLER_PLUGIN, cryptedLink));
         }
         super.crawl(generation, lazyC, cryptedLink);
-
     }
 
     @Override
@@ -95,6 +94,10 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
 
     @Override
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+    }
+
+    @Override
+    public void onLinkCrawlerFinished() {
     }
 
 }

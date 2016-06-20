@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -65,7 +64,7 @@ public class IrfreeCm extends PluginForDecrypt {
             if (crypted != null) {
                 link = Encoding.Base64Decode(Encoding.htmlDecode(crypted));
             }
-            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
+            if (!new Regex(link, this.getSupportedLinks()).matches()) {
                 DownloadLink dLink = createDownloadlink(link);
                 if (pws != null && pws.size() > 0) {
                     dLink.setSourcePluginPasswordList(new ArrayList<String>(pws));

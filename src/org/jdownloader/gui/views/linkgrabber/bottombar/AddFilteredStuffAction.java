@@ -173,6 +173,10 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
         public void onLinkCrawlerNewJob(LinkCollectingJob job) {
         }
 
+        @Override
+        public void onLinkCrawlerFinished() {
+        }
+
     }
 
     @Override

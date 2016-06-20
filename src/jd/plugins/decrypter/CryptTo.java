@@ -32,7 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 
@@ -134,7 +133,7 @@ public class CryptTo extends PluginForDecrypt {
                 file.getParentFile().mkdirs();
                 brc.downloadConnection(file, con);
                 if (file.exists() && file.length() > 100) {
-                    links.addAll(JDUtilities.getController().getContainerLinks(file));
+                    links.addAll(loadContainerFile(file));
                 }
             }
         } catch (Throwable e) {

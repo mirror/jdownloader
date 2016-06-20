@@ -2,11 +2,18 @@ package jd.controlling.linkcollector;
 
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 
+import org.jdownloader.controlling.UniqueAlltimeID;
+
 public class LinkCollectingJob {
 
-    private String              jobContent;
-    private String              customSourceUrl;
-    private CrawledLinkModifier crawledLinkModifierPrePackagizer = null;
+    private String                jobContent;
+    private String                customSourceUrl;
+    private CrawledLinkModifier   crawledLinkModifierPrePackagizer = null;
+    private final UniqueAlltimeID uniqueAlltimeID                  = new UniqueAlltimeID();
+
+    public UniqueAlltimeID getUniqueAlltimeID() {
+        return uniqueAlltimeID;
+    }
 
     public CrawledLinkModifier getCrawledLinkModifierPrePackagizer() {
         return crawledLinkModifierPrePackagizer;

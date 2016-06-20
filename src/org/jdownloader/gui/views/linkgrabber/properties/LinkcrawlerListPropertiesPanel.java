@@ -124,6 +124,10 @@ public abstract class LinkcrawlerListPropertiesPanel<E extends AbstractNodePrope
     }
 
     @Override
+    public void onLinkCrawlerFinished() {
+    }
+
+    @Override
     public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
     }
 

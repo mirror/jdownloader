@@ -74,6 +74,10 @@ public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkC
          */
         CRAWLER_STOPPED,
         /**
+         * All Crawler have stopped
+         */
+        CRAWLER_FINISHED,
+        /**
          * A new Crawler has been stopped.<br>
          * Parameter[0]: (LinkCollectorCrawler) the crawler <br>
          * Parameter[1]: LinkCollectingJob

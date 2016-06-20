@@ -45,6 +45,9 @@ public class LinkCollectorEventSender extends Eventsender<LinkCollectorListener,
         case CRAWLER_STOPPED:
             listener.onLinkCrawlerStopped((LinkCollectorCrawler) event.getParameter());
             break;
+        case CRAWLER_FINISHED:
+            listener.onLinkCrawlerFinished();
+            break;
         case NEW_CRAWLER_JOB:
             listener.onLinkCrawlerNewJob((LinkCollectingJob) event.getParameter(0));
             break;

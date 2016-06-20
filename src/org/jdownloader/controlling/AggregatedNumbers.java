@@ -330,15 +330,24 @@ public class AggregatedNumbers {
         this.disabledDownloadsFinished = downloadsFinishedDisabled;
         this.disabledDownloadsSkipped = downloadsSkippedDisabled;
         this.disabledLoadedBytes = loadedBytesDisabled;
+        if (totalBytesDisabled == -1 && linkCount == 0) {
+            totalBytesDisabled = 0;
+        }
         this.disabledTotalBytes = totalBytesDisabled;
 
         this.downloadsFailed = downloadsFailed;
         this.downloadsFinished = downloadsFinished;
         this.downloadsSkipped = downloadsSkipped;
+        if (totalBytes == -1 && linkCount == 0) {
+            totalBytes = 0;
+        }
         this.totalBytes = totalBytes;
         this.loadedBytes = loadedBytes;
 
         this.enabledUnfinishedLoadedBytes = enabledUnfinishedLoadedBytes;
+        if (enabledUnfinishedTotalBytes == -1 && linkCount == 0) {
+            enabledUnfinishedTotalBytes = 0;
+        }
         this.enabledUnfinishedTotalBytes = enabledUnfinishedTotalBytes;
 
         this.linkCount = linkCount;

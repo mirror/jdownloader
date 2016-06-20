@@ -18,14 +18,15 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -49,8 +50,11 @@ public class DLdr extends PluginForDecrypt {
         if (jdlist != null) {
             /* Links einlesen */
             jdlist = Encoding.Base64Decode(jdlist);
-            ArrayList<DownloadLink> links = new DistributeData(jdlist).findLinks();
-            decryptedLinks.addAll(links);
+            final String[] possibleLinks = HTMLParser.getHttpLinks(Encoding.htmlDecode(jdlist), null, null);
+            for (final String possibleLink : possibleLinks) {
+                final DownloadLink link = createDownloadlink(possibleLink);
+                decryptedLinks.add(link);
+            }
         } else {
             /* Container einlesen */
             if (new Regex(parameter.getCryptedUrl(), Pattern.compile("dlc://", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -68,7 +72,7 @@ public class DLdr extends PluginForDecrypt {
             }
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + format);
             Browser.download(container, br.cloneBrowser().openGetConnection("http://" + url));
-            ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
+            final List<DownloadLink> links = loadContainerFile(container);
             for (DownloadLink dLink : links) {
                 decryptedLinks.add(dLink);
             }

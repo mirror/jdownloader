@@ -10,7 +10,8 @@ public class LinkCrawlerEvent extends SimpleEvent<LinkCrawler, Object, LinkCrawl
 
     public static enum Type {
         STARTED,
-        STOPPED
+        STOPPED,
+        FINISHED
     }
 
 }

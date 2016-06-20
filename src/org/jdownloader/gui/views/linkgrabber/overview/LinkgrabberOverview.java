@@ -37,22 +37,22 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawlerNumbers> implements GenericConfigEventListener<Boolean>, LinkCollectorListener, GUIListener {
 
     private static final AtomicBoolean INCLUDE_DISABLED = new AtomicBoolean(false) {
-        {
-            final AtomicBoolean variable = this;
-            CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                                                            {
+                                                                final AtomicBoolean variable = this;
+                                                                CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-                @Override
-                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                    variable.set(Boolean.TRUE.equals(newValue));
-                }
+                                                                    @Override
+                                                                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                                                                        variable.set(Boolean.TRUE.equals(newValue));
+                                                                    }
 
-                @Override
-                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                }
-            });
-            variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
-        }
-    };
+                                                                    @Override
+                                                                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                                                                    }
+                                                                });
+                                                                variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
+                                                            }
+                                                        };
 
     private final class UnknownCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
         private UnknownCountEntry(String label) {
@@ -226,7 +226,7 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     /**
      *
      */
-     private static final long           serialVersionUID = -195024600818162517L;
+    private static final long           serialVersionUID = -195024600818162517L;
 
     private final ListSelectionListener selectionListener;
     private final TableModelListener    tableListener;
@@ -397,6 +397,10 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
     @Override
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+    }
+
+    @Override
+    public void onLinkCrawlerFinished() {
     }
 
 }

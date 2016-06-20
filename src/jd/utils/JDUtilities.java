@@ -32,7 +32,6 @@ import jd.SecondLevelLaunch;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.NoOldJDDataBaseFoundException;
-import jd.controlling.JDController;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
@@ -75,7 +74,7 @@ public class JDUtilities {
 
     /**
      * returns old Configuration (if available) or creates dummy one (in new JD2) so we can import existing configs into current version
-     * 
+     *
      * @return
      */
     @Deprecated
@@ -98,18 +97,8 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt den verwendeten Controller zurueck
-     * 
-     * @return gerade verwendete CONTROLLER-instanz
-     */
-    @Deprecated
-    public static JDController getController() {
-        return JDController.getInstance();
-    }
-
-    /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurueck
-     * 
+     *
      * @author JD-Team
      * @return gibt den Pfad zu den JAC Methoden zurueck
      */
@@ -120,7 +109,7 @@ public class JDUtilities {
     /**
      * Liefert das Basisverzeichnis fuer jD zurueck. Don't use a logger in this method. It will cause a NullpointerException, because the
      * logger need this method for initialisation.
-     * 
+     *
      * @return ein File, dass das Basisverzeichnis angibt
      */
     public static File getJDHomeDirectoryFromEnvironment() {
@@ -156,7 +145,7 @@ public class JDUtilities {
 
     /**
      * Sucht ein passendes Plugin fuer einen Anbieter Please dont use the returned Plugin to start any function
-     * 
+     *
      * @param host
      *            Der Host, von dem das Plugin runterladen kann
      * @return Ein passendes Plugin oder null
@@ -200,8 +189,8 @@ public class JDUtilities {
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @return RevisionID
      */
     public static String getRevision() {
@@ -225,7 +214,7 @@ public class JDUtilities {
 
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurueck
-     * 
+     *
      * @author JD-Team
      * @param resource
      *            Ressource, die geladen werden soll
@@ -257,7 +246,7 @@ public class JDUtilities {
 
     /**
      * Fuehrt einen Externen befehl aus.
-     * 
+     *
      * @param command
      * @param parameter
      * @param runIn
@@ -340,7 +329,7 @@ public class JDUtilities {
 
     /**
      * Gibt das Attribut zu key in childNode zurueck
-     * 
+     *
      * @param childNode
      * @param key
      * @return String Atribut

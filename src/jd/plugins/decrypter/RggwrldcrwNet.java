@@ -100,7 +100,7 @@ public class RggwrldcrwNet extends PluginForDecrypt {
 
     @Override
     public LinkCrawler getCustomNextCrawler() {
-        final LinkCrawler lc = new LinkCrawler();
+        final LinkCrawler lc = new LinkCrawler(true, true);
         lc.setFilter(new LinkCrawlerFilter() {
 
             @Override

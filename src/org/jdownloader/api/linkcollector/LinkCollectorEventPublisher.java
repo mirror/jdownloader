@@ -150,4 +150,8 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 
+    @Override
+    public void onLinkCrawlerFinished() {
+    }
+
 }

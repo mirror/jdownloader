@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -183,22 +184,35 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         @Override
         protected CrawledLink crawledLinkFactorybyURL(String url) {
             final CrawledLink ret = new CrawledLink(url);
-            if (getJob() != null) {
-                ret.setOrigin(getJob().getOrigin());
+            final LinkCollectingJob job = getJob();
+            if (job != null) {
+                ret.setOrigin(job.getOrigin());
             }
             return ret;
         }
 
         @Override
         protected void crawlerStopped() {
+            crawlerAdded.set(false);
             linkCollector.onCrawlerStopped(this);
             super.crawlerStopped();
         }
 
+        private final AtomicBoolean crawlerAdded = new AtomicBoolean(false);
+
         @Override
         protected void crawlerStarted() {
+            if (crawlerAdded.compareAndSet(false, true)) {
+                linkCollector.onCrawlerAdded(this);
+            }
             linkCollector.onCrawlerStarted(this);
             super.crawlerStarted();
+        }
+
+        @Override
+        protected void crawlerFinished() {
+            linkCollector.onCrawlerFinished(this);
+            super.crawlerFinished();
         }
     }
 
@@ -309,6 +323,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void onCrawlerStopped(LinkCollectorCrawler crawledLinkCrawler) {
         getEventsender().removeListener(crawledLinkCrawler);
         eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_STOPPED, crawledLinkCrawler, QueuePriority.NORM));
+    }
+
+    public void onCrawlerFinished(LinkCollectorCrawler crawledLinkCrawler) {
+        getEventsender().removeListener(crawledLinkCrawler);
+        eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_FINISHED, crawledLinkCrawler, QueuePriority.NORM));
     }
 
     public void onCrawlerStarted(LinkCollectorCrawler crawledLinkCrawler) {
@@ -486,6 +505,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+            }
+
+            @Override
+            public void onLinkCrawlerFinished() {
             }
 
         });
@@ -1044,7 +1067,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
         final JobLinkCrawler lc = newJobLinkCrawler(job);
         lc.crawl(new ArrayList<CrawledLink>(links));
-        onCrawlerAdded(lc);
         return lc;
     }
 
@@ -1067,7 +1089,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
              * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
              */
             final String jobText = job.getText();
-            onCrawlerAdded(lc);
             // keep text if it is tiny.
             // if we have the text in the job, we can display it for example in the balloons
             if (StringUtils.isNotEmpty(jobText) && jobText.length() > 500) {
@@ -1186,9 +1207,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {

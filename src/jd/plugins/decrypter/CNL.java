@@ -27,11 +27,11 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import jd.PluginWrapper;
-import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -75,7 +75,6 @@ public class CNL extends PluginForDecrypt {
                 crypted = Encoding.Base64Decode(p.substring(i + 1));
                 continue;
             }
-
         }
         decryptedLinks.addAll(decrypt(crypted, jk, null, passwords, source));
         return decryptedLinks;
@@ -97,49 +96,34 @@ public class CNL extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
         final byte[] key;
-
         if (jk != null) {
-
             try {
                 final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
-
                 final String fun = jk + "  f()";
-
                 final Object result = engine.eval(fun);
-
                 key = JDHexUtils.getByteArray(result + "");
-
             } catch (ScriptException e) {
                 getLogger().log(e);
                 throw new RuntimeException(e);
-            } finally {
-
             }
         } else {
             key = JDHexUtils.getByteArray(k);
         }
         final byte[] baseDecoded = Base64.decode(crypted);
         final String decryted = decrypt(baseDecoded, key).trim();
-
         final ArrayList<String> passwords = new ArrayList<String>(Arrays.asList(Regex.getLines(password)));
-
-        final ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
-        for (final DownloadLink link : links) {
+        final String[] possibleLinks = HTMLParser.getHttpLinks(Encoding.htmlDecode(decryted), null, null);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (final String possibleLink : possibleLinks) {
+            final DownloadLink link = createDownloadlink(possibleLink);
+            ret.add(link);
             if (passwords != null && passwords.size() > 0) {
                 link.setSourcePluginPasswordList(passwords);
             }
+            link.setContentUrl(source);
         }
-        for (final DownloadLink l : links) {
-            if (source != null) {
-                try {/* JD2 only */
-                    l.setContentUrl(source);
-                } catch (Throwable e) {/* Stable */
-                    l.setBrowserUrl(source);
-                }
-            }
-        }
-        return links;
+        return ret;
     }
 
     /* NO OVERRIDE!! */

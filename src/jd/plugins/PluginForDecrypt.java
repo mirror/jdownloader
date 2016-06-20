@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -570,6 +571,26 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public LinkCrawler getCustomNextCrawler() {
         return null;
+    }
+
+    protected List<DownloadLink> loadContainerFile(File file) {
+        final LinkCrawler lc = LinkCrawler.newInstance();
+        lc.crawl(file.toURI().toString());
+        lc.waitForCrawling();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lc.getCrawledLinks().size());
+        for (final CrawledLink link : lc.getCrawledLinks()) {
+            DownloadLink dl = link.getDownloadLink();
+            if (dl == null) {
+                final String url = link.getURL();
+                if (url != null) {
+                    dl = new DownloadLink(null, null, null, url, true);
+                }
+            }
+            if (dl != null) {
+                ret.add(dl);
+            }
+        }
+        return ret;
     }
 
     @Override

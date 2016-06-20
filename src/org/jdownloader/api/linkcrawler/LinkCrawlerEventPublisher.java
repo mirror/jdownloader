@@ -12,23 +12,27 @@ import org.appwork.remoteapi.events.SimpleEventObject;
 
 public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerListener {
 
-    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    private final String[]                    eventIDs;
+    private final CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
+    private final String[]                                   eventIDs;
 
     private enum EVENTID {
         STARTED,
-        STOPPED
+        STOPPED,
+        FINISHED
     }
 
     public LinkCrawlerEventPublisher() {
-        eventIDs = new String[] { EVENTID.STARTED.name(), EVENTID.STOPPED.name() };
+        eventIDs = new String[] { EVENTID.STARTED.name(), EVENTID.STOPPED.name(), EVENTID.FINISHED.name() };
     }
 
     @Override
     public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, event.getType().name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
+        if (!eventSenders.isEmpty()) {
+            final SimpleEventObject eventObject = new SimpleEventObject(this, event.getType().name(), null);
+            // you can add uniqueID of linkcrawler and job to event
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
         }
     }
 
@@ -44,7 +48,7 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
 
     @Override
     public void register(RemoteAPIEventsSender eventsAPI) {
-        boolean wasEmpty = eventSenders.isEmpty();
+        final boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
             LinkCrawler.getGlobalEventSender().addListener(this, true);

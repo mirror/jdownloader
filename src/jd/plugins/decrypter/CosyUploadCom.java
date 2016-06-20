@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -121,9 +122,9 @@ public class CosyUploadCom extends PluginForDecrypt {
             }
 
             if (file != null && file.exists() && file.length() > 100) {
-                final ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                final List<DownloadLink> decryptedLinks = loadContainerFile(file);
                 if (decryptedLinks.size() > 0) {
-                    return decryptedLinks;
+                    return new ArrayList<DownloadLink>(decryptedLinks);
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

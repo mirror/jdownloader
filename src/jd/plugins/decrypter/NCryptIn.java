@@ -24,10 +24,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -45,6 +41,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends antiDDoSForDecrypt {
@@ -389,7 +389,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
                 if (file != null && file.exists() && file.length() > 100) {
-                    links.addAll(JDUtilities.getController().getContainerLinks(file));
+                    links.addAll(loadContainerFile(file));
                 }
             }
         } catch (Throwable e) {

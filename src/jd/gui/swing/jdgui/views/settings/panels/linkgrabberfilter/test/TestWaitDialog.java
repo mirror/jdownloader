@@ -10,6 +10,15 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -27,15 +36,6 @@ import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
 public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
 
@@ -204,12 +204,12 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         p.add(new JScrollPane(new ResultTable(this, model = createTableModel())), "spanx,pushx,growx,newline");
         recThread = new Thread("LinkFilterTesting") {
 
-            private LinkCrawler              lc  = new LinkCrawler(true, true) {
-                @Override
-                protected Long getDefaultAverageRuntime() {
-                    return -100l;
-                }
-            };
+            private final LinkCrawler        lc  = new LinkCrawler(true, true) {
+                                                     @Override
+                                                     protected Long getDefaultAverageRuntime() {
+                                                         return -100l;
+                                                     }
+                                                 };
             private LinkChecker<CrawledLink> lch = new LinkChecker<CrawledLink>();
 
             @Override

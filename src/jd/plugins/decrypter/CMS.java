@@ -166,7 +166,7 @@ public class CMS extends PluginForDecrypt {
                             if (form.containsHTML("dlc")) {
                                 final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                                 Browser.download(container, br.openFormConnection(form));
-                                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                                decryptedLinks.addAll(loadContainerFile(container));
                                 break;
                             }
                         }
