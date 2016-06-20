@@ -604,12 +604,12 @@ public class PreFilesCom extends antiDDoSForHost {
             account.setValid(false);
             return ai;
         }
-        String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        String space[][] = new Regex(correctedBR, "<td>Storage:?</td>\\s*<td>([0-9\\.]+) (KB|MB|GB|TB)\\s*/\\s*").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
             ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         }
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:?</td>\\s*<td>([^<>\"\\']+)</td>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
@@ -623,11 +623,8 @@ public class PreFilesCom extends antiDDoSForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Free Account");
-            try {
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
         } else {
             String expire = new Regex(correctedBR, "((January|February|March|April|May|June|July|August|September|October|November|December) \\d{1,2}, \\d{4})").getMatch(0);
             if (expire == null) {
@@ -637,11 +634,9 @@ public class PreFilesCom extends antiDDoSForHost {
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
-                try {
-                    account.setMaxSimultanDownloads(20);
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                }
+                account.setMaxSimultanDownloads(20);
+                account.setConcurrentUsePossible(true);
+
             }
             ai.setStatus("Premium Account");
         }
@@ -652,6 +647,8 @@ public class PreFilesCom extends antiDDoSForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
+                br = new Browser();
+
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -707,8 +704,8 @@ public class PreFilesCom extends antiDDoSForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getPage("/settings");
-                if (!new Regex(correctedBR, "<li>Premium until").matches()) {
+                getPage("/my-account");
+                if (!new Regex(correctedBR, "<li>Premium until|>PRO Account</dt>").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
