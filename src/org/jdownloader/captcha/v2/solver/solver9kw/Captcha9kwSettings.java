@@ -171,6 +171,13 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the Captcha Feedback for Recaptchav2")
+    boolean isfeedbackrecaptchav2();
+
+    void setfeedbackrecaptchav2(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the option selfsolve")
     boolean isSelfsolve();
 

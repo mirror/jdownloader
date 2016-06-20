@@ -93,6 +93,21 @@ public class NineKWAccount {
     private int    workerMouse;
     private int    workerConfirm;
     private int    workerText;
+    private long   createTime = System.currentTimeMillis();
+
+    public long getCreateTime() {
+        return createTime;
+    }
+
+    private String user;
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
 
     public int getWorkerText() {
         return workerText;

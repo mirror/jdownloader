@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -34,14 +38,11 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.seamless.util.io.IO;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-
 public class Captcha9kwSolver extends CESChallengeSolver<String> {
 
     private static final Captcha9kwSolver INSTANCE           = new Captcha9kwSolver();
     private final ThreadPoolExecutor      threadPool         = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
+    private String                        accountStatusString;
 
     AtomicInteger                         counterSolved      = new AtomicInteger();
     AtomicInteger                         counterInterrupted = new AtomicInteger();
@@ -82,10 +83,23 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
     @Override
     public boolean canHandle(Challenge<?> c) {
         if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
-
+            try {
+                checkForEnoughCredits();
+            } catch (SolverException e) {
+                return false;
+            }
             return true;
         }
-        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
+
+        if (c instanceof BasicCaptchaChallenge && super.canHandle(c)) {
+            try {
+                checkForEnoughCredits();
+            } catch (SolverException e) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     public synchronized void setlong_debuglog(String long_debuglog) {
@@ -127,6 +141,16 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) getChallenge(job.getJob());
+
+        checkForEnoughCredits();
+        NineKWAccount acc = loadAccount();
+        if (StringUtils.isEmpty(acc.getError())) {
+            accountStatusString = acc.getCreditBalance() + " Credits";
+        } else {
+            accountStatusString = acc.getError();
+        }
+
+        checkForEnoughCredits();
 
         int cph = config.gethour();
         int cpm = config.getminute();
@@ -588,18 +612,22 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                 @Override
                 public void run() {
                     try {
-                        final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
-                        final Browser br = new Browser();
-                        br.setAllowedResponseCodes(new int[] { 500 });
-                        for (int i = 0; i <= 3; i++) {
-                            final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
-                            LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
-                            if (ret.startsWith("OK")) {
-                                setdebug_short("CaptchaID " + captchaID + ": NotOK (Feedback 2)");
-                                counterNotOK.incrementAndGet();
-                                break;
-                            } else {
-                                Thread.sleep(2000);
+                        final String captchaTypeID = ((Captcha9kwResponse) response).getChallenge().getTypeID();
+
+                        if (captchaTypeID == "recaptchav2" && config.isfeedbackrecaptchav2() || captchaTypeID != "recaptchav2") {
+                            final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                            final Browser br = new Browser();
+                            br.setAllowedResponseCodes(new int[] { 500 });
+                            for (int i = 0; i <= 3; i++) {
+                                final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                                LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
+                                if (ret.startsWith("OK")) {
+                                    setdebug_short("CaptchaID " + captchaID + ": NotOK (Feedback 2)");
+                                    counterNotOK.incrementAndGet();
+                                    break;
+                                } else {
+                                    Thread.sleep(2000);
+                                }
                             }
                         }
 
@@ -614,9 +642,63 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
     }
 
     @Override
+    public String getAccountStatusString() {
+        return accountStatusString;
+    }
+
     protected boolean validateLogins() {
         return StringUtils.isNotEmpty(config.getApiKey()) && isEnabled();
 
+    }
+
+    private volatile NineKWAccount lastAccount = null;
+
+    private void checkForEnoughCredits() throws SolverException {
+        final NineKWAccount lLastAccount = lastAccount;
+        if (lLastAccount != null) {
+            // valid cached account
+            if (StringUtils.equals(config.getApiKey(), lLastAccount.getUser())) {
+                // user did not change
+                if ((System.currentTimeMillis() - lLastAccount.getCreateTime()) < 5 * 60 * 1000l) {
+                    // cache is not older than 5 minutes
+                    if (lLastAccount.getCreditBalance() < 10) {
+                        if (counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime5.get()) > 30) {
+                            counterdialogtime5.set((System.currentTimeMillis() / 1000));
+                            jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocredits() + "\n");
+                        }
+                        throw new SolverException("Not Enough Credits for Task");
+                    }
+                    if (lLastAccount.getError() != null) {
+                        throw new SolverException("9kw.eu: " + lLastAccount.getError());
+                    }
+                }
+            }
+        }
+    }
+
+    public NineKWAccount loadAccount() {
+        final NineKWAccount ret = new NineKWAccount();
+        ret.setRequests(counter.get());
+        ret.setSkipped(counterInterrupted.get());
+        ret.setSolved(counterSolved.get());
+        ret.setUser(config.getApiKey());
+        try {
+            final Browser br = new Browser();
+            br.setDebug(true);
+            br.setVerbose(true);
+            String result = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchaguthaben&cbh=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
+            if (result.startsWith("OK-")) {
+                String balance = result.substring(3);
+                balance = balance.replace(".-", "");
+                ret.setCreditBalance(Float.valueOf(balance).intValue());
+            } else {
+                ret.setError(result);
+            }
+        } catch (Exception e) {
+            ret.setError(e.getMessage());
+        }
+        lastAccount = ret;
+        return ret;
     }
 
     @Override
