@@ -299,6 +299,7 @@ public class RealDebridCom extends PluginForHost {
             }
         };
         final Browser br2 = br.cloneBrowser();
+        br2.setAllowedResponseCodes(new int[0]);
         boolean increment = false;
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(dllink), true, maxChunks);
