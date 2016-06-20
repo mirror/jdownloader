@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -642,6 +643,8 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw p;
             }
             return false;
+        } catch (final SkipReasonException s) {
+            throw s;
         } catch (final Exception e) {
             if (isLast) {
                 throw e;
