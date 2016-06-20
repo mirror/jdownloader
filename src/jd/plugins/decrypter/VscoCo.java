@@ -21,15 +21,18 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://[^/]+\\.vsco\\.co/grid/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+)" }, flags = { 0 })
 public class VscoCo extends PluginForDecrypt {
 
     public VscoCo(PluginWrapper wrapper) {
@@ -38,12 +41,12 @@ public class VscoCo extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
-        this.br.getPage(parameter);
-        final String cookie_vs = this.br.getCookie(this.getHost(), "vs");
-        final String siteid = this.getJson("id");
+        final String username = getUsername(parameter);
+        br.getPage(parameter);
+        final String cookie_vs = br.getCookie(this.getHost(), "vs");
+        final String siteid = PluginJSonUtils.getJson(br, "id");
         long amount_total = 0;
         /* More than 500 possible */
         int max_count_per_page = 500;
@@ -51,13 +54,19 @@ public class VscoCo extends PluginForDecrypt {
         if (cookie_vs == null || siteid == null) {
             return null;
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
+
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 break;
             }
-            this.br.getPage("http://" + username + ".vsco.co/ajxp/" + cookie_vs + "/2.0/medias?site_id=" + siteid + "&page=" + page + "&size=" + max_count_per_page);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            ajax.getPage("/ajxp/" + cookie_vs + "/2.0/medias?site_id=" + siteid + "&page=" + page + "&size=" + max_count_per_page);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(ajax.toString());
             if (page == 1) {
                 amount_total = DummyScriptEnginePlugin.toLong(entries.get("total"), 0);
                 if (amount_total == 0) {
@@ -73,13 +82,18 @@ public class VscoCo extends PluginForDecrypt {
                 if (fid == null) {
                     return null;
                 }
-                final String url_content = "http://" + username + ".vsco.co/media/" + fid;
-                final String filename = username + "_" + fid + ".jpg";
-                final DownloadLink dl = this.createDownloadlink(url_content);
-                dl.setContentUrl(url_content);
+                final String medialink = (String) entries.get("permalink");
+                String url_content = (String) entries.get("responsive_url");
+                if (!(url_content.startsWith("http") || url_content.startsWith("//"))) {
+                    url_content = Request.getLocation("//" + url_content, br.getRequest());
+                }
+                final String filename = username + "_" + fid + getFileNameExtensionFromString(url_content, ".jpg");
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + url_content);
+                dl.setContentUrl(medialink);
                 dl.setName(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
+                fp.add(dl);
                 distribute(dl);
             }
             if (ressources.size() < max_count_per_page) {
@@ -92,32 +106,15 @@ public class VscoCo extends PluginForDecrypt {
         if (decryptedLinks.size() == 0 && !this.isAbort()) {
             return null;
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(username);
-        fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    private String getUsername(final String parameter) {
+        String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
+        if (username == null) {
+            username = new Regex(parameter, "vsco\\.co/([a-zA-Z0-9]+)/grid").getMatch(0);
+        }
+        return username;
     }
 
 }
