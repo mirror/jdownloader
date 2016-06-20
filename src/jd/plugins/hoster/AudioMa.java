@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,8 +26,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|api/music/url/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+))" }, flags = { 0 })
 public class AudioMa extends PluginForHost {
 
     public AudioMa(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class AudioMa extends PluginForHost {
         return "http://www.audiomack.com/about/terms-of-service";
     }
 
-    private static final String  TYPE_API       = "http://(www\\.)?audiomack\\.com/api/music/url/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+";
+    private static final String  TYPE_API       = "http://(www\\.)?audiomack\\.com/api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)";
     private static final boolean use_oembed_api = true;
 
     @SuppressWarnings("deprecation")
@@ -54,8 +54,8 @@ public class AudioMa extends PluginForHost {
             if (br.containsHTML(">Did not find any music with url")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String artist = getJson("author_name");
-            final String songname = getJson("title");
+            final String artist = PluginJSonUtils.getJson(br, "author_name");
+            final String songname = PluginJSonUtils.getJson(br, "title");
             if (artist == null || songname == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -74,9 +74,9 @@ public class AudioMa extends PluginForHost {
             filename = br.getRegex("<aside class=\"span2\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>([^<>\"]*?) \\- download and stream \\| AudioMack</title>").getMatch(0);
-            }
-            if (filename == null) {
-                filename = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                }
             }
         }
         if (filename == null) {
@@ -92,27 +92,24 @@ public class AudioMa extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         /* Access real link here in case we used the oembed API above */
-        if (use_oembed_api) {
+        if (use_oembed_api && !br.getURL().equals(downloadLink.getDownloadURL())) {
             br.getPage(downloadLink.getDownloadURL());
         }
         /* Prefer downloadlink --> Higher quality version */
         String dllink = br.getRegex("\"(http://(www\\.)?music\\.audiomack\\.com/tracks/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            String apilink;
             if (downloadLink.getDownloadURL().matches(TYPE_API)) {
-                apilink = downloadLink.getDownloadURL();
             } else {
-                apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
+                final String apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
                 if (apilink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                br.getPage(apilink);
             }
-            br.getPage(apilink);
-            dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = PluginJSonUtils.getJson(br, "url");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = dllink.replace("\\", "");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -120,68 +117,6 @@ public class AudioMa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override

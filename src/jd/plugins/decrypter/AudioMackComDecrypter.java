@@ -20,6 +20,8 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -28,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(?:embed\\d-)?album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(?:embed\\d-)?(?:album|large)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class AudioMackComDecrypter extends PluginForDecrypt {
 
     public AudioMackComDecrypter(PluginWrapper wrapper) {
@@ -36,23 +38,37 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br = new Browser();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("/embed\\d-album/", "/album/");
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Offline or not yet released */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"countdown\\-clock\"|This song has been removed due to a DMCA Complaint")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0), null));
             return decryptedLinks;
         }
         String fpName = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) {
-            final Regex paraminfo = new Regex(parameter, "audiomack\\.com/album/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)");
-            fpName = paraminfo.getMatch(0) + " - " + paraminfo.getMatch(1);
+            final Regex paraminfo = new Regex(parameter, "/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)$");
+            fpName = paraminfo.getMatch(0) + " - " + paraminfo.getMatch(1).replace("-", " ");
+        }
+        if (parameter.matches(".+/embed\\d-large/.+")) {
+            String link = br.getRegex("data-src=\"(.*?)\"").getMatch(0);
+            // fail over
+            if (link == null) {
+                link = br.getRegex("data-url=\"(.*?)\"").getMatch(0);
+                if (link != null) {
+                    link = Request.getLocation(link, br.getRequest());
+                }
+            }
+            if (link != null) {
+                decryptedLinks.add(createDownloadlink(link));
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+                return decryptedLinks;
+            }
         }
         final String plaintable = br.getRegex("<div id=\"playlist\" class=\"plwrapper\" for=\"audiomack\\-embed\">(.*?</div>[\t\n\r ]+</div>[\t\n\r ]+</div>(<\\!\\-\\-/\\.song\\-wrap\\-\\->)?)[\t\n\r ]+</div>[\t\n\r ]+</div>").getMatch(0);
         final String[] links = plaintable.split("<div class=\"song\"");
@@ -75,17 +91,9 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                 fina.setProperty("plain_filename", finalname);
                 fina.setProperty("mainlink", parameter);
                 if (description != null) {
-                    try {
-                        fina.setComment(Encoding.htmlDecode(description));
-                    } catch (Throwable e) {
-                    }
+                    fina.setComment(Encoding.htmlDecode(description));
                 }
-                try {
-                    fina.setContentUrl(parameter);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    fina.setBrowserUrl(parameter);
-                }
+                fina.setContentUrl(parameter);
                 decryptedLinks.add(fina);
             }
         }
@@ -95,12 +103,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             final DownloadLink fina = createDownloadlink("directhttp://" + ziplink);
             fina.setFinalFileName(fpName + ".zip");
             fina.setAvailable(true);
-            try {
-                fina.setContentUrl(ziplink);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                fina.setBrowserUrl(ziplink);
-            }
+            fina.setContentUrl(ziplink);
             decryptedLinks.add(fina);
         }
         final FilePackage fp = FilePackage.getInstance();
