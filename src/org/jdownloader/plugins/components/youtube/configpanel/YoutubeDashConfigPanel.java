@@ -317,6 +317,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_audio(), null, null, new TextInput(CFG_YOUTUBE.AUDIO_FILENAME_PATTERN));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_image(), null, null, new TextInput(CFG_YOUTUBE.IMAGE_FILENAME_PATTERN));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_subtitle(), null, null, new TextInput(CFG_YOUTUBE.SUBTITLE_FILENAME_PATTERN));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_description(), null, null, new TextInput(CFG_YOUTUBE.DESCRIPTION_FILENAME_PATTERN));
 
         updateBest();
     }

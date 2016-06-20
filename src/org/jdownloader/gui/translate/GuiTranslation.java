@@ -6513,4 +6513,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Browser öffnen" })
 
     String lit_open_browser();
+
+    @Default(lngs = { "en" }, values = { "Filename for Description files" })
+
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_description();
 }
