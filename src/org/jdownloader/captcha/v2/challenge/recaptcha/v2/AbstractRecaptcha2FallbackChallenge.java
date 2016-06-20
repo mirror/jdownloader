@@ -19,6 +19,8 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -35,8 +37,6 @@ import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.controlling.captcha.SkipRequest;
 
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
@@ -189,6 +189,10 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 width = Math.max(width, fm.stringWidth(line));
                 y += LINE_HEIGHT;
             }
+            if (width > 400) {
+                width = 400;
+            }
+
             y += 15;
             if (icon != null) {
                 y = Math.max(y, icon.getIconHeight() + 10);
