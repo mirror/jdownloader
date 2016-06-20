@@ -64,7 +64,7 @@ public class GigaBaseCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
         }
-        final Regex fileInfo = br.getRegex("<small>Download file:</small><br/>\\s*([^<>\"]*?)\\s*<small>\\(([^<>\"]*?)\\)</small>");
+        final Regex fileInfo = br.getRegex("<small>(?:Download file|Скачать файл):</small><br/>\\s*([^<>\"]*?)\\s*<small>\\(([^<>\"]*?)\\)</small>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
         if (filename == null) {
@@ -100,7 +100,7 @@ public class GigaBaseCom extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("href=\"/getfile/[^\"<>]*?(/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
+                    dllink = br.getRegex("href=\"(/getfile/[^\"<>]*?(/free\\?step=[^\"<>]*?)?&referer=)").getMatch(0);
                 }
             }
             /* workaround for old stable bug */
