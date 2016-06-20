@@ -25,6 +25,12 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -35,12 +41,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
-
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 public class Account extends Property {
 
@@ -613,12 +613,18 @@ public class Account extends Property {
             return true;
         }
         if (!StringUtils.equals(getHoster(), account.getHoster())) {
+            // different hoster
             return false;
         }
         if (!StringUtils.equals(getUser(), account.getUser())) {
+            // different user names
             return false;
+        } else if (StringUtils.isNotEmpty(getUser())) {
+            // same none null username
+            return true;
         }
         if (!StringUtils.equals(getPass(), account.getPass())) {
+            // different passwords
             return false;
         }
         return true;
@@ -632,8 +638,7 @@ public class Account extends Property {
         setProperty(LATEST_VALID_TIMESTAMP, currentTimeMillis);
     }
 
-    public static enum AccountType
-            implements LabelInterface {
+    public static enum AccountType implements LabelInterface {
         FREE {
             @Override
             public String getLabel() {

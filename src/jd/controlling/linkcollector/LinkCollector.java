@@ -187,6 +187,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             final LinkCollectingJob job = getJob();
             if (job != null) {
                 ret.setOrigin(job.getOrigin());
+                ret.setSourceJob(job);
             }
             return ret;
         }
@@ -1394,7 +1395,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             setCrawlerFilter(LinkFilterController.getInstance());
             restoreButtonEnabled = CFG_LINKGRABBER.RESTORE_BUTTON_ENABLED.isEnabled();
             setPackagizer(PackagizerController.getInstance());
-            LinkChecker<CrawledLink> llinkChecker = new LinkChecker<CrawledLink>();
+            final LinkChecker<CrawledLink> llinkChecker = new LinkChecker<CrawledLink>();
             llinkChecker.setLinkCheckHandler(this);
             linkChecker = llinkChecker;
         }
