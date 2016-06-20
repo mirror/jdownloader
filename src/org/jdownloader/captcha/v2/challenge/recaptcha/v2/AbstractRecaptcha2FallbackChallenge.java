@@ -11,15 +11,13 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-
-import jd.controlling.captcha.SkipRequest;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
@@ -37,6 +35,8 @@ import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.captcha.SkipRequest;
 
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
@@ -165,32 +165,25 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
         final BufferedImage img = ImageIO.read(getImageFile());
         try {
             final Font font = new Font("Arial", 0, 12);
-            final FontMetrics fmBold = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD));// check for missing fonts/headless java
             final FontMetrics fm = img.getGraphics().getFontMetrics(font);
             final String exeplain = getExplain();
             final Icon icon = getExplainIcon(exeplain);
             final String key = getHighlightedExplain();
             final ArrayList<String> lines = new ArrayList<String>();
-            String[] ex = getExplain().replaceAll("<.*?>", "").split(Pattern.quote(key));
+            lines.addAll(split(fm, getExplain().replaceAll("<.*?>", "")));
             if (getChooseAtLeast() > 0) {
-                lines.add(_GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast()));
+                lines.addAll(split(fm, _GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast())));
             }
 
             lines.add("Example answer: 2,5,6");
             int y = 0;
             int width = 0;
-            for (String p : ex) {
-                width += fm.stringWidth(p + "");
-            }
-            y += LINE_HEIGHT;
-            width += fmBold.stringWidth(key);
+
+            // y += LINE_HEIGHT;
 
             for (String line : lines) {
                 width = Math.max(width, fm.stringWidth(line));
                 y += LINE_HEIGHT;
-            }
-            if (width > 400) {
-                width = 400;
             }
 
             y += 15;
@@ -220,18 +213,6 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 }
                 int afterIconX = x;
                 x = afterIconX;
-                for (int i = 0; i < ex.length; i++) {
-
-                    g.setFont(font);
-                    g.drawString(ex[i], x, y);
-                    x += g.getFontMetrics().stringWidth(ex[i]);
-
-                    if (ex.length == 1 || i < ex.length - 1) {
-                        g.setFont(font.deriveFont(Font.BOLD));
-                        g.drawString("" + key + "", x, y);
-                        x += g.getFontMetrics().stringWidth("" + key + "");
-                    }
-                }
 
                 g.setFont(font);
                 x = afterIconX;
@@ -300,6 +281,26 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 throw e;
             }
         }
+    }
+
+    private Collection<? extends String> split(FontMetrics fm, String str) {
+        str = str.replaceAll("[\r\n]+", " ");
+        ArrayList<String> ret = new ArrayList<String>();
+        while (str.length() > 0) {
+            int max = str.length();
+            while (fm.stringWidth(str.substring(0, max)) > 400) {
+                max--;
+            }
+            if (max < str.length()) {
+                int lastSpace = str.lastIndexOf(" ", max + 1);
+                if (lastSpace > 0) {
+                    max = lastSpace + 1;
+                }
+            }
+            ret.add(str.substring(0, max).trim());
+            str = str.substring(max);
+        }
+        return ret;
     }
 
     private int ceil(double d) {
