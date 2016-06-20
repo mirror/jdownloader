@@ -66,7 +66,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 infoDialog.hideDialog();
             }
         }
-        getSettings().setGuiEnabled(b);
+        getSettings().setWindowVisible(b);
 
     }
 
