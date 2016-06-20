@@ -265,8 +265,13 @@ public class LinkCrawler {
             lc = new LinkCrawler(false, false) {
 
                 @Override
-                protected CrawledLink crawledLinkFactorybyURL(String url) {
-                    final CrawledLink ret = new CrawledLink(url);
+                protected CrawledLink crawledLinkFactorybyURL(final String url) {
+                    final CrawledLink ret;
+                    if (parent != null) {
+                        ret = parent.crawledLinkFactorybyURL(url);
+                    } else {
+                        ret = new CrawledLink(url);
+                    }
                     if (source != null) {
                         ret.setSourceLink(source);
                     }
@@ -343,19 +348,19 @@ public class LinkCrawler {
         final LinkCrawlerThread thread = getCurrentLinkCrawlerThread();
         if (connectParentCrawler && thread != null) {
             /* forward crawlerGeneration from parent to this child */
-            parentCrawler = thread.getCurrentLinkCrawler();
-            classLoader = parentCrawler.getPluginClassLoaderChild();
+            this.parentCrawler = thread.getCurrentLinkCrawler();
+            this.classLoader = parentCrawler.getPluginClassLoaderChild();
             this.unsortedLazyHostPlugins = parentCrawler.unsortedLazyHostPlugins;
             this.directPlugin = parentCrawler.directPlugin;
             this.httpPlugin = parentCrawler.httpPlugin;
             this.ftpPlugin = parentCrawler.ftpPlugin;
             this.directHTTPPermission = parentCrawler.directHTTPPermission;
             this.defaultDownloadFolder = parentCrawler.defaultDownloadFolder;
-            duplicateFinderContainer = parentCrawler.duplicateFinderContainer;
-            duplicateFinderCrawler = parentCrawler.duplicateFinderCrawler;
-            duplicateFinderFinal = parentCrawler.duplicateFinderFinal;
-            duplicateFinderDeep = parentCrawler.duplicateFinderDeep;
-            linkCrawlerRules = parentCrawler.linkCrawlerRules;
+            this.duplicateFinderContainer = parentCrawler.duplicateFinderContainer;
+            this.duplicateFinderCrawler = parentCrawler.duplicateFinderCrawler;
+            this.duplicateFinderFinal = parentCrawler.duplicateFinderFinal;
+            this.duplicateFinderDeep = parentCrawler.duplicateFinderDeep;
+            this.linkCrawlerRules = parentCrawler.linkCrawlerRules;
             setHandler(parentCrawler.getHandler());
             setDeepInspector(parentCrawler.getDeepInspector());
         } else {
@@ -431,7 +436,11 @@ public class LinkCrawler {
         return crawlerGeneration.get();
     }
 
-    protected CrawledLink crawledLinkFactorybyURL(String url) {
+    protected CrawledLink crawledLinkFactorybyURL(final String url) {
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.crawledLinkFactorybyURL(url);
+        }
         return new CrawledLink(url);
     }
 
