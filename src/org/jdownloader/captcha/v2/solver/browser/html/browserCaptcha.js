@@ -19,8 +19,7 @@ function getOffsetRect(elem) {
 	var docElem = document.documentElement
 
 	var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop
-	var scrollLeft = window.pageXOffset || docElem.scrollLeft
-			|| body.scrollLeft
+	var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft
 
 	var clientTop = docElem.clientTop || body.clientTop || 0
 	var clientLeft = docElem.clientLeft || body.clientLeft || 0
@@ -44,11 +43,16 @@ function getOffset(elem) {
 
 function init(elem) {
 
-	window.addEventListener("beforeunload", function (e) {
-//close dialog when user closed browser
+	window.addEventListener("beforeunload", function(e) {
+		// close dialog when user closed browser
 		unload();
-		  return null;;                            //Webkit, Safari, Chrome
-		});
+		// https://svn.jdownloader.org/issues/78145
+		// http://stackoverflow.com/questions/11793996/onbeforeunload-handler-says-null-in-ie
+		if (getInternetExplorerVersion() < 11) {
+			return null;
+			; // Webkit, Safari, Chrome
+		}
+	});
 
 	var bounds = null;
 	if (elem != null) {
@@ -58,10 +62,8 @@ function init(elem) {
 	var xmlHttp = null;
 
 	xmlHttp = new XMLHttpRequest();
-	var w = Math.max(document.documentElement.clientWidth,
-			window.innerWidth || 0)
-	var h = Math.max(document.documentElement.clientHeight,
-			window.innerHeight || 0)
+	var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+	var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
 	/*
 	 * If the browser does not support screenX and screen Y, use screenLeft and
 	 * screenTop instead (and vice versa)
@@ -87,16 +89,10 @@ function init(elem) {
 	}
 
 	if (bounds) {
-		xmlHttp.open("GET", window.location.href + "&do=loaded&x=" + winLeft
-				+ "&y=" + winTop + "&w=" + windowWidth + "&h=" + windowHeight
-				+ "&vw=" + w + "&vh=" + h + "&eleft=" + bounds.left + "&etop="
-				+ bounds.top + "&ew=" + bounds.width + "&eh=" + bounds.height,
-				true);
+		xmlHttp.open("GET", window.location.href + "&do=loaded&x=" + winLeft + "&y=" + winTop + "&w=" + windowWidth + "&h=" + windowHeight + "&vw=" + w + "&vh=" + h + "&eleft=" + bounds.left + "&etop=" + bounds.top + "&ew=" + bounds.width + "&eh=" + bounds.height, true);
 
 	} else {
-		xmlHttp.open("GET", window.location.href + "&do=loaded&x=" + winLeft
-				+ "&y=" + winTop + "&w=" + windowWidth + "&h=" + windowHeight
-				+ "&vw=" + w + "&vh=" + h, true);
+		xmlHttp.open("GET", window.location.href + "&do=loaded&x=" + winLeft + "&y=" + winTop + "&w=" + windowWidth + "&h=" + windowHeight + "&vw=" + w + "&vh=" + h, true);
 
 	}
 	xmlHttp.send();
@@ -107,33 +103,29 @@ function getInternetExplorerVersion() {
 	if (navigator.appName == 'Microsoft Internet Explorer') {
 		var ua = navigator.userAgent;
 		var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
-		if (re.exec(ua) != null)
-			rv = parseFloat(RegExp.$1);
+		if (re.exec(ua) != null) rv = parseFloat(RegExp.$1);
 	} else if (navigator.appName == 'Netscape') {
 		var ua = navigator.userAgent;
 		var re = new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})");
-		if (re.exec(ua) != null)
-			rv = parseFloat(RegExp.$1);
+		if (re.exec(ua) != null) rv = parseFloat(RegExp.$1);
 	}
 	return rv;
 }
-function unload(){
+function unload() {
 	try {
 		var xhr = new XMLHttpRequest();
-	
 
 		xhr.open("GET", window.location.href + "&do=unload", true);
 		xhr.timeout = 5000;
 		xhr.send();
 
 	} catch (err) {
-		
+
 		return;
 	}
 }
 function closeWindowOrTab() {
 
-	
 	console.log("Close browser");
 
 	var ie = getInternetExplorerVersion();
@@ -182,14 +174,13 @@ function refresh() {
 	try {
 		var xhr = new XMLHttpRequest();
 
-
 		xhr.onTimeout = function() {
 			closeWindowOrTab();
 
 		}
-	
+
 		xhr.onerror = xhr.onTimeout;
-		
+
 		xhr.onLoad = function() {
 			if (xhr.status == 0) {
 				closeWindowOrTab();
@@ -201,7 +192,7 @@ function refresh() {
 				setTimeout(refresh, 1000);
 			}
 		}
-		
+
 		xhr.onreadystatechange = function() {
 			if (xhr.readyState == 4) {
 				xhr.onLoad();
@@ -209,7 +200,8 @@ function refresh() {
 		};
 
 		xhr.open("GET", window.location.href + "&do=canClose", true);
-		//set timeout AFTER .open else we would get an invalid state exception in ie 11 (any maybe even 10)
+		// set timeout AFTER .open else we would get an invalid state exception
+		// in ie 11 (any maybe even 10)
 		xhr.timeout = 5000;
 		xhr.send();
 
