@@ -112,7 +112,10 @@ public class Account extends Property {
                     }, null);
                     final Cookies ret = new Cookies();
                     for (final CookieStorable storable : cookies) {
-                        ret.add(storable._restore());
+                        final Cookie cookie = storable._restore();
+                        if (!cookie.isExpired()) {
+                            ret.add(cookie);
+                        }
                     }
                     return ret;
                 } catch (Throwable e) {
