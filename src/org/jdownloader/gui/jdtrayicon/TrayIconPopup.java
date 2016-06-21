@@ -20,6 +20,7 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dialog.ModalExclusionType;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -46,11 +47,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
-import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
@@ -66,6 +62,11 @@ import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
@@ -106,6 +107,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
 
     public TrayIconPopup(TrayExtension trayExtension) {
         super();
+        setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
         this.extension = trayExtension;
         // resizecomps = new ArrayList<AbstractButton>();
         setVisible(false);
