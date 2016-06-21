@@ -83,7 +83,7 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String type = accDetails.get("type");
-        if ("premium".equals(type) || true) {
+        if ("premium".equals(type)) {
             /* only platinium and premium support */
             getPage("https://www.alldebrid.com/api.php?action=get_host");
             String hoster[] = br.toString().split(",\\s*");
@@ -126,11 +126,11 @@ public class AllDebridCom extends antiDDoSForHost {
             }
             /* Timestamp given in remaining seconds. */
             final String secondsLeft = accDetails.get("timestamp");
-            if (secondsLeft != null && false) {
+            if (secondsLeft != null) {
                 account.setValid(true);
                 final long validuntil = System.currentTimeMillis() + (Long.parseLong(secondsLeft) * 1001);
                 ac.setValidUntil(validuntil);
-            } else if (false) {
+            } else {
                 /* no daysleft available?! */
                 account.setValid(false);
             }
