@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2;
 
 import java.awt.Cursor;
+import java.awt.Dialog.ModalExclusionType;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -36,13 +37,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -77,6 +71,13 @@ import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> implements MouseListener, MouseMotionListener {
 
@@ -647,7 +648,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         final JPanel panel = new JPanel(getDialogLayout());
         SwingUtils.setOpaque(panel, false);
         LAFOptions.applyBackground(lafOptions.getColorForPanelBackground(), field);
-
+        getDialog().setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
         Header headerPanel = null;
         if (type == DialogType.HOSTER) {
 
@@ -846,7 +847,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
     @Override
     public Window getOwner() {
-        return super.getOwner();// needs another solution, breaks add account
+        return JDGui.getInstance().getMainFrame();
     }
 
     public void pack() {
