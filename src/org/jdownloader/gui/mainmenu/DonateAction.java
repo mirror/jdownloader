@@ -21,19 +21,15 @@ public class DonateAction extends CustomizableAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
-        ConfirmDialog d = new ConfirmDialog(0, _GUI.T.DonationDialog_DonationDialog_title_(), _GUI.T.DonationDialog_layoutDialogContent_top_text(), new AbstractIcon(IconKey.ICON_HEART, 32), _GUI.T.lit_continue(), null) {
+        final ConfirmDialog d = new ConfirmDialog(0, _GUI.T.DonationDialog_DonationDialog_title_(), _GUI.T.DonationDialog_layoutDialogContent_top_text(), new AbstractIcon(IconKey.ICON_HEART, 32), _GUI.T.lit_continue(), null) {
             protected int getPreferredWidth() {
                 return 650;
             };
         };
-
         UIOManager.I().show(null, d);
         if (d.getCloseReason() == CloseReason.OK) {
             CrossSystem.openURL("https://my.jdownloader.org/contribute/#/");
-
         }
-
     }
 
 }

@@ -11,14 +11,11 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.config.AdvancedConfigQueryStorable;
@@ -30,35 +27,22 @@ import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public class PluginConfigAdapter {
-    private static final String OLD_CONFIG_PREFIX = "deprecated";
+    private static final String   OLD_CONFIG_PREFIX = "deprecated";
 
-    private Plugin              plugin;
-    private LazyPlugin          lazyPlugin;
-    private ConfigInterface     config;
-    private ConfigContainer     oldConfig;
+    private final LazyPlugin      lazyPlugin;
+    private PluginConfigInterface config;
+    private ConfigContainer       oldConfig;
 
     public PluginConfigAdapter(LazyPlugin lazyPlugin) throws ClassNotFoundException {
         this.lazyPlugin = lazyPlugin;
-        this.plugin = lazyPlugin.getPrototype(null);
-        initConfig();
-    }
-
-    private void initConfig() throws ClassNotFoundException {
-        if (this.isOldConfig()) {
-            try {
-                this.oldConfig = this.plugin.getConfig();
-            } catch (WTFException e) {
-                e.printStackTrace();
-                throw new ClassNotFoundException();
-            }
-        } else {
-            PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
-            Class<? extends PluginConfigInterface> configInterface = (Class<? extends PluginConfigInterface>) classLoader.loadClass(plugin.getConfigInterface().getName());
-            this.config = PluginJsonConfig.get(configInterface);
+        if (this.lazyPlugin == null) {
+            throw new ClassNotFoundException();
         }
     }
 
@@ -67,28 +51,69 @@ public class PluginConfigAdapter {
             this.lazyPlugin = HostPluginController.getInstance().get(displayName);
         } else if (interfaceName.contains("jd.plugins.decrypter")) {
             this.lazyPlugin = CrawlerPluginController.getInstance().get(displayName);
-        }
-        if (this.lazyPlugin != null) {
-            this.plugin = this.lazyPlugin.getPrototype(null);
         } else {
-            throw new ClassNotFoundException();
+            this.lazyPlugin = null;
         }
-        initConfig();
+        if (lazyPlugin == null) {
+            throw new ClassNotFoundException("interfaceName:" + interfaceName + "|displayName:" + displayName);
+        }
+    }
+
+    private boolean initialized = false;
+
+    private synchronized void init() {
+        if (!initialized) {
+            initialized = true;
+            try {
+                final String configInterfaceName = getConfigInterface();
+                if (configInterfaceName == null) {
+                    final Plugin plugin = lazyPlugin.getPrototype(null);
+                    this.oldConfig = plugin.getConfig();
+                } else {
+                    final PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
+                    final Class<? extends PluginConfigInterface> configInterface = (Class<? extends PluginConfigInterface>) classLoader.loadClass(configInterfaceName);
+                    this.config = PluginJsonConfig.get(configInterface);
+                }
+            } catch (Throwable e) {
+                throw new WTFException(e);
+            }
+        }
+    }
+
+    private String getConfigInterface() {
+        if (isHostPlugin()) {
+            return ((LazyHostPlugin) lazyPlugin).getConfigInterface();
+        } else if (isCrawlerPlugin()) {
+            return ((LazyCrawlerPlugin) lazyPlugin).getConfigInterface();
+        } else {
+            return null;
+        }
     }
 
     public boolean isOldConfig() {
-        return this.plugin.getConfigInterface() == null;
+        return getConfigInterface() == null;
+    }
+
+    public boolean hasConfig() {
+        if (isHostPlugin()) {
+            return ((LazyHostPlugin) lazyPlugin).isHasConfig() || ((LazyHostPlugin) lazyPlugin).getConfigInterface() != null;
+        } else if (isCrawlerPlugin()) {
+            return ((LazyCrawlerPlugin) lazyPlugin).isHasConfig() || ((LazyCrawlerPlugin) lazyPlugin).getConfigInterface() != null;
+        } else {
+            return false;
+        }
     }
 
     public boolean isHostPlugin() {
-        return this.plugin instanceof PluginForHost;
+        return this.lazyPlugin instanceof LazyHostPlugin;
     }
 
     public boolean isCrawlerPlugin() {
-        return this.plugin instanceof PluginForDecrypt;
+        return this.lazyPlugin instanceof LazyCrawlerPlugin;
     }
 
     public Object getValue(String key) throws BadParameterException {
+        init();
         if (this.isOldConfig()) {
             if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
                 for (ConfigEntry entry : this.oldConfig.getEntries()) {
@@ -97,15 +122,15 @@ public class PluginConfigAdapter {
                     }
                 }
             }
-        } else {
+        } else if (config != null) {
             KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
             return kh.getValue();
         }
-
         throw new BadParameterException("no matching config entry");
     }
 
     public Object getDefaultValue(String key) throws BadParameterException {
+        init();
         if (this.isOldConfig()) {
             if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
                 for (ConfigEntry entry : this.oldConfig.getEntries()) {
@@ -114,7 +139,7 @@ public class PluginConfigAdapter {
                     }
                 }
             }
-        } else {
+        } else if (config != null) {
             KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
             return kh.getDefaultValue();
         }
@@ -123,46 +148,50 @@ public class PluginConfigAdapter {
     }
 
     public boolean setValue(String key, Object value) {
-        if (StringUtils.isEmpty(key)) {
-            return false;
-        }
-        if (isOldConfig() && this.oldConfig.getEntries() != null) {
-            for (ConfigEntry entry : this.oldConfig.getEntries()) {
-                if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
-                    entry.getPropertyInstance().setProperty(key, value);
-                    return true;
+        init();
+        if (!StringUtils.isEmpty(key) && isOldConfig()) {
+            if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
+                for (ConfigEntry entry : this.oldConfig.getEntries()) {
+                    if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
+                        entry.getPropertyInstance().setProperty(key, value);
+                        return true;
+                    }
                 }
+            } else if (config != null) {
+                final KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
+                Type rc = kh.getRawType();
+                String json = JSonStorage.serializeToJson(value);
+                TypeRef<Object> type = new TypeRef<Object>(rc) {
+                };
+                Object v = JSonStorage.stringToObject(json, type, null);
+                kh.setValue(v);
+                return true;
             }
-        } else {
-            KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
-            Type rc = kh.getRawType();
-            String json = JSonStorage.serializeToJson(value);
-            TypeRef<Object> type = new TypeRef<Object>(rc) {
-            };
-            Object v = JSonStorage.stringToObject(json, type, null);
-            kh.setValue(v);
-            return true;
         }
         return false;
     }
 
     public List<PluginConfigEntryAPIStorable> listConfigEntries(AdvancedConfigQueryStorable query) throws UpdateRequiredClassNotFoundException {
-        List<PluginConfigEntryAPIStorable> result = new ArrayList<PluginConfigEntryAPIStorable>();
-
-        boolean configInterfaceMatch = query == null || query.getConfigInterface() == null || (query.getConfigInterface().equals(OLD_CONFIG_PREFIX + "." + lazyPlugin.getClassName()) || (plugin.getConfigInterface() != null && query.getConfigInterface().equals(plugin.getConfigInterface().getName())));
+        final List<PluginConfigEntryAPIStorable> result = new ArrayList<PluginConfigEntryAPIStorable>();
+        if (!hasConfig()) {
+            return result;
+        }
+        boolean configInterfaceMatch = query == null || query.getConfigInterface() == null || (query.getConfigInterface().equals(OLD_CONFIG_PREFIX + "." + lazyPlugin.getClassName()) || (getConfigInterface() != null && query.getConfigInterface().equals(getConfigInterface())));
         if (query == null) {
             query = new AdvancedConfigQueryStorable();
         }
         if (!configInterfaceMatch) {
             return result;
         } else {
+            init();
             Pattern cPat = null;
             if (!StringUtils.isEmpty(query.getPattern())) {
                 cPat = Pattern.compile(query.getPattern(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
             }
             if (isOldConfig()) {
                 for (final ConfigEntry entry : oldConfig.getEntries()) {
-                    if (cPat != null && !cPat.matcher(this.plugin.getClass().getName() + "." + this.lazyPlugin.getDisplayName() + "." + entry.getPropertyName()).matches()) {
+                    final String check = lazyPlugin.getClassName() + "." + this.lazyPlugin.getDisplayName() + "." + entry.getPropertyName();
+                    if (cPat != null && !cPat.matcher(check).matches()) {
                         continue;
                     } else {
                         PluginConfigEntryAPIStorable storable = createAPIStorable(entry, query);
@@ -172,15 +201,15 @@ public class PluginConfigAdapter {
                     }
                 }
             } else {
-                final PluginConfigInterface cfg = PluginJsonConfig.get((Class<PluginConfigInterface>) this.plugin.getConfigInterface());
-                final HashMap<Method, KeyHandler<?>> khMap = cfg._getStorageHandler().getMap();
+                final HashMap<Method, KeyHandler<?>> khMap = config._getStorageHandler().getMap();
                 final HashSet<KeyHandler<?>> dupeMap = new HashSet<KeyHandler<?>>();
-                for (KeyHandler keyHandler : khMap.values()) {
-                    if (cPat != null && !cPat.matcher(keyHandler.getStorageHandler().getConfigInterface().getName() + "." + this.lazyPlugin.getDisplayName() + "." + keyHandler.getKey()).matches()) {
+                for (final KeyHandler<?> keyHandler : khMap.values()) {
+                    final String check = lazyPlugin.getClassName() + "." + this.lazyPlugin.getDisplayName() + "." + keyHandler.getKey();
+                    if (cPat != null && !cPat.matcher(check).matches()) {
                         continue;
                     } else {
                         if (dupeMap.add(keyHandler)) {
-                            final AdvancedConfigEntry entry = new AdvancedConfigEntry(cfg, keyHandler);
+                            final AdvancedConfigEntry entry = new AdvancedConfigEntry(config, keyHandler);
                             final PluginConfigEntryAPIStorable storable = createAPIStorable(entry, query);
                             if (storable != null) {
                                 result.add(storable);
@@ -251,7 +280,7 @@ public class PluginConfigAdapter {
         return setValue(key, this.getDefaultValue(key));
     }
 
-    private AbstractType getAbstractTypeFromConfigType(int configContainerType) {
+    private AbstractType getAbstractTypeFromConfigType(final int configContainerType) {
         if (configContainerType == ConfigContainer.TYPE_CHECKBOX) {
             return AbstractType.BOOLEAN;
         } else if (configContainerType == ConfigContainer.TYPE_COMBOBOX || configContainerType == ConfigContainer.TYPE_SPINNER || configContainerType == ConfigContainer.TYPE_COMBOBOX_INDEX || configContainerType == ConfigContainer.TYPE_RADIOFIELD) {

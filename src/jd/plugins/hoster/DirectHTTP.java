@@ -24,12 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +46,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -678,10 +678,7 @@ public class DirectHTTP extends antiDDoSForHost {
                             fileName = null;
                         }
                     }
-                    if (fileName != null /*
-                                          * the following setter is NEVER referenced within JD source.. we need to url decode filenames! &&
-                                          * downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)
-                                          */) {
+                    if (fileName != null && downloadLink.getBooleanProperty("urlDecodeFinalFileName", true)) {
                         fileName = Encoding.urlDecode(fileName, false);
                     }
                 }

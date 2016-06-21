@@ -92,7 +92,7 @@ public class PluginsAPIImpl implements PluginsAPI {
         for (LazyPlugin lazyPlugin : plugins) {
             try {
                 final PluginConfigAdapter adapter = new PluginConfigAdapter(lazyPlugin);
-                result.addAll((ArrayList<PluginConfigEntryAPIStorable>) adapter.listConfigEntries(query));
+                result.addAll(adapter.listConfigEntries(query));
             } catch (ClassNotFoundException e1) {
                 e1.printStackTrace();
             }

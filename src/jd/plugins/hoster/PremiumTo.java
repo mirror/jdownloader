@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,6 +45,7 @@ import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
@@ -586,12 +588,12 @@ public class PremiumTo extends UseNet {
         return -10;
     }
 
-    // @Override
-    // public List<UsenetServer> getAvailableUsenetServer() {
-    // final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-    // ret.addAll(UsenetServer.createServerList("usenet2.premium.to", false, 119, 81));
-    // ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 563, 444));
-    // return ret;
-    // }
+    @Override
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", false, 119, 81));
+        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 563, 444));
+        return ret;
+    }
 
 }
