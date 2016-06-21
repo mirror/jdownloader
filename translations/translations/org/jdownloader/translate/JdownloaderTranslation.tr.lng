@@ -164,6 +164,7 @@ MyJDownloaderController_onError_account_unconfirmed='JDownloader'ım' epostanız
 MyJDownloaderController_onError_badlogins='JDownloader'ım' oturum açma bilgileriniz doğru değil.\nLütfen kullanıcı adı/eposta ve parolanızı kontrol edin!
 MyJDownloaderController_onError_outdated=JDownloader, JDownloader'ım hizmetine bağlanamadı. Lütfen JDownloader'ınızı güncelleyin!
 MyJDownloaderController_onError_unknown=JDownloader, JDownloader'ım hizmetine bağlanamadı: %s1
+OAUTH_CHALLENGE_EXPLAIN=Lütfen tarayıcınızda oturum açma sayfasını açın ve oturum açma adımlarını takip edin.\nJDownloader, oturum açmanızı bitirir bitirmez devam edecek.
 OptionalContainer_OptionalContainer=Daha Fazla Eylem...
 PackagizerSettings_folderbypackage_rule_name=Alt Klasörü Paket Adına göre oluştur
 PackagizerSettings_folderbyplugin_rule_name2=Klasör yapısını kabul et
