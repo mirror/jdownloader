@@ -77,7 +77,7 @@ public class Account extends Property {
          */
         final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.antiDDoSCookiePattern;
         for (final Cookie cookie : cookies.getCookies()) {
-            if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies)) {
+            if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies) && !cookie.isExpired()) {
                 cookieStorables.add(new CookieStorable(cookie));
             }
         }
