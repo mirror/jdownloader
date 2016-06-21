@@ -7,8 +7,6 @@ import java.awt.event.WindowListener;
 import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.resources.AWUTheme;
 import org.appwork.uio.CloseReason;
@@ -21,6 +19,7 @@ import org.appwork.uio.UserIOHandlerInterface;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -32,6 +31,8 @@ import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
+
+import jd.gui.swing.jdgui.JDGui;
 
 public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
 
@@ -250,7 +251,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             AbstractDialog<?> dialog = (AbstractDialog<?>) impl;
             if (dialog.getModalityType() == ModalityType.MODELESS) {
                 if (SwingUtilities.isEventDispatchThread()) {
-                    throw new IllegalStateException("Cannot call a Modeless Blocking dialog in the EDT. Use a Wrapperthread");
+                    IllegalStateException e;
+                    LoggerFactory.getDefaultLogger().log(e = new IllegalStateException("Cannot call a Modeless Blocking dialog in the EDT. Use a Wrapperthread"));
+                    throw e;
                 }
                 return showModeless(class1, impl);
             }
@@ -300,7 +303,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                 // no Reason to log here
             } catch (final DialogCanceledException e) {
                 // no Reason to log here
-                
+
             } finally {
                 if (handle != null) {
                     handle.dispose();
