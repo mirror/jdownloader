@@ -18,6 +18,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -145,7 +146,8 @@ public class LinkCrawler {
     private LinkCrawlerDeepInspector                       deepInspector               = null;
     private DirectHTTPPermission                           directHTTPPermission        = DirectHTTPPermission.ALWAYS;
 
-    private final UniqueAlltimeID                          uniqueAlltimeID             = new UniqueAlltimeID();
+    protected final UniqueAlltimeID                        uniqueAlltimeID             = new UniqueAlltimeID();
+    protected final WeakHashMap<LinkCrawler, Object>       children                    = new WeakHashMap<LinkCrawler, Object>();
 
     protected List<LinkCrawlerRule> getLinkCrawlerRules() {
         return listLinkCrawlerRules();
@@ -265,6 +267,18 @@ public class LinkCrawler {
             lc = new LinkCrawler(false, false) {
 
                 @Override
+                protected void attachLinkCrawler(final LinkCrawler linkCrawler) {
+                    if (linkCrawler != null && linkCrawler != this) {
+                        if (parent != null) {
+                            parent.attachLinkCrawler(linkCrawler);
+                        }
+                        synchronized (children) {
+                            children.put(linkCrawler, Boolean.TRUE);
+                        }
+                    }
+                }
+
+                @Override
                 protected CrawledLink crawledLinkFactorybyURL(final String url) {
                     final CrawledLink ret;
                     if (parent != null) {
@@ -300,6 +314,7 @@ public class LinkCrawler {
                 }
 
             };
+            parent.attachLinkCrawler(lc);
         } else {
             lc = new LinkCrawler(true, true);
         }
@@ -343,12 +358,25 @@ public class LinkCrawler {
         return linkCrawlerRules;
     }
 
-    public LinkCrawler(boolean connectParentCrawler, boolean avoidDuplicates) {
+    protected void attachLinkCrawler(final LinkCrawler linkCrawler) {
+        if (linkCrawler != null && linkCrawler != this) {
+            final LinkCrawler parent = getParent();
+            if (parent != null) {
+                parent.attachLinkCrawler(linkCrawler);
+            }
+            synchronized (children) {
+                children.put(linkCrawler, Boolean.TRUE);
+            }
+        }
+    }
+
+    public LinkCrawler(final boolean connectParentCrawler, final boolean avoidDuplicates) {
         setFilter(defaultFilterFactory());
         final LinkCrawlerThread thread = getCurrentLinkCrawlerThread();
         if (connectParentCrawler && thread != null) {
             /* forward crawlerGeneration from parent to this child */
             this.parentCrawler = thread.getCurrentLinkCrawler();
+            this.parentCrawler.attachLinkCrawler(this);
             this.classLoader = parentCrawler.getPluginClassLoaderChild();
             this.unsortedLazyHostPlugins = parentCrawler.unsortedLazyHostPlugins;
             this.directPlugin = parentCrawler.directPlugin;
@@ -678,8 +706,8 @@ public class LinkCrawler {
                 }
             }
             if (stopped) {
-                synchronized (this) {
-                    this.notifyAll();
+                synchronized (WAIT) {
+                    WAIT.notifyAll();
                 }
                 if (getParent() == null) {
                     cleanupDuplicateFinder();
@@ -688,8 +716,8 @@ public class LinkCrawler {
                 crawlerStopped();
             }
             if (finished) {
-                synchronized (this) {
-                    this.notifyAll();
+                synchronized (WAIT) {
+                    WAIT.notifyAll();
                 }
                 cleanupDuplicateFinder();
                 EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.FINISHED));
@@ -2203,22 +2231,60 @@ public class LinkCrawler {
     }
 
     public boolean waitForCrawling() {
-        while (isRunning()) {
-            synchronized (LinkCrawler.this) {
-                if (isRunning()) {
+        return waitForCrawling(true);
+    }
+
+    private final static Object WAIT = new Object();
+
+    public boolean waitForCrawling(final boolean waitForChildren) {
+        while (isRunning(waitForChildren)) {
+            synchronized (WAIT) {
+                if (isRunning(waitForChildren)) {
                     try {
-                        LinkCrawler.this.wait(1000);
+                        WAIT.wait(1000);
                     } catch (InterruptedException e) {
                         break;
                     }
                 }
             }
         }
-        return isRunning() == false;
+        return isRunning(waitForChildren) == false;
+    }
+
+    public List<LinkCrawler> getChildren() {
+        synchronized (children) {
+            return new ArrayList<LinkCrawler>(children.keySet());
+        }
+    }
+
+    public LinkCrawler getRoot() {
+        final LinkCrawler parent = getParent();
+        if (parent != null) {
+            return parent.getRoot();
+        }
+        return this;
     }
 
     public boolean isRunning() {
-        return runningState.get();
+        return isRunning(true);
+    }
+
+    public boolean isRunning(final boolean checkChildren) {
+        if (runningState.get()) {
+            return true;
+        }
+        if (checkChildren) {
+            synchronized (children) {
+                if (children.size() > 0) {
+                    for (final LinkCrawler child : children.keySet()) {
+                        if (child.isRunning(false)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public static boolean isCrawling() {
@@ -2801,11 +2867,10 @@ public class LinkCrawler {
             if (isDoDuplicateFinderFinalCheck()) {
                 /* specialHandling: Crypted A - > B - > Final C , and A equals C */
                 // if link comes from flashgot, origin might be null
-                boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
-
-                CrawledLink existing;
+                final boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
+                final CrawledLink existing;
                 if ((existing = duplicateFinderFinal.putIfAbsent(link.getLinkID(), link)) != null && !specialHandling) {
-                    PluginForHost hPlugin = link.gethPlugin();
+                    final PluginForHost hPlugin = link.gethPlugin();
                     if (hPlugin == null || hPlugin.onLinkCrawlerDupeFilterEnabled(existing, link)) {
                         return;
                     }
