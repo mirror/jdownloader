@@ -8,6 +8,7 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -30,12 +31,14 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setVariantsColumnAlwaysVisible(boolean b);
 
     @DefaultJsonObject("[]")
+    @DefaultOnNull
     @AboutConfig
     List<DownloadPath> getDownloadDestinationHistory();
 
     void setDownloadDestinationHistory(List<DownloadPath> value);
 
     @DefaultJsonObject("[]")
+    @DefaultOnNull
     @AboutConfig
     List<PackageHistoryEntry> getPackageNameHistory();
 
