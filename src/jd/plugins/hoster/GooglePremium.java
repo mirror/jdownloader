@@ -1,8 +1,5 @@
 package jd.plugins.hoster;
 
-import org.appwork.exceptions.WTFException;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.plugins.Account;
@@ -11,6 +8,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.components.google.GoogleHelper;
 
 @HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "google.com (Recaptcha)" }, urls = { "google://.+" }, flags = { 2 })
 public class GooglePremium extends PluginForHost {
@@ -34,10 +33,8 @@ public class GooglePremium extends PluginForHost {
                 account.setValid(false);
                 return ai;
             }
-
         } catch (final Exception e) {
             ai.setStatus(e.getMessage());
-
             account.setValid(false);
             return ai;
         }
@@ -55,25 +52,22 @@ public class GooglePremium extends PluginForHost {
 
     @Override
     public ConfigContainer getConfig() {
-        throw new WTFException("Not implemented");
+        return null;
     }
 
     public GooglePremium(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.google.com/signup");
-
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         handlePremium(downloadLink, null);
-
     }
 
     public boolean hasConfig() {
@@ -92,7 +86,6 @@ public class GooglePremium extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink downloadLink) {
-
     }
 
     @Override

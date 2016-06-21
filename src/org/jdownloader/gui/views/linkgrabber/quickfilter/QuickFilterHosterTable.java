@@ -14,8 +14,10 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.components.Header;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.images.NewTheme;
 
 public class QuickFilterHosterTable extends FilterTable {
 
@@ -112,12 +114,22 @@ public class QuickFilterHosterTable extends FilterTable {
         final Icon favIcon;
         if (link.isDirectHTTP()) {
             HOST = Browser.getHost(link.getURL());
-            ID = "http_".concat(HOST);
-            favIcon = null;
+            if (HOST == null) {
+                ID = "http_unknown";
+                favIcon = NewTheme.I().getIcon(IconKey.ICON_BROWSE, 16);
+            } else {
+                ID = "http_".concat(HOST);
+                favIcon = info.getFavIcon();
+            }
         } else if (link.isFTP()) {
             HOST = Browser.getHost(link.getURL());
-            ID = "ftp_".concat(HOST);
-            favIcon = null;
+            if (HOST == null) {
+                ID = "ftp_unknown";
+                favIcon = NewTheme.I().getIcon(IconKey.ICON_BROWSE, 16);
+            } else {
+                ID = "ftp_".concat(HOST);
+                favIcon = info.getFavIcon();
+            }
         } else {
             HOST = info.getTld();
             favIcon = info.getFavIcon();
@@ -144,7 +156,7 @@ public class QuickFilterHosterTable extends FilterTable {
             };
             if (favIcon != null) {
                 ret.setIcon(favIcon);
-            } else {
+            } else if (HOST != null) {
                 ret.setIcon(FavIcons.getFavIcon(HOST, ret));
             }
             filterMapping.put(ID, ret);
