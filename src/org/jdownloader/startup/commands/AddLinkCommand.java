@@ -6,7 +6,6 @@ import java.util.Arrays;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
 
 import org.appwork.utils.StringUtils;
 
@@ -29,11 +28,11 @@ public class AddLinkCommand extends AbstractStartupCommand {
             try {
                 final LinkCollectingJob job;
                 if (StringUtils.startsWithCaseInsensitive(parameter, "http")) {
-                    job = new LinkCollectingJob(new LinkOriginDetails(linkOrigin, null), parameter);
+                    job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
                 } else if (StringUtils.startsWithCaseInsensitive(parameter, "file:/")) {
-                    job = new LinkCollectingJob(new LinkOriginDetails(linkOrigin, null), parameter);
+                    job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
                 } else {
-                    job = new LinkCollectingJob(new LinkOriginDetails(linkOrigin, null), new File(parameter).toURI().toString());
+                    job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), new File(parameter).toURI().toString());
                 }
                 LinkCollector.getInstance().addCrawlerJob(job);
                 return true;

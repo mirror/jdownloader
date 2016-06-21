@@ -17,14 +17,20 @@ public enum LinkOrigin {
     DOWNLOADED_CONTAINER(_JDT.T.LinkSource_DOWNLOADED_CONTAINER()),
     EXTENSION(_JDT.T.LinkSource_EXTENSION());
 
-    private final String translation;
+    private final String            translation;
+    private final LinkOriginDetails linkOriginDetails;
 
     private LinkOrigin(String translation) {
         this.translation = translation;
+        this.linkOriginDetails = new LinkOriginDetails(this, null);
     }
 
-    public String getTranslation() {
+    public final String getTranslation() {
         return translation;
+    }
+
+    public final LinkOriginDetails getLinkOriginDetails() {
+        return linkOriginDetails;
     }
 
 }

@@ -16,6 +16,17 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.PluginForHost;
+
 import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.CounterMap;
@@ -41,18 +52,6 @@ import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
-
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.PluginForHost;
 
 public class YoutubeLinkGrabberExtender {
 
@@ -473,7 +472,7 @@ public class YoutubeLinkGrabberExtender {
 
                     String dummyUrl = "https://www.youtube.com/watch?v=" + videoID + "#variant=" + Encoding.urlEncode(id);
 
-                    LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG) : cl.getOriginLink().getOrigin());
+                    LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails() : cl.getOriginLink().getOrigin());
                     job.setText(dummyUrl);
                     job.setCustomSourceUrl(cl.getOriginLink().getURL());
                     job.setDeepAnalyse(false);

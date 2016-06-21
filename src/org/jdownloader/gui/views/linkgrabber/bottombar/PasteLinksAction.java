@@ -6,7 +6,6 @@ import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -64,7 +63,7 @@ public class PasteLinksAction extends CustomizableAppAction implements ActionCon
             @Override
             public void run() {
                 final ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
-                final LinkCollectingJob crawljob = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.PASTE_LINKS_ACTION, null), content != null ? content.getContent() : null);
+                final LinkCollectingJob crawljob = new LinkCollectingJob(LinkOrigin.PASTE_LINKS_ACTION.getLinkOriginDetails(), content != null ? content.getContent() : null);
                 if (content != null) {
                     crawljob.setCustomSourceUrl(content.getBrowserURL());
                 }

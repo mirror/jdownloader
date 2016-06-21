@@ -160,7 +160,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 return;
             }
             final String dummyCNL = createDummyCNL(crypted, jk, null);
-            final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL);
+            final LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL);
             job.setCustomSourceUrl(source);
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {
@@ -184,11 +184,11 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     jk = jk.replace(";}", "';}");
                 }
                 final String dummyCNL = createDummyCNL(cnl.getCrypted(), jk, cnl.getKey());
-                jobs.add(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL));
+                jobs.add(new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL));
             }
             if (StringUtils.isNotEmpty(cnl.getUrls())) {
                 final String urls = cnl.getUrls();
-                jobs.add(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls));
+                jobs.add(new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls));
             }
             if (jobs.size() > 0) {
                 final CrawledLinkModifier modifier = new CrawledLinkModifier() {
@@ -360,7 +360,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             askPermission(request, null, null);
             final String urls = request.getParameterbyKey("urls");
             if (StringUtils.isNotEmpty(urls)) {
-                clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
+                clickAndLoad2Add(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             }
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
@@ -412,7 +412,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             }
             final String finalPasswords = passwords;
             final String finalComment = request.getParameterbyKey("comment");
-            LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls);
+            LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls);
             final String finalDestination = request.getParameterbyKey("dir");
             job.setCustomSourceUrl(source);
             final String finalPackageName = request.getParameterbyKey("package");
@@ -480,7 +480,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
             final String url = tmp.toURI().toString();
-            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), url, request);
+            clickAndLoad2Add(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), url, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
@@ -599,7 +599,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
-                LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
+                LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
                 final String finalPackageName = request.getParameterbyKey("package");
                 String dir = request.getParameterbyKey("dir");
                 if (dir != null && dir.matches("^[a-zA-Z]{1}:$")) {

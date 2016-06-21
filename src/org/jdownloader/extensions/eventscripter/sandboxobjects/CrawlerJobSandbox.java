@@ -13,7 +13,7 @@ public class CrawlerJobSandbox {
     }
 
     public CrawlerJobSandbox() {
-        job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.PASTE_LINKS_ACTION, "Test Job for EventScripter"));
+        job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.PASTE_LINKS_ACTION, "Test Job for EventScripter"));
         job.setText("http://jdownloader.org/_media/knowledge/wiki/development/open_preferences.png");
         job.setDeepAnalyse(false);
     }

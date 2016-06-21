@@ -33,7 +33,6 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -53,7 +52,6 @@ import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.icon.IconBadgePainter;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.MacDockProgressDisplay;
 import org.jdownloader.updatev2.RestartController;
@@ -93,9 +91,9 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
             public void run() {
                 try {
                     com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(JDGui.getInstance().getMainFrame(), true);
-                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("MacOS FullScreen Support activated");
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("MacOS FullScreen Support activated");
                 } catch (Throwable e) {
-                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
             }
 
@@ -236,7 +234,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                                     }
                                 });
                             } catch (final Throwable e) {
-                                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             }
                         }
                     } finally {
@@ -335,7 +333,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void openFiles(final OpenFilesEvent e) {
         appReOpened(null);
-         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Handle open files from Dock " + e.getFiles().toString());
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Handle open files from Dock " + e.getFiles().toString());
         final StringBuilder sb = new StringBuilder();
         for (final File file : e.getFiles()) {
             if (sb.length() > 0) {
@@ -348,22 +346,22 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
             @Override
             public void run() {
-                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), links));
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK.getLinkOriginDetails(), links));
             }
         });
     }
 
     public void openURI(final AppEvent.OpenURIEvent e) {
         appReOpened(null);
-         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Handle open uri from Dock " + e.getURI().toString());
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Handle open uri from Dock " + e.getURI().toString());
         final String links = e.getURI().toString();
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
-                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), links));
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK.getLinkOriginDetails(), links));
             }
         });
     }
