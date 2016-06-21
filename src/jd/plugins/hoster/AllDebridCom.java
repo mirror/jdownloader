@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,9 +37,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://s\\d+\\.alldebrid\\.com/dl/[a-z0-9]+/.+" }, flags = { 2 })
 public class AllDebridCom extends antiDDoSForHost {
@@ -79,12 +81,12 @@ public class AllDebridCom extends antiDDoSForHost {
         for (String data[] : info) {
             accDetails.put(data[0].toLowerCase(Locale.ENGLISH), data[1].toLowerCase(Locale.ENGLISH));
         }
-        ArrayList<String> supportedHosts = new ArrayList<String>();
-        String type = accDetails.get("type");
-        if ("premium".equals(type)) {
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String type = accDetails.get("type");
+        if ("premium".equals(type) || true) {
             /* only platinium and premium support */
             getPage("https://www.alldebrid.com/api.php?action=get_host");
-            String hoster[] = br.toString().split(",\\s*[\r\n]{1,2}\\s*");
+            String hoster[] = br.toString().split(",\\s*");
             if (hoster != null) {
                 /* workaround for buggy getHost call */
                 supportedHosts.add("tusfiles.net");
@@ -124,11 +126,11 @@ public class AllDebridCom extends antiDDoSForHost {
             }
             /* Timestamp given in remaining seconds. */
             final String secondsLeft = accDetails.get("timestamp");
-            if (secondsLeft != null) {
+            if (secondsLeft != null && false) {
                 account.setValid(true);
                 final long validuntil = System.currentTimeMillis() + (Long.parseLong(secondsLeft) * 1001);
                 ac.setValidUntil(validuntil);
-            } else {
+            } else if (false) {
                 /* no daysleft available?! */
                 account.setValid(false);
             }
@@ -147,7 +149,8 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     private void handleErrors() throws PluginException {
-        if ("login fail".equals(br.toString())) {
+        final String error = PluginJSonUtils.getJson(br, "error");
+        if ("login fail".equals(br.toString()) || "login gailed".equals(br.toString())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong User Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if ("too mutch fail, blocked for 6 hour".equals(br.toString())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToo many incorrect attempts at login!\r\nYou've been blocked for 6 hours", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -155,6 +158,8 @@ public class AllDebridCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "500 internal server error", 15 * 60 * 1000l);
+        } else if (StringUtils.startsWithCaseInsensitive(error, "To many downloads")) {
+            // some limitation on concurrent download for this host.
         }
     }
 
