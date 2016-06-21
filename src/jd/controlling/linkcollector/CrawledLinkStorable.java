@@ -98,7 +98,7 @@ public class CrawledLinkStorable implements Storable {
     }
 
     public LinkOriginStorable getOriginDetails() {
-        LinkOriginDetails origin = link.getOrigin();
+        final LinkOriginDetails origin = link.getOrigin();
         if (origin == null) {
             return null;
         }
@@ -108,8 +108,8 @@ public class CrawledLinkStorable implements Storable {
     public void setOriginDetails(LinkOriginStorable origin) {
         if (origin != null) {
             try {
-                LinkOrigin enu = LinkOrigin.valueOf(origin.id);
-                link.setOrigin(new LinkOriginDetails(enu, origin.details));
+                final LinkOrigin enu = LinkOrigin.valueOf(origin.id);
+                link.setOrigin(LinkOriginDetails.getInstance(enu, origin.details));
             } catch (Throwable e) {
                 e.printStackTrace();
             }

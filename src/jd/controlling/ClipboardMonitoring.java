@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.parser.html.HTMLParser;
@@ -316,7 +315,7 @@ public class ClipboardMonitoring {
                             if (!StringUtils.isEmpty(handleThisRound)) {
                                 if (FIRSTROUNDDONE) {
                                     clipboardChangeDetector.restart();
-                                    LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CLIPBOARD, null), handleThisRound);
+                                    LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound);
                                     final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
                                     if (pws != null && pws.size() > 0) {
                                         job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
@@ -625,7 +624,7 @@ public class ClipboardMonitoring {
             }
             final String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
-                final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(origin, null), content);
+                final LinkCollectingJob job = new LinkCollectingJob(origin.getLinkOriginDetails(), content);
 
                 job.setCustomSourceUrl(browserUrl);
                 final HashSet<String> pws = PasswordUtils.getPasswords(content);

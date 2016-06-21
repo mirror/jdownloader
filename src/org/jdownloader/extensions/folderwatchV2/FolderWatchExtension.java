@@ -273,7 +273,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     }
 
     private void addContainerFile(final File file) {
-        final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.EXTENSION, "FolderWatch:" + file.getAbsolutePath()), file.toURI().toString());
+        final LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.EXTENSION, "FolderWatch:" + file.getAbsolutePath()), file.toURI().toString());
         final LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
         lc.waitForCrawling();
     }
@@ -406,7 +406,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
         getLogger().info("AddJob \r\n" + JSonStorage.toString(j));
         switch (j.getType()) {
         case NORMAL:
-            final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.EXTENSION, "FolderWatch:" + f.getAbsolutePath()), j.getText());
+            final LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.EXTENSION, "FolderWatch:" + f.getAbsolutePath()), j.getText());
             job.setDeepAnalyse(j.isDeepAnalyseEnabled());
             final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 

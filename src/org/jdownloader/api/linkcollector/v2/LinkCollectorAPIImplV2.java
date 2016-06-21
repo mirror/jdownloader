@@ -12,6 +12,20 @@ import java.util.Set;
 
 import javax.swing.Icon;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.plugins.DownloadLink;
+
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -38,21 +52,6 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.UrlDisplayType;
-
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.plugins.DownloadLink;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -362,7 +361,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             }
         }
 
-        final LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null/* add useragent? */), sb.toString());
+        final LinkCollectingJob lcj = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), sb.toString());
         final boolean overwritePackagizerRules = Boolean.TRUE.equals(query.isOverwritePackagizerRules());
 
         final HashSet<String> finalExtPws;
@@ -664,7 +663,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 final File tmp = Application.getTempResource(fileName);
                 final byte[] write = IO.readStream(-1, getInputStream(content));
                 IO.writeToFile(tmp, write);
-                LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.toURI().toString());
+                LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), tmp.toURI().toString());
                 LinkCollector.getInstance().getAddLinksThread(job, null).start();
             } catch (IOException e) {
                 e.printStackTrace();

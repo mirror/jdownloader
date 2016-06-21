@@ -29,6 +29,19 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.parser.html.HTMLParser;
+import jd.plugins.DownloadLink;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -71,20 +84,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.parser.html.HTMLParser;
-import jd.plugins.DownloadLink;
-
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextArea                         input;
@@ -116,7 +115,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextField                        comment;
 
-    private JCheckBox                           overwritePackagizer;;
+    private JCheckBox                           overwritePackagizer;                   ;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -217,7 +216,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     @Override
     protected LinkCollectingJob createReturnValue() {
-        final LinkCollectingJob ret = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG, null), input.getText());
+        final LinkCollectingJob ret = new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails(), input.getText());
         final boolean overwritePackagizerRules = isOverwritePackagizerEnabled();
         final String finalPackageName = packagename.getText().trim();
         final String finalComment = getComment().trim();
