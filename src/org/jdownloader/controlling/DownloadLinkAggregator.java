@@ -220,6 +220,9 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
         this.onlineStatusOfflineCount = offline;
         this.onlineStatusOnlineCount = online;
         this.enabledCount = enabled;
+        if (totalBytes == -1 && totalCount == 0) {
+            totalBytes = 0;
+        }
         this.totalBytes = totalBytes;
         this.bytesLoaded = bytesLoaded;
         this.finishedCount = finished;

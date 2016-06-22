@@ -27,18 +27,23 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
 
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
-    private static final String PATTERN_NAME     = "{name}";
-    private static final String PATTERN_NEWLINE  = "{newline}";
-    private static final String PATTERN_COMMENT  = "{comment}";
-    private static final String PATTERN_SHA256   = "{sha256}";
-    private static final String PATTERN_MD5      = "{md5}";
-    private static final String PATTERN_FILESIZE = "{filesize}";
-    private static final String PATTERN_URL      = "{url}";
-    private static final String PATTERN_TYPE     = "{type}";
-    private static final String PATTERN_PATH     = "{path}";
+    private static final String PATTERN_NAME          = "{name}";
+    private static final String PATTERN_NEWLINE       = "{newline}";
+    private static final String PATTERN_COMMENT       = "{comment}";
+    private static final String PATTERN_SHA256        = "{sha256}";
+    private static final String PATTERN_MD5           = "{md5}";
+    private static final String PATTERN_FILESIZE      = "{filesize}";
+    private static final String PATTERN_URL           = "{url}";
+    private static final String PATTERN_URL_CONTAINER = "{url.container}";
+    private static final String PATTERN_URL_ORIGIN    = "{url.origin}";
+    private static final String PATTERN_URL_CONTENT   = "{url.content}";
+    private static final String PATTERN_URL_REFERRER  = "{url.referrer}";
+    private static final String PATTERN_TYPE          = "{type}";
+    private static final String PATTERN_PATH          = "{path}";
 
     public CopyGenericContextAction() {
         super(true, true);
@@ -111,30 +116,25 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         if (isSmartSelection()) {
             for (PackageView<?, ?> pv : getTable().getSelectionInfo().getPackageViews()) {
                 AbstractPackageNode<?, ?> pkg = pv.getPackage();
                 add(sb, pkg);
-
                 List<AbstractNode> childs = (List<AbstractNode>) pv.getChildren();
                 for (AbstractNode c : childs) {
                     add(sb, c);
                 }
-
             }
         } else {
             for (AbstractNode pv : getTable().getSelectionInfo().getRawSelection()) {
                 add(sb, pv);
-
             }
         }
-
         ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
     }
 
@@ -143,7 +143,6 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         if (pv instanceof FilePackage) {
             line = getPatternPackages();
             FilePackage pkg = (FilePackage) pv;
-
             FilePackageView fpv = new FilePackageView(pkg);
             fpv.aggregate();
             line = line.replace(PATTERN_TYPE, "Package");
@@ -155,7 +154,10 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NAME, nulltoString(pkg.getName()));
             line = line.replace(PATTERN_SHA256, nulltoString(null));
             line = line.replace(PATTERN_URL, nulltoString(null));
-
+            line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
+            line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
+            line = line.replace(PATTERN_URL_ORIGIN, nulltoString(null));
+            line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
         } else if (pv instanceof DownloadLink) {
             line = getPatternLinks();
             DownloadLink link = (DownloadLink) pv;
@@ -168,7 +170,10 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NAME, nulltoString(link.getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getSha1Hash()));
             line = line.replace(PATTERN_URL, nulltoString(link.getView().getDisplayUrl()));
-
+            line = line.replace(PATTERN_URL_CONTAINER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link)));
+            line = line.replace(PATTERN_URL_CONTENT, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link)));
+            line = line.replace(PATTERN_URL_ORIGIN, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, link)));
+            line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledLink) {
             line = getPatternLinks();
             CrawledLink link = (CrawledLink) pv;
@@ -181,7 +186,10 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NAME, nulltoString(link.getDownloadLink().getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getDownloadLink().getSha1Hash()));
             line = line.replace(PATTERN_URL, nulltoString(link.getDownloadLink().getView().getDisplayUrl()));
-
+            line = line.replace(PATTERN_URL_CONTAINER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link)));
+            line = line.replace(PATTERN_URL_CONTENT, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link)));
+            line = line.replace(PATTERN_URL_ORIGIN, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, link)));
+            line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledPackage) {
             line = getPatternPackages();
             CrawledPackage pkg = (CrawledPackage) pv;
@@ -198,6 +206,10 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 line = line.replace(PATTERN_NAME, nulltoString(pkg.getName()));
                 line = line.replace(PATTERN_SHA256, nulltoString(null));
                 line = line.replace(PATTERN_URL, nulltoString(null));
+                line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
+                line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
+                line = line.replace(PATTERN_URL_ORIGIN, nulltoString(null));
+                line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
             } finally {
                 pkg.getModifyLock().readUnlock(readL);
             }

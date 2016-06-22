@@ -3,6 +3,7 @@ package org.jdownloader.extensions.infobar;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -15,6 +16,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.JDProgressBar;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.nutils.Formatter;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -34,13 +41,9 @@ import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.gui.swing.jdgui.components.JDProgressBar;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.nutils.Formatter;
-import net.miginfocom.swing.MigLayout;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener, GenericConfigEventListener<Integer>, WindowListener {
 
@@ -144,7 +147,20 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
         lblHelp.setToolTipText(T.T.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
 
-        JPanel panel = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill,200]"));
+        JLabel lblCrawler = new JLabel(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title());
+        lblCrawler.setIcon(new AbstractIcon(IconKey.ICON_LINKGRABBER, 16));
+        lblCrawler.setHorizontalTextPosition(JLabel.LEADING);
+        lblCrawler.setHorizontalAlignment(JLabel.CENTER);
+        lblCrawler.setToolTipText(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip());
+        lblCrawler.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
+                JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+            }
+        });
+
+        JPanel panel = new JPanel(new MigLayout("ins 6, wrap 1", "[grow,fill,250]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
         panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
 
@@ -152,6 +168,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         panel.add(lblETA);
         panel.add(prgTotal);
         panel.add(lblHelp, "hidemode 3");
+        panel.add(lblCrawler);
 
         this.setLayout(new MigLayout("ins 0", "[grow,fill]"));
         this.add(panel);
@@ -163,18 +180,17 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         if (isVisible()) {
             return;
         }
-        InfoUpdater thread = new InfoUpdater();
-        Thread oldThread = updater.getAndSet(thread);
+        final InfoUpdater thread = new InfoUpdater();
+        final Thread oldThread = updater.getAndSet(thread);
         if (oldThread != null) {
             oldThread.interrupt();
         }
         thread.start();
         WindowManager.getInstance().setVisible(this, true, FrameState.OS_DEFAULT);
-
     }
 
     public void hideDialog() {
-        Thread thread = updater.getAndSet(null);
+        final Thread thread = updater.getAndSet(null);
         if (thread != null) {
             thread.interrupt();
         }
