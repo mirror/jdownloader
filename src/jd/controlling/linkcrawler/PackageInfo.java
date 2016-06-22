@@ -1,6 +1,7 @@
 package jd.controlling.linkcrawler;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class PackageInfo {
@@ -46,7 +47,7 @@ public class PackageInfo {
         if (StringUtils.isEmpty(name)) {
             name = null;
         }
-        this.name = name;
+        this.name = CrossSystem.alleviatePathParts(name);
     }
 
     public String getDestinationFolder() {
