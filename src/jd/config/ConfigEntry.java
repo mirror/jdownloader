@@ -114,7 +114,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Konstruktor fuer Komponenten die nix brauchen. z.B. JSeparator
-     * 
+     *
      * @param type
      * @see ConfigContainer#TYPE_SEPARATOR
      */
@@ -124,7 +124,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Konstruktor fuer Komponenten, welche eine Swing-Komponente darstellen sollen
-     * 
+     *
      * @param type
      * @param component
      * @param constraints
@@ -138,7 +138,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Konstruktor fuer z.B. Buttons (Label + Actionlistener)
-     * 
+     *
      * @param type
      *            Typ ID (ConfigContainer.TYPE_*)
      * @param actionListener
@@ -166,7 +166,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Konstruktor z.B. fuer Combobox oder radiofield ( mehrere werte(list), eine auswahl (property)
-     * 
+     *
      * @param type
      * @param propertyInstance
      *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit hilfe von propertyName werden Informationen aus ihr gelesen
@@ -190,7 +190,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Konstruktor fuer z.B. ein Textfeld (label& ein eingabefeld
-     * 
+     *
      * @param type
      *            TYP ID
      * @param propertyInstance
@@ -216,7 +216,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Konstruktor z.B. fuer einen JSpinner (property, label, range (start/end), step)
-     * 
+     *
      * @param type
      * @param propertyInstance
      *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit hilfe von propertyName werden Informationen aus ihr gelesen
@@ -261,7 +261,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Konstruktor fuer ein einfaches Label
-     * 
+     *
      * @param type
      * @param label
      * @see ConfigContainer#TYPE_LABEL
@@ -284,6 +284,11 @@ public class ConfigEntry implements Serializable {
     }
 
     public Object getDefaultValue() {
+        if (defaultValue == null) {
+            if (ConfigContainer.TYPE_CHECKBOX == getType()) {
+                return false;
+            }
+        }
         return defaultValue;
     }
 
@@ -351,7 +356,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Gibt den Typ zurueck
-     * 
+     *
      * @return Typ des Eintrages
      */
     public int getType() {
@@ -382,7 +387,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Legt den defaultwert fest, falls in der propertyinstanz keiner gefunden wurde.
-     * 
+     *
      * @param value
      * @return this. damit ist eine Struktur new ConfigEntry(...).setdefaultValue(...).setStep(...).setBla... moeglich
      */
@@ -424,7 +429,7 @@ public class ConfigEntry implements Serializable {
 
     /**
      * Sets the propoertyType. one of PropertyType enum.
-     * 
+     *
      * @param propertyType
      * @return
      */

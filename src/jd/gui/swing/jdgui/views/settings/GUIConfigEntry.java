@@ -290,7 +290,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
      * @param text
      */
     public void setData(Object text) {
-        if (text == null && configEntry.getDefaultValue() != null) {
+        if (text == null) {
             text = configEntry.getDefaultValue();
         }
         switch (configEntry.getType()) {
