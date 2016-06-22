@@ -35,6 +35,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
@@ -499,7 +500,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         if (StringUtils.isEmpty(newText) && config.isAutoFillAddLinksDialogWithClipboardContentEnabled()) {
                             ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
                             if (content != null) {
-                                newText = content.getContent();
+                                newText = preprocessFind(content.getContent());
                                 browserURL = content.getBrowserURL();
                             }
                         }
@@ -562,11 +563,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             public void windowActivated(WindowEvent e) {
             }
         });
-
-        // this.getDialog().setLocation(new Point((int) (screenSize.getWidth() -
-        // this.getDialog().getWidth()) / 2, (int) (screenSize.getHeight() -
-        // this.getDialog().getHeight()) / 2));
-
         return p;
     }
 
@@ -725,10 +721,15 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         return ret;
     }
 
+    protected String preprocessFind(String text) {
+        if (text != null) {
+            return new LinkCrawler(false, false).preprocessFind(text, null, false);
+        }
+        return text;
+    }
+
     public void parse(String txt) {
-
         autoPasswords.addAll(PasswordUtils.getPasswords(txt));
-
         if (autoPasswords.size() > 1) {
             password.setText(JSonStorage.serializeToJson(autoPasswords));
         } else if (autoPasswords.size() > 0) {
