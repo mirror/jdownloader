@@ -124,6 +124,9 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
             OpenerAccessTracker tracker = openedRandomAccessFileList.get(filename);
             if (tracker == null) {
                 ArchiveFile af = map.get(filename);
+                if (af == null) {
+                    af = archive.getBestArchiveFileMatch(filename);
+                }
                 filename = af == null ? filename : af.getFilePath();
                 tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
                 openedRandomAccessFileList.put(filename, tracker);

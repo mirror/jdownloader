@@ -387,6 +387,20 @@ public enum SplitType {
         return true;
     }
 
+    public ArchiveFile getBestArchiveFileMatch(final Archive archive, final String fileName) {
+        final SplitType splitType = archive.getSplitType();
+        if (splitType == this) {
+            final String partNumberString = splitType.getPartNumberString(fileName);
+            final int partNumber = splitType.getPartNumber(partNumberString);
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                if (partNumber == splitType.getPartNumber(splitType.getPartNumberString(archiveFile.getName()))) {
+                    return archiveFile;
+                }
+            }
+        }
+        return null;
+    }
+
     public static List<ArchiveFile> getMissingArchiveFiles(Archive archive, SplitType splitType, int numberOfParts) {
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().size() > 0 ? archive.getArchiveFiles().get(0) : null;
         if (firstArchiveFile != null) {
