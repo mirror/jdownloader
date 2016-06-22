@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,12 +54,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uplod.it" }, urls = { "https?://(www\\.)?(?:uplod\\.it|uploadex\\.com)/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploads.to", "ourupload.com" }, urls = { "https?://(www\\.)?(?:uplod\\.it|uploads.to)/(?:embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?(?:uploadex\\.com|ourupload\\.com)/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2, 0 })
 public class UplodIt extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -63,11 +63,11 @@ public class UplodIt extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://uplod.it";
-    private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private final String                   COOKIE_HOST                     = "http://" + getHost();
+    private final String                   NICE_HOST                       = getHost().replaceAll("(https://|http://)", "");
+    private final String                   NICE_HOSTproperty               = getHost().replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(uplod\\.it|downlod\\.me)";
+    private static final String            DOMAINS                         = "(uplod\\.it|downlod\\.me|uploads\\.to|uploadex\\.com|ourupload\\.com)";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
@@ -140,9 +140,14 @@ public class UplodIt extends PluginForHost {
     @Override
     public String rewriteHost(String host) {
         final String currentHost = getHost();
-        if ("uplod.it".equals(currentHost)) {
+        if ("uploads.to".equals(currentHost)) {
+            if (host == null || "uplod.it".equals(host)) {
+                return "uploads.to";
+            }
+        }
+        if ("ourupload.com".equals(currentHost)) {
             if (host == null || "uploadex.com".equals(host)) {
-                return "uplod.it";
+                return "ourupload.com";
             }
         }
         return super.rewriteHost(host);
