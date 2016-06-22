@@ -1183,7 +1183,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             public Boolean edtRun() {
 
                 // don't block anthing if the frame is active anyway
-                if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) {
+                if ((getMainFrame().hasFocus() || getMainFrame().isActive())/* && getMainFrame().isVisible() */) {
                     logger.info("SilentMode: Mainframe has Focus: ");
                     return false;
                 }
@@ -1194,7 +1194,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 }
 
                 for (Window w : Window.getWindows()) {
-                    if ((w.hasFocus() || w.isActive()) && w.isVisible()) {
+                    if ((w.hasFocus() || w.isActive())/* && w.isVisible() */) {
                         logger.info("SilentMode: No SilentMode. Active Window: " + w);
                         return false;
                     }
