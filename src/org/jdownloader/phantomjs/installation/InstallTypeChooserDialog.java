@@ -70,14 +70,19 @@ public class InstallTypeChooserDialog extends AbstractDialog<Object> implements 
         p.add(header(_GUI.T.FFMpegInstallTypeChooserDialog_layoutDialogContent_problem()), "spanx");
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_LOGO_PHANTOMJS_LOGO, 32)), "gapleft 10,gapright 10");
         // p.add(textField, "spanx");
-        p.add(new JLabel(_GUI.T.PhantomJSInstallTypeChooserDialog_message(task)), "spanx");
+        p.add(new JLabel(htmlize(_GUI.T.PhantomJSInstallTypeChooserDialog_message(task))), "spanx");
 
         p.add(header(_GUI.T.FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser()), "spanx");
 
         // p.add(textField, "gapleft 10,spanx");
-        p.add(new JLabel(_GUI.T.Phantom_JS_Explain_download()), "gapleft 10,spanx");
+        p.add(new JLabel(htmlize(_GUI.T.Phantom_JS_Explain_download())), "gapleft 10,spanx");
         StatsManager.I().track("install/dialog", CollectionName.PJS);
         return p;
+    }
+
+    private String htmlize(String html) {
+
+        return "<html>" + html.replaceAll("<.*?>", "") + "</html>";
     }
 
     @Override
