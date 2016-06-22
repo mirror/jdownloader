@@ -1276,6 +1276,20 @@ public enum ArchiveType {
         return null;
     }
 
+    public ArchiveFile getBestArchiveFileMatch(final Archive archive, final String fileName) {
+        final ArchiveType archiveType = archive.getArchiveType();
+        if (archiveType == this) {
+            final String partNumberString = archiveType.getPartNumberString(fileName);
+            final int partNumber = archiveType.getPartNumber(partNumberString);
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                if (partNumber == archiveType.getPartNumber(archiveType.getPartNumberString(archiveFile.getName()))) {
+                    return archiveFile;
+                }
+            }
+        }
+        return null;
+    }
+
     public static List<ArchiveFile> getMissingArchiveFiles(Archive archive, ArchiveType archiveType, int numberOfParts) {
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().size() > 0 ? archive.getArchiveFiles().get(0) : null;
         if (firstArchiveFile != null) {

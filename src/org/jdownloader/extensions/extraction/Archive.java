@@ -127,6 +127,15 @@ public class Archive {
         this.splitType = splitType;
     }
 
+    public ArchiveFile getBestArchiveFileMatch(final String fileName) {
+        if (getArchiveType() != null) {
+            return getArchiveType().getBestArchiveFileMatch(this, fileName);
+        } else if (getSplitType() != null) {
+            return getSplitType().getBestArchiveFileMatch(this, fileName);
+        }
+        return null;
+    }
+
     /**
      * ArchiveFiles CRC error.
      */

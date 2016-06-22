@@ -34,30 +34,33 @@ import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 
 /**
  * Used to join the separated HJSplit and 7z files.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
     private Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
     private final String                     password;
     private long                             accessCounter              = 0;
     private String                           name                       = null;
+    private final Archive                    archive;
 
-    MultiOpener() {
-        this(null);
+    MultiOpener(Archive archive) {
+        this(archive, null);
     }
 
-    MultiOpener(String password) {
+    MultiOpener(Archive archive, String password) {
         if (password == null) {
             /* password null will crash jvm */
             password = "";
         }
         this.password = password;
+        this.archive = archive;
     }
 
     public Object getProperty(PropID propID) throws SevenZipException {
@@ -76,6 +79,10 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
         try {
             OpenerAccessTracker tracker = openedRandomAccessFileList.get(filename);
             if (tracker == null) {
+                if (archive != null) {
+                    final ArchiveFile af = archive.getBestArchiveFileMatch(filename);
+                    filename = af == null ? filename : af.getFilePath();
+                }
                 tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
                 openedRandomAccessFileList.put(filename, tracker);
             }
@@ -116,7 +123,7 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
 
     /**
      * Closes all open files.
-     * 
+     *
      * @throws IOException
      */
     public void close() throws IOException {
