@@ -279,14 +279,14 @@ public class DepfileCom extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
-            String expire = br.getRegex("href='/myspace/space/premium'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})<").getMatch(0);
+            String expire = br.getRegex("href='/myspace/space/premium'>(\\d{2}[\\.\\-]\\d{2}[\\.\\-]\\d{2} \\d{2}:\\d{2})<").getMatch(0);
             // only premium accounts expire, affiliate doesn't.. they are a form of premium according to admin.
             if (expire == null && isAccountPremium()) {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
             } else if (expire != null && isAccountPremium()) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yy hh:mm", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, (expire.contains(".") ? "dd.MM.yy hh:mm" : "MM-dd-yy hh:mm"), null), br);
                 ai.setStatus("Premium Account");
             } else if (expire == null && isAccountAffiliate()) {
                 ai.setStatus("Affiliate Account");
