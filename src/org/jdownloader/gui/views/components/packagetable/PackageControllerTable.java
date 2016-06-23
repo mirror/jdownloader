@@ -50,6 +50,7 @@ import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelSelectionOnlySelectionInfo.SelectionOnlyPackageView;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -222,8 +223,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final ExtColumn<AbstractNode> column = this.getExtColumnAtPoint(e.getPoint());
         if (column == getExpandCollapseColumn()) {
             final Rectangle bounds = column.getBounds();
-            if (e.getPoint().x - bounds.x < 30) {
-                return true;
+            System.out.println(e.getPoint().x - bounds.x);
+            if (e.getPoint().x - bounds.x < FileColumn.EXPAND_COLLAPSE_AREA) {
+                final int row = this.rowAtPoint(e.getPoint());
+                final AbstractNode node = this.getModel().getObjectbyRow(row);
+                if (node instanceof AbstractPackageNode) {
+                    return true;
+                }
             }
         }
         return false;

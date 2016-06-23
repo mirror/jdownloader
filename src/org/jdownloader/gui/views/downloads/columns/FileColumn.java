@@ -12,6 +12,18 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.border.Border;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcrawler.ArchiveCrawledPackage;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.NaturalOrderComparator;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -38,32 +50,22 @@ import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcrawler.ArchiveCrawledPackage;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.NaturalOrderComparator;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
-public class FileColumn extends ExtTextColumn<AbstractNode>implements GenericConfigEventListener<Boolean> {
+public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
     /**
      *
      */
-    private static final long serialVersionUID  = -2963955407564917958L;
+    private static final long serialVersionUID     = -2963955407564917958L;
     protected Border          leftGapBorder;
     private final Icon        iconPackageOpen;
     private final Icon        iconPackageClosed;
     private final Icon        iconArchive;
     private final Icon        iconArchiveOpen;
     protected Border          normalBorder;
-    private boolean           selectAll         = false;
-    private boolean           hideSinglePackage = true;
+    private boolean           selectAll            = false;
+    private boolean           hideSinglePackage    = true;
+
+    public final static int   EXPAND_COLLAPSE_AREA = 32 + 1/* leftGapBorder */+ 5 + 1/* super.defaultBorder */;
 
     public FileColumn() {
         super(_GUI.T.filecolumn_title());
@@ -134,11 +136,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode>implements GenericCon
 
     @Override
     public boolean onDoubleClick(MouseEvent e, AbstractNode contextObject) {
-
-        if (e.getPoint().x - getBounds().x < 30) {
+        if (isExpandCollapseArea(e, contextObject)) {
             return false;
         }
-
         if (contextObject instanceof DownloadLink) {
             switch (CFG_GUI.CFG.getLinkDoubleClickAction()) {
             case NOTHING:
@@ -237,12 +237,18 @@ public class FileColumn extends ExtTextColumn<AbstractNode>implements GenericCon
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-
         return true;
     }
 
+    public boolean isExpandCollapseArea(final MouseEvent e, final AbstractNode obj) {
+        if (obj instanceof AbstractPackageNode && (e.getPoint().x - getBounds().x) < EXPAND_COLLAPSE_AREA) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean onRenameClick(final MouseEvent e, final AbstractNode obj) {
-        if (e.getPoint().x - getBounds().x < 30) {
+        if (isExpandCollapseArea(e, obj)) {
             return false;
         }
         startEditing(obj);
@@ -311,20 +317,8 @@ public class FileColumn extends ExtTextColumn<AbstractNode>implements GenericCon
         } else if (value instanceof AbstractPackageNode) {
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
         } else if (value instanceof DownloadLink) {
-            // if (((DownloadLink) value).hasVariantSupport()) {
-            // if (((DownloadLink) value).getDefaultPlugin().hasVariantToChooseFrom(((DownloadLink) value))) {
-            // return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((DownloadLink)
-            // value).getLinkInfo().getIcon(), 10, 10), 3, -2);
-            // }
-            // }
             return (((DownloadLink) value).getLinkInfo().getIcon());
         } else if (value instanceof CrawledLink) {
-            // if (((CrawledLink) value).hasVariantSupport()) {
-            // if (((CrawledLink) value).gethPlugin().hasVariantToChooseFrom(((CrawledLink) value).getDownloadLink())) {
-            // return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((CrawledLink)
-            // value).getLinkInfo().getIcon(), 10, 10), 3, -2);
-            // }
-            // }
             return (((CrawledLink) value).getLinkInfo().getIcon());
         }
         return null;
