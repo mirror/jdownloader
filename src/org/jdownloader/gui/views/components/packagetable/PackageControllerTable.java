@@ -223,7 +223,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final ExtColumn<AbstractNode> column = this.getExtColumnAtPoint(e.getPoint());
         if (column == getExpandCollapseColumn()) {
             final Rectangle bounds = column.getBounds();
-            System.out.println(e.getPoint().x - bounds.x);
             if (e.getPoint().x - bounds.x < FileColumn.EXPAND_COLLAPSE_AREA) {
                 final int row = this.rowAtPoint(e.getPoint());
                 final AbstractNode node = this.getModel().getObjectbyRow(row);
