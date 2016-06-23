@@ -108,12 +108,27 @@ public class OneTubeTo extends PluginForHost {
                 /* TODO: Implement this correctly! */
                 br.postPage("https://1tube.to/p/api/?json=1", sb.toString());
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                api_data = (LinkedHashMap<String, Object>) api_data.get("data");
+                final Object data = api_data.get("data");
+                if (data != null && data instanceof LinkedHashMap) {
+                    api_data = (LinkedHashMap<String, Object>) data;
+                } else {
+                    /* All offline */
+                    api_data = null;
+                }
                 for (final DownloadLink dl : links) {
                     final String fid = getFID(dl);
+                    if (api_data == null) {
+                        dl.setName(fid);
+                        dl.setAvailable(false);
+                        continue;
+                    }
                     api_data_singlelink = (LinkedHashMap<String, Object>) api_data.get(fid);
-                    final String state = (String) api_data_singlelink.get("state");
-                    if (api_data_singlelink == null || "off".equals(state)) {
+                    String state = null;
+                    try {
+                        state = (String) api_data_singlelink.get("state");
+                    } catch (final Throwable e) {
+                    }
+                    if (api_data_singlelink == null || state == null || state.equalsIgnoreCase("off")) {
                         dl.setName(fid);
                         dl.setAvailable(false);
                         continue;
