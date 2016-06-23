@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,8 +32,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)" }, flags = { 0 })
+import org.appwork.utils.formatter.TimeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?\\d+/?" }, flags = { 0, 0 })
 public class VideoMediasetIt extends PluginForHost {
 
     public VideoMediasetIt(PluginWrapper wrapper) {
@@ -44,18 +50,26 @@ public class VideoMediasetIt extends PluginForHost {
         return "http://www.licensing.mediaset.it/";
     }
 
-    private static final String TYPE_EMBED   = "https?://(?:www\\.)?video\\.mediaset\\.it/player/playerIFrame\\.shtml\\?id=\\d+";
-    private static final String TYPE_NORMAL  = "https?://(?:www\\.)?video\\.mediaset\\.it/video/.+";
-    private boolean             dlImpossible = false;
+    private static final String  TYPE_VIDEO_MEDIASET_EMBED  = "https?://(?:www\\.)?video\\.mediaset\\.it/player/playerIFrame\\.shtml\\?id=\\d+";
+    private static final String  TYPE_VIDEO_MEDIASET_NORMAL = "https?://(?:www\\.)?video\\.mediaset\\.it/video/.+";
+    private static final String  TYPE_VIDEO_WITTYTV         = "https?://(?:www\\.)?wittytv\\.it/.+";
+    private static final String  HTML_MS_SILVERLIGHT        = "silverlight/playerSilverlight\\.js\"";
+    private static final boolean use_player_json            = true;
+    private boolean              dlImpossible               = false;
 
     // Important info: Can only handle normal videos, NO
     // "Microsoft Silverlight forced" videos!
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        String streamID = new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
-        if (streamID == null) {
-            streamID = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
+        String streamID;
+        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_WITTYTV)) {
+            streamID = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
+        } else {
+            streamID = new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
+            if (streamID == null) {
+                streamID = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
+            }
         }
         if (streamID == null) {
             /* Whatever the user added it is probably not a video! */
@@ -64,37 +78,54 @@ public class VideoMediasetIt extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
-        br.getPage(downloadLink.getDownloadURL());
         /* 2016-06-16 TODO: Fix support for embedded URLs */
-        if (downloadLink.getDownloadURL().matches(TYPE_EMBED)) {
+        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_MEDIASET_EMBED)) {
+            br.getPage(downloadLink.getDownloadURL());
             downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-            if (!br.getURL().matches(TYPE_NORMAL)) {
+            if (!br.getURL().matches(TYPE_VIDEO_MEDIASET_NORMAL)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setUrlDownload(br.getURL());
-        }
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Il video che stai cercando non")) {
+            /* 2016-06-16 TODO: Fix support for embedded URLs! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("silverlight/playerSilverlight\\.js\"")) {
-            downloadLink.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
-            return AvailableStatus.TRUE;
-        }
-        String filename = br.getRegex("content=\"([^<>]*?) \\| Video Mediaset\" name=\"title\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"title\">([^<>\"]+)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<h2 class=\"titleWrap\">([^<>]*?)</h2>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>]*?)\\- Video Mediaset</title>").getMatch(0);
+
+        String date = null;
+        String date_formatted = null;
+        String filename;
+        if (use_player_json) {
+            this.br.getPage("http://plr.video.mediaset.it/html/metainfo.sjson?id=" + streamID);
+            filename = PluginJSonUtils.getJson(this.br, "title");
+            date = PluginJSonUtils.getJson(this.br, "production-date");
+        } else {
+            br.getPage(downloadLink.getDownloadURL());
+            if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Il video che stai cercando non")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML(HTML_MS_SILVERLIGHT)) {
+                downloadLink.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
+                return AvailableStatus.TRUE;
+            }
+            filename = br.getRegex("content=\"([^<>]*?) \\| Video Mediaset\" name=\"title\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"title\">([^<>\"]+)<").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex("<h2 class=\"titleWrap\">([^<>]*?)</h2>").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>]*?)\\- Video Mediaset</title>").getMatch(0);
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
+        filename = Encoding.htmlDecode(filename.trim());
         filename = encodeUnicode(filename);
+        date_formatted = formatDate(date);
+        if (date_formatted != null) {
+            filename = date_formatted + "_video_mediaset_it_" + filename;
+        }
         /** New way, thx to: http://userscripts.org/scripts/review/151516 */
         // E.g. original request:
         // http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=123456&format=json&callback=jQuery5456457_45747847&_=36747457
@@ -141,21 +172,21 @@ public class VideoMediasetIt extends PluginForHost {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 }
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                dlImpossible = true;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("silverlight/playerSilverlight\\.js\"")) {
+        if (br.containsHTML(HTML_MS_SILVERLIGHT)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader can't download MS Silverlight videos!");
         }
         if (DLLINK.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
@@ -186,6 +217,24 @@ public class VideoMediasetIt extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(final String input) {
+        if (input == null) {
+            return null;
+        }
+        final long date = TimeFormatter.getMilliSeconds(input, "dd/MM/yyyy", Locale.ENGLISH);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     @Override
