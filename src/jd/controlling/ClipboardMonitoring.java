@@ -589,7 +589,10 @@ public class ClipboardMonitoring {
                 final String sourceURL = new Regex(result, "EndFragment:\\d+[\r\n]*SourceURL:(.*?)(\r|\n)").getMatch(0);
                 final String fragment = new Regex(result, "<!--StartFragment-->(.*?)<!--EndFragment-->").getMatch(0);
                 if (fragment != null) {
-                    return new HTMLFragment(sourceURL, fragment);
+                    if (!StringUtils.isEmpty(sourceURL) && HTMLParser.getProtocol(sourceURL) != null) {
+                        return new HTMLFragment(sourceURL, fragment);
+                    }
+                    return new HTMLFragment(getCurrentBrowserURL(transferable), fragment);
                 }
             }
             final String browserURL = getCurrentBrowserURL(transferable, result);
