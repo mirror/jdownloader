@@ -21,13 +21,6 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -39,6 +32,12 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
@@ -587,8 +586,8 @@ public class ClipboardMonitoring {
             final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
             final String result = convertBytes(htmlDataBytes, charSet, true);
             if (CrossSystem.isWindows()) {
-                final String sourceURL = new Regex(result, "^EndFragment:\\d+[\r\n]*^SourceURL:(.*?)(\r|\n)").getMatch(0);
-                final String fragment = new Regex(result, "^<!--StartFragment-->(.*?)<!--EndFragment-->").getMatch(0);
+                final String sourceURL = new Regex(result, "EndFragment:\\d+[\r\n]*SourceURL:(.*?)(\r|\n)").getMatch(0);
+                final String fragment = new Regex(result, "<!--StartFragment-->(.*?)<!--EndFragment-->").getMatch(0);
                 if (fragment != null) {
                     return new HTMLFragment(sourceURL, fragment);
                 }
@@ -837,7 +836,7 @@ public class ClipboardMonitoring {
             if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
                 return viewSource;
             }
-            viewSource = new Regex(htmlFlavor, "^EndFragment:\\d+[\r\n]*^SourceURL:(.*?)(\r|\n)").getMatch(0);
+            viewSource = new Regex(htmlFlavor, "EndFragment:\\d+[\r\n]*SourceURL:(.*?)(\r|\n)").getMatch(0);
             if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
                 return viewSource;
             }
