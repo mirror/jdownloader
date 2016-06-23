@@ -21,6 +21,13 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -32,12 +39,6 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
@@ -101,6 +102,7 @@ public class ClipboardMonitoring {
                 } finally {
                     closeClipboard.invoke(clipboard, new Object[] {});
                 }
+            } catch (final IOException ignore) {
             } catch (final Throwable e) {
                 logger.log(e);
             }
@@ -592,7 +594,8 @@ public class ClipboardMonitoring {
                     if (!StringUtils.isEmpty(sourceURL) && HTMLParser.getProtocol(sourceURL) != null) {
                         return new HTMLFragment(sourceURL, fragment);
                     }
-                    return new HTMLFragment(getCurrentBrowserURL(transferable), fragment);
+                    final String browserURL = getCurrentBrowserURL(transferable, result);
+                    return new HTMLFragment(browserURL, fragment);
                 }
             }
             final String browserURL = getCurrentBrowserURL(transferable, result);

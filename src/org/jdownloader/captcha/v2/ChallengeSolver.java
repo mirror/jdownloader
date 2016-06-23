@@ -13,14 +13,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import jd.controlling.captcha.SkipException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
-import jd.controlling.captcha.SkipException;
 
 public abstract class ChallengeSolver<T> {
     public static final ChallengeSolver EXTERN = new ChallengeSolver<Object>() {
@@ -133,13 +133,15 @@ public abstract class ChallengeSolver<T> {
     }
 
     public void kill(SolverJob<T> job) {
-        synchronized (map) {
-            final JobRunnable<T> jr = map.remove(job);
-            if (jr != null) {
-                job.getLogger().info("Cancel " + jr);
-                jr.cancel();
-            } else {
-                job.getLogger().info("Could not kill " + job + " in " + this);
+        if (job != null) {
+            synchronized (map) {
+                final JobRunnable<T> jr = map.remove(job);
+                if (jr != null) {
+                    job.getLogger().info("Cancel " + jr);
+                    jr.cancel();
+                } else {
+                    job.getLogger().info("Could not kill " + job + " in " + this);
+                }
             }
         }
     }
