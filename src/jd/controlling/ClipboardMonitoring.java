@@ -43,6 +43,26 @@ import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
 
+    public static class HTMLFragment {
+
+        private final String sourceURL;
+
+        public final String getSourceURL() {
+            return sourceURL;
+        }
+
+        public final String getFragment() {
+            return fragment;
+        }
+
+        private final String fragment;
+
+        private HTMLFragment(final String sourceURL, final String fragment) {
+            this.sourceURL = sourceURL;
+            this.fragment = fragment;
+        }
+    }
+
     private static class WindowsClipboardHack {
         Method                  openClipboard    = null;
         Method                  closeClipboard   = null;
@@ -202,10 +222,10 @@ public class ClipboardMonitoring {
                 return;
             }
             monitoringThread = new Thread() {
-                private String oldStringContent = null;
-                private String oldHTMLContent   = null;
-                private String oldListContent   = null;
-                private String lastBrowserUrl   = null;
+                private String       oldStringContent = null;
+                private HTMLFragment oldHTMLFragment  = null;
+                private String       oldListContent   = null;
+                private String       lastBrowserUrl   = null;
 
                 @Override
                 public void run() {
@@ -267,22 +287,22 @@ public class ClipboardMonitoring {
                                             /*
                                              * lets fetch fresh HTML Content if available
                                              */
-                                            final String htmlContent = getHTMLTransferData(currentContent);
-                                            if (htmlContent != null) {
+                                            final HTMLFragment htmlFragment = getHTMLFragment(currentContent);
+                                            if (htmlFragment != null) {
                                                 /*
                                                  * remember that we had HTML content this round
                                                  */
-                                                oldHTMLContent = htmlContent;
+                                                oldHTMLFragment = htmlFragment;
                                                 if (htmlFlavorAllowed) {
-                                                    handleThisRound = handleThisRound + "\r\n" + htmlContent;
+                                                    handleThisRound = handleThisRound + "\r\n" + htmlFragment.getFragment();
                                                 }
-                                                lastBrowserUrl = getCurrentBrowserURL(currentContent, htmlContent);
+                                                lastBrowserUrl = htmlFragment.getSourceURL();
                                             } else {
-                                                oldHTMLContent = null;
+                                                oldHTMLFragment = null;
                                             }
                                         } catch (final Throwable e) {
                                         }
-                                    } else if (oldHTMLContent != null) {
+                                    } else if (oldHTMLFragment != null) {
                                         /*
                                          * no String Content change detected, let's verify if the HTML content hasn't changed
                                          */
@@ -290,20 +310,20 @@ public class ClipboardMonitoring {
                                             /*
                                              * lets fetch fresh HTML Content if available
                                              */
-                                            final String htmlContent = getHTMLTransferData(currentContent);
-                                            if (htmlContent != null) {
+                                            final HTMLFragment htmlFragment = getHTMLFragment(currentContent);
+                                            if (htmlFragment != null) {
                                                 /*
                                                  * remember that we had HTML content this round
                                                  */
-                                                if (changeDetector(oldHTMLContent, htmlContent)) {
-                                                    oldHTMLContent = htmlContent;
+                                                if (changeDetector(oldHTMLFragment, htmlFragment)) {
+                                                    oldHTMLFragment = htmlFragment;
                                                     if (htmlFlavorAllowed) {
-                                                        handleThisRound = newStringContent + "\r\n" + htmlContent;
+                                                        handleThisRound = newStringContent + "\r\n" + htmlFragment.getFragment();
                                                     }
-                                                    lastBrowserUrl = getCurrentBrowserURL(currentContent, htmlContent);
+                                                    lastBrowserUrl = htmlFragment.getSourceURL();
                                                 }
                                             } else {
-                                                oldHTMLContent = null;
+                                                oldHTMLFragment = null;
                                             }
                                         } catch (final Throwable e) {
                                         }
@@ -369,14 +389,10 @@ public class ClipboardMonitoring {
                     stringContent = getStringTransferData(currentContent);
                 } catch (final Throwable e) {
                 }
-                String htmlContent = null;
-                String browserUrl = null;
+                HTMLFragment htmlFragment = null;
                 try {
                     /* lets fetch fresh HTML Content if available */
-                    htmlContent = getHTMLTransferData(currentContent);
-                    if (htmlContent != null) {
-                        browserUrl = getCurrentBrowserURL(currentContent, htmlContent);
-                    }
+                    htmlFragment = getHTMLFragment(currentContent);
                 } catch (final Throwable e) {
                     e.printStackTrace();
                 }
@@ -386,15 +402,21 @@ public class ClipboardMonitoring {
                     sb.append(stringContent);
                     sb.append(">");
                 }
-                if (isHtmlFlavorAllowed() && htmlContent != null) {
+                if (isHtmlFlavorAllowed() && htmlFragment != null && StringUtils.isNotEmpty(htmlFragment.getFragment())) {
                     if (sb.length() > 0) {
                         sb.append("\r\n");
                     }
                     sb.append("<");
-                    sb.append(htmlContent);
+                    sb.append(htmlFragment.getFragment());
                     sb.append(">");
                 }
-                return new ClipboardContent(sb.toString(), browserUrl);
+                if (sb.length() > 0) {
+                    if (htmlFragment != null) {
+                        return new ClipboardContent(sb.toString(), htmlFragment.getSourceURL());
+                    } else {
+                        return new ClipboardContent(sb.toString(), null);
+                    }
+                }
             }
         }
         return null;
@@ -438,6 +460,21 @@ public class ClipboardMonitoring {
         }
         if (oldS != null && newS != null && !oldS.equalsIgnoreCase(newS)) {
             return true;
+        }
+        return false;
+    }
+
+    private boolean changeDetector(HTMLFragment oldFragment, HTMLFragment newFragment) {
+        if (oldFragment == null && newFragment != null) {
+            return true;
+        }
+        if (oldFragment != null && newFragment != null) {
+            if (!StringUtils.equals(oldFragment.getSourceURL(), newFragment.getSourceURL())) {
+                return true;
+            }
+            if (!StringUtils.equals(oldFragment.getFragment(), newFragment.getFragment())) {
+                return true;
+            }
         }
         return false;
     }
@@ -512,13 +549,24 @@ public class ClipboardMonitoring {
         }
     }
 
+    @Deprecated
     public static String getHTMLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
+        final HTMLFragment ret = getHTMLFragment(transferable);
+        if (ret != null) {
+            return ret.getFragment();
+        } else {
+            return null;
+        }
+    }
+
+    public static HTMLFragment getHTMLFragment(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         DataFlavor htmlFlavor = null;
         final Class<?> preferClass = byte[].class;
         /*
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
-        for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
+        final DataFlavor[] flavors = transferable.getTransferDataFlavors();
+        for (final DataFlavor flav : flavors) {
             if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(preferClass)) {
                 /*
                  * we use first hit and search UTF-8
@@ -534,10 +582,19 @@ public class ClipboardMonitoring {
                 }
             }
         }
-        byte[] htmlDataBytes = getBytes(null, htmlFlavor, transferable);
+        final byte[] htmlDataBytes = getBytes(null, htmlFlavor, transferable);
         if (htmlDataBytes != null && htmlDataBytes.length != 0) {
-            String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
-            return convertBytes(htmlDataBytes, charSet, true);
+            final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
+            final String result = convertBytes(htmlDataBytes, charSet, true);
+            if (CrossSystem.isWindows()) {
+                final String sourceURL = new Regex(result, "^EndFragment:\\d+[\r\n]*^SourceURL:(.*?)(\r|\n)").getMatch(0);
+                final String fragment = new Regex(result, "^<!--StartFragment-->(.*?)<!--EndFragment-->").getMatch(0);
+                if (fragment != null) {
+                    return new HTMLFragment(sourceURL, fragment);
+                }
+            }
+            final String browserURL = getCurrentBrowserURL(transferable, result);
+            return new HTMLFragment(browserURL, result);
         }
         return null;
     }
@@ -594,17 +651,21 @@ public class ClipboardMonitoring {
         try {
             final String listContent = getListTransferData(transferable);
             final String stringContent = getStringTransferData(transferable);
-            final String htmlContent;
+            final HTMLFragment htmlFragment;
             if (StringUtils.isNotEmpty(stringContent)) {
-                htmlContent = getHTMLTransferData(transferable);
+                htmlFragment = getHTMLFragment(transferable);
             } else {
-                htmlContent = null;
+                htmlFragment = null;
             }
-            final String browserUrl;
-            if (StringUtils.isNotEmpty(htmlContent)) {
-                browserUrl = getCurrentBrowserURL(transferable, htmlContent);
+            final String sourceURL;
+            if (htmlFragment != null && StringUtils.isNotEmpty(htmlFragment.getSourceURL())) {
+                sourceURL = htmlFragment.getSourceURL();
             } else {
-                browserUrl = null;
+                if (htmlFragment == null) {
+                    sourceURL = getCurrentBrowserURL(transferable, null);
+                } else {
+                    sourceURL = getCurrentBrowserURL(transferable, htmlFragment.getFragment());
+                }
             }
             StringBuilder sb = new StringBuilder();
             if (StringUtils.isNotEmpty(listContent)) {
@@ -617,16 +678,15 @@ public class ClipboardMonitoring {
                 sb.append(stringContent);
                 sb.append(">\r\n\r\n");
             }
-            if (isHtmlFlavorAllowed() && StringUtils.isNotEmpty(htmlContent)) {
+            if (isHtmlFlavorAllowed() && htmlFragment != null && StringUtils.isNotEmpty(htmlFragment.getFragment())) {
                 sb.append("<");
-                sb.append(htmlContent);
+                sb.append(htmlFragment.getFragment());
                 sb.append(">");
             }
             final String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
                 final LinkCollectingJob job = new LinkCollectingJob(origin.getLinkOriginDetails(), content);
-
-                job.setCustomSourceUrl(browserUrl);
+                job.setCustomSourceUrl(sourceURL);
                 final HashSet<String> pws = PasswordUtils.getPasswords(content);
                 if (pws != null && pws.size() > 0) {
                     job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
@@ -773,7 +833,11 @@ public class ClipboardMonitoring {
             return ret;
         }
         if (htmlFlavor != null) {
-            final String viewSource = new Regex(htmlFlavor, "<a href=\"view-source:(https?://.*?)\"").getMatch(0);
+            String viewSource = new Regex(htmlFlavor, "<a href=\"view-source:(https?://.*?)\"").getMatch(0);
+            if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
+                return viewSource;
+            }
+            viewSource = new Regex(htmlFlavor, "^EndFragment:\\d+[\r\n]*^SourceURL:(.*?)(\r|\n)").getMatch(0);
             if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
                 return viewSource;
             }
