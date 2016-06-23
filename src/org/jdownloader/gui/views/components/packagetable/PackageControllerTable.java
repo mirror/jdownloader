@@ -153,7 +153,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     public PackageControllerTable(final PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
         tableModel = pctm;
-
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
