@@ -10,19 +10,19 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -47,6 +47,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
@@ -56,21 +59,33 @@ import jd.utils.JDUtilities;
  */
 public abstract class K2SApi extends PluginForHost {
 
-    private String          authToken;
-    protected String        directlinkproperty;
-    protected int           chunks;
-    protected boolean       resumes;
-    protected boolean       isFree;
-    private final String    lng                    = getLanguage();
-    private final String    AUTHTOKEN              = "auth_token";
-    private int             authTokenFail          = 0;
-    private int             loginCaptchaFail       = -1;
+    private String                         authToken;
+    protected String                       directlinkproperty;
+    protected int                          chunks;
+    protected boolean                      resumes;
+    protected boolean                      isFree;
+    private final String                   lng                    = getLanguage();
+    private final String                   AUTHTOKEN              = "auth_token";
+    private int                            authTokenFail          = 0;
+    private int                            loginCaptchaFail       = -1;
+
+    /* Reconnect workaround settings */
+    protected final String                 EXPERIMENTALHANDLING   = "EXPERIMENTALHANDLING";
+    protected final boolean                default_eh             = false;
+    private Pattern                        IPREGEX                = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                 = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP              = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap          = new HashMap<String, Long>();
+    private String                         PROPERTY_LASTIP        = "K2S_PROPERTY_LASTIP";
+    private final String                   PROPERTY_LASTDOWNLOAD  = "_lastdownload_timestamp";
+    private final long                     FREE_RECONNECTWAIT     = 1 * 60 * 60 * 1000L;
+    private static String[]                IPCHECK                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     // plugin config definition
-    protected final String  USE_API                = "USE_API_2";
-    protected final boolean default_USE_API        = true;
-    protected final String  SSL_CONNECTION         = "SSL_CONNECTION_2";
-    protected final boolean default_SSL_CONNECTION = true;
+    protected final String                 USE_API                = "USE_API_2";
+    protected final boolean                default_USE_API        = true;
+    protected final String                 SSL_CONNECTION         = "SSL_CONNECTION_2";
+    protected final boolean                default_SSL_CONNECTION = true;
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
@@ -379,6 +394,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void handleDownload(final DownloadLink downloadLink, final Account account) throws Exception {
         logger.info(getRevisionInfo());
         resetAccountProperties(account);
@@ -386,6 +402,7 @@ public abstract class K2SApi extends PluginForHost {
         reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
         String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+        dllink = null;
         // required to get overrides to work
         br = prepAPI(newBrowser());
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
@@ -412,6 +429,37 @@ public abstract class K2SApi extends PluginForHost {
             }
             if (isFree) {
                 // free non account, and free account download method.
+                currentIP.set(this.getIP());
+                if (account == null) {
+                    logger.info("Free, WEB download method in use!");
+                    synchronized (CTRLLOCK) {
+                        /* Load list of saved IPs + timestamp of last download */
+                        final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                        if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                            blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                        }
+                    }
+                }
+                /**
+                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+                 */
+                if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+                    long lastdownload = 0;
+                    long passedTimeSinceLastDl = 0;
+                    logger.info("New Download: currentIP = " + currentIP.get());
+                    /*
+                     * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts
+                     * if he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
+                     * download using the same free accounts after performing a reconnect!
+                     */
+                    lastdownload = getPluginSavedLastDownloadTimestamp();
+                    passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                    if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                        logger.info("Experimental handling active --> There still seems to be a waittime on the current IP --> ERROR_IP_BLOCKED");
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+                    }
+                }
+
                 postPageRaw(br, "/requestcaptcha", "", account);
                 final String challenge = getJson("challenge");
                 final String captcha_url = getJson("captcha_url");
@@ -446,6 +494,18 @@ public abstract class K2SApi extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("dllink = " + dllink);
+
+            /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
+            synchronized (CTRLLOCK) {
+                if (account != null) {
+                    account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
+                } else {
+                    blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+                    getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+                }
+                setIP(downloadLink, account);
+            }
+
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
@@ -1322,6 +1382,92 @@ public abstract class K2SApi extends PluginForHost {
                 logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
             }
         }
+    }
+
+    /* Reconnect workaround methods */
+    private String getIP() throws PluginException {
+        Browser ip = new Browser();
+        String currentIP = null;
+        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
+        Collections.shuffle(checkIP);
+        for (String ipServer : checkIP) {
+            if (currentIP == null) {
+                try {
+                    ip.getPage(ipServer);
+                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
+                    if (currentIP != null) {
+                        break;
+                    }
+                } catch (Throwable e) {
+                }
+            }
+        }
+        if (currentIP == null) {
+            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return currentIP;
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean setIP(final DownloadLink link, final Account account) throws PluginException {
+        synchronized (IPCHECK) {
+            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (ipChanged(link) == false) {
+                // Static IP or failure to reconnect! We don't change lastIP
+                logger.warning("Your IP hasn't changed since last download");
+                return false;
+            } else {
+                String lastIP = currentIP.get();
+                link.setProperty(PROPERTY_LASTIP, lastIP);
+                K2SApi.lastIP.set(lastIP);
+                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
+                logger.info("LastIP = " + lastIP);
+                return true;
+            }
+        }
+    }
+
+    private boolean ipChanged(final DownloadLink link) throws PluginException {
+        String currIP = null;
+        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
+            currIP = currentIP.get();
+        } else {
+            currIP = getIP();
+        }
+        if (currIP == null) {
+            return false;
+        }
+        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
+        if (lastIP == null) {
+            lastIP = K2SApi.lastIP.get();
+        }
+        if (lastIP == null) {
+            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
+        }
+        return !currIP.equals(lastIP);
+    }
+
+    private long getPluginSavedLastDownloadTimestamp() {
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Long> ipentry = it.next();
+                final String ip = ipentry.getKey();
+                final long timestamp = ipentry.getValue();
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                    /* Remove old entries */
+                    it.remove();
+                }
+                if (ip.equals(currentIP.get())) {
+                    lastdownload = timestamp;
+                }
+            }
+        }
+        return lastdownload;
     }
 
     // cloudflare
