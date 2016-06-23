@@ -125,12 +125,15 @@ public class PremiumTo extends UseNet {
         String[] traffic = tbr.toString().split(";");
         if (traffic != null && traffic.length == 3) {
             // because we can not account for separate traffic allocations.
+            /* Normal traffic */
             final long nT = Long.parseLong(traffic[0]);
+            /* Special traffic */
             final long spT = Long.parseLong(traffic[1]);
-            // final long stT = Long.parseLong(traffic[2]);//storage
-            ac.setTrafficLeft(nT + spT + "MiB");
+            /* Storage traffic */
+            final long stT = Long.parseLong(traffic[2]);
+            ac.setTrafficLeft(nT + spT + stT + "MiB");
             // set both so we can check in canHandle.
-            account.setProperty(normalTraffic, nT);
+            account.setProperty(normalTraffic, nT + stT);
             account.setProperty(specialTraffic, spT);
         }
         {
