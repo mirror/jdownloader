@@ -380,6 +380,9 @@ public class OneFichierCom extends PluginForHost {
         } else if (br.containsHTML(">\\s*File not found !\\s*<br/>It has could be deleted by its owner\\.\\s*<")) {
             // api linkchecking can be out of sync (wrong)
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("Warning ! Without subscription, you can only download one file at")) {
+            // jdlog://3278035891641
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads - wait before starting new downloads", 3 * 60 * 1000l);
         } else if (br.containsHTML("<h1>Select files to send :</h1>")) {
             // for some reason they linkcheck correct, then show upload page. re: jdlog://3895673179241
             // https://svn.jdownloader.org/issues/65003

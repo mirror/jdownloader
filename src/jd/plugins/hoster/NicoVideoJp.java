@@ -127,17 +127,20 @@ public class NicoVideoJp extends PluginForHost {
             link.setName(linkid_url);
             return AvailableStatus.TRUE;
         }
+        final String channel;
         String filename;
         if (loggedin) {
             filename = br.getRegex("class=\"originalVideoTitle\">([^<>\"]+)<").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"videoTitle\">([^<>\"]+)<").getMatch(0);
             }
+            channel = br.getRegex("data\\-click\\-target=\"userName\">([^<>\"]+)<").getMatch(0);
         } else {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
             }
+            channel = br.getRegex("Uploader: <strong itemprop=\"name\">([^<>\"]*?)</strong>").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -149,7 +152,6 @@ public class NicoVideoJp extends PluginForHost {
         if (date != null) {
             link.setProperty("originaldate", date);
         }
-        final String channel = br.getRegex("Uploader: <strong itemprop=\"name\">([^<>\"]*?)</strong>").getMatch(0);
         if (channel != null) {
             link.setProperty("channel", channel);
         }
