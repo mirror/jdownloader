@@ -17,25 +17,27 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://(www\\.)?rtbf\\.be/(?:video|auvio)/detail_[a-z0-9}\\-_]+\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://rtbf\\.bedecrypted/\\d+" }, flags = { 0 })
 public class RtbfBe extends PluginForHost {
 
     public RtbfBe(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -48,60 +50,41 @@ public class RtbfBe extends PluginForHost {
         return -1;
     }
 
-    private String dllink = null;
+    /** Settings stuff */
+    private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    @SuppressWarnings("deprecation")
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
+                                                                     {
+                                                                         /*
+                                                                          * Format-name:videoCodec, videoBitrate, videoResolution,
+                                                                          * audioCodec, audioBitrate
+                                                                          */
+                                                                         /*
+                                                                          * We could also add audio- and videobitrate but from my tests they
+                                                                          * looked quite variable so we prefer not to use wrong information
+                                                                          * here as it will be used for the filenames later too!
+                                                                          */
+                                                                         put("download", new String[] { "AVC", null, "???x???", "AAC LC", null });
+                                                                         put("high", new String[] { "AVC", "800 kbps", "720x400", "AAC LC", "128 kbps" });
+                                                                         put("medium", new String[] { "AVC", "400 kbps", "640x360", "AAC LC", "77 kbps" });
+                                                                         put("low", new String[] { "AVC", "200 kbps", "400x200", "AAC LC", "77 kbps" });
+                                                                     }
+                                                                 };
+
+    private String                                dllink         = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // The regex only takes the short urls but these ones redirect to the real ones to if follow redirects is false the plugin doesn't
-        // work at all!
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        this.br.setFollowRedirects(true);
+        dllink = downloadLink.getStringProperty("directlink", null);
+        final String filename = downloadLink.getStringProperty("directfilename", null);
+
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-        }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        br.getPage("embed/media?id=" + fid + "&autoplay=1");
-        String vid_text = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
-        if (vid_text == null) {
-            vid_text = this.br.getRegex("data\\-video=\"(.*?)\"").getMatch(0);
-        }
-        if (vid_text == null) {
-            vid_text = this.br.getRegex("data\\-media=\"(.*?)\"></div>").getMatch(0);
-        }
-        if (vid_text == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // this is json encoded with htmlentities.
-        vid_text = HTMLEntities.unhtmlentities(vid_text);
-        vid_text = Encoding.htmlDecode(vid_text);
-        vid_text = PluginJSonUtils.unescape(vid_text);
-        // we can get filename here also.
-        if (filename == null) {
-            filename = PluginJSonUtils.getJson(vid_text, "title");
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        dllink = PluginJSonUtils.getJson(vid_text, "downloadUrl");
-        if (dllink == null) {
-            dllink = PluginJSonUtils.getJson(vid_text, "high");
-        }
-        if (dllink == null) {
-            // audio
-            dllink = PluginJSonUtils.getJson(vid_text, "url");
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
 
-        String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(filename + ext);
+        downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
@@ -110,13 +93,13 @@ public class RtbfBe extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -131,9 +114,55 @@ public class RtbfBe extends PluginForHost {
         dl.startDownload();
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's rtbf.be plugin helps downloading videoclips from rtbf.be.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
+        final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
+        while (it.hasNext()) {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
+             */
+            String usertext = "Load ";
+            final Entry<String, String[]> videntry = it.next();
+            final String internalname = videntry.getKey();
+            final String[] vidinfo = videntry.getValue();
+            final String videoCodec = vidinfo[0];
+            final String videoBitrate = vidinfo[1];
+            final String videoResolution = vidinfo[2];
+            final String audioCodec = vidinfo[3];
+            final String audioBitrate = vidinfo[4];
+            if (videoCodec != null) {
+                usertext += videoCodec + " ";
+            }
+            if (videoBitrate != null) {
+                usertext += videoBitrate + " ";
+            }
+            if (videoResolution != null) {
+                usertext += videoResolution + " ";
+            }
+            if (audioCodec != null || audioBitrate != null) {
+                usertext += "with audio ";
+                if (audioCodec != null) {
+                    usertext += audioCodec + " ";
+                }
+                if (audioBitrate != null) {
+                    usertext += audioBitrate;
+                }
+            }
+            if (usertext.endsWith(" ")) {
+                usertext = usertext.substring(0, usertext.lastIndexOf(" "));
+            }
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_" + internalname, usertext).setDefaultValue(true);
+            getConfig().addEntry(vidcfg);
+        }
     }
 
     @Override

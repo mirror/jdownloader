@@ -131,7 +131,7 @@ public class WiTo extends PluginForHost {
 
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(1);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(20);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
@@ -353,18 +353,21 @@ public class WiTo extends PluginForHost {
                         fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                         if (inValidate(fileInfo[1])) {
                             fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                            // generic failover#1
-                            if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                            }
-                            // generic failover#2
-                            if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-                            }
                         }
                     }
                 }
             }
+        }
+        if (inValidate(fileInfo[1])) {
+            fileInfo[1] = new Regex(correctedBR, "\\(<span style=\"font-size:12px; color:#62ad2f;\">([^<>\"]+)</span>\\)").getMatch(0);
+        }
+        // generic failover#1
+        if (inValidate(fileInfo[1])) {
+            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        }
+        // generic failover#2
+        if (inValidate(fileInfo[1])) {
+            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
         }
         /* MD5 is only available in very very rare cases! */
         if (inValidate(fileInfo[2])) {
@@ -1190,7 +1193,7 @@ public class WiTo extends PluginForHost {
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#1", 5 * 60 * 1000l);
         } else if (responsecode == 503) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached, wait before starting more downloads!", 5 * 60 * 1000l);
         }
     }
 

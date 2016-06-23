@@ -23,108 +23,94 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.cnbc.com" }, urls = { "http://video\\.cnbc\\.com/gallery/\\?video=\\d+" }, flags = { 0 })
-public class CnbcComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/detail_[a-z0-9}\\-_]+\\?id=\\d+" }, flags = { 0 })
+public class RtbfBeDecrypter extends PluginForDecrypt {
 
-    public CnbcComDecrypter(PluginWrapper wrapper) {
+    public RtbfBeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Thanks: https://github.com/isync/www-video-download/blob/master/cnbc-downloader.pl */
-
-    /* Example main: http://video.cnbc.com/gallery/?video=3000373412 */
-    /*
-     * Example
-     * mpeg4_500000_Streaming|http://syndication.cnbc.com/vcps/media/content?id=MzAwMDM3MzQxMgptcGVnNF81MDAwMDAKU3RyZWFtaW5n&UserName
-     * =cmsguest@cnbc.com&key=NA
-     */
-    /*
-     * Example mpeg4_500000_HLSSBRStreaming|http://cnbcmbr-vh.akamaihd.net/i/mp4/VCPS/Y2015/M04D23/3000373412/
-     * 4ED3-REQ-0422-RetireWell_MBR_0500.mp4/master.m3u8
-     */
-    /*
-     * Example
-     * mpeg4_1100000_Download|http://pdl.iphone.cnbc.com/VCPS/Y2015/M04D23/3000373412/4ED3-REQ-0422-RetireWell_H264_720x405_30p_1M.mp4
-     */
-    /*
-     * Example mpeg4_1_HLSMBRStreaming|http://cnbcmbr-vh.akamaihd.net/i/mp4/VCPS/Y2015/M04D23/3000373412/
-     * 4ED3-REQ-0422-RetireWell_MBR_,0240,0300,0500,0700,0900,1300,1700,.mp4.csmil/master.m3u8
-     */
-
-    private static final String DOMAIN         = "video.cnbc.com";
-    /* Last checked: 27.04.15 */
-    /* seems to be CNBC's thePlatform partner id */
-    private static final String partner_id     = "6008";
     /* Settings stuff */
     private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister-host plugin */
-        JDUtilities.getPluginForHost("video.cnbc.com");
+        JDUtilities.getPluginForHost(this.getHost());
         final String parameter = param.toString();
-        final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
-        LinkedHashMap<String, Object> entries = null;
-        ArrayList<Object> ressourcelist = null;
+        final String fid = new Regex(parameter, "(\\d+)$").getMatch(0);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.CnbcCom.formats;
-        final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
-        final String decryptedhost = "http://" + nicehost + "decrypted";
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
+        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.RtbfBe.formats;
+        final String decryptedhost = "http://" + this.getHost() + "decrypted/";
+
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
-        this.br.setFollowRedirects(false);
-        this.br.setAllowedResponseCodes(503);
-        /* We use their mobile API. Mobile-UA is not needed but let's not make it too obvious :) */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
-        br.getPage("http://www.cnbc.com/vapi/videoservice/rssvideosearch.do?callback=mobileVideoServiceJSON&action=videos&ids=" + vid + "&output=json&partnerId=" + partner_id);
-        /* 503 = normal offline in this case */
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.getRequest().getHttpConnection().getResponseCode() == 503) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setFinalFileName(vid);
-            decryptedLinks.add(dl);
+        this.br.setFollowRedirects(true);
+        br.getPage(parameter);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("rss");
-        entries = (LinkedHashMap<String, Object>) entries.get("channel");
-        entries = (LinkedHashMap<String, Object>) entries.get("item");
-        /*
-         * Most times we will have 10 entries available - sometimes less and sometimes also less http-urls but usually at least 2 of 4 http
-         * urls are available.
-         */
-        ressourcelist = (ArrayList) entries.get("metadata:formatLink");
-        String title = (String) entries.get("title");
-        title = encodeUnicode(title);
-        final String description = (String) entries.get("description");
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+        }
+        br.getPage("embed/media?id=" + fid + "&autoplay=1");
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        String vid_text = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
+        if (vid_text == null) {
+            vid_text = this.br.getRegex("data\\-video=\"(.*?)\"").getMatch(0);
+        }
+        if (vid_text == null) {
+            vid_text = this.br.getRegex("data\\-media=\"(.*?)\"></div>").getMatch(0);
+        }
+        if (vid_text == null) {
+            return null;
+        }
+        // this is json encoded with htmlentities.
+        vid_text = HTMLEntities.unhtmlentities(vid_text);
+        vid_text = Encoding.htmlDecode(vid_text);
+        vid_text = PluginJSonUtils.unescape(vid_text);
+        // we can get filename here also.
+        if (title == null) {
+            title = PluginJSonUtils.getJson(vid_text, "title");
+        }
+        if (title == null) {
+            return null;
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        for (final Object plo : ressourcelist) {
-            final String urlinfo[] = ((String) plo).split("\\|");
-            final String qualinfo = urlinfo[0];
-            final String url = urlinfo[1];
-            if (formats.containsKey(qualinfo) && cfg.getBooleanProperty(qualinfo, true)) {
+
+        final String[][] qualities = { { "download", "downloadUrl" }, { "high", "high" }, { "medium", "web" }, { "low", "mobile" } };
+        for (final String[] qualityinfo : qualities) {
+            final String qualityCfg = qualityinfo[0];
+            final String qualityJson = qualityinfo[1];
+            final String qualityDllink = PluginJSonUtils.getJson(vid_text, qualityJson);
+            if (qualityDllink != null && formats.containsKey(qualityCfg) && cfg.getBooleanProperty("ALLOW_" + qualityCfg, true)) {
                 final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                final String[] vidinfo = formats.get(qualinfo);
+                final String[] vidinfo = formats.get(qualityCfg);
                 String filename = title + "_" + getFormatString(vidinfo);
                 filename += ".mp4";
 
                 dl.setContentUrl(parameter);
-                if (description != null) {
-                    dl.setComment(description);
-                }
-                dl.setLinkID(vid + filename);
+                dl.setLinkID(fid + filename);
                 dl._setFilePackage(fp);
-                dl.setProperty("format", qualinfo);
                 dl.setProperty("mainlink", parameter);
-                dl.setProperty("directlink", url);
+                dl.setProperty("directlink", qualityDllink);
                 dl.setProperty("directfilename", filename);
                 dl.setFinalFileName(filename);
                 if (fastLinkcheck) {
@@ -134,7 +120,7 @@ public class CnbcComDecrypter extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            logger.info(DOMAIN + ": None of the selected formats were found or none were selected, decrypting done...");
+            logger.info("None of the selected formats were found or none were selected, decrypting done...");
             return decryptedLinks;
         }
         return decryptedLinks;
