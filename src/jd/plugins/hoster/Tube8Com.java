@@ -48,7 +48,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.(com|fr)/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" }, flags = { 2 })
 public class Tube8Com extends PluginForHost {
 
     /* DEV NOTES */
@@ -338,7 +338,7 @@ public class Tube8Com extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     * 
+     *
      * @see <a href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">
      *      "Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
