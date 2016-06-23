@@ -46,20 +46,23 @@ public class FileloadIo extends PluginForDecrypt {
         final String folder_url_part = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
         final String folderid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
         jd.plugins.hoster.FileloadIo.prepBRWebsite(this.br);
-        /* Important: Access main-folder to find all free_download_fileids!! */
-        br.getPage("https://" + this.getHost() + "/" + folderid);
-        if (jd.plugins.hoster.FileloadIo.mainlinkIsOffline(this.br)) {
-            /* Folder offline */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (this.br.containsHTML("Please wait a moment while the files are being prepared for download|The page will reload automatically once the files are ready")) {
-            /* Happens directly after uploading new files to this host. */
-            logger.info("There is nothing to download YET ...");
-            return decryptedLinks;
-        }
 
-        /* Find ids needed for free download */
-        final String[] free_download_fileids = br.getRegex("data\\-fileid=\"(\\d+)\"").getColumn(0);
+        String[] free_download_fileids = null;
+        if (!jd.plugins.hoster.FileloadIo.USE_API_FOR_FREE_UNREGISTERED_DOWNLOADS) {
+            /* Important: Access main-folder to find all free_download_fileids for non-API mode!! */
+            br.getPage("https://" + this.getHost() + "/" + folderid);
+            if (jd.plugins.hoster.FileloadIo.mainlinkIsOffline(this.br)) {
+                /* Folder offline */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else if (this.br.containsHTML("Please wait a moment while the files are being prepared for download|The page will reload automatically once the files are ready")) {
+                /* Happens directly after uploading new files to this host. */
+                logger.info("There is nothing to download YET ...");
+                return decryptedLinks;
+            }
+            /* Find ids needed for free download via website. */
+            free_download_fileids = br.getRegex("data\\-fileid=\"(\\d+)\"").getColumn(0);
+        }
 
         int counter = 0;
         br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folder_url_part);

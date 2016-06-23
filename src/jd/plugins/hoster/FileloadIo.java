@@ -50,23 +50,24 @@ public class FileloadIo extends PluginForHost {
     }
 
     /* Notes: Also known as/before: netload.in, dateisenden.de */
-    private static final String API_BASE                     = "https://api.fileload.io/";
+    private static final String API_BASE                                = "https://api.fileload.io/";
+    public static final boolean USE_API_FOR_FREE_UNREGISTERED_DOWNLOADS = true;
     /* Connection stuff */
-    private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = 1;
-    private final int           FREE_MAXDOWNLOADS            = 1;
-    private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
-    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean       FREE_RESUME                             = true;
+    private final int           FREE_MAXCHUNKS                          = 1;
+    private final int           FREE_MAXDOWNLOADS                       = 1;
+    private final boolean       ACCOUNT_FREE_RESUME                     = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS                  = -2;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS               = 1;
+    private final boolean       ACCOUNT_PREMIUM_RESUME                  = true;
+    private final int           ACCOUNT_PREMIUM_MAXCHUNKS               = 0;
+    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS            = 20;
 
-    private String              account_auth_token           = null;
-    private String              dllink                       = null;
-    private boolean             server_issues                = false;
-    private String              folderid                     = null;
-    private String              linkid                       = null;
+    private String              account_auth_token                      = null;
+    private String              dllink                                  = null;
+    private boolean             server_issues                           = false;
+    private String              folderid                                = null;
+    private String              linkid                                  = null;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("fileloaddecrypted.io/", "fileload.io/"));
@@ -165,10 +166,14 @@ public class FileloadIo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        if (USE_API_FOR_FREE_UNREGISTERED_DOWNLOADS) {
+            downloadAPI(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        } else {
+            downloadFreeWebsite(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        }
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void downloadFreeWebsite(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         this.br = prepBRWebsite(new Browser());
         getDllinkWebsite();
         /* Website */
@@ -299,18 +304,31 @@ public class FileloadIo extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
+        final String directlinkproperty;
         int maxchunks;
         boolean resume;
         if (account.getType() == AccountType.FREE) {
+            directlinkproperty = "directlink_free_account";
             maxchunks = ACCOUNT_FREE_MAXCHUNKS;
             resume = ACCOUNT_FREE_RESUME;
         } else {
+            directlinkproperty = "directlink_premium_account";
             maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
             resume = ACCOUNT_PREMIUM_RESUME;
         }
-        String dllink = this.checkDirectLink(link, "premium_directlink");
+        downloadAPI(link, resume, maxchunks, directlinkproperty);
+    }
+
+    private void downloadAPI(final DownloadLink link, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception {
+        String dllink = this.checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            br.getPage(API_BASE + "download/" + Encoding.urlEncode(this.account_auth_token) + "/" + this.folderid + "/" + Encoding.urlEncode(getFilenameProperty(link)));
+            String api_download_url_call = API_BASE + "download/";
+            if (this.account_auth_token != null) {
+                /* E.g. (free|premium) account download. */
+                api_download_url_call += Encoding.urlEncode(this.account_auth_token) + "/";
+            }
+            api_download_url_call += this.folderid + "/" + Encoding.urlEncode(getFilenameProperty(link));
+            br.getPage(api_download_url_call);
             dllink = PluginJSonUtils.getJson(this.br, "download_link");
             if (dllink == null || !dllink.startsWith("http")) {
                 handleErrorsAPI();
@@ -329,7 +347,7 @@ public class FileloadIo extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty("premium_directlink", dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
