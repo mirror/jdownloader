@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbr.ee" }, urls = { "http://(www\\.)?dbr\\.ee/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbr.ee" }, urls = { "https?://(www\\.)?dbr\\.ee/[A-Za-z0-9]+" }, flags = { 0 })
 public class DbrEe extends PluginForHost {
 
     public DbrEe(PluginWrapper wrapper) {
