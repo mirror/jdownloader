@@ -432,7 +432,6 @@ public abstract class K2SApi extends PluginForHost {
                 // free non account, and free account download method.
                 currentIP.set(this.getIP());
                 if (account == null) {
-                    logger.info("Free, WEB download method in use!");
                     synchronized (CTRLLOCK) {
                         /* Load list of saved IPs + timestamp of last download */
                         final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
