@@ -4,13 +4,14 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
+
 import org.appwork.swing.MigPanel;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public abstract class AbstractBubbleContentPanel extends MigPanel {
 
@@ -41,20 +42,35 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
         public JLabel lbl;
         public JLabel value;
 
-        public void setText(Object v) {
-            value.setText(v + "");
+        public void setText(final Object v) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    value.setText(String.valueOf(v));
+                }
+            };
         }
 
-        public void setVisible(boolean b) {
-            lbl.setVisible(b);
-            value.setVisible(b);
+        public void setVisible(final boolean b) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    lbl.setVisible(b);
+                    value.setVisible(b);
+                }
+            };
         }
 
-        public void setTooltip(String filePath) {
+        public void setTooltip(final String toolTip) {
+            new EDTRunner() {
 
-            lbl.setToolTipText(filePath);
-            value.setToolTipText(filePath);
-
+                @Override
+                protected void runInEDT() {
+                    lbl.setToolTipText(toolTip);
+                    value.setToolTipText(toolTip);
+                }
+            };
         }
 
     }
@@ -65,15 +81,12 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
             existingPair.lbl = createHeaderLabel(lbl, iconWait);
             existingPair.value = new JLabel("");
         }
-
         add(existingPair.lbl, "hidemode 3");
-
         add(existingPair.value, "hidemode 3");
         return existingPair;
     }
 
     protected Pair addPair(Pair existingPair, String lbl, String icon) {
-
         return addPair(existingPair, lbl, NewTheme.I().getIcon(icon, 18));
     }
 
@@ -97,7 +110,6 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
     }
 
     protected JLabel createHeaderLabel(String lbl, String icon) {
-
         return createHeaderLabel(lbl, NewTheme.I().getIcon(icon, 18));
     }
 
@@ -120,7 +132,6 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
             ((AbstractIcon) icon).setAutoDisabledIconEnabled(false);
         }
         progressCircle = new IconedProcessIndicator(icon);
-
         progressCircle.setIndeterminate(false);
         progressCircle.setEnabled(false);
         progressCircle.setValue(100);
