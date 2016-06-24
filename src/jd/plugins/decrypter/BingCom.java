@@ -24,7 +24,6 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -33,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com" }, urls = { "http://(www\\.)?bing\\.com/(videos/watch/video|watch/video)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bing.com" }, urls = { "http://(www\\.)?bing\\.com/(videos/watch/video|watch/video)/.+" }, flags = { 0 })
 public class BingCom extends PluginForDecrypt {
 
     public BingCom(PluginWrapper wrapper) {
@@ -52,9 +51,7 @@ public class BingCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink dl = createDownloadlink("decrypted://bing.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            dl.setFinalFileName(new Regex(parameter, "bing\\.com/(.+)").getMatch(0));
-            dl.setAvailable(false);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

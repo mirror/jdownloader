@@ -80,36 +80,42 @@ public class VideoOnlineUa extends PluginForHost {
             DLLINK = "http://video.online.ua/playlist/" + fid + ".xml?o=t&" + hash;
         } else {
             DLLINK = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("video\\s*?:\\s*?(?:\\'|\")(https?://[^<>\"\\']+)(?:\\'|\")").getMatch(0);
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(Encoding.htmlDecode(DLLINK));
-        if (br.containsHTML(">Страница по данному адресу отсутствует<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        DLLINK = br.getRegex("<location>(http://[^<>\"]*?)</location>").getMatch(0);
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
+            if (con.getContentType().contains("html")) {
+                br2.getPage(DLLINK);
+                if (br.containsHTML(">Страница по данному адресу отсутствует<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                DLLINK = br.getRegex("<location>(http://[^<>\"]*?)</location>").getMatch(0);
+                if (DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                DLLINK = Encoding.htmlDecode(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            filename = Encoding.htmlDecode(filename).trim();
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) {
+                ext = ".mp4";
+            }
+            downloadLink.setFinalFileName(filename + ext);
             return AvailableStatus.TRUE;
         } finally {
             try {

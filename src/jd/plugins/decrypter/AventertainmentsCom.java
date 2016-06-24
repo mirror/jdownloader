@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -57,6 +58,13 @@ public class AventertainmentsCom extends PluginForDecrypt {
             fpName = title_part1.trim() + " - " + title_part2.trim();
         } else {
             fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        }
+        if (fpName != null) {
+            /* Clean packagename */
+            final String rubbish = new Regex(fpName, "(\\s*?AVEntertainment\\s*?:.+)").getMatch(0);
+            if (rubbish != null) {
+                fpName = fpName.replace(rubbish, "");
+            }
         }
 
         boolean foundScreenshot = false;

@@ -18,7 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -56,7 +56,7 @@ public class YunpanCn extends antiDDoSForDecrypt {
             /* Clean added url */
             parameter = parameter.replace("&downloadpassword=" + passCode, "");
         }
-        final String json;
+        String json;
         final String host;
         final String host_url = new Regex(parameter, "https?://([^/]+)/").getMatch(0);
         if (host_url.equals("yunpan.cn") || subfolder_id == null) {
@@ -69,6 +69,13 @@ public class YunpanCn extends antiDDoSForDecrypt {
                 handlePassword(param);
             }
             json = this.br.getRegex("data:(\\[.*?\\])").getMatch(0);
+            if (json == null) {
+                json = this.br.getRegex("var\\s*?SYS_CONF\\s*?=\\s*?(\\{.*?\\})").getMatch(0);
+            }
+            if (json == null && this.br.containsHTML("id=\"linkError\"")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
         } else {
             host = host_url;
             host_with_protocol = "http://" + host;
@@ -82,10 +89,18 @@ public class YunpanCn extends antiDDoSForDecrypt {
             json = this.br.getRegex("data:(\\[.*?\\])").getMatch(0);
         }
         DownloadLink dl = null;
-        LinkedHashMap<String, Object> entries = null;
-        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        HashMap<String, Object> entries = null;
+        final ArrayList<Object> ressourcelist;
+        final Object jsono = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        if (jsono instanceof HashMap) {
+            /* E.g. single file */
+            ressourcelist = new ArrayList<Object>();
+            ressourcelist.add(jsono);
+        } else {
+            ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        }
         for (final Object foldero : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) foldero;
+            entries = (HashMap<String, Object>) foldero;
             final String nid = (String) entries.get("nid");
             final String name = (String) entries.get("name");
             final String path = (String) entries.get("path");

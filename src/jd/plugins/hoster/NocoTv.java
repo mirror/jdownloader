@@ -41,17 +41,17 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "online.nolife-tv.com" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#(!|%21)/\\d+/[a-z0-9\\-_]+" }, flags = { 2 })
-public class OnlineNoLifeTvCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noco.tv" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#(!|%21)/\\d+/[a-z0-9\\-_]+" }, flags = { 2 })
+public class NocoTv extends PluginForHost {
 
     private String              DLLINK              = null;
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
     private boolean             notDownloadable     = false;
     private static Object       LOCK                = new Object();
-    private static final String MAINPAGE            = "http://online.nolife-tv.com/";
+    private static final String MAINPAGE            = "http://noco.tv/";
     private static final String SALT                = "YTUzYmUxODUzNzcwZjBlYmUwMzExZDY5OTNjN2JjYmU=";
 
-    public OnlineNoLifeTvCom(final PluginWrapper wrapper) {
+    public NocoTv(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.nolife-tv.com/souscription");
     }
@@ -59,6 +59,17 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         /** Videos come from a decrypter */
         link.setUrlDownload(link.getDownloadURL().replace("online.nolife-tvdecrypted.com/", "online.nolife-tv.com/"));
+    }
+
+    /** 2016-06-24: domainchange from online.nolife-tv.com to noco.tv - plugin has not yet been fixed - seems to be a pay-only site! */
+    @Override
+    public String rewriteHost(String host) {
+        if ("online.nolife-tv.com".equals(getHost())) {
+            if (host == null || "online.nolife-tv.com".equals(host)) {
+                return "noco.tv";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override

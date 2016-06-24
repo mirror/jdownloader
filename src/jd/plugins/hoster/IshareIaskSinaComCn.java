@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ishare.iask.sina.com.cn" }, urls = { "http://(www\\.)?ishare\\.iask\\.sina\\.com\\.cn/f/\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ishare.iask.sina.com.cn" }, urls = { "https?://(?:www\\.)?ishare\\.iask\\.sina\\.com\\.cn/f/\\d+\\.html" }, flags = { 0 })
 public class IshareIaskSinaComCn extends PluginForHost {
 
     public IshareIaskSinaComCn(PluginWrapper wrapper) {
@@ -50,7 +50,11 @@ public class IshareIaskSinaComCn extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.getPage("http://ishare.iask.sina.com.cn/download.php?fileid=" + new Regex(downloadLink.getDownloadURL(), "ishare\\.iask\\.sina\\.com\\.cn/f/(\\d+)\\.html").getMatch(0));
+        br.getPage("http://ishare.iask.sina.com.cn/download.php?fileid=" + new Regex(downloadLink.getDownloadURL(), "/(\\d+)\\.html").getMatch(0));
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            /* Premiumonly */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -68,21 +72,24 @@ public class IshareIaskSinaComCn extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>共享资料</title>|<br>5秒钟后跳转到首页</div>|近期共享资料正在配合有关部门进行淫秽、色情、")) {
+        if (br.containsHTML("<title>共享资料</title>|<br>5秒钟后跳转到首页</div>|近期共享资料正在配合有关部门进行淫秽、色情、") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?) - 免费高速下载 - 共享资料</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("name=\"file_title\" id=\"file_des\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"hiddenfile_title\" id=\"hiddenfile_title\" value=\"(.*?)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<h1 class=\"f14\" style=\"display:inline;\">(.*?)</h1></div>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<input type=\"hidden\" name=\"title\" value=\"(.*?)\">").getMatch(0);
-                    }
-                }
-            }
+        }
+        if (filename == null) {
+            filename = br.getRegex("name=\"hiddenfile_title\" id=\"hiddenfile_title\" value=\"(.*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h1 class=\"f14\" style=\"display:inline;\">(.*?)</h1></div>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<input type=\"hidden\" name=\"title\" value=\"(.*?)\">").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("class=\"detail\\-box\">[\t\n\r ]*?<h2 title=\"([^<>\"]+)\">").getMatch(0);
         }
         String filesize = br.getRegex("class=\"f10\">0分<br>(.*?)</span></td>").getMatch(0);
         if (filename == null) {

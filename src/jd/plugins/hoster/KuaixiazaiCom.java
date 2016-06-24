@@ -30,16 +30,26 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "163disk.com" }, urls = { "http://(www\\.)?163disk\\.com/fileview_\\d+\\.html" }, flags = { 0 })
-public class HundredSixteeThreeDiskCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kuaixiazai.com" }, urls = { "https?://(?:www\\.)?(?:163disk|kuaixiazai)\\.com/fileview_\\d+\\.html" }, flags = { 0 })
+public class KuaixiazaiCom extends PluginForHost {
 
-    public HundredSixteeThreeDiskCom(PluginWrapper wrapper) {
+    public KuaixiazaiCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.163disk.com/";
+        return "http://www.kuaixiazai.com/";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("163disk.com".equals(getHost())) {
+            if (host == null || "163disk.com".equals(host)) {
+                return "kuaixiazai.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -47,28 +57,47 @@ public class HundredSixteeThreeDiskCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">你访问的文件为提取文件需提取码才可访问。现在将转入提取页面")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">你访问的文件为提取文件需提取码才可访问。现在将转入提取页面") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("class=\"nowrap file\\-name kz\\-[a-z0-9]+\">([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex("\">文件大小：([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         final String md5 = br.getRegex(">文件MD5：([a-z0-9]{32})</td").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getPage("http://www.163disk.com/?ac=download&id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=1&type=bf&t=" + System.currentTimeMillis());
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.163disk\\.com(:\\d+)?/file/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.kuaixiazai.com/?ac=download&id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=1&type=wt&t=" + System.currentTimeMillis());
+        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.(?:163disk|kuaixiazai)\\.com(:\\d+)?/file/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(file/[^<>\"\\']*?)\\'").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!dllink.startsWith("http") && !dllink.startsWith("/")) {
+            dllink = "http://" + this.getHost() + "/" + dllink;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            }
             br.followConnection();
-            if (br.containsHTML("<title>Error</title>|<TITLE>无法找到该页</TITLE>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("<title>Error</title>|<TITLE>无法找到该页</TITLE>")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -32,7 +31,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/folder/\\d+/[\\w\\%]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rg\\.to)/folder/\\d+/[^/]+\\.html" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class RapidGatorNetFolder extends PluginForDecrypt {
 
@@ -53,21 +52,18 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         JDUtilities.getPluginForHost("rapidgator.net");
         jd.plugins.hoster.RapidGatorNet.prepareBrowser(br);
         // normal stuff
-        try {
-            br.setFollowRedirects(true);
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            logger.info("Link offline (server error): " + parameter);
-            return decryptedLinks;
-        } finally {
-            br.setFollowRedirects(false);
-        }
-        if (br.containsHTML("E_FOLDERNOTFOUND")) {
-            logger.info("Link offline: " + parameter);
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        br.setFollowRedirects(false);
+
+        if (br.containsHTML("E_FOLDERNOTFOUND") || this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("Downloading:[\r\n\t ]+</strong>[\r\n\t ]+(.*?)[\r\n\t ]+</p>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
+        }
         parsePage(decryptedLinks);
         parseNextPage(decryptedLinks);
         if (fpName != null) {
@@ -79,9 +75,10 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret) {
+        final String[] subfolders = this.br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
         String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
 
-        if (links == null || links.length == 0) {
+        if ((links == null || links.length == 0) && (subfolders == null || subfolders.length == 0)) {
             logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + parameter);
             return;
         }
@@ -91,6 +88,14 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
                 link.setName(dl[2].replaceFirst("\\.html$", ""));
                 link.setDownloadSize(SizeFormatter.getSize(dl[3]));
                 link.setAvailable(true);
+                ret.add(link);
+            }
+        }
+
+        if (subfolders != null && subfolders.length != 0) {
+            for (String folder : subfolders) {
+                folder = "http://rapidgator.net" + folder;
+                final DownloadLink link = createDownloadlink(folder);
                 ret.add(link);
             }
         }

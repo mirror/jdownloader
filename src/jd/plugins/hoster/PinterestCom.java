@@ -299,8 +299,9 @@ public class PinterestCom extends PluginForHost {
                 prepAPIBR(br);
                 String postData = "source_url=/login/&data={\"options\":{\"username_or_email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"},\"context\":{}}&module_path=App()>LoginPage()>Login()>Button(class_name=primary,+text=Anmelden,+type=submit,+size=large)";
                 // postData = Encoding.urlEncode(postData);
+                final String urlpart = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0);
                 try {
-                    br.postPageRaw("https://www.pinterest.com/resource/UserSessionResource/create/", postData);
+                    br.postPageRaw(urlpart + "/resource/UserSessionResource/create/", postData);
                 } catch (final BrowserException e) {
                     if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
