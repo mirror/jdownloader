@@ -30,6 +30,9 @@ import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -60,9 +63,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener, GenericConfigEventListener<Boolean> {
 
@@ -446,8 +446,14 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         this.timeout = timeout;
     }
 
-    public void setHeaderText(String txt) {
-        headerLbl.setText(txt);
+    public void setHeaderText(final String txt) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                headerLbl.setText(txt);
+            }
+        };
     }
 
     private Component createHeader(String caption) {
