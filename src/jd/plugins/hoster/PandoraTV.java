@@ -129,7 +129,7 @@ public class PandoraTV extends PluginForHost {
         final String hqurl = (String) entries.get("flv");
         if (hqurl != null) {
             /* Fix path ... */
-            urlpath = new Regex(hqurl, "(/hd/.+)").getMatch(0);
+            urlpath = new Regex(hqurl, "(/[^/]+/_user////.+)").getMatch(0);
             if (urlpath != null) {
                 final String userid = getUserid(downloadLink);
                 final String userid_letter_1 = userid.substring(0, 1);
@@ -164,6 +164,11 @@ public class PandoraTV extends PluginForHost {
         downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
