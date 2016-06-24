@@ -37,7 +37,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -128,10 +127,11 @@ public class FileBoomMe extends K2SApi {
     /* end of K2SApi stuff */
 
     private void setConfigElements() {
-        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.FileBoomMe.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API);
+        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, "Use API (recommended!)").setDefaultValue(default_USE_API);
         getConfig().addEntry(cfgapi);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.FileBoomMe.EXPERIMENTALHANDLING", "Enable reconnect workaround?")).setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.FileBoomMe.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode!)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
 
     @Override
@@ -142,6 +142,7 @@ public class FileBoomMe extends K2SApi {
         }
         correctDownloadLink(link);
         this.setBrowserExclusive();
+        super.prepBrowserForWebsite(this.br);
         getPage(link.getDownloadURL());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

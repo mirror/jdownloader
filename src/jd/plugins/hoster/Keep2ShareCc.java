@@ -39,7 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -165,8 +164,9 @@ public class Keep2ShareCc extends K2SApi {
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);
+        super.prepBrowserForWebsite(this.br);
         getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>Keep2Share\\.cc - Error</title>")) {
+        if (br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
             link.getLinkStatus().setStatusText("Cannot check status - unknown error state");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -760,10 +760,11 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     private void setConfigElements() {
-        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API);
+        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, "Use API (recommended!)").setDefaultValue(default_USE_API);
         getConfig().addEntry(cfgapi);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.Keep2ShareCc.EXPERIMENTALHANDLING", "Enable reconnect workaround?")).setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Keep2ShareCc.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode!)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
 
 }

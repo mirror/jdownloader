@@ -26,12 +26,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -54,7 +51,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(www\\.)?filejoker\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FileJokerNet extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -83,6 +85,9 @@ public class FileJokerNet extends antiDDoSForHost {
 
     private static final String  INVALIDLINKS                 = "https?://(www\\.)?filejoker\\.net/registration";
 
+    /* Plugin settings */
+    private static final String  CUSTOM_REFERER               = "CUSTOM_REFERER";
+
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.5.7
     // mods: erandom UA|ours is blocked, heavily modified, DO NOT UPGRADE!
@@ -104,7 +109,18 @@ public class FileJokerNet extends antiDDoSForHost {
 
     public FileJokerNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    private Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
+        if (custom_referer != null && !custom_referer.equals("")) {
+            /* Specified Referer gives us 150 KB/s in free mode vs ~50 KB/s without that. */
+            br.getHeaders().put("Referer", custom_referer);
+        }
+        return br;
     }
 
     @Override
@@ -112,8 +128,8 @@ public class FileJokerNet extends antiDDoSForHost {
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.setFollowRedirects(true);
         setFUID(link);
+        prepBR(this.br);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -913,6 +929,7 @@ public class FileJokerNet extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
+                prepBR(this.br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -1012,6 +1029,10 @@ public class FileJokerNet extends antiDDoSForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null));
     }
 
     @Override
