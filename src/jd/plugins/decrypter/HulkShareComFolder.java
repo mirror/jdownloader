@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,7 +49,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        } else if (parameter.matches(HULKSHAREDOWNLOADLINK)) {
+        } else if (new Regex(parameter, Pattern.compile(HULKSHAREDOWNLOADLINK, Pattern.CASE_INSENSITIVE)).matches()) {
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
         }
@@ -56,23 +57,15 @@ public class HulkShareComFolder extends PluginForDecrypt {
         if (fid != null) {
             parameter = "http://www.hulkshare.com/" + fid;
         }
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie("http://hulkshare.com/", "lang", "english");
-        try {
-            // They can have huge pages, allow double of the normal load limit
-            br.setLoadLimit(4194304);
-        } catch (final Throwable e) {
-            // Not available in old 0.9.581 Stable
-        }
+        // They can have huge pages, allow double of the normal load limit
+        br.setLoadLimit(4194304);
         br.getPage(parameter);
-        if (br.getHttpConnection().getContentType().equals("text/javascript") || br.getHttpConnection().getContentType().equals("text/css")) {
+        if (br.getHttpConnection().getContentType().equals("text/javascript") || br.getHttpConnection().getContentType().equals("text/css") || this.br.getURL().contains("/404.php")) {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        }
-        String argh = br.getRedirectLocation();
-        if (argh != null) {
-            br.getPage(argh);
         }
         if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading")) {
             logger.info("Link offline: " + parameter);
@@ -101,7 +94,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        if (parameter.matches(TYPE_PLAYLIST)) {
+        if (new Regex(parameter, Pattern.compile(TYPE_PLAYLIST, Pattern.CASE_INSENSITIVE)).matches()) {
             String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) {
                 fpName = "hulkshare.com playlist - " + new Regex(parameter, "(\\d+)$").getMatch(0);
@@ -119,7 +112,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
             return decryptedLinks;
-        } else if (br.getURL().matches(TYPE_SECONDSINGLELINK)) {
+        } else if (new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) {
             final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
             if (longLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

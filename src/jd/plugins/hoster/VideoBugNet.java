@@ -64,6 +64,10 @@ public class VideoBugNet extends PluginForHost {
         }
         dllink = br.getRegex("url: '(http[^']+(videobug\\.net|play44\\.net)%2Fvideos[^']+)").getMatch(0);
         if (dllink == null) {
+            if (this.br.containsHTML("url: ")) {
+                /* Empty player videosource --> Offline! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(dllink, false);

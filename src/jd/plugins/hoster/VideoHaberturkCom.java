@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.haberturk.com" }, urls = { "http://(www\\.)?video\\.haberturk\\.com/haber/video/[a-z0-9\\-_]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.haberturk.com" }, urls = { "https?://video\\.haberturk\\.com/haber/video/[a-z0-9\\-_]+/\\d+|https?://(?:www\\.)?haberturk\\.com/video/haber/izle/[a-z0-9\\-_]+/\\d+" }, flags = { 0 })
 public class VideoHaberturkCom extends PluginForHost {
 
     public VideoHaberturkCom(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class VideoHaberturkCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://video.haberturk.com/")) {
+        if (br.getURL().equals("http://video.haberturk.com/") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h2 class=\"baslik\">([^<>\"]*?)</h2>").getMatch(0);

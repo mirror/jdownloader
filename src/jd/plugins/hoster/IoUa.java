@@ -67,6 +67,9 @@ public class IoUa extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("Возможно, превышен период неактивности<br>и в целях безопасности сессия")) {
+            logger.info("Password protected content or offline");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("'/" + imageID + "u'")) {
             br.getPage("http://io.ua/" + imageID + "u");

@@ -37,6 +37,7 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Allow adult videos
         br.setCookie("http://video.online.ua/", "online_18", "1");
+        br.setFollowRedirects(true);
         String parameter = param.toString() + "/";
         br.getPage(parameter);
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
@@ -78,7 +79,7 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        final DownloadLink main = createDownloadlink("http://video.online.uadecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
+        final DownloadLink main = createDownloadlink("http://video.online.uadecrypted/" + new Regex(parameter, "(\\d+)/?$").getMatch(0));
         decryptedLinks.add(main);
         return decryptedLinks;
     }

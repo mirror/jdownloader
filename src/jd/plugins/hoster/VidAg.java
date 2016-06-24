@@ -26,10 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,6 +45,10 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid.ag" }, urls = { "https?://(www\\.)?vid\\.ag/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VidAg extends PluginForHost {
 
@@ -64,7 +64,7 @@ public class VidAg extends PluginForHost {
     /* Linktypes */
     private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
     private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode|>Site is under maintenance, please try again after sometime";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -161,7 +161,7 @@ public class VidAg extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was (removed|deleted) by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (isInMaintenance()) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
             if (fileInfo[0] != null) {
                 link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
@@ -243,6 +243,11 @@ public class VidAg extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean isInMaintenance() {
+        final boolean maintenance = new Regex(correctedBR, MAINTENANCE).matches() || this.br.getURL().contains("/maintenance.html");
+        return maintenance;
     }
 
     private String[] scanInfo(final String[] fileInfo) {
@@ -546,6 +551,7 @@ public class VidAg extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
+            checkErrors(downloadLink, false);
             checkServerErrors();
             handlePluginBroken(downloadLink, "dllinknofile", 3);
         }
@@ -986,7 +992,7 @@ public class VidAg extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (isInMaintenance()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
     }
