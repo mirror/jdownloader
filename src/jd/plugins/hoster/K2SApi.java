@@ -85,6 +85,7 @@ public abstract class K2SApi extends PluginForHost {
     protected final String                 USE_API                = "USE_API_2";
     protected final boolean                default_USE_API        = true;
     protected final String                 SSL_CONNECTION         = "SSL_CONNECTION_2";
+    protected final String                 CUSTOM_REFERER         = "CUSTOM_REFERER";
     protected final boolean                default_SSL_CONNECTION = true;
 
     public K2SApi(PluginWrapper wrapper) {
@@ -459,7 +460,6 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
-
                 postPageRaw(br, "/requestcaptcha", "", account);
                 final String challenge = getJson("challenge");
                 final String captcha_url = getJson("captcha_url");
@@ -523,6 +523,16 @@ public abstract class K2SApi extends PluginForHost {
             // remove download slot
             controlSlot(-1, account);
         }
+    }
+
+    protected Browser prepBrowserForWebsite(final Browser br) {
+        final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
+        if (!inValidate(custom_referer)) {
+            /* Specified Referer + User-Agent gives us 150 KB/s in free mode vs ~50 KB/s without that. */
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0");
+            br.getHeaders().put("Referer", custom_referer);
+        }
+        return br;
     }
 
     /**
