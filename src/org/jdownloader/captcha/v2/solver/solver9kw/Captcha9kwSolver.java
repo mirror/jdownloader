@@ -662,9 +662,11 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                 if ((System.currentTimeMillis() - lLastAccount.getCreateTime()) < 5 * 60 * 1000l) {
                     // cache is not older than 5 minutes
                     if (lLastAccount.getCreditBalance() < 10) {
-                        if (counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime5.get()) > 30) {
-                            counterdialogtime5.set((System.currentTimeMillis() / 1000));
-                            jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocredits() + "\n");
+                        if (config.getlowcredits()) {
+                            if (counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime5.get()) > 30) {
+                                counterdialogtime5.set((System.currentTimeMillis() / 1000));
+                                jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocredits() + "\n");
+                            }
                         }
                         throw new SolverException("Not Enough Credits for Task");
                     }
