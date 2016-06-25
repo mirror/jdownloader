@@ -660,13 +660,7 @@ public class DepositFiles extends antiDDoSForHost {
             // via /api/
             if (useAPI.get()) {
                 ai = apiFetchAccountInfo(account);
-                // only way to detect plugin defect is to set false prior throwing.
-                if (!useAPI.get()) {
-                    br = new Browser();
-                    ai = new AccountInfo();
-                }
-            }
-            if (!useAPI.get()) {
+            } else {
                 setMainpage();
                 ai = webFetchAccountInfo(account);
             }
@@ -701,9 +695,13 @@ public class DepositFiles extends antiDDoSForHost {
             String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
             if (expire == null) {
                 expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
-            }
-            if (expire == null) {
-                expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
+                if (expire == null) {
+                    expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
+                    // russian ip subnets or accounts, seem to not respect url language setting
+                    if (expire == null) {
+                        expire = br.getRegex("<div class=\"access\">Ваш Gold доступ активен до: <b>(.*?)</b></div>").getMatch(0);
+                    }
+                }
             }
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
             if (expire == null) {
@@ -844,15 +842,8 @@ public class DepositFiles extends antiDDoSForHost {
             }
         }
         if (useAPI.get()) {
-            try {
-                apiHandlePremium(downloadLink, account);
-            } catch (PluginException e) {
-                throw e;
-            }
-        }
-        // plugin defect, work around as you can not catch exception id in older versions of JD
-        // only disable API when plugin defect is the status! all other error types should be treated as valid.
-        if (!useAPI.get()) {
+            apiHandlePremium(downloadLink, account);
+        } else {
             webHandlePremium(downloadLink, account);
         }
     }
@@ -1168,10 +1159,10 @@ public class DepositFiles extends antiDDoSForHost {
             String dlToken = getJson("download_token");
             if (delay == null && mode == null && dlToken == null) {
                 logger.warning("api epic fail");
-                if (useAPI.getAndSet(false) == true) {
-                    return;
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                // if (useAPI.getAndSet(false) == true) {
+                // return;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // }
             }
             // download modes seem to indicate if the user can download as 'gold' or 'free' connection ratios?. User can download there
             // own uploads under gold even though they don't have gold account status.
@@ -1210,10 +1201,10 @@ public class DepositFiles extends antiDDoSForHost {
         String dllink = getJson("download_url");
         if (dllink == null) {
             logger.warning("Could not find 'dllink'");
-            if (useAPI.getAndSet(false) == true) {
-                return;
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            // if (useAPI.getAndSet(false) == true) {
+            // return;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
         }
         // for now limit to premium accounts
         // if (!account.getBooleanProperty("free", false)) {
