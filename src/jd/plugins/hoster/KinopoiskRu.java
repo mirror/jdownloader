@@ -69,6 +69,7 @@ public class KinopoiskRu extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setLoadLimit(3123000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("\\'trailerW\\'")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
