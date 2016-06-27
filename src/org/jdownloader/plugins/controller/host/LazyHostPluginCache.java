@@ -50,8 +50,9 @@ public class LazyHostPluginCache {
             final CountingInputStream bis = new CountingInputStream(new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size()));
             try {
                 final AWFCUtils is = new AWFCUtils(bis);
-                if (CACHEVERSION != is.readLong()) {
-                    throw new IOException("Outdated CacheVersion");
+                final long version = is.readLong();
+                if (CACHEVERSION != version) {
+                    throw new IOException("Outdated CacheVersion:" + version + "|" + CACHEVERSION);
                 }
                 final long lastModified = is.readLong();
                 final int lazyPluginClassSize = is.readShort();

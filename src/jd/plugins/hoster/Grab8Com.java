@@ -595,7 +595,7 @@ public class Grab8Com extends antiDDoSForHost {
                 tempUnavailableHoster(20 * 60 * 1000l);
             } else if (StringUtils.containsIgnoreCase(error, "Error generating link") || StringUtils.containsIgnoreCase(error, "Get link download error")) {
                 logger.warning("'Get link' error");
-                handleErrorRetries("getlinkerror", 20, 2 * 60 * 1000l);
+                handleErrorRetries("getlinkerror", 10, 2 * 60 * 1000l);
             } else if (StringUtils.equalsIgnoreCase(error, "Login to generate link")) {
                 logger.warning("apparently cookies are no longer valid");
                 currAcc.setProperty("cookies", Property.NULL);

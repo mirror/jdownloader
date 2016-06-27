@@ -19,6 +19,7 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
@@ -185,33 +186,35 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 // logger.finer("@CrawlerPlugin ok(cached):" + plugin.getClassName() + " " + plugin.getDisplayName() + " " +
                 // plugin.getVersion());
             } else {
-                String simpleName = new String(pluginInfo.getClazz().getSimpleName());
-                DecrypterPlugin a = pluginInfo.getClazz().getAnnotation(DecrypterPlugin.class);
-                if (a != null) {
+                final String simpleName = pluginInfo.getSimpleName();
+                if (pluginInfo.isValid()) {
                     try {
+                        final PluginClassLoaderChild classLoader;
+                        if (Application.getJavaVersion() <= Application.JAVA16 || pluginInfo.getClazz() == null) {
+                            classLoader = PluginClassLoader.getInstance().getChild();
+                        } else {
+                            classLoader = (PluginClassLoaderChild) pluginInfo.getClazz().getClassLoader();
+                        }
                         final long revision = pluginInfo.getLazyPluginClass().getRevision();
-                        String[] names = a.names();
-                        String[] patterns = a.urls();
-                        int[] flags = a.flags();
+                        String[] names = pluginInfo.getNames();
+                        String[] patterns = pluginInfo.getPatterns();
                         if (names.length == 0) {
+                            Class<PluginForDecrypt> clazz = pluginInfo.getClazz();
+                            if (clazz == null) {
+                                clazz = (Class<PluginForDecrypt>) classLoader.loadClass(pluginInfo.getClazzName());
+                            }
                             /* create multiple crawler plugins from one source */
-                            patterns = (String[]) pluginInfo.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
-                            names = (String[]) pluginInfo.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
-                            flags = (int[]) pluginInfo.getClazz().getDeclaredMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
+                            patterns = (String[]) clazz.getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
+                            names = (String[]) clazz.getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
                         }
                         if (patterns.length != names.length) {
                             //
                             throw new WTFException("names.length != patterns.length");
                         }
-                        if (flags.length != names.length && a.interfaceVersion() == 2) {
-                            /* interfaceVersion 2 is for Stable/Nightly */
-                            logger.log(new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName));
-                        }
                         if (names.length == 0) {
                             //
                             throw new WTFException("names.length=0");
                         }
-                        final PluginClassLoaderChild classLoader = (PluginClassLoaderChild) pluginInfo.getClazz().getClassLoader();
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
                         for (int i = 0; i < names.length; i++) {
@@ -220,8 +223,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                 lazyCrawlerPlugin = new LazyCrawlerPlugin(pluginInfo.getLazyPluginClass(), new String(patterns[i]), new String(names[i]), pluginInfo.getClazz(), classLoader);
                                 try {
                                     /* check for stable compatibility */
-                                    classLoader.setPluginClass(new String(pluginInfo.getClazz().getName()));
-                                    classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
+                                    classLoader.setPluginClass(simpleName);
                                     final PluginForDecrypt plg = lazyCrawlerPlugin.newInstance(classLoader);
                                     final Class<? extends ConfigInterface> configInterface = plg.getConfigInterface();
                                     if (configInterface != null) {

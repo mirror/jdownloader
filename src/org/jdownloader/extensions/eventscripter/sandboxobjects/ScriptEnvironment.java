@@ -508,6 +508,28 @@ public class ScriptEnvironment {
         return ret;
     }
 
+    @ScriptAPI(description = "Get a list of all packages")
+    public static FilePackageSandBox[] getAllFilePackages() {
+        final List<FilePackage> list = DownloadController.getInstance().getPackagesCopy();
+        final FilePackageSandBox[] ret = new FilePackageSandBox[list.size()];
+        int i = 0;
+        for (final FilePackage dlc : list) {
+            ret[i++] = new FilePackageSandBox(dlc);
+        }
+        return ret;
+    }
+
+    @ScriptAPI(description = "Get a list of all downloadlinks")
+    public static DownloadLinkSandBox[] getAllDownloadLinks() {
+        final List<DownloadLink> links = DownloadController.getInstance().getAllChildren();
+        final DownloadLinkSandBox[] ret = new DownloadLinkSandBox[links.size()];
+        int i = 0;
+        for (final DownloadLink link : links) {
+            ret[i++] = new DownloadLinkSandBox(link);
+        }
+        return ret;
+    }
+
     @ScriptAPI(description = "Get a list of all running packages")
     public static FilePackageSandBox[] getRunningDownloadPackages() {
         final Set<FilePackage> list = DownloadWatchDog.getInstance().getRunningFilePackages();

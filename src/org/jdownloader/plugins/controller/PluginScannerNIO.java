@@ -20,6 +20,8 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 
 public class PluginScannerNIO<T extends Plugin> {
 
+    private final static boolean      isJava16orOlder = Application.getJavaVersion() <= Application.JAVA16;
+
     private final PluginController<T> pluginController;
 
     protected PluginController<T> getPluginController() {
@@ -94,7 +96,7 @@ public class PluginScannerNIO<T extends Plugin> {
                         Class<T> pluginClass = null;
                         long[] infos = null;
                         try {
-                            if (cl == null) {
+                            if (cl == null || isJava16orOlder) {
                                 cl = PluginClassLoader.getInstance().getChild();
                             }
                             if (md == null) {

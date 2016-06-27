@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -38,6 +36,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" }, flags = { 2 })
 public class ImgSrcRu extends PluginForDecrypt {
@@ -154,7 +154,14 @@ public class ImgSrcRu extends PluginForDecrypt {
 
             parsePage(param);
             parseNextPage(param);
-
+            for (DownloadLink link : decryptedLinks) {
+                if (username != null) {
+                    link.setProperty("username", username.trim());
+                }
+                if (fpName != null) {
+                    link.setProperty("gallery", fpName.trim());
+                }
+            }
             fp.addLinks(decryptedLinks);
 
             if (decryptedLinks.size() == 0) {
