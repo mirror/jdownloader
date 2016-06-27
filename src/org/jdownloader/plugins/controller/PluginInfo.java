@@ -1,15 +1,17 @@
 package org.jdownloader.plugins.controller;
 
+import org.appwork.utils.Application;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.HostPlugin;
 import jd.plugins.Plugin;
 
-import org.appwork.utils.Application;
-
 public class PluginInfo<T extends Plugin> {
 
     private final Class<T>        clazz;
-    private LazyPlugin<T>         lazyPlugin      = null;
+    private final LazyPlugin<T>   lazyPlugin;
     private final LazyPluginClass lazyPluginClass;
 
     private final String          simpleName;
@@ -44,7 +46,30 @@ public class PluginInfo<T extends Plugin> {
         return lazyPluginClass;
     }
 
+    public PluginInfo(LazyPluginClass lazyPluginClass, LazyPlugin<T> lazyPlugin) {
+        this.lazyPluginClass = lazyPluginClass;
+        this.lazyPlugin = lazyPlugin;
+        boolean valid = false;
+        this.simpleName = lazyPluginClass.getClassName();
+        if (lazyPlugin != null) {
+            this.clazzName = lazyPlugin.getClassName();
+            if (lazyPlugin instanceof LazyHostPlugin) {
+                valid = true;
+
+            } else if (lazyPlugin instanceof LazyCrawlerPlugin) {
+                valid = true;
+            }
+        } else {
+            this.clazzName = null;
+        }
+        this.valid = valid;
+        this.clazz = null;
+        this.patterns = new String[0];
+        this.names = new String[0];
+    }
+
     public PluginInfo(LazyPluginClass lazyPluginClass, Class<T> clazz) {
+        this.lazyPlugin = null;
         this.lazyPluginClass = lazyPluginClass;
         this.simpleName = new String(clazz.getSimpleName());
         this.clazzName = clazz.getName();
@@ -88,10 +113,6 @@ public class PluginInfo<T extends Plugin> {
 
     public LazyPlugin<T> getLazyPlugin() {
         return lazyPlugin;
-    }
-
-    public void setLazyPlugin(LazyPlugin<T> lazyPlugin) {
-        this.lazyPlugin = lazyPlugin;
     }
 
 }
