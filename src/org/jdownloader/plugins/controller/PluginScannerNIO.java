@@ -12,11 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.plugins.Plugin;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+
+import jd.plugins.Plugin;
 
 public class PluginScannerNIO<T extends Plugin> {
 
@@ -42,8 +42,7 @@ public class PluginScannerNIO<T extends Plugin> {
             final long lastFolderModified = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
             if (lastModified > 0 && lastFolderModified == lastModified && pluginCache != null && pluginCache.size() > 0) {
                 for (final LazyPlugin<T> lazyPlugin : pluginCache) {
-                    final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), null);
-                    pluginInfo.setLazyPlugin(lazyPlugin);
+                    final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
                     ret.add(pluginInfo);
                 }
                 return ret;
@@ -85,8 +84,7 @@ public class PluginScannerNIO<T extends Plugin> {
                                     for (final LazyPlugin<T> lazyPlugin : lazyPlugins) {
                                         // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
                                         // lazyPluginClass.getRevision());
-                                        final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
-                                        pluginInfo.setLazyPlugin(lazyPlugin);
+                                        final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, lazyPlugin);
                                         ret.add(pluginInfo);
                                     }
                                     continue;
