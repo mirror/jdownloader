@@ -24,10 +24,16 @@ public class PluginInfo<T extends Plugin> {
     }
 
     public String[] getNames() {
+        if (lazyPlugin != null) {
+            return new String[] { lazyPlugin.getDisplayName() };
+        }
         return names;
     }
 
     public String[] getPatterns() {
+        if (lazyPlugin != null) {
+            return new String[] { lazyPlugin.getPatternSource() };
+        }
         return patterns;
     }
 
@@ -55,7 +61,6 @@ public class PluginInfo<T extends Plugin> {
             this.clazzName = lazyPlugin.getClassName();
             if (lazyPlugin instanceof LazyHostPlugin) {
                 valid = true;
-
             } else if (lazyPlugin instanceof LazyCrawlerPlugin) {
                 valid = true;
             }
@@ -66,6 +71,7 @@ public class PluginInfo<T extends Plugin> {
         this.clazz = null;
         this.patterns = new String[0];
         this.names = new String[0];
+        ;
     }
 
     public PluginInfo(LazyPluginClass lazyPluginClass, Class<T> clazz) {
