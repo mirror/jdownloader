@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,6 +29,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" }, flags = { 0 })
 public class WeTransferCom extends PluginForHost {
@@ -91,6 +91,7 @@ public class WeTransferCom extends PluginForHost {
         if (recepientID == null) {
             recepientID = "";
         }
+        String filename1 = br.getRegex("class='filename'>(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("class='filename'>.*?</span>.*?([0-9,\\.]+\\s*(K|M|G)B)").getMatch(0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
         br.getPage(mainpage + "api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
@@ -118,6 +119,9 @@ public class WeTransferCom extends PluginForHost {
             String filename = new Regex(Encoding.htmlDecode(dllink), "filename=([^&]+)").getMatch(0);
             if (filename == null) {
                 filename = PluginJSonUtils.getJson(br, "filename");
+            }
+            if (filename == null) {
+                filename = filename1;
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
