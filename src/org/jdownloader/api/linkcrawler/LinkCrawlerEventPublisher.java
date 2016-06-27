@@ -1,7 +1,14 @@
 package org.jdownloader.api.linkcrawler;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
@@ -28,11 +35,47 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
     @Override
     public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
         if (!eventSenders.isEmpty()) {
-            final SimpleEventObject eventObject = new SimpleEventObject(this, event.getType().name(), null);
+            HashMap<String, Object> dls = new HashMap<String, Object>();
+            final LinkCrawler crawler = event.getCaller();
+            dls.put("crawlerId", crawler.getUniqueAlltimeID().getID());
+            if (event.getCaller() instanceof JobLinkCrawler) {
+                JobLinkCrawler jobCrawler = ((JobLinkCrawler) crawler);
+                final LinkCollectingJob job = ((JobLinkCrawler) crawler).getJob();
+                if (job != null) {
+                    dls.put("jobId", job.getUniqueAlltimeID().getID());
+                    if (LinkCrawlerEvent.Type.STOPPED.equals(event.getType())) {
+                        final List<CrawledLink> linklist = jobCrawler.getCrawledLinks();
+                        final HashSet<CrawledPackage> dupe = new HashSet<CrawledPackage>();
+                        int offlineCnt = 0;
+                        int onlineCnt = 0;
+                        synchronized (linklist) {
+                            for (final CrawledLink cl : linklist) {
+                                dupe.add(cl.getParentNode());
+                                switch (cl.getLinkState()) {
+                                case OFFLINE:
+                                    offlineCnt++;
+                                    break;
+                                case ONLINE:
+                                    onlineCnt++;
+                                    break;
+                                }
+                            }
+                        }
+
+                        dls.put("packages", dupe.size());
+                        dls.put("links", jobCrawler.getCrawledLinksFoundCounter());
+                        dls.put("online", onlineCnt);
+                        dls.put("offline", offlineCnt);
+                    }
+                }
+
+            }
+            final SimpleEventObject eventObject = new SimpleEventObject(this, event.getType().name(), dls);
             // you can add uniqueID of linkcrawler and job to event
             for (RemoteAPIEventsSender eventSender : eventSenders) {
                 eventSender.publishEvent(eventObject, null);
             }
+
         }
     }
 
