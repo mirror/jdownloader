@@ -42,9 +42,9 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
 
     void moveLinks(long[] linkIds, long afterLinkID, long destPackageID) throws BadParameterException;
 
-    void addLinks(AddLinksQueryStorable query);
+    LinkCollectingJobAPIStorable addLinks(AddLinksQueryStorable query);
 
-    void addContainer(String type, String content);
+    LinkCollectingJobAPIStorable addContainer(String type, String content);
 
     List<LinkVariantStorableV2> getVariants(long linkid) throws BadParameterException;
 
@@ -67,7 +67,9 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
     boolean setDownloadPassword(long[] linkIds, long[] packageIds, String pass) throws BadParameterException;
 
     boolean clearList();
-    
+
     boolean abort();
+
+    boolean isCollecting();
 
 }

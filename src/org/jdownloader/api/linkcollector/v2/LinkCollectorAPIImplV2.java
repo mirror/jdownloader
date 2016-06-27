@@ -23,6 +23,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.plugins.DownloadLink;
 
@@ -312,8 +313,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     @Override
-    public void addLinks(final AddLinksQueryStorable query) {
-        add(query);
+    public LinkCollectingJobAPIStorable addLinks(final AddLinksQueryStorable query) {
+        return add(query);
     }
 
     private static List<File> processDataURLs(final AddLinksQueryStorable query) {
@@ -339,7 +340,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         return ret;
     }
 
-    public static void add(final AddLinksQueryStorable query) {
+    public static LinkCollectingJobAPIStorable add(final AddLinksQueryStorable query) {
         Priority p = Priority.DEFAULT;
         try {
             p = Priority.valueOf(query.getPriority().name());
@@ -462,6 +463,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             PackageHistoryManager.getInstance().add(query.getPackageName());
         }
         LinkCollector.getInstance().getAddLinksThread(lcj, null).start();
+        return new LinkCollectingJobAPIStorable(lcj);
     }
 
     @Override
@@ -643,11 +645,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     @Override
-    public void addContainer(String type, String content) {
-        loadContainer(type, content);
+    public LinkCollectingJobAPIStorable addContainer(String type, String content) {
+        return loadContainer(type, content);
     }
 
-    public static void loadContainer(String type, String content) {
+    public static LinkCollectingJobAPIStorable loadContainer(String type, String content) {
         final String fileName;
         if ("DLC".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
@@ -656,7 +658,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         } else if ("CCF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
         } else {
-            return;
+            fileName = null;
         }
         if (fileName != null) {
             try {
@@ -665,10 +667,12 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 IO.writeToFile(tmp, write);
                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), tmp.toURI().toString());
                 LinkCollector.getInstance().getAddLinksThread(job, null).start();
+                return new LinkCollectingJobAPIStorable(job);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        return null;
     }
 
     @Override
@@ -741,4 +745,10 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         LinkCollector.getInstance().abort();
         return true;
     }
+
+    @Override
+    public boolean isCollecting() {
+        return LinkCrawler.isCrawling() || LinkCollector.getInstance().isCollecting();
+    }
+
 }
