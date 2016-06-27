@@ -724,7 +724,6 @@ public class SecondLevelLaunch {
             public void uncaughtException(Thread t, Throwable e) {
                 LogSource logger = LogController.getInstance().getLogger("UncaughtExceptionHandler");
                 logger.severe("Uncaught Exception in: " + t.getId() + "=" + t.getName() + "|" + e.getMessage());
-                e.printStackTrace();
                 logger.log(e);
                 logger.close();
             }

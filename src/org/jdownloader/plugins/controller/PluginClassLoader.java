@@ -34,19 +34,19 @@ public class PluginClassLoader extends URLClassLoader {
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-        {
-            add("java.lang.Boolean");
-            add("java.lang.Byte");
-            add("java.lang.String");
-            add("java.lang.Double");
-            add("java.lang.Integer");
-            add("java.lang.Long");
-            add("java.lang.Float");
-            add("java.lang.Short");
-            add("java.math.BigInteger");
-            add("java.math.BigDecimal");
-        }
-    };
+                                                                                              {
+                                                                                                  add("java.lang.Boolean");
+                                                                                                  add("java.lang.Byte");
+                                                                                                  add("java.lang.String");
+                                                                                                  add("java.lang.Double");
+                                                                                                  add("java.lang.Integer");
+                                                                                                  add("java.lang.Long");
+                                                                                                  add("java.lang.Float");
+                                                                                                  add("java.lang.Short");
+                                                                                                  add("java.math.BigInteger");
+                                                                                                  add("java.math.BigDecimal");
+                                                                                              }
+                                                                                          };
 
     private static class PluginClassLoaderClass {
         private final WeakReference<Class<?>> clazz;
@@ -73,15 +73,14 @@ public class PluginClassLoader extends URLClassLoader {
             }
         }
 
-        private static final byte _0XCA                    = (byte) 0xca;
-        private static final byte _0XFE                    = (byte) 0xfe;
-        private static final byte _0XBA                    = (byte) 0xba;
-        private static final byte _0XBE                    = (byte) 0xbe;
-        private boolean           createDummyLibs          = true;
-        private boolean           jared                    = Application.isJared(PluginClassLoader.class);
+        private static final byte _0XCA           = (byte) 0xca;
+        private static final byte _0XFE           = (byte) 0xfe;
+        private static final byte _0XBA           = (byte) 0xba;
+        private static final byte _0XBE           = (byte) 0xbe;
+        private boolean           createDummyLibs = true;
+        private boolean           jared           = Application.isJared(PluginClassLoader.class);
 
-        private boolean           checkStableCompatibility = false;
-        private String            pluginClass              = null;
+        private String            pluginClass     = null;
 
         public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
@@ -92,10 +91,6 @@ public class PluginClassLoader extends URLClassLoader {
          */
         public String getPluginClass() {
             return pluginClass;
-        }
-
-        public boolean isCheckStableCompatibility() {
-            return checkStableCompatibility;
         }
 
         /**
@@ -318,31 +313,6 @@ public class PluginClassLoader extends URLClassLoader {
                         }
                     }
                 }
-                if (isCheckStableCompatibility() && name.equals(pluginClass) == false && !name.startsWith(pluginClass + "$")) {
-                    boolean check = true;
-                    if (check) {
-                        check = !name.equals("jd.plugins.hoster.RTMPDownload");/* available in 09581 Stable */
-                    }
-                    if (check) {
-                        check = !name.equals("org.appwork.utils.speedmeter.SpeedMeterInterface");/* available in 09581 Stable */
-                    }
-                    if (check) {
-                        check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
-                                                                                                                       * available in 09581
-                                                                                                                       * Stable
-                                                                                                                       */
-                    }
-                    if (check) {
-                        check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
-                         * available in 09581 Stable
-                         */
-                    }
-                    if (check) {
-                        if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
-                            System.out.println("Check for Stable Compatibility!!!: " + getPluginClass() + " wants to load " + name);
-                        }
-                    }
-                }
                 if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) {
                     return super.loadClass(name);
                 }
@@ -384,10 +354,6 @@ public class PluginClassLoader extends URLClassLoader {
                 throw new ClassNotFoundException(name, e);
             }
 
-        }
-
-        public void setCheckStableCompatibility(boolean checkStableCompatibility) {
-            this.checkStableCompatibility = checkStableCompatibility;
         }
 
         /**

@@ -49,8 +49,9 @@ public class LazyCrawlerPluginCache {
             final CountingInputStream bis = new CountingInputStream(new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size()));
             try {
                 final AWFCUtils is = new AWFCUtils(bis);
+                final long version = is.readLong();
                 if (CACHEVERSION != is.readLong()) {
-                    throw new IOException("Outdated CacheVersion");
+                    throw new IOException("Outdated CacheVersion:" + version + "|" + CACHEVERSION);
                 }
                 final long lastModified = is.readLong();
                 final int lazyPluginClassSize = is.readShort();
