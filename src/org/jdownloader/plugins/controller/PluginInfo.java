@@ -71,7 +71,6 @@ public class PluginInfo<T extends Plugin> {
         this.clazz = null;
         this.patterns = new String[0];
         this.names = new String[0];
-        ;
     }
 
     public PluginInfo(LazyPluginClass lazyPluginClass, Class<T> clazz) {
