@@ -17,12 +17,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.JDProgressBar;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.nutils.Formatter;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -44,6 +38,12 @@ import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.JDProgressBar;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.nutils.Formatter;
+import net.miginfocom.swing.MigLayout;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener, GenericConfigEventListener<Integer>, WindowListener {
 
@@ -139,6 +139,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         lblETA.setHorizontalAlignment(JLabel.TRAILING);
 
         prgTotal = new JDProgressBar();
+        prgTotal.setMaximum(1);
+        prgTotal.setMinimum(0);
         prgTotal.setStringPainted(true);
 
         lblHelp = new JLabel(T.T.jd_plugins_optional_infobar_InfoDialog_help());
@@ -234,8 +236,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
                             long curDl = dla.getBytesLoaded();
                             lblProgress.setText(Formatter.formatFilesize(curDl, 0) + " / " + Formatter.formatFilesize(totalDl, 0));
                             lblETA.setText(Formatter.formatSeconds(dla.getEta()));
-                            prgTotal.setMaximum(totalDl);
-                            prgTotal.setValue(curDl);
+                            prgTotal.setMaximum(Math.max(1, totalDl));
+                            prgTotal.setValue(Math.max(0, curDl));
                         } else {
                             updater.compareAndSet(thread, null);
                         }
