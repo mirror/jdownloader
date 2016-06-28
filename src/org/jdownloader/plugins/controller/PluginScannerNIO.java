@@ -12,11 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.plugins.Plugin;
+
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-
-import jd.plugins.Plugin;
 
 public class PluginScannerNIO<T extends Plugin> {
 
@@ -96,6 +96,7 @@ public class PluginScannerNIO<T extends Plugin> {
                         try {
                             if (cl == null || isJava16orOlder) {
                                 cl = PluginClassLoader.getInstance().getChild();
+                                cl.setMapStaticFields(false);
                             }
                             if (md == null) {
                                 md = MessageDigest.getInstance("SHA-256");
