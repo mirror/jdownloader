@@ -371,7 +371,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 }
                                 if (lazyHostPlugin != null) {
                                     retList.add(lazyHostPlugin);
-                                    // logger.finer("@HostPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
                                 }
                             } catch (Throwable e) {
                                 logger.log(e);
