@@ -302,6 +302,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         }
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
+                        classLoader.setMapStaticFields(false);
                         for (int i = 0; i < names.length; i++) {
                             LazyHostPlugin lazyHostPlugin = null;
                             try {

@@ -35,19 +35,19 @@ public class PluginClassLoader extends URLClassLoader {
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-        {
-            add("java.lang.Boolean");
-            add("java.lang.Byte");
-            add("java.lang.String");
-            add("java.lang.Double");
-            add("java.lang.Integer");
-            add("java.lang.Long");
-            add("java.lang.Float");
-            add("java.lang.Short");
-            add("java.math.BigInteger");
-            add("java.math.BigDecimal");
-        }
-    };
+                                                                                              {
+                                                                                                  add("java.lang.Boolean");
+                                                                                                  add("java.lang.Byte");
+                                                                                                  add("java.lang.String");
+                                                                                                  add("java.lang.Double");
+                                                                                                  add("java.lang.Integer");
+                                                                                                  add("java.lang.Long");
+                                                                                                  add("java.lang.Float");
+                                                                                                  add("java.lang.Short");
+                                                                                                  add("java.math.BigInteger");
+                                                                                                  add("java.math.BigDecimal");
+                                                                                              }
+                                                                                          };
 
     private static class PluginClassLoaderClass {
         private final WeakReference<Class<?>> clazz;
@@ -79,10 +79,20 @@ public class PluginClassLoader extends URLClassLoader {
         private static final byte _0XBA           = (byte) 0xba;
         private static final byte _0XBE           = (byte) 0xbe;
         private boolean           createDummyLibs = true;
-        private boolean           jared           = Application.isJared(PluginClassLoader.class);
+        private boolean           mapStaticFields = true;
 
-        private String            pluginClass     = null;
-        private final String      creationHistory = Exceptions.getStackTrace(new Throwable());
+        public boolean isMapStaticFields() {
+            return mapStaticFields;
+        }
+
+        public void setMapStaticFields(boolean mapStaticFields) {
+            this.mapStaticFields = mapStaticFields;
+        }
+
+        private boolean      jared           = Application.isJared(PluginClassLoader.class);
+
+        private String       pluginClass     = null;
+        private final String creationHistory = Exceptions.getStackTrace(new Throwable());
 
         public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
@@ -185,7 +195,7 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         private final Class<?> mapStaticFields(final Class<?> currentClass) {
-            if (currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
+            if (isMapStaticFields() && currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
                 final String currentClassName = currentClass.getName();
                 final HashMap<String, Object> sharedPluginObjects;
                 synchronized (sharedPluginObjectsPool) {

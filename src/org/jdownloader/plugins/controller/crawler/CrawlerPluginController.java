@@ -217,6 +217,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         }
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
+                        classLoader.setMapStaticFields(false);
                         for (int i = 0; i < names.length; i++) {
                             LazyCrawlerPlugin lazyCrawlerPlugin = null;
                             try {
@@ -289,7 +290,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     *
+     * 
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
