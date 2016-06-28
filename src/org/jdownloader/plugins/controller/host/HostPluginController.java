@@ -270,8 +270,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyHostPlugin plugin = (LazyHostPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);
-                // logger.finer("@HostPlugin ok(cached):" + plugin.getClassName() + " " + plugin.getDisplayName() + " " +
-                // plugin.getVersion());
             } else {
                 final String simpleName = pluginInfo.getSimpleName();
                 if (pluginInfo.isValid()) {
