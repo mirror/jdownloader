@@ -149,15 +149,23 @@ public class PremiumyPl extends PluginForHost {
             if (packageInfo == null) {
                 packageInfo = br.getRegex("<div class=\"contentTitleGreen\">Pakiety</div>[ \t\n\r\f]+<div class=\"packagesInfo\">[ \t\n\r\f]+(.*)<br />[ \t\n\r\f]+</div>[ \t\n\r\f]+</div>").getMatch(0);
                 if (packageInfo != null) {
-                    packageName = "Transfer";
-                    String trafficLeft = new Regex(packageInfo, "Transfer: (\\d+\\.?\\d?[MGT]?B)").getMatch(0);
-                    ai.setTrafficLeft(trafficLeft);
+                    if (packageInfo.contains("Multi:") && packageInfo.contains("Transfer:")) {
+                        packageName = "Multi + Transfer";
+                        ai.setProperty("DETAILS", (String) ai.getProperty("DETAILS") + "\n" + packageInfo.replace("<br /><div class=\"separator\"></div>", ", "));
+                    } else {
+
+                        packageName = "Transfer";
+                        String trafficLeft = new Regex(packageInfo, "Transfer: (\\d+\\.?\\d?[MGT]?B)").getMatch(0);
+                        ai.setTrafficLeft(trafficLeft);
+                        ai.setProperty("DETAILS", (String) ai.getProperty("DETAILS") + "\n" + packageInfo);
+                    }
                 }
             } else {
 
                 // hoster package
                 if (packageInfo.contains("Multi")) {
                     packageName = "Multi";
+                    ai.setProperty("DETAILS", (String) ai.getProperty("DETAILS") + "\n" + packageInfo);
                 } else {
                     packageName = getPhrase("HOSTER");
 
@@ -167,6 +175,7 @@ public class PremiumyPl extends PluginForHost {
                     ai.setTrafficMax(trafficLeft);
                     long traffic = SizeFormatter.getSize(trafficLeft) - SizeFormatter.getSize(trafficUsed);
                     ai.setTrafficLeft(traffic);
+                    ai.setProperty("DETAILS", (String) ai.getProperty("DETAILS") + "\n" + getPhrase("EXPIRE_DATE") + ": " + packageInfo.replaceFirst("Serwis [A-Za-z0-9^ ]+: ", ""));
                 }
                 String validUntil = new Regex(packageInfo, "[A-Za-z]+: (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
                 long expireTime = TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm", Locale.ENGLISH);
@@ -260,7 +269,9 @@ public class PremiumyPl extends PluginForHost {
         // wait, workaround
         sleep(1 * 1000l, link);
         int chunks = 0;
-
+        if (downloadUrl.contains("catshare.net")) {
+            chunks = 4;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
         // error
@@ -372,6 +383,7 @@ public class PremiumyPl extends PluginForHost {
             put("HOSTER", "Hoster");
             put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
             put("HOSTER_UNAVAILABLE", "Host is temporarily unavailable");
+            put("EXPIRE_DATE", "Expiration date");
 
                                                   }
     };
@@ -385,8 +397,8 @@ public class PremiumyPl extends PluginForHost {
             put("HOSTER", "Serwis");
             put("PLUGIN_BROKEN", "\r\nProblem z wtyczką, skontaktuj się z zespołem wsparcia JDownloader!");
             put("HOSTER_UNAVAILABLE", "Serwis jest niedostępny");
-
-                                                  }
+            put("EXPIRE_DATE", "Data ważności");
+        }
     };
 
     /**
