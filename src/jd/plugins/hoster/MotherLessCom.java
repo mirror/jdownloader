@@ -231,6 +231,16 @@ public class MotherLessCom extends PluginForHost {
         return ai;
     }
 
+    private void login(final Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", ua);
+        br.postPage("https://motherless.com/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://motherless.com/", "_auth") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
     public String getAGBLink() {
         return "http://motherless.com/tou";
     }
@@ -308,15 +318,6 @@ public class MotherLessCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
         }
         doFree(link);
-    }
-
-    private void login(final Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", ua);
-        br.postPage("https://motherless.com/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://motherless.com/", "auth") == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
