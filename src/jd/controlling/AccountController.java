@@ -98,12 +98,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
 
-    };
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -457,8 +457,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                     * we are offline, so lets just return without any account update
-                     */
+                                                           * we are offline, so lets just return without any account update
+                                                           */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -797,6 +797,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 new PluginFinder().assignPlugin(account, true);
             }
             if (account.getHoster() != null) {
+                Account existingAccount = null;
                 synchronized (AccountController.this) {
                     final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
                     List<Account> accs = ACCOUNTS.get(host);
@@ -806,13 +807,25 @@ public class AccountController implements AccountControllerListener, AccountProp
                     }
                     for (final Account acc : accs) {
                         if (acc.equals(account)) {
-                            return;
+                            existingAccount = acc;
+                            break;
                         }
                     }
-                    account.setAccountController(this);
-                    accs.add(account);
+                    if (existingAccount == null) {
+                        account.setAccountController(this);
+                        accs.add(account);
+                    }
                 }
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
+                if (existingAccount == null) {
+                    this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
+                } else if (existingAccount != null && (!existingAccount.isEnabled() || existingAccount.getError() != null)) {
+                    // reuse properties and accountInfos from new account
+                    existingAccount.setError(null, null);
+                    existingAccount.setAccountInfo(account.getAccountInfo());
+                    existingAccount.setProperties(account.getProperties());
+                    existingAccount.setEnabled(true);
+                    getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
+                }
             }
         }
     }
