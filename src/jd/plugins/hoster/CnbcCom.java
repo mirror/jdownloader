@@ -39,7 +39,7 @@ public class CnbcCom extends PluginForHost {
     /** Settings stuff */
     private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
         {
             /*
              * Format-name:videoCodec, videoBitrate, videoResolution,
@@ -55,7 +55,7 @@ public class CnbcCom extends PluginForHost {
             put("mpeg4_600000_Download", new String[] { "AVC", null, "480x270", "AAC LC", null });
             put("mpeg4_1100000_Download", new String[] { "AVC", null, "704x396", "AAC LC", null });
         }
-    };
+    });
 
     private String                                DLLINK         = null;
 

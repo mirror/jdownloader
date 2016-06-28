@@ -242,8 +242,14 @@ public class PluginClassLoader extends URLClassLoader {
                                             logger.severe("Cant modify Field " + fieldName + " for " + currentClassName);
                                         }
                                     }
-                                    final Object fieldObject = field.get(null);
+                                    Object fieldObject = field.get(null);
                                     if (fieldObject != null) {
+                                        if (fieldObject.getClass().getClassLoader() instanceof PluginClassLoaderChild) {
+                                            if (logger == null) {
+                                                logger = LogController.CL(false);
+                                            }
+                                            logger.info("FIXME!!!! Class " + currentClassName + " has customized static field: " + fieldName + "!");
+                                        }
                                         sharedPluginObjects.put(new String(fieldName), fieldObject);// dereference from field
                                     } else {
                                         if (logger == null) {

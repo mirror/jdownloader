@@ -39,7 +39,7 @@ public class BloombergCom extends PluginForHost {
     /** Settings stuff */
     private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
         {
             /*
              * Format-name:videoCodec, videoBitrate, videoResolution,
@@ -56,7 +56,7 @@ public class BloombergCom extends PluginForHost {
             put("mpg2_720x480_mpg2", new String[] { "MPEG-2 Video", "6000", "720x480", "MPEG-1 Audio layer 2", "192" });
 
         }
-    };
+    });
 
     private String                                DLLINK         = null;
 

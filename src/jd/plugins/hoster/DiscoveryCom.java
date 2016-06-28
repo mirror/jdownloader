@@ -41,7 +41,7 @@ public class DiscoveryCom extends PluginForHost {
     private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
     private static final String                   GRAB_SUBTITLE  = "GRAB_SUBTITLE";
 
-    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
         {
             /*
              * Format-name:videoCodec, videoBitrate, videoResolution,
@@ -65,7 +65,7 @@ public class DiscoveryCom extends PluginForHost {
             put("5000k", new String[] { "AVC", "5000", "1920x1080", "AAC LC", "64" });
 
         }
-    };
+    });
 
     private String                                DLLINK         = null;
 
@@ -97,7 +97,7 @@ public class DiscoveryCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                    con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

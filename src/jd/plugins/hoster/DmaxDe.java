@@ -70,21 +70,21 @@ public class DmaxDe extends PluginForHost {
     private String                                DLLINK                 = null;
     private boolean                               downloadMode           = false;
 
-    public static LinkedHashMap<String, String[]> formats                = new LinkedHashMap<String, String[]>() {
-                                                                             {
-                                                                                 /*
-                                                                                  * Format-name:videoCodec, videoBitrate, videoResolution,
-                                                                                  * audioCodec, audioBitrate
-                                                                                  */
-                                                                                 put("240", new String[] { "AVC", "440", "240x140", "AAC LC", "128" });
-                                                                                 put("480", new String[] { "AVC", "440", "480x268", "AAC LC", "128" });
-                                                                                 put("640", new String[] { "AVC", "700", "640x360", "AAC LC", "128" });
-                                                                                 put("720", new String[] { "AVC", "950", "720x204", "AAC LC", "128" });
-                                                                                 put("1024", new String[] { "AVC", "950", "1024x576", "AAC LC", "128" });
-                                                                                 put("1280", new String[] { "AVC", "1600", "1280x720", "AAC LC", "128" });
+    public static LinkedHashMap<String, String[]> formats                = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution,
+             * audioCodec, audioBitrate
+             */
+            put("240", new String[] { "AVC", "440", "240x140", "AAC LC", "128" });
+            put("480", new String[] { "AVC", "440", "480x268", "AAC LC", "128" });
+            put("640", new String[] { "AVC", "700", "640x360", "AAC LC", "128" });
+            put("720", new String[] { "AVC", "950", "720x204", "AAC LC", "128" });
+            put("1024", new String[] { "AVC", "950", "1024x576", "AAC LC", "128" });
+            put("1280", new String[] { "AVC", "1600", "1280x720", "AAC LC", "128" });
 
-                                                                             }
-                                                                         };
+        }
+    });
 
     /*
      * Thanks goes to: https://github.com/bromix/plugin.video.bromix.dmax_de/blob/master/discoverychannel/fusion.py AND

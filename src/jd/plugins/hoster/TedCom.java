@@ -90,22 +90,22 @@ public class TedCom extends PluginForHost {
     private static final String                   GRAB_SUBTITLE_UKRAINIAN            = "GRAB_SUBTITLE_UKRAINIAN";
     private static final String                   GRAB_SUBTITLE_VIETNAMESE           = "GRAB_SUBTITLE_VIETNAMESE";
 
-    public static LinkedHashMap<String, String[]> formats                            = new LinkedHashMap<String, String[]>() {
-                                                                                         {
-                                                                                             /*
-                                                                                              * Format-name:videoCodec, videoBitrate,
-                                                                                              * videoResolution, audioCodec, audioBitrate
-                                                                                              */
-                                                                                             put("64", new String[] { "AVC", "40", "320x180", "AAC LC", "24" });
-                                                                                             put("180", new String[] { "AVC", "145", "512x288", "AAC LC", "36" });
-                                                                                             put("320", new String[] { "AVC", "282", "512x288", "AAC LC", "40" });
-                                                                                             put("450", new String[] { "AVC", "404", "512x288", "AAC LC", "48" });
-                                                                                             put("600", new String[] { "AVC", "540", "640x360", "AAC LC", "64" });
-                                                                                             put("950", new String[] { "AVC", "852", "854x480", "AAC LC", "96" });
-                                                                                             put("1500", new String[] { "AVC", "1350", "1280x720", "AAC LC", "128" });
+    public static LinkedHashMap<String, String[]> formats                            = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
+             */
+            put("64", new String[] { "AVC", "40", "320x180", "AAC LC", "24" });
+            put("180", new String[] { "AVC", "145", "512x288", "AAC LC", "36" });
+            put("320", new String[] { "AVC", "282", "512x288", "AAC LC", "40" });
+            put("450", new String[] { "AVC", "404", "512x288", "AAC LC", "48" });
+            put("600", new String[] { "AVC", "540", "640x360", "AAC LC", "64" });
+            put("950", new String[] { "AVC", "852", "854x480", "AAC LC", "96" });
+            put("1500", new String[] { "AVC", "1350", "1280x720", "AAC LC", "128" });
 
-                                                                                         }
-                                                                                     };
+        }
+    });
 
     public TedCom(PluginWrapper wrapper) {
         super(wrapper);
