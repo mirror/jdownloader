@@ -50,7 +50,7 @@ public class LazyCrawlerPluginCache {
             try {
                 final AWFCUtils is = new AWFCUtils(bis);
                 final long version = is.readLong();
-                if (CACHEVERSION != is.readLong()) {
+                if (CACHEVERSION != version) {
                     throw new IOException("Outdated CacheVersion:" + version + "|" + CACHEVERSION);
                 }
                 final long lastModified = is.readLong();
