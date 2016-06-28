@@ -185,14 +185,14 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         private final Class<?> mapStaticFields(final Class<?> currentClass) {
-            if (false && currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
+            if (currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
                 final String currentClassName = currentClass.getName();
                 final HashMap<String, Object> sharedPluginObjects;
                 synchronized (sharedPluginObjectsPool) {
                     HashMap<String, Object> contains = sharedPluginObjectsPool.get(currentClassName);
                     if (contains == null) {
                         contains = new HashMap<String, Object>();
-                        sharedPluginObjectsPool.put(currentClassName, contains);
+                        sharedPluginObjectsPool.put(new String(currentClassName), contains);// dereference from currentClass
                     }
                     sharedPluginObjects = contains;
                 }
@@ -244,7 +244,7 @@ public class PluginClassLoader extends URLClassLoader {
                                     }
                                     final Object fieldObject = field.get(null);
                                     if (fieldObject != null) {
-                                        sharedPluginObjects.put(fieldName, fieldObject);
+                                        sharedPluginObjects.put(new String(fieldName), fieldObject);// dereference from field
                                     } else {
                                         if (logger == null) {
                                             logger = LogController.CL(false);
