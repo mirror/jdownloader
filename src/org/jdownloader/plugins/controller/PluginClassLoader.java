@@ -35,19 +35,19 @@ public class PluginClassLoader extends URLClassLoader {
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-                                                                                              {
-                                                                                                  add("java.lang.Boolean");
-                                                                                                  add("java.lang.Byte");
-                                                                                                  add("java.lang.String");
-                                                                                                  add("java.lang.Double");
-                                                                                                  add("java.lang.Integer");
-                                                                                                  add("java.lang.Long");
-                                                                                                  add("java.lang.Float");
-                                                                                                  add("java.lang.Short");
-                                                                                                  add("java.math.BigInteger");
-                                                                                                  add("java.math.BigDecimal");
-                                                                                              }
-                                                                                          };
+        {
+            add("java.lang.Boolean");
+            add("java.lang.Byte");
+            add("java.lang.String");
+            add("java.lang.Double");
+            add("java.lang.Integer");
+            add("java.lang.Long");
+            add("java.lang.Float");
+            add("java.lang.Short");
+            add("java.math.BigInteger");
+            add("java.math.BigDecimal");
+        }
+    };
 
     private static class PluginClassLoaderClass {
         private final WeakReference<Class<?>> clazz;
@@ -277,7 +277,7 @@ public class PluginClassLoader extends URLClassLoader {
             return currentClass;
         }
 
-        private final HashMap<String, WeakReference<PluginClassLoaderClass>> LOADEDCLASSES = new HashMap<String, WeakReference<PluginClassLoaderClass>>();
+        private final HashMap<String, PluginClassLoaderClass> LOADEDCLASSES = new HashMap<String, PluginClassLoaderClass>();
 
         @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
@@ -324,10 +324,7 @@ public class PluginClassLoader extends URLClassLoader {
                 PluginClassLoaderClass c = null;
                 final Class<?> clazz;
                 synchronized (LOADEDCLASSES) {
-                    final WeakReference<PluginClassLoaderClass> weak = LOADEDCLASSES.get(name);
-                    if (weak != null) {
-                        c = weak.get();
-                    }
+                    c = LOADEDCLASSES.get(name);
                     if (c == null) {
                         final URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                         if (myUrl == null) {
@@ -335,7 +332,7 @@ public class PluginClassLoader extends URLClassLoader {
                         }
                         clazz = loadAndDefineClass(myUrl, name);
                         c = new PluginClassLoaderClass(clazz);
-                        LOADEDCLASSES.put(name, new WeakReference<PluginClassLoaderClass>(c));
+                        LOADEDCLASSES.put(name, c);
                     } else {
                         clazz = c.getClazz();
                     }
