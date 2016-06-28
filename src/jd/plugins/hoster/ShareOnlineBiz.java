@@ -265,6 +265,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
 
         /* file is offline */
         if (br.containsHTML("The requested file is not available")) {
+            if (br.containsHTML("The server was not able to find the desired file")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The server was not able to find the desired file", 60 * 60 * 1000l);
+            }
             logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
