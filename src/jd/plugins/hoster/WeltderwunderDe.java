@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 public class WeltderwunderDe extends PluginForHost {
 
     /** INFORMATION: On problems in the future, check out their Apps: http://www.weltderwunder.de/footer/spalte-3/mobile-smart-tv-apps/ */
-    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>() {
+    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
         {
             /*
              * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
@@ -55,7 +55,7 @@ public class WeltderwunderDe extends PluginForHost {
             put("2_1_5", new String[] { "AVC", "2400", "1024x570", "AAC LC", "128" });
 
         }
-    };
+    });
 
     private String                                DLLINK  = null;
 

@@ -492,7 +492,7 @@ public class VivaTv extends PluginForHost {
     }
 
     /** Static list of FEED-urls. If one is missing they can be found by accessing the correct player-URL (see list below). */
-    public static HashMap<String, String> feedURLs                    = new HashMap<String, String>() {
+    public static HashMap<String, String> feedURLs                    = new HashMap<String, String>(new HashMap<String, String>() {
         {
             put("ALL_OTHERS", url_service_feed_api_mtvnn_v2);
             /*
@@ -527,7 +527,7 @@ public class VivaTv extends PluginForHost {
             put("logotv.com", "http://www.logotv.com/player/includes/rss.jhtml?uri=%s");
             put("mtvnn.com", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
         }
-    };
+    });
 
     /** Static list of mediagen URLs. These are usually sub-URLs of feed-urls and they'll return the final downloadlinks. */
     /**
@@ -546,7 +546,7 @@ public class VivaTv extends PluginForHost {
      * acceptMethods= see 'possibleAcceptMethodsValues' HashMap below --> Defines the streaming method we prefer
      *
      */
-    public static HashMap<String, String> mediagenURLs                = new HashMap<String, String>() {
+    public static HashMap<String, String> mediagenURLs                = new HashMap<String, String>(new HashMap<String, String>() {
         {
             /*
              * For some of these, we have to access the feed- or player
@@ -603,9 +603,9 @@ public class VivaTv extends PluginForHost {
             // put("logotv.com",
             // "http://www.logotv.com/player/includes/mediaGen.jhtml?uri=%s");
         }
-    };
+    });
 
-    public static HashMap<String, String> embedURLs                   = new HashMap<String, String>() {
+    public static HashMap<String, String> embedURLs                   = new HashMap<String, String>(new HashMap<String, String>() {
         {
             /*
              * Only a small amount if embeddable - usually embedded links
@@ -616,7 +616,7 @@ public class VivaTv extends PluginForHost {
             put("ALL_OTHERS", "http://media.mtvnservices.com/%s");
             put("mtv.com", "http://media.mtvnservices.com/embed/%s/");
         }
-    };
+    });
 
     /**
      * These are only accessed for embedded videos. They contain the feed-URLs. This list might be useful in the future. Strong format:
@@ -626,7 +626,7 @@ public class VivaTv extends PluginForHost {
      * &ownerOrgId=2&keywords =Some+keywords +in+this+format&keywords =Some+more+keywords+in+this+format&keywords
      * =Even+more+keywords+in+this+format
      */
-    public static HashMap<String, String> playerURLs                  = new HashMap<String, String>() {
+    public static HashMap<String, String> playerURLs                  = new HashMap<String, String>(new HashMap<String, String>() {
         {
             put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
             put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
@@ -638,9 +638,9 @@ public class VivaTv extends PluginForHost {
             put("mtv.com.au", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s&type=network&ref=www.mtv.com.au&geo=DE&group=intl&network=None&device=Other");
             put("cc.com", "http://media.mtvnservices.com/pmt/e1/access/index.html?uri=%s&configtype=edge");
         }
-    };
+    });
 
-    public static HashMap<String, String> possibleAcceptMethodsValues = new HashMap<String, String>() {
+    public static HashMap<String, String> possibleAcceptMethodsValues = new HashMap<String, String>(new HashMap<String, String>() {
         {
             /*
              * "acceptMethods" is a parameter of mediagen URLs. It's
@@ -656,7 +656,7 @@ public class VivaTv extends PluginForHost {
             put("hls", "http");
             put("hds", "http");
         }
-    };
+    });
 
     /** Returns a feed URL based on the domain. */
     private String getFEEDurl(final String domain) throws PluginException {

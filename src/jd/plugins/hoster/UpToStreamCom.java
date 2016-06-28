@@ -64,7 +64,7 @@ public class UpToStreamCom extends PluginForHost {
     }
 
     @SuppressWarnings("serial")
-    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>() {
+    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
         {
             /*
              * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
@@ -80,7 +80,7 @@ public class UpToStreamCom extends PluginForHost {
             put("1080", new String[] { "AVC", "1370", "1920x1080", "AAC LC", "128" });
 
         }
-    };
+    });
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {

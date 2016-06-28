@@ -362,21 +362,21 @@ public class ArteTv extends PluginForHost {
         return "JDownloader's Arte Plugin helps downloading videoclips from arte.tv. Arte+7 provides different video qualities.";
     }
 
-    public static HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                        {
-                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
-                                                        }
-                                                    };
+    public static HashMap<String, String> phrasesEN = new HashMap<String, String>(new HashMap<String, String>() {
+        {
+            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
+        }
+    });
 
-    public static HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                        {
-                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
-                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
-                                                        }
-                                                    };
+    public static HashMap<String, String> phrasesDE = new HashMap<String, String>(new HashMap<String, String>() {
+        {
+            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
+            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
+        }
+    });
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

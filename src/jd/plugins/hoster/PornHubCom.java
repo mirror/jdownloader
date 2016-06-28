@@ -55,25 +55,25 @@ public class PornHubCom extends PluginForHost {
     public static final String                    html_privatevideo         = "id=\"iconLocked\"";
     private String                                dlUrl                     = null;
 
-    public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    /*
-                                                                                     * Format-name:videoCodec, videoBitrate,
-                                                                                     * videoResolution, audioCodec, audioBitrate
-                                                                                     */
-                                                                                    /*
-                                                                                     * Video-bitrates and resultions here are not exact as
-                                                                                     * they vary.
-                                                                                     */
-                                                                                    /**
-                                                                                     * TODO: Check for other resolutions, check: 180p, 1080p
-                                                                                     */
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+    public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
+             */
+            /*
+             * Video-bitrates and resultions here are not exact as
+             * they vary.
+             */
+            /**
+             * TODO: Check for other resolutions, check: 180p, 1080p
+             */
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
 
-                                                                                }
-                                                                            };
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 

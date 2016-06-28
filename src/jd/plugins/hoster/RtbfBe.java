@@ -53,23 +53,23 @@ public class RtbfBe extends PluginForHost {
     /** Settings stuff */
     private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
-                                                                     {
-                                                                         /*
-                                                                          * Format-name:videoCodec, videoBitrate, videoResolution,
-                                                                          * audioCodec, audioBitrate
-                                                                          */
-                                                                         /*
-                                                                          * We could also add audio- and videobitrate but from my tests they
-                                                                          * looked quite variable so we prefer not to use wrong information
-                                                                          * here as it will be used for the filenames later too!
-                                                                          */
-                                                                         put("download", new String[] { "AVC", null, "???x???", "AAC LC", null });
-                                                                         put("high", new String[] { "AVC", "800 kbps", "720x400", "AAC LC", "128 kbps" });
-                                                                         put("medium", new String[] { "AVC", "400 kbps", "640x360", "AAC LC", "77 kbps" });
-                                                                         put("low", new String[] { "AVC", "200 kbps", "400x200", "AAC LC", "77 kbps" });
-                                                                     }
-                                                                 };
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution,
+             * audioCodec, audioBitrate
+             */
+            /*
+             * We could also add audio- and videobitrate but from my tests they
+             * looked quite variable so we prefer not to use wrong information
+             * here as it will be used for the filenames later too!
+             */
+            put("download", new String[] { "AVC", null, "???x???", "AAC LC", null });
+            put("high", new String[] { "AVC", "800 kbps", "720x400", "AAC LC", "128 kbps" });
+            put("medium", new String[] { "AVC", "400 kbps", "640x360", "AAC LC", "77 kbps" });
+            put("low", new String[] { "AVC", "200 kbps", "400x200", "AAC LC", "77 kbps" });
+        }
+    });
 
     private String                                dllink         = null;
 
