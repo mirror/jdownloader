@@ -20,6 +20,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
@@ -81,12 +82,10 @@ public class PluginClassLoader extends URLClassLoader {
         private boolean           jared           = Application.isJared(PluginClassLoader.class);
 
         private String            pluginClass     = null;
-        private final Throwable   creationHistory;
+        private final String      creationHistory = Exceptions.getStackTrace(new Throwable());
 
         public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
-            creationHistory = new Throwable();
-            creationHistory.fillInStackTrace();
         }
 
         /**
@@ -526,12 +525,10 @@ public class PluginClassLoader extends URLClassLoader {
 
     }
 
-    private final Throwable creationHistory;
+    private final String creationHistory = Exceptions.getStackTrace(new Throwable());
 
     private PluginClassLoader() {
         super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, PluginClassLoader.class.getClassLoader());
-        creationHistory = new Throwable();
-        creationHistory.fillInStackTrace();
     }
 
     public PluginClassLoaderChild getChild() {
