@@ -81,9 +81,12 @@ public class PluginClassLoader extends URLClassLoader {
         private boolean           jared           = Application.isJared(PluginClassLoader.class);
 
         private String            pluginClass     = null;
+        private final Throwable   creationHistory;
 
         public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
+            creationHistory = new Throwable();
+            creationHistory.fillInStackTrace();
         }
 
         /**
@@ -275,7 +278,7 @@ public class PluginClassLoader extends URLClassLoader {
             return currentClass;
         }
 
-        private final HashMap<String, PluginClassLoaderClass> LOADEDCLASSES = new HashMap<String, PluginClassLoaderClass>();
+        private final HashMap<String, WeakReference<PluginClassLoaderClass>> LOADEDCLASSES = new HashMap<String, WeakReference<PluginClassLoaderClass>>();
 
         @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
@@ -322,7 +325,10 @@ public class PluginClassLoader extends URLClassLoader {
                 PluginClassLoaderClass c = null;
                 final Class<?> clazz;
                 synchronized (LOADEDCLASSES) {
-                    c = LOADEDCLASSES.get(name);
+                    final WeakReference<PluginClassLoaderClass> weak = LOADEDCLASSES.get(name);
+                    if (weak != null) {
+                        c = weak.get();
+                    }
                     if (c == null) {
                         final URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                         if (myUrl == null) {
@@ -330,7 +336,7 @@ public class PluginClassLoader extends URLClassLoader {
                         }
                         clazz = loadAndDefineClass(myUrl, name);
                         c = new PluginClassLoaderClass(clazz);
-                        LOADEDCLASSES.put(name, c);
+                        LOADEDCLASSES.put(name, new WeakReference<PluginClassLoaderClass>(c));
                     } else {
                         clazz = c.getClazz();
                     }
@@ -520,9 +526,12 @@ public class PluginClassLoader extends URLClassLoader {
 
     }
 
+    private final Throwable creationHistory;
+
     private PluginClassLoader() {
         super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, PluginClassLoader.class.getClassLoader());
-
+        creationHistory = new Throwable();
+        creationHistory.fillInStackTrace();
     }
 
     public PluginClassLoaderChild getChild() {
