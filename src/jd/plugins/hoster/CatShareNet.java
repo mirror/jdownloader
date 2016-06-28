@@ -61,7 +61,7 @@ public class CatShareNet extends PluginForHost {
     private String          brbefore               = "";
     private String          HOSTER                 = "http://catshare.net";
     private static Object   lock                   = new Object();
-    protected final String  USE_API                = "USE_API_33933";
+    protected final String  USE_API                = "USE_API_33952";
     private final boolean   defaultUSE_API         = true;
     private final boolean   use_api_availablecheck = true;
 
@@ -930,10 +930,10 @@ public class CatShareNet extends PluginForHost {
 
     private void setConfigElements() {
         /*
-         * 2016-06-09: Disabled this setting on admin request - if there are API issues in the future, this can be re-enabled! Keep in mind
+         * 2016-06-29: Disabled this setting on admin request - if there are API issues in the future, this can be re-enabled! Keep in mind
          * that website might change so the website handling might be broken and needs fixing first before it can be used!!
          */
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.CatShareNet.useAPI", getPhrase("USE_API"))).setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.CatShareNet.useAPI", getPhrase("USE_API"))).setDefaultValue(defaultUSE_API).setEnabled(false));
     }
 
     private boolean getUseAPI() {
