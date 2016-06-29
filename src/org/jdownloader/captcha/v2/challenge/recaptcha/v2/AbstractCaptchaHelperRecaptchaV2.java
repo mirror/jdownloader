@@ -61,14 +61,14 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected static int getRequiredCorrectAnswersGuess() {
 
         synchronized (CORRECT_AFTER_LIST) {
-            if (CORRECT_AFTER_LIST.size() < 2) {
-                return 1;
+            if (CORRECT_AFTER_LIST.size() == 0) {
+                return 3;
             }
             int min = Integer.MAX_VALUE;
             for (int i : CORRECT_AFTER_LIST) {
                 min = Math.min(i, min);
             }
-            return Math.min(2, min);
+            return min;
         }
     }
 

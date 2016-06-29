@@ -22,8 +22,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
@@ -45,6 +43,8 @@ import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+
+import jd.gui.swing.laf.LookAndFeelController;
 
 public class Main {
 
@@ -214,10 +214,6 @@ public class Main {
                 return list.toJsonString();
             }
 
-            @Override
-            public boolean canSerialize(Object arg0) {
-                return arg0 instanceof JsonFactoryInterface;
-            }
         });
         // set MyJDownloaderCLient JsonHandler
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {

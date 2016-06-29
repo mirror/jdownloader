@@ -282,6 +282,8 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                         StatsManager.I().track("direct", CollectionName.PJS);
                         logger.info("Wow");
                         return;
+                    } else {
+                        token = null;
                     }
                     phantom.switchFrameToMain();
                     if (phantom.evalInPageContext("document.getElementsByTagName('iframe').length>1") == Boolean.TRUE) {
@@ -715,6 +717,8 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                         StatsManager.I().track("solved", infos, CollectionName.PJS);
 
                         return true;
+                    } else {
+                        token = null;
                     }
                     phantom.switchFrameToChild(0);
                     error = (String) phantom.evalInPageContext("document.getElementsByClassName('rc-anchor-error-msg')[0].innerText");

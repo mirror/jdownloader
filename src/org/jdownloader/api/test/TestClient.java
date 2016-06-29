@@ -254,11 +254,6 @@ public class TestClient {
 
             }
 
-            @Override
-            public boolean canSerialize(final Object arg0) {
-                return arg0 instanceof JsonFactoryInterface;
-            }
-
         });
         AbstractDialog.setDefaultLocator(new RememberAbsoluteDialogLocator("MYJDTest"));
 
@@ -411,6 +406,7 @@ public class TestClient {
                 try {
                     lastOption = (Test) Dialog.getInstance().showComboDialog(0, "Please Choose", "Choose Test", TESTS.toArray(new Test[] {}), lastOption, null, null, null, new ListCellRenderer() {
                         private ListCellRenderer org;
+
                         {
                             org = new JComboBox().getRenderer();
                         }
