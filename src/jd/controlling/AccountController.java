@@ -98,12 +98,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                  };
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -266,6 +266,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         final AccountError errorBefore = account.getError();
         final String errorMessageBefore = account.getErrorString();
+        PluginForHost plugin = null;
         final HashMap<AccountProperty.Property, AccountProperty> propertyChanges = new HashMap<AccountProperty.Property, AccountProperty>();
         try {
             final AccountPropertyChangeHandler handler = new AccountPropertyChangeHandler() {
@@ -304,7 +305,6 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
             final PluginClassLoaderChild cl = PluginClassLoader.getSharedChild(account.getPlugin());
             PluginClassLoader.setThreadPluginClassLoaderChild(cl, null);
-            PluginForHost plugin = null;
             try {
                 plugin = account.getPlugin().getLazyP().newInstance(cl);
                 if (plugin == null) {
@@ -457,8 +457,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                                                           * we are offline, so lets just return without any account update
-                                                           */
+                     * we are offline, so lets just return without any account update
+                     */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -492,6 +492,13 @@ public class AccountController implements AccountControllerListener, AccountProp
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
+                }
+                if (plugin != null) {
+                    try {
+                        plugin.clean();
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
                 }
                 logger.close();
                 if (bThread != null) {
