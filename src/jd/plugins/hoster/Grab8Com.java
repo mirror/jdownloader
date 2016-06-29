@@ -167,10 +167,14 @@ public class Grab8Com extends antiDDoSForHost {
             getPage("https://" + getHost() + "/");
             postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = PluginJSonUtils.getJson(ajax, "linkdown");
-            final boolean transload = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(ajax, "use_transload"));
-            if (dllink == null && transload) {
-                // TODO: transload/api error handling.
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
+            if (StringUtils.isEmpty(dllink)) {
+                final boolean transload = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(ajax, "use_transload"));
+                if (transload) {
+                    // TODO: transload/api error handling.
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 // final String transloadUrl = PluginJSonUtils.getJson(ajax, "tstatus_url");
                 // getPage(transloadUrl);
                 // final Form transloadform = br.getFormbyKey("saveto");
