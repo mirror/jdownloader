@@ -25,6 +25,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.plugins.tasks.PluginSubTask;
+
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -51,21 +66,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
-
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.tasks.PluginProgressTask;
-import org.jdownloader.plugins.tasks.PluginSubTask;
 
 public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
 
@@ -471,10 +471,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 downloadLink.setLivePlugin(null);
                 queueItem.queueLinks.remove(downloadLink);
                 if (handlePlugin != null) {
-                    try {
-                        handlePlugin.validateLastChallengeResponse();
-                    } catch (final Throwable ignore) {
-                        downloadLogger.log(ignore);
+                    if (!this.isAborting()) {
+                        try {
+                            handlePlugin.validateLastChallengeResponse();
+                        } catch (final Throwable ignore) {
+                            downloadLogger.log(ignore);
+                        }
                     }
                     final DownloadInterface di = handlePlugin.getDownloadInterface();
                     resumed = di != null && di.isResumedDownload();
