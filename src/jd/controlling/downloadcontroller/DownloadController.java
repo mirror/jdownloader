@@ -702,7 +702,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                 }
                 if (entries == 0) {
-                    throw new WTFException("Empty/Invalid Zip:" + file);
+                    throw new WTFException("Empty/Invalid Zip:" + file + "|Size:" + file.length());
                 }
                 /* sort positions */
                 final List<Integer> packageIndices = new ArrayList<Integer>(packageMap.keySet());
