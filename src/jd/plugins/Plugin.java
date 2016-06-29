@@ -34,6 +34,27 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.uio.CloseReason;
@@ -59,27 +80,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -507,25 +507,7 @@ public abstract class Plugin implements ActionListener {
     public abstract Matcher getMatcher();
 
     public void clean() {
-        List<Challenge<?>> ch = challenges;
-        challenges = null;
-        if (ch != null) {
-            for (Challenge<?> c : ch) {
-                if (c != null) {
-                    try {
-                        c.cleanup();
-                    } catch (Throwable e) {
-                        if (logger != null) {
-                            logger.log(e);
-                        } else {
-                            LoggerFactory.getDefaultLogger().log(e);
-                        }
-
-                    }
-                }
-            }
-        }
-
+        cleanupLastChallengeResponse();
         br = null;
         for (final File clean : cleanUpCaptchaFiles) {
             if (!clean.delete()) {
@@ -782,6 +764,28 @@ public abstract class Plugin implements ActionListener {
                 final SolverJob<?> job = c.getJob();
                 if (job != null) {
                     job.invalidate();
+                }
+            }
+        }
+    }
+
+    public synchronized void cleanupLastChallengeResponse() {
+        final List<Challenge<?>> ch = challenges;
+        challenges = null;
+        if (ch != null) {
+            for (final Challenge<?> c : ch) {
+                if (c != null) {
+                    try {
+                        c.cleanup();
+                    } catch (Throwable e) {
+                        final LogInterface logger = this.logger;
+                        if (logger != null) {
+                            logger.log(e);
+                        } else {
+                            LoggerFactory.getDefaultLogger().log(e);
+                        }
+
+                    }
                 }
             }
         }
