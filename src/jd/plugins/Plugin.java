@@ -778,7 +778,7 @@ public abstract class Plugin implements ActionListener {
                     try {
                         c.cleanup();
                     } catch (Throwable e) {
-                        final LogInterface logger = this.logger;
+                        final LogInterface logger = getLogger();
                         if (logger != null) {
                             logger.log(e);
                         } else {
