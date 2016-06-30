@@ -48,7 +48,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(?:www\\.)?(?:exashare\\.com|dowed\\.info|bojem3a\\.info)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(?:www\\.)?(?:exashare\\.com|dowed\\.info|bojem3a\\.info|ajihezo\\.info)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class ExaShareCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -59,7 +59,7 @@ public class ExaShareCom extends PluginForHost {
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(exashare\\.com|dowed\\.info|bojem3a\\.info)";
+    private static final String  DOMAINS                      = "(exashare\\.com|dowed\\.info|bojem3a\\.info|ajihezo\\.info)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -147,7 +147,7 @@ public class ExaShareCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (!br.getURL().matches("https?://(www\\.)?" + DOMAINS + "/((vid)?embed\\-)?[a-z0-9]{12}") || new Regex(correctedBR, "(No such file|File Not Found<|>The file was (deleted|removed) by|Reason for deletion:\n|class=\"error\\-container\"|The file you were looking for could not be found)").matches()) {
+        if (new Regex(correctedBR, "(No such file|File Not Found<|>The file was (deleted|removed) by|Reason for deletion:\n|class=\"error\\-container\"|The file you were looking for could not be found)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
