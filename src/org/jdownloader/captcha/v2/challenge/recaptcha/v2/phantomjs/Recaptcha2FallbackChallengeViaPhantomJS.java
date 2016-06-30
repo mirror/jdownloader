@@ -625,7 +625,9 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                             return true;
                         }
                     });
+
                     return true;
+
                 } else {
                     // continue
                 }

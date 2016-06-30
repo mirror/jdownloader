@@ -3,13 +3,11 @@ package org.jdownloader.captcha.v2.solverjob;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipRequest;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
@@ -19,6 +17,9 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.ValidationResult;
+
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipRequest;
 
 public class SolverJob<T> {
 
@@ -42,12 +43,15 @@ public class SolverJob<T> {
 
     private final AtomicBoolean                    alive     = new AtomicBoolean(true);
 
+    private long                                   created;
+
     public String toString() {
-        return "CaptchaJob: " + challenge + " Solver: " + solverList;
+        return "CaptchaJob: " + new Date(created) + " " + challenge + " Solver: " + solverList;
     }
 
     public SolverJob(ChallengeResponseController controller, Challenge<T> c, List<ChallengeSolver<T>> solver) {
         this.challenge = c;
+        created = System.currentTimeMillis();
         this.controller = controller;
         this.solverList = new HashSet<ChallengeSolver<T>>(solver);
         config = JsonConfig.create(CaptchaSettings.class);

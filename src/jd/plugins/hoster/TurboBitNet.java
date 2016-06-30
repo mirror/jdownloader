@@ -32,6 +32,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,12 +63,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|dz-files\\.ru|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com|twobit\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
@@ -375,7 +375,7 @@ public class TurboBitNet extends PluginForHost {
             }
         } else if (br.containsHTML("class=\"g-recaptcha\"")) {
             /* ReCaptchaV2 */
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(captchaform);
         } else {
@@ -416,6 +416,13 @@ public class TurboBitNet extends PluginForHost {
             if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+        }
+
+        if (br.getHttpConnection().getResponseCode() == 302) {
+            // Solving took too long?
+            invalidateLastChallengeResponse();
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
         }
         simulateBrowser();
         // Ticket Time

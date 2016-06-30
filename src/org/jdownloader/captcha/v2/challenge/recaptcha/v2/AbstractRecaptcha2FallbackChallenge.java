@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
@@ -23,6 +24,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -50,6 +52,13 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     protected void killSession() {
         cleanup();
         getJob().kill();
+    }
+
+    @Override
+    public void initController(SolverJob<String> job) {
+        System.out.println("Set new Job: " + job);
+        super.initController(job);
+        owner.initController(job);
     }
 
     protected int chooseAtLeast;
@@ -91,6 +100,7 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     protected String           token;
 
     public static final String WITH_OF_ALL_THE = "(?:with|of|all the) (.*?)(?:\\.|\\!|\\?|$)";
+    private static final Color COLOR_BG        = new Color(0x4A90E2);
 
     protected boolean          useEnglish;
     protected Icon             explainIcon;
@@ -122,7 +132,7 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                             g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
                             g.setColor(Color.WHITE);
                             g.fillRect(columnWidth - 20, 0, 20, 20);
-                            g.setColor(Color.BLACK);
+                            g.setColor(COLOR_BG);
                             g.drawString(num + "", columnWidth - 20 + 5, 0 + 15);
                             images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
                         } catch (NullPointerException e) {
@@ -167,67 +177,46 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
             final Font font = new Font("Arial", 0, 12);
             final FontMetrics fm = img.getGraphics().getFontMetrics(font);
             final String exeplain = getExplain();
-            final Icon icon = getExplainIcon(exeplain);
+            // final Icon icon = getExplainIcon(exeplain);
             final String key = getHighlightedExplain();
             final ArrayList<String> lines = new ArrayList<String>();
+            lines.add(key.toUpperCase(Locale.ENGLISH));
             lines.addAll(split(fm, getExplain().replaceAll("<.*?>", "")));
             if (getChooseAtLeast() > 0) {
                 lines.addAll(split(fm, _GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast())));
             }
 
             lines.add("Example answer: 2,5,6");
+            lines.add("If there is no match, answer with - or 0");
             int y = 0;
             int width = 0;
-
-            // y += LINE_HEIGHT;
-
+            int textHeight = 2;
             for (String line : lines) {
                 width = Math.max(width, fm.stringWidth(line));
-                y += LINE_HEIGHT;
+                textHeight += LINE_HEIGHT;
             }
-
-            y += 15;
-            if (icon != null) {
-                y = Math.max(y, icon.getIconHeight() + 10);
-
-            }
-            y += 7;
+            textHeight += LINE_HEIGHT;
+            y += 5;
+            y += 8;
             width += 10;
 
-            final BufferedImage newImage = IconIO.createEmptyImage(Math.max((icon == null ? 0 : (icon.getIconWidth() + 5)) + width, img.getWidth()), img.getHeight() + y);
+            final BufferedImage newImage = IconIO.createEmptyImage(Math.max(width, img.getWidth()), img.getHeight() + textHeight);
             final Graphics2D g = (Graphics2D) newImage.getGraphics();
             try {
                 int x = 5;
-                y = LINE_HEIGHT;
 
                 g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                g.setColor(Color.BLACK);
+                g.setColor(COLOR_BG);
                 g.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
                 g.setColor(Color.WHITE);
                 g.setFont(font.deriveFont(Font.BOLD));
-                if (icon != null) {
-                    icon.paintIcon(null, g, x, 5);
-
-                    g.drawRect(x, 5, icon.getIconWidth(), icon.getIconHeight());
-                    x += icon.getIconWidth() + 5;
-                }
-                int afterIconX = x;
-                x = afterIconX;
-
+                g.drawString(lines.remove(0), (newImage.getWidth() - img.getWidth()) / 2, y);
                 g.setFont(font);
-                x = afterIconX;
-                for (String line : lines) {
-                    y += LINE_HEIGHT;
-                    g.drawString(line, x, y);
 
-                }
-                y += 15;
-                if (icon != null) {
-                    y = Math.max(y, icon.getIconHeight() + 10);
+                y += 5;
 
-                }
                 g.setColor(Color.WHITE);
-                g.drawLine(0, y, newImage.getWidth(), y);
+                g.fillRect(0, y, newImage.getWidth(), img.getHeight() + 10);
                 y += 5;
 
                 Rectangle bounds = new Rectangle((newImage.getWidth() - img.getWidth()) / 2, y, img.getWidth(), img.getHeight());
@@ -245,13 +234,13 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                             int yOff = yslot > 0 ? 2 : 0;
                             g.setColor(Color.WHITE);
                             g.fillRect(ceil(xx + columnWidth - 20 + bounds.x - xOff), ceil(yy + bounds.y + yOff), 20, 20);
-                            g.setColor(Color.BLACK);
+                            g.setColor(COLOR_BG);
 
                             g.drawString(num + "", ceil(xx + columnWidth - 20 + bounds.x + 5 - xOff - (num >= 10 ? 4 : 0)), ceil(yy + bounds.y + 15 + yOff));
                         }
                     }
                 }
-                // g.setColor(Color.WHITE);
+                g.setColor(Color.WHITE);
                 int splitterWidth = 3;
                 g.setStroke(new BasicStroke(splitterWidth));
                 for (int yslot = 0; yslot < getSplitHeight() - 1; yslot++) {
@@ -265,6 +254,19 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
 
                     g.drawLine(bounds.x + x, bounds.y, bounds.x + x, bounds.y + bounds.height);
                 }
+
+                y = bounds.y + bounds.height;
+                y += 5;
+
+                g.setFont(font);
+                g.setColor(Color.WHITE);
+                for (String line : lines) {
+
+                    y += LINE_HEIGHT;
+                    g.drawString(line, 5, y);
+
+                }
+
             } finally {
                 g.dispose();
             }
@@ -353,35 +355,40 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
         final HashSet<String> dupe = new HashSet<String>();
         for (int i = 0; i < parts.length; i++) {
             if (StringUtils.isNotEmpty(parts[i])) {
-                int in = Integer.parseInt(parts[i]);
-                if (in > (getSplitHeight() * getSplitWidth())) {
-                    // invalid split
+                try {
+                    int in = Integer.parseInt(parts[i]);
+                    if (in > (getSplitHeight() * getSplitWidth())) {
+                        // invalid split
 
-                    String p1 = parts[i].substring(0, 1);
-                    in = Integer.parseInt(p1);
-                    if (dupe.add(p1)) {
-                        if (sb.length() > 0) {
-                            sb.append(",");
+                        String p1 = parts[i].substring(0, 1);
+                        in = Integer.parseInt(p1);
+                        if (dupe.add(p1)) {
+                            if (sb.length() > 0) {
+                                sb.append(",");
+                            }
+                            sb.append(in);
                         }
-                        sb.append(in);
-                    }
 
-                    p1 = parts[i].substring(1);
-                    in = Integer.parseInt(p1);
-                    if (dupe.add(p1)) {
-                        if (sb.length() > 0) {
-                            sb.append(",");
+                        p1 = parts[i].substring(1);
+                        in = Integer.parseInt(p1);
+                        if (dupe.add(p1)) {
+                            if (sb.length() > 0) {
+                                sb.append(",");
+                            }
+                            sb.append(in);
                         }
-                        sb.append(in);
-                    }
 
-                } else {
-                    if (dupe.add(parts[i])) {
-                        if (sb.length() > 0) {
-                            sb.append(",");
+                    } else {
+                        if (dupe.add(parts[i]) && in > 0) {
+                            if (sb.length() > 0) {
+                                sb.append(",");
+                            }
+                            sb.append(in);
                         }
-                        sb.append(in);
                     }
+                } catch (Throwable e) {
+                    LoggerFactory.getDefaultLogger().info("Parse error: " + parts[i]);
+                    LoggerFactory.getDefaultLogger().log(e);
                 }
             }
         }
@@ -401,7 +408,7 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
         useEnglish |= DeathByCaptchaSolver.getInstance().getService().isEnabled();
         useEnglish |= ImageTyperzCaptchaSolver.getInstance().getService().isEnabled();
         useEnglish |= CBSolver.getInstance().getService().isEnabled();
-
+        initController(challenge.getJob());
     }
 
     @Override

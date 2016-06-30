@@ -28,6 +28,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.gui.translate._GUI;
 
@@ -38,12 +39,12 @@ public class ClickCaptchaDialog extends AbstractImageCaptchaDialog {
 
     private Point resultPoint = null;
 
-    public ClickCaptchaDialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String explain) {
-        this(flag, type, DomainInfo, new Image[] { image }, explain);
-    }
+    // public ClickCaptchaDialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String explain) {
+    // this(flag, type, DomainInfo, new Image[] { image }, explain);
+    // }
 
-    public ClickCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
+    public ClickCaptchaDialog(ClickCaptchaChallenge captchaChallenge, int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
+        super(captchaChallenge, flag | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
     }
 
@@ -95,7 +96,9 @@ public class ClickCaptchaDialog extends AbstractImageCaptchaDialog {
     }
 
     public ClickedPoint getResult() {
-        if (resultPoint == null) return null;
+        if (resultPoint == null) {
+            return null;
+        }
         return new ClickedPoint(resultPoint.x, resultPoint.y);
     }
 

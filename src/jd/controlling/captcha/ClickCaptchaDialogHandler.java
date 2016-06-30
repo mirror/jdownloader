@@ -6,10 +6,6 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 
-import jd.gui.swing.dialog.CaptchaDialog;
-import jd.gui.swing.dialog.ClickCaptchaDialog;
-import jd.gui.swing.dialog.DialogType;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.images.IconIO;
@@ -24,6 +20,10 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+
+import jd.gui.swing.dialog.CaptchaDialog;
+import jd.gui.swing.dialog.ClickCaptchaDialog;
+import jd.gui.swing.dialog.DialogType;
 
 public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptchaChallenge> {
 
@@ -62,7 +62,7 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
             } else {
                 return;
             }
-            ClickCaptchaDialog d = new ClickCaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain());
+            ClickCaptchaDialog d = new ClickCaptchaDialog(captchaChallenge, flag, dialogType, getHost(), images, captchaChallenge.getExplain());
             d.setPlugin(captchaChallenge.getPlugin());
             d.setTimeout(getTimeoutInMS());
             if (getTimeoutInMS() == captchaChallenge.getTimeout()) {

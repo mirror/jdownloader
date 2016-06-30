@@ -6,9 +6,6 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 
-import jd.gui.swing.dialog.CaptchaDialog;
-import jd.gui.swing.dialog.DialogType;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.images.IconIO;
@@ -22,6 +19,9 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+
+import jd.gui.swing.dialog.CaptchaDialog;
+import jd.gui.swing.dialog.DialogType;
 
 public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptchaChallenge> {
 
@@ -62,7 +62,8 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
                 return;
             }
 
-            CaptchaDialog d = new CaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain()) {
+            CaptchaDialog d = new CaptchaDialog(captchaChallenge, flag, dialogType, getHost(), images, captchaChallenge.getExplain()) {
+
                 public void dispose() {
 
                     super.dispose();

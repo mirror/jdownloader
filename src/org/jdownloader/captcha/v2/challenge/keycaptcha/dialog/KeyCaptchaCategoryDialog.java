@@ -14,9 +14,6 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.gui.swing.dialog.DialogType;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -26,6 +23,9 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.CategoryData;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaCategoryChallenge;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+
+import jd.gui.swing.dialog.DialogType;
+import net.miginfocom.swing.MigLayout;
 
 public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> implements ActionListener {
 
@@ -52,8 +52,8 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
 
     private int                         maxWidth;
 
-    public KeyCaptchaCategoryDialog(int flag, DialogType type, DomainInfo domain, KeyCaptchaCategoryChallenge captchaChallenge) {
-        super(flag, _GUI.T.KeyCaptchaCategoryDialog(domain.getTld()), type, domain, _GUI.T.KeyCaptchaCategoryDialog_explain(domain.getTld()));
+    public KeyCaptchaCategoryDialog(KeyCaptchaCategoryChallenge captchaChallenge2, int flag, DialogType type, DomainInfo domain, KeyCaptchaCategoryChallenge captchaChallenge) {
+        super(captchaChallenge2, flag, _GUI.T.KeyCaptchaCategoryDialog(domain.getTld()), type, domain, _GUI.T.KeyCaptchaCategoryDialog_explain(domain.getTld()));
         // super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN, title, null, null, null);
 
         this.challenge = captchaChallenge;

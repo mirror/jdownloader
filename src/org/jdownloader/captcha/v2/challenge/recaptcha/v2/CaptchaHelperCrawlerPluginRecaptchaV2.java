@@ -109,7 +109,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 for (AbstractResponse<String> r : c.getResult()) {
                     if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
                         String token = ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
-                        if (token == null) {
+                        if (!RecaptchaV2Challenge.isValidToken(token)) {
                             for (int i = 0; i < jobs.size(); i++) {
 
                                 jobs.get(i).invalidate();
@@ -136,6 +136,12 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Captcha reponse value did not validate!");
             }
             return c.getResult().getValue();
+
+        } catch (PluginException e) {
+            for (int i = 0; i < jobs.size(); i++) {
+                jobs.get(i).invalidate();
+            }
+            throw e;
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;

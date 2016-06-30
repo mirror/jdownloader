@@ -30,6 +30,7 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractCaptchaDialog;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -90,8 +91,8 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
     protected Rectangle bounds;
     protected double    scaleFaktor;
 
-    public AbstractImageCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
-        super(flags, title, type, domainInfo, explain);
+    public AbstractImageCaptchaDialog(ImageCaptchaChallenge<?> challenge, int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
+        super(challenge, flags, title, type, domainInfo, explain);
 
         // if we have gif images, but read them as non indexed images, we try to fix this here.
         java.util.List<Image> ret = new ArrayList<Image>();

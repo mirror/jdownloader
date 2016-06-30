@@ -139,10 +139,15 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
      * @author raztoki
      */
     protected final boolean isCaptchaResponseValid() {
-        if (isSolved() && getResult().getValue().matches("[\\w-]{30,}")) {
+        String v = getResult().getValue();
+        if (isSolved() && RecaptchaV2Challenge.isValidToken(v)) {
             return true;
         }
         return false;
+    }
+
+    public static boolean isValidToken(String v) {
+        return v != null && v.matches("[\\w-]{30,}");
     }
 
     @Override
