@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.apache.commons.lang3.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -1150,8 +1151,14 @@ public class DepositFiles extends antiDDoSForHost {
         if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "File Password protected!");
         }
-        if ("FileDoesNotExist".equalsIgnoreCase(getJson("error")) && "Error".equalsIgnoreCase(getJson("status"))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("Error".equalsIgnoreCase(getJson("status"))) {
+            final String error = getJson("error");
+            if ("FileDoesNotExist".equalsIgnoreCase(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (StringUtils.equalsIgnoreCase(error, "ConnectionLimitHasBeenExhaustedForYourIP")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
         }
         if (account.getBooleanProperty("free", false)) {
             String mode = getJson("mode");
