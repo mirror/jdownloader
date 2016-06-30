@@ -55,7 +55,9 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.gui.Header;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
@@ -130,7 +132,34 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
     }
 
     @Override
+    public boolean isExpired(long currentTimeout) {
+        boolean is = super.isExpired(currentTimeout);
+        boolean cesActive = false;
+        SolverJob<?> job = challenge.getJob();
+
+        if (challenge != null) {
+            // don't autoclose captcha dialog if ces solver is still active
+            for (ChallengeSolver s : challenge.getJob().getSolverList()) {
+                if (s instanceof CESChallengeSolver && !challenge.getJob().isDone(s)) {
+                    cesActive = true;
+                }
+            }
+        }
+
+        return is && !cesActive;
+    }
+
+    @Override
+    public String formatCountdown(long currentTimeout) {
+        if (currentTimeout < 0) {
+            return "wait for C.E.S.";
+        }
+        return super.formatCountdown(currentTimeout);
+    }
+
+    @Override
     public void mouseEntered(MouseEvent e) {
+
         // no cancel here. this would cancel the timeout if the dialog appears under the mouse - even if it does not move
     }
 
@@ -294,16 +323,18 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         return hideAllCaptchas;
     }
 
-    protected Plugin     plugin;
-    protected boolean    stopDownloads = false;
-    protected DialogType type;
-    protected boolean    refresh;
-    protected boolean    stopCrawling;
-    protected boolean    stopShowingCrawlerCaptchas;
+    protected Plugin             plugin;
+    protected boolean            stopDownloads = false;
+    protected DialogType         type;
+    protected boolean            refresh;
+    protected boolean            stopCrawling;
+    protected boolean            stopShowingCrawlerCaptchas;
+    protected final Challenge<?> challenge;
 
-    public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain) {
+    public AbstractCaptchaDialog(Challenge<?> challenge, int flags, String title, DialogType type, DomainInfo domainInfo, String explain) {
 
         super(flags, title, null, _GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), type == DialogType.CRAWLER ? _GUI.T.lit_cancel() : _GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
+        this.challenge = challenge;
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
         } else {

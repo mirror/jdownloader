@@ -29,6 +29,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.gui.translate._GUI;
 
 /**
@@ -39,12 +40,12 @@ public class CaptchaDialog extends AbstractImageCaptchaDialog implements ActionL
     private ExtTextField textField;
     private String       suggest;
 
-    public CaptchaDialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String explain) {
-        this(flag, type, DomainInfo, new Image[] { image }, explain);
+    public CaptchaDialog(BasicCaptchaChallenge captchaChallenge, final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String explain) {
+        this(captchaChallenge, flag, type, DomainInfo, new Image[] { image }, explain);
     }
 
-    public CaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
+    public CaptchaDialog(BasicCaptchaChallenge captchaChallenge, int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
+        super(captchaChallenge, flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
     }
 

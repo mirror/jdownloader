@@ -70,6 +70,8 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
+        ArrayList<SolverJob<String>> jobs = new ArrayList<SolverJob<String>>();
+
         try {
             if (link != null) {
                 link.addPluginProgress(progress);
@@ -97,12 +99,11 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                     logger.warning("Cancel. Blacklist Matching");
                     throw new CaptchaException(blackListEntry);
                 }
-                ArrayList<SolverJob<String>> jobs = new ArrayList<SolverJob<String>>();
 
                 jobs.add(ChallengeResponseController.getInstance().handle(c));
                 AbstractRecaptcha2FallbackChallenge rcFallback = null;
 
-                while (jobs.size() <= 10) {
+                while (jobs.size() <= 20) {
 
                     if (rcFallback == null && c.getResult() != null) {
                         for (AbstractResponse<String> r : c.getResult()) {
@@ -143,7 +144,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                     for (AbstractResponse<String> r : c.getResult()) {
                         if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
                             String token = ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
-                            if (StringUtils.isEmpty(token)) {
+                            if (!RecaptchaV2Challenge.isValidToken(token)) {
                                 for (int i = 0; i < jobs.size(); i++) {
 
                                     jobs.get(i).invalidate();
@@ -166,7 +167,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                         }
                     }
                 }
-
+                // check main challenge
                 if (!c.isCaptchaResponseValid()) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha reponse value did not validate!");
                 }
@@ -174,6 +175,11 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             } finally {
                 c.cleanup();
             }
+            // } catch (PluginException e) {
+            // for (int i = 0; i < jobs.size(); i++) {
+            // jobs.get(i).invalidate();
+            // }
+            // throw e;
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;

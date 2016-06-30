@@ -64,8 +64,8 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
     // this(flag, type, DomainInfo, new Image[] { image }, explain);
     // }
 
-    public RecaptchaChooseFrom3x3Dialog(int flag, DialogType type, DomainInfo domainInfo, AbstractRecaptcha2FallbackChallenge challenge) {
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, null, (Image[]) null);
+    public RecaptchaChooseFrom3x3Dialog(AbstractRecaptcha2FallbackChallenge captchaChallenge, int flag, DialogType type, DomainInfo domainInfo, AbstractRecaptcha2FallbackChallenge challenge) {
+        super(captchaChallenge, flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, null, (Image[]) null);
 
         this.challenge = challenge;
         BufferedImage img;

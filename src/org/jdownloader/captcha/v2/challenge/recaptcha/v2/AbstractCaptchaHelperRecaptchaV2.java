@@ -76,7 +76,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     public AbstractCaptchaHelperRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken) {
         this.plugin = plugin;
-        this.br = br;
+        this.br = br.cloneBrowser();
         this.siteUrl = br.getURL();
         this.siteDomain = Browser.getHost(siteUrl, true);
         logger = plugin.getLogger();

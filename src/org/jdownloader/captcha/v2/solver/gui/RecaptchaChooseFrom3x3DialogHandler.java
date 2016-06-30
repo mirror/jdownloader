@@ -47,7 +47,7 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
             result = "7,8,9";
             return;
         }
-        RecaptchaChooseFrom3x3Dialog d = new RecaptchaChooseFrom3x3Dialog(flag, dialogType, getHost(), captchaChallenge);
+        RecaptchaChooseFrom3x3Dialog d = new RecaptchaChooseFrom3x3Dialog(captchaChallenge, flag, dialogType, getHost(), captchaChallenge);
         d.setPlugin(captchaChallenge.getPlugin());
         d.setTimeout(getTimeoutInMS());
         if (getTimeoutInMS() == captchaChallenge.getTimeout()) {

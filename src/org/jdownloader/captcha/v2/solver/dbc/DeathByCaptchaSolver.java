@@ -37,6 +37,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_DBC;
 
+import jd.captcha.gui.BasicWindow;
 import jd.http.Browser;
 import jd.http.QueryInfo;
 import jd.http.URLConnectionAdapter;
@@ -95,7 +96,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             return false;
         }
         if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
-            return true;
+            // does not work right now. need to contact DBC
+            return false;
         }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
@@ -143,6 +145,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 r.addFormData(new FormData("grid", fbc.getSplitWidth() + "x" + fbc.getSplitHeight()));
 
                 r.addFormData(new FormData("type", "3"));
+                BasicWindow.showImage(ImageIO.read(challenge.getImageFile()));
                 final byte[] bytes = IO.readFile(challenge.getImageFile());
                 r.addFormData(new FormData("captchafile", "captcha", "application/octet-stream", bytes));
                 // Banner sending does not work right now
@@ -155,6 +158,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 // }
 
             } else {
+
                 final byte[] bytes = IO.readFile(challenge.getImageFile());
                 r.addFormData(new FormData("captchafile", "captcha", "application/octet-stream", bytes));
 
@@ -170,7 +174,11 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " uploaded: " + status.getCaptcha());
                 long startTime = System.currentTimeMillis();
+
                 while (status != null && !status.isSolved()) {
+                    if (System.currentTimeMillis() - startTime > 5 * 60 * 60 * 1000l) {
+                        throw new SolverException("Failed:Timeout");
+                    }
                     Thread.sleep(1000);
                     job.getLogger().info("deathbycaptcha.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
 
@@ -181,6 +189,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                     job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + status.getText());
 
                     AbstractResponse<String> answer = challenge.parseAPIAnswer(status.getText().replace("[", "").replace("]", ""), this);
+
                     DeathByCaptchaResponse response = new DeathByCaptchaResponse(challenge, this, status, answer.getValue(), answer.getPriority());
 
                     job.setAnswer(response);
@@ -195,6 +204,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             job.getLogger().log(e);
 
             challenge.sendStatsError(this, e);
+        } finally {
+            System.out.println("DBC DONe");
         }
 
     }
