@@ -225,12 +225,12 @@ public class RealDebridCom extends PluginForHost {
         ai.setValidUntil(TimeFormatter.getTimestampByGregorianTime(user.getExpiration()));
 
         if ("premium".equalsIgnoreCase(user.getType())) {
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
 
         } else {
             account.setType(AccountType.FREE);
-
+            ai.setStatus("Free Account");
             ai.setProperty("multiHostSupport", Property.NULL);
             return ai;
         }
@@ -290,6 +290,15 @@ public class RealDebridCom extends PluginForHost {
                     return super.getHashInfo();
                 } else {
                     return null;
+                }
+            }
+
+            @Override
+            public long getVerifiedFileSize() {
+                if (linkresp == null || linkresp.getCrc() == 1) {
+                    return super.getVerifiedFileSize();
+                } else {
+                    return -1;
                 }
             }
 
