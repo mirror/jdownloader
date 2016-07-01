@@ -28,7 +28,7 @@ public class DonateAction extends CustomizableAppAction {
         };
         UIOManager.I().show(null, d);
         if (d.getCloseReason() == CloseReason.OK) {
-            CrossSystem.openURL("https://my.jdownloader.org/contribute/#/");
+            CrossSystem.openURL("https://my.jdownloader.org/contribute/#/?ref=jdownloader");
         }
     }
 
