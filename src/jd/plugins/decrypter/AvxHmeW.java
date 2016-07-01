@@ -46,7 +46,7 @@ public class AvxHmeW extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
         br.clearCookies(getHost());
-        // two differnet sites, do not rename, avaxhome.pro doesn't belong to the following template.
+        // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
         String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.se)", "avxhome.in");
         br.setFollowRedirects(true);
         try {
@@ -58,7 +58,7 @@ public class AvxHmeW extends PluginForDecrypt {
         if (!parameter.contains("avaxhome.pro/")) {
             // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
             // images/self site refs + imdb refs
-            String[] links = br.getRegex("<a href=\"(" + notThis + ")\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getColumn(0);
+            String[] links = br.getRegex("<a href=\"(" + notThis + ")\"\\s+[^>]*target=\"_blank\" rel=\"nofollow\">(?!<img)").getColumn(0);
             if (links != null && links.length != 0) {
                 for (String link : links) {
                     if (!link.matches(this.getSupportedLinks().pattern())) {
@@ -83,7 +83,7 @@ public class AvxHmeW extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(coverlink));
                 }
             }
-            String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            String fpName = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
