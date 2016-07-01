@@ -68,14 +68,18 @@ public class ServePornCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("url: \\'(https?://cdn[^/]+/[^<>\"\\']*?\\.(?:flv|mp4)[^<>\"/]*?)\\'").getMatch(0);
         }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("src=\"(https?://cdn[^\"]+)\"").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
+            logger.info("filename = " + filename + ", DLLINK = " + DLLINK);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
-            ext = ".flv";
+            ext = ".mp4";
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
