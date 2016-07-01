@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,8 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/folder/([A-Z0-9]+)" }, flags = { 0 })
 public class FShareVnFolder extends PluginForDecrypt {
@@ -59,7 +59,7 @@ public class FShareVnFolder extends PluginForDecrypt {
                 br.getHeaders().put("Accept", "*/*");
                 br.getPage(parameter + "?pageIndex=" + i);
             }
-            linkinformation = br.getRegex("<li>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
+            linkinformation = br.getRegex("<li[^>]*>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
             if (linkinformation == null || linkinformation.length == 0) {
                 failed = true;
                 linkinformation = br.getRegex("(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getColumn(0);
