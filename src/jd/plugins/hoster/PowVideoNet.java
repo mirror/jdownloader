@@ -169,6 +169,11 @@ public class PowVideoNet extends antiDDoSForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
     /**
      * defines custom browser requirements.
      */
@@ -177,10 +182,6 @@ public class PowVideoNet extends antiDDoSForHost {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
-            /*
-             * 2016-05-12: Our standard-UA is blocked - let's see how long this one will work / or if they will block current FF version :)
-             */
-            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0");
         }
         return prepBr;
     }
@@ -220,10 +221,6 @@ public class PowVideoNet extends antiDDoSForHost {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-
-        if (cbr.containsHTML("No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|>The file was deleted by administration because it didn't comply with our Terms of Use<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
@@ -248,6 +245,9 @@ public class PowVideoNet extends antiDDoSForHost {
             if (cbr.containsHTML("You have reached the download(-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
+            }
+            if (cbr.containsHTML("No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|>The file was deleted by administration because it didn't comply with our Terms of Use<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -515,6 +515,7 @@ public class PowVideoNet extends antiDDoSForHost {
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+        regexStuff.add("(<\\s*meta\\s+(?:.*?<\\s*/meta\\s*>|[^>]+/?\\s*>))");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
