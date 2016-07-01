@@ -19,14 +19,15 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 /**
  * balanced IP check uses the jdownloader ip check servers. This type of ip check is default, and fallback for all reconnect methods
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public class BalancedWebIPCheck implements IPCheckProvider {
 
     private static final java.util.List<String> SERVICES = new ArrayList<String>();
     static {
+        SERVICES.add("http://ipcheck4.jdownloader.org");
         SERVICES.add("http://ipcheck3.jdownloader.org");
         SERVICES.add("http://ipcheck2.jdownloader.org");
         SERVICES.add("http://ipcheck1.jdownloader.org");
@@ -61,7 +62,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
 
     /**
      * gets the external IP.
-     * 
+     *
      * @throws IPCheckException
      *             if there is no valid external IP
      */
