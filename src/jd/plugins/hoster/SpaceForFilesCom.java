@@ -848,20 +848,20 @@ public class SpaceForFilesCom extends PluginForHost {
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            if (correctedBR.contains("Wrong captcha")) {
+            if (new Regex(correctedBR, "(?:Error\\s*:\\s*)?Wrong captcha").matches()) {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (correctedBR.contains("\">Skipped countdown<")) {
+            if (new Regex(correctedBR, "(?:Error\\s*:\\s*)?Skipped countdown").matches()) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
         }
         /** Wait time reconnect handling */
-        if (correctedBR.contains(">Bandwidth overload detected")) {
+        if (new Regex(correctedBR, "(?:Error\\s*:\\s*)?Bandwidth overload detected").matches()) {
             logger.info("Users' IP is banned because of suspection of leeching");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-        if (correctedBR.contains(">You, or someone with the same IP")) {
+        if (new Regex(correctedBR, "(?:Error\\s*:\\s*)?You, or someone with the same IP").matches()) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
