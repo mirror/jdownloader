@@ -405,6 +405,8 @@ public class RealDebridCom extends PluginForHost {
             }
         } catch (APIException e) {
             switch (e.getError()) {
+            case IP_ADRESS_FORBIDDEN:
+                throw new PluginException(LinkStatus.ERROR_FATAL, e.getMessage());
             case FILE_UNAVAILABLE:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.downloadlink_status_error_hoster_temp_unavailable(), 10 * 60 * 1000l);
             case UNSUPPORTED_HOSTER:
