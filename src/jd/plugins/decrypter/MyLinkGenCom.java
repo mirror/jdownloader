@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -41,8 +42,9 @@ public class MyLinkGenCom extends antiDDoSForDecrypt {
 
     /* Heavily modified safelinking.net script, thus not using SflnkgNt class */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http://", "https://");
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         final String type = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         getPage(parameter);
@@ -53,11 +55,11 @@ public class MyLinkGenCom extends antiDDoSForDecrypt {
         if ("p".equalsIgnoreCase(type)) {
             String continuelink = br.getRegex("\"(http[^<>\"]*?)\" class=\"btn btn-default\">Continue to file").getMatch(0);
             if (continuelink == null) {
-                continuelink = "http://mylinkgen.com/g/" + uid;
+                continuelink = "/g/" + uid;
             }
             getPage(continuelink);
         }
-        final String finallink = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        final String finallink = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\" class=\"btn btn-default\"").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
