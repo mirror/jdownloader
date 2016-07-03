@@ -27,10 +27,10 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision: 27628 $", interfaceVersion = 2, names = { "link.tl" }, urls = { "http://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" }, flags = { 0 })
-public class LnkTl extends PluginForDecrypt {
+public class LnkTl extends antiDDoSForDecrypt {
 
     public LnkTl(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +43,7 @@ public class LnkTl extends PluginForDecrypt {
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.postPage(url, param);
+        postPage(ajax, url, param);
     }
 
     /**
@@ -52,10 +52,11 @@ public class LnkTl extends PluginForDecrypt {
      */
     // NOTE: Similar plugins: BcVc, AdliPw, AdcrunCh,
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        br = new Browser();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        getPage(parameter);
 
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
@@ -104,22 +105,25 @@ public class LnkTl extends PluginForDecrypt {
 
         // waittime is 5 seconds. but somehow this often results in an error.
         // we use 5.5 seconds to avoid them
-        Thread.sleep(5500);
+        sleep(5500, param);
 
         // second
         data.put("opt", "make_log");
         data.put(Encoding.urlEncode("args[aid]"), matches[0]);
         ajaxPostPage(post[post.length - 1], data);
 
-        String url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
+        String url = PluginJSonUtils.getJson(ajax, "url");
         if (url == null) {
             // maybe we have to wait even longer?
-            Thread.sleep(2000);
+            sleep(2000, param);
             ajaxPostPage(post[post.length - 1], data);
-            url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
+            url = PluginJSonUtils.getJson(ajax, "url");
+        }
+        if (url.contains("link.tl/fly/go.php?")) {
+            getPage(url);
+            url = br.getRegex("href=\"([^\"]+)\"\\s*>Skip!<").getMatch(0);
         }
 
-        url = jd.plugins.hoster.K2SApi.JSonUtils.unescape(url);
         decryptedLinks.add(createDownloadlink(url));
         return decryptedLinks;
     }
@@ -128,7 +132,7 @@ public class LnkTl extends PluginForDecrypt {
      * @param source
      *            String for decoder to process
      * @return String result
-     * */
+     */
     protected String decodeDownloadLink(final String s) {
         String decoded = null;
 

@@ -29,11 +29,12 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,6}$|\\d+/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,7}$|\\d+/.+)" }, flags = { 0 })
 public class BcVc extends antiDDoSForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
@@ -123,19 +124,19 @@ public class BcVc extends antiDDoSForDecrypt {
 
         // waittime is 5 seconds. but somehow this often results in an error.
         // we use 5.5 seconds to avoid them
-        Thread.sleep(5500);
+        sleep(5500, param);
 
         // third
         data.put("opt", "make_log");
         data.put(Encoding.urlEncode("args[nok]"), "no");
         ajaxPostPage("/fly/ajax.fly.php", data);
 
-        String url = jd.plugins.hoster.K2SApi.JSonUtils.getJson(ajax, "url");
+        String url = PluginJSonUtils.getJson(ajax, "url");
         if (url == null) {
             // maybe we have to wait even longer?
-            Thread.sleep(2000);
+            sleep(2000, param);
             ajaxPostPage("/fly/ajax.fly.php", data);
-            url = jd.plugins.hoster.K2SApi.JSonUtils.getJson(ajax, "url");
+            url = PluginJSonUtils.getJson(ajax, "url");
         }
         if (url != null) {
             decryptedLinks.add(createDownloadlink(url));
