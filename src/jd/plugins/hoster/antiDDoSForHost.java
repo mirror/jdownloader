@@ -65,11 +65,12 @@ public abstract class antiDDoSForHost extends PluginForHost {
     private static final String                   cfRequiredCookies     = "__cfduid|cf_clearance";
     private static final String                   icRequiredCookies     = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
     private static final String                   suRequiredCookies     = "sucuri_cloudproxy_uuid_[a-f0-9]+";
+    private static final String                   bfRequiredCookies     = "rcksid|BLAZINGFAST-WEB-PROTECT";
     protected static HashMap<String, Cookies>     antiDDoSCookies       = new HashMap<String, Cookies>();
     protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
     protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
 
-    public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies;
+    public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies + "|" + bfRequiredCookies;
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -469,6 +470,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
             // Sucuri
             else if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
                 processSucuri(ibr, cookies);
+            }
+            // BlazingFast
+            else if (containsBlazingFast(ibr)) {
+                processBlazingFast(ibr, cookies);
             }
             // save the session!
             synchronized (antiDDoSCookies) {
@@ -889,6 +894,47 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     /**
+     * <a href="https://blazingfast.io/">Blazingfast.io</a> 'web/vps/dedicated server' service provider with antiDDoS functionality within
+     * product <a href="https://blazingfast.io/web">"web"</a>
+     *
+     * @author raztoki
+     */
+    private void processBlazingFast(final Browser ibr, final Cookies cookies) throws IOException {
+        // only one known protection measure (at this time)
+        final Browser br = ibr.cloneBrowser();
+        // javascript based checks.
+        String xhr = br.getRegex("xhr\\.open\\(\"GET\",\"(.*?)\",true").getMatch(0);
+        // ww is just screen size
+        final String ww = "1920";
+        xhr = xhr.replaceFirst("\"\\s*\\s*\\+\\s*ww\\s*\\+\\s*\"", ww);
+        br.getHeaders().put("Accept", "*/*");
+        // javascript.
+        br.getPage(xhr);
+        // replace window/document references, remove the redirect
+        final String js = br.toString().replace("redir();", "").replaceFirst("if\\(\\$\\(window\\)\\.width\\(\\)>0\\)\\s*\\{.*?\\}", "");
+        try {
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            engine.eval(js);
+            engine.eval("var result = toHex(BFCrypt.decrypt(c,2,a,b));");
+            final String result = (String) engine.get("result");
+            ibr.setCookie(ibr.getURL(), "BLAZINGFAST-WEB-PROTECT", result);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        // redirect happens via js to specified url but its always current url.
+        ibr.getPage(ibr.getURL());
+        // get cookies we want/need.
+        // refresh these with every getPage/postPage/submitForm?
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), bfRequiredCookies).matches()) {
+                cookies.add(c);
+            }
+        }
+    }
+
+    /**
      * returns true if browser contains cookies that match expected
      *
      * @author raztoki
@@ -920,6 +966,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
             }
         }
         return false;
+    }
+
+    protected boolean containsBlazingFast(final Browser ibr) {
+        final boolean result = ibr.containsHTML("<title>Just a moment please\\.\\.\\.</title>") && ibr.containsHTML(">Verifying your browser, please wait\\.\\.\\.<br>DDoS Protection by</font> Blazingfast\\.io<");
+        return result;
     }
 
     /**
@@ -972,7 +1023,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         final HashMap<String, String> cookies = new HashMap<String, String>();
         final Cookies add = br.getCookies(host);
         for (final Cookie c : add.getCookies()) {
-            if (!c.getKey().matches(cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies)) {
+            if (!c.getKey().matches(antiDDoSCookiePattern)) {
                 cookies.put(c.getKey(), c.getValue());
             }
         }
