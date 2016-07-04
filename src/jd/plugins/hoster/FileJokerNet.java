@@ -26,6 +26,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,11 +55,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FileJokerNet extends antiDDoSForHost {
@@ -823,6 +823,11 @@ public class FileJokerNet extends antiDDoSForHost {
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
+        final String accountIpBlocked = new Regex(correctedBR, "class=\"error_page\">\\s*You've tried to download from \\d+ different IPs in the last \\d+ [a-z]+\\. You will not be able to download for (.*?).\\s*</div>").getMatch(0);
+        if (account != null && accountIpBlocked != null) {
+            final Long parsedTime = parseTime(accountIpBlocked);
+            throw new PluginException(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, "Multiple connections from multiple IP addresses in short duration", parsedTime > 0 ? parsedTime : 3 * 60 * 60 * 1000l);
+        }
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -835,6 +840,28 @@ public class FileJokerNet extends antiDDoSForHost {
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
         }
+    }
+
+    private final long parseTime(final String input) {
+        String tmphrs = new Regex(input, "\\s+(\\d+)\\s*hours?").getMatch(0);
+        String tmpmin = new Regex(input, "\\s+(\\d+)\\s*minutes?").getMatch(0);
+        String tmpsec = new Regex(input, "\\s+(\\d+)\\s*seconds?").getMatch(0);
+        String tmpdays = new Regex(input, "\\s+(\\d+)\\s*days?").getMatch(0);
+        int minutes = 0, seconds = 0, hours = 0, days = 0;
+        if (tmphrs != null) {
+            hours = Integer.parseInt(tmphrs);
+        }
+        if (tmpmin != null) {
+            minutes = Integer.parseInt(tmpmin);
+        }
+        if (tmpsec != null) {
+            seconds = Integer.parseInt(tmpsec);
+        }
+        if (tmpdays != null) {
+            days = Integer.parseInt(tmpdays);
+        }
+        long waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000l;
+        return waittime;
     }
 
     /**
@@ -947,9 +974,10 @@ public class FileJokerNet extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage("https://filejoker.net/login");
+                // required otherwise they redirect to /#login then we need to get login again...
+                getPage("https://filejoker.net/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage("https://filejoker.net/login", "recaptcha_response_field=&op=login&redirect=&rand=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage("/login", "recaptcha_response_field=&op=login&redirect=&rand=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "email") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
