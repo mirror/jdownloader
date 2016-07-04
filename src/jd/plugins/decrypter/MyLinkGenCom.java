@@ -47,12 +47,13 @@ public class MyLinkGenCom extends antiDDoSForDecrypt {
         final String parameter = param.toString().replace("http://", "https://");
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         final String type = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        // at times they will state redirect to site owner 'http://ganool.ag', set referrer solves this.
+        br.getHeaders().put("Referer", "http://ganool.ag/");
         getPage(parameter);
-        if (br.containsHTML("file not exist")) {
+        if (br.toString().matches("(?i)file not exist|File does not exist")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        // at times they will state redirect to site owner 'http://ganool.ag', but this is rubbish.
         if ("p".equalsIgnoreCase(type)) {
             String continuelink = br.getRegex("\"(http[^<>\"]*?)\" class=\"btn btn-default\">Continue to file").getMatch(0);
             if (continuelink == null) {
@@ -63,6 +64,7 @@ public class MyLinkGenCom extends antiDDoSForDecrypt {
         final String finallink = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\" class=\"btn btn-default\"").getMatch(0);
         if (finallink == null) {
             if (br.containsHTML(">\\s*Generating failed\\. Requested file no longer available\\.")) {
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
