@@ -52,6 +52,7 @@ public class MyLinkGenCom extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        // at times they will state redirect to site owner 'http://ganool.ag', but this is rubbish.
         if ("p".equalsIgnoreCase(type)) {
             String continuelink = br.getRegex("\"(http[^<>\"]*?)\" class=\"btn btn-default\">Continue to file").getMatch(0);
             if (continuelink == null) {
@@ -61,6 +62,9 @@ public class MyLinkGenCom extends antiDDoSForDecrypt {
         }
         final String finallink = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\" class=\"btn btn-default\"").getMatch(0);
         if (finallink == null) {
+            if (br.containsHTML(">\\s*Generating failed\\. Requested file no longer available\\.")) {
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
