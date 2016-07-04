@@ -21,6 +21,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,12 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * Note: prem.link redirects to grab8
@@ -106,7 +106,7 @@ public class Grab8Com extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
 
@@ -130,7 +130,7 @@ public class Grab8Com extends antiDDoSForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(DownloadLink link, Account account) throws PluginException {
         /* handle premium should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
@@ -172,6 +172,10 @@ public class Grab8Com extends antiDDoSForHost {
                 if (transload) {
                     // TODO: transload/api error handling.
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
+                } else if ("captcha".equalsIgnoreCase(PluginJSonUtils.getJson(ajax, "status"))) {
+                    // {"status":"captcha","message":"","cid":17021,"src":"http:\/\/p7.grab8.com\/new\/images\/depfile.com_captcha.png?rand=4137","server":"http:\/\/p7.grab8.com\/new\/","link":"https:\/\/depfile.com\/uid","runtime":3.5580089092255}
+                    // the multihoster is trying to pass the captcha back to this user.... we don't want a bar of that
+                    handleErrorRetries("captcha", 10, 5 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
