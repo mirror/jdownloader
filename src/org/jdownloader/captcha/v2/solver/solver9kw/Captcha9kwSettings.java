@@ -171,13 +171,6 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the Captcha Feedback for Recaptchav2")
-    boolean isfeedbackrecaptchav2();
-
-    void setfeedbackrecaptchav2(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the option selfsolve")
     boolean isSelfsolve();
 
@@ -277,14 +270,6 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     int getDefaultTimeout();
 
     void setDefaultTimeout(int ms);
-
-    @AboutConfig
-    @DefaultIntValue(180)
-    @SpinnerValidator(min = 5, max = 1800)
-    @DescriptionForConfigEntry("Interval for the notifications")
-    int getDefaultTimeoutNotification();
-
-    void setDefaultTimeoutNotification(int ms);
 
     @AboutConfig
     @DefaultJsonObject("{\"jdownloader.org\":60000}")

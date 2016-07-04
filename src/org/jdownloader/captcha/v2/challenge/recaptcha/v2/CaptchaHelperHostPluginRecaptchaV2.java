@@ -150,17 +150,13 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                                     jobs.get(i).invalidate();
 
                                 }
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                             } else {
-                                setCorrectAfter(jobs.size());
 
-                                int validateTheLast = getRequiredCorrectAnswersGuess();
                                 for (int i = 0; i < jobs.size(); i++) {
 
-                                    if (i >= jobs.size() - validateTheLast) {
-                                        jobs.get(i).validate();
-                                    } else {
-                                        jobs.get(i).invalidate();
-                                    }
+                                    jobs.get(i).validate();
+
                                 }
                             }
                             return token;

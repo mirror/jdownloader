@@ -1,6 +1,5 @@
 package org.jdownloader.captcha.v2.solver.dbc;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -11,14 +10,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
-import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -127,13 +124,13 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 AbstractRecaptcha2FallbackChallenge fbc = ((AbstractRecaptcha2FallbackChallenge) challenge);
 
                 byte[] banner = null;
-                Icon icon = fbc.getExplainIcon(fbc.getExplain());
-                if (icon != null) {
-                    ByteArrayOutputStream baos;
-                    ImageIO.write(IconIO.toBufferedImage(icon), "jpg", baos = new ByteArrayOutputStream());
-                    banner = baos.toByteArray();
-
-                }
+                // Icon icon = fbc.getExplainIcon(fbc.getExplain());
+                // if (icon != null) {
+                // ByteArrayOutputStream baos;
+                // ImageIO.write(IconIO.toBufferedImage(icon), "jpg", baos = new ByteArrayOutputStream());
+                // banner = baos.toByteArray();
+                //
+                // }
                 // c.isVerbose = true;
                 // c.proxy = new Proxy(Type.HTTP, new InetSocketAddress("localhost", 8888));
 
@@ -142,7 +139,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
 
                 r.addFormData(new FormData("banner_text", fbc.getExplain()));
 
-                r.addFormData(new FormData("grid", fbc.getSplitWidth() + "x" + fbc.getSplitHeight()));
+                r.addFormData(new FormData("grid", fbc.getSubChallenge().getGridWidth() + "x" + fbc.getSubChallenge().getGridHeight()));
 
                 r.addFormData(new FormData("type", "3"));
                 BasicWindow.showImage(ImageIO.read(challenge.getImageFile()));

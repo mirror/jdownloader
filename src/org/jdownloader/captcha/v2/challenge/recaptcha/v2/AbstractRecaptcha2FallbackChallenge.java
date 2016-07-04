@@ -17,17 +17,15 @@ import java.util.HashSet;
 import java.util.Locale;
 
 import javax.imageio.ImageIO;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.ValidationResult;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
@@ -36,17 +34,53 @@ import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.translate._GUI;
 
 import jd.controlling.captcha.SkipRequest;
 
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
     protected final RecaptchaV2Challenge owner;
-    protected String                     highlightedExplain;
 
-    public String getType() {
-        return type;
+    private ArrayList<SubChallenge>      subChallenges;
+    private SubChallenge                 subChallenge;
+
+    public SubChallenge getSubChallenge() {
+        synchronized (this) {
+            if (subChallenge == null) {
+                createNewSubChallenge();
+            }
+        }
+        return subChallenge;
+    }
+
+    public ArrayList<SubChallenge> getSubChallenges() {
+        synchronized (this) {
+            return new ArrayList<SubChallenge>(subChallenges);
+        }
+
+    }
+
+    public static enum ChallengeType {
+        DYNAMIC,
+        TILESELECT,
+        IMAGESELECT;
+    }
+
+    protected SubChallenge createNewSubChallenge() {
+        SubChallenge sc = new SubChallenge();
+        synchronized (this) {
+            if (subChallenges == null) {
+                subChallenges = new ArrayList<SubChallenge>();
+            }
+
+            subChallenges.add(sc);
+            subChallenge = sc;
+        }
+        onNewChallenge(sc);
+        return sc;
+    }
+
+    protected void onNewChallenge(SubChallenge sc) {
     }
 
     protected void killSession() {
@@ -61,49 +95,17 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
         owner.initController(job);
     }
 
-    protected int chooseAtLeast;
-
     @Override
     public SolverJob<String> getJob() {
         return owner.getJob();
     }
 
-    public int getChooseAtLeast() {
-        return chooseAtLeast;
-    }
-
-    protected String type;
-
-    public String getHighlightedExplain() {
-        return highlightedExplain;
-    }
-
-    private int splitWidth;
-
-    public int getSplitWidth() {
-        return splitWidth;
-    }
-
-    public void setSplitWidth(int splitWidth) {
-        this.splitWidth = splitWidth;
-    }
-
-    public int getSplitHeight() {
-        return splitHeight;
-    }
-
-    public void setSplitHeight(int splitHeight) {
-        this.splitHeight = splitHeight;
-    }
-
-    private int                splitHeight;
     protected String           token;
 
     public static final String WITH_OF_ALL_THE = "(?:with|of|all the) (.*?)(?:\\.|\\!|\\?|$)";
     private static final Color COLOR_BG        = new Color(0x4A90E2);
 
     protected boolean          useEnglish;
-    protected Icon             explainIcon;
 
     @Override
     public Object getAPIStorable(String format) throws Exception {
@@ -174,20 +176,24 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     public BufferedImage getAnnotatedImage() throws IOException {
         final BufferedImage img = ImageIO.read(getImageFile());
         try {
+
             final Font font = new Font("Arial", 0, 12);
-            final FontMetrics fm = img.getGraphics().getFontMetrics(font);
+            final FontMetrics fm = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD));
             final String exeplain = getExplain();
             // final Icon icon = getExplainIcon(exeplain);
-            final String key = getHighlightedExplain();
+            final String key = subChallenge.getSearchKey();
             final ArrayList<String> lines = new ArrayList<String>();
-            lines.add(key.toUpperCase(Locale.ENGLISH));
-            lines.addAll(split(fm, getExplain().replaceAll("<.*?>", "")));
-            if (getChooseAtLeast() > 0) {
-                lines.addAll(split(fm, _GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast())));
-            }
+            if (StringUtils.isNotEmpty(key)) {
+                lines.add(key.toUpperCase(Locale.ENGLISH) + "?");
+            } else {
+                lines.add(subChallenge.getType().toUpperCase(Locale.ENGLISH) + "?");
 
-            lines.add("Example answer: 2,5,6");
-            lines.add("If there is no match, answer with - or 0");
+            }
+            lines.addAll(split(fm, getExplain().replaceAll("<.*?>", "")));
+
+            for (String line : addAnnotationLines()) {
+                lines.addAll(split(fm, line.replaceAll("<.*?>", "")));
+            }
             int y = 0;
             int width = 0;
             int textHeight = 2;
@@ -208,9 +214,15 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                 g.setColor(COLOR_BG);
                 g.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
+                String uidd = getSubChallenges().size() + "." + getSubChallenge().getReloudCounter();
+                int w = fm.stringWidth(uidd);
+                double factor = 0.8;
+                g.setColor(new Color(Math.max((int) (COLOR_BG.getRed() * factor), 0), Math.max((int) (COLOR_BG.getGreen() * factor), 0), Math.max((int) (COLOR_BG.getBlue() * factor), 0), COLOR_BG.getAlpha()));
+                g.drawString(uidd, x + newImage.getWidth() - w - 10, 13);
                 g.setColor(Color.WHITE);
                 g.setFont(font.deriveFont(Font.BOLD));
-                g.drawString(lines.remove(0), (newImage.getWidth() - img.getWidth()) / 2, y);
+
+                g.drawString(lines.remove(0), Math.max(5, (newImage.getWidth() - img.getWidth()) / 2), y);
                 g.setFont(font);
 
                 y += 5;
@@ -222,15 +234,18 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 Rectangle bounds = new Rectangle((newImage.getWidth() - img.getWidth()) / 2, y, img.getWidth(), img.getHeight());
                 g.drawImage(img, bounds.x, bounds.y, null);
                 g.setFont(new Font("Arial", 0, 16).deriveFont(Font.BOLD));
-                double columnWidth = bounds.getWidth() / getSplitWidth();
-                double rowHeight = bounds.getHeight() / getSplitHeight();
-                for (int yslot = 0; yslot < getSplitHeight(); yslot++) {
-                    for (int xslot = 0; xslot < getSplitWidth(); xslot++) {
+                double columnWidth = bounds.getWidth() / subChallenge.getGridWidth();
+                double rowHeight = bounds.getHeight() / subChallenge.getGridHeight();
+                for (int yslot = 0; yslot < subChallenge.getGridHeight(); yslot++) {
+                    for (int xslot = 0; xslot < subChallenge.getGridWidth(); xslot++) {
                         if (isSlotAnnotated(xslot, yslot)) {
                             double xx = (xslot) * columnWidth;
                             double yy = (yslot) * rowHeight;
-                            int num = xslot + yslot * getSplitWidth() + 1;
-                            int xOff = xslot < (getSplitWidth() - 1) ? 2 : 0;
+                            int num = xslot + yslot * subChallenge.getGridWidth() + 1;
+                            int xOff = xslot < (subChallenge.getGridWidth() - 1) ? 2 : 0;
+
+                            xOff -= 1;
+
                             int yOff = yslot > 0 ? 2 : 0;
                             g.setColor(Color.WHITE);
                             g.fillRect(ceil(xx + columnWidth - 20 + bounds.x - xOff), ceil(yy + bounds.y + yOff), 20, 20);
@@ -243,13 +258,13 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 g.setColor(Color.WHITE);
                 int splitterWidth = 3;
                 g.setStroke(new BasicStroke(splitterWidth));
-                for (int yslot = 0; yslot < getSplitHeight() - 1; yslot++) {
+                for (int yslot = 0; yslot < subChallenge.getGridHeight() - 1; yslot++) {
                     y = ceil((1 + yslot) * rowHeight);
 
                     g.drawLine(bounds.x, bounds.y + y, bounds.x + bounds.width, bounds.y + y);
 
                 }
-                for (int xslot = 0; xslot < getSplitWidth() - 1; xslot++) {
+                for (int xslot = 0; xslot < subChallenge.getGridWidth() - 1; xslot++) {
                     x = ceil((1 + xslot) * columnWidth);
 
                     g.drawLine(bounds.x + x, bounds.y, bounds.x + x, bounds.y + bounds.height);
@@ -263,6 +278,10 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 for (String line : lines) {
 
                     y += LINE_HEIGHT;
+                    if (line == lines.get(lines.size() - 1)) {
+                        // g.setColor(Color.RED.brighter());
+                        g.setFont(font.deriveFont(Font.BOLD, 14));
+                    }
                     g.drawString(line, 5, y);
 
                 }
@@ -283,6 +302,10 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 throw e;
             }
         }
+    }
+
+    protected ArrayList<String> addAnnotationLines() {
+        return new ArrayList<String>();
     }
 
     private Collection<? extends String> split(FontMetrics fm, String str) {
@@ -309,99 +332,59 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
         return (int) Math.ceil(d);
     }
 
-    public Icon getExplainIcon(String exeplain) {
-        if (explainIcon != null) {
-            return IconIO.getScaledInstance(explainIcon, 80, 55);
-        }
-        try {
-            String filename = new Regex(exeplain, WITH_OF_ALL_THE).getMatch(0).replaceAll("[^\\w]", "") + ".jpg";
-            try {
-
-                return IconIO.getScaledInstance(new ImageIcon(ImageIO.read(getClass().getResource("example/" + filename))), 80, 55);
-
-            } catch (Throwable e) {
-                // no example icon
-                System.out.println("No Example " + exeplain);
-            }
-        } catch (Throwable e) {
-
-        }
-        return null;
-    }
-
     @Override
     public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
-        // boolean singleDigit = getSplitHeight() * getSplitWidth() < 10;
-        // if (singleDigit && false) {
-        // json = json.replaceAll("[^\\d]+", "");
-        //
-        // final StringBuilder sb = new StringBuilder();
-        // final HashSet<String> dupe = new HashSet<String>();
-        // for (int i = 0; i < json.length(); i++) {
-        // if (dupe.add(json.charAt(i) + "")) {
-        // if (sb.length() > 0) {
-        // sb.append(",");
-        // }
-        // sb.append(Integer.parseInt(json.charAt(i) + ""));
-        // }
-        // }
-        // boolean enough = getChooseAtLeast() <= 0 || dupe.size() >= getChooseAtLeast();
-        // return new CaptchaResponse(this, solver, sb.toString(), !enough || dupe.size() > 5 ? 0 : 100);
-        // } else {
-        json = json.replaceAll("(\\d\\d)([^\\,])", "$1,$2");
-        String[] parts = json.split("[^\\d]+");
-
-        final StringBuilder sb = new StringBuilder();
-        final HashSet<String> dupe = new HashSet<String>();
-        for (int i = 0; i < parts.length; i++) {
-            if (StringUtils.isNotEmpty(parts[i])) {
-                try {
-                    int in = Integer.parseInt(parts[i]);
-                    if (in > (getSplitHeight() * getSplitWidth())) {
-                        // invalid split
-
-                        String p1 = parts[i].substring(0, 1);
-                        in = Integer.parseInt(p1);
-                        if (dupe.add(p1)) {
-                            if (sb.length() > 0) {
-                                sb.append(",");
-                            }
-                            sb.append(in);
-                        }
-
-                        p1 = parts[i].substring(1);
-                        in = Integer.parseInt(p1);
-                        if (dupe.add(p1)) {
-                            if (sb.length() > 0) {
-                                sb.append(",");
-                            }
-                            sb.append(in);
-                        }
-
-                    } else {
-                        if (dupe.add(parts[i]) && in > 0) {
-                            if (sb.length() > 0) {
-                                sb.append(",");
-                            }
-                            sb.append(in);
-                        }
-                    }
-                } catch (Throwable e) {
-                    LoggerFactory.getDefaultLogger().info("Parse error: " + parts[i]);
-                    LoggerFactory.getDefaultLogger().log(e);
-                }
+        try {
+            if ("-".equals(json) || "".equals(json) || "0".equals(json)) {
+                CaptchaResponse r = new CaptchaResponse(this, solver, "0", 100);
+                return r;
             }
-        }
-        boolean enough = getChooseAtLeast() <= 0 || dupe.size() >= getChooseAtLeast();
-        return new CaptchaResponse(this, solver, sb.toString(), !enough || dupe.size() > 5 ? 0 : 100);
+            HashSet<Integer> ret = new HashSet<Integer>();
+            String clean = json.replaceAll("[^\\d,]", "");
 
-        // }
+            clean = clean.replaceAll("[,]+$", "");
+            boolean bad = !clean.equals(json);
+            final StringBuilder sb = new StringBuilder();
+            final HashSet<String> dupe = new HashSet<String>();
+            while (clean.length() > 0) {
+
+                int index = clean.indexOf(",");
+                if (index == -1) {
+                    index = 1;
+                }
+
+                String part = clean.substring(0, index);
+                int i = Integer.parseInt(part);
+                while (i > getSubChallenge().getTileCount() && index > 1) {
+                    index--;
+                    part = clean.substring(0, index);
+                    i = Integer.parseInt(part);
+                }
+                ret.add(i);
+                clean = clean.substring(index);
+                clean = clean.replaceAll("^[,]+", "");
+
+            }
+            for (Integer i : ret) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+
+                }
+                sb.append(i);
+            }
+            CaptchaResponse r = new CaptchaResponse(this, solver, sb.toString(), dupe.size() > 5 ? 0 : 100);
+            if (bad) {
+                r.setValidation(ValidationResult.INVALID);
+            }
+            return r;
+            // }
+        } catch (Throwable e) {
+            throw new WTFException(e);
+        }
     }
 
     public AbstractRecaptcha2FallbackChallenge(RecaptchaV2Challenge challenge) {
         super(challenge.getTypeID(), null, null, challenge.getExplain(), challenge.getPlugin(), 0);
-        splitHeight = 3;
-        splitWidth = 3;
         this.owner = challenge;
         setAccountLogin(owner.isAccountLogin());
         useEnglish |= NineKwSolverService.getInstance().isEnabled();

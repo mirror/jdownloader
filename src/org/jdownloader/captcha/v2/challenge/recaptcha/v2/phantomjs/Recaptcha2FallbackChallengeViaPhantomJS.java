@@ -1,8 +1,5 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs;
 
-import java.awt.AlphaComposite;
-import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -10,13 +7,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
 
@@ -34,7 +32,6 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -45,8 +42,10 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.utils.ImagePHash;
 import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ValidationResult;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.SubChallenge;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -67,54 +66,52 @@ import jd.http.Cookies;
 import jd.http.Request;
 
 public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2FallbackChallenge {
-    public static final String DYNAMIC    = "dynamic";
 
-    public static final String TILESELECT = "tileselect";
-
-    private static LogSource   LOGGER;
+    private static LogSource LOGGER;
 
     static {
         LOGGER = LogController.getInstance().getLogger("PHANTOMJS");
 
     }
 
-    private LogInterface             logger;
+    @Override
+    protected ArrayList<String> addAnnotationLines() {
+        ArrayList<String> lines = new ArrayList<String>();
 
-    private PhantomJS                phantom;
+        SubChallenge sc = getSubChallenge();
+        if (sc.getGridHeight() * sc.getGridWidth() < 10) {
+            lines.add("Example answer: 2,5,6 or 256");
+        } else {
+            lines.add("Example answer: 2,5,6 Use , deliminator");
+        }
 
-    private boolean                  errorAnotherOneRequired;
+        if (sc.getChallengeType() == ChallengeType.DYNAMIC && sc.getDynamicRoundCount() > 1) {
+            lines.add("If there is no match, answer with \"0\"");
+        }
+        return lines;
+    }
 
-    private boolean                  errorDynamicTileMore;
+    private LogInterface logger;
 
-    private boolean                  errorIncorrect;
+    private PhantomJS    phantom;
 
-    private HashMap<String, Payload> payloads;
-    private TileContent[][]          tileGrid;
+    private DebugWindow  debugger;
 
-    protected String                 mainImageUrl;
+    protected String     verificationResponse;
 
-    private String                   challengeType;
+    protected String     error;
 
-    private DebugWindow              debugger;
+    private boolean      doRunAntiDdos;
 
-    protected String                 verificationResponse;
+    private boolean      googleLoggedIn;
 
-    protected String                 error;
-
-    private boolean                  doRunAntiDdos;
-
-    private int                      reloadCounter = 0;
-
-    private String                   reloadErrorMessage;
-
-    private boolean                  googleLoggedIn;
+    protected String     initScript;
 
     @Override
     protected boolean isSlotAnnotated(int xslot, int yslot) {
-        if (!DYNAMIC.equals(challengeType)) {
-            return true;
-        }
-        return tileGrid == null || !tileGrid[xslot][yslot].isNoMatch();
+
+        return getSubChallenge().isSlotAnnotated(xslot, yslot);
+
     }
 
     public Recaptcha2FallbackChallengeViaPhantomJS(RecaptchaV2Challenge challenge) {
@@ -160,7 +157,6 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 }
             }
 
-            payloads = new HashMap<String, Payload>();
             phantom = new PhantomJS() {
                 @Override
                 protected WebCache initWebCache() {
@@ -272,28 +268,33 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 // phantom.evalInPageContext("console.log(document.getElementsByClassName('recaptcha-checkbox-checkmark').length);");
                 phantom.waitUntilDOM(read("waitForCheckbox.js"));
                 phantom.evalInPageContext(read("clickCheckbox.js"));
-                String initScript = null;
-                while (true) {
-                    Thread.sleep(500);
-                    phantom.switchFrameToMain();
-                    phantom.switchFrameToChild(0);
-                    token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
-                    if (StringUtils.isNotEmpty(token)) {
-                        StatsManager.I().track("direct", CollectionName.PJS);
-                        logger.info("Wow");
-                        return;
-                    } else {
-                        token = null;
-                    }
-                    phantom.switchFrameToMain();
-                    if (phantom.evalInPageContext("document.getElementsByTagName('iframe').length>1") == Boolean.TRUE) {
-                        phantom.switchFrameToChild(1);
-                        initScript = (String) phantom.evalInPageContext(read("getInitScript.js"));
-                        if (StringUtils.isNotEmpty(initScript)) {
-                            break;
+
+                waitFor(60000, null, new Condition() {
+
+                    @Override
+                    public boolean breakIfTrue() throws InterruptedException, IOException {
+                        Thread.sleep(500);
+                        phantom.switchFrameToMain();
+                        phantom.switchFrameToChild(0);
+                        token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
+                        if (StringUtils.isNotEmpty(token)) {
+                            StatsManager.I().track("direct", CollectionName.PJS);
+                            logger.info("Wow");
+                            return true;
+                        } else {
+                            token = null;
                         }
+                        phantom.switchFrameToMain();
+                        if (phantom.evalInPageContext("document.getElementsByTagName('iframe').length>1") == Boolean.TRUE) {
+                            phantom.switchFrameToChild(1);
+                            initScript = (String) phantom.evalInPageContext(read("getInitScript.js"));
+                            if (StringUtils.isNotEmpty(initScript)) {
+                                return true;
+                            }
+                        }
+                        return false;
                     }
-                }
+                });
 
                 readChallenge(initScript);
                 phantom.evalInPageContext(read("basicsPage.js"));
@@ -359,18 +360,21 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         try {
             System.out.println("New Payload: " + bytes.length + " - " + url.contains("&id") + " - " + url);
             BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
-            synchronized (payloads) {
-                payloads.put(url, new Payload(img, url));
+            if (getSubChallenge() == null || (!url.contains("&id=") && getSubChallenge().getMainPayload() != null)) {
+                createNewSubChallenge();
+            }
+            synchronized (getSubChallenge()) {
+                getSubChallenge().payloads.put(url, new Payload(img, url));
                 if (!url.contains("&id=")) {
                     // main image
-                    mainImageUrl = url;
+                    // mainImageUrl = url;
                     ImageIO.write(img, "png", getImageFile());
 
                 } else if (!Application.isJared(null)) {
                     saveTile(bytes, url);
 
                 }
-                payloads.notifyAll();
+                getSubChallenge().notifyAll();
             }
 
             // BasicWindow.showImage(payloadImage);
@@ -384,7 +388,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         int i = 0;
         File file = null;
         do {
-            file = Application.getResource("tmp/rc2/" + challengeType + "/" + highlightedExplain + "/" + Hash.getMD5(bytes) + "_" + i + ".png");
+            file = Application.getResource("tmp/rc2/" + getSubChallenge().getChallengeType() + "/" + getSubChallenge().getSearchKey() + "/" + Hash.getMD5(bytes) + "_" + i + ".png");
 
             i++;
         } while (file.exists());
@@ -400,7 +404,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         } catch (Exception e) {
             e.printStackTrace();
         }
-        file = Application.getResource("tmp/rc2/" + challengeType + "/" + highlightedExplain + "/logs.txt");
+        file = Application.getResource("tmp/rc2/" + getSubChallenge().getChallengeType() + "/" + getSubChallenge().getSearchKey() + "/logs.txt");
         IO.writeStringToFile(file, Hash.getMD5(bytes) + "," + new Regex(url, "\\&id=([^\\&]+)").getMatch(0) + "," + phash + "\r\n", true);
     }
 
@@ -411,86 +415,110 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         handleInitData(initData);
     }
 
+    @Override
+    protected void onNewChallenge(SubChallenge sc) {
+        ArrayList<SubChallenge> all = getSubChallenges();
+
+        for (int i = 0; i < all.size() - 2; i++) {
+            for (Response r : all.get(i).getResponses()) {
+                r.getResponse().setValidation(ValidationResult.INVALID);
+            }
+        }
+
+    }
+
     protected void handleInitData(Map<String, Object> initData) throws InterruptedException, IOException, TimeoutException {
-        setSplitWidth(((Number) initData.get("x")).intValue());
-        setSplitHeight(((Number) initData.get("y")).intValue());
-        doRunAntiDdos = true;
-        tileGrid = new TileContent[getSplitWidth()][getSplitHeight()];
-        type = (String) initData.get("contentType");
-        challengeType = (String) initData.get("challengeType");
-        HashMap<String, String> explain = JSonStorage.convert(phantom.evalInPageContext(read("extractExplanation.js")), TypeRef.HASHMAP_STRING);
+        try {
+            final SubChallenge subChallenge = getSubChallenge();
+            subChallenge.initGrid(((Number) initData.get("x")).intValue(), ((Number) initData.get("y")).intValue());
 
-        String decs = explain.get("description");
-        StatsManager.I().track("challengeType/" + challengeType, CollectionName.PJS);
-        if (TILESELECT.equalsIgnoreCase(challengeType)) {
-            decs += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help_tile_selection(explain.get("tag"));
-        }
-        if (DYNAMIC.equalsIgnoreCase(challengeType) && !googleLoggedIn) {
-            if (Application.isHeadless()) {
-                UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_OK, _GUI.T.phantomjs_recaptcha_google_account_title(), _GUI.T.phantomjs_recaptcha_google_account_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI.T.lit_close()));
-            } else {
-                JDGui.help(_GUI.T.phantomjs_recaptcha_google_account_title(), _GUI.T.phantomjs_recaptcha_google_account_msg(), new AbstractIcon(IconKey.ICON_OCR, 32));
-            }
+            doRunAntiDdos = true;
 
-        }
-        setExplain(decs);
-
-        this.highlightedExplain = explain.get("tag");
-
-        String exampleDataUrl = (String) initData.get("explainUrl");
-        explainIcon = null;
-        if (exampleDataUrl != null) {
+            subChallenge.setType((String) initData.get("contentType"));
             try {
-                explainIcon = IconIO.getIconFromDataUrl(exampleDataUrl);
-            } catch (IOException e) {
-                e.printStackTrace();
+                subChallenge.setChallengeType(ChallengeType.valueOf(String.valueOf(initData.get("challengeType")).toUpperCase(Locale.ENGLISH)));
+            } catch (Throwable e) {
+                logger.info("Unknown Challenge Type: " + JSonStorage.serializeToJson(initData));
+                throw new WTFException(e);
             }
-        }
-        String html = phantom.getFrameHtml();
-        final Object mainPayloadUrl = phantom.evalInPageContext("document.getElementsByClassName('rc-image-tile-wrapper')[0].getElementsByTagName('img')[0].src");
-        // wait until the payload image has been loaded
+            final AtomicReference<HashMap<String, String>> explain = new AtomicReference<HashMap<String, String>>();
+            phantom.switchFrameToMain();
+            phantom.switchFrameToChild(1);
+            // wait for page
+            waitFor(10000, null, new Condition() {
 
-        waitFor(60000, payloads, new Condition() {
+                @Override
+                public boolean breakIfTrue() throws InterruptedException, IOException {
+                    explain.set(JSonStorage.convert(phantom.evalInPageContext(read("extractExplanation.js")), TypeRef.HASHMAP_STRING));
+                    if (explain.get() != null) {
+                        return true;
+                    }
+                    return false;
+                }
 
-            @Override
-            public boolean breakIfTrue() {
-                return payloads.containsKey(mainPayloadUrl);
+            });
+            logger.info(JSonStorage.serializeToJson(explain.get()));
+            String decs = explain.get().get("description").replace("Click verify once there are none left.", "").trim();
+            ;
+            StatsManager.I().track("challengeType/" + subChallenge.getChallengeType(), CollectionName.PJS);
+            if (subChallenge.getChallengeType() == ChallengeType.TILESELECT) {
+                decs += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help_tile_selection(explain.get().get("tag"));
             }
+            if (subChallenge.getChallengeType() == ChallengeType.DYNAMIC && !googleLoggedIn) {
+                if (Application.isHeadless()) {
+                    UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_OK, _GUI.T.phantomjs_recaptcha_google_account_title(), _GUI.T.phantomjs_recaptcha_google_account_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI.T.lit_close()));
+                } else {
+                    JDGui.help(_GUI.T.phantomjs_recaptcha_google_account_title(), _GUI.T.phantomjs_recaptcha_google_account_msg(), new AbstractIcon(IconKey.ICON_OCR, 32));
+                }
 
-        });
-
-        for (int x = 0; x < getSplitWidth(); x++) {
-            for (int y = 0; y < getSplitHeight(); y++) {
-
-                tileGrid[x][y] = new TileContent(payloads.get(mainPayloadUrl));
-                // tileGrid.put(x*y, new Payload(main))
             }
-        }
-        if (!Application.isJared(null)) {
-            BufferedImage img = payloads.get(mainImageUrl).image;
-            if (TILESELECT.equalsIgnoreCase(challengeType)) {
-                final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            setExplain(decs);
+            subChallenge.setSearchKey(explain.get().get("tag"));
 
-                ImageIO.write(img, "png", bos);
-                saveTile(bos.toByteArray(), mainImageUrl);
-            } else {
-                double tileWidth = (double) img.getWidth() / getSplitWidth();
-                double tileHeight = (double) img.getHeight() / getSplitHeight();
-                for (int x = 0; x < getSplitWidth(); x++) {
-                    for (int y = 0; y < getSplitHeight(); y++) {
+            // String exampleDataUrl = (String) initData.get("explainUrl");
 
-                        BufferedImage imgnew = IconIO.createEmptyImage((int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight));
-                        Graphics2D g2d = (Graphics2D) imgnew.getGraphics();
-                        g2d.drawImage(img, 0, 0, (int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight), (int) (x * tileWidth), (int) (y * tileHeight), (int) (x * tileWidth) + (int) Math.ceil(tileWidth), (int) (y * tileHeight) + (int) Math.ceil(tileHeight), null);
-                        g2d.dispose();
+            String html = phantom.getFrameHtml();
+            final Object mainPayloadUrl = phantom.evalInPageContext("document.getElementsByClassName('rc-image-tile-wrapper')[0].getElementsByTagName('img')[0].src");
+            // wait until the payload image has been loaded
 
-                        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            waitFor(60000, subChallenge, new Condition() {
 
-                        ImageIO.write(imgnew, "png", bos);
-                        saveTile(bos.toByteArray(), mainImageUrl);
+                @Override
+                public boolean breakIfTrue() {
+                    return subChallenge.payloads.containsKey(mainPayloadUrl);
+                }
+
+            });
+            subChallenge.fillGrid((String) mainPayloadUrl);
+
+            if (!Application.isJared(null)) {
+                BufferedImage img = subChallenge.payloads.get(subChallenge.getMainImageUrl()).image;
+                if (subChallenge.getChallengeType() == ChallengeType.TILESELECT) {
+                    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+                    ImageIO.write(img, "png", bos);
+                    saveTile(bos.toByteArray(), subChallenge.getMainImageUrl());
+                } else {
+                    double tileWidth = (double) img.getWidth() / subChallenge.getGridWidth();
+                    double tileHeight = (double) img.getHeight() / subChallenge.getGridHeight();
+                    for (int x = 0; x < subChallenge.getGridWidth(); x++) {
+                        for (int y = 0; y < subChallenge.getGridHeight(); y++) {
+
+                            BufferedImage imgnew = IconIO.createEmptyImage((int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight));
+                            Graphics2D g2d = (Graphics2D) imgnew.getGraphics();
+                            g2d.drawImage(img, 0, 0, (int) Math.ceil(tileWidth), (int) Math.ceil(tileHeight), (int) (x * tileWidth), (int) (y * tileHeight), (int) (x * tileWidth) + (int) Math.ceil(tileWidth), (int) (y * tileHeight) + (int) Math.ceil(tileHeight), null);
+                            g2d.dispose();
+
+                            final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+                            ImageIO.write(imgnew, "png", bos);
+                            saveTile(bos.toByteArray(), subChallenge.getMainImageUrl());
+                        }
                     }
                 }
             }
+        } catch (Throwable e) {
+            throw new WTFException(e);
         }
     }
 
@@ -531,6 +559,8 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         }
     }
 
+    private String reloadErrorMessage;
+
     @Override
     public boolean validateResponse(AbstractResponse<String> response) {
         try {
@@ -539,83 +569,63 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 killSession();
                 return false;
             }
+            final SubChallenge sc = getSubChallenge();
 
-            errorAnotherOneRequired = false;
-            errorDynamicTileMore = false;
-            errorIncorrect = false;
+            sc.resetErrors();
             reloadErrorMessage = null;
             // BasicWindow.showImage(phantom.getScreenShot());
-            final HashSet<String> dupe = new HashSet<String>();
+
             phantom.switchFrameToMain();
             // String htmlMain = phantom.getFrameHtml();
             phantom.switchFrameToChild(1);
             // String htmlFrame = phantom.getFrameHtml();
 
-            final String[] parts = response.getValue().split("[,]+");
-            int clickedElements = 0;
-            for (int i = 0; i < parts.length; i++) {
-                try {
-                    final int num = Integer.parseInt(parts[i]) - 1;
+            final Response rc2Resp = new Response(response, sc);
 
-                    if (dupe.add(Integer.toString(num)) && num < getSplitHeight() * getSplitWidth()) {
-                        phantom.evalInPageContext("clickBox(" + (num) + ");");
-                        tileGrid[num % getSplitWidth()][num / getSplitWidth()].setNoMatch(false);
-                        tileGrid[num % getSplitWidth()][num / getSplitWidth()].setAsyncJsStuffInProgress(true);
-                        clickedElements++;
+            sc.addResponse(rc2Resp);
+            for (Integer num : rc2Resp.getClickedIndices()) {
+                if (num >= 0) {
+                    phantom.evalInPageContext("clickBox(" + (num) + ");");
 
-                    }
-                } catch (NumberFormatException e) {
-
+                    sc.getTile(num).setAsyncJsStuffInProgress(true);
                 }
             }
 
-            for (int x = 0; x < getSplitWidth(); x++) {
-                for (int y = 0; y < getSplitHeight(); y++) {
-                    if (!dupe.contains(Integer.toString(x + y * getSplitWidth()))) {
-                        tileGrid[x][y].setNoMatch(true);
-                    }
+            switch (sc.getChallengeType()) {
+            case DYNAMIC:
 
-                }
-            }
-            if (DYNAMIC.equals(challengeType)) {
-                if (clickedElements > 0) {
-                    waitFor(60000, payloads, new Condition() {
+                if (rc2Resp.getSize() > 0 && rc2Resp.getClickedIndices().get(0) != -1) {
+                    waitFor(60000, sc, new Condition() {
 
                         @Override
                         public boolean breakIfTrue() throws InterruptedException, IOException {
 
-                            for (int i = 0; i < parts.length; i++) {
-                                try {
-                                    final int num = Integer.parseInt(parts[i]) - 1;
+                            for (final Integer num : rc2Resp.getClickedIndices()) {
 
-                                    if (dupe.contains(Integer.toString(num)) && num < getSplitHeight() * getSplitWidth()) {
-                                        TileContent tile = tileGrid[num % getSplitWidth()][num / getSplitWidth()];
-                                        if (tile.isAsyncJsStuffInProgress()) {
-                                            String tileUrl;
+                                TileContent tile = sc.getTile(num);
+                                if (tile.isAsyncJsStuffInProgress()) {
+                                    String tileUrl;
 
-                                            tileUrl = (String) phantom.evalInPageContext("document.getElementsByClassName('rc-image-tile-target')[" + num + "].getElementsByTagName('img')[0].src");
+                                    tileUrl = (String) phantom.evalInPageContext("document.getElementsByClassName('rc-image-tile-target')[" + num + "].getElementsByTagName('img')[0].src");
 
-                                            if (!StringUtils.equals(tileUrl, tile.getPayload().url)) {
+                                    if (!StringUtils.equals(tileUrl, tile.getPayload().url)) {
 
-                                                Payload newPayload = payloads.get(tileUrl);
+                                        Payload newPayload = sc.getPayloadByUrl(tileUrl);
 
-                                                if (newPayload != null) {
+                                        if (newPayload != null) {
 
-                                                    tile.setPayload(newPayload);
-                                                    tile.setAsyncJsStuffInProgress(false);
-                                                }
-                                            }
+                                            tile.setPayload(newPayload);
+                                            tile.setAsyncJsStuffInProgress(false);
                                         }
                                     }
-                                } catch (NumberFormatException e) {
-
                                 }
+
                             }
 
-                            for (int x = 0; x < getSplitWidth(); x++) {
-                                for (int y = 0; y < getSplitHeight(); y++) {
+                            for (int x = 0; x < sc.getGridWidth(); x++) {
+                                for (int y = 0; y < sc.getGridHeight(); y++) {
 
-                                    if (tileGrid[x][y].isAsyncJsStuffInProgress()) {
+                                    if (sc.getTile(x, y).isAsyncJsStuffInProgress()) {
                                         return false;
                                     }
 
@@ -629,60 +639,65 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                     return true;
 
                 } else {
+                    // int ret = 0;
+                    // sc.get
+                    // for (int x = 0; x < sc.getGridWidth(); x++) {
+                    // for (int y = 0; y < sc.getGridHeight(); y++) {
+                    // if (sc.getTile(x, y).isNoMatch()) {
+                    // ret++;
+                    // }
+                    // }
+                    // }
+                    // if (ret == 0) {
+                    // response.setValidation(ValidationResult.INVALID);
+                    // return false;
+                    // } else {
+                    // // empty. and we have a preselection
+                    // }
                     // continue
                 }
+                break;
 
-            } else if ("imageselect".equals(challengeType) || TILESELECT.equals(challengeType)) {
+            case IMAGESELECT:
+            case TILESELECT:
 
-                waitFor(15000, null, new Condition() {
+                if (rc2Resp.getSize() > 0) {
+                    waitFor(15000, null, new Condition() {
 
-                    @Override
-                    public boolean breakIfTrue() throws InterruptedException, IOException {
+                        @Override
+                        public boolean breakIfTrue() throws InterruptedException, IOException {
 
-                        for (int i = 0; i < parts.length; i++) {
-                            try {
-                                final int num = Integer.parseInt(parts[i]) - 1;
+                            for (final Integer num : rc2Resp.getClickedIndices()) {
 
-                                if (dupe.contains(Integer.toString(num)) && num < getSplitHeight() * getSplitWidth()) {
-                                    TileContent tile = tileGrid[num % getSplitWidth()][num / getSplitWidth()];
-                                    if (tile.isAsyncJsStuffInProgress()) {
-                                        String tdElementClassname = (String) phantom.evalInPageContext("document.getElementsByClassName('rc-image-tile-target')[" + num + "].parentNode.className");
-                                        if (StringUtils.isNotEmpty(tdElementClassname)) {
-                                            tile.setAsyncJsStuffInProgress(false);
+                                TileContent tile = sc.getTile(num);
+                                if (tile.isAsyncJsStuffInProgress()) {
+                                    String tdElementClassname = (String) phantom.evalInPageContext("document.getElementsByClassName('rc-image-tile-target')[" + num + "].parentNode.className");
+                                    if (StringUtils.isNotEmpty(tdElementClassname)) {
+                                        tile.setAsyncJsStuffInProgress(false);
 
-                                        }
                                     }
                                 }
-                            } catch (NumberFormatException e) {
 
                             }
-                        }
 
-                        for (int x = 0; x < getSplitWidth(); x++) {
-                            for (int y = 0; y < getSplitHeight(); y++) {
+                            for (int x = 0; x < sc.getGridWidth(); x++) {
+                                for (int y = 0; y < sc.getGridHeight(); y++) {
 
-                                if (tileGrid[x][y].isAsyncJsStuffInProgress()) {
-                                    return false;
+                                    if (sc.getTile(x, y).isAsyncJsStuffInProgress()) {
+                                        return false;
+                                    }
+
                                 }
-
                             }
+
+                            return true;
                         }
-
-                        return true;
-                    }
-                });
-
+                    });
+                } else {
+                    response.setValidation(ValidationResult.INVALID);
+                    return false;
+                }
             }
-            // while (true) {
-            // // Thread.sleep(1000);
-            // String input = Dialog.getInstance().showInputDialog(0, "", "", "", null, null, null);
-            // if (StringUtils.isNotEmpty(input)) {
-            // phantom.evalInPageContext("clickBox(" + input + ");");
-            // } else {
-            // break;
-            // }
-            // }
-            // BasicWindow.showImage(phantom.getScreenShot());
 
             phantom.evalInPageContext("clickVerify();");
 
@@ -692,19 +707,19 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 public boolean breakIfTrue() throws InterruptedException, IOException {
                     phantom.switchFrameToMain();
                     phantom.switchFrameToChild(1);
-                    errorAnotherOneRequired = phantom.evalInPageContext("document.getElementsByClassName('rc-imageselect-error-select-more')[0].style.display!='none'") == Boolean.TRUE;
-                    if (errorAnotherOneRequired) {
+                    sc.setErrorAnotherOneRequired(phantom.evalInPageContext("document.getElementsByClassName('rc-imageselect-error-select-more')[0].style.display!='none'") == Boolean.TRUE);
+                    if (sc.isErrorAnotherOneRequired()) {
                         reloadErrorMessage = _GUI.T.RECAPTCHA_2_VERIFICATION_ERROR_MORE_REQUIRED();
                         return true;
                     }
-                    errorDynamicTileMore = phantom.evalInPageContext("document.getElementsByClassName('rc-imageselect-error-dynamic-more')[0].style.display!='none'") == Boolean.TRUE;
-                    if (errorDynamicTileMore) {
+                    sc.setErrorDynamicTileMore(phantom.evalInPageContext("document.getElementsByClassName('rc-imageselect-error-dynamic-more')[0].style.display!='none'") == Boolean.TRUE);
+                    if (sc.isErrorDynamicTileMore()) {
                         reloadErrorMessage = _GUI.T.RECAPTCHA_2_VERIFICATION_ERROR_TILE_MORE();
 
                         return true;
                     }
-                    errorIncorrect = phantom.evalInPageContext("document.getElementsByClassName('rc-imageselect-incorrect-response')[0].style.display!='none'") == Boolean.TRUE;
-                    if (errorIncorrect) {
+                    sc.setErrorIncorrect(phantom.evalInPageContext("document.getElementsByClassName('rc-imageselect-incorrect-response')[0].style.display!='none'") == Boolean.TRUE);
+                    if (sc.isErrorIncorrect()) {
                         reloadErrorMessage = _GUI.T.RECAPTCHA_2_VERIFICATION_ERROR_ANOTHER_CHALLENGE();
 
                         return true;
@@ -715,7 +730,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                     token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
                     if (StringUtils.isNotEmpty(token)) {
                         HashMap<String, String> infos = new HashMap<String, String>();
-                        infos.put("reloadCount", reloadCounter + "");
+                        infos.put("reloadCount", sc.getReloudCounter() + "");
                         StatsManager.I().track("solved", infos, CollectionName.PJS);
 
                         return true;
@@ -732,32 +747,30 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
 
             });
             if (StringUtils.isNotEmpty(error)) {
+                response.setValidation(ValidationResult.INVALID);
+
                 killSession();
                 return false;
             }
-            if (errorDynamicTileMore || errorAnotherOneRequired) {
-                for (int x = 0; x < getSplitWidth(); x++) {
-                    for (int y = 0; y < getSplitHeight(); y++) {
+            if (sc.isErrorDynamicTileMore() || sc.isErrorAnotherOneRequired()) {
 
-                        TileContent tile = tileGrid[x][y];
-                        tile.setNoMatch(false);
-                    }
-                }
+                response.setValidation(ValidationResult.INVALID);
+
             }
-            if (errorIncorrect) {
-
+            if (sc.isErrorIncorrect()) {
+                // if (sc.getChallengeType() != ChallengeType.DYNAMIC && getReloadCounter() > 0) {
+                // response.setValidation(ValidationResult.INVALID);
+                // }
                 phantom.execute(" _global['verificationResponse']=" + verificationResponse + ";");
+
                 Map<String, Object> initData = (Map<String, Object>) phantom.get(read("extractInitDataFromVerificationResponse.js"));
+
                 handleInitData(initData);
-                // another
-                // readChallenge(initScript);
+
             }
-            // if (errorIncorrect) {
-            // killSession();
-            // return false;
-            // } else {
+
             return true;
-            // }
+
         } catch (Throwable e1) {
             this.logger.log(e1);
             trackException(e1);
@@ -789,72 +802,17 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         if (!phantom.isRunning()) {
             throw new IOException("PhantomJS is not running");
         }
-        reloadCounter++;
 
+        SubChallenge sc = getSubChallenge();
+        sc.reload();
         HashMap<String, String> infos = new HashMap<String, String>();
-        infos.put("counter", reloadCounter + "");
+        infos.put("counter", sc.getReloudCounter() + "");
 
         StatsManager.I().track(100, "reloadCount", "reload", infos, CollectionName.PJS);
-        Payload mainImage = payloads.get(mainImageUrl);
 
-        BufferedImage imgnew = IconIO.createEmptyImage(mainImage.image.getWidth(), mainImage.image.getHeight());
-        Graphics2D g2d = (Graphics2D) imgnew.getGraphics();
-
-        if (DYNAMIC.equals(challengeType)) {
-            double tileWidth = (double) mainImage.image.getWidth() / getSplitWidth();
-            double tileHeight = (double) mainImage.image.getHeight() / getSplitHeight();
-
-            BufferedImage grayOriginal = null;
-            for (int x = 0; x < getSplitWidth(); x++) {
-                for (int y = 0; y < getSplitHeight(); y++) {
-                    int tileX = (int) (x * tileWidth);
-                    int tileY = (int) (y * tileHeight);
-                    TileContent tile = tileGrid[x][y];
-                    if (tile.isNoMatch()) {
-                        if (tile.getPayload().url.contains("&id=")) {
-                            g2d.drawImage(ImageProvider.convertToGrayScale(tile.getPayload().image), (int) (x * tileWidth), (int) (y * tileHeight), (int) tileWidth, (int) tileHeight, null);
-                        } else {
-                            if (grayOriginal == null) {
-                                grayOriginal = ImageProvider.convertToGrayScale(mainImage.image);
-                            }
-                            g2d.drawImage(grayOriginal, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, null);
-
-                        }
-                        Composite c = g2d.getComposite();
-                        try {
-                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
-                            g2d.setColor(Color.WHITE);
-                            g2d.fillRect((int) (x * tileWidth), (int) (y * tileHeight), (int) tileWidth, (int) tileHeight);
-                        } finally {
-                            g2d.setComposite(c);
-                        }
-
-                    } else {
-                        if (tile.getPayload().url.contains("&id=")) {
-                            g2d.drawImage(tile.getPayload().image, (int) (x * tileWidth), (int) (y * tileHeight), (int) tileWidth, (int) tileHeight, null);
-                        } else {
-                            g2d.drawImage(mainImage.image, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, null);
-
-                        }
-
-                    }
-                }
-            }
-
-        } else {
-            g2d.drawImage(mainImage.image, 0, 0, null);
-        }
-        if (!getExplain().contains(_GUI.T.RECAPTCHA_2_Dialog_help_dynamic())) {
-            setExplain(getExplain() + " <br>" + _GUI.T.RECAPTCHA_2_Dialog_help_dynamic());
-        }
-        g2d.dispose();
         getImageFile().delete();
-        ImageIO.write(imgnew, "png", getImageFile());
+        ImageIO.write(sc.paintImage(), "png", getImageFile());
 
-    }
-
-    public int getReloadCounter() {
-        return reloadCounter;
     }
 
 }

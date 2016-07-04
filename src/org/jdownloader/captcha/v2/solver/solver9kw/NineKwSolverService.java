@@ -101,15 +101,15 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         NineKWAccount ret = new NineKWAccount();
         String credits;
 
-        ret.setRequests(textSolver.counter.get() + clickSolver.click9kw_counter.get());
-        ret.setSkipped(textSolver.counterInterrupted.get() + clickSolver.click9kw_counterInterrupted.get());
-        ret.setSolved(textSolver.counterSolved.get() + clickSolver.click9kw_counterSolved.get());
+        ret.setRequests(textSolver.counter.get() + clickSolver.counter.get());
+        ret.setSkipped(textSolver.counterInterrupted.get() + clickSolver.counterInterrupted.get());
+        ret.setSolved(textSolver.counterSolved.get() + clickSolver.counterSolved.get());
 
-        ret.setSend(textSolver.counterSend.get() + clickSolver.click9kw_counterSend.get());
-        ret.setSendError(textSolver.counterSendError.get() + clickSolver.click9kw_counterSendError.get());
-        ret.setOK(textSolver.counterOK.get() + clickSolver.click9kw_counterOK.get());
-        ret.setNotOK(textSolver.counterNotOK.get() + clickSolver.click9kw_counterNotOK.get());
-        ret.setUnused(textSolver.counterUnused.get() + clickSolver.click9kw_counterUnused.get());
+        ret.setSend(textSolver.counterSend.get() + clickSolver.counterSend.get());
+        ret.setSendError(textSolver.counterSendError.get() + clickSolver.counterSendError.get());
+        ret.setOK(textSolver.counterOK.get() + clickSolver.counterOK.get());
+        ret.setNotOK(textSolver.counterNotOK.get() + clickSolver.counterNotOK.get());
+        ret.setUnused(textSolver.counterUnused.get() + clickSolver.counterUnused.get());
 
         try {
             String servercheck = br.getPage(getAPIROOT() + "grafik/servercheck.txt");
