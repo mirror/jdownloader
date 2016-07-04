@@ -22,36 +22,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.CustomStorageName;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.BooleanKeyHandler;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.captcha.v2.AbstractResponse;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.plugins.components.realDebridCom.api.Error;
-import org.jdownloader.plugins.components.realDebridCom.api.json.ClientSecret;
-import org.jdownloader.plugins.components.realDebridCom.api.json.CodeResponse;
-import org.jdownloader.plugins.components.realDebridCom.api.json.ErrorResponse;
-import org.jdownloader.plugins.components.realDebridCom.api.json.HostsResponse;
-import org.jdownloader.plugins.components.realDebridCom.api.json.TokenResponse;
-import org.jdownloader.plugins.components.realDebridCom.api.json.UnrestrictLinkResponse;
-import org.jdownloader.plugins.components.realDebridCom.api.json.UserResponse;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
@@ -76,6 +46,33 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.plugins.components.realDebridCom.RealDebridComConfig;
+import org.jdownloader.plugins.components.realDebridCom.api.Error;
+import org.jdownloader.plugins.components.realDebridCom.api.json.ClientSecret;
+import org.jdownloader.plugins.components.realDebridCom.api.json.CodeResponse;
+import org.jdownloader.plugins.components.realDebridCom.api.json.ErrorResponse;
+import org.jdownloader.plugins.components.realDebridCom.api.json.HostsResponse;
+import org.jdownloader.plugins.components.realDebridCom.api.json.TokenResponse;
+import org.jdownloader.plugins.components.realDebridCom.api.json.UnrestrictLinkResponse;
+import org.jdownloader.plugins.components.realDebridCom.api.json.UserResponse;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+(\\.download)?\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -281,8 +278,14 @@ public class RealDebridCom extends PluginForHost {
                 maxChunks = -(int) linkresp.getChunks();
             }
         }
-
-        final String host = Browser.getHost(dllink);
+        final boolean useSSL = PluginJsonConfig.get(RealDebridComConfig.class).isUseSSLForDownload();
+        final String downloadLink;
+        if (useSSL) {
+            downloadLink = dllink.replaceFirst("^http:", "https:");
+        } else {
+            downloadLink = dllink.replaceFirst("^https:", "http:");
+        }
+        final String host = Browser.getHost(downloadLink);
         final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
             @Override
             public HashInfo getHashInfo() {
@@ -311,7 +314,7 @@ public class RealDebridCom extends PluginForHost {
         br2.setAllowedResponseCodes(new int[0]);
         boolean increment = false;
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(dllink), true, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(downloadLink), true, maxChunks);
             if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
                 /* content disposition, lets download it */
                 RUNNING_DOWNLOADS.incrementAndGet();
@@ -631,16 +634,6 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-
-    }
-
-    @CustomStorageName("RealDebridCom")
-    public interface RealDebridComConfig extends PluginConfigInterface {
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        void setIgnoreServerSideChunksNum(boolean b);
-
-        boolean isIgnoreServerSideChunksNum();
 
     }
 
