@@ -379,8 +379,9 @@ public class RealDebridCom extends PluginForHost {
             login(account, false);
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
-            String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-            UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", link.getStringProperty("pass", null), true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
+            final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+            final String password = link.getStringProperty("pass", null);
+            UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", password, true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
             });
 
             final String genLnk = linkresp.getDownload();
