@@ -22,6 +22,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,9 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/(?!\\s+).+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
@@ -110,8 +110,6 @@ public class UlozTo extends PluginForHost {
             }
             throw e;
         }
-        // not sure if this is still needed with 2012/02/01 changes
-        handleRedirect(downloadLink);
         /* For age restricted links */
         final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (ageFormToken != null) {
@@ -183,11 +181,16 @@ public class UlozTo extends PluginForHost {
         return filename;
     }
 
-    private void handleDownloadUrl(final DownloadLink downloadLink) throws IOException {
+    private void handleDownloadUrl(final DownloadLink downloadLink) throws IOException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
+        int i = 0;
+        while (br.getRedirectLocation() != null) {
+            if (i == 10) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Redirect loop");
+            }
             logger.info("Getting redirect-page");
             br.getPage(br.getRedirectLocation());
+            i++;
         }
     }
 
