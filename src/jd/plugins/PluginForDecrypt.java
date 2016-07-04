@@ -67,13 +67,13 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
-    private LinkCrawlerDistributer          distributer             = null;
+    private volatile LinkCrawlerDistributer distributer             = null;
 
-    private LazyCrawlerPlugin               lazyC                   = null;
+    private volatile LazyCrawlerPlugin      lazyC                   = null;
 
-    private LinkCrawlerAbort                linkCrawlerAbort;
+    private volatile LinkCrawlerAbort       linkCrawlerAbort;
 
-    private LinkCrawler                     crawler;
+    private volatile LinkCrawler            crawler;
 
     private final static ProgressController dummyProgressController = new ProgressController();
 
