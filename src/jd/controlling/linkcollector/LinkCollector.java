@@ -1208,9 +1208,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1857,19 +1857,38 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         try {
             return loadFile(file, restoreMap);
         } catch (Throwable e) {
-            final File renameTo = new File(file.getAbsolutePath() + ".backup");
-            boolean backup = false;
-            try {
-                if (file.exists()) {
-                    if (file.renameTo(renameTo) == false) {
-                        IO.copyFile(file, renameTo);
+            if (file != null) {
+                final File backupTo = new File(file.getAbsolutePath() + ".backup");
+                boolean backupSucceeded = false;
+                Long size = null;
+                try {
+                    if (file.exists()) {
+                        size = file.length();
+                        if (size > 0) {
+                            if (file.renameTo(backupTo) == false) {
+                                IO.copyFile(file, backupTo);
+                                backupSucceeded = backupTo.exists();
+                                if (backupSucceeded && file.exists()) {
+                                    if (file.delete() == false) {
+                                        file.deleteOnExit();
+                                    }
+                                }
+                            } else {
+                                backupSucceeded = backupTo.exists();
+                            }
+                        } else {
+                            file.delete();
+                        }
                     }
-                    backup = true;
+                } catch (final Throwable e2) {
+                    logger.log(e2);
                 }
-            } catch (final Throwable e2) {
-                logger.log(e2);
+                if (backupSucceeded) {
+                    logger.severe("Could backup " + file + "<to>" + backupTo);
+                } else {
+                    logger.severe("Could not backup " + file + "<to>" + backupTo + " because size=" + size);
+                }
             }
-            logger.severe("Could backup " + file + " to " + renameTo + " ->" + backup);
             logger.log(e);
         }
         return null;

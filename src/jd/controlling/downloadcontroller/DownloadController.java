@@ -502,19 +502,36 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     importList(lpackages);
                 } catch (final Throwable e) {
                     if (loadedList != null) {
-                        final File renameTo = new File(loadedList.getAbsolutePath() + ".backup");
-                        boolean backup = false;
+                        final File backupTo = new File(loadedList.getAbsolutePath() + ".backup");
+                        boolean backupSucceeded = false;
+                        Long size = null;
                         try {
                             if (loadedList.exists()) {
-                                if (loadedList.renameTo(renameTo) == false) {
-                                    IO.copyFile(loadedList, renameTo);
+                                size = loadedList.length();
+                                if (size > 0) {
+                                    if (loadedList.renameTo(backupTo) == false) {
+                                        IO.copyFile(loadedList, backupTo);
+                                        backupSucceeded = backupTo.exists();
+                                        if (backupSucceeded && loadedList.exists()) {
+                                            if (loadedList.delete() == false) {
+                                                loadedList.deleteOnExit();
+                                            }
+                                        }
+                                    } else {
+                                        backupSucceeded = backupTo.exists();
+                                    }
+                                } else {
+                                    loadedList.delete();
                                 }
-                                backup = true;
                             }
                         } catch (final Throwable e2) {
                             logger.log(e2);
                         }
-                        logger.severe("Could backup " + loadedList + " to " + renameTo + " ->" + backup);
+                        if (backupSucceeded) {
+                            logger.severe("Could backup " + loadedList + "<to>" + backupTo);
+                        } else {
+                            logger.severe("Could not backup " + loadedList + "<to>" + backupTo + " because size=" + size);
+                        }
                     }
                     logger.log(e);
                 } finally {
