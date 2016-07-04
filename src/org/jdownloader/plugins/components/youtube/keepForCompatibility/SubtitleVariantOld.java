@@ -19,7 +19,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeBasicVariantStorable;
 
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -36,7 +36,7 @@ public class SubtitleVariantOld {
     public SubtitleVariantOld(String identifier) {
         this.identifier = identifier;
 
-        QueryInfo qi;
+        UrlQuery qi;
         try {
             qi = Request.parseQuery(identifier);
 

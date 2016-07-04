@@ -105,7 +105,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.http.StaticProxySelector;
 import jd.nutils.encoding.Encoding;
@@ -1672,7 +1672,7 @@ public class YoutubeHelper {
                         for (HlsContainer c : containers) {
 
                             String[][] params = new Regex(c.downloadurl, "/([^/]+)/([^/]+)").getMatches();
-                            final QueryInfo query = Request.parseQuery(c.downloadurl);
+                            final UrlQuery query = Request.parseQuery(c.downloadurl);
                             if (params != null) {
                                 for (int i = 1; i < params.length; i++) {
                                     query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
@@ -1733,7 +1733,7 @@ public class YoutubeHelper {
                             String url = baseUrlElement.getTextContent();
 
                             String[][] params = new Regex(url, "/([^/]+)/([^/]+)").getMatches();
-                            final QueryInfo query = Request.parseQuery(url);
+                            final UrlQuery query = Request.parseQuery(url);
                             if (params != null) {
                                 for (int i = 1; i < params.length; i++) {
                                     query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
@@ -1847,7 +1847,7 @@ public class YoutubeHelper {
     }
 
     private void collectMapsFromVideoInfo(String queryString, String src) throws MalformedURLException {
-        QueryInfo map = Request.parseQuery(queryString);
+        UrlQuery map = Request.parseQuery(queryString);
         for (Entry<String, String> es : map.toMap().entrySet()) {
             videoInfo.put(es.getKey(), Encoding.urlDecode(es.getValue(), false));
         }
@@ -1921,7 +1921,7 @@ public class YoutubeHelper {
      * @throws IOException
      * @throws PluginException
      */
-    private void handleQuery(Element representation, final Map<YoutubeITAG, StreamCollection> ret, String url, final QueryInfo query, StreamMap src) throws IOException, PluginException {
+    private void handleQuery(Element representation, final Map<YoutubeITAG, StreamCollection> ret, String url, final UrlQuery query, StreamMap src) throws IOException, PluginException {
         String r = null;
 
         r = xmlNodeToString(representation);
@@ -2484,7 +2484,7 @@ public class YoutubeHelper {
         return formattedFilename;
     }
 
-    protected YoutubeStreamData parseLine(final QueryInfo query, StreamMap src) throws MalformedURLException, IOException, PluginException {
+    protected YoutubeStreamData parseLine(final UrlQuery query, StreamMap src) throws MalformedURLException, IOException, PluginException {
 
         if (StringUtils.equalsIgnoreCase(query.get("conn"), "rtmp")) {
             logger.info("Stream is not supported: " + query);

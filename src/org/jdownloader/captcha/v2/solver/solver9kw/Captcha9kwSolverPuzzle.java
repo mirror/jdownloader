@@ -15,7 +15,7 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 
 public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
 
@@ -51,7 +51,7 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
         options.setConfirm(config.isconfirm());
         try {
 
-            QueryInfo qi = createQueryForUpload(solverJob, options, null);
+            UrlQuery qi = createQueryForUpload(solverJob, options, null);
 
             KeyCaptchaImages images = captchaChallenge.getHelper().getPuzzleData().getImages();
             LinkedList<BufferedImage> piecesAll = new LinkedList<BufferedImage>(images.pieces);
@@ -64,7 +64,7 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
 
             }
 
-            QueryInfo queryPoll = createQueryForPolling();
+            UrlQuery queryPoll = createQueryForPolling();
 
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });

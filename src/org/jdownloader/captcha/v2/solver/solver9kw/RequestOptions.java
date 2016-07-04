@@ -1,19 +1,19 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 
 public class RequestOptions {
     private int       cph;
     private int       cpm;
     private int       priothing;
     private int       timeoutthing;
-    private QueryInfo moreoptions = new QueryInfo();
+    private UrlQuery moreoptions = new UrlQuery();
 
-    public QueryInfo getMoreoptions() {
+    public UrlQuery getMoreoptions() {
         return moreoptions;
     }
 
-    public void setMoreoptions(QueryInfo moreoptions) {
+    public void setMoreoptions(UrlQuery moreoptions) {
         this.moreoptions = moreoptions;
     }
 

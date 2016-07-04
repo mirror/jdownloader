@@ -20,7 +20,7 @@ import org.jdownloader.plugins.components.youtube.itag.QualitySortIdentifier;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGenericVariantInfo;
 
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -261,7 +261,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                     YoutubeHelper.writeVariantToDownloadLink(downloadLink, ret);
                 } else {
                     try {
-                        QueryInfo q = Request.parseQuery(old);
+                        UrlQuery q = Request.parseQuery(old);
                         ((SubtitleVariant) ret).getGenericInfo().setBase(null);
                         ((SubtitleVariant) ret).getGenericInfo().setLanguage(q.get("lng"));
                         ((SubtitleVariant) ret).getGenericInfo().setSourceLanguage(q.get("src"));

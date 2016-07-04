@@ -25,7 +25,7 @@ import javax.imageio.ImageIO;
 
 import jd.http.Browser;
 import jd.http.ProxySelectorInterface;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.plugins.components.UserAgents;
 
@@ -556,7 +556,7 @@ public class PhantomJS implements HttpRequestHandler {
 
                         Thread.sleep(5000);
 
-                        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new QueryInfo().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+                        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
                         if (!"OK".equals(result)) {
 
                             throw new IOException("IPC JD->PJS Failed: " + result);
@@ -668,7 +668,7 @@ public class PhantomJS implements HttpRequestHandler {
     public Image getScreenShot() throws InterruptedException, IOException {
         long jobID = new UniqueAlltimeID().getID();
 
-        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/screenshot", new QueryInfo().addAndReplace("jobID", jobID + "").addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/screenshot", new UrlQuery().addAndReplace("jobID", jobID + "").addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
         if ("OK".equals(result)) {
             String base64JSon = waitForJob(jobID);
             String base64 = JSonStorage.restoreFromString(base64JSon, TypeRef.STRING);
@@ -705,7 +705,7 @@ public class PhantomJS implements HttpRequestHandler {
 
     public String execute(long jobID, String js) throws IOException, InterruptedException {
 
-        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new QueryInfo().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new UrlQuery().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
         if ("OK".equals(result)) {
             return waitForJob(jobID);
         } else {

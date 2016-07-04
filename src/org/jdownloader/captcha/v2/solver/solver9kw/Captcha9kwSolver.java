@@ -14,7 +14,7 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 
 public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
@@ -68,8 +68,8 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
         options.setConfirm(config.isconfirm());
         try {
             final byte[] data = captchaChallenge instanceof Recaptcha2FallbackChallengeViaPhantomJS ? ((Recaptcha2FallbackChallengeViaPhantomJS) captchaChallenge).getAnnotatedImageBytes() : IO.readFile(((ImageCaptchaChallenge) captchaChallenge).getImageFile());
-            QueryInfo qi = createQueryForUpload(solverJob, options, data);
-            QueryInfo queryPoll = createQueryForPolling();
+            UrlQuery qi = createQueryForUpload(solverJob, options, data);
+            UrlQuery queryPoll = createQueryForPolling();
 
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });

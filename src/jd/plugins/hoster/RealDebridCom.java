@@ -22,31 +22,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.http.Browser;
-import jd.http.QueryInfo;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -55,6 +30,7 @@ import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -73,6 +49,30 @@ import org.jdownloader.plugins.components.realDebridCom.api.json.UserResponse;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+(\\.download)?\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -134,7 +134,7 @@ public class RealDebridCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal("rdeb.io", 500);
     }
 
-    private <T> T callRestAPI(String method, QueryInfo query, TypeRef<T> type) throws Exception {
+    private <T> T callRestAPI(String method, UrlQuery query, TypeRef<T> type) throws Exception {
         Request request;
         ensureAPIBrowser();
         login(account, false);
@@ -154,7 +154,7 @@ public class RealDebridCom extends PluginForHost {
         }
     }
 
-    protected synchronized <T> T callRestAPIInternal(String url, QueryInfo query, TypeRef<T> type) throws IOException, APIException {
+    protected synchronized <T> T callRestAPIInternal(String url, UrlQuery query, TypeRef<T> type) throws IOException, APIException {
 
         Request request;
         if (token != null) {
@@ -380,7 +380,7 @@ public class RealDebridCom extends PluginForHost {
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
             String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-            UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new QueryInfo().append("link", dllink, true).append("password", link.getStringProperty("pass", null), true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
+            UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", link.getStringProperty("pass", null), true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
             });
 
             final String genLnk = linkresp.getDownload();
@@ -479,7 +479,7 @@ public class RealDebridCom extends PluginForHost {
                 TokenResponse token = JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE);
                 ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, ClientSecret.TYPE);
 
-                String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new QueryInfo().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", token.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+                String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", token.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
                 TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, TokenResponse.TYPE);
                 if (newToken.validate()) {
                     this.token = newToken;
@@ -567,7 +567,7 @@ public class RealDebridCom extends PluginForHost {
 
             //
 
-            String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new QueryInfo().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+            String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
             TokenResponse token = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
             });
 

@@ -13,6 +13,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
@@ -33,7 +34,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 import jd.http.Browser;
-import jd.http.QueryInfo;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 
@@ -295,8 +295,8 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         throw new SolverException(title);
     }
 
-    protected QueryInfo createQueryForPolling() {
-        QueryInfo queryPoll = new QueryInfo().appendEncoded("action", "usercaptchacorrectdata");
+    protected UrlQuery createQueryForPolling() {
+        UrlQuery queryPoll = new UrlQuery().appendEncoded("action", "usercaptchacorrectdata");
         queryPoll.appendEncoded("jd", "2");
         queryPoll.appendEncoded("source", "jd2");
         queryPoll.appendEncoded("apikey", config.getApiKey());
@@ -304,7 +304,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         return queryPoll;
     }
 
-    protected void poll(Browser br, RequestOptions options, CESSolverJob<T> solverJob, String captchaID, QueryInfo queryPoll) throws InterruptedException, IOException, SolverException {
+    protected void poll(Browser br, RequestOptions options, CESSolverJob<T> solverJob, String captchaID, UrlQuery queryPoll) throws InterruptedException, IOException, SolverException {
         long startTime = System.currentTimeMillis();
         Thread.sleep(10000);
         String ret = "";
@@ -342,7 +342,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
 
     abstract protected void parseResponse(CESSolverJob<T> solverJob, Challenge<T> captchaChallenge, String captchaID, String antwort) throws IOException;
 
-    protected String upload(Browser br, CESSolverJob<T> solverJob, QueryInfo qi) throws InterruptedException, IOException, SolverException {
+    protected String upload(Browser br, CESSolverJob<T> solverJob, UrlQuery qi) throws InterruptedException, IOException, SolverException {
         String ret = "";
         Challenge<T> captchaChallenge = getChallenge(solverJob);
 
@@ -388,8 +388,8 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         return ret.substring(3);
     }
 
-    protected QueryInfo createQueryForUpload(CESSolverJob<T> job, RequestOptions options, final byte[] data) {
-        QueryInfo qi = new QueryInfo();
+    protected UrlQuery createQueryForUpload(CESSolverJob<T> job, RequestOptions options, final byte[] data) {
+        UrlQuery qi = new UrlQuery();
         qi.appendEncoded("action", "usercaptchaupload");
         qi.appendEncoded("jd", "2");
         qi.appendEncoded("source", "jd2");

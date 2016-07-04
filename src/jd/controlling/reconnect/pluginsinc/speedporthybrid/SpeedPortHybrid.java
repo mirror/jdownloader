@@ -28,6 +28,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.SwingUtils;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESFastEngine;
@@ -47,7 +48,6 @@ import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 import jd.controlling.reconnect.ipcheck.InvalidIPException;
 import jd.http.Browser;
-import jd.http.QueryInfo;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -486,7 +486,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             // logout: logout=byby&csrf_token=eZQe%2B3%2F%2BRBOPOAHa5x4fEtlnevO9PMp
             String json = null;
             for (int i = 5; i > 0; i--) {
-                QueryInfo query = new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true);
+                UrlQuery query = new UrlQuery().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("challengev", "null", true);
 
                 json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), query);
 
@@ -514,7 +514,7 @@ public class SpeedPortHybrid extends RouterPlugin implements IPCheckProvider {
             long start = System.currentTimeMillis();
             do {
 
-                json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), new QueryInfo().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
+                json = br.postPage(createAbsoluteUrl("/data/Login.json?lang=de", 0), new UrlQuery().append("csrf_token", "nulltoken", true).append("showpw", "0", true).append("password", Hash.getSHA256(challengev + ":" + config.getPassword()), true));
 
                 Thread.sleep(15000);
             } while ("69".equals(extractVariable(json, "login")) && (System.currentTimeMillis() - start) < 2 * 60 * 1000l);

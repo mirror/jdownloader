@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 
 public enum YoutubeITAG {
     DASH_AUDIO_128K_AAC(140, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_128),
@@ -269,10 +269,10 @@ public enum YoutubeITAG {
 
     }
 
-    public static YoutubeITAG get(int itag, int width, int height, int fps, String type, QueryInfo query, long uploadDate) {
+    public static YoutubeITAG get(int itag, int width, int height, int fps, String type, UrlQuery query, long uploadDate) {
         YoutubeITAGVersion version = null;
         if (query == null) {
-            query = new QueryInfo();
+            query = new UrlQuery();
         }
 
         switch (itag) {
