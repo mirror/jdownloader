@@ -26,8 +26,8 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
-import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
@@ -335,7 +335,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         for (PackageView<PackageType, ChildType> pkg : selection.getPackageViews()) {
             if (pkg.isPackageSelected()) {
                 final PackageType pt = pkg.getPackage();
-                final String finalDirectory = directory.replaceAll(DownloadFolderChooserDialog.PACKAGETAG, pt.getName());
+                final String finalDirectory = directory.replaceAll(PackagizerController.PACKAGETAG, pt.getName());
                 if (pt instanceof FilePackage) {
                     DownloadWatchDog.getInstance().setDownloadDirectory((FilePackage) pt, finalDirectory);
                     DownloadPathHistoryManager.getInstance().add(directory);
