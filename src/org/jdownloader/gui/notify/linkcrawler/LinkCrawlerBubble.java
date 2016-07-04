@@ -123,7 +123,7 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
     protected void update() {
         final LinkCollectorCrawler crwl = crawler.get();
         if (crwl != null) {
-            delayedUpdate();
+            update.resetAndStart();
         }
     }
 }
