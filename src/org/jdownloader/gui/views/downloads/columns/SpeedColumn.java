@@ -11,17 +11,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.nutils.Formatter;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -43,6 +32,17 @@ import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.nutils.Formatter;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
     /**
@@ -52,7 +52,6 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     private final AtomicBoolean warningEnabled      = new AtomicBoolean(false);
     private final Icon          warningIcon;
     private final AtomicBoolean speedLimiterEnabled = new AtomicBoolean(false);
-    private final Color         defaultColor;
 
     public SpeedColumn() {
         super(_GUI.T.SpeedColumn_SpeedColumn());
@@ -70,7 +69,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
             }
         });
         warningIcon = NewTheme.I().getIcon(IconKey.ICON_WARNING, 16);
-        defaultColor = rendererField.getForeground();
+
         speedLimiterEnabled.set(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
@@ -110,7 +109,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         if (speedLimiterEnabled.get()) {
             rendererField.setForeground(Color.RED);
         } else {
-            rendererField.setForeground(defaultColor);
+            rendererField.setForeground(null);
         }
     }
 
