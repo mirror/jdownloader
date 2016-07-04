@@ -17,6 +17,6 @@ public interface RealDebridComConfig extends PluginConfigInterface {
     @DefaultBooleanValue(false)
     boolean isUseSSLForDownload();
 
-    void setUseSSLForDownload();
+    void setUseSSLForDownload(boolean b);
 
 }
