@@ -67,7 +67,7 @@ public class SubChallenge {
 
     public SubChallenge() {
 
-        payloads = new HashMap<>();
+        payloads = new HashMap<String, Payload>();
     }
 
     public String getSearchKey() {
