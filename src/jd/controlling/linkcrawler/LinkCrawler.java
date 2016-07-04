@@ -688,41 +688,38 @@ public class LinkCrawler {
      * check if all known crawlers are done and notify all waiting listener + cleanup DuplicateFinder
      */
     protected void checkFinishNotify() {
-        if (crawler.decrementAndGet() == 0) {
-            /* this LinkCrawler instance stopped, notify static counter */
-            final boolean finished;
-            final boolean stopped;
-            synchronized (CRAWLER) {
-                if (crawler.get() == 0 && runningState.compareAndSet(true, false)) {
-                    stopped = true;
-                    if (CRAWLER.get() > 0) {
-                        finished = CRAWLER.decrementAndGet() == 0;
-                    } else {
-                        finished = false;
-                    }
+        /* this LinkCrawler instance stopped, notify static counter */
+        final boolean finished;
+        final boolean stopped;
+        synchronized (CRAWLER) {
+            if (crawler.decrementAndGet() == 0 && runningState.compareAndSet(true, false)) {
+                stopped = true;
+                if (CRAWLER.get() > 0) {
+                    finished = CRAWLER.decrementAndGet() == 0;
                 } else {
-                    stopped = false;
                     finished = false;
                 }
+            } else {
+                return;
             }
-            if (stopped) {
-                synchronized (WAIT) {
-                    WAIT.notifyAll();
-                }
-                if (getParent() == null) {
-                    cleanupDuplicateFinder();
-                }
-                EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
-                crawlerStopped();
+        }
+        if (stopped) {
+            synchronized (WAIT) {
+                WAIT.notifyAll();
             }
-            if (finished) {
-                synchronized (WAIT) {
-                    WAIT.notifyAll();
-                }
+            if (getParent() == null) {
                 cleanupDuplicateFinder();
-                EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.FINISHED));
-                crawlerFinished();
             }
+            EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
+            crawlerStopped();
+        }
+        if (finished) {
+            synchronized (WAIT) {
+                WAIT.notifyAll();
+            }
+            cleanupDuplicateFinder();
+            EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.FINISHED));
+            crawlerFinished();
         }
     }
 
@@ -747,18 +744,20 @@ public class LinkCrawler {
 
     private boolean checkStartNotify(int generation) {
         if (checkAllowStart(generation)) {
-            if (crawler.getAndIncrement() == 0) {
-                final boolean event;
-                synchronized (CRAWLER) {
+            final boolean event;
+            synchronized (CRAWLER) {
+                if (crawler.getAndIncrement() == 0) {
                     event = runningState.compareAndSet(false, true);
                     if (event) {
                         CRAWLER.incrementAndGet();
                     }
+                } else {
+                    event = false;
                 }
-                if (event) {
-                    EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STARTED));
-                    crawlerStarted();
-                }
+            }
+            if (event) {
+                EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STARTED));
+                crawlerStarted();
             }
             return true;
         }
@@ -2484,11 +2483,11 @@ public class LinkCrawler {
                                 synchronized (distributedLinks) {
                                     if (distributedLinks.size() == 0) {
                                         return;
+                                    } else {
+                                        linksToDistribute = new ArrayList<CrawledLink>(distributedLinks);
+                                        distributedLinks.clear();
                                     }
-                                    linksToDistribute = new ArrayList<CrawledLink>(distributedLinks);
-                                    distributedLinks.clear();
                                 }
-                                final List<CrawledLink> linksToDistributeFinal = linksToDistribute;
                                 if (checkStartNotify(generation)) {
                                     /* enqueue distributing of the links */
                                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
@@ -2504,8 +2503,7 @@ public class LinkCrawler {
 
                                         @Override
                                         void crawling() {
-                                            final List<CrawledLink> distributeThis = new ArrayList<CrawledLink>(linksToDistributeFinal);
-                                            nextLinkCrawler.get().distribute(generation, distributeThis);
+                                            nextLinkCrawler.get().distribute(generation, linksToDistribute);
                                         }
                                     });
                                 }
