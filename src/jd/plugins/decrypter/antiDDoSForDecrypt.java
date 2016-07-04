@@ -31,7 +31,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -223,7 +223,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (ibr == null || page == null || post == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final PostRequest request = ibr.createPostRequest(page, new QueryInfo(), null);
+        final PostRequest request = ibr.createPostRequest(page, new UrlQuery(), null);
         request.setPostDataString(post);
         setContentType(request, isJson);
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we

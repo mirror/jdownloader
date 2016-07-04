@@ -34,7 +34,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 
@@ -555,7 +555,7 @@ public class ItagHelper {
         return false;
     }
 
-    private QueryInfo       query;
+    private UrlQuery       query;
     private String          url;
     private String          itag;
     private Browser         br;
@@ -564,7 +564,7 @@ public class ItagHelper {
     private YoutubeClipData vid;
     private File            file;
 
-    public ItagHelper(YoutubeClipData vid, Browser br, QueryInfo query, String url) {
+    public ItagHelper(YoutubeClipData vid, Browser br, UrlQuery query, String url) {
         this.query = query;
         this.url = url;
         this.itag = query.get("itag");

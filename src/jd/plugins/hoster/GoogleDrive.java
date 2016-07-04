@@ -22,7 +22,7 @@ import org.jdownloader.plugins.components.google.GoogleHelper;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -198,7 +198,7 @@ public class GoogleDrive extends PluginForHost {
                 links[i] = unescape(links[i]);
             }
 
-            final QueryInfo query = Request.parseQuery(links[0]);
+            final UrlQuery query = Request.parseQuery(links[0]);
             streamLink = Encoding.urlDecode(query.get("url"), false);
         }
         br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");

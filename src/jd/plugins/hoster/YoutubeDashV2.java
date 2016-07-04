@@ -36,7 +36,7 @@ import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -1980,7 +1980,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     try {
                         SubtitleVariant v = new SubtitleVariant();
                         v.setGenericInfo(new YoutubeSubtitleStorable());
-                        QueryInfo info;
+                        UrlQuery info;
 
                         info = Request.parseQuery(q);
 

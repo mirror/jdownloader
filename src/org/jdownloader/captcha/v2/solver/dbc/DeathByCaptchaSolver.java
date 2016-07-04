@@ -36,7 +36,7 @@ import org.jdownloader.settings.staticreferences.CFG_DBC;
 
 import jd.captcha.gui.BasicWindow;
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
@@ -255,7 +255,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                             Challenge<?> challenge = response.getChallenge();
 
                             if (challenge instanceof BasicCaptchaChallenge) {
-                                createBrowser().postPage("http://api.dbcapi.me/api/captcha/" + captcha.getCaptcha() + "/report", new QueryInfo().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
+                                createBrowser().postPage("http://api.dbcapi.me/api/captcha/" + captcha.getCaptcha() + "/report", new UrlQuery().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
 
                             }
                         } finally {
@@ -309,7 +309,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     private DBCGetUserResponse getUserData() throws UnsupportedEncodingException, IOException {
-        String json = createBrowser().postPage("http://api.dbcapi.me/api/user", new QueryInfo().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
+        String json = createBrowser().postPage("http://api.dbcapi.me/api/user", new UrlQuery().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
 
         return JSonStorage.restoreFromString(json, DBCGetUserResponse.TYPE);
 

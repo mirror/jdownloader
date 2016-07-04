@@ -32,7 +32,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -396,7 +396,7 @@ public class D extends PluginsC {
             br.getHeaders().put("rev", JDUtilities.getRevision());
 
             //
-            QueryInfo qi = new QueryInfo().addAndReplace("destType", "jdtc6").addAndReplace("b", Encoding.urlEncode(UpdateController.getInstance().getAppID())).addAndReplace("srcType", "dlc").addAndReplace("data", Encoding.urlEncode(bin)).addAndReplace("v", JDUtilities.getRevision());
+            UrlQuery qi = new UrlQuery().addAndReplace("destType", "jdtc6").addAndReplace("b", Encoding.urlEncode(UpdateController.getInstance().getAppID())).addAndReplace("srcType", "dlc").addAndReplace("data", Encoding.urlEncode(bin)).addAndReplace("v", JDUtilities.getRevision());
             br.postPage(s9 + "", qi);
 
             // 3f69b642cc403506ff1ee7f22b23ce40

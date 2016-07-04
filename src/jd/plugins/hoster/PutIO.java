@@ -8,7 +8,7 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -273,7 +273,7 @@ public class PutIO extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                String infoJson = br.postPage("https://put.io/login", new QueryInfo().append("next", "/v2/account/info?access_token=1&intercom=1&sharing=1", true).append("name", account.getUser(), true).append("password", account.getPass(), true));
+                String infoJson = br.postPage("https://put.io/login", new UrlQuery().append("next", "/v2/account/info?access_token=1&intercom=1&sharing=1", true).append("name", account.getUser(), true).append("password", account.getPass(), true));
                 login_token2 = br.getCookie(br.getHost(), LOGIN_TOKEN22);
 
                 br.getHeaders().put(X_PUTIO_LOGIN_TOKEN, login_token2);

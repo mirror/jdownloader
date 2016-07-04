@@ -2,7 +2,7 @@ package org.jdownloader.plugins.components.youtube;
 
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 
 public class YoutubeStreamData {
 
@@ -86,7 +86,7 @@ public class YoutubeStreamData {
         return src;
     }
 
-    public YoutubeStreamData(String src, final YoutubeClipData vid, String url, YoutubeITAG itag, QueryInfo query) {
+    public YoutubeStreamData(String src, final YoutubeClipData vid, String url, YoutubeITAG itag, UrlQuery query) {
         this.src = src;
         this.clip = vid;
         this.itag = itag;

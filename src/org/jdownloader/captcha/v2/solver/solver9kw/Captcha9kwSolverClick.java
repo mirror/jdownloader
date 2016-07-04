@@ -11,7 +11,7 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 
 import jd.http.Browser;
-import jd.http.QueryInfo;
+import org.appwork.utils.parser.UrlQuery;
 
 public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint> {
 
@@ -52,8 +52,8 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
         options.setConfirm(config.ismouseconfirm());
         try {
             final byte[] data = IO.readFile(captchaChallenge.getImageFile());
-            QueryInfo qi = createQueryForUpload(solverJob, options, data).appendEncoded("mouse", "1");
-            QueryInfo queryPoll = createQueryForPolling().appendEncoded("mouse", "1");
+            UrlQuery qi = createQueryForUpload(solverJob, options, data).appendEncoded("mouse", "1");
+            UrlQuery queryPoll = createQueryForPolling().appendEncoded("mouse", "1");
 
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
