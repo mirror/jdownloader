@@ -22,7 +22,7 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolBarAction {
         if (dlDir == null) {
             return;
         }
-        String str = PackagizerController.replaceDynamicTags(dlDir, "packagename");
+        String str = PackagizerController.replaceDynamicTags(dlDir, "packagename", null);
         /* we want to open the dlDir and not its parent folder/select it */
         File file = new File(str);
         while (file != null && !file.exists()) {

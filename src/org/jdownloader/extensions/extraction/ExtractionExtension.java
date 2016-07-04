@@ -27,6 +27,17 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
+import jd.SecondLevelLaunch;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+import jd.plugins.AddonPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -94,17 +105,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
-
-import jd.SecondLevelLaunch;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
 
@@ -821,7 +821,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             if (!StringUtils.isEmpty(path)) {
                 /* use customized extracttofolder */
                 if (!raw) {
-                    path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+                    path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME, null);
                 }
 
                 path = archive.getFactory().createExtractSubPath(path, archive);
@@ -843,7 +843,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
 
         if (!raw) {
-            path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+            path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME, null);
         }
         path = archive.getFactory().createExtractSubPath(path, archive);
         File ret = new File(path);

@@ -37,8 +37,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     private javax.swing.JCheckBox cbPackage;
     private File                  path;
     private boolean               packageSubFolderSelectionVisible;
-    private boolean               subfolder  = false;
-    public static final String    PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    private boolean               subfolder = false;
 
     /**
      * @param flag
@@ -66,7 +65,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         }
         setDimensor(new RememberLastDialogDimension(id));
         if (path != null) {
-            if (path.getAbsolutePath().endsWith(PACKAGETAG)) {
+            if (path.getAbsolutePath().endsWith(PackagizerController.PACKAGETAG)) {
                 subfolder = true;
                 this.path = path.getParentFile();
             }
@@ -101,12 +100,12 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
             }
             if (cbPackage != null && cbPackage.isSelected()) {
-                if (cbPackage.isSelected() && f.getAbsolutePath().endsWith(PACKAGETAG)) {
+                if (cbPackage.isSelected() && f.getAbsolutePath().endsWith(PackagizerController.PACKAGETAG)) {
 
                     return new File[] { f };
                 } else {
 
-                    return new File[] { new File(f, PACKAGETAG) };
+                    return new File[] { new File(f, PackagizerController.PACKAGETAG) };
                 }
             } else {
 
@@ -165,7 +164,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     /**
      * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
      * exist
-     * 
+     *
      * @param file
      * @return
      */

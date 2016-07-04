@@ -18,6 +18,9 @@ import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
@@ -64,6 +67,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     public static final String                  PACKAGENAME    = "packagename";
     public static final String                  SIMPLEDATE     = "simpledate";
+    public static final String                  INDEXOF        = "indexof";
 
     private static final PackagizerController   INSTANCE       = new PackagizerController(false);
     public static final String                  ORGPACKAGENAME = "orgpackagename";
@@ -279,6 +283,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
 
         });
+
         addReplacer(new PackagizerReplacer() {
 
             public String getID() {
@@ -613,11 +618,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         HashSet<String> ret = new HashSet<String>();
         synchronized (this) {
             for (PackagizerRule rule : list) {
-
                 ret.add(JSonStorage.serializeToJson(rule));
-
             }
-
         }
         return ret;
     }
@@ -709,8 +711,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     public static String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
     public static String DATETAG    = "<jd:" + PackagizerController.SIMPLEDATE + ":";
+    public static String INDEXOFTAG = "<jd:" + PackagizerController.INDEXOF + ">";
 
-    public static String replaceDynamicTags(String input, String packageName) {
+    public static String replaceDynamicTags(String input, String packageName, AbstractNode node) {
         if (StringUtils.isEmpty(input)) {
             return input;
         }
@@ -723,6 +726,19 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     ret = ret.replace(PACKAGETAG, CrossSystem.alleviatePathParts(packageName));
                 }
                 ret = CrossSystem.fixPathSeparators(ret);
+            }
+            if (ret.contains(INDEXOFTAG)) {
+                AbstractPackageNode parentNode = null;
+                if (!(node instanceof AbstractPackageChildrenNode) || (parentNode = ((AbstractPackageChildrenNode<AbstractPackageNode>) node).getParentNode()) == null) {
+                    ret = ret.replace(INDEXOFTAG, "");
+                } else {
+                    final int index = parentNode.indexOf((AbstractPackageChildrenNode) node);
+                    if (index >= 0) {
+                        ret = ret.replace(INDEXOFTAG, String.valueOf(index));
+                    } else {
+                        ret = ret.replace(INDEXOFTAG, "");
+                    }
+                }
             }
             if (ret.contains(DATETAG)) {
                 int start = ret.indexOf(DATETAG);

@@ -832,7 +832,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 final String saveTo = abstractNodes.loadSaveTo();
                 final String path = destination.getPath();
                 if (!StringUtils.equals(saveTo, path)) {
-                    abstractNodes.saveSaveTo(PackagizerController.replaceDynamicTags(path, abstractNodes.loadPackageName()));
+                    abstractNodes.saveSaveTo(PackagizerController.replaceDynamicTags(path, abstractNodes.loadPackageName(), abstractNodes.getCurrentNode()));
                     DownloadPathHistoryManager.getInstance().add(path);
                 }
             }

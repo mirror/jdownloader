@@ -22,7 +22,7 @@ import org.jdownloader.gui.views.downloads.properties.AbstractNodeProperties;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.settings.GeneralSettings;
 
-public class CrawledLinkNodeProperties extends AbstractNodeProperties {
+public class CrawledLinkNodeProperties extends AbstractNodeProperties<CrawledLink> {
 
     private final CrawledLink    currentLink;
     private final CrawledPackage currentPackage;
@@ -178,6 +178,11 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
     @Override
     protected void saveHashInfo(HashInfo hashInfo) {
         currentLink.getDownloadLink().setHashInfo(hashInfo);
+    }
+
+    @Override
+    protected CrawledLink getCurrentNode() {
+        return currentLink;
     }
 
 }

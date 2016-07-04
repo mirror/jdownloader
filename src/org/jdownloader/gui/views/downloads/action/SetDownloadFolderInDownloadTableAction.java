@@ -68,7 +68,7 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
 
     @Override
     protected void set(FilePackage pkg, String absolutePath) {
-        DownloadWatchDog.getInstance().setDownloadDirectory(pkg, PackagizerController.replaceDynamicTags(absolutePath, pkg.getName()));
+        DownloadWatchDog.getInstance().setDownloadDirectory(pkg, PackagizerController.replaceDynamicTags(absolutePath, pkg.getName(), pkg));
 
     }
 

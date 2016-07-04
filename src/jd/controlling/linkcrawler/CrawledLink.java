@@ -247,7 +247,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
                 if (lparent != null) {
                     packageName = lparent.getName();
                 }
-                return CrossSystem.alleviatePathParts(PackagizerController.replaceDynamicTags(lname, packageName));
+                return CrossSystem.alleviatePathParts(PackagizerController.replaceDynamicTags(lname, packageName, this));
             } else {
                 return lname;
             }
