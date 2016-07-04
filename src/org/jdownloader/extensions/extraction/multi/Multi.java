@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -274,7 +275,18 @@ public class Multi extends IExtraction {
         return SevenZip.isInitializedSuccessfully();
     }
 
-    private boolean hasLibrarySupport(ExtractionExtension extractionExtension) {
+    private boolean checkLibraries(final ExtractionExtension extractionExtension, final Set<String> libIDs) {
+        logger.finer("Try Lib IDs: " + libIDs);
+        for (final String libID : libIDs) {
+            if (initLibrary(libID)) {
+                extractionExtension.getSettings().setLastWorkingLibID(libID);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasLibrarySupport(final ExtractionExtension extractionExtension) {
         final String customLibID = System.getProperty("sevenzipLibID");
         if (StringUtils.isNotEmpty(customLibID)) {
             if (initLibrary(customLibID)) {
@@ -285,49 +297,45 @@ public class Multi extends IExtraction {
             }
             return false;
         } else {
+            final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
+            final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
+            if (StringUtils.isNotEmpty(lastWorkingLibID)) {
+                libIDs.add(lastWorkingLibID);
+                extractionExtension.getSettings().setLastWorkingLibID(null);
+                extractionExtension.getSettings()._getStorageHandler().write();
+            }
             final OperatingSystem os = CrossSystem.getOS();
             switch (os.getFamily()) {
             case BSD:
-                switch (os) {
-                case FREEBSD:
-                    switch (CrossSystem.getARCHFamily()) {
-                    case X86:
+                switch (CrossSystem.getARCHFamily()) {
+                case X86:
+                    switch (os) {
+                    case DRAGONFLYBSD:
                         if (Application.is64BitJvm()) {
-                            final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
-                            final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
-                            if (StringUtils.isNotEmpty(lastWorkingLibID)) {
-                                libIDs.add(lastWorkingLibID);
-                                extractionExtension.getSettings().setLastWorkingLibID(null);
-                                extractionExtension.getSettings()._getStorageHandler().write();
-                            }
-                            libIDs.add("FreeBSD-amd64");
-                            libIDs.add("FreeBSD-amd64-2");
-                            for (final String libID : libIDs) {
-                                if (initLibrary(libID)) {
-                                    extractionExtension.getSettings().setLastWorkingLibID(libID);
-                                    return true;
-                                }
-                            }
-                            return false;
-                        } else {
-                            return initLibrary("FreeBSD-i386");
+                            libIDs.add("DragonFlyBSD-amd64");
                         }
+                        break;
+                    case FREEBSD:
+                        if (Application.is64BitJvm()) {
+                            libIDs.add("FreeBSD-amd64");
+                            // libIDs.add("FreeBSD-amd64-2");// untested
+                        } else {
+                            libIDs.add("FreeBSD-i386");
+                        }
+                        break;
                     default:
-                        return false;
+                        // Not supported
+                        break;
                     }
+                    break;
                 default:
-                    return false;
+                    // Not supported
+                    break;
                 }
+                break;
             case LINUX:
                 switch (CrossSystem.getARCHFamily()) {
                 case ARM:
-                    final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
-                    final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
-                    if (StringUtils.isNotEmpty(lastWorkingLibID)) {
-                        libIDs.add(lastWorkingLibID);
-                        extractionExtension.getSettings().setLastWorkingLibID(null);
-                        extractionExtension.getSettings()._getStorageHandler().write();
-                    }
                     if (Application.is64BitJvm()) {
                         libIDs.add("Linux-aarch64");
                     } else {
@@ -340,39 +348,41 @@ public class Multi extends IExtraction {
                             libIDs.add("Linux-arm3");
                         }
                     }
-                    for (final String libID : libIDs) {
-                        if (initLibrary(libID)) {
-                            extractionExtension.getSettings().setLastWorkingLibID(libID);
-                            return true;
-                        }
-                    }
-                    return false;
+                    break;
                 case X86:
                     if (Application.is64BitJvm()) {
-                        return initLibrary("Linux-amd64");
+                        libIDs.add("Linux-amd64");
                     } else {
-                        return initLibrary("Linux-i386");
+                        libIDs.add("Linux-i386");
                     }
+                    break;
                 case PPC:
-                    return initLibrary("Linux-ppc");
+                    libIDs.add("Linux-ppc");
+                    break;
                 default:
-                    return false;
+                    // Not supported
+                    break;
                 }
+                break;
             case MAC:
                 if (Application.is64BitJvm()) {
-                    return initLibrary("Mac-x86_64");
+                    libIDs.add("Mac-x86_64");
                 } else {
-                    return initLibrary("Mac-i386");
+                    libIDs.add("Mac-i386");
                 }
+                break;
             case WINDOWS:
                 if (Application.is64BitJvm()) {
-                    return initLibrary("Windows-amd64");
+                    libIDs.add("Windows-amd64");
                 } else {
-                    return initLibrary("Windows-x86");
+                    libIDs.add("Windows-x86");
                 }
+                break;
             default:
-                return false;
+                // Not supported
+                break;
             }
+            return checkLibraries(extractionExtension, libIDs);
         }
     }
 
