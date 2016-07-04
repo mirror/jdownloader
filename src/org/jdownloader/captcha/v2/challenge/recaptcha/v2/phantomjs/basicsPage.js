@@ -10,6 +10,7 @@
 	clickBox = function(num) {
 
 		if (document.getElementsByClassName('rc-image-tile-target')[num].parentNode.className) {
+			console.log("Already clicked: "+num);
 			return;
 		}
 		boxes = document.getElementsByClassName("rc-image-tile-target");

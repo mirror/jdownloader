@@ -29,7 +29,6 @@ import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 
-import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
@@ -43,7 +42,8 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Recaptcha2FallbackChallengeViaPhantomJS;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge.ChallengeType;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.SubChallenge;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -82,21 +82,20 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
     @Override
     protected void addBeforeImage(MigPanel field) {
         super.addBeforeImage(field);
-        String key = challenge.getHighlightedExplain();
+        SubChallenge sub = challenge.getSubChallenge();
+        String key = sub.getSearchKey();
 
         field.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
-        Icon explainIcon = challenge.getExplainIcon(challenge.getExplain());
-        String ex = challenge.getExplain().replaceAll("<.*?>", "").replace(key, "<b>" + key + "</b>");
+        String ex = challenge.getExplain().replaceAll("<.*?>", "");
+        if (StringUtils.isNotEmpty(key)) {
+            ex = ex.replace(key, "<b>" + key + "</b>");
+        }
         if (StringUtils.isNotEmpty(challenge.getReloadErrorMessage())) {
             ex += "<br><b><font color='#ff0000'>" + challenge.getReloadErrorMessage() + "</font></b>";
         }
-        if (explainIcon != null) {
-            field.add(SwingUtils.setOpaque(new JLabel("<html>" + ex + "</html>", explainIcon, JLabel.LEFT), false), "gapleft 5,gaptop 5");
-        } else {
-            field.add(SwingUtils.setOpaque(new JLabel("<html>" + ex + "</html>"), false), "gapleft 5,gaptop 5");
 
-        }
+        field.add(SwingUtils.setOpaque(new JLabel("<html>" + ex + "</html>"), false), "gapleft 5,gaptop 5");
 
         field.add(new JSeparator(JSeparator.HORIZONTAL));
 
@@ -112,33 +111,33 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
         if (bounds == null) {
             return;
         }
-
-        double columnWidth = bounds.getWidth() / challenge.getSplitWidth();
-        double rowHeight = bounds.getHeight() / challenge.getSplitHeight();
-        double imgColumnWidth = images[0].getWidth(null) / challenge.getSplitWidth();
-        double imgRowHeight = images[0].getHeight(null) / challenge.getSplitHeight();
+        SubChallenge sub = challenge.getSubChallenge();
+        double columnWidth = bounds.getWidth() / sub.getGridWidth();
+        double rowHeight = bounds.getHeight() / sub.getGridHeight();
+        double imgColumnWidth = images[0].getWidth(null) / sub.getGridWidth();
+        double imgRowHeight = images[0].getHeight(null) / sub.getGridHeight();
 
         g.setColor(col);
 
         int splitterWidth = 4;
         ((Graphics2D) g).setStroke(new BasicStroke(splitterWidth));
-        for (int yslot = 0; yslot < challenge.getSplitHeight() - 1; yslot++) {
+        for (int yslot = 0; yslot < sub.getGridHeight() - 1; yslot++) {
             int y = ceil((1 + yslot) * rowHeight);
 
             g.drawLine(bounds.x, bounds.y + y, bounds.x + bounds.width, bounds.y + y);
 
         }
-        for (int xslot = 0; xslot < challenge.getSplitWidth() - 1; xslot++) {
+        for (int xslot = 0; xslot < sub.getGridWidth() - 1; xslot++) {
             int x = ceil((1 + xslot) * columnWidth);
 
             g.drawLine(bounds.x + x, bounds.y, bounds.x + x, bounds.y + bounds.height);
         }
         ((Graphics2D) g).setStroke(new BasicStroke(3));
-        for (int yslot = 0; yslot < challenge.getSplitHeight(); yslot++) {
-            for (int xslot = 0; xslot < challenge.getSplitWidth(); xslot++) {
+        for (int yslot = 0; yslot < sub.getGridHeight(); yslot++) {
+            for (int xslot = 0; xslot < sub.getGridWidth(); xslot++) {
                 int x = (int) ((1 + xslot) * columnWidth);
                 int y = (int) ((1 + yslot) * rowHeight);
-                int num = xslot + yslot * challenge.getSplitWidth();
+                int num = xslot + yslot * sub.getGridWidth();
 
                 // Color color = Color.RED;
                 if (selected.contains(num)) {
@@ -168,6 +167,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
     @Override
     public JComponent layoutDialogContent() {
         JComponent ret = super.layoutDialogContent();
+        final SubChallenge sub = challenge.getSubChallenge();
         this.selected = new HashSet<Integer>();
         iconPanel.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
         iconPanel.setToolTipText(getHelpText());
@@ -176,15 +176,15 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
             @Override
             public void mouseReleased(MouseEvent e) {
 
-                int x = (e.getX() - bounds.x) / (bounds.width / challenge.getSplitWidth());
-                int y = (e.getY() - bounds.y) / (bounds.height / challenge.getSplitHeight());
-                int num = x + y * challenge.getSplitWidth();
+                int x = (e.getX() - bounds.x) / (bounds.width / sub.getGridWidth());
+                int y = (e.getY() - bounds.y) / (bounds.height / sub.getGridHeight());
+                int num = x + y * sub.getGridWidth();
                 System.out.println("pressed " + num);
                 if (!selected.remove(num)) {
                     selected.add(num);
 
                 }
-                if (challenge instanceof Recaptcha2FallbackChallengeViaPhantomJS && ((Recaptcha2FallbackChallengeViaPhantomJS) challenge).getReloadCounter() > 0 && selected.size() == 0) {
+                if (sub.getChallengeType() == ChallengeType.DYNAMIC && sub.getReloudCounter() > 0 && selected.size() == 0) {
                     okButton.setText(_GUI.T.RECAPTCHA_2_Dialog_empty_tile_selection());
 
                 } else {
@@ -212,7 +212,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
             }
         });
 
-        if (challenge instanceof Recaptcha2FallbackChallengeViaPhantomJS && ((Recaptcha2FallbackChallengeViaPhantomJS) challenge).getReloadCounter() > 0) {
+        if (sub.getChallengeType() == ChallengeType.DYNAMIC && sub.getReloudCounter() > 0) {
             okButton.setText(_GUI.T.RECAPTCHA_2_Dialog_empty_tile_selection());
 
         }

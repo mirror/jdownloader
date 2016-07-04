@@ -14,18 +14,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
-import jd.http.Browser;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
@@ -50,6 +38,18 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
+import jd.http.Browser;
+import net.miginfocom.swing.MigLayout;
 
 public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
     private ExtButton                      btnRegister;
@@ -668,14 +668,14 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
                 Captcha9kwSolver.getInstance().counterNotOK.set(0);
                 Captcha9kwSolver.getInstance().counterUnused.set(0);
 
-                Captcha9kwSolverClick.getInstance().click9kw_counterSolved.set(0);
-                Captcha9kwSolverClick.getInstance().click9kw_counterInterrupted.set(0);
-                Captcha9kwSolverClick.getInstance().click9kw_counter.set(0);
-                Captcha9kwSolverClick.getInstance().click9kw_counterSend.set(0);
-                Captcha9kwSolverClick.getInstance().click9kw_counterSendError.set(0);
-                Captcha9kwSolverClick.getInstance().click9kw_counterOK.set(0);
-                Captcha9kwSolverClick.getInstance().click9kw_counterNotOK.set(0);
-                Captcha9kwSolverClick.getInstance().click9kw_counterUnused.set(0);
+                Captcha9kwSolverClick.getInstance().counterSolved.set(0);
+                Captcha9kwSolverClick.getInstance().counterInterrupted.set(0);
+                Captcha9kwSolverClick.getInstance().counter.set(0);
+                Captcha9kwSolverClick.getInstance().counterSend.set(0);
+                Captcha9kwSolverClick.getInstance().counterSendError.set(0);
+                Captcha9kwSolverClick.getInstance().counterOK.set(0);
+                Captcha9kwSolverClick.getInstance().counterNotOK.set(0);
+                Captcha9kwSolverClick.getInstance().counterUnused.set(0);
 
                 jd.gui.UserIO.getInstance().requestMessageDialog("9kw debug ", _GUI.T.NinekwService_createPanel_btnUserDebugStatReset_text());
             }
@@ -692,7 +692,9 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                Captcha9kwSolver.getInstance().captcha_map9kw.clear();
+                synchronized (AbstractCaptcha9kwSolver.CAPTCHA_MAP) {
+                    AbstractCaptcha9kwSolver.CAPTCHA_MAP.clear();
+                }
 
                 jd.gui.UserIO.getInstance().requestMessageDialog("9kw debug ", _GUI.T.NinekwService_createPanel_btnUserDebugBlacklistReset_text());
             }
@@ -710,14 +712,14 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String crazylist = "";
-                crazylist += "OK: " + (Captcha9kwSolverClick.getInstance().click9kw_counterOK.get() + Captcha9kwSolver.getInstance().counterOK.get()) + "\n";
-                crazylist += " NotOK: " + (Captcha9kwSolverClick.getInstance().click9kw_counterNotOK.get() + Captcha9kwSolver.getInstance().counterNotOK.get()) + "\n";
-                crazylist += " Solved: " + (Captcha9kwSolverClick.getInstance().click9kw_counterSolved.get() + Captcha9kwSolver.getInstance().counterSolved.get()) + "\n";
-                crazylist += " Unused: " + (Captcha9kwSolverClick.getInstance().click9kw_counterUnused.get() + Captcha9kwSolver.getInstance().counterUnused.get()) + "\n";
-                crazylist += " Interrupted: " + (Captcha9kwSolverClick.getInstance().click9kw_counterInterrupted.get() + Captcha9kwSolver.getInstance().counterInterrupted.get()) + "\n";
-                crazylist += " Send: " + (Captcha9kwSolverClick.getInstance().click9kw_counterSend.get() + Captcha9kwSolver.getInstance().counterSend.get()) + "\n";
-                crazylist += " SendError: " + (Captcha9kwSolverClick.getInstance().click9kw_counterSendError.get() + Captcha9kwSolver.getInstance().counterSendError.get()) + "\n";
-                crazylist += " All: " + (Captcha9kwSolverClick.getInstance().click9kw_counter.get() + Captcha9kwSolver.getInstance().counter.get()) + "\n";
+                crazylist += "OK: " + (Captcha9kwSolverClick.getInstance().counterOK.get() + Captcha9kwSolver.getInstance().counterOK.get()) + "\n";
+                crazylist += " NotOK: " + (Captcha9kwSolverClick.getInstance().counterNotOK.get() + Captcha9kwSolver.getInstance().counterNotOK.get()) + "\n";
+                crazylist += " Solved: " + (Captcha9kwSolverClick.getInstance().counterSolved.get() + Captcha9kwSolver.getInstance().counterSolved.get()) + "\n";
+                crazylist += " Unused: " + (Captcha9kwSolverClick.getInstance().counterUnused.get() + Captcha9kwSolver.getInstance().counterUnused.get()) + "\n";
+                crazylist += " Interrupted: " + (Captcha9kwSolverClick.getInstance().counterInterrupted.get() + Captcha9kwSolver.getInstance().counterInterrupted.get()) + "\n";
+                crazylist += " Send: " + (Captcha9kwSolverClick.getInstance().counterSend.get() + Captcha9kwSolver.getInstance().counterSend.get()) + "\n";
+                crazylist += " SendError: " + (Captcha9kwSolverClick.getInstance().counterSendError.get() + Captcha9kwSolver.getInstance().counterSendError.get()) + "\n";
+                crazylist += " All: " + (Captcha9kwSolverClick.getInstance().counter.get() + Captcha9kwSolver.getInstance().counter.get()) + "\n";
 
                 try {
                     Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw stats", null, crazylist, NewTheme.getInstance().getIcon("proxy", 32), null, null);
@@ -739,7 +741,12 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                String crazylist = Captcha9kwSolver.getInstance().captcha_map9kw.toString();
+
+                String crazylist;
+
+                synchronized (AbstractCaptcha9kwSolver.CAPTCHA_MAP) {
+                    crazylist = AbstractCaptcha9kwSolver.CAPTCHA_MAP.toString();
+                }
 
                 try {
                     Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw stats", null, crazylist, NewTheme.getInstance().getIcon("proxy", 32), null, null);

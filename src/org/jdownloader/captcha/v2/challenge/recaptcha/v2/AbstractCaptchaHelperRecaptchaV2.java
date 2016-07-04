@@ -1,7 +1,5 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
-import java.util.ArrayList;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
@@ -45,31 +43,6 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     public String getSiteDomain() {
         return siteDomain;
-    }
-
-    private static ArrayList<Integer> CORRECT_AFTER_LIST = new ArrayList<Integer>();
-
-    protected static void setCorrectAfter(int size) {
-        synchronized (CORRECT_AFTER_LIST) {
-            CORRECT_AFTER_LIST.add(size);
-            while (CORRECT_AFTER_LIST.size() > 5) {
-                CORRECT_AFTER_LIST.remove(0);
-            }
-        }
-    }
-
-    protected static int getRequiredCorrectAnswersGuess() {
-
-        synchronized (CORRECT_AFTER_LIST) {
-            if (CORRECT_AFTER_LIST.size() == 0) {
-                return 3;
-            }
-            int min = Integer.MAX_VALUE;
-            for (int i : CORRECT_AFTER_LIST) {
-                min = Math.min(i, min);
-            }
-            return min;
-        }
     }
 
     private String siteDomain;

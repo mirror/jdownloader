@@ -197,7 +197,7 @@ public class GoogleHelper {
             this.br.clearCookies("youtube.com");
             this.br.setCookie("http://google.com", "PREF", "hl=en-GB");
             //
-            if (isCacheEnabled() && account.getProperty(COOKIES2) != null) {
+            if (account.getProperty(COOKIES2) != null) {
 
                 @SuppressWarnings("unchecked")
                 HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty(COOKIES2);
@@ -209,7 +209,7 @@ public class GoogleHelper {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie("google.com", key, value);
                         }
-                        if (hasBeenValidatedRecently(account)) {
+                        if (isCacheEnabled() && hasBeenValidatedRecently(account)) {
                             return true;
                         }
                         getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");

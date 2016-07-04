@@ -115,17 +115,13 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                                 jobs.get(i).invalidate();
 
                             }
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
                         } else {
-                            setCorrectAfter(jobs.size());
 
-                            int validateTheLast = getRequiredCorrectAnswersGuess();
                             for (int i = 0; i < jobs.size(); i++) {
 
-                                if (i >= jobs.size() - validateTheLast) {
-                                    jobs.get(i).validate();
-                                } else {
-                                    jobs.get(i).invalidate();
-                                }
+                                jobs.get(i).validate();
+
                             }
                         }
                         return token;
