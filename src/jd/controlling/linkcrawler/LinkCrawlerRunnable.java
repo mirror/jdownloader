@@ -2,6 +2,7 @@ package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class LinkCrawlerRunnable implements Runnable {
@@ -32,10 +33,11 @@ public abstract class LinkCrawlerRunnable implements Runnable {
     }
 
     protected void run_delayed() {
-        Object lock = sequentialLockingObject();
-        LinkCrawlerRunnable startRunnable = null;
+        final Object lock = sequentialLockingObject();
+        final int maxConcurrency = maxConcurrency();
+        final LinkCrawlerRunnable startRunnable;
         synchronized (SEQ_RUNNABLES) {
-            java.util.List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
+            List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
             if (seqs == null) {
                 /* no queued sequential runnable */
                 seqs = new ArrayList<LinkCrawlerRunnable>();
@@ -46,33 +48,41 @@ public abstract class LinkCrawlerRunnable implements Runnable {
                 counter = new AtomicInteger(0);
                 SEQ_COUNTER.put(lock, counter);
             }
-            if (counter.get() < maxConcurrency()) {
+            if (counter.get() < maxConcurrency) {
                 /* we have still some slots available for concurrent running */
-                startRunnable = this;
+                if (seqs.size() > 0) {
+                    startRunnable = seqs.remove(0);
+                    seqs.add(this);
+                } else {
+                    startRunnable = this;
+                }
                 counter.incrementAndGet();
+            } else {
+                startRunnable = null;
+                seqs.add(this);
             }
-            seqs.add(this);
         }
         if (startRunnable == null) {
             return;
         }
         try {
-            this.run_now();
+            startRunnable.run_now();
         } finally {
             synchronized (SEQ_RUNNABLES) {
-                java.util.List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
-                AtomicInteger counter = SEQ_COUNTER.get(lock);
+                final List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
+                final AtomicInteger counter = SEQ_COUNTER.get(lock);
                 if (seqs != null) {
                     /* remove current Runnable */
                     counter.decrementAndGet();
-                    seqs.remove(this);
                     if (seqs.size() == 0) {
-                        /* remove sequential runnable queue */
-                        SEQ_RUNNABLES.remove(lock);
-                        SEQ_COUNTER.remove(lock);
+                        if (counter.get() == 0) {
+                            /* remove sequential runnable queue */
+                            SEQ_RUNNABLES.remove(lock);
+                            SEQ_COUNTER.remove(lock);
+                        }
                     } else {
                         /* process next waiting runnable */
-                        LinkCrawlerRunnable next = seqs.remove(0);
+                        final LinkCrawlerRunnable next = seqs.remove(0);
                         LinkCrawler.threadPool.execute(next);
                     }
                 }
