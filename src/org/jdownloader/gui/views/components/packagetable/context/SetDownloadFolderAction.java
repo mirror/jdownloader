@@ -18,6 +18,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
@@ -47,7 +48,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
             final PackageType cp = lselection.getFirstPackage();
             path = LinkTreeUtils.getRawDownloadDirectory(cp);
             if (path.getName().equals(cp.getName())) {
-                path = new File(path.getParentFile(), DownloadFolderChooserDialog.PACKAGETAG);
+                path = new File(path.getParentFile(), PackagizerController.PACKAGETAG);
             }
         }
 
