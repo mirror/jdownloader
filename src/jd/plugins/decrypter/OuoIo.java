@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink;
  * @author psp
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.io/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.(?:io|press)/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})" }, flags = { 0 })
 public class OuoIo extends antiDDoSForDecrypt {
 
     public OuoIo(PluginWrapper wrapper) {
@@ -61,7 +61,9 @@ public class OuoIo extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (!br.containsHTML("class=\"content\"")) {
+        if (br.getRedirectLocation() != null) {
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+        } else if (!br.containsHTML("class=\"content\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -84,8 +86,8 @@ public class OuoIo extends antiDDoSForDecrypt {
 
     private void set(final String downloadLink) {
         parameter = downloadLink;
-        fuid = new Regex(parameter, ".+\\.io/([A-Za-z0-9]{4,})$").getMatch(0);
-        slink = new Regex(parameter, "\\.io/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
+        fuid = new Regex(parameter, ".+\\.(?:io|press)/([A-Za-z0-9]{4,})$").getMatch(0);
+        slink = new Regex(parameter, "\\.(?:io|press)/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
