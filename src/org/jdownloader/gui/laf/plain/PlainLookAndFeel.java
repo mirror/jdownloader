@@ -42,7 +42,7 @@ public class PlainLookAndFeel extends SyntheticaLookAndFeel {
             try {
                 File custom = Application.getResource("cfg/laf/" + PlainLookAndFeel.class.getSimpleName() + ".xml");
                 if (custom.exists()) {
-
+                    LoggerFactory.getDefaultLogger().info("Custom LAF XML: " + custom);
                     super.load(new BufferedInputStream(fis = new FileInputStream(custom)), resourceBase);
                     input.close();
                     return;
