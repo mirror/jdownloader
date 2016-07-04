@@ -56,7 +56,6 @@ public class LinkTreeUtils {
             if (node instanceof AbstractPackageChildrenNode) {
                 ret.add((T) node);
             } else {
-
                 // if we selected a package, and ALL it's links, we want all links
                 // if we selected a package, and only a few links, we probably want only these few links.
                 // if we selected a package, and it is NOT expanded, we want all links
