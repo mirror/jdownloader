@@ -4,6 +4,10 @@ import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -21,10 +25,6 @@ import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
@@ -122,7 +122,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                     newPackage.setExpanded(isExpandNewPackage());
                     newPackage.setName(name);
                     String f = d.getDownloadFolder();
-                    newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(f, name));
+                    newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(f, name, newPackage));
 
                     final StringBuilder sb = new StringBuilder();
                     final HashSet<String> commentDups = new HashSet<String>();

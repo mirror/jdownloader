@@ -99,19 +99,19 @@ public class LinkTreeUtils {
             if (parent != null) {
                 directory = parent.getView().getDownloadDirectory();
             }
-            return getDownloadDirectory(directory, parent == null ? null : parent.getName());
+            return getDownloadDirectory(directory, parent == null ? null : parent.getName(), node);
         } else if (node instanceof FilePackage) {
             directory = ((FilePackage) node).getView().getDownloadDirectory();
-            return getDownloadDirectory(directory, ((FilePackage) node).getName());
+            return getDownloadDirectory(directory, ((FilePackage) node).getName(), node);
         } else if (node instanceof CrawledLink) {
             final CrawledPackage parent = ((CrawledLink) node).getParentNode();
             if (parent != null) {
                 directory = parent.getDownloadFolder();
             }
-            return getDownloadDirectory(directory, parent == null ? null : parent.getName());
+            return getDownloadDirectory(directory, parent == null ? null : parent.getName(), node);
         } else if (node instanceof CrawledPackage) {
             directory = ((CrawledPackage) node).getDownloadFolder();
-            return getDownloadDirectory(directory, ((CrawledPackage) node).getName());
+            return getDownloadDirectory(directory, ((CrawledPackage) node).getName(), node);
         } else {
             throw new WTFException("Unknown Type: " + node.getClass());
         }
@@ -154,15 +154,15 @@ public class LinkTreeUtils {
         }
     }
 
-    public static File getDownloadDirectory(String path, String packagename) {
+    public static File getDownloadDirectory(String path, String packagename, AbstractNode node) {
         if (StringUtils.isEmpty(path)) {
-            return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename));
+            return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename, node));
         } else {
-            path = PackagizerController.replaceDynamicTags(path, packagename);
+            path = PackagizerController.replaceDynamicTags(path, packagename, node);
             if (CrossSystem.isAbsolutePath(path)) {
                 return new File(path);
             } else {
-                return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename), path);
+                return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename, node), path);
             }
         }
     }

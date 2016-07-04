@@ -10,7 +10,10 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 
-public abstract class AbstractNodeProperties {
+public abstract class AbstractNodeProperties<T extends AbstractNode> {
+
+    abstract protected T getCurrentNode();
+
     abstract protected List<Archive> loadArchives();
 
     abstract protected boolean hasLoadedArchives();

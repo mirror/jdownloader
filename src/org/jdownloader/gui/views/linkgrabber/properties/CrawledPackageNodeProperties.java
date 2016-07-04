@@ -18,7 +18,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.properties.AbstractNodeProperties;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 
-public class CrawledPackageNodeProperties extends AbstractNodeProperties {
+public class CrawledPackageNodeProperties extends AbstractNodeProperties<CrawledPackage> {
 
     private final CrawledPackage currentPackage;
     private List<Archive>        archives = null;
@@ -156,5 +156,10 @@ public class CrawledPackageNodeProperties extends AbstractNodeProperties {
 
     @Override
     protected void saveHashInfo(HashInfo hashInfo) {
+    }
+
+    @Override
+    protected CrawledPackage getCurrentNode() {
+        return currentPackage;
     }
 }

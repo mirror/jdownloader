@@ -17,7 +17,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 
-public class FilePackageNodeProperties extends AbstractNodeProperties {
+public class FilePackageNodeProperties extends AbstractNodeProperties<FilePackage> {
 
     private final FilePackage currentPackage;
     private List<Archive>     archives = null;
@@ -153,6 +153,11 @@ public class FilePackageNodeProperties extends AbstractNodeProperties {
 
     @Override
     protected void saveHashInfo(HashInfo hashInfo) {
+    }
+
+    @Override
+    protected FilePackage getCurrentNode() {
+        return currentPackage;
     }
 
 }
