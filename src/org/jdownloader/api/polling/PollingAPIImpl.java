@@ -125,7 +125,7 @@ public class PollingAPIImpl implements PollingAPI {
         LinkCollector lc = LinkCollector.getInstance();
 
         String status = "UNKNOWN";
-        if (lc.getLinkChecker().isRunning()) {
+        if (lc.getDefaultLinkChecker().isRunning()) {
             status = "RUNNING";
         } else {
             status = "IDLE";
