@@ -75,7 +75,7 @@ public class FastShareorg extends PluginForHost {
             br.setFollowRedirects(false);
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
-            if (!br.containsHTML("(No filename specified or the file has been deleted|This file has been deleted because of complaints|>Invalid file URL, maybe the file has been deleted\\.<)")) {
+            if (!br.containsHTML("(No filename specified or the file has been deleted|This file has been deleted because of complaints|>Invalid file URL, maybe the file has been deleted\\.<|>Not Found<)")) {
                 downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getMatch(0)));
                 String filesize = null;
                 if ((filesize = br.getRegex("<i>\\((.*)MB\\)</i>").getMatch(0)) != null) {
@@ -86,7 +86,7 @@ public class FastShareorg extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } catch (Exception e) {
-            logger.log( e);
+            logger.log(e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
