@@ -115,6 +115,11 @@ public class StartDownloadsBubbleSupport extends AbstractBubbleSupport implement
                                                             });
                                                         }
                                                     }
+
+                                                    @Override
+                                                    public boolean isHighPriority() {
+                                                        return false;
+                                                    }
                                                 });
                                             }
                                         }

@@ -26,8 +26,6 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -47,6 +45,8 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
@@ -283,6 +283,11 @@ public class VideoMegaTv extends antiDDoSForHost {
                             final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
                             delete.add(downloadLink);
                             DownloadWatchDog.getInstance().delete(delete, null);
+                        }
+
+                        @Override
+                        public boolean isHighPriority() {
+                            return false;
                         }
                     });
                     // not set as offline! have to throw exception!!

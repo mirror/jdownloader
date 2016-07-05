@@ -22,8 +22,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.HTACCESSController;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -37,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
 
 /**
  * alternative log downloader
@@ -116,6 +116,11 @@ public class JdLog extends PluginForHost {
                             final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
                             delete.add(downloadLink);
                             DownloadWatchDog.getInstance().delete(delete, null);
+                        }
+
+                        @Override
+                        public boolean isHighPriority() {
+                            return false;
                         }
                     });
                     // not set as offline! have to throw exception!!
