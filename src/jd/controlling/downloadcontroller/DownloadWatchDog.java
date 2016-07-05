@@ -1924,24 +1924,28 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public void enqueueJob(final DownloadWatchDogJob job) {
         synchronized (watchDogJobs) {
             if (job.isHighPriority()) {
-                final DownloadWatchDogJob peek = watchDogJobs.peek();
-                if (peek == null || !peek.isHighPriority()) {
-                    watchDogJobs.offerFirst(job);
+                final DownloadWatchDogJob first = watchDogJobs.peekFirst();
+                final DownloadWatchDogJob last = watchDogJobs.peekLast();
+                if (first == null || !first.isHighPriority()) {
+                    watchDogJobs.offerFirst(job);// offerFirst because list is empty or first one is non high priority
+                } else if (last.isHighPriority()) {
+                    watchDogJobs.offerLast(job);// offerLast because last one is high priority
                 } else {
-                    boolean jobAdded = false;
+                    boolean jobOffered = false;
                     final ListIterator<DownloadWatchDogJob> it = watchDogJobs.listIterator();
                     while (it.hasNext()) {
                         final DownloadWatchDogJob next = it.next();
                         if (next.isHighPriority()) {
                             continue;
                         } else {
+                            // add after last(it.previous) high priority
                             it.previous();
                             it.add(job);
-                            jobAdded = true;
+                            jobOffered = true;
                             break;
                         }
                     }
-                    if (!jobAdded) {
+                    if (!jobOffered) {
                         watchDogJobs.offerLast(job);
                     }
                 }
