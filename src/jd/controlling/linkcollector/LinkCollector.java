@@ -2511,6 +2511,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             public void execute(DownloadSession currentSession) {
                                 currentSession.setForcedOnlyModeEnabled(false);
                             }
+
+                            @Override
+                            public boolean isHighPriority() {
+                                return false;
+                            }
                         });
                     }
                 } else if (finalAutoStart) {

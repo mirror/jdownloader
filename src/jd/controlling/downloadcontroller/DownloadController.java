@@ -896,6 +896,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                             @Override
                                             public void interrupt() {
                                             }
+
+                                            @Override
+                                            public boolean isHighPriority() {
+                                                return false;
+                                            }
                                         });
                                     } else {
                                         updatePluginInstance(node);
@@ -910,6 +915,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
                 @Override
                 public void interrupt() {
+                }
+
+                @Override
+                public boolean isHighPriority() {
+                    return false;
                 }
             });
         }

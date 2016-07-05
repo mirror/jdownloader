@@ -2,13 +2,6 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
-import org.jdownloader.images.AbstractIcon;
-
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogJob;
@@ -16,6 +9,13 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.images.AbstractIcon;
 
 public class StopsignAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -57,6 +57,11 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
 
             @Override
             public void interrupt() {
+            }
+
+            @Override
+            public boolean isHighPriority() {
+                return true;
             }
         }, true);
         DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
