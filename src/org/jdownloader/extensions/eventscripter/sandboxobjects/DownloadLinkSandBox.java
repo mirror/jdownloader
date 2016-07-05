@@ -7,7 +7,9 @@ import java.util.WeakHashMap;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 
 import org.appwork.exceptions.WTFException;
@@ -120,6 +122,22 @@ public class DownloadLinkSandBox {
             return downloadLink.getUniqueID().toString();
         }
         return null;
+    }
+
+    public boolean remove() {
+        if (downloadLink != null) {
+            final FilePackage filePackage = downloadLink.getParentNode();
+            if (filePackage != null && !FilePackage.isDefaultFilePackage(filePackage)) {
+                final PackageController<FilePackage, DownloadLink> controller = filePackage.getControlledBy();
+                if (controller != null) {
+                    final ArrayList<DownloadLink> children = new ArrayList<DownloadLink>();
+                    children.add(downloadLink);
+                    controller.removeChildren(children);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void setProperty(String key, Object value) {
