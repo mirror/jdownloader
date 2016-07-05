@@ -36,6 +36,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -133,7 +134,7 @@ public class EHentaiOrg extends PluginForHost {
                 downloadLink.setDownloadSize(SizeFormatter.getSize(html_filesize));
             }
         }
-        dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/(?:h|im)/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);
         }
@@ -364,7 +365,7 @@ public class EHentaiOrg extends PluginForHost {
         if (fpName == null || uidPart == null || uidPart.length != 2) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String title = fpName + "_" + uidPart[0] + "-" + df.format(Integer.parseInt(uidPart[1]));
+        final String title = HTMLEntities.unhtmlentities(fpName) + "_" + uidPart[0] + "-" + df.format(Integer.parseInt(uidPart[1]));
         return title;
     }
 
