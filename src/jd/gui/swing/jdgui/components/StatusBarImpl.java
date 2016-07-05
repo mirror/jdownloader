@@ -197,7 +197,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
 
             public void onLinkCheckerEvent(final LinkCheckerEvent event) {
-                if (event.getCaller() == LinkCollector.getInstance().getLinkChecker()) {
+                if (event.getCaller() == LinkCollector.getInstance().getDefaultLinkChecker()) {
                     updateLinkGrabberIndicator();
                 } else if (LinkCheckerEvent.Type.STARTED.equals(event.getType())) {
                     new EDTRunner() {
@@ -303,19 +303,19 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     private final AtomicBoolean   linkgrabberIndicatorEnabled = new AtomicBoolean(false);
     private final DelayedRunnable linkgrabberIndicatorUpdater = new DelayedRunnable(ToolTipController.EXECUTER, 500, 2000) {
-        @Override
-        public String getID() {
-            return "StatusBar:LinkGrabberIndicatorUpdater";
-        }
+                                                                  @Override
+                                                                  public String getID() {
+                                                                      return "StatusBar:LinkGrabberIndicatorUpdater";
+                                                                  }
 
-        @Override
-        public void delayedrun() {
-            updateLinkGrabberIndicator();
-        }
-    };
+                                                                  @Override
+                                                                  public void delayedrun() {
+                                                                      updateLinkGrabberIndicator();
+                                                                  }
+                                                              };
 
     private void updateLinkGrabberIndicator() {
-        final boolean enabled = LinkCrawler.isCrawling() || LinkCollector.getInstance().isCollecting();
+        final boolean enabled = LinkCollector.getInstance().isCollecting();
         if (enabled) {
             linkgrabberIndicatorUpdater.resetAndStart();
         }

@@ -60,16 +60,16 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
 
     private final DelayedRunnable update = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500l, 1000l) {
 
-                                             @Override
-                                             public String getID() {
-                                                 return "LinkCrawlerBubble";
-                                             }
+        @Override
+        public String getID() {
+            return "LinkCrawlerBubble";
+        }
 
-                                             @Override
-                                             public void delayedrun() {
-                                                 delayedUpdate();
-                                             }
-                                         };
+        @Override
+        public void delayedrun() {
+            delayedUpdate();
+        }
+    };
 
     private final void delayedUpdate() {
         final LinkCollectorCrawler crwl = crawler.get();
@@ -120,10 +120,14 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
         }
     }
 
-    protected void update() {
+    protected void update(final boolean delay) {
         final LinkCollectorCrawler crwl = crawler.get();
         if (crwl != null) {
-            update.resetAndStart();
+            if (delay) {
+                update.resetAndStart();
+            } else {
+                delayedUpdate();
+            }
         }
     }
 }

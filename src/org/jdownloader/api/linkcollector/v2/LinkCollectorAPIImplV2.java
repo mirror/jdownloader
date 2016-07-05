@@ -23,7 +23,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.plugins.DownloadLink;
 
@@ -748,7 +747,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public boolean isCollecting() {
-        return LinkCrawler.isCrawling() || LinkCollector.getInstance().isCollecting();
+        return LinkCollector.getInstance().isCollecting();
     }
 
 }

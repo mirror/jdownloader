@@ -131,19 +131,45 @@ import org.jdownloader.translate._JDT;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
 
-    public static final String SOURCE_VARIANT_ID = "SOURCE_VARIANT_ID";
+    public static final String                        SOURCE_VARIANT_ID = "SOURCE_VARIANT_ID";
+
+    private final WeakHashMap<JobLinkCrawler, Object> jobLinkCrawlers   = new WeakHashMap<JobLinkCrawler, Object>();
 
     public static final class JobLinkCrawler extends LinkCollectorCrawler {
         private final LinkCollectingJob         job;
         private final LinkCollectingInformation collectingInfo;
         private final LinkCollector             linkCollector;
+        private final AtomicBoolean             crawlerAdded = new AtomicBoolean(false);
+        private final long                      collectingID;
+        private final LinkChecker<CrawledLink>  linkChecker  = new LinkChecker<CrawledLink>();
+
+        public long getCollectingID() {
+            return collectingID;
+        }
+
+        protected LinkCollector getLinkCollector() {
+            return linkCollector;
+        }
+
+        public LinkChecker<CrawledLink> getLinkChecker() {
+            return linkChecker;
+        }
+
+        public boolean isCollecting() {
+            return isRunning() || getLinkChecker().isRunning();
+        }
+
+        public void abort() {
+            getLinkChecker().stopChecking();
+            stopCrawling();
+        }
 
         protected JobLinkCrawler(final LinkCollector linkCollector, final LinkCollectingJob job) {
-            linkCollector.lazyInit();
+            this.collectingID = linkCollector.getCollectingID();
             this.job = job;
-            collectingInfo = new LinkCollectingInformation(this, linkCollector.getLinkChecker(), linkCollector);
             this.linkCollector = linkCollector;
-            setFilter(linkCollector.getCrawlerFilter());
+            this.linkChecker.setLinkCheckHandler(linkCollector);
+            this.collectingInfo = new LinkCollectingInformation(this);
             final LinkCrawlerHandler defaultHandler = defaulHandlerFactory();
             setHandler(new LinkCrawlerHandler() {
 
@@ -157,13 +183,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 public void handleFinalLink(CrawledLink link) {
                     link.setCollectingInfo(collectingInfo);
                     link.setSourceJob(getJob());
-                    linkCollector.handleFinalLink(link);
+                    linkCollector.handleFinalLink(link, getLinkChecker());
                     defaultHandler.handleFinalLink(link);
                 }
 
                 @Override
                 public void handleFilteredLink(CrawledLink link) {
-                    link.setCollectingInfo(collectingInfo);
                     link.setSourceJob(getJob());
                     linkCollector.handleFilteredLink(link);
                     defaultHandler.handleFilteredLink(link);
@@ -175,10 +200,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     defaultHandler.handleBrokenLink(link);
                 }
             });
+            synchronized (linkCollector.jobLinkCrawlers) {
+                linkCollector.jobLinkCrawlers.put(this, Boolean.TRUE);
+            }
         }
 
         public LinkCollectingJob getJob() {
             return job;
+        }
+
+        @Override
+        public LinkCrawlerFilter getFilter() {
+            return linkCollector.getCrawlerFilter();
         }
 
         @Override
@@ -194,12 +227,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         @Override
         protected void crawlerStopped() {
-            crawlerAdded.set(false);
-            linkCollector.onCrawlerStopped(this);
+            if (crawlerAdded.compareAndSet(true, false)) {
+                linkCollector.onCrawlerStopped(this);
+            }
             super.crawlerStopped();
         }
-
-        private final AtomicBoolean crawlerAdded = new AtomicBoolean(false);
 
         @Override
         protected void crawlerStarted() {
@@ -341,7 +373,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public static SingleReachableState                                          CRAWLERLIST_LOADED = new SingleReachableState("CRAWLERLIST_COMPLETE");
     private static LinkCollector                                                INSTANCE           = new LinkCollector();
 
-    private volatile LinkChecker<CrawledLink>                                   linkChecker        = null;
+    private volatile LinkChecker<CrawledLink>                                   defaultLinkChecker = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
@@ -354,8 +386,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private volatile ExtractionExtension                                        archiver;
     private final DelayedRunnable                                               asyncSaving;
-
-    private volatile PackagizerInterface                                        packagizer         = null;
 
     protected volatile CrawledPackage                                           offlinePackage;
 
@@ -377,10 +407,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return collectingID.get();
     }
 
-    private final AtomicLong       collectingRequested  = new AtomicLong(0);
-    private final AtomicLong       collectingProcessed  = new AtomicLong(0);
-
-    private boolean                restoreButtonEnabled = false;
+    private final AtomicLong       collectingRequested = new AtomicLong(0);
+    private final AtomicLong       collectingProcessed = new AtomicLong(0);
 
     private final AutoStartManager autoStartManager;
 
@@ -580,15 +608,26 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void abort() {
         collectingID.incrementAndGet();
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ABORT));
-        final LinkChecker<CrawledLink> llinkChecker = linkChecker;
-        if (llinkChecker != null) {
-            llinkChecker.stopChecking();
+        synchronized (jobLinkCrawlers) {
+            for (final JobLinkCrawler jobLinkCrawler : jobLinkCrawlers.keySet()) {
+                jobLinkCrawler.abort();
+            }
         }
     }
 
     public boolean isCollecting() {
-        final LinkChecker<CrawledLink> llinkChecker = linkChecker;
-        return llinkChecker != null && llinkChecker.isRunning() || (collectingRequested.get() != collectingProcessed.get());
+        if ((collectingRequested.get() != collectingProcessed.get())) {
+            return true;
+        } else {
+            synchronized (jobLinkCrawlers) {
+                for (final JobLinkCrawler jobLinkCrawler : jobLinkCrawlers.keySet()) {
+                    if (jobLinkCrawler.isCollecting()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     protected void autoFileNameCorrection(List<CrawledLink> pkgchildren, CrawledPackage pkg) {
@@ -868,7 +907,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         return null;
                     }
                     final LinkCollectingInformation info = link.getCollectingInfo();
-                    if (info == null || info.getCollectingID() == getCollectingID()) {
+                    if (info == null || info.isCollectingIDValid()) {
                         putCrawledLinkByLinkID(linkID, link);
                         if (link.getDownloadLink() != null) {
                             /* set CrawledLink as changeListener to its DownloadLink */
@@ -1108,7 +1147,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private void addFilteredStuff(final CrawledLink filtered, final boolean checkDupe) {
         filtered.setCollectingInfo(null);
-        if (restoreButtonEnabled == false) {
+        if (CFG_LINKGRABBER.RESTORE_BUTTON_ENABLED.isEnabled() == false) {
             /** RestoreButton is disabled, no need to save the filtered links */
             /* clear references */
             clearCrawledLinkReferences(filtered);
@@ -1271,7 +1310,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      * @return the crawlerFilter
      */
     public LinkCrawlerFilter getCrawlerFilter() {
-        return crawlerFilter;
+        return LinkFilterController.getInstance();
     }
 
     public java.util.List<CrawledLink> getFilteredStuff(final boolean clearAfterGet) {
@@ -1294,13 +1333,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return filteredStuff.size();
     }
 
-    public LinkChecker<CrawledLink> getLinkChecker() {
-        lazyInit();
-        return linkChecker;
-    }
-
-    public PackagizerInterface getPackagizer() {
-        return packagizer;
+    public synchronized LinkChecker<CrawledLink> getDefaultLinkChecker() {
+        if (defaultLinkChecker == null) {
+            final LinkChecker<CrawledLink> linkChecker = new LinkChecker<CrawledLink>();
+            linkChecker.setLinkCheckHandler(this);
+            defaultLinkChecker = linkChecker;
+        }
+        return defaultLinkChecker;
     }
 
     public void handleFilteredLink(CrawledLink link) {
@@ -1322,8 +1361,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void handleFinalLink(final CrawledLink link) {
+        handleFinalLink(link, getDefaultLinkChecker());
+    }
+
+    public void handleFinalLink(final CrawledLink link, final LinkChecker<CrawledLink> linkChecker) {
         final LinkCollectingInformation info = link.getCollectingInfo();
-        if (info != null && info.getCollectingID() != getCollectingID()) {
+        if (info != null && !info.isCollectingIDValid()) {
             clearCrawledLinkReferences(link);
         } else {
             if (org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.isEnabled()) {
@@ -1331,7 +1374,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        if (info != null && info.getCollectingID() != getCollectingID()) {
+                        if (info != null && !info.isCollectingIDValid()) {
                             clearCrawledLinkReferences(link);
                         } else {
                             /* avoid additional linkCheck when linkID already exists */
@@ -1365,11 +1408,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        if (info != null && info.getCollectingID() != getCollectingID()) {
+                        if (info != null && !info.isCollectingIDValid()) {
                             clearCrawledLinkReferences(link);
                         } else {
                             applyJobCrawledLinkModifier(link, true);
-                            final PackagizerInterface pc = getPackagizer();
+                            final PackagizerInterface pc = PackagizerController.getInstance();
                             if (pc != null) {
                                 /* run packagizer on un-checked link */
                                 pc.runByUrl(link);
@@ -1384,26 +1427,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    private void lazyInit() {
-        if (linkChecker != null) {
-            return;
-        }
-        synchronized (this) {
-            if (linkChecker != null) {
-                return;
-            }
-            setCrawlerFilter(LinkFilterController.getInstance());
-            restoreButtonEnabled = CFG_LINKGRABBER.RESTORE_BUTTON_ENABLED.isEnabled();
-            setPackagizer(PackagizerController.getInstance());
-            final LinkChecker<CrawledLink> llinkChecker = new LinkChecker<CrawledLink>();
-            llinkChecker.setLinkCheckHandler(this);
-            linkChecker = llinkChecker;
-        }
-    }
-
     public void linkCheckDone(final CrawledLink link) {
         /* this method is called by LinkChecker, we already updated the dupeCheckMap */
-        if (crawlerFilter.dropByFileProperties(link)) {
+        if (getCrawlerFilter().dropByFileProperties(link)) {
             addFilteredStuff(link, false);
         } else {
             if (!addGenericVariant(link.getDownloadLink())) {
@@ -1414,7 +1440,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 protected Void run() throws RuntimeException {
                     applyJobCrawledLinkModifier(link, true);
-                    final PackagizerInterface pc = getPackagizer();
+                    final PackagizerInterface pc = PackagizerController.getInstance();
                     if (pc != null) {
                         /* run packagizer on checked link */
                         pc.runByFile(link);
@@ -2309,21 +2335,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public void setArchiver(ExtractionExtension archiver) {
         this.archiver = archiver;
-    }
-
-    /**
-     * @param crawlerFilter
-     *            the crawlerFilter to set
-     */
-    public void setCrawlerFilter(LinkCrawlerFilter crawlerFilter) {
-        if (crawlerFilter == null) {
-            throw new IllegalArgumentException("crawlerFilter is null");
-        }
-        this.crawlerFilter = crawlerFilter;
-    }
-
-    public void setPackagizer(PackagizerInterface packagizerInterface) {
-        this.packagizer = packagizerInterface;
     }
 
     @Override
