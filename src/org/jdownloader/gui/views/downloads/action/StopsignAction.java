@@ -63,7 +63,7 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
             public boolean isHighPriority() {
                 return true;
             }
-        }, true);
+        });
         DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
 
     }
