@@ -29,11 +29,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -223,7 +224,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     protected final NullsafeAtomicReference<Thread>        reconnectThread       = new NullsafeAtomicReference<Thread>(null);
     protected final NullsafeAtomicReference<Thread>        tempWatchDogJobThread = new NullsafeAtomicReference<Thread>(null);
     protected NullsafeAtomicReference<DownloadWatchDogJob> currentWatchDogJob    = new NullsafeAtomicReference<DownloadWatchDogJob>(null);
-    private final LinkedBlockingDeque<DownloadWatchDogJob> watchDogJobs          = new LinkedBlockingDeque<DownloadWatchDogJob>();
+    private final LinkedList<DownloadWatchDogJob>          watchDogJobs          = new LinkedList<DownloadWatchDogJob>();
 
     private final StateMachine                             stateMachine;
     private final DownloadSpeedManager                     dsm;
@@ -1727,7 +1728,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* shutdown is requested, we do not start new downloads */
             return false;
         }
-        final DownloadWatchDogJob job = watchDogJobs.peek();
+        final DownloadWatchDogJob job;
+        synchronized (watchDogJobs) {
+            job = watchDogJobs.peek();
+        }
         if (job != null && job.isHighPriority()) {
             return false;
         }
@@ -1918,10 +1922,26 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void enqueueJob(final DownloadWatchDogJob job) {
-        if (job.isHighPriority()) {
-            watchDogJobs.offerFirst(job);
-        } else {
-            watchDogJobs.offerLast(job);
+        synchronized (watchDogJobs) {
+            if (job.isHighPriority()) {
+                final ListIterator<DownloadWatchDogJob> it = watchDogJobs.listIterator();
+                boolean added = false;
+                while (it.hasNext()) {
+                    final DownloadWatchDogJob next = it.next();
+                    if (next.isHighPriority()) {
+                        continue;
+                    } else {
+                        it.add(job);
+                        added = true;
+                        break;
+                    }
+                }
+                if (added == false) {
+                    watchDogJobs.offerFirst(job);
+                }
+            } else {
+                watchDogJobs.offerLast(job);
+            }
         }
         if (!isWatchDogThread()) {
             synchronized (WATCHDOGLOCK) {
@@ -2984,14 +3004,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                             /* clear interrupted flag in case someone interrupted a DownloadWatchDogJob */
                             interrupted();
-                            if (watchDogJobs.size() == 0) {
+                            if (!hasWaitingJobs()) {
                                 WATCHDOGLOCK.wait();
                             }
                             if (!isWatchDogThread()) {
                                 return;
                             }
                         }
-                        final DownloadWatchDogJob job = watchDogJobs.poll();
+                        final DownloadWatchDogJob job;
+                        synchronized (watchDogJobs) {
+                            job = watchDogJobs.poll();
+                        }
                         if (job != null) {
                             try {
                                 currentWatchDogJob.set(job);
@@ -3201,6 +3224,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         });
     }
 
+    protected boolean hasWaitingJobs() {
+        synchronized (watchDogJobs) {
+            return watchDogJobs.peek() != null;
+        }
+    }
+
     private synchronized void startDownloadWatchDog() {
         stateMachine.setStatus(RUNNING_STATE);
         Thread thread = new Thread() {
@@ -3209,7 +3238,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 try {
                     setTempWatchDogJobThread(Thread.currentThread());
                     while (true) {
-                        final DownloadWatchDogJob job = watchDogJobs.poll();
+                        final DownloadWatchDogJob job;
+                        synchronized (watchDogJobs) {
+                            job = watchDogJobs.poll();
+                        }
                         if (job != null) {
                             try {
                                 currentWatchDogJob.set(job);
@@ -3278,39 +3310,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                            @Override
-                            public void delayedrun() {
-                                enqueueJob(new DownloadWatchDogJob() {
+                                                          @Override
+                                                          public void delayedrun() {
+                                                              enqueueJob(new DownloadWatchDogJob() {
 
-                                    @Override
-                                    public void interrupt() {
-                                    }
+                                                                  @Override
+                                                                  public void interrupt() {
+                                                                  }
 
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        /* reset CONNECTION_UNAVAILABLE */
-                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                                                  @Override
+                                                                  public void execute(DownloadSession currentSession) {
+                                                                      /* reset CONNECTION_UNAVAILABLE */
+                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                            @Override
-                                            public int returnMaxResults() {
-                                                return 0;
-                                            }
+                                                                          @Override
+                                                                          public int returnMaxResults() {
+                                                                              return 0;
+                                                                          }
 
-                                            @Override
-                                            public boolean acceptNode(DownloadLink node) {
-                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                            }
-                                        });
-                                        unSkip(unSkip);
-                                    }
+                                                                          @Override
+                                                                          public boolean acceptNode(DownloadLink node) {
+                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                                                          }
+                                                                      });
+                                                                      unSkip(unSkip);
+                                                                  }
 
-                                    @Override
-                                    public boolean isHighPriority() {
-                                        return false;
-                                    }
-                                });
-                            }
-                        };
+                                                                  @Override
+                                                                  public boolean isHighPriority() {
+                                                                      return false;
+                                                                  }
+                                                              });
+                                                          }
+                                                      };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -3632,7 +3664,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         try {
                             int round = 0;
                             synchronized (WATCHDOGLOCK) {
-                                while (watchDogJobs.isEmpty() && ++round < 4 && DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
+                                while (!hasWaitingJobs() && ++round < 4 && DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
                                     long currentTimeStamp = System.currentTimeMillis();
                                     WATCHDOGLOCK.wait(1250);
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
