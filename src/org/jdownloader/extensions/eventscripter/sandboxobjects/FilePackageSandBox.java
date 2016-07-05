@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
@@ -123,6 +124,24 @@ public class FilePackageSandBox {
             });
             return finished.get();
         }
+    }
+
+    public boolean remove() {
+        if (filePackage != null && !FilePackage.isDefaultFilePackage(filePackage)) {
+            final PackageController<FilePackage, DownloadLink> controller = filePackage.getControlledBy();
+            if (controller != null) {
+                controller.removePackage(filePackage);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String getUUID() {
+        if (filePackage != null) {
+            return filePackage.getUniqueID().toString();
+        }
+        return null;
     }
 
     public String getDownloadFolder() {

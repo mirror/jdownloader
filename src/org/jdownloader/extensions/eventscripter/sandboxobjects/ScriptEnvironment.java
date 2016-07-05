@@ -519,6 +519,18 @@ public class ScriptEnvironment {
         return ret;
     }
 
+    @ScriptAPI(description = "Remove a downloadlink by uuid")
+    public static boolean removeDownloadLinkByUUID(final String uuid) {
+        final DownloadLink link = DownloadController.getInstance().getLinkByID(Long.parseLong(uuid));
+        return link != null && new DownloadLinkSandBox(link).remove();
+    }
+
+    @ScriptAPI(description = "Remove a package by uuid")
+    public static boolean removeFilePackageByUUID(final String uuid) {
+        final FilePackage filePackage = DownloadController.getInstance().getPackageByID(Long.parseLong(uuid));
+        return filePackage != null && new FilePackageSandBox(filePackage).remove();
+    }
+
     @ScriptAPI(description = "Get a list of all downloadlinks")
     public static DownloadLinkSandBox[] getAllDownloadLinks() {
         final List<DownloadLink> links = DownloadController.getInstance().getAllChildren();
