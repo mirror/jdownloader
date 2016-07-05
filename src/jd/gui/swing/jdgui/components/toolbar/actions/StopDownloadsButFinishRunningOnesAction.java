@@ -53,7 +53,7 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
             public boolean isHighPriority() {
                 return true;
             }
-        }, true);
+        });
     }
 
     private boolean            hideIfDownloadsAreStopped     = false;
