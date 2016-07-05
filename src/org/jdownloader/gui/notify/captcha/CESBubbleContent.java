@@ -27,6 +27,7 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.Element;
+import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -83,24 +84,26 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         east.add(status = new JLabel(""), "hidemode 3");
         add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,aligny top");
         add(east);
-        Challenge<?> ic = cesSolverJob.getChallenge();
-        if (ic instanceof RecaptchaV2Challenge) {
-            ic = ((RecaptchaV2Challenge) ic).createBasicCaptchaChallenge();
-        }
-        if (ic instanceof ImageCaptchaChallenge) {
-            try {
-                ImageIcon icon = null;
+        if (CFG_BUBBLE.CFG.isCaptchaExchangeSolverBubbleImageVisible()) {
+            Challenge<?> ic = cesSolverJob.getChallenge();
+            if (ic instanceof RecaptchaV2Challenge) {
+                ic = ((RecaptchaV2Challenge) ic).createBasicCaptchaChallenge();
+            }
+            if (ic instanceof ImageCaptchaChallenge) {
+                try {
+                    ImageIcon icon = null;
 
-                icon = new ImageIcon(((ImageCaptchaChallenge) ic).getAnnotatedImage());
+                    icon = new ImageIcon(((ImageCaptchaChallenge) ic).getAnnotatedImage());
 
-                if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
+                    if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
 
-                    icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));
+                        icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));
+                    }
+                    add(new JSeparator(), "spanx,pushx,growx");
+                    add(new JLabel(icon), "spanx,pushx,growx");
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                add(new JSeparator(), "spanx,pushx,growx");
-                add(new JLabel(icon), "spanx,pushx,growx");
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
 
