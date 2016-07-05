@@ -116,18 +116,12 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public void setBubbleNotifyEnabledDuringSilentMode(boolean b);
 
     public static enum BubbleNotifyEnabledState {
-        @EnumLabel("Always")
-        ALWAYS,
-        @EnumLabel("Never")
-        NEVER,
-        @EnumLabel("Only if JDownloader is not the active window")
-        JD_NOT_ACTIVE,
-        @EnumLabel("Only if JDownloader is minimized to tray or taskbar")
-        TRAY_OR_TASKBAR,
-        @EnumLabel("Only if JDownloader is minimized to tray")
-        TRAY,
-        @EnumLabel("Only if JDownloader is minimized to taskbar")
-        TASKBAR
+        @EnumLabel("Always") ALWAYS,
+        @EnumLabel("Never") NEVER,
+        @EnumLabel("Only if JDownloader is not the active window") JD_NOT_ACTIVE,
+        @EnumLabel("Only if JDownloader is minimized to tray or taskbar") TRAY_OR_TASKBAR,
+        @EnumLabel("Only if JDownloader is minimized to tray") TRAY,
+        @EnumLabel("Only if JDownloader is minimized to taskbar") TASKBAR
 
     }
 
@@ -265,4 +259,10 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public boolean isBubbleAnchorRelativeToWindow();
 
     public void setBubbleAnchorRelativeToWindow(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCaptchaExchangeSolverBubbleImageVisible();
+
+    public void setCaptchaExchangeSolverBubbleImageVisible(boolean b);
 }
