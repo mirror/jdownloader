@@ -60,7 +60,7 @@ public class VipCocoleechCom extends PluginForHost {
 
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 20;
-    private static final int                               defaultMAXCHUNKS     = 1;
+    private static final int                               defaultMAXCHUNKS     = -5;
     private static final boolean                           defaultRESUME        = true;
     private final String                                   apikey               = "cdb5efc9c72196c1bd8b7a594b46b44f";
 
