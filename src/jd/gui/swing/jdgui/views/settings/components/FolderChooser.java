@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.components;
 
 import java.io.File;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.JPopupMenu;
@@ -35,7 +36,8 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     private StateUpdateEventSender<FolderChooser> eventSender;
     private boolean                               setting;
 
-    private String                                originalPath;
+    private String                                originalPath     = null;
+    private String                                initialPath      = null;
 
     public FolderChooser() {
         super("FolderChooser", true);
@@ -66,7 +68,8 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                destination.setList(DownloadPathHistoryManager.getInstance().listPaths());
+                final List<String> list = DownloadPathHistoryManager.getInstance().listPaths(initialPath);
+                destination.setList(list);
             }
 
             @Override
@@ -99,6 +102,9 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     }
 
     public void setPath(final String downloadDestination) {
+        if (initialPath == null) {
+            initialPath = downloadDestination;
+        }
         originalPath = downloadDestination;
         super.setPath(downloadDestination);
     }
