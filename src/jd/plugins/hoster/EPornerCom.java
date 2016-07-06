@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "http://(www\\.)?eporner\\.com/hd\\-porn/\\d+(/[^/]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "http://(www\\.)?eporner\\.com/hd\\-porn/\\w+(/[^/]+)?" }, flags = { 0 })
 public class EPornerCom extends PluginForHost {
 
-    public String DLLINK = null;
+    public String dllink = null;
 
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,7 +61,7 @@ public class EPornerCom extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
         if (filename == null) {
             /* Filename inside url */
-            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/\\d+/(.+)").getMatch(0);
+            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/\\w+/(.+)").getMatch(0);
             if (filename != null) {
                 /* url filename --> Nicer url filename */
                 filename = filename.replace("-", " ");
@@ -69,24 +69,23 @@ public class EPornerCom extends PluginForHost {
         }
         if (filename == null) {
             /* linkid inside url */
-            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/(\\d+)").getMatch(0);
+            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/(\\w+)").getMatch(0);
         }
         final String correctedBR = br.toString().replace("\\", "");
-        String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\d+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);
+        final String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\w+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);
         if (continueLink == null || filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        continueLink = "http://www.eporner.com" + continueLink;
         br.getPage(Encoding.htmlDecode(continueLink) + (continueLink.endsWith("/") ? "1920" : "/1920"));
-        DLLINK = br.getRegex("<hd\\.file>(http://.*?)</hd\\.file>").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("file:[\r\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
-        }
-        if (DLLINK == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(DLLINK)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = br.getRegex("<hd\\.file>(https?://.*?)</hd\\.file>").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<file>(https?://.*?)</file>").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("file:[\r\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
@@ -95,7 +94,7 @@ public class EPornerCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -113,7 +112,7 @@ public class EPornerCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
