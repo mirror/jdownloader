@@ -204,7 +204,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                         } else {
                             setTooltipText(_JDT.T.StartDownloadsAction_createTooltip_());
                         }
-                        View view = JDGui.getInstance().getMainTabbedPane().getSelectedView();
+                        final View view = JDGui.getInstance().getMainTabbedPane().getSelectedView();
                         if (enable && view instanceof LinkGrabberView) {
                             if (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext() == StartButtonAction.DISABLED) {
                                 enable = false;
