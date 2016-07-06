@@ -72,4 +72,8 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
 
     boolean isCollecting();
 
+    boolean abort(long jobId);
+
+    List<JobLinkCrawlerAPIStorable> queryLinkCrawlerJobs(final LinkCrawlerJobsQueryStorable query);
+
 }

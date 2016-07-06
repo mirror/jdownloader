@@ -15,6 +15,7 @@ import javax.swing.Icon;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
 import jd.controlling.linkcollector.LinkOrigin;
@@ -746,8 +747,29 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     @Override
+    public boolean abort(long jobId) {
+        final List<JobLinkCrawler> jobs = LinkCollector.getInstance().getJobLinkCrawlerByJobId(jobId);
+        for (JobLinkCrawler job : jobs) {
+            job.abort();
+        }
+        return jobs.size() != 0;
+    }
+
+    @Override
     public boolean isCollecting() {
         return LinkCollector.getInstance().isCollecting();
+    }
+
+    @Override
+    public List<JobLinkCrawlerAPIStorable> queryLinkCrawlerJobs(final LinkCrawlerJobsQueryStorable query) {
+        List<JobLinkCrawlerAPIStorable> result = new ArrayList<JobLinkCrawlerAPIStorable>();
+        if (query.getJobIds() != null) {
+            final List<JobLinkCrawler> jobs = LinkCollector.getInstance().getJobLinkCrawlerByJobId(query.getJobIds());
+            for (JobLinkCrawler job : jobs) {
+                result.add(new JobLinkCrawlerAPIStorable(query, job));
+            }
+        }
+        return result;
     }
 
 }
