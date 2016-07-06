@@ -10,6 +10,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -53,6 +54,13 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
             @Override
             public void execute(DownloadSession currentSession) {
                 currentSession.toggleStopMark(context);
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
+                    }
+                };
             }
 
             @Override
@@ -64,7 +72,6 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
                 return true;
             }
         });
-        DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
 
     }
 }
