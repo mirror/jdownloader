@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
@@ -247,6 +248,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             linkCollector.onCrawlerFinished(this);
             super.crawlerFinished();
         }
+
     }
 
     private static class CrawledPackageMappingID {
@@ -628,6 +630,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         return false;
+    }
+
+    public List<JobLinkCrawler> getJobLinkCrawlerByJobId(long... ids) {
+        List<JobLinkCrawler> result = new ArrayList<LinkCollector.JobLinkCrawler>();
+        Set<UniqueAlltimeID> jobs = new HashSet<UniqueAlltimeID>();
+        for (long id : ids) {
+            jobs.add(new UniqueAlltimeID(id));
+        }
+        synchronized (jobLinkCrawlers) {
+            for (final JobLinkCrawler jobLinkCrawler : jobLinkCrawlers.keySet()) {
+                if (jobs.contains(jobLinkCrawler.getJob().getUniqueAlltimeID())) {
+                    result.add(jobLinkCrawler);
+                }
+            }
+        }
+        return result;
     }
 
     protected void autoFileNameCorrection(List<CrawledLink> pkgchildren, CrawledPackage pkg) {

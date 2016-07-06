@@ -156,7 +156,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             maxResults = links.size();
         }
 
-        for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
+        int until = Math.min(startWith + maxResults, links.size());
+        for (int i = startWith; i < until; i++) {
             final DownloadLink dl = links.get(i);
             final DownloadLinkAPIStorableV2 dls = toStorable(queryParams, dl, this);
             result.add(dls);
