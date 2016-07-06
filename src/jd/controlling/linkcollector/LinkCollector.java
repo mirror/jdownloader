@@ -634,10 +634,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public List<JobLinkCrawler> getJobLinkCrawlerByJobId(long... ids) {
         List<JobLinkCrawler> result = new ArrayList<LinkCollector.JobLinkCrawler>();
-        Set<UniqueAlltimeID> jobs = new HashSet<UniqueAlltimeID>();
-        for (long id : ids) {
-            jobs.add(new UniqueAlltimeID(id));
-        }
+        final Set<UniqueAlltimeID> jobs = UniqueAlltimeID.createSet(ids);
         synchronized (jobLinkCrawlers) {
             for (final JobLinkCrawler jobLinkCrawler : jobLinkCrawlers.keySet()) {
                 if (jobs.contains(jobLinkCrawler.getJob().getUniqueAlltimeID())) {
