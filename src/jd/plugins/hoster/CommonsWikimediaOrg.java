@@ -32,8 +32,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/[^/]+/media/File:.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?File:.+" }, flags = { 0 })
 public class CommonsWikimediaOrg extends PluginForHost {
 
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
@@ -59,11 +60,6 @@ public class CommonsWikimediaOrg extends PluginForHost {
         return "https://wikimediafoundation.org/wiki/Terms_of_Use";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid = new Regex(link.getDownloadURL(), "/File:(.+)").getMatch(0);
-        link.setUrlDownload("https://commons.wikimedia.org/wiki/File:" + fid);
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -81,7 +77,10 @@ public class CommonsWikimediaOrg extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        final String filesize_str = this.br.getRegex("file size: (\\d+(?:\\.\\d{1,2})? [A-Za-z]+)").getMatch(0);
+        String filesize_str = this.br.getRegex("file size: (\\d+(?:\\.\\d{1,2})? [A-Za-z]+)").getMatch(0);
+        if (filesize_str == null) {
+            filesize_str = this.br.getRegex("(?-i)class=\"fileInfo\">[^<]*?(\\d+(\\.\\d+)?\\s*[KMGT]B)").getMatch(0);
+        }
         DLLINK = br.getRegex("id=\"file\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
             /* E.g. https://commons.wikimedia.org/wiki/File:BBH_gravitational_lensing_of_gw150914.webm */
@@ -91,10 +90,16 @@ public class CommonsWikimediaOrg extends PluginForHost {
             /* E.g. https://commons.wikimedia.org/wiki/File:Sintel_movie_720x306.ogv */
             DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]+)\"[^<>]+data\\-title=\"Original").getMatch(0);
         }
+        if (DLLINK == null) {
+            /* E.g. https://zh.wikipedia.org/wiki/File:%E9%84%AD%E7%A7%80%E6%96%87_%E5%8E%BB%E6%84%9B%E5%90%A7.jpg */
+            DLLINK = br.getRegex("\"fullImageLink\"\\s*id=\"file\"><a href=\"((https?)?:?//.*?)\"").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        if (!DLLINK.startsWith("http")) {
+            DLLINK = URLHelper.parseLocation(br._getURL(), DLLINK);
+        }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
