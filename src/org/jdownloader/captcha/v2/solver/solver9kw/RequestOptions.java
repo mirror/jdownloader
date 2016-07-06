@@ -3,10 +3,10 @@ package org.jdownloader.captcha.v2.solver.solver9kw;
 import org.appwork.utils.parser.UrlQuery;
 
 public class RequestOptions {
-    private int       cph;
-    private int       cpm;
-    private int       priothing;
-    private int       timeoutthing;
+    private int      cph;
+    private int      cpm;
+    private int      priothing;
+    private int      timeoutthing;
     private UrlQuery moreoptions = new UrlQuery();
 
     public UrlQuery getMoreoptions() {
@@ -74,7 +74,7 @@ public class RequestOptions {
         priothing = config.getprio();
         timeoutthing = (config.getDefaultTimeout() / 1000);
         selfsolve = config.isSelfsolve();
-        confirm = config.ismouseconfirm();
+        confirm = config.isconfirm();
     }
 
 }

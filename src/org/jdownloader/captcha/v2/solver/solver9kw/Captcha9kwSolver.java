@@ -2,7 +2,10 @@ package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
 
+import jd.http.Browser;
+
 import org.appwork.utils.IO;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
@@ -12,9 +15,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-
-import jd.http.Browser;
-import org.appwork.utils.parser.UrlQuery;
 
 public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
@@ -65,7 +65,12 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
         Challenge<String> captchaChallenge = getChallenge(solverJob);
         RequestOptions options = prepare(solverJob);
-        options.setConfirm(config.isconfirm());
+
+        if (options.getMoreoptions().containsKey("userconfirm")) {
+            options.getMoreoptions().remove("userconfirm");
+        } else {
+            options.setConfirm(config.isconfirm());
+        }
         try {
             final byte[] data = captchaChallenge instanceof Recaptcha2FallbackChallengeViaPhantomJS ? ((Recaptcha2FallbackChallengeViaPhantomJS) captchaChallenge).getAnnotatedImageBytes() : IO.readFile(((ImageCaptchaChallenge) captchaChallenge).getImageFile());
             UrlQuery qi = createQueryForUpload(solverJob, options, data);

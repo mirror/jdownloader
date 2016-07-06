@@ -5,17 +5,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import jd.http.Browser;
+
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaImages;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaResponse;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-
-import jd.http.Browser;
-import org.appwork.utils.parser.UrlQuery;
 
 public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
 
@@ -48,7 +48,11 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
         checkInterruption();
         KeyCaptchaPuzzleChallenge captchaChallenge = (KeyCaptchaPuzzleChallenge) solverJob.getChallenge();
         RequestOptions options = prepare(solverJob);
-        options.setConfirm(config.isconfirm());
+        if (options.getMoreoptions().containsKey("userconfirm")) {
+            options.getMoreoptions().remove("userconfirm");
+        } else {
+            options.setConfirm(config.isconfirm());
+        }
         try {
 
             UrlQuery qi = createQueryForUpload(solverJob, options, null);
