@@ -54,7 +54,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
      * {@link #getInstance()}.
      */
     public StartDownloadsAction() {
-
         setName(_JDT.T.StartDownloadsAction_createTooltip_());
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
@@ -64,7 +63,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
         setAccelerator(KeyEvent.VK_S);
         updateEnableState();
-
     }
 
     @Override
@@ -97,7 +95,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
             });
         } else {
             DownloadWatchDog.getInstance().startDownloads();
-
         }
         DownloadSession session = DownloadWatchDog.getInstance().getSession();
 
@@ -124,8 +121,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     @Override
     public String createTooltip() {
-        DownloadSession session = DownloadWatchDog.getInstance().getSession();
-
+        final DownloadSession session = DownloadWatchDog.getInstance().getSession();
         if (session != null && session.isForcedOnlyModeEnabled()) {
             return _JDT.T.StartDownloadsAction_forced_createTooltip_();
         }
@@ -147,9 +143,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     public void setHideIfDownloadsAreRunning(boolean showIfDownloadsAreRunning) {
         this.hideIfDownloadsAreRunning = showIfDownloadsAreRunning;
-
         updateEnableState();
-
     }
 
     @Override
@@ -159,7 +153,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     @Override
     public void onDownloadWatchdogStateIsIdle() {
         updateEnableState();
-
     }
 
     @Override
@@ -168,73 +161,78 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     }
 
     private void updateEnableState() {
-
-        new EDTRunner() {
+        DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
 
             @Override
-            protected void runInEDT() {
-                DownloadSession session = DownloadWatchDog.getInstance().getSession();
-                boolean enable = (!DownloadWatchDog.getInstance().isRunning());
-                // putValue(Action.SMALL_ICON, null);
-                // putValue(Action.LARGE_ICON_KEY, null);
-                Icon newSmall = normalSmall;
-
-                if (session != null && DownloadWatchDog.getInstance().isRunning()) {
-                    enable |= session.isForcedOnlyModeEnabled();
-                    if (session.isForcedOnlyModeEnabled()) {
-                        newSmall = forcedSmall;
-
-                    }
-                }
-
-                if (newSmall != smallIcon) {
-                    if (newSmall == forcedSmall) {
-                        smallIcon = forcedSmall;
-                        largeIcon = forcedLarge;
-                    } else {
-                        smallIcon = normalSmall;
-                        largeIcon = normalLarge;
-                    }
-                    firePropertyChange(Action.SMALL_ICON, new Object(), new Object());
-                    firePropertyChange(Action.LARGE_ICON_KEY, new Object(), new Object());
-                }
-                if (smallIcon == forcedSmall) {
-                    setTooltipText(_JDT.T.StartDownloadsAction_forced_createTooltip_());
-
-                } else {
-                    setTooltipText(_JDT.T.StartDownloadsAction_createTooltip_());
-                }
-
-                View view = JDGui.getInstance().getMainTabbedPane().getSelectedView();
-
-                if (enable && view instanceof LinkGrabberView) {
-                    if (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext() == StartButtonAction.DISABLED) {
-                        enable = false;
-                    }
-                }
-                setEnabled(enable);
-                if (isHideIfDownloadsAreRunning()) {
-                    setVisible(enable);
-
-                }
+            public boolean isHighPriority() {
+                return false;
             }
-        };
+
+            @Override
+            public void interrupt() {
+            }
+
+            @Override
+            public void execute(final DownloadSession session) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        final boolean isRunning = DownloadWatchDog.getInstance().isRunning();
+                        boolean enable = (!isRunning);
+                        Icon newSmall = normalSmall;
+                        if (session != null && isRunning) {
+                            enable |= session.isForcedOnlyModeEnabled();
+                            if (session.isForcedOnlyModeEnabled()) {
+                                newSmall = forcedSmall;
+                            }
+                        }
+                        if (newSmall != smallIcon) {
+                            if (newSmall == forcedSmall) {
+                                smallIcon = forcedSmall;
+                                largeIcon = forcedLarge;
+                            } else {
+                                smallIcon = normalSmall;
+                                largeIcon = normalLarge;
+                            }
+                            firePropertyChange(Action.SMALL_ICON, new Object(), new Object());
+                            firePropertyChange(Action.LARGE_ICON_KEY, new Object(), new Object());
+                        }
+                        if (smallIcon == forcedSmall) {
+                            setTooltipText(_JDT.T.StartDownloadsAction_forced_createTooltip_());
+
+                        } else {
+                            setTooltipText(_JDT.T.StartDownloadsAction_createTooltip_());
+                        }
+                        View view = JDGui.getInstance().getMainTabbedPane().getSelectedView();
+                        if (enable && view instanceof LinkGrabberView) {
+                            if (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext() == StartButtonAction.DISABLED) {
+                                enable = false;
+                            }
+                        }
+                        setEnabled(enable);
+                        if (isHideIfDownloadsAreRunning()) {
+                            setVisible(enable);
+                        }
+                    }
+                };
+            }
+        });
+
     }
 
-    private Icon normalSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 18);
-    private Icon forcedSmall = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 18); ;
-    private Icon normalLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24);
-    private Icon forcedLarge = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 24); ;
-    private Icon smallIcon   = normalSmall;
-    private Icon largeIcon   = normalLarge;
+    private final Icon normalSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 18);
+    private final Icon forcedSmall = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 18); ;
+    private final Icon normalLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24);
+    private final Icon forcedLarge = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 24); ;
+    private Icon       smallIcon   = normalSmall;
+    private Icon       largeIcon   = normalLarge;
 
     /**
      * @return
      */
     protected Icon getSmallIconForToolbar() {
-
         return smallIcon;
-
     }
 
     /**
@@ -246,7 +244,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     @Override
     public Object getValue(String key) {
-
         return super.getValue(key);
     }
 
@@ -279,9 +276,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     @Override
     public void onGuiMainTabSwitch(View oldView, final View newView) {
-
         DownloadWatchDog.getInstance().notifyCurrentState(this);
-
     }
 
     @Override
