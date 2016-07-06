@@ -180,6 +180,8 @@ public class SaveTv extends PluginForHost {
     private static final int      ACCOUNT_PREMIUM_MAXCHUNKS                 = -2;
     private static final int      ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
 
+    private static final int      FREE_MAXDOWNLOADS                         = -1;
+
     /* Other API/site errorhandling constants */
     private static final String   HTML_SITE_DL_IMPOSSIBLE                   = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
     private static final String   HTML_API_DL_IMPOSSIBLE                    = ">1418</ErrorCodeID>";
@@ -258,7 +260,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
@@ -276,7 +278,7 @@ public class SaveTv extends PluginForHost {
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
-        cfg = this.getPluginConfig();
+        this.cfg = this.getPluginConfig();
     }
 
     /**
@@ -302,9 +304,7 @@ public class SaveTv extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
             link.getLinkStatus().setStatusText("Kann Links ohne gültigen Account nicht überprüfen");
-            synchronized (LOCK) {
-                checkAccountNeededDialog();
-            }
+            checkAccountNeededDialog();
             return AvailableStatus.UNCHECKABLE;
         }
         setConstants(aa, link);
@@ -660,7 +660,6 @@ public class SaveTv extends PluginForHost {
         synchronized (LOCK) {
             checkFeatureDialogAll();
             checkFeatureDialogCrawler();
-            /* TODO: Remove this after june 2015 --> Done */
             // checkFeatureDialogNew();
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
@@ -780,35 +779,22 @@ public class SaveTv extends PluginForHost {
             }
 
             site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
-            if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
-                /* Extremely rare case */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
-            }
-            /* Ads-Free version not available - handle it */
-            if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
-                logger.info("Received server error 'Leider enthält Ihre Aufnahme nur Werbung'");
-                final long maxRetries = getLongProperty(cfg, FORCE_WITH_ADS_ON_ERROR_MAXRETRIES, defaultFORCE_WITH_ADS_ON_ERROR_maxRetries);
-                final long waitHours = getLongProperty(cfg, FORCE_WITH_ADS_ON_ERROR_HOURS, defaultFORCE_WITH_ADS_ON_ERROR_HOURS);
-                long currentTryCount = getLongProperty(downloadLink, "curren_no_hd_ads_free_available_retries", 0);
-                final boolean load_with_ads = (maxRetries != 0 && currentTryCount >= maxRetries);
-                if (!load_with_ads) {
-                    currentTryCount++;
-                    downloadLink.setProperty("curren_no_hd_ads_free_available_retries", currentTryCount);
-                    logger.info("--> Throw Exception_no_ads_free_2 | Try " + currentTryCount + "/" + maxRetries);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Versuch " + currentTryCount + "/" + maxRetries + "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (HD Format gewählt aber nicht verfügbar)", waitHours * 60 * 60 * 1000l);
-                } else {
-                    logger.info("--> Max retries reached: " + maxRetries + " --> Trying to download adsfree version");
-                    site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, "false");
-                    if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (Ausweichen auf HQ Format hat nichts gebracht)", 12 * 60 * 60 * 1000l);
-                    }
-                }
-            }
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("ARRVIDEOURL");
-            final Object dllink_object = ressourcelist.get(2);
-            if (dllink_object instanceof String) {
-                dllink = (String) dllink_object;
+            /* 2016-07-06: Collecting errors: */
+            /*
+             * {"ERROR":
+             * "Durch Anwendung der Schnittliste wurde der gesamte Inhalt der Aufnahme entfernt. Um den Inhalt ihrer Aufnahme zu betrachten, laden Sie bitte die ungeschnittene Version."
+             * ,"TELECASTID":1.2579225E7}
+             */
+            final String error = (String) entries.get("ERROR");
+            if (!inValidate(error)) {
+                /* 2016-07-06: As long as we haven't collected *all* possible errors let's just have generic handling for all. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fehler beim Downloadversuch: " + error, 10 * 60 * 1000l);
+            }
+            final boolean dlurl_success = ((Boolean) entries.get("SUCCESS")).booleanValue();
+            dllink = (String) entries.get("DOWNLOADURL");
+            if (inValidate(dllink) && !dlurl_success) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download aus unbekannten Gründen zurzeit nicht möglich", 10 * 60 * 1000l);
             }
         }
         if (dllink == null) {
@@ -930,11 +916,11 @@ public class SaveTv extends PluginForHost {
         setConstants(account, null);
         loginSafe(this.br, account, true);
         /* We're logged in - don't fail here! */
-        String acctype = null;
+        String package_name = null;
         try {
             if (is_API_enabled()) {
                 // doSoapRequest("http://tempuri.org/IUser/GetUserStatus", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId>");
-                acctype = "XL Account";
+                package_name = ACCOUNTTYPE_DEFAULT;
             } else {
                 /*
                  * Get long lasting login cookie. Keep in mind that such a cookie can only exist once for every account so in case a user
@@ -984,11 +970,10 @@ public class SaveTv extends PluginForHost {
                 ai.setValidUntil(expireDate_user_display);
                 account.setProperty(PROPERTY_acc_expire, expireDate_real);
 
-                final String package_name = getJson(br.toString(), "SCURRENTARTICLENAME");
-                if (package_name.contains("Basis")) {
-                    acctype = "Basis Account";
-                } else {
-                    acctype = "XL Account";
+                package_name = getJson(br.toString(), "SCURRENTARTICLENAME");
+                if (inValidate(package_name)) {
+                    /* This should never happen */
+                    package_name = ACCOUNTTYPE_DEFAULT;
                 }
                 final String runtime = new Regex(package_name, "(\\d+ Monate)").getMatch(0);
                 account.setProperty(PROPERTY_acc_package, correctData(package_name));
@@ -1014,8 +999,8 @@ public class SaveTv extends PluginForHost {
             /* Should not happen but a failure of the account detail crawler won't hurt - we logged in fine! */
             logger.info("Extended account check failed");
         }
-        ai.setStatus(acctype);
-        account.setProperty(PROPERTY_acc_type, acctype);
+        ai.setStatus(package_name);
+        account.setProperty(PROPERTY_acc_type, package_name);
         ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
@@ -1247,7 +1232,7 @@ public class SaveTv extends PluginForHost {
      * @throws Exception
      */
     private void site_AccessDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws Exception {
-        final String downloadoverview_url = "https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?TelecastId=" + getTelecastId(dl) + "&iFormat=" + user_selected_video_quality + "&bAdFree=" + downloadWithoutAds;
+        final String downloadoverview_url = "https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl2.cfm?TelecastId=" + getTelecastId(dl) + "&iFormat=" + user_selected_video_quality + "&bAdFree=" + downloadWithoutAds;
         this.getPageSafe(downloadoverview_url, this.currAcc);
     }
 
@@ -1305,7 +1290,9 @@ public class SaveTv extends PluginForHost {
     }
 
     private boolean apiActive() {
-        return (API_SESSIONID != null && is_API_enabled());
+        // return (API_SESSIONID != null && is_API_enabled());
+        /* TODO: 2016-07-06: APIV2 has been shut down - implement APIV3, then re-enable functionality here! */
+        return false;
     }
 
     public static long calculateFilesize(final String minutes) {
@@ -1418,7 +1405,7 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings("unchecked")
     public static String jsonGetBestQualityId(final ArrayList<Object> sourcelist) {
         final String recordingformat;
-        if (sourcelist != null) {
+        if (sourcelist != null && sourcelist.size() > 0) {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
             recordingformat = Long.toString(jsonGetRecordingformatid(entries));
         } else {
@@ -1983,8 +1970,6 @@ public class SaveTv extends PluginForHost {
     private final static int     defaultCrawlLasthours                      = 0;
     private final static int     defaultADS_FREE_UNAVAILABLE_HOURS          = 12;
     private final static int     defaultADS_FREE_UNAVAILABLE_MAXRETRIES     = 0;
-    private final static int     defaultFORCE_WITH_ADS_ON_ERROR_HOURS       = 12;
-    private final static int     defaultFORCE_WITH_ADS_ON_ERROR_maxRetries  = 0;
 
     private static final boolean defaultDisableLinkcheck                    = false;
     private static final boolean defaultCrawlerActivate                     = false;
@@ -1999,6 +1984,8 @@ public class SaveTv extends PluginForHost {
     private static final String  defaultCONFIGURED_APIKEY                   = "JDDEFAULT";
     private static final boolean defaultDeleteTelecastIDAfterDownload       = false;
     private static final boolean defaultDeleteTelecastIDIfFileAlreadyExists = false;
+
+    private static final String  ACCOUNTTYPE_DEFAULT                        = "XL Account";
 
     private void setConfigElements() {
         /* Crawler settings */
@@ -2020,10 +2007,6 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(preferAdsFree);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.ADS_FREE_UNAVAILABLE_HOURS, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFreeRetryHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der Standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten.\r\n"), 1, 24, 1).setDefaultValue(defaultADS_FREE_UNAVAILABLE_HOURS).setEnabledCondidtion(preferAdsFree, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.ADS_FREE_UNAVAILABLE_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.ignoreOnlyAdsFreeAfterRetries_maxRetries", "Max Anzahl Neuversuche bis der Download der Version ohne Schnittliste erzwungen wird [0 = nie erzwingen]:"), 0, 100, 1).setDefaultValue(defaultADS_FREE_UNAVAILABLE_MAXRETRIES).setEnabledCondidtion(preferAdsFree, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Einstelungen zur Fehlerbehandlung des Fehlers 'Leider enthält Ihre Aufnahme nur Werbung'."));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.FORCE_WITH_ADS_ON_ERROR_HOURS, JDL.L("plugins.hoster.SaveTv.forceHQHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der Standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten.\r\n"), 1, 24, 1).setDefaultValue(defaultFORCE_WITH_ADS_ON_ERROR_HOURS).setEnabledCondidtion(preferAdsFree, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.FORCE_WITH_ADS_ON_ERROR_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.forceWithoutAdsMaxretries", "Max Anzahl Neuversuche bis der Download der Version ohne Schnittliste erzwungen wird [0 = nie erzwingen]:"), 0, 100, 1).setDefaultValue(defaultFORCE_WITH_ADS_ON_ERROR_maxRetries).setEnabledCondidtion(preferAdsFree, true));
 
         /* Filename settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -2102,9 +2085,9 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.ACTIVATE_BETA_FEATURES, JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell welche gibt steht im Support Forum.")).setEnabled(defaultACTIVATE_BETA_FEATURES));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")).setDefaultValue(defaultUSEAPI);
+        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "<html><p style=\"color:#F62817\">Update 06.07.2016: APIV2 ist nicht mehr funktionsfähig - die folgenden Einstellungen wird wieder verfügbar, sobald APIV3 eingebaut ist!</p><p>API verwenden?</p><p>INFO: Aktiviert man die API, sind einige Features wie folgt betroffen:</p>-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)<p>-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen</p></html>")).setDefaultValue(defaultUSEAPI).setEnabled(false);
         getConfig().addEntry(api);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CONFIGURED_APIKEY, JDL.L("plugins.hoster.SaveTv.apikey", "Benutzerdefinierten API-Key eingeben:\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Die API ist nur mit gültigem API-Key (in der Regel mit den Standardeinstellungen) nutzbar!</p></html>")).setDefaultValue(defaultCONFIGURED_APIKEY).setEnabledCondidtion(api, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CONFIGURED_APIKEY, JDL.L("plugins.hoster.SaveTv.apikey", "Benutzerdefinierten API-Key eingeben:\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Die API ist nur mit gültigem API-Key (in der Regel mit den Standardeinstellungen) nutzbar!</p></html>")).setDefaultValue(defaultCONFIGURED_APIKEY).setEnabledCondidtion(api, true).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren <html><b>[Nicht empfohlen]</b>?\r\n<p style=\"color:#F62817\"><b>Vorteile:\r\n</b>-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\n<b>Nachteile:\r\n</b>-Im Linkgrabber werden zunächst nur die telecastIDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt</p></html>")).setDefaultValue(defaultDisableLinkcheck));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -2144,24 +2127,26 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void checkAccountNeededDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("accNeededShown", Boolean.FALSE) == false) {
-                if (config.getProperty("accNeededShown2") == null) {
-                    showAccNeededDialog();
+        synchronized (LOCK) {
+            SubConfiguration config = null;
+            try {
+                config = getPluginConfig();
+                if (config.getBooleanProperty("accNeededShown", Boolean.FALSE) == false) {
+                    if (config.getProperty("accNeededShown2") == null) {
+                        showAccNeededDialog();
+                    } else {
+                        config = null;
+                    }
                 } else {
                     config = null;
                 }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("accNeededShown", Boolean.TRUE);
-                config.setProperty("accNeededShown2", "shown");
-                config.save();
+            } catch (final Throwable e) {
+            } finally {
+                if (config != null) {
+                    config.setProperty("accNeededShown", Boolean.TRUE);
+                    config.setProperty("accNeededShown2", "shown");
+                    config.save();
+                }
             }
         }
     }
@@ -2365,7 +2350,7 @@ public class SaveTv extends PluginForHost {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
             final String windowTitleLangText = "Account Zusatzinformationen";
-            final String accType = account.getStringProperty(PROPERTY_acc_type, "Premium Account");
+            final String accType = account.getStringProperty(PROPERTY_acc_type, ACCOUNTTYPE_DEFAULT);
             final String accUsername = account.getStringProperty(PROPERTY_acc_username, "?");
             String acc_expire = "Niemals";
             final String acc_package = account.getStringProperty(PROPERTY_acc_package, "?");
@@ -2378,6 +2363,14 @@ public class SaveTv extends PluginForHost {
             final String user_lastcrawl_date;
             final long time_last_crawl_ended_newlinks = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, 0);
             final long time_last_crawl_ended = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL, 0);
+            final String maxchunks;
+            if (ACCOUNT_PREMIUM_MAXCHUNKS == 0) {
+                maxchunks = "20";
+            } else if (ACCOUNT_PREMIUM_MAXCHUNKS < 1) {
+                maxchunks = Integer.toString(-ACCOUNT_PREMIUM_MAXCHUNKS);
+            } else {
+                maxchunks = Integer.toString(ACCOUNT_PREMIUM_MAXCHUNKS);
+            }
 
             final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy 'um' HH:mm 'Uhr'");
 
@@ -2422,7 +2415,7 @@ public class SaveTv extends PluginForHost {
 
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", "20");
-            panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", "2");
+            panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", maxchunks);
             panelGenerator.addEntry("Abgebrochene Downloads fortsetzbar:", "Ja");
 
             panelGenerator.addEntry("Plugin Revision:", revision);
