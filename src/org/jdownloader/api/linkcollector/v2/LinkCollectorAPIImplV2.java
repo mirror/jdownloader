@@ -749,10 +749,13 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public boolean abort(long jobId) {
         final List<JobLinkCrawler> jobs = LinkCollector.getInstance().getJobLinkCrawlerByJobId(jobId);
-        for (JobLinkCrawler job : jobs) {
-            job.abort();
+        boolean ret = false;
+        for (final JobLinkCrawler job : jobs) {
+            if (job.abort()) {
+                ret = true;
+            }
         }
-        return jobs.size() != 0;
+        return ret;
     }
 
     @Override
@@ -762,10 +765,10 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public List<JobLinkCrawlerAPIStorable> queryLinkCrawlerJobs(final LinkCrawlerJobsQueryStorable query) {
-        List<JobLinkCrawlerAPIStorable> result = new ArrayList<JobLinkCrawlerAPIStorable>();
+        final List<JobLinkCrawlerAPIStorable> result = new ArrayList<JobLinkCrawlerAPIStorable>();
         if (query.getJobIds() != null) {
             final List<JobLinkCrawler> jobs = LinkCollector.getInstance().getJobLinkCrawlerByJobId(query.getJobIds());
-            for (JobLinkCrawler job : jobs) {
+            for (final JobLinkCrawler job : jobs) {
                 result.add(new JobLinkCrawlerAPIStorable(query, job));
             }
         }
