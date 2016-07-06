@@ -39,6 +39,60 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.TaskQueue;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector.CachedAccountPermission;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector.DownloadLinkCandidatePermission;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
+import jd.controlling.downloadcontroller.DownloadSession.SessionState;
+import jd.controlling.downloadcontroller.ProxyInfoHistory.WaitingSkipReasonContainer;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogEventSender;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.ProxyEvent;
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.NoGateWayException;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.CandidateResultProvider;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.FileBytesCache;
+
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -109,60 +163,6 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
 
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.TaskQueue;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector.CachedAccountPermission;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector.DownloadLinkCandidatePermission;
-import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
-import jd.controlling.downloadcontroller.DownloadSession.SessionState;
-import jd.controlling.downloadcontroller.ProxyInfoHistory.WaitingSkipReasonContainer;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogEventSender;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.ProxyEvent;
-import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.Reconnecter.ReconnectResult;
-import jd.controlling.reconnect.ReconnecterEvent;
-import jd.controlling.reconnect.ReconnecterListener;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.NoGateWayException;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.CandidateResultProvider;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkProperty;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.FileBytesCache;
-
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, FileCreationListener {
 
     private static class ReconnectThread extends Thread {
@@ -205,12 +205,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
-    public static final State IDLE_STATE     = new State("IDLE");
-    public static final State RUNNING_STATE  = new State("RUNNING");
+    public static final State                              IDLE_STATE            = new State("IDLE");
+    public static final State                              RUNNING_STATE         = new State("RUNNING");
 
-    public static final State PAUSE_STATE    = new State("PAUSE");
-    public static final State STOPPING_STATE = new State("STOPPING");
-    public static final State STOPPED_STATE  = new State("STOPPED_STATE");
+    public static final State                              PAUSE_STATE           = new State("PAUSE");
+    public static final State                              STOPPING_STATE        = new State("STOPPING");
+    public static final State                              STOPPED_STATE         = new State("STOPPED_STATE");
 
     static {
         IDLE_STATE.addChildren(RUNNING_STATE);
@@ -646,11 +646,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             public void execute(DownloadSession currentSession) {
-                Set<DownloadLink> oldList = new LinkedHashSet<DownloadLink>(currentSession.getForcedLinks());
+                final Set<DownloadLink> oldList = new LinkedHashSet<DownloadLink>(currentSession.getForcedLinks());
                 oldList.addAll(linksForce);
-                // eventSender.fireEvent
                 currentSession.setForcedLinks(new CopyOnWriteArrayList<DownloadLink>(sortActivationRequests(oldList)));
-
             }
 
             @Override
@@ -2134,31 +2132,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     currentSession.getForcedLinks().removeAll(deleteFiles);
                 }
                 for (final DownloadLink link : deleteFiles) {
-                    SingleDownloadController con = link.getDownloadLinkController();
+                    final SingleDownloadController con = link.getDownloadLinkController();
                     if (con == null || con.isAlive() == false) {
                         /* link has no/no alive singleDownloadController, so delete it now */
                         deleteFile(link, deleteTo);
                     } else {
                         /* link has a running singleDownloadController, abort it and delete it after */
                         con.abort();
-                        enqueueJob(new DownloadWatchDogJob() {
+                        con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
                             @Override
                             public void execute(DownloadSession currentSession) {
-                                if (currentSession != null) {
-                                    currentSession.getActivationRequests().remove(link);
-                                    currentSession.getForcedLinks().remove(link);
-                                }
-                                SingleDownloadController con = link.getDownloadLinkController();
-                                if (con != null && con.isAlive()) {
-                                    /* link still has a running singleDownloadController, abort it and delete it after */
-                                    con.abort();
-                                    /* enqueue again */
-                                    enqueueJob(this);
-                                    return;
-                                } else {
-                                    /* now we can delete the link */
-                                    deleteFile(link, deleteTo);
-                                }
+                                /* now we can delete the link */
+                                deleteFile(link, deleteTo);
                                 return;
                             }
 
@@ -3320,39 +3305,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                            @Override
-                            public void delayedrun() {
-                                enqueueJob(new DownloadWatchDogJob() {
+                                                          @Override
+                                                          public void delayedrun() {
+                                                              enqueueJob(new DownloadWatchDogJob() {
 
-                                    @Override
-                                    public void interrupt() {
-                                    }
+                                                                  @Override
+                                                                  public void interrupt() {
+                                                                  }
 
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        /* reset CONNECTION_UNAVAILABLE */
-                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                                                  @Override
+                                                                  public void execute(DownloadSession currentSession) {
+                                                                      /* reset CONNECTION_UNAVAILABLE */
+                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                            @Override
-                                            public int returnMaxResults() {
-                                                return 0;
-                                            }
+                                                                          @Override
+                                                                          public int returnMaxResults() {
+                                                                              return 0;
+                                                                          }
 
-                                            @Override
-                                            public boolean acceptNode(DownloadLink node) {
-                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                            }
-                                        });
-                                        unSkip(unSkip);
-                                    }
+                                                                          @Override
+                                                                          public boolean acceptNode(DownloadLink node) {
+                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                                                          }
+                                                                      });
+                                                                      unSkip(unSkip);
+                                                                  }
 
-                                    @Override
-                                    public boolean isHighPriority() {
-                                        return false;
-                                    }
-                                });
-                            }
-                        };
+                                                                  @Override
+                                                                  public boolean isHighPriority() {
+                                                                      return false;
+                                                                  }
+                                                              });
+                                                          }
+                                                      };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -3376,7 +3361,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                                     @Override
                                     public boolean isHighPriority() {
-                                        return true;
+                                        return false;
                                     }
                                 });
                             }
@@ -3491,9 +3476,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 @Override
                                 public void execute(DownloadSession currentSession) {
                                     for (DownloadLink item : list) {
-                                        if (item instanceof DownloadLink) {
-                                            removeLink(item, currentSession);
-                                        }
+                                        removeLink(item, currentSession);
                                     }
                                 }
 
