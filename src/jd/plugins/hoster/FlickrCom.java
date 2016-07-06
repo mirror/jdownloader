@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -48,6 +49,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 2 })
 public class FlickrCom extends PluginForHost {
@@ -545,7 +551,15 @@ public class FlickrCom extends PluginForHost {
                         break;
                     }
                 }
-                filename += "_" + linkid;
+                final ExtensionsFilterInterface ext = CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(filename));
+                if (ext == null) {
+                    filename = linkid + "_" + filename;
+                } else {
+                    if (!StringUtils.equalsIgnoreCase(dl.getStringProperty("ext", defaultPhotoExt), "." + ext.name())) {
+                        dl.setProperty("ext", "." + ext.name().toLowerCase(Locale.ENGLISH));
+                    }
+                    filename = Files.getFileNameWithoutExtension(filename);
+                }
             }
             /* Needed for custom filenames! */
             if (dl.getStringProperty("title", null) == null) {

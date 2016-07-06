@@ -28,11 +28,11 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private Pair             offline;
     private Pair             status;
 
-    private int              joblessCount;
-    private int              offlineCount;
-    private int              linksCount;
+    private int              joblessCount = -1;
+    private int              offlineCount = -1;
+    private int              linksCount   = -1;
     private final AtomicLong lastChange   = new AtomicLong(-1);
-    private int              onlineCount;
+    private int              onlineCount  = -1;
     private Pair             packages;
     private Pair             online;
     private final long       CLOSETIMEOUT = 10000l;
@@ -79,14 +79,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         }
     }
 
-    public void update() {
-        if (duration != null) {
-            duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
-        }
-    }
-
     public void update(final JobLinkCrawler jlc) {
-        update();
         final List<CrawledLink> linklist = jlc.getCrawledLinks();
         final HashSet<CrawledPackage> dupe = new HashSet<CrawledPackage>();
         int offlineCnt = 0;
@@ -110,14 +103,15 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         }
 
         boolean changes = false;
+        final int linksCnt = jlc.getCrawledLinksFoundCounter();
         changes |= onlineCount != onlineCnt;
         changes |= offlineCount != offlineCnt;
         changes |= joblessCount != jobless;
-        changes |= linksCount != jlc.getCrawledLinksFoundCounter();
+        changes |= linksCount != linksCnt;
         this.offlineCount = offlineCnt;
         this.onlineCount = onlineCnt;
         this.joblessCount = jobless;
-        this.linksCount = jlc.getCrawledLinksFoundCounter();
+        this.linksCount = linksCnt;
         if (changes) {
             this.lastChange.set(System.currentTimeMillis());
         }
@@ -146,6 +140,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 if (packages != null) {
                     packages.setText(dupe.size() + "");
                 }
+                final boolean isCollecting = jlc.isCollecting();
                 if (status != null) {
                     if (jlc.isRunning()) {
                         status.setText(_GUI.T.LinkCrawlerBubbleContent_update_runnning());
@@ -155,6 +150,20 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                         } else {
                             status.setText(_GUI.T.LinkCrawlerBubbleContent_update_finished());
                         }
+                    }
+                }
+                if (duration != null) {
+                    if (isCollecting) {
+                        // still collecting
+                        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+                    } else {
+                        // show complete duration
+                        long lastChange = LinkCrawlerBubbleContent.this.lastChange.get();
+                        if (lastChange == -1) {
+                            lastChange = System.currentTimeMillis();
+                            LinkCrawlerBubbleContent.this.lastChange.compareAndSet(-1, lastChange);
+                        }
+                        duration.setText(TimeFormatter.formatMilliSeconds(lastChange - startTime, 0));
                     }
                 }
             }
