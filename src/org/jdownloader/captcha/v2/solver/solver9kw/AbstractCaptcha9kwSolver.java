@@ -395,16 +395,15 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         qi.appendEncoded("source", "jd2");
         qi.appendEncoded("captchaperhour", options.getCph() + "");
         qi.appendEncoded("captchapermin", options.getCpm() + "");
-        qi.addAll(options.getMoreoptions().list());
-
         qi.appendEncoded("prio", options.getPriothing() + "");
         qi.appendEncoded("selfsolve", options.isSelfsolve() + "");
         qi.appendEncoded("confirm", options.isConfirm() + "");
+        qi.appendEncoded("maxtimeout", options.getTimeoutthing() + "");
+        qi.addAll(options.getMoreoptions().list());
 
         qi.appendEncoded("oldsource", getChallenge(job).getTypeID() + "");
         qi.appendEncoded("apikey", config.getApiKey() + "");
         qi.appendEncoded("captchaSource", "jdPlugin");
-        qi.appendEncoded("maxtimeout", options.getTimeoutthing() + "");
         qi.appendEncoded("version", "1.2");
         qi.appendEncoded("base64", "1");
         if (data != null) {
@@ -612,6 +611,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                             }
                             if (detailvalue[0].equals("confirm") && detailvalue[1].matches("^[0-9]+$")) {
                                 options.setConfirm(detailvalue[1].equals("1"));
+                                options.getMoreoptions().appendEncoded("userconfirm", "1");
                             }
                             if (detailvalue[0].equals("selfsolve") && detailvalue[1].matches("^[0-9]+$")) {
                                 options.setSelfsolve(detailvalue[1].equals("1"));

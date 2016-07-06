@@ -2,16 +2,16 @@ package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
 
+import jd.http.Browser;
+
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-
-import jd.http.Browser;
-import org.appwork.utils.parser.UrlQuery;
 
 public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint> {
 
@@ -49,7 +49,11 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
         checkInterruption();
         ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
         RequestOptions options = prepare(solverJob);
-        options.setConfirm(config.ismouseconfirm());
+        if (options.getMoreoptions().containsKey("userconfirm")) {
+            options.getMoreoptions().remove("userconfirm");
+        } else {
+            options.setConfirm(config.ismouseconfirm());
+        }
         try {
             final byte[] data = IO.readFile(captchaChallenge.getImageFile());
             UrlQuery qi = createQueryForUpload(solverJob, options, data).appendEncoded("mouse", "1");
