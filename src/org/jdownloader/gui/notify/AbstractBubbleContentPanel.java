@@ -16,7 +16,7 @@ import org.jdownloader.images.NewTheme;
 public abstract class AbstractBubbleContentPanel extends MigPanel {
 
     protected IconedProcessIndicator progressCircle;
-    protected long                   startTime;
+    protected final long             startTime = System.currentTimeMillis();
     private AbstractNotifyWindow<?>  window;
 
     private String clean(String label) {
@@ -136,7 +136,6 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
         progressCircle.setEnabled(false);
         progressCircle.setValue(100);
         addProgress();
-        startTime = System.currentTimeMillis();
         SwingUtils.setOpaque(this, false);
     }
 
@@ -146,7 +145,6 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
 
     public AbstractBubbleContentPanel() {
         super("ins 3 3 0 3,wrap 2", "[fill][grow,fill]", "[]");
-        startTime = System.currentTimeMillis();
         SwingUtils.setOpaque(this, false);
     }
 

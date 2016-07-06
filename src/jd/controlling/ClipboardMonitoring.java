@@ -102,6 +102,7 @@ public class ClipboardMonitoring {
                 } finally {
                     closeClipboard.invoke(clipboard, new Object[] {});
                 }
+            } catch (final IllegalStateException ignore) {
             } catch (final IOException ignore) {
             } catch (final Throwable e) {
                 logger.log(e);
