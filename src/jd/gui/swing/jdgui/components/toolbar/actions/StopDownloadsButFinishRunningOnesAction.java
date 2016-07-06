@@ -18,6 +18,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.translate._JDT;
 
 public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarAction implements DownloadWatchdogListener, ActionContext {
@@ -43,6 +44,13 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
             @Override
             public void execute(DownloadSession currentSession) {
                 currentSession.toggleStopMark(STOPMARK.RANDOM);
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
+                    }
+                };
             }
 
             @Override
