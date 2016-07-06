@@ -3232,9 +3232,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             protected final void processJobs() {
                 try {
                     setTempWatchDogJobThread(Thread.currentThread());
+                    DownloadWatchDogJob peekLast = null;
                     while (true) {
                         final DownloadWatchDogJob job;
                         synchronized (watchDogJobs) {
+                            if (peekLast == null) {
+                                peekLast = watchDogJobs.peekLast();
+                            }
                             job = watchDogJobs.poll();
                         }
                         if (job != null) {
@@ -3245,6 +3249,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 logger.log(e);
                             } finally {
                                 currentWatchDogJob.set(null);
+                            }
+                            if (job == peekLast) {
+                                // avoid loops for enqueueJob->enqueueJob->enqueueJob...
+                                break;
                             }
                         } else {
                             break;
