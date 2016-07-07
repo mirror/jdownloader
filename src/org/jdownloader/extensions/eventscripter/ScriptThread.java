@@ -34,7 +34,6 @@ import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
-import net.sourceforge.htmlunit.corejs.javascript.WrappedException;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 public class ScriptThread extends Thread implements JSShutterDelegate {
@@ -72,7 +71,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     @Override
     public void run() {
         synchronized (script) {
-
             if (!script.isEnabled()) {
                 return;
             }
@@ -82,15 +80,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             scope.init(cx);
             cx.setOptimizationLevel(-1);
             cx.setLanguageVersion(Context.VERSION_1_5);
-
             try {
-
                 String preloadClasses = preInitClasses();
-
                 evalTrusted(preloadClasses);
                 // required by some libraries
                 evalTrusted("global=this;");
-
                 initEnvironment();
                 cleanupClasses();
                 evalUNtrusted(script.getScript());
@@ -98,7 +92,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             } catch (Throwable e) {
                 logger.log(e);
                 notifyAboutException(e);
-
             } finally {
                 Context.exit();
             }
@@ -106,7 +99,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     public void notifyAboutException(Throwable e) {
-
         Dialog.getInstance().showExceptionDialog("An Error Occured", e.getMessage(), e);
         if (script != null) {
             script.setEnabled(false);
@@ -119,7 +111,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         dupes.add("net.sourceforge.htmlunit.corejs.javascript.Function");
         dupes.add("void");
         Class[] classes = new Class[] { Boolean.class, Integer.class, Long.class, String.class, Double.class, Float.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class };
-
         String preloadClasses = "";
         for (Class c : classes) {
             if (c.isArray()) {
@@ -132,17 +123,14 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 continue;
             }
             preloadClasses += "load=" + c.getName() + ";\r\n";
-
         }
         Collection<Class<?>> clazzes = ScriptEnvironment.getRequiredClasses();
         clazzes.addAll(script.getEventTrigger().getAPIClasses());
         clazzes.add(Object.class);
         for (Class<?> c : clazzes) {
-
             if (c.isArray()) {
                 // preloadClasses += "load=" + c.getName() + ";\r\n";
                 c = c.getComponentType();
-
             }
             if (!dupes.add(c.getName())) {
                 continue;
@@ -151,7 +139,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 continue;
             }
             preloadClasses += "load=" + c.getName() + ";\r\n";
-
         }
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
             if (f.getAnnotation(ScriptAPI.class) != null) {
@@ -166,7 +153,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                     continue;
                 }
                 preloadClasses += "load=" + c.getName() + ";\r\n";
-
             }
         }
         preloadClasses += "delete load;";
@@ -177,22 +163,17 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         for (Method f : ScriptEnvironment.class.getDeclaredMethods()) {
             if (f.getAnnotation(ScriptAPI.class) != null) {
                 evalTrusted(f.getName() + "=" + ScriptEnvironment.class.getName() + "." + f.getName() + ";");
-
             }
         }
-
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
             if (f.getAnnotation(ScriptAPI.class) != null) {
                 ScriptableObject.putProperty(scope, f.getName(), ScriptEnvironment.toJSObject(f.get(null)));
-
             }
         }
-
         for (Entry<String, Object> es : props.entrySet()) {
             ScriptableObject.putProperty(scope, es.getKey(), es.getValue());
             // convert to real js objects
             // evalTrusted(es.getKey() + " = " + new SimpleMapper().objectToString() + ";");
-
         }
     }
 
@@ -207,24 +188,18 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
 
     private void cleanupClasses() {
         ArrayList<String> list = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
-
         Collections.sort(list, new Comparator<String>() {
-
             @Override
             public int compare(String o1, String o2) {
                 return o2.length() - o1.length();
             }
         });
-
         // Cleanup
-
         ScriptableObject.deleteProperty(scope, "Packages");
         for (String s : list) {
             while (true) {
-
                 try {
                     ScriptableObject.deleteProperty(scope, s);
-
                 } catch (Throwable e) {
                     // e.printStackTrace();
                 }
@@ -240,12 +215,9 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
 
     public void requireJavascript(final String fileOrUrl) throws IOException {
         ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.securityLoading_title(), T.T.securityLoading(fileOrUrl), new AbstractIcon(IconKey.ICON_SERVER, 32), null, null) {
-
             @Override
             public String getDontShowAgainKey() {
-
                 return "ASK_TO_REQUIRE_JS_" + fileOrUrl;
-
             }
 
             @Override
@@ -257,11 +229,8 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 setReturnmask(false);
                 this.dispose();
             }
-
         };
-
         d.setDoNotShowAgainSelected(true);
-
         // Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
         // if (ret != null && ret > 0) {
         // return;
@@ -273,7 +242,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 String js = br.getPage(fileOrUrl);
                 logger.info(js);
                 evalUNtrusted(js);
-
             } else {
                 File file = new File(fileOrUrl);
                 if (!file.exists()) {
@@ -282,9 +250,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 String js = IO.readFileToString(file);
                 logger.info(js);
                 evalUNtrusted(js);
-
             }
-
         }
     }
 
@@ -293,7 +259,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     public Global getScope() {
-
         return scope;
     }
 
@@ -311,7 +276,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 } catch (IOException e) {
                     throw new WTFException(e);
                 }
-
             }
         }
     }
@@ -333,55 +297,36 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         // for (Entry<Object, Object> es : ((NativeObject) ret).entrySet()) {
         // ((NativeObject) ret).setAttributes(es.getKey() + "", NativeObject.READONLY);
         // }
-
         return ret;
     }
 
     @Override
     public boolean isClassVisibleToScript(boolean trusted, String className) {
         if (trusted) {
-
             return true;
-
         } else if (className.startsWith("adapter")) {
-
             return true;
-
         } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
-
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-
             return true;
         } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.ConsString")) {
-
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-
             return true;
         } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
-
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-
             return true;
         } else if (className.equals(org.jdownloader.extensions.eventscripter.EnvironmentException.class.getName())) {
-
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Environment error occured");
-
             return true;
         } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.WrappedException")) {
-            WrappedException.class.getName();
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Script RuntimeException occured");
-
             return true;
         } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EvaluatorException")) {
-
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-
             return true;
         } else {
             EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
             throw ret;
-
         }
     }
-
 }
