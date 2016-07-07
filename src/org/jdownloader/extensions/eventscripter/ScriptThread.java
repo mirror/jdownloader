@@ -13,11 +13,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
-import jd.http.Browser;
-import net.sourceforge.htmlunit.corejs.javascript.Context;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
-import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.uio.CloseReason;
@@ -32,8 +27,17 @@ import org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
+import org.jdownloader.scripting.JSShutterDelegate;
 
-public class ScriptThread extends Thread {
+import jd.http.Browser;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
+import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
+import net.sourceforge.htmlunit.corejs.javascript.WrappedException;
+import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
+
+public class ScriptThread extends Thread implements JSShutterDelegate {
     private ScriptEntry             script;
     private HashMap<String, Object> props;
     private Global                  scope;
@@ -314,7 +318,7 @@ public class ScriptThread extends Thread {
 
     /**
      * create a native javaobject for settings
-     * 
+     *
      * @param settings
      * @return
      */
@@ -331,6 +335,53 @@ public class ScriptThread extends Thread {
         // }
 
         return ret;
+    }
+
+    @Override
+    public boolean isClassVisibleToScript(boolean trusted, String className) {
+        if (trusted) {
+
+            return true;
+
+        } else if (className.startsWith("adapter")) {
+
+            return true;
+
+        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
+
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+
+            return true;
+        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.ConsString")) {
+
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+
+            return true;
+        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
+
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+
+            return true;
+        } else if (className.equals(org.jdownloader.extensions.eventscripter.EnvironmentException.class.getName())) {
+
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Environment error occured");
+
+            return true;
+        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.WrappedException")) {
+            WrappedException.class.getName();
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Script RuntimeException occured");
+
+            return true;
+        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EvaluatorException")) {
+
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+
+            return true;
+        } else {
+            EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
+            throw ret;
+
+        }
     }
 
 }

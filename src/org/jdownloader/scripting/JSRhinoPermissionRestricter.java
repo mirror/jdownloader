@@ -2,7 +2,6 @@ package org.jdownloader.scripting;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
@@ -132,8 +131,17 @@ public class JSRhinoPermissionRestricter {
             cx.setClassShutter(new ClassShutter() {
                 public boolean visibleToScripts(String className) {
                     Thread cur = Thread.currentThread();
-                    if (TRUSTED_THREAD.containsKey(cur)) {
-                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Trusted Thread Loads: " + className);
+                    boolean trusted = TRUSTED_THREAD.containsKey(cur);
+                    if (cur instanceof JSShutterDelegate) {
+                        if (((JSShutterDelegate) cur).isClassVisibleToScript(trusted, className)) {
+
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                    if (trusted) {
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Trusted Thread Loads: " + className);
                         return true;
 
                     }
@@ -142,7 +150,7 @@ public class JSRhinoPermissionRestricter {
                     } else if (className.startsWith("org.mozilla.javascript.ConsString")) {
                         return true;
                     } else if (className.equals("org.mozilla.javascript.EcmaError")) {
-                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         return true;
 
                     } else {
@@ -182,7 +190,7 @@ public class JSRhinoPermissionRestricter {
         public Object get(String name, Scriptable start) {
 
             if (name.equals("getClass")) {
-                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("JS Security Exception");
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("JS Security Exception");
                 return NOT_FOUND;
             }
 
