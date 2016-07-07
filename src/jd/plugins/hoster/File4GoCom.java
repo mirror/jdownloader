@@ -42,6 +42,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0, 0 })
 public class File4GoCom extends PluginForHost {
@@ -83,8 +84,8 @@ public class File4GoCom extends PluginForHost {
         // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
         br.setFollowRedirects(false);
         //
-        while (agent.get() == null || !agent.get().contains("Firefox/")) {
-            agent.set(UserAgents.stringUserAgent());
+        if (agent.get() == null) {
+            agent.set(UserAgents.stringUserAgent(BrowserName.Firefox));
         }
         br.getHeaders().put("User-Agent", agent.get());
         br.setCookie(MAINPAGE, "animesonline", "1");
@@ -93,7 +94,7 @@ public class File4GoCom extends PluginForHost {
         br.setCookie(MAINPAGE, "noadvtday", "0");
         br.setCookie(MAINPAGE, "hellpopab", "1");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores") || br.getURL().endsWith("/404.php")) {
+        if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Nome:</b>\\s*(.*?)\\s*(?:</p>)?</span>").getMatch(0);
@@ -106,6 +107,9 @@ public class File4GoCom extends PluginForHost {
         String filesize = br.getRegex(">Tamanho:</b>\\s*(.*?)\\s*</span>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("<b>File size:</b>\\s*([^<>\"]+)\\s*</").getMatch(0);
+        }
+        if ("".equals(filename) && "0 Bytes".equals(filesize)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setName(filename.trim());
         if (filesize != null) {
