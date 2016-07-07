@@ -18,13 +18,19 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.IO;
+import org.jdownloader.plugins.components.cryptojs.CryptoJS;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -88,13 +94,20 @@ public class MangaTradersOrg extends antiDDoSForHost {
                 br = new Browser();
                 login(aa, false);
                 getPage(dl.getDownloadURL());
-                if (br.getRedirectLocation() == null) {
+                String dllink = null;
+                if (br.getHttpConnection().getContentType().equals("text/html")) {
+                    // some other bullshit task.
+                    dllink = processJS();
+                } else {
+                    dllink = br.getRedirectLocation();
+                }
+                if (dllink == null) {
                     dl.setAvailable(false);
                 } else {
                     br.setFollowRedirects(true);
                     URLConnectionAdapter con = null;
                     try {
-                        con = openAntiDDoSRequestConnection(br, br.createHeadRequest(br.getRedirectLocation()));
+                        con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
                         dl.setVerifiedFileSize(con.getLongContentLength());
                         dl.setFinalFileName(getFileNameFromHeader(con));
                         dl.setAvailable(true);
@@ -112,6 +125,30 @@ public class MangaTradersOrg extends antiDDoSForHost {
             return false;
         }
         return true;
+    }
+
+    private String processJS() {
+        String result = null;
+        try {
+            final String user = br.getRegex("class=\"user\" value=\"(.*?)\">").getMatch(0);
+            String link = br.getRegex("class=\"link\" value=\"(.*?)\"").getMatch(0);
+            if (user == null || link == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link = Encoding.htmlOnlyDecode(link);
+            final String js3 = "var newLocation=JSON.parse(CryptoJS.AES.decrypt(link, user, {format: CryptoJSAesJson}).toString(CryptoJS.enc.Utf8));";
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            engine.put("link", link);
+            engine.put("user", user);
+            engine.eval(IO.readURLToString(CryptoJS.class.getResource("aes.js")));
+            engine.eval(IO.readURLToString(CryptoJS.class.getResource("aes-json-format.js")));
+            engine.eval(js3);
+            result = (String) engine.get("newLocation");
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
@@ -193,33 +230,23 @@ public class MangaTradersOrg extends antiDDoSForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(mainPage, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(getHost(), cookies);
+                    return;
                 }
                 // Clear the Referer or the download could start here which then causes an exception
-                br.getHeaders().put("Referer", "http://mangatraders.org/");
+                br = new Browser();
                 br.setFollowRedirects(true);
-                postPage("http://mangatraders.org/login/process.php", "email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&redirect_Login=%2F&rememberMe=checked");
+                getPage("http://mangatraders.org/");
+                postPage("/login/process.php", "redirect_Login=%2F&email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&rememberMe=checked");
                 final String userNameCookie = br.getCookie(mainPage, cookieName);
                 if (userNameCookie == null || "deleted".equalsIgnoreCase(userNameCookie)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(this.getHost()));
+                account.saveCookies(br.getCookies(this.getHost()), "");
                 weAreAlreadyLoggedIn = true;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
