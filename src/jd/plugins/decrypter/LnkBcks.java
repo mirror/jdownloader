@@ -124,28 +124,30 @@ public class LnkBcks extends antiDDoSForDecrypt {
         getPage(parameter);
         long firstGet = System.currentTimeMillis();
         String link = br.getRedirectLocation();
-        if ((link != null && link.contains("/notfound/")) || br.containsHTML("(>Link Not Found<|>The link may have been deleted by the owner|" + surveyLink + ")")) {
-            decryptedLinks.add(createOfflinelink(parameter, (br.containsHTML(surveyLink) ? "JD NOTE - We don't support surveys" : null), (br.containsHTML(surveyLink) ? "JD NOTE - We don't support surveys" : null)));
-            return decryptedLinks;
-        } else if (!inValidate(link)) {
-            final String puid = parameter.substring(parameter.lastIndexOf("/", parameter.length()));
-            final String cuid = link.substring(link.lastIndexOf("/", link.length()));
+        if (!inValidate(link)) {
+            final String puid = getUid(parameter);
+            final String cuid = getUid(link);
             // unsupported site but we should grab the link!
             if (StringUtils.equals(puid, cuid)) {
                 boolean isMatch = false;
+                final String linkhost = Browser.getHost(link);
                 for (final String host : getAnnotationNames()) {
-                    if (new Regex(link, Pattern.quote(host)).matches()) {
+                    if (StringUtils.equals(linkhost, host)) {
                         isMatch = true;
                         break;
                     }
-                    if (!isMatch) {
-                        // we don't know about this site, lets post about it!
-                        org.jdownloader.statistics.StatsManager.I().track("linkbucks/unidentified_domain/" + Browser.getHost(link));
-                    }
+                }
+                if (!isMatch) {
+                    // we don't know about this site, lets post about it!
+                    org.jdownloader.statistics.StatsManager.I().track("linkbucks/unidentified_domain/" + Browser.getHost(link));
                 }
                 getPage(link);
-                link = null;
+                link = br.getRedirectLocation();
             }
+        }
+        if ((link != null && link.contains("/notfound/")) || br.containsHTML("(>Link Not Found<|>The link may have been deleted by the owner|" + surveyLink + ")")) {
+            decryptedLinks.add(createOfflinelink(parameter, (br.containsHTML(surveyLink) ? "JD NOTE - We don't support surveys" : null), (br.containsHTML(surveyLink) ? "JD NOTE - We don't support surveys" : null)));
+            return decryptedLinks;
         }
         if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("<div id=\"lb_header\">.*?/a>.*?<a.*?href=\"(.*?)\".*?class=\"lb", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -283,6 +285,23 @@ public class LnkBcks extends antiDDoSForDecrypt {
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
+    }
+
+    private String getUid(String link) {
+        String uid = new Regex(link, "https?://([a-f0-9]{8})\\.[a-z0-9]+\\.[a-z0-9]+/").getMatch(0);
+        if (uid == null) {
+            uid = new Regex(link, "(?:www\\.)?[a-z0-9]+\\.[a-z0-9]+/([a-f0-9]{8})/url/.+").getMatch(0);
+            if (uid == null) {
+                uid = new Regex(link, "(?:www\\.)?[a-z0-9]+\\.[a-z0-9]+/([0-9a-zA-Z]{5})/url/[a-f0-9]+").getMatch(0);
+                if (uid == null) {
+                    uid = new Regex(link, "(?:www\\.)?[a-z0-9]+\\.[a-z0-9]+/(?:link/)?([a-f0-9]{8})").getMatch(0);
+                    if (uid == null) {
+                        uid = new Regex(link, "(?:www\\.)?[a-z0-9]+\\.[a-z0-9]+/([a-zA-Z0-9]{4,5})").getMatch(0);
+                    }
+                }
+            }
+        }
+        return uid;
     }
 
     @Override
