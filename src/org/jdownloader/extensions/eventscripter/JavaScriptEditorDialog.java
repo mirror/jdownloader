@@ -74,7 +74,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         // dummy. @see #relayout
-        p = new MigPanel("ins 0,wrap 1,debug", "[grow,fill]", "[][][grow,fill][grow,fill]");
+        p = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill][grow,fill]");
         toolbar = new JToolBar();
         toolbar.setRollover(true);
         toolbar.setFloatable(false);

@@ -12,21 +12,6 @@ import java.util.Set;
 
 import javax.swing.Icon;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -34,6 +19,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.content.v2.ContentAPIImplV2;
@@ -53,6 +39,21 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.UrlDisplayType;
+
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.plugins.DownloadLink;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -235,76 +236,81 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (maxResults < 0) {
             maxResults = links.size();
         }
-        ContentAPIImplV2 contentAPI = RemoteAPIController.getInstance().getContentAPI();
+
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
 
             CrawledLink cl = links.get(i);
-            CrawledLinkAPIStorableV2 cls = new CrawledLinkAPIStorableV2(cl);
-
-            if (queryParams.isPassword() && cl.getDownloadLink() != null) {
-                cls.setDownloadPassword(cl.getDownloadLink().getDownloadPassword());
-            }
-
-            if (queryParams.isPriority()) {
-                cls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(cl.getPriority().name()));
-            }
-            if (queryParams.isVariantID() || queryParams.isVariantName() || queryParams.isVariantIcon() || queryParams.isVariants()) {
-                try {
-                    if (cl.hasVariantSupport()) {
-                        if (queryParams.isVariants()) {
-                            cls.setVariants(true);
-                        }
-                        if (queryParams.isVariantID() || queryParams.isVariantName() || queryParams.isVariantIcon()) {
-                            LinkVariant v = cl.getDownloadLink().getDefaultPlugin().getActiveVariantByLink(cl.getDownloadLink());
-                            LinkVariantStorableV2 s = new LinkVariantStorableV2();
-                            if (v != null) {
-                                if (queryParams.isVariantID()) {
-                                    s.setId(v._getUniqueId());
-                                }
-                                if (queryParams.isVariantName()) {
-                                    s.setName(v._getName(cl));
-                                }
-                                if (queryParams.isVariantIcon()) {
-                                    Icon icon = v._getIcon(cl);
-                                    if (icon != null) {
-                                        s.setIconKey(contentAPI.getIconKey(icon));
-                                    }
-                                }
-                            }
-                            cls.setVariant(s);
-                        }
-
-                    }
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
-            }
-            if (queryParams.isComment()) {
-                cls.setComment(cl.getComment());
-            }
-            if (queryParams.isBytesTotal()) {
-                cls.setBytesTotal(cl.getSize());
-            }
-            if (queryParams.isHost()) {
-                cls.setHost(cl.getHost());
-            }
-            if (queryParams.isAvailability()) {
-                cls.setAvailability(cl.getLinkState());
-
-            }
-            if (queryParams.isUrl()) {
-                cls.setUrl(cl.getURL());
-
-            }
-            if (queryParams.isEnabled()) {
-                cls.setEnabled(cl.isEnabled());
-            }
-            cls.setPackageUUID(cl.getParentNode().getUniqueID().getID());
+            CrawledLinkAPIStorableV2 cls = toStorable(queryParams, cl);
 
             result.add(cls);
         }
 
         return result;
+    }
+
+    public static CrawledLinkAPIStorableV2 toStorable(CrawledLinkQueryStorable queryParams, CrawledLink cl) {
+        CrawledLinkAPIStorableV2 cls = new CrawledLinkAPIStorableV2(cl);
+        ContentAPIImplV2 contentAPI = RemoteAPIController.getInstance().getContentAPI();
+        if (queryParams.isPassword() && cl.getDownloadLink() != null) {
+            cls.setDownloadPassword(cl.getDownloadLink().getDownloadPassword());
+        }
+
+        if (queryParams.isPriority()) {
+            cls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(cl.getPriority().name()));
+        }
+        if (queryParams.isVariantID() || queryParams.isVariantName() || queryParams.isVariantIcon() || queryParams.isVariants()) {
+            try {
+                if (cl.hasVariantSupport()) {
+                    if (queryParams.isVariants()) {
+                        cls.setVariants(true);
+                    }
+                    if (queryParams.isVariantID() || queryParams.isVariantName() || queryParams.isVariantIcon()) {
+                        LinkVariant v = cl.getDownloadLink().getDefaultPlugin().getActiveVariantByLink(cl.getDownloadLink());
+                        LinkVariantStorableV2 s = new LinkVariantStorableV2();
+                        if (v != null) {
+                            if (queryParams.isVariantID()) {
+                                s.setId(v._getUniqueId());
+                            }
+                            if (queryParams.isVariantName()) {
+                                s.setName(v._getName(cl));
+                            }
+                            if (queryParams.isVariantIcon()) {
+                                Icon icon = v._getIcon(cl);
+                                if (icon != null) {
+                                    s.setIconKey(contentAPI.getIconKey(icon));
+                                }
+                            }
+                        }
+                        cls.setVariant(s);
+                    }
+
+                }
+            } catch (Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
+        }
+        if (queryParams.isComment()) {
+            cls.setComment(cl.getComment());
+        }
+        if (queryParams.isBytesTotal()) {
+            cls.setBytesTotal(cl.getSize());
+        }
+        if (queryParams.isHost()) {
+            cls.setHost(cl.getHost());
+        }
+        if (queryParams.isAvailability()) {
+            cls.setAvailability(cl.getLinkState());
+
+        }
+        if (queryParams.isUrl()) {
+            cls.setUrl(cl.getURL());
+
+        }
+        if (queryParams.isEnabled()) {
+            cls.setEnabled(cl.isEnabled());
+        }
+        cls.setPackageUUID(cl.getParentNode().getUniqueID().getID());
+        return cls;
     }
 
     @Override
