@@ -69,7 +69,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TEMPORARILYBLOCKED                    = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
     private static final String FASTLINKCHECK_VIDEO                   = "FASTLINKCHECK_VIDEO";
-    private static final String FASTLINKCHECK_PICTURES                = "FASTLINKCHECK_PICTURES";
+    private static final String FASTLINKCHECK_PICTURES                = "FASTLINKCHECK_PICTURES_V2";
     private static final String FASTLINKCHECK_AUDIO                   = "FASTLINKCHECK_AUDIO";
     private static final String ALLOW_BEST                            = "ALLOW_BEST";
     private static final String ALLOW_240P                            = "ALLOW_240P";
@@ -788,13 +788,15 @@ public class VKontakteRuHoster extends PluginForHost {
         if (e != null && e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
             final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
             try {
+                errlogger.severe("-START OF REPORT-");
                 errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
                 errlogger.severe("URL: " + link.getPluginPatternMatcher() + " | ContentUrl: " + link.getContentUrl() + " | ContainerUrl: " + link.getContainerUrl() + " | OriginUrl: " + link.getOriginUrl() + " | ReferrerUrl: " + link.getReferrerUrl());
                 if (e != null) {
                     errlogger.log(e);
                 }
-                if (br != null) {
-                    errlogger.info(br.toString());
+                if (br != null && br.getRequest() != null) {
+                    errlogger.info(br.getRequest().toString());
+                    errlogger.severe("-END OF REPORT-");
                 }
             } finally {
                 errlogger.close();
@@ -879,7 +881,7 @@ public class VKontakteRuHoster extends PluginForHost {
         /* Count how many possible downloadlinks we have */
         int links_count = 0;
         Map<String, Object> attachments = (Map<String, Object>) o;
-        final String qualities[] = { "src_big", "src", "src_small" };
+        final String qualities[] = { "src_xxxbig", "src_xxbig", "src_xbig", "src_big", "src", "src_small" };
         for (final String quality : qualities) {
             final Object finurl = attachments.get(quality);
             if (finurl != null) {
@@ -1043,7 +1045,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTLINKCHECK));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast linkcheck for picture links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast linkcheck for all picture links (when true or false filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?")).setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.fastAudioLinkcheck", "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTAUDIOLINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings:"));

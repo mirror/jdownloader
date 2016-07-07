@@ -84,7 +84,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /* Settings */
     private static final String     FASTLINKCHECK_VIDEO                     = "FASTLINKCHECK_VIDEO";
-    private static final String     FASTLINKCHECK_PICTURES                  = "FASTLINKCHECK_PICTURES";
+    private static final String     FASTLINKCHECK_PICTURES                  = "FASTLINKCHECK_PICTURES_V2";
     private static final String     FASTLINKCHECK_AUDIO                     = "FASTLINKCHECK_AUDIO";
     private static final String     ALLOW_BEST                              = "ALLOW_BEST";
     private static final String     ALLOW_240P                              = "ALLOW_240P";
