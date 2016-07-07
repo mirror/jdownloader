@@ -90,7 +90,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private IfFileExistsAction        ifFileExistsAction;
     private File                      extractToFolder;
     private boolean                   successful            = false;
-    private ExtractLogFileWriter      crashLog;
     private boolean                   askForUnknownPassword = false;
     private Item                      currentActiveItem;
     private final ExtractionProgress  extractionProgress;
@@ -200,13 +199,19 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     @Override
     public Void run() {
+        final boolean deleteExtractionLog = !CFG_EXTRACTION.CFG.isWriteExtractionLogEnabled();
         // let's write an info file. and delete if after extraction. this why we have infosfiles if the extraction crashes jd
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
-        crashLog = new ExtractLogFileWriter(archive.getName(), firstArchiveFile.getFilePath(), archive.getArchiveID()) {
+        final ExtractLogFileWriter crashLog = new ExtractLogFileWriter(archive.getName(), firstArchiveFile.getFilePath(), archive.getArchiveID()) {
             @Override
             public void write(String string) {
                 super.write(string);
                 logger.info(string);
+            }
+
+            @Override
+            protected boolean deleteOnShutDown() {
+                return deleteExtractionLog;
             }
         };
         try {
@@ -480,7 +485,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 } catch (final Throwable e) {
                 }
                 crashLog.close();
-                if (!CFG_EXTRACTION.CFG.isWriteExtractionLogEnabled()) {
+                if (deleteExtractionLog) {
                     crashLog.delete();
                 }
                 if (gotKilled()) {

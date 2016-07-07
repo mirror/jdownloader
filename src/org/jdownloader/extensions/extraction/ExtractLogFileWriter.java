@@ -6,61 +6,100 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.jdownloader.controlling.FileCreationManager;
 
-public class ExtractLogFileWriter {
+public class ExtractLogFileWriter implements ShutdownVetoListener {
 
-    private File           file;
-    private BufferedWriter output;
-    private String         id;
+    private File           currentFile = null;
+    private BufferedWriter output      = null;
+    private final File     finalFile;
 
     public ExtractLogFileWriter(String name, String filePath, String id) {
-        this.id = id;
-        File f = Archive.getArchiveLogFileById(id);
-        file = new File(new File(f.getParentFile(), "open"), f.getName());
-        FileCreationManager.getInstance().mkdir(file.getParentFile());
+        finalFile = Archive.getArchiveLogFileById(id);
+        currentFile = new File(new File(finalFile.getParentFile(), "open"), finalFile.getName());
+        FileCreationManager.getInstance().mkdir(currentFile.getParentFile());
+        if (deleteOnShutDown()) {
+            ShutdownController.getInstance().addShutdownVetoListener(this);
+        }
+        FileOutputStream fos = null;
         try {
-            file.createNewFile();
-
-            if (!file.canWrite()) { throw new IllegalArgumentException("Cannot write to file: " + file); }
-
-            output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, false), "UTF-8"));
+            currentFile.createNewFile();
+            if (!currentFile.canWrite()) {
+                throw new IllegalArgumentException("Cannot write to file: " + currentFile);
+            }
+            output = new BufferedWriter(new OutputStreamWriter(fos = new FileOutputStream(currentFile, false), "UTF-8"));
         } catch (IOException e) {
+            try {
+                if (fos != null) {
+                    fos.close();
+                    fos = null;
+                }
+            } catch (IOException e2) {
+            }
+            delete();
             e.printStackTrace();
         }
         write("Archive Name: " + name);
         write("Archive Path: " + filePath);
     }
 
+    protected boolean deleteOnShutDown() {
+        return true;
+    }
+
     public void delete() {
         close();
-        FileCreationManager.getInstance().delete(file, null);
+        FileCreationManager.getInstance().delete(currentFile, null);
+        ShutdownController.getInstance().removeShutdownVetoListener(this);
     }
 
     public void write(String string) {
         if (output != null) {
             try {
                 output.write(System.currentTimeMillis() + " - " + string);
-
                 output.write("\r\n");
                 output.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
     }
 
     public void close() {
         try {
-            output.close();
-            File newFile;
-            newFile = Archive.getArchiveLogFileById(id);
-            FileCreationManager.getInstance().delete(newFile, null);
-            file.renameTo(newFile);
-            file = newFile;
+            final BufferedWriter os = output;
+            output = null;
+            if (os != null) {
+                os.close();
+                FileCreationManager.getInstance().delete(finalFile, null);
+                if (currentFile.renameTo(finalFile)) {
+                    currentFile = finalFile;
+                }
+            }
         } catch (Exception e) {
         }
+    }
+
+    @Override
+    public void onShutdown(ShutdownRequest request) {
+        delete();
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownRequest request) {
+    }
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
 }

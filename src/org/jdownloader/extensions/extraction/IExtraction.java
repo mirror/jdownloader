@@ -39,7 +39,6 @@ public abstract class IExtraction {
     private ExtractLogFileWriter crashLog;
 
     public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
-
         this.lastAccessedArchiveFile = lastAccessedArchiveFile;
         writeCrashLog("Extracting from: " + lastAccessedArchiveFile);
     }
@@ -182,6 +181,7 @@ public abstract class IExtraction {
     }
 
     public void writeCrashLog(String string) {
+        final ExtractLogFileWriter crashLog = this.crashLog;
         if (crashLog != null) {
             crashLog.write(string);
         }
