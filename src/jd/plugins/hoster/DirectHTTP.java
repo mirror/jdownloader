@@ -630,13 +630,18 @@ public class DirectHTTP extends antiDDoSForHost {
                     if (embeddedLinks.size() == 1) {
                         embeddedLink = embeddedLinks.get(0);
                     } else {
-                        final String extension = Files.getExtension(getDownloadURL(downloadLink));
-                        for (final String check : embeddedLinks) {
-                            if (StringUtils.endsWithCaseInsensitive(check, extension)) {
-                                if (embeddedLink == null) {
-                                    embeddedLink = check;
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        final String orginalURL = getDownloadURL(downloadLink);
+                        final String extension = Files.getExtension(orginalURL);
+                        if (embeddedLinks.contains(orginalURL)) {
+                            embeddedLink = orginalURL;
+                        } else {
+                            for (final String check : embeddedLinks) {
+                                if (StringUtils.endsWithCaseInsensitive(check, extension)) {
+                                    if (embeddedLink == null) {
+                                        embeddedLink = check;
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                    }
                                 }
                             }
                         }
