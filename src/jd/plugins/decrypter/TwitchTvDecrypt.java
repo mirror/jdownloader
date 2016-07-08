@@ -61,7 +61,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
     private void ajaxGetPage(final String string) throws IOException {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/vnd.twitchtv.v3+json");
-        ajax.getHeaders().put("Referer", "http://api.twitch.tv/crossdomain/receiver.html?v=2");
+        ajax.getHeaders().put("Referer", "https://api.twitch.tv/crossdomain/receiver.html?v=2");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (userApiToken != null) {
             ajax.getHeaders().put("Twitch-Api-Token", userApiToken);
@@ -84,7 +84,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredLinks = new ArrayList<DownloadLink>();
         // currently they redirect https to http
-        String parameter = param.toString().replaceFirst("^https://", "http://").replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
+        String parameter = param.toString().replaceFirst("^http://", "https://").replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
         final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
 
         final SubConfiguration cfg = this.getPluginConfig();
@@ -129,7 +129,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 int maxVideos = 0;
                 int offset = 0;
                 do {
-                    ajaxGetPage("http://api.twitch.tv/kraken/channels/" + username + "/videos?limit=100&offset=" + offset + "&on_site=1");
+                    ajaxGetPage("https://api.twitch.tv/kraken/channels/" + username + "/videos?limit=100&offset=" + offset + "&on_site=1");
                     if (offset == 0) {
                         maxVideos = Integer.parseInt(ajax.getRegex("\"_total\":(\\d+)").getMatch(0));
                     }
@@ -139,7 +139,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                         return null;
                     }
                     for (final String dl : decryptAgainLinks) {
-                        decryptedLinks.add(createDownloadlink("http://twitch.tv" + dl));
+                        decryptedLinks.add(createDownloadlink("https://twitch.tv" + dl));
                     }
                     offset += step;
                 } while (decryptedLinks.size() < maxVideos);
@@ -154,7 +154,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     return null;
                 }
                 for (final String dl : decryptAgainLinks) {
-                    decryptedLinks.add(createDownloadlink("http://twitch.tv" + dl));
+                    decryptedLinks.add(createDownloadlink("https://twitch.tv" + dl));
                 }
             }
         } else {
@@ -166,7 +166,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
 
             if (br.getURL().matches(videoSingleWeb)) {
                 // no longer get videoname from html, it requires api call.
-                ajaxGetPage("http://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
+                ajaxGetPage("https://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
                 filename = PluginJSonUtils.getJson(ajax, "title");
                 channelName = PluginJSonUtils.getJson(ajax, "display_name");
                 date = PluginJSonUtils.getJson(ajax, "recorded_at");
@@ -274,7 +274,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 // they have multiple qualities, this would be defendant on uploaders original quality.
                 // we need sig for next request
                 // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
-                ajaxGetPage("http://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
+                ajaxGetPage("https://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
                 if (ajax.getHttpConnection().getResponseCode() == 404) {
                     // offline
                     final String message = PluginJSonUtils.getJson(ajax, "message");
@@ -289,16 +289,16 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 }
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("[\r\n#]+", "");
-                this.ajaxGetPagePlayer("http://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
+                this.ajaxGetPagePlayer("https://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
                 // {"token":"{\"user_id\":null,\"vod_id\":3707868,\"expires\":1421924057,\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}","sig":"a73d0354f84e8122d78b14f47552e0f83217a89e"}
                 final String auth = PluginJSonUtils.getJson(ajax, "sig");
-                // final String expire = PluginJSonUtils.getJson(ajax.toString().replaceAll("\\\\\"", "\""), "expires");
-                final String privileged = PluginJSonUtils.getJson(ajax.toString().replaceAll("\\\\\"", "\""), "privileged");
+                // final String expire = PluginJSonUtils.getJson(ajax, "expires");
+                final String privileged = PluginJSonUtils.getJson(ajax, "privileged");
                 final String tokenString = PluginJSonUtils.getJson(ajax, "token");
                 // auth required
                 // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
                 final String a = Encoding.urlEncode(tokenString);
-                this.ajaxGetPagePlayer("http://usher.twitch.tv/vod/" + vid + ".m3u8?nauth=" + a + "&nauthsig=" + auth + "&player=twitchweb&allow_source=true");
+                this.ajaxGetPagePlayer("https://usher.twitch.tv/vod/" + vid + ".m3u8?nauth=" + a + "&nauthsig=" + auth + "&player=twitchweb&allow_source=true");
                 // #EXTM3U
                 // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="chunked",NAME="Source",AUTOSELECT=YES,DEFAULT=YES
                 // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3428253,CODECS="avc1.4D4029,mp4a.40.2",VIDEO="chunked"
@@ -431,7 +431,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     }
                 }
                 if (channelName != null) {
-                    fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
+                    fpName = (fpName == null ? "" : fpName) + Encoding.htmlDecode(channelName.trim()) + " - ";
                 }
                 if (date != null) {
                     try {
