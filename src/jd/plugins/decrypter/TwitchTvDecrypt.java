@@ -496,7 +496,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             return false;
         }
         try {
-            jd.plugins.hoster.TwitchTv.login(this.br, aa, force);
+            ((jd.plugins.hoster.TwitchTv) plugin).login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setValid(false);
             return false;
