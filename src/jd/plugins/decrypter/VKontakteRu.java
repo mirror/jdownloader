@@ -50,7 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -193,7 +193,7 @@ public class VKontakteRu extends PluginForDecrypt {
         account = null;
         // set setters,
         br = new Browser();
-        this.CRYPTEDLINK_ORIGINAL = param.toString();
+        this.CRYPTEDLINK_ORIGINAL = param.toString().replace("new.vk.com/", "vk.com/");
         this.CRYPTEDLINK = param;
         this.decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
@@ -1496,7 +1496,7 @@ public class VKontakteRu extends PluginForDecrypt {
             } else if (this.br.getURL().matches(".+/blank\\.php\\?code=\\d+") || this.br.containsHTML(">You do not have permission to do this")) {
                 /* General errormessage */
                 break;
-            } else if (br.getURL().equals(parameter)) {
+            } else if (br.getURL().equals(parameter) || br.getURL().replaceAll("https?://(\\w+\\.)?vk\\.com", "").equals(parameter.replaceAll("https?://(\\w+\\.)?vk\\.com", ""))) {
                 // If our current url is already the one we want to access here, break dance!
                 break;
             } else if (!parameter.equals(br.getURL()) && i > 3) {
