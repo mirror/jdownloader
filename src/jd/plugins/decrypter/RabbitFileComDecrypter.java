@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -80,6 +81,7 @@ public class RabbitFileComDecrypter extends PluginForDecrypt {
             dl.setProperty("mainlink", parameter);
             dl.setProperty("plain_part", Integer.toString(part));
             dl.setProperty("plain_code", code);
+            dl.setContainerUrl(Request.getLocation("/download_regular.php?file=" + code, br.getRequest()));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
             part++;
