@@ -53,7 +53,7 @@ public interface CaptchaSettings extends ConfigInterface {
     void setDialogCountdownForCrawlerEnabled(boolean b);
 
     @AboutConfig
-    @DefaultEnumValue("ASK")
+    @DefaultEnumValue("SKIP")
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead")
     CAPTCHA_TIMEOUT_ACTION getCaptchaTimeoutAction();
 
