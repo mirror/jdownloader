@@ -23,6 +23,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,12 +42,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class StreaminTo extends antiDDoSForHost {
@@ -61,10 +63,10 @@ public class StreaminTo extends antiDDoSForHost {
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean VIDEOHOSTER_2                = true;
-    private static final boolean SUPPORTSHTTPS                = false;
+    private final String         PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private final boolean        VIDEOHOSTER                  = false;
+    private boolean              VIDEOHOSTER_2                = false;
+    private final boolean        SUPPORTSHTTPS                = false;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -90,6 +92,11 @@ public class StreaminTo extends antiDDoSForHost {
     // protocol: no https
     // captchatype: null
     // other:
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -254,6 +261,7 @@ public class StreaminTo extends antiDDoSForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                download1.remove("imhuman");
                 /*
                  * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                  */
@@ -408,28 +416,65 @@ public class StreaminTo extends antiDDoSForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+        if (dllink.startsWith("http")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            correctBR();
-            checkServerErrors();
-            handlePluginBroken(downloadLink, "dllinknofile", 3);
+            downloadLink.setProperty(directlinkproperty, dllink);
+            fixFilename(downloadLink);
+            try {
+                /* add a download slot */
+                controlFree(+1);
+                /* start the dl */
+                dl.startDownload();
+            } finally {
+                /* remove download slot */
+                controlFree(-1);
+            }
+        } else {
+            try {
+                rtmpDownload(downloadLink, dllink);
+            } catch (final Throwable e) {
+                logger.info(getHost() + ": timesfailed_unknown_rtmp_error");
+                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 5) {
+                    timesFailed++;
+                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", timesFailed);
+                    logger.info(getHost() + ": timesfailed_unknown_rtmp_error -> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_unknown_rtmp_error");
+                } else {
+                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", Property.NULL);
+                    logger.info(getHost() + ": timesfailed_unknown_rtmp_error - disabling current host!");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown fatal server error", 5 * 60 * 1000l);
+                }
+            }
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        fixFilename(downloadLink);
-        try {
-            /* add a download slot */
-            controlFree(+1);
-            /* start the dl */
-            dl.startDownload();
-        } finally {
-            /* remove download slot */
-            controlFree(-1);
-        }
+    }
+
+    private void rtmpDownload(DownloadLink downloadLink, String dllink) throws Exception {
+        dl = new RTMPDownload(this, downloadLink, dllink);
+        setupRTMPConnection(dllink, dl, downloadLink);
+        ((RTMPDownload) dl).startDownload();
+    }
+
+    private void setupRTMPConnection(String stream, DownloadInterface dl, DownloadLink downloadLink) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        String url = stream.split("@")[0];
+        rtmp.setPlayPath(stream.split("@")[1]);
+        rtmp.setUrl(url);
+        rtmp.setSwfVfy(stream.split("@")[2]);
+        rtmp.setPageUrl(br.getURL());
+        rtmp.setConn("S:" + stream.split("@")[1]);
+        rtmp.setResume(false);
     }
 
     @Override
@@ -497,27 +542,42 @@ public class StreaminTo extends antiDDoSForHost {
     }
 
     public String getDllink() {
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/((files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?|[a-z0-9]{20,}/v\\.(?:flv|mp4)))\\1").getMatch(1);
+        String dllink = null;
+        if (false) {
+            dllink = br.getRedirectLocation();
             if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                    for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) {
-                            break;
+                dllink = new Regex(correctedBR, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/((files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?|[a-z0-9]{20,}/v\\.(?:flv|mp4)))\\1").getMatch(1);
+                if (dllink == null) {
+                    final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                    if (cryptedScripts != null && cryptedScripts.length != 0) {
+                        for (String crypted : cryptedScripts) {
+                            dllink = decodeDownloadLink(crypted);
+                            if (dllink != null) {
+                                break;
+                            }
                         }
                     }
                 }
             }
-        }
-        /* try rtmp workaround, thx to raztoki */
-        if (dllink == null) {
-            final String i = new Regex(correctedBR, "image:\\s*\"(https?://[^/]+/)").getMatch(0);
-            final String h = new Regex(correctedBR, "\\?h=([a-z0-9]{30,70})").getMatch(0);
-            if (h != null && i != null) {
-                dllink = i + h + "/video.mp4";
+            /* try rtmp workaround, thx to raztoki */
+            if (dllink == null) {
+                final String i = new Regex(correctedBR, "image:\\s*\"(https?://[^/]+/)").getMatch(0);
+                final String h = new Regex(correctedBR, "\\?h=([a-z0-9]{30,70})").getMatch(0);
+                if (h != null && i != null) {
+                    dllink = i + h + "/video.mp4";
+                }
+            }
+        } else {
+            // rtmp is required
+            String in = new Regex(correctedBR, "jwplayer\\(\"vplayer\"\\)\\.setup\\(\\{(.*?)\\}\\);").getMatch(0);
+            if (in != null) {
+                String out1 = PluginJSonUtils.getJson(in, "file");
+                String out0 = PluginJSonUtils.getJson(in, "streamer");
+                dllink = "http://streamin.to/player/player.swf";
+                if (out0 == null || out1 == null) {
+                    return null;
+                }
+                dllink = out0 + "@" + out1 + "@" + dllink;
             }
         }
 
