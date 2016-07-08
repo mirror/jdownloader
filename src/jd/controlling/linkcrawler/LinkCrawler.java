@@ -2810,7 +2810,18 @@ public class LinkCrawler {
         }
     }
 
-    protected void preprocessFinalCrawledLink(CrawledLink link) {
+    protected void preprocessFinalCrawledLink(final CrawledLink crawledLink) {
+        final DownloadLink downloadLink = crawledLink.getDownloadLink();
+        if (downloadLink != null) {
+            final PluginForHost defaultPlugin = downloadLink.getDefaultPlugin();
+            if (defaultPlugin != null) {
+                try {
+                    defaultPlugin.correctDownloadLink(downloadLink);
+                } catch (final Throwable e) {
+                    LogController.CL().log(e);
+                }
+            }
+        }
     }
 
     public static boolean isTempDecryptedURL(final String url) {

@@ -27,16 +27,6 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://rabbitfiledecrypted\\.com/[A-Za-z0-9]+\\&part=\\d+" }, flags = { 2 })
 public class RabbitFileCom extends PluginForHost {
 
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        final String code = link.getStringProperty("plain_code", null);
-        if (code == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String url = "http://www.rabbitfile.com/download_regular.php?file=" + code;
-        link.setUrlDownload(url);
-    }
-
     public RabbitFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,9 +41,9 @@ public class RabbitFileCom extends PluginForHost {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        correctDownloadLink(link);
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        final String code = link.getStringProperty("plain_code", null);
+        br.getPage("http://www.rabbitfile.com/download_regular.php?file=" + code);
         if (br.toString().length() < 300) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

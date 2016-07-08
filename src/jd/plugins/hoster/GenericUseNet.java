@@ -36,6 +36,7 @@ import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "genericusenet" }, urls = { "" }, flags = { 0 })
@@ -58,8 +59,8 @@ public class GenericUseNet extends UseNet {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         if ("genericusenet".equals(link.getHost())) {
-            link.setHost("usenet");
-            link.setDefaultPlugin(HostPluginController.getInstance().get("usenet").getPrototype(null));
+            final LazyHostPlugin usenetPlugin = HostPluginController.getInstance().get("usenet");
+            usenetPlugin.getPrototype(null).assignPlugin(link);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -69,8 +70,8 @@ public class GenericUseNet extends UseNet {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         if ("genericusenet".equals(link.getHost())) {
-            link.setHost("usenet");
-            link.setDefaultPlugin(HostPluginController.getInstance().get("usenet").getPrototype(null));
+            final LazyHostPlugin usenetPlugin = HostPluginController.getInstance().get("usenet");
+            usenetPlugin.getPrototype(null).assignPlugin(link);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

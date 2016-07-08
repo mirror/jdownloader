@@ -270,13 +270,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setHost(host);
         created = System.currentTimeMillis();
         this.setPluginPatternMatcher(pluginPattern);
-        if (plugin != null && this.getPluginPatternMatcher() != null) {
-            try {
-                plugin.correctDownloadLink(this);
-            } catch (Throwable e) {
-                LogController.CL().log(e);
-            }
-        }
     }
 
     public long getFinishedDate() {
@@ -1146,7 +1139,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {

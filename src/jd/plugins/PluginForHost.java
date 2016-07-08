@@ -609,6 +609,9 @@ public abstract class PluginForHost extends Plugin {
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
 
+    public void onPluginAssigned(final DownloadLink link) throws Exception {
+    }
+
     /**
      * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname, verfuegbarkeit etc.
      *

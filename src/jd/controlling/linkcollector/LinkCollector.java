@@ -1786,18 +1786,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return;
         }
         final Iterator<CrawledPackage> iterator = fps.iterator();
-        DownloadLink dlLink = null;
-        CrawledLink localLink = null;
-        Iterator<CrawledLink> it;
-        CrawledPackage fp;
-        PluginFinder pluginFinder = new PluginFinder(logger);
+        final PluginFinder pluginFinder = new PluginFinder(logger);
         while (iterator.hasNext()) {
-            fp = iterator.next();
+            final CrawledPackage fp = iterator.next();
             if (fp.getChildren() != null) {
-                it = fp.getChildren().iterator();
+                final Iterator<CrawledLink> it = fp.getChildren().iterator();
                 while (it.hasNext()) {
-                    localLink = it.next();
-                    dlLink = localLink.getDownloadLink();
+                    final CrawledLink localLink = it.next();
+                    final DownloadLink dlLink = localLink.getDownloadLink();
 
                     if (dlLink == null) {
                         /* remove crawledLinks without DownloadLink */
@@ -1806,7 +1802,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                     /* assign defaultPlugin matching the hostname */
                     pluginFinder.assignPlugin(dlLink, true);
-
                 }
             }
             if (fp.getChildren() == null || fp.getChildren().size() == 0) {
@@ -1854,7 +1849,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                             if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
                                 logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
-                                link.setDefaultPlugin(newDefaultPlugin);
                                 if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
                                     link.setFinalLinkState(null);
                                 }
