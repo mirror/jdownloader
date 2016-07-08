@@ -28,6 +28,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+/**
+ *
+ *
+ *
+ */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)/(?:[^/]+/){2})" }, flags = { 0 })
 public class XXXBlg extends antiDDoSForDecrypt {
 
@@ -77,7 +82,7 @@ public class XXXBlg extends antiDDoSForDecrypt {
                     return null;
                 }
                 dLink = createDownloadlink(form.getAction(null));
-                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)/(?:[^/]+/){2}))")) {
+                if (!parameter.matches(this.getSupportedLinks().toString())) {
                     decryptedLinks.add(createDownloadlink(parameter));
                 }
             }
@@ -85,7 +90,6 @@ public class XXXBlg extends antiDDoSForDecrypt {
             decryptedLinks.add(dLink);
 
         } else {
-
             String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
             if (fpname == null) {
                 fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
