@@ -23,6 +23,9 @@ import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -41,10 +44,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class TwitchTvDecrypt extends PluginForDecrypt {
@@ -71,7 +72,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
     private void ajaxGetPagePlayer(final String string) throws IOException {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/18.0.0.194");
+        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.192");
         ajax.getPage(string);
     }
 
@@ -157,19 +158,21 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 }
             }
         } else {
+            String filename = null;
+            String channelName = null;
+            String date = null;
+            String fpName = null;
+            final FilePackage fp = FilePackage.getInstance();
+
             if (br.getURL().matches(videoSingleWeb)) {
                 // no longer get videoname from html, it requires api call.
                 ajaxGetPage("http://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
-                String filename = getJson(ajax, "title");
-                final String channelName = getJson(ajax, "display_name");
-                final String date = getJson(ajax, "recorded_at");
+                filename = PluginJSonUtils.getJson(ajax, "title");
+                channelName = PluginJSonUtils.getJson(ajax, "display_name");
+                date = PluginJSonUtils.getJson(ajax, "recorded_at");
                 final String vdne = "Video does not exist";
-                if (ajax != null && vdne.equals(getJson(ajax, "message"))) {
-                    try {
-                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + vdne, vdne));
-                    } catch (final Throwable t) {
-                        logger.info("OfflineLink :" + parameter);
-                    }
+                if (ajax != null && vdne.equals(PluginJSonUtils.getJson(ajax, "message"))) {
+                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + vdne, vdne));
                     return decryptedLinks;
                 }
                 String failreason = "Unknown server error";
@@ -188,11 +191,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     }
                 }
                 if (failed) {
-                    try {
-                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
-                    } catch (final Throwable t) {
-                        logger.info("OfflineLink :" + parameter);
-                    }
+                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
                     return decryptedLinks;
                 }
                 if (filename == null) {
@@ -236,22 +235,17 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     if (channelName != null) {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
-                    dlink.setProperty("LINKDUPEID", "twitch" + vid + "_" + counter);
+                    dlink.setProperty("LINKDUPEID", "twitch:" + vid + ":" + counter);
                     final String formattedFilename = jd.plugins.hoster.TwitchTv.getFormattedFilename(dlink);
                     dlink.setName(formattedFilename);
                     if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {
                         dlink.setAvailable(true);
                     }
-                    try {
-                        dlink.setContentUrl(parameter);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
+                    dlink.setContentUrl(parameter);
                     decryptedLinks.add(dlink);
                     counter++;
                 }
 
-                String fpName = "";
                 if (channelName != null) {
                     fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
                 }
@@ -274,31 +268,22 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 }
                 fpName += filename;
                 fpName += " - [" + links.length + "]" + " - " + used_quality;
-                final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName);
                 fp.addLinks(decryptedLinks);
             } else if (br.getURL().matches(videoSingleHLS)) {
-                if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
-                    logger.warning("HLS is only supported in JDownloader 2.");
-                    return decryptedLinks;
-                }
                 // they have multiple qualities, this would be defendant on uploaders original quality.
                 // we need sig for next request
                 // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
                 ajaxGetPage("http://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
                 if (ajax.getHttpConnection().getResponseCode() == 404) {
                     // offline
-                    final String message = getJson(ajax, "message");
-                    try {
-                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + message, message));
-                    } catch (final Throwable t) {
-                        logger.info("OfflineLink :" + parameter);
-                    }
+                    final String message = PluginJSonUtils.getJson(ajax, "message");
+                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + message, message));
                     return decryptedLinks;
                 }
-                String filename = getJson(ajax, "title");
-                final String channelName = getJson(ajax, "display_name");
-                final String date = getJson(ajax, "recorded_at");
+                filename = PluginJSonUtils.getJson(ajax, "title");
+                channelName = PluginJSonUtils.getJson(ajax, "display_name");
+                date = PluginJSonUtils.getJson(ajax, "recorded_at");
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -306,10 +291,10 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 filename = filename.replaceAll("[\r\n#]+", "");
                 this.ajaxGetPagePlayer("http://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
                 // {"token":"{\"user_id\":null,\"vod_id\":3707868,\"expires\":1421924057,\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}","sig":"a73d0354f84e8122d78b14f47552e0f83217a89e"}
-                final String auth = getJson(ajax, "sig");
-                // final String expire = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "expires");
-                final String privileged = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "privileged");
-                final String tokenString = getJson(ajax, "token");
+                final String auth = PluginJSonUtils.getJson(ajax, "sig");
+                // final String expire = PluginJSonUtils.getJson(ajax.toString().replaceAll("\\\\\"", "\""), "expires");
+                final String privileged = PluginJSonUtils.getJson(ajax.toString().replaceAll("\\\\\"", "\""), "privileged");
+                final String tokenString = PluginJSonUtils.getJson(ajax, "token");
                 // auth required
                 // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
                 final String a = Encoding.urlEncode(tokenString);
@@ -332,12 +317,8 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/mobile/index-dvr.m3u8
                 if (ajax.getHttpConnection().getResponseCode() == 403) {
                     // error handling for invalid token and or subscription based video/channel?
-                    try {
-                        final String failreason = ("true".equalsIgnoreCase(privileged) ? "Subscription required" : "Login required");
-                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
-                    } catch (final Throwable t) {
-                        logger.info("OfflineLink :" + parameter);
-                    }
+                    final String failreason = ("true".equalsIgnoreCase(privileged) ? "Subscription required" : "Login required");
+                    decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
                     return decryptedLinks;
                 }
                 final String[] medias = ajax.getRegex("#EXT-X-MEDIA([^\r\n]+[\r\n]+){3}").getColumn(-1);
@@ -362,20 +343,12 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
                     final String linkID = "twitch:" + vid + ":HLS:" + bw;
-                    try {
-                        dlink.setLinkID(linkID);
-                    } catch (final Throwable t) {
-                        dlink.setProperty("LINKDUPEID", linkID);
-                    }
+                    dlink.setLinkID(linkID);
                     // let linkchecking routine do all this!
                     // final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
                     // dlink.setName(formattedFilename);
                     dlink.setName("linkcheck-failed-recheck-online-status-manually.mp4");
-                    try {
-                        dlink.setContentUrl(parameter);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
+                    dlink.setContentUrl(parameter);
                     try {
                         ((jd.plugins.hoster.TwitchTv) plugin).setBrowser(br.cloneBrowser());
                         dlink.setAvailableStatus(((jd.plugins.hoster.TwitchTv) plugin).requestFileInformation(dlink));
@@ -388,7 +361,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                         decryptedLinks.add(0, dlink);
                     }
                 }
-                // because its too akward to know bitrate to p rating we online check, then confirm by ffprobe results
+                // because its too awkward to know bitrate to p rating we online check, then confirm by ffprobe results
                 if (true) {
                     // highest to lowest determines best. this is how there api returns 'source[chunked], high, medium, low, mobile'
                     // I assume that is... 1080, 720, 480, 360, 240, but it might not be!
@@ -457,7 +430,6 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                         }
                     }
                 }
-                String fpName = "";
                 if (channelName != null) {
                     fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
                 }
@@ -479,15 +451,35 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     }
                 }
                 fpName += filename;
-                final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName);
                 fp.addLinks(decryptedLinks);
             } else {
                 // unsupported feature
-                try {
-                    decryptedLinks.add(createOfflinelink(parameter, null));
-                } catch (final Throwable t) {
-                    logger.info("OfflineLink :" + parameter);
+                decryptedLinks.add(createOfflinelink(parameter, null));
+            }
+            // chat logs?, needs to be here so it can get filename stuff from other if statements setters
+            if (this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TwitchTv.grabChatHistory, jd.plugins.hoster.TwitchTv.defaultGrabChatHistory)) {
+                // create download link just for this, and continue.
+                final DownloadLink dlink = createDownloadlink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000));
+                dlink.setProperty(jd.plugins.hoster.TwitchTv.grabChatHistory, true);
+                final String linkID = "twitch:" + vid + ":" + jd.plugins.hoster.TwitchTv.grabChatHistory;
+                dlink.setLinkID(linkID);
+                dlink.setProperty("plainfilename", filename);
+                // dlink.setProperty("quality", quality);
+                if (date != null) {
+                    dlink.setProperty("originaldate", date);
+                }
+                if (channelName != null) {
+                    dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
+                }
+                dlink.setProperty("extension", " - Chat History.txt");
+                final String formattedFilename = jd.plugins.hoster.TwitchTv.getFormattedFilename(dlink);
+                dlink.setName(formattedFilename);
+                fp.add(dlink);
+                if (!desiredLinks.isEmpty()) {
+                    desiredLinks.add(dlink);
+                } else {
+                    decryptedLinks.add(dlink);
                 }
             }
         }
@@ -528,68 +520,6 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             JDUtilities.getPluginForHost("twitch.tv");
             pL.set(true);
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     /* NO OVERRIDE!! */
