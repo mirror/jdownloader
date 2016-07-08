@@ -27,6 +27,8 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,8 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" }, flags = { 3 })
 public class VideoFCTwoCom extends PluginForHost {
@@ -293,7 +293,7 @@ public class VideoFCTwoCom extends PluginForHost {
         if (upid == null || gk == null) {
             // quite a few of these patterns are too generic, 'this content... is now in javascript variable. errmsg span is also present in
             // ALL pages just doesn't contain text when not valid...
-            if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php") || br.containsHTML("class=\"errmsg\"")) {
+            if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php") || br.containsHTML("class=\"errmsg\"") || br.getURL().endsWith("://video.fc2.com/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -446,7 +446,7 @@ public class VideoFCTwoCom extends PluginForHost {
      * If import Browser request headerfield contains key of k && key value of v
      *
      * @author raztoki
-     * */
+     */
     private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
         if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
             return false;
