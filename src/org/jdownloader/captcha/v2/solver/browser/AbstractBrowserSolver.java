@@ -78,7 +78,7 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
                 });
                 return;
             case SKIP_LINK:
-                throw new SkipException(SkipRequest.SINGLE);
+                throw new SkipException(job.getChallenge(), SkipRequest.SINGLE);
             }
         }
         checkInterruption();

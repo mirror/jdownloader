@@ -2,6 +2,12 @@ package jd.controlling.captcha;
 
 import javax.swing.SwingUtilities;
 
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging2.LogInterface;
@@ -16,15 +22,8 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
-
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 
 public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
 
@@ -139,7 +138,7 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
             }
         }
         if (logger == null) {
-            logger =  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger();
+            logger = org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger();
         }
         return logger;
     }
@@ -148,7 +147,6 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
         DialogType dialogType = null;
         try {
             int f = 0;
-
             int countdown = getTimeoutInMS();
             if (captchaChallenge.getPlugin() instanceof PluginForHost) {
                 dialogType = DialogType.HOSTER;
@@ -162,39 +160,29 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
                     f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
             }
-
             showDialog(dialogType, f);
-
             return;
         } catch (DialogNoAnswerException e) {
-
             /* no external response available */
             if (e.isCausedByInterrupt()) {
                 throw new InterruptedException("Dialog Interrupted");
             }
-
             if (e.isCausedByTimeout()) {
-                throw new SkipException(SkipRequest.TIMEOUT);
+                throw new SkipException(captchaChallenge, SkipRequest.TIMEOUT);
             }
-            throw new SkipException(SkipRequest.SINGLE);
-
+            throw new SkipException(captchaChallenge, SkipRequest.SINGLE);
         } catch (HideCaptchasByHostException e) {
-
-            throw new SkipException(SkipRequest.BLOCK_HOSTER);
-
+            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_HOSTER);
         } catch (HideCaptchasByPackageException e) {
-
-            throw new SkipException(SkipRequest.BLOCK_PACKAGE);
-
+            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_PACKAGE);
         } catch (StopCurrentActionException e) {
-            throw new SkipException(SkipRequest.STOP_CURRENT_ACTION);
+            throw new SkipException(captchaChallenge, SkipRequest.STOP_CURRENT_ACTION);
         } catch (HideAllCaptchasException e) {
-            throw new SkipException(SkipRequest.BLOCK_ALL_CAPTCHAS);
-
+            throw new SkipException(captchaChallenge, SkipRequest.BLOCK_ALL_CAPTCHAS);
         } catch (RuntimeException e) {
             LogSource.exception(getLogger(), e);
         } catch (RefreshException e) {
-            throw new SkipException(SkipRequest.REFRESH);
+            throw new SkipException(captchaChallenge, SkipRequest.REFRESH);
         }
     }
 

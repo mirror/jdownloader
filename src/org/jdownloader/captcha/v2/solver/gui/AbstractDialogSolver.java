@@ -51,7 +51,7 @@ public abstract class AbstractDialogSolver<T> extends ChallengeSolver<T> {
                 });
                 return;
             case SKIP_LINK:
-                throw new SkipException(SkipRequest.SINGLE);
+                throw new SkipException(job.getChallenge(), SkipRequest.SINGLE);
             }
         }
         checkInterruption();

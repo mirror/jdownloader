@@ -8,6 +8,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
@@ -43,9 +46,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
 
 public class ChallengeResponseController {
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
@@ -236,19 +236,17 @@ public class ChallengeResponseController {
     }
 
     public <T> SolverJob<T> handle(final Challenge<T> c) throws InterruptedException, SkipException {
-
         LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
         if (logger == null) {
             logger = this.logger;
         }
-
         logger.info("Log to " + logger.getName());
         logger.info("Handle Challenge: " + c);
         final ArrayList<ChallengeSolver<T>> solver = createList(c);
         logger.info("Solver: " + solver);
         if (solver.size() == 0) {
             logger.info("No solver available!");
-            throw new SkipException(SkipRequest.BLOCK_HOSTER);
+            throw new SkipException(c, SkipRequest.BLOCK_HOSTER);
         }
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
@@ -276,7 +274,7 @@ public class ChallengeResponseController {
                 }
             }
             if (job.getSkipRequest() != null) {
-                throw new SkipException(job.getSkipRequest());
+                throw new SkipException(c, job.getSkipRequest());
             }
             final ResponseList<T> response = job.getResponseAndKill();
             logger.info("All Responses: " + job.getResponses());

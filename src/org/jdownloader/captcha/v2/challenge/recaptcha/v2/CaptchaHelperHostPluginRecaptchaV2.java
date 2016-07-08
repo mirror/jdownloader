@@ -2,6 +2,19 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -20,19 +33,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
 
@@ -56,7 +56,6 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         }
         final PluginForHost plugin = this.plugin;
         final DownloadLink link = getPlugin().getDownloadLink();
-
         if (siteKey == null) {
             siteKey = getSiteKey();
             if (siteKey == null) {
@@ -71,7 +70,6 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         ArrayList<SolverJob<String>> jobs = new ArrayList<SolverJob<String>>();
-
         try {
             if (link != null) {
                 link.addPluginProgress(progress);
@@ -99,25 +97,19 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                     logger.warning("Cancel. Blacklist Matching");
                     throw new CaptchaException(blackListEntry);
                 }
-
                 jobs.add(ChallengeResponseController.getInstance().handle(c));
                 AbstractRecaptcha2FallbackChallenge rcFallback = null;
-
                 while (jobs.size() <= 20) {
-
                     if (rcFallback == null && c.getResult() != null) {
                         for (AbstractResponse<String> r : c.getResult()) {
                             if (r.getChallenge() != null && r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
                                 rcFallback = (AbstractRecaptcha2FallbackChallenge) r.getChallenge();
-
                                 break;
-
                             }
                         }
                     }
                     if (rcFallback != null && rcFallback.getToken() == null) {
                         // retry
-
                         try {
                             rcFallback.reload(jobs.size() + 1);
                         } catch (Throwable e) {
@@ -135,28 +127,21 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                         break;
                     }
                 }
-
                 if (!c.isSolved()) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-
                 if (c.getResult() != null) {
                     for (AbstractResponse<String> r : c.getResult()) {
                         if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
                             String token = ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
                             if (!RecaptchaV2Challenge.isValidToken(token)) {
                                 for (int i = 0; i < jobs.size(); i++) {
-
                                     jobs.get(i).invalidate();
-
                                 }
                                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                             } else {
-
                                 for (int i = 0; i < jobs.size(); i++) {
-
                                     jobs.get(i).validate();
-
                                 }
                             }
                             return token;
@@ -203,23 +188,10 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
-                case SINGLE:
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
-                    }
-                    break;
                 case TIMEOUT:
-                    /*
-                     * TODO: come up with better solution... <br /> For now not using
-                     * JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled() because in previous
-                     * implementation we wouldn't break and would return "" (from refresh) response to plugins!! this is BADDDDDDDDDDDDDD
-                     * idea! we should never return empty response to plugins, specially a response that is shared for different error
-                     * types. Plugins have zero idea what happen to cause issue.
-                     */
-                    // if (!JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CaptchaDialog timed out!", 5 * 60 * 1000l);
-                    // }
+                    getPlugin().onCaptchaTimeout(link, e.getChallenge());
+                    // TIMEOUT may fallthrough to SINGLE
+                case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
@@ -239,7 +211,6 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             throw new CaptchaException(e.getSkipRequest());
         } finally {
             link.removePluginProgress(progress);
-
         }
     }
 

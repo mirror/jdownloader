@@ -47,11 +47,6 @@ public class CFG_CAPTCHA {
     public static final BooleanKeyHandler               DIALOG_COUNTDOWN_FOR_CRAWLER_ENABLED           = SH.getKeyHandler("DialogCountdownForCrawlerEnabled", BooleanKeyHandler.class);
 
     /**
-     * If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead
-     **/
-    public static final BooleanKeyHandler               SKIP_DOWNLOAD_LINK_ON_CAPTCHA_TIMEOUT_ENABLED  = SH.getKeyHandler("SkipDownloadLinkOnCaptchaTimeoutEnabled", BooleanKeyHandler.class);
-
-    /**
      * Enable the CES & Remote Captcha Bubbles
      **/
     public static final BooleanKeyHandler               REMOTE_CAPTCHA_BUBBLE_ENABLED                  = SH.getKeyHandler("RemoteCaptchaBubbleEnabled", BooleanKeyHandler.class);
