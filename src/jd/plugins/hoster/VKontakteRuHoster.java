@@ -639,11 +639,10 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             return false;
         } catch (final PluginException p) {
-            if (p.getLinkStatus() == LinkStatus.ERROR_ALREADYEXISTS) {
-                throw p;
-            }
-            return false;
+            // required for exists on disk and set mirror as complete.
+            throw p;
         } catch (final SkipReasonException s) {
+            // required for file exists on disk (standard).
             throw s;
         } catch (final Exception e) {
             if (isLast) {
