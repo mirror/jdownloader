@@ -2003,6 +2003,7 @@ public class LinkCrawler {
             forwardCryptedLinkInfos(sourceCrawledLink, destCrawledLink.getCryptedLink());
             forwardDownloadLinkInfos(getLatestDownloadLink(sourceCrawledLink), destCrawledLink.getDownloadLink(), singleDestCrawledLink);
             if (Boolean.TRUE.equals(singleDestCrawledLink) && sourceCrawledLink.isNameSet()) {
+                // forward customized name, eg from container plugins
                 destCrawledLink.setName(sourceCrawledLink.getName());
             }
             final CrawledLinkModifier destCustomModifier = destCrawledLink.getCustomCrawledLinkModifier();
