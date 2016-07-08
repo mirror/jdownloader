@@ -23,6 +23,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,11 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
 public class TwitchTv extends PluginForHost {
@@ -83,7 +83,13 @@ public class TwitchTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        br = new Browser();
         dllink = downloadLink.getStringProperty("plain_directlink", downloadLink.getStringProperty("m3u", null));
+        if (dllink == null && isChatDownload(downloadLink)) {
+            // incase the user updates the formatting in configs between decrypter and download.
+            downloadLink.setName(getFormattedFilename(downloadLink));
+            return AvailableStatus.TRUE;
+        }
         if (downloadLink.getBooleanProperty("offline", false) || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -97,7 +103,7 @@ public class TwitchTv extends PluginForHost {
                 }
 
                 br.getHeaders().put("Accept", "*/*");
-                br.getHeaders().put("X-Requested-With", "ShockwaveFlash/18.0.0.194");
+                br.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.192");
                 br.getHeaders().put("Referer", downloadLink.getContentUrl());
                 HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
                 StreamInfo streamInfo = downloader.getProbe();
@@ -155,14 +161,51 @@ public class TwitchTv extends PluginForHost {
         }
     }
 
+    private boolean isChatDownload(DownloadLink downloadLink) {
+        return downloadLink.getBooleanProperty(jd.plugins.hoster.TwitchTv.grabChatHistory, jd.plugins.hoster.TwitchTv.defaultGrabChatHistory);
+    }
+
+    private static String getVuid(final DownloadLink downloadLink) {
+        final String result = new Regex(downloadLink.getLinkID(), "twitch:(\\d+):").getMatch(0);
+        return result;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (dllink != null && dllink.endsWith("m3u8")) {
             doHLS(downloadLink);
+        } else if (isChatDownload(downloadLink)) {
+            doChatDownload(downloadLink);
         } else {
             doFree(downloadLink);
         }
+    }
+
+    private void doChatDownload(DownloadLink downloadLink) throws Exception {
+        // I don't see the point in linkchecking these!
+        dllink = "https://rechat.twitch.tv/rechat-messages?start=0&video_id=v" + getVuid(downloadLink);
+        // remove all of log, and start from scratch. for instance twitter/admin deletes comment, the order then changes and you have messed
+        // up history.
+        br.setAllowedResponseCodes(400);
+        br.getHeaders().put("Referer", downloadLink.getContainerUrl());
+        br.getHeaders().put("Accept", "application/vnd.api+json");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("application/json")) {
+            br.followConnection();
+            final String tt = br.getRegex("is not between (\\d+)").getMatch(0);
+            dllink = dllink.replace("start=0", "start=" + tt);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+                if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("application/json")) {
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+        dl.startDownload();
     }
 
     private final void doHLS(final DownloadLink downloadLink) throws Exception {
@@ -286,7 +329,10 @@ public class TwitchTv extends PluginForHost {
         formattedFilename = formattedFilename.replace("*ext*", extension);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*videoname*", videoName);
-
+        final String vuid = getVuid(downloadLink);
+        if (vuid != null) {
+            formattedFilename = formattedFilename.replace("*vuid*", vuid);
+        }
         return formattedFilename;
     }
 
@@ -323,7 +369,7 @@ public class TwitchTv extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 // they don't allow requests to home page to handshake with https.. very poor.
-                br.getPage("http://www.twitch.tv/user/login_popup");
+                br.getPage("https://www.twitch.tv/user/login_popup");
                 // two iframes. one signup, one login.
                 final String[] iframes = br.getRegex("<iframe [^>]*src\\s*=\\s*(\"|')(.*?)\\1").getColumn(1);
                 if (iframes == null) {
@@ -399,12 +445,14 @@ public class TwitchTv extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        requestFileInformation(downloadLink);
         if (dllink != null && dllink.endsWith("m3u8")) {
-            doHLS(link);
+            doHLS(downloadLink);
+        } else if (isChatDownload(downloadLink)) {
+            doChatDownload(downloadLink);
         } else {
-            doFree(link);
+            doFree(downloadLink);
         }
     }
 
@@ -420,6 +468,8 @@ public class TwitchTv extends PluginForHost {
 
     private final static String defaultCustomFilenameWeb = "*partnumber**videoname*_*quality**ext*";
     private final static String defaultCustomFilenameHls = "*partnumber* - *videoname* -*videoQuality*_*videoCodec*-*audioBitrate*_*audioCodec**ext*";
+    public final static String  grabChatHistory          = "grabChatHistory";
+    public final static boolean defaultGrabChatHistory   = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.twitchtv.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
@@ -445,20 +495,23 @@ public class TwitchTv extends PluginForHost {
         sb.append("*videoQuality* = the frame size/quality, e.g. '720p'\r\n");
         sb.append("*videoCodec* = video codec used, e.g. 'h264'\r\n");
         sb.append("*audioBitrate* = audio bitrate, e.g. '128kbits'\r\n");
-        sb.append("*audioCodec* = audio encoding type, e.g. 'aac'");
+        sb.append("*audioCodec* = audio encoding type, e.g. 'aac'\r\n");
+        sb.append("*vuid* = video unquie identifier");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         // best shite for hls
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Quality selection, this is for HLS /v/ links only"));
-        final ConfigEntry cfgbest = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "useBest", JDL.L("plugins.hoster.twitchtv.usebest", "Only grab best video within selection above?, Else will return available videos within your selected above")).setDefaultValue(true);
+        final ConfigEntry cfgbest = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "useBest", JDL.L("plugins.hoster.twitchtv.usebest", "Only grab best video within selection below?, Else will return available videos within your selected above")).setDefaultValue(true);
         getConfig().addEntry(cfgbest);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q1080p", JDL.L("plugins.hoster.twitchtv.check1080p", "Grab 1080?")).setDefaultValue(true).setEnabledCondidtion(cfgbest, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q720p", JDL.L("plugins.hoster.twitchtv.check720p", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(cfgbest, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q480p", JDL.L("plugins.hoster.twitchtv.check480p", "Grab 480p?")).setDefaultValue(true).setEnabledCondidtion(cfgbest, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q360p", JDL.L("plugins.hoster.twitchtv.check360p", "Grab 360p?")).setDefaultValue(true).setEnabledCondidtion(cfgbest, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.twitchtv.check240p", "Grab 240p?")).setDefaultValue(true).setEnabledCondidtion(cfgbest, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q1080p", JDL.L("plugins.hoster.twitchtv.check1080p", "Grab 1080?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q720p", JDL.L("plugins.hoster.twitchtv.check720p", "Grab 720p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q480p", JDL.L("plugins.hoster.twitchtv.check480p", "Grab 480p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q360p", JDL.L("plugins.hoster.twitchtv.check360p", "Grab 360p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.twitchtv.check240p", "Grab 240p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "avoidChunked", JDL.L("plugins.hoster.twitchtv.avoidChunked", "Avoid source quality (chunked)?")).setDefaultValue(true));
-
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), grabChatHistory,
+        // JDL.L("plugins.hoster.twitchtv.grabChatHistory", "Download given videos chat
+        // history.")).setDefaultValue(defaultGrabChatHistory));
     }
 
     @Override
