@@ -52,6 +52,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
@@ -353,8 +354,12 @@ public class VKontakteRuHoster extends PluginForHost {
                             }
                             albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
                             if (albumID == null) {
-                                logger.info("vk.com: albumID is null");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                // new.vk.com/
+                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
+                                if (albumID == null) {
+                                    logger.info("vk.com: albumID is null");
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
                             }
                             link.setProperty("albumid", albumID);
                         }
@@ -448,7 +453,7 @@ public class VKontakteRuHoster extends PluginForHost {
         final String[][] qualities = { { "url1080", "1080p" }, { "url720", "720p" }, { "url480", "480p" }, { "url360", "360p" }, { "url240", "240p" } };
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         for (final String[] qualityInfo : qualities) {
-            final String finallink = getJson(qualityInfo[0]);
+            final String finallink = PluginJSonUtils.getJson(br, qualityInfo[0]);
             if (finallink != null) {
                 foundQualities.put(qualityInfo[1], finallink);
             }
@@ -465,18 +470,6 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public String getAGBLink() {
         return getBaseURL() + "/help.php?page=terms";
-    }
-
-    private String getJson(final String key) {
-        return getJson(br.toString(), key);
-    }
-
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.\\-]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
     }
 
     @Override
@@ -742,8 +735,11 @@ public class VKontakteRuHoster extends PluginForHost {
             // Force login
             login(br, acc);
             br.getPage(page);
+        } else if (br.getRedirectLocation() != null && br.getRedirectLocation().replaceAll("https?://(\\w+\\.)?vk\\.com", "").equals(page.replaceAll("https?://(\\w+\\.)?vk\\.com", ""))) {
+            br.getPage(br.getRedirectLocation());
         }
         generalErrorhandling();
+
     }
 
     private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
@@ -794,7 +790,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     errlogger.log(e);
                 }
                 if (br != null && br.getRequest() != null) {
-                    errlogger.info(br.getRequest().toString());
+                    errlogger.info("\r\n" + br.getRequest().toString());
                     errlogger.severe("-END OF REPORT-");
                 }
             } finally {
@@ -1044,7 +1040,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTLINKCHECK));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast linkcheck for all picture links (when true or false filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?")).setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast linkcheck for all picture links (when true or false filename & filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?")).setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.fastAudioLinkcheck", "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?")).setDefaultValue(default_fastlinkcheck_FASTAUDIOLINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings:"));
