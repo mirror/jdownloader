@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,6 +27,16 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://rabbitfiledecrypted\\.com/[A-Za-z0-9]+\\&part=\\d+" }, flags = { 2 })
 public class RabbitFileCom extends PluginForHost {
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        final String code = link.getStringProperty("plain_code", null);
+        if (code == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String url = "http://www.rabbitfile.com/download_regular.php?file=" + code;
+        link.setUrlDownload(url);
+    }
+
     public RabbitFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,13 +47,13 @@ public class RabbitFileCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        correctDownloadLink(link);
         this.setBrowserExclusive();
-        final String code = link.getStringProperty("plain_code", null);
-        br.getPage("http://www.rabbitfile.com/download_regular.php?file=" + code);
+        br.getPage(link.getDownloadURL());
         if (br.toString().length() < 300) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
