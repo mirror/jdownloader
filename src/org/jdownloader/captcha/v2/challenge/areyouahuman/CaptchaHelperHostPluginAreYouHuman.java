@@ -2,6 +2,21 @@ package org.jdownloader.captcha.v2.challenge.areyouahuman;
 
 import java.awt.Rectangle;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -24,21 +39,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAreYouHuman<PluginForHost> {
 
     public CaptchaHelperHostPluginAreYouHuman(PluginForHost plugin, Browser br, String siteKey) {
@@ -52,7 +52,6 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
     }
 
     public String getToken() throws PluginException, InterruptedException {
-
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
@@ -70,7 +69,7 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
         try {
             link.addPluginProgress(progress);
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final AreYouAHumanChallenge c = new AreYouAHumanChallenge(apiKey, getPlugin()) {
+            final AreYouAHumanChallenge challenge = new AreYouAHumanChallenge(apiKey, getPlugin()) {
 
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
@@ -106,14 +105,13 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                 public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
                     return null;
                 }
-
             };
-            c.setTimeout(getPlugin().getCaptchaTimeout());
+            challenge.setTimeout(getPlugin().getCaptchaTimeout());
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use antiCaptcha services
                  */
-                c.setAccountLogin(true);
+                challenge.setAccountLogin(true);
             } else {
                 final SingleDownloadController controller = link.getDownloadLinkController();
                 if (controller != null) {
@@ -121,19 +119,19 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                 }
             }
             getPlugin().invalidateLastChallengeResponse();
-            final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
+            final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
             if (blackListEntry != null) {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            final SolverJob<String> job = ChallengeResponseController.getInstance().handle(c);
-            if (!c.isSolved()) {
+            final SolverJob<String> job = ChallengeResponseController.getInstance().handle(challenge);
+            if (!challenge.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (!c.isCaptchaResponseValid()) {
+            if (!challenge.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha reponse value did not validate!");
             }
-            return c.getResult().getValue();
+            return challenge.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;
@@ -161,19 +159,14 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
+                case TIMEOUT:
+                    getPlugin().onCaptchaTimeout(link, e.getChallenge());
+                    // TIMEOUT may fallthrough to SINGLE
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
-                    break;
-                case TIMEOUT:
-                    // if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
-                    }
-                    // }
                     break;
                 case REFRESH:
                     break;
@@ -189,5 +182,4 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
             link.removePluginProgress(progress);
         }
     }
-
 }

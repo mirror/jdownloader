@@ -23,6 +23,12 @@ public interface CaptchaSettings extends ConfigInterface {
         // SKIP_MANUAL
     }
 
+    public static enum CAPTCHA_TIMEOUT_ACTION {
+        SKIP,
+        RETRY,
+        ASK
+    }
+
     public static final CaptchaSettings CFG = JsonConfig.create(CaptchaSettings.class);
 
     @AboutConfig
@@ -47,11 +53,11 @@ public interface CaptchaSettings extends ConfigInterface {
     void setDialogCountdownForCrawlerEnabled(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultEnumValue("ASK")
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead")
-    boolean isSkipDownloadLinkOnCaptchaTimeoutEnabled();
+    CAPTCHA_TIMEOUT_ACTION getCaptchaTimeoutAction();
 
-    void setSkipDownloadLinkOnCaptchaTimeoutEnabled(boolean b);
+    void setCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
     @DefaultIntValue(60000)

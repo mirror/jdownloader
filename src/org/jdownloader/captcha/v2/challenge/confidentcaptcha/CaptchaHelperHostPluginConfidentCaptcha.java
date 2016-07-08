@@ -2,7 +2,19 @@ package org.jdownloader.captcha.v2.challenge.confidentcaptcha;
 
 import java.awt.Rectangle;
 
-import org.appwork.storage.config.JsonConfig;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -22,20 +34,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 public class CaptchaHelperHostPluginConfidentCaptcha extends AbstractCaptchaHelperConfidentCaptcha<PluginForHost> {
 
     public CaptchaHelperHostPluginConfidentCaptcha(final PluginForHost plugin, final Browser br, final String siteKey) {
@@ -47,7 +45,6 @@ public class CaptchaHelperHostPluginConfidentCaptcha extends AbstractCaptchaHelp
     }
 
     public String getToken() throws PluginException, InterruptedException {
-
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
@@ -123,19 +120,15 @@ public class CaptchaHelperHostPluginConfidentCaptcha extends AbstractCaptchaHelp
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
+                case TIMEOUT:
+                    getPlugin().onCaptchaTimeout(link, e.getChallenge());
+                    // TIMEOUT may fallthrough to SINGLE
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
-                case TIMEOUT:
-                    if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
-                        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
-                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                            HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
-                        }
-                    }
                 case REFRESH:
                     // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
                     return "";

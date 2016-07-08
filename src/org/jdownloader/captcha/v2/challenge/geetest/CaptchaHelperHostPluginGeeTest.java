@@ -2,6 +2,21 @@ package org.jdownloader.captcha.v2.challenge.geetest;
 
 import java.awt.Rectangle;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -23,35 +38,17 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest<PluginForHost> {
 
     public CaptchaHelperHostPluginGeeTest(PluginForHost plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
-
     }
 
     public CaptchaHelperHostPluginGeeTest(PluginForHost plugin, Browser br) {
         this(plugin, br, null);
-
     }
 
     public String getToken() throws PluginException, InterruptedException {
-
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
@@ -160,19 +157,14 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                     }
                     break;
+                case TIMEOUT:
+                    getPlugin().onCaptchaTimeout(link, e.getChallenge());
+                    // TIMEOUT may fallthrough to SINGLE
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                     }
-                    break;
-                case TIMEOUT:
-                    // if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                    }
-                    // }
                     break;
                 case REFRESH:
                     break;

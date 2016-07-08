@@ -1,5 +1,9 @@
 package org.jdownloader.captcha.v2.challenge.oauth;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.gui.swing.jdgui.JDGui;
+
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -12,10 +16,6 @@ import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
-
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.gui.swing.jdgui.JDGui;
 
 public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
     private static final OAuthDialogSolver INSTANCE = new OAuthDialogSolver();
@@ -80,7 +80,7 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
                 });
                 return;
             case SKIP_LINK:
-                throw new SkipException(SkipRequest.SINGLE);
+                throw new SkipException(job.getChallenge(), SkipRequest.SINGLE);
             }
         }
         checkInterruption();
