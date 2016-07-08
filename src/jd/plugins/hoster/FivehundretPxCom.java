@@ -57,7 +57,6 @@ public class FivehundretPxCom extends PluginForHost {
             final String ID = new Regex(link.getPluginPatternMatcher(), "photo/(\\d+)").getMatch(0);
             link.setLinkID(ID);
         }
-        super.correctDownloadLink(link);
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })

@@ -90,18 +90,30 @@ public class PluginFinder {
         return null;
     }
 
+    private boolean assign(final DownloadLink link, final PluginForHost pluginForHost) {
+        try {
+            if (pluginForHost.assignPlugin(link)) {
+                try {
+                    pluginForHost.onPluginAssigned(link);
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+                return true;
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        return false;
+    }
+
     public synchronized PluginForHost assignPlugin(final DownloadLink link, final boolean assignPlugin) {
         final String host = assignHost(link.getHost());
         if (host != null) {
             if (pluginCaches.containsKey(host)) {
                 final PluginForHost pluginForHost = pluginCaches.get(host);
                 if (pluginForHost != null) {
-                    try {
-                        if (!assignPlugin || pluginForHost.assignPlugin(link)) {
-                            return pluginForHost;
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
+                    if (!assignPlugin || assign(link, pluginForHost)) {
+                        return pluginForHost;
                     }
                 }
             }
@@ -110,12 +122,8 @@ public class PluginFinder {
                 if (lazyHostPlugin != null) {
                     final PluginForHost pluginForHost = lazyHostPlugin.getPrototype(null);
                     pluginCaches.put(host, pluginForHost);
-                    try {
-                        if (!assignPlugin || pluginForHost.assignPlugin(link)) {
-                            return pluginForHost;
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
+                    if (!assignPlugin || assign(link, pluginForHost)) {
+                        return pluginForHost;
                     }
                 }
             } catch (final Throwable e) {
@@ -128,12 +136,8 @@ public class PluginFinder {
                 logger.severe("Assign fallBackPlugin for: " + link.getHost() + ">" + host + "=" + link.getName());
                 final PluginForHost pluginForHost = fallBackPlugin.getPrototype(null);
                 pluginCaches.put(host, pluginForHost);
-                try {
-                    if (!assignPlugin || pluginForHost.assignPlugin(link)) {
-                        return pluginForHost;
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
+                if (!assignPlugin || assign(link, pluginForHost)) {
+                    return pluginForHost;
                 }
             }
         } catch (final Throwable e) {

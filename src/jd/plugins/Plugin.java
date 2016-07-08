@@ -516,7 +516,7 @@ public abstract class Plugin implements ActionListener {
         }
     }
 
-    public CrawledLink convert(DownloadLink link) {
+    public CrawledLink convert(final DownloadLink link) {
         return new CrawledLink(link);
     }
 

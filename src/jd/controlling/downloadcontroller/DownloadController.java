@@ -875,7 +875,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     }
                                     if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
                                         logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
-                                        link.setDefaultPlugin(newDefaultPlugin);
                                         if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
                                             link.setFinalLinkState(null);
                                         }
@@ -930,19 +929,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             return;
         }
         final Iterator<FilePackage> iterator = fps.iterator();
-        DownloadLink localLink;
-        Iterator<DownloadLink> it;
-        FilePackage fp;
-        PluginFinder pluginFinder = new PluginFinder(logger);
+        final PluginFinder pluginFinder = new PluginFinder(logger);
         boolean cleanupStartup = allowCleanup && CleanAfterDownloadAction.CLEANUP_ONCE_AT_STARTUP.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction());
         boolean cleanupFileExists = JsonConfig.create(GeneralSettings.class).getCleanupFileExists();
         while (iterator.hasNext()) {
-            fp = iterator.next();
+            final FilePackage fp = iterator.next();
             if (fp.getChildren() != null) {
-                java.util.List<DownloadLink> removeList = new ArrayList<DownloadLink>();
-                it = fp.getChildren().iterator();
+                final List<DownloadLink> removeList = new ArrayList<DownloadLink>();
+                final Iterator<DownloadLink> it = fp.getChildren().iterator();
                 while (it.hasNext()) {
-                    localLink = it.next();
+                    final DownloadLink localLink = it.next();
                     if (cleanupStartup) {
                         if (FinalLinkState.CheckFinished(localLink.getFinalLinkState())) {
                             logger.info("Remove " + localLink.getView().getDisplayName() + " because Finished and CleanupOnStartup!");

@@ -1238,7 +1238,6 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private AvailableStatus reqFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
         final boolean checked = checkLinks(new DownloadLink[] { link });
         // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
         if (!checked && hasAntiddosCaptchaRequirement()) {
