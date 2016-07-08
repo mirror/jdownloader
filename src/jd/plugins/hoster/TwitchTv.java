@@ -49,6 +49,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
@@ -80,6 +81,15 @@ public class TwitchTv extends PluginForHost {
     private static final int    ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
     private String              dllink                    = null;
+
+    private Browser             ajax                      = null;
+
+    private void ajaxSubmitForm(final Form form) throws Exception {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.submitForm(form);
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -346,7 +356,7 @@ public class TwitchTv extends PluginForHost {
     private static Object       ctrlLock    = new Object();
 
     @SuppressWarnings("unchecked")
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (accountLock) {
             try {
                 // Load cookies
@@ -376,7 +386,7 @@ public class TwitchTv extends PluginForHost {
                     throwError();
                 }
                 for (String iframe : iframes) {
-                    iframe = Encoding.htmlDecode(iframe);
+                    iframe = Encoding.htmlOnlyDecode(iframe);
                     if (StringUtils.containsIgnoreCase(iframe, "/authentications/new") || StringUtils.containsIgnoreCase(iframe, "username=")) {
                         br.getPage(iframe);
                         break;
@@ -391,8 +401,17 @@ public class TwitchTv extends PluginForHost {
                 // <div class="g-recaptcha" data-sitekey="6Ld65QcTAAAAAMBbAE8dkJq4Wi4CsJy7flvKhYqX"></div>
                 f.put("username", Encoding.urlEncode(account.getUser()));
                 f.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(f);
-                if (br.getCookie(MAINPAGE, "persistent") == null) {
+                // json now!
+                ajaxSubmitForm(f);
+                // correct will redirect, with no cookies until following redirect; incorrect has error message && no cookies.
+                final String redirect = PluginJSonUtils.getJson(ajax, "redirect");
+                if (redirect != null) {
+                    // not with json headers
+                    br.getPage(redirect);
+                } else {
+                    // this will be errors...
+                    // {"message":"Incorrect username or password.","captcha":"false","errors":["Incorrect username or password."]}
+                    // if (br.getCookie(MAINPAGE, "persistent") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -427,18 +446,14 @@ public class TwitchTv extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
-        try {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
