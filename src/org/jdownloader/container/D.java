@@ -32,7 +32,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import org.appwork.utils.parser.UrlQuery;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -47,6 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.UpdateController;
 import org.w3c.dom.Document;
@@ -546,19 +546,18 @@ public class D extends PluginsC {
                     java.util.List<String> pws = new ArrayList<String>();
                     String pc = "";
                     for (int entry = 0; entry < data.getLength(); entry++) {
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("url")) {
+                        final String nodeName = data.item(entry).getNodeName();
+                        if ("url".equalsIgnoreCase(nodeName)) {
                             ls.add(data.item(entry).getTextContent());
-                        }
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("password")) {
-                            java.util.List<String> ret = parsePassword(data.item(entry).getTextContent());
+                        } else if ("password".equalsIgnoreCase(nodeName)) {
+                            List<String> ret = parsePassword(data.item(entry).getTextContent());
                             for (String pw : ret) {
                                 if (!pws.contains(pw)) {
                                     pws.add(pw);
                                 }
                             }
-                        }
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("comment")) {
-                            String cmt = data.item(entry).getTextContent();
+                        } else if ("comment".equalsIgnoreCase(nodeName)) {
+                            final String cmt = data.item(entry).getTextContent();
                             if (pc.indexOf(cmt) < 0) {
                                 pc += cmt + " | ";
                             }
@@ -622,24 +621,22 @@ public class D extends PluginsC {
                 Node file = uls.item(fc);
                 if (file != null) {
                     NodeList data = file.getChildNodes();
-                    java.util.List<String> ls = new ArrayList<String>();
-                    java.util.List<String> pws = new ArrayList<String>();
+                    List<String> ls = new ArrayList<String>();
+                    List<String> pws = new ArrayList<String>();
                     String pgc = "";
                     for (int entry = 0; entry < data.getLength(); entry++) {
-
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("url")) {
+                        final String nodeName = data.item(entry).getNodeName();
+                        if ("url".equalsIgnoreCase(nodeName)) {
                             ls.add(Encoding.Base64Decode(data.item(entry).getTextContent()));
-                        }
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("password")) {
-                            java.util.List<String> ret = parsePassword(Encoding.Base64Decode(data.item(entry).getTextContent()));
+                        } else if ("password".equalsIgnoreCase(nodeName)) {
+                            final List<String> ret = parsePassword(Encoding.Base64Decode(data.item(entry).getTextContent()));
                             for (String pw : ret) {
                                 if (!pws.contains(pw)) {
                                     pws.add(pw);
                                 }
                             }
-                        }
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("comment")) {
-                            String cmt = Encoding.Base64Decode(data.item(entry).getTextContent());
+                        } else if ("comment".equalsIgnoreCase(nodeName)) {
+                            final String cmt = Encoding.Base64Decode(data.item(entry).getTextContent());
                             if (pgc.indexOf(cmt) < 0) {
                                 pgc += cmt + " | ";
                             }
@@ -659,7 +656,6 @@ public class D extends PluginsC {
                         // links.get(linkCounter).substring(links.get(linkCounter
                         // ).lastIndexOf("/")
                         // + 1), pHost.getHost(), null, true);
-
                         nl = new CrawledLink(ls.get(lc));
                         if (pws != null && pws.size() > 0) {
                             nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
@@ -746,7 +742,8 @@ public class D extends PluginsC {
                     java.util.List<String> s7 = new ArrayList<String>();
 
                     for (int entry = 0; entry < data.getLength(); entry++) {
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("url")) {
+                        final String nodeName = data.item(entry).getNodeName();
+                        if ("url".equalsIgnoreCase(nodeName)) {
                             String sls = Encoding.Base64Decode(data.item(entry).getTextContent());
                             String[] lsr = HTMLParser.getHttpLinks(sls, null);
                             final boolean none = lsr.length == 0;
@@ -784,11 +781,9 @@ public class D extends PluginsC {
                                 logger.severe("DLC Error. Generator Link split Error");
                                 break;
                             }
-                        }
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("filename")) {
+                        } else if ("filename".equals(nodeName)) {
                             n5.add(Encoding.Base64Decode(data.item(entry).getTextContent()));
-                        }
-                        if (data.item(entry).getNodeName().equalsIgnoreCase("size")) {
+                        } else if ("size".equalsIgnoreCase(nodeName)) {
                             s7.add(Encoding.Base64Decode(data.item(entry).getTextContent()));
                         }
                     }

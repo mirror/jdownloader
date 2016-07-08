@@ -2002,6 +2002,9 @@ public class LinkCrawler {
             destCrawledLink.setMatchingFilter(sourceCrawledLink.getMatchingFilter());
             forwardCryptedLinkInfos(sourceCrawledLink, destCrawledLink.getCryptedLink());
             forwardDownloadLinkInfos(getLatestDownloadLink(sourceCrawledLink), destCrawledLink.getDownloadLink(), singleDestCrawledLink);
+            if (Boolean.TRUE.equals(singleDestCrawledLink) && sourceCrawledLink.isNameSet()) {
+                destCrawledLink.setName(sourceCrawledLink.getName());
+            }
             final CrawledLinkModifier destCustomModifier = destCrawledLink.getCustomCrawledLinkModifier();
             if (destCustomModifier == null) {
                 destCrawledLink.setCustomCrawledLinkModifier(sourceLinkModifier);
