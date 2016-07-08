@@ -73,12 +73,13 @@ public class DepfileCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("depfiledecrypted.com/", "depfile.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("depfiledecrypted.com/", "depfile.com/").replace("http://", "https://"));
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         // Set English language
         br.setCookie(MAINPAGE, "sdlanguageid", "2");
@@ -247,6 +248,13 @@ public class DepfileCom extends PluginForHost {
         }
     }
 
+    private void checkForTwoFactor() throws PluginException {
+        // jdlog://4112035891641/ jdlog://8112035891641/
+        if (br.containsHTML("<h1>Protect your account with Both your password and your phone\\.\\s*<br>2-Step Verification</h1>") && br.containsHTML("<p class=\"intro\">Extra protection for your account\\.\\s*\\(TOTP\\) - Time-based One-Time Password\\.</p>")) {
+            throw new PluginException(PluginException.VALUE_ID_PREMIUM_DISABLE, "2 Factor Authentication setup required!");
+        }
+    }
+
     private boolean isAccountAffiliate() {
         return br.containsHTML("/myspace/space/income");
     }
@@ -305,16 +313,20 @@ public class DepfileCom extends PluginForHost {
         login(account, false);
         if (AccountType.FREE.equals(account.getType())) {
             br.getPage(downloadLink.getDownloadURL());
+            checkForTwoFactor();
             doFree(downloadLink);
         } else {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
+            checkForTwoFactor();
             if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours")) {
                 logger.info("Daily limit reached, temp disabling premium");
-                final AccountInfo ai = account.getAccountInfo();
-                ai.setTrafficLeft(0);
-                account.setAccountInfo(ai);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                synchronized (LOCK) {
+                    final AccountInfo ai = account.getAccountInfo();
+                    ai.setTrafficLeft(0);
+                    account.setAccountInfo(ai);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
             }
             {
                 // they now have captcha for premium users, nice hey?
