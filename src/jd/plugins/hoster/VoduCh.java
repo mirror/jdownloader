@@ -47,11 +47,15 @@ public class VoduCh extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("404 error: not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("404 Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex finfo = br.getRegex("<h1>([^<>\"]*?)<strong>\\( ([^<>\"]*?) \\)</strong></h1>");
         final String filename = finfo.getMatch(0);
         final String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -61,10 +65,14 @@ public class VoduCh extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String hash = br.getRegex("value=\"([a-z0-9]+)\" name=\"play_hash\"").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (hash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(br.getURL() + "?play_hash=" + hash + "&confirm=Continue+to+Play+Movie");
         final String dllink = br.getRegex("url: \\'(https?://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -87,27 +95,34 @@ public class VoduCh extends PluginForHost {
         String servName = null;
         String servExt = null;
         String orgNameExt = downloadLink.getFinalFileName();
-        if (orgNameExt == null) orgNameExt = downloadLink.getName();
-        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
-        if (!inValidate(orgExt))
+        if (orgNameExt == null) {
+            orgNameExt = downloadLink.getName();
+        }
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) {
+            orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        }
+        if (!inValidate(orgExt)) {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
-        else
+        } else {
             orgName = orgNameExt;
+        }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
         String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         if (!inValidate(servNameExt) && servNameExt.contains(".")) {
             servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
             servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
-        } else
+        } else {
             servName = servNameExt;
+        }
         String FFN = null;
-        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
             // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
             FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+        } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
-        else
+        } else {
             FFN = orgNameExt;
+        }
         downloadLink.setFinalFileName(FFN);
     }
 
@@ -120,10 +135,11 @@ public class VoduCh extends PluginForHost {
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     @Override
