@@ -56,7 +56,7 @@ public class SflnkgNt extends abstractSafeLinking {
                 a[i] = "https?://sflk\\.in/[a-zA-Z0-9]{10}";
             } else {
                 // https is only supported on there safelinking.net domain, once again auto correct within correctLink call to supportsHTTPS
-                a[i] = "https?://(?:www\\.)?" + Pattern.quote(domain) + "/(?:(?:p|d(?:/com)?)/[a-zA-Z0-9]{10}|(?:d/)?" + regexBase58() + ")";
+                a[i] = "https?://(?:www\\.)?" + Pattern.quote(domain) + "/(?:(?:p|d(?:/com)?)/[a-zA-Z0-9]{10}|[a-f0-9]{10}|(?:d/)?" + regexBase58() + ")";
             }
             i++;
         }
