@@ -11,6 +11,11 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,11 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -225,7 +225,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         case 11: {
                             // unsupported types
                             // short wait to prevent hammering
-                            Thread.sleep(2500);
+                            sleep(2500, param);
                             // maybe also good to clear cookies?
                             getPage(br.getURL());
                             continue;
@@ -543,14 +543,13 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         while (wait < 3000) {
                             wait = 1272 * new Random().nextInt(6);
                         }
-                        Thread.sleep(wait);
+                        sleep(wait, param);
                         protectedForm.put("captchatype", "Simple");
                         protectedForm.put("used_captcha", "SolveMedia");
                         protectedForm.put("adcopy_challenge", "null");
                         protectedForm.put("adcopy_response", "");
                         break;
                     } else {
-
                         org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, param);
@@ -609,7 +608,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 case 11: {
                     // unsupported types
                     // short wait to prevent hammering
-                    Thread.sleep(2500);
+                    sleep(2500, param);
                     // maybe also good to clear cookies?
                     getPage(br.getURL());
                     protectedForm = formProtected();
