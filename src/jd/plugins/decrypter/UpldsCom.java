@@ -48,7 +48,7 @@ public class UpldsCom extends PluginForDecrypt {
             return null;
         }
         br.submitForm(decryptform);
-        final String finallink = br.getRegex("This direct link will be available for your IP .*?<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        final String finallink = br.getRegex("<span.*?>\\s<a href=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
