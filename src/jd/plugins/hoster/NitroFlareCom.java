@@ -403,7 +403,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
-     *
+     * 
      * @param account
      * @return
      * @throws PluginException
@@ -467,7 +467,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * useAPI frame work? <br />
      * Override this when incorrect
-     *
+     * 
      * @return
      */
     private boolean useAPI() {
@@ -829,7 +829,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (br.containsHTML(err1)) {
             // I don't see why this would happening logs contain no proxy!
             throw new PluginException(LinkStatus.ERROR_FATAL, err1);
-        } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("<p id=\"error\"[^>]+>Your premium has reached the maximum volume for today"))) {
+        } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("<p id=\"error\"[^>]+>Your premium has reached the maximum volume for today|>This download exceeds the daily download limit"))) {
             synchronized (LOCK) {
                 final AccountInfo ai = account.getAccountInfo();
                 ai.setTrafficLeft(0);
