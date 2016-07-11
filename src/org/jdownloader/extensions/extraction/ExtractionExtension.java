@@ -251,6 +251,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         if (!Boolean.FALSE.equals(factory.isPartOfAnArchive())) {
             final Archive existing = getExistingArchive(factory);
             if (existing == null) {
+                Throwable throwable = null;
                 final boolean deepInspection = !(factory instanceof CrawledLinkFactory);
                 for (IExtraction extractor : extractors) {
                     try {
@@ -264,10 +265,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             }
                         }
                     } catch (final Throwable e) {
+                        throwable = e;
                         logger.log(e);
                     }
                 }
-                factory.setPartOfAnArchive(false);
+                if (throwable == null) {
+                    factory.setPartOfAnArchive(false);
+                }
             }
             return existing;
         }
