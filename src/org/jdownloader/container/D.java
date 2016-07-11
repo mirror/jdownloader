@@ -44,9 +44,12 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.UpdateController;
 import org.w3c.dom.Document;
@@ -699,14 +702,9 @@ public class D extends PluginsC {
 
         logger.info("Parse v3");
         cls = new ArrayList<CrawledLink>();
-        CrawledLink nl;
-
-        int c = 0;
 
         NodeList ps = node.getChildNodes();
-        String pns = "";
-        String cs = "";
-        String cmts = "";
+
         for (int pgs = 0; pgs < ps.getLength(); pgs++) {
             if (!ps.item(pgs).getNodeName().equals("package")) {
                 continue;
@@ -727,10 +725,6 @@ public class D extends PluginsC {
             } else {
                 dpi.setComment(cs2);
             }
-
-            pns += pn + (pn != null && pn.length() > 0 ? "; " : "");
-            cs += ca3 + (ca3 != null && ca3.length() > 0 ? "; " : "");
-            cmts += cs2 + (cs2 != null && cs2.length() > 0 ? "; " : "");
             NodeList urls = ps.item(pgs).getChildNodes();
             for (int fileCounter = 0; fileCounter < urls.getLength(); fileCounter++) {
 
@@ -739,7 +733,6 @@ public class D extends PluginsC {
                     NodeList data = file.getChildNodes();
                     java.util.List<String> ls2 = new ArrayList<String>();
                     java.util.List<String> n5 = new ArrayList<String>();
-                    java.util.List<String> s7 = new ArrayList<String>();
 
                     for (int entry = 0; entry < data.getLength(); entry++) {
                         final String nodeName = data.item(entry).getNodeName();
@@ -783,49 +776,30 @@ public class D extends PluginsC {
                             }
                         } else if ("filename".equals(nodeName)) {
                             n5.add(Encoding.Base64Decode(data.item(entry).getTextContent()));
-                        } else if ("size".equalsIgnoreCase(nodeName)) {
-                            s7.add(Encoding.Base64Decode(data.item(entry).getTextContent()));
                         }
                     }
 
                     while (ls2.size() > n5.size()) {
                         n5.add(null);
                     }
-                    while (ls2.size() > s7.size()) {
-                        s7.add(null);
-                    }
                     final List<String> pws = parsePassword(oos);
                     for (int lcs = 0; lcs < ls2.size(); lcs++) {
-
-                        // PluginForHost pHost =
-                        // findHostPlugin(links.get(linkCounter));
-                        // if (pHost != null) {
-                        // newLink = new CrawledLink((PluginForHost)
-                        // pHost.getClass().newInstance(),
-                        // links.get(linkCounter).substring(links.get(linkCounter
-                        // ).lastIndexOf("/")
-                        // + 1), pHost.getHost(), null, true);
-                        // String ll =
-                        // ls2.get(lcs).substring(ls2.get(lcs).lastIndexOf("/")
-                        // + 1);
-                        nl = new CrawledLink(ls2.get(lcs));
-
+                        final CrawledLink nl = new CrawledLink(ls2.get(lcs));
                         if (pws != null && pws.size() > 0) {
                             nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
                         }
                         nl.setDesiredPackageInfo(dpi.getCopy());
-                        if (n5.get(lcs) != null) {
-                            nl.setName(n5.get(lcs));
+                        final String name = n5.get(lcs);
+                        if (StringUtils.isNotEmpty(name)) {
+                            final String ext = Files.getExtension(name);
+                            if (ext != null) {
+                                final ExtensionsFilterInterface extension = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
+                                if (extension != null) {
+                                    nl.setName(name);
+                                }
+                            }
                         }
-                        // if (s7.get(lcs) != null) {
-                        // nl.(Formatter.filterInt(s7.get(lcs)));
-                        // }
-
                         cls.add(nl);
-
-                        c++;
-                        // }
-
                     }
                 }
 
