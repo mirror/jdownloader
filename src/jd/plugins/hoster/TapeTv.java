@@ -169,7 +169,7 @@ public class TapeTv extends PluginForHost {
                  * we make sure only one result is in ret, thats the case for svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
-
+                correctDownloadLink(sourceLink);
                 Browser br = new Browser();
                 setBrowserExclusive();
                 br.setFollowRedirects(true);

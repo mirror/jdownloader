@@ -166,16 +166,13 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Call the MyJDownloader API", parameters = { "\"namespace\"", "\"methodname\"", "parameter1", "parameter2", "..." }, example = "callAPI(\"downloadsV2\", \"queryLinks\", { \"name\": true})")
     public static Object callAPI(String namespace, String method, Object... parameters) throws EnvironmentException {
-
         askForPermission("call the Remote API: " + namespace + "/" + method);
-        String js;
         try {
-            Object ret = RemoteAPIController.getInstance().call(namespace, method, parameters);
+            final Object ret = RemoteAPIController.getInstance().call(namespace, method, parameters);
             final ScriptThread env = getScriptThread();
             // convert to javascript object
-            js = "(function(){ return " + JSonStorage.serializeToJson(ret) + ";}());";
-            Object retObject = env.evalTrusted(js);
-
+            final String js = "(function(){ return " + JSonStorage.serializeToJson(ret) + ";}());";
+            final Object retObject = env.evalTrusted(js);
             return retObject;
         } catch (Throwable e) {
             throw new EnvironmentException(e);
