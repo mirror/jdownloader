@@ -2,6 +2,12 @@ package org.jdownloader.plugins;
 
 import java.awt.Color;
 
+import jd.nutils.Formatter;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.Downloadable;
+
 import org.jdownloader.api.downloads.ChannelCollector;
 import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
@@ -11,12 +17,6 @@ import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.tasks.PluginProgressTask;
 import org.jdownloader.translate._JDT;
-
-import jd.nutils.Formatter;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.Downloadable;
 
 public class DownloadPluginProgress extends PluginProgress {
 
@@ -67,7 +67,6 @@ public class DownloadPluginProgress extends PluginProgress {
             return normal;
         }
         long total = getTotal();
-
         if (total < 0) {
             return unknownFileSize;
         }

@@ -83,8 +83,10 @@ public class DirectHTTP extends antiDDoSForHost {
                     modifiedData = modifiedData.replace("httpviajd://", "http://");
                     modifiedData = modifiedData.replace(".jdeatme", "");
                 }
+                final DownloadLink link = ret.get(0);
+                correctDownloadLink(link);// needed to fixup the returned url
                 /* single link parsing in svn/jd2 */
-                final String url = ret.get(0).getDownloadURL();
+                final String url = link.getDownloadURL();
                 final int idx = modifiedData.indexOf(url);
                 if (idx >= 0 && modifiedData.length() >= idx + url.length()) {
                     String param = modifiedData.substring(idx + url.length());

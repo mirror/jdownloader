@@ -81,6 +81,7 @@ public class DreiSatDe extends PluginForHost {
                  * we make sure only one result is in ret, thats the case for svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
+                correctDownloadLink(sourceLink);
                 final String ID = new Regex(sourceLink.getDownloadURL(), "(?:\\&|\\?)obj=(\\d+)").getMatch(0);
                 // Flash: 1=auto; 11=low; 13=high; 14=veryhigh; 1?=hd --> rtmp://
                 // Quicktime: 5=auto; 51=low; 53=high; 54=veryhigh; 5?=hd --> rtsp://
