@@ -65,6 +65,7 @@ public class PbsOrg extends PluginForHost {
                  */
                 String vid = null;
                 final DownloadLink link = ret.get(0);
+                correctDownloadLink(link);
                 if (link.getDownloadURL().matches(TYPE_VIDEO)) {
                     vid = new Regex(link.getDownloadURL(), "^.+/(\\d+)").getMatch(0);
                 } else {
