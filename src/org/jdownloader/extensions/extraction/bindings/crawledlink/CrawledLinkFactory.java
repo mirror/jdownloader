@@ -72,7 +72,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             for (final Character unsafeChar : unsafeChars) {
                 modifiedFilaNamePattern = modifiedFilaNamePattern.replace(unsafeChar.toString(), "\\\\E.\\\\Q");
             }
-            // we need to escape $ as it has special meaning in String.replaceFirst
+            // we need to escape $ because it has special meaning in String.replaceFirst
             modifiedFilaNamePattern = modifiedFilaNamePattern.replace("$", "\\$");
             final String modifiedFilePathPattern = filePathPattern.replaceFirst(Pattern.quote(fileNamePattern) + "$", modifiedFilaNamePattern);
             final String ret = pattern.replace("^\\Q" + filePathPattern + "\\E", "^\\Q" + modifiedFilePathPattern + "\\E");
