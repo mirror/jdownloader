@@ -303,7 +303,7 @@ public class FileCryptCc extends PluginForDecrypt {
             } else if (first_rd != null && !first_rd.contains("filecrypt.cc/")) {
                 finallink = first_rd;
             } else {
-                final String nextlink = br2.getRegex("\"(https?://(www\\.)?filecrypt\\.cc/index\\.php\\?Action=(G|g)o[^<>\"]*?)\"").getMatch(0);
+                final String nextlink = br2.getRegex("(\"|')(https?://(www\\.)?filecrypt\\.cc/index\\.php\\?Action=(G|g)o[^<>\"']+)").getMatch(1);
                 if (nextlink != null) {
                     br2.getPage(nextlink);
                     finallink = br2.getRedirectLocation();
