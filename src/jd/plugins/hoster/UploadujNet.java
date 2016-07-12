@@ -62,6 +62,9 @@ public class UploadujNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches("http://uploaduj.net/(faq|konto).*?/.*?")) {
+            return AvailableStatus.FALSE;
+        }
         this.setBrowserExclusive();
         this.br.setCookie(this.getHost(), "lang", "en");
         br.getPage(link.getDownloadURL());
@@ -149,7 +152,7 @@ public class UploadujNet extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
