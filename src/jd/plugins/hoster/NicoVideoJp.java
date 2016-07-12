@@ -97,7 +97,7 @@ public class NicoVideoJp extends PluginForHost {
     /**
      * IMPORTANT: The site has a "normal" and "economy" mode. Normal mode = Higher video quality - mp4 streams. Economy mode = lower quality
      * - flv streams. Premium users are ALWAYS in the normal mode.
-     *
+     * 
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -115,7 +115,7 @@ public class NicoVideoJp extends PluginForHost {
             loggedin = true;
         }
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) {
+        if (br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>|>This video is for .*? only") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("this video inappropriate.<")) {
@@ -517,13 +517,13 @@ public class NicoVideoJp extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlFree
      *            (+1|-1)
      */
