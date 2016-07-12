@@ -2,13 +2,18 @@ package org.jdownloader.plugins.config;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
+
+import jd.config.SubConfiguration;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.HostPlugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -27,12 +32,6 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-
-import jd.config.SubConfiguration;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.HostPlugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 
 public class PluginJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
@@ -161,8 +160,7 @@ public class PluginJsonConfig {
         final StorageHandler<T> storageHandler = new StorageHandler<T>(storage, configInterface) {
             @Override
             protected void requestSave() {
-                super.requestSave();
-                SAVEDELAYER.resetAndStart();
+                PluginJsonConfig.SAVEDELAYER.resetAndStart();
             }
 
             @Override
@@ -182,9 +180,8 @@ public class PluginJsonConfig {
         classLoaderMap.put(ID, new WeakReference<ConfigInterface>(intf));
         SubConfiguration oldSub = SubConfiguration.getConfig(host, true);
         if (oldSub != null) {
-            for (Entry<Method, KeyHandler<?>> es : storageHandler.getMap().entrySet()) {
-                KeyHandler<Object> handler = (KeyHandler<Object>) es.getValue();
-                TakeValueFromSubconfig takeFrom = handler.getAnnotation(TakeValueFromSubconfig.class);
+            for (KeyHandler handler : storageHandler.getKeyHandler()) {
+                TakeValueFromSubconfig takeFrom = (TakeValueFromSubconfig) handler.getAnnotation(TakeValueFromSubconfig.class);
                 if (takeFrom != null) {
                     if (oldSub.hasProperty(takeFrom.value())) {
                         Object value = oldSub.getProperty(takeFrom.value());

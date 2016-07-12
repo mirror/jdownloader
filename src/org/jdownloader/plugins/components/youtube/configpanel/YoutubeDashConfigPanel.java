@@ -11,6 +11,14 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
@@ -40,14 +48,6 @@ import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
@@ -344,9 +344,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
     @Override
     public void reset() {
-
-        for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
-
+        for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
             m.setValue(m.getDefaultValue());
         }
         new EDTRunner() {
@@ -356,7 +354,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 updateContents();
             }
         };
-
     }
 
     @Override

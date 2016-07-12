@@ -121,9 +121,10 @@ public class Property implements Serializable {
             Object r = getProperty(key, def);
             if (r instanceof String) {
                 r = Integer.parseInt((String) r);
+            } else if (r instanceof Number) {
+                r = ((Number) r).intValue();
             }
-            final Integer ret = (Integer) r;
-            return ret;
+            return def;
         } catch (final Exception e) {
             return def;
         }
@@ -139,11 +140,10 @@ public class Property implements Serializable {
             Object r = getProperty(key, def);
             if (r instanceof String) {
                 r = Long.parseLong((String) r);
-            } else if (r instanceof Integer) {
-                r = ((Integer) r).longValue();
+            } else if (r instanceof Number) {
+                r = ((Number) r).longValue();
             }
-            final Long ret = (Long) r;
-            return ret;
+            return def;
         } catch (final Exception e) {
             return def;
         }

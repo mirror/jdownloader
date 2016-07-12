@@ -31,6 +31,22 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.Label;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.components.TextPane;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.PremiumAccountTableModel;
+import jd.nutils.Formatter;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
@@ -46,6 +62,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -71,28 +88,13 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.Label;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.components.TextPane;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.PremiumAccountTableModel;
-import jd.nutils.Formatter;
-import net.miginfocom.swing.MigLayout;
 
 public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements AccountControllerListener {
     private List<Group> groups = new ArrayList<Group>();
@@ -216,7 +218,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
 
     public void reset() {
         for (ConfigInterface cfg : interfaces) {
-            for (KeyHandler m : cfg._getStorageHandler().getMap().values()) {
+            for (KeyHandler m : cfg._getStorageHandler().getKeyHandler()) {
                 m.setValue(m.getDefaultValue());
             }
         }
@@ -485,7 +487,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                                     addPair(_GUI.T.lit_premium_points(), null, new Label(ai.getPremiumPoints() + ""));
                                 }
                             }
-                            if (acc.isMultiHost()) {
+                            if (acc.isMultiHost() && acc.getPlugin().getLazyP().hasFeature(FEATURE.MULTIHOST)) {
                                 initMultiHosterInfo(acc);
                             }
                             Class<? extends AccountConfigInterface> accountConfig = plgh.getAccountConfigInterface(acc);
@@ -504,11 +506,13 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
     }
 
     private String getExpireDateString(Account acc, AccountInfo ai) {
-        if (ai.getValidUntil() <= 0) {
+        final long validUntil = ai.getValidUntil();
+        if (validUntil <= 0) {
             return null;
         }
-        Date date = new Date(ai.getValidUntil());
-        return formatDate(date);
+        final Date date = new Date(validUntil);
+        final long left = validUntil - System.currentTimeMillis();
+        return formatDate(date) + " (" + TimeFormatter.formatMilliSeconds(left, TimeFormatter.HIDE_SECONDS) + ")";
     }
 
     protected String formatDate(Date date) {
@@ -701,12 +705,12 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         Group defGroup = null;
         ArrayList<Group> finalGroups = new ArrayList<Group>();
         HashSet<Group> groupsAdded = new HashSet<Group>();
-        ArrayList<KeyHandler> list = new ArrayList<KeyHandler>(new HashSet<KeyHandler>(cfg._getStorageHandler().getMap().values()));
-        Collections.sort(list, new Comparator<KeyHandler>() {
+        List<KeyHandler<?>> list = cfg._getStorageHandler().getKeyHandler();
+        Collections.sort(list, new Comparator<KeyHandler<?>>() {
             @Override
-            public int compare(KeyHandler o1, KeyHandler o2) {
-                Order orderAn1 = (Order) o1.getAnnotation(Order.class);
-                Order orderAn2 = (Order) o2.getAnnotation(Order.class);
+            public int compare(KeyHandler<?> o1, KeyHandler<?> o2) {
+                Order orderAn1 = o1.getAnnotation(Order.class);
+                Order orderAn2 = o2.getAnnotation(Order.class);
                 int order1 = orderAn1 == null ? Integer.MAX_VALUE : orderAn1.value();
                 int order2 = orderAn2 == null ? Integer.MAX_VALUE : orderAn2.value();
                 int ret = CompareUtils.compare(order1, order2);
@@ -717,7 +721,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                 }
             }
         });
-        parent: for (KeyHandler m : list) {
+        parent: for (KeyHandler<?> m : list) {
             for (Group g : interfaceGroups) {
                 if (g.matches(m)) {
                     g.add(m);

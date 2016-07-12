@@ -1,9 +1,7 @@
 package org.jdownloader.updatev2.gui;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.Locale;
-import java.util.Map.Entry;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
@@ -44,8 +42,8 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
                 });
             }
         };
-        for (final Entry<Method, KeyHandler<?>> e : ret.getMap().entrySet()) {
-            e.getValue().setAllowWriteDefaultObjects(false);
+        for (final KeyHandler<?> keyHandler : ret.getKeyHandler()) {
+            keyHandler.setAllowWriteDefaultObjects(false);
         }
         // restore old storage
         try {

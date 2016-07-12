@@ -1,10 +1,7 @@
 package org.jdownloader.api.plugins;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -201,19 +198,15 @@ public class PluginConfigAdapter {
                     }
                 }
             } else {
-                final HashMap<Method, KeyHandler<?>> khMap = config._getStorageHandler().getMap();
-                final HashSet<KeyHandler<?>> dupeMap = new HashSet<KeyHandler<?>>();
-                for (final KeyHandler<?> keyHandler : khMap.values()) {
+                for (final KeyHandler<?> keyHandler : config._getStorageHandler().getKeyHandler()) {
                     final String check = lazyPlugin.getClassName() + "." + this.lazyPlugin.getDisplayName() + "." + keyHandler.getKey();
                     if (cPat != null && !cPat.matcher(check).matches()) {
                         continue;
                     } else {
-                        if (dupeMap.add(keyHandler)) {
-                            final AdvancedConfigEntry entry = new AdvancedConfigEntry(config, keyHandler);
-                            final PluginConfigEntryAPIStorable storable = createAPIStorable(entry, query);
-                            if (storable != null) {
-                                result.add(storable);
-                            }
+                        final AdvancedConfigEntry entry = new AdvancedConfigEntry(config, keyHandler);
+                        final PluginConfigEntryAPIStorable storable = createAPIStorable(entry, query);
+                        if (storable != null) {
+                            result.add(storable);
                         }
                     }
                 }

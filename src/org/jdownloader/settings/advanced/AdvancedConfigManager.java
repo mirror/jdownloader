@@ -1,10 +1,12 @@
 package org.jdownloader.settings.advanced;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import jd.controlling.linkchecker.LinkCheckerConfig;
+import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -47,9 +49,6 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.linkchecker.LinkCheckerConfig;
-import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -115,11 +114,7 @@ public class AdvancedConfigManager {
             }
         }
         logger.info("Register " + cf._getStorageHandler().getConfigInterface());
-        final HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
-        for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
-            if (map.containsKey(m)) {
-                continue;
-            }
+        for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
             if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
                 if (m.getSetMethod() == null) {
                     throw new RuntimeException("Setter for " + m.getKey() + " missing");
@@ -127,7 +122,6 @@ public class AdvancedConfigManager {
                     throw new RuntimeException("Getter for " + m.getKey() + " missing");
                 } else {
                     configInterfaces.add(new AdvancedConfigEntry(cf, m));
-                    map.put(m, true);
                 }
             }
         }
@@ -142,14 +136,8 @@ public class AdvancedConfigManager {
             final String ifName = hplg.getConfigInterface();
             if (StringUtils.isNotEmpty(ifName)) {
                 try {
-
                     final PluginConfigInterface cf = PluginJsonConfig.get((Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
-
-                    HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
-                    for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
-                        if (map.containsKey(m)) {
-                            continue;
-                        }
+                    for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
                         if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
                             if (m.getSetMethod() == null) {
                                 throw new RuntimeException("Setter for " + m.getKey() + " missing");
@@ -157,7 +145,6 @@ public class AdvancedConfigManager {
                                 throw new RuntimeException("Getter for " + m.getKey() + " missing");
                             } else {
                                 ret.add(new AdvancedConfigEntry(cf, m));
-                                map.put(m, true);
                             }
                         }
                     }

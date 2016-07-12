@@ -1,133 +1,279 @@
 package org.jdownloader.plugins.config;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.WeakHashMap;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.shutdown.ShutdownRequest;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.JsonKeyValueStorage;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.InterfaceParseException;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.annotations.CryptedStorage;
-import org.appwork.storage.config.handler.StorageHandler;
-import org.appwork.utils.Application;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 import jd.plugins.Account;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.InterfaceParseException;
+import org.appwork.storage.config.annotations.CryptedStorage;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.handler.StorageHandler;
+import org.jdownloader.logging.LogController;
+
 public class AccountJsonConfig {
-    private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
-    private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
-    protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
-                                                                                                                     @Override
-                                                                                                                     public void delayedrun() {
-                                                                                                                         saveAll();
-                                                                                                                         cleanup();
-                                                                                                                     }
-                                                                                                                 };
-    private final static boolean                                                                   DEBUG         = false;
+    private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
 
-    static {
-        File pluginsFolder = Application.getResource("cfg/accounts/");
-        if (!pluginsFolder.exists()) {
-            pluginsFolder.mkdirs();
-        }
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-            @Override
-            public long getMaxDuration() {
-                return 0;
-            }
+    private final static boolean                                                                   DEBUG        = false;
+    private final static String                                                                    PREFIX       = "configInterface.";
 
-            @Override
-            public int getHookPriority() {
-                return 0;
-            }
-
-            @Override
-            public void onShutdown(final ShutdownRequest shutdownRequest) {
-                saveAll();
-            }
-
-            @Override
-            public String toString() {
-                return "ShutdownEvent: SaveAllAccountJsonConfig";
-            }
-        });
-    }
-
-    private synchronized static void saveAll() {
-        HashMap<String, JsonKeyValueStorage> storages = STORAGE_CACHE;
-        Iterator<Entry<String, JsonKeyValueStorage>> it = storages.entrySet().iterator();
-        while (it.hasNext()) {
-            it.next().getValue().save();
-        }
-    }
-
-    private synchronized static void cleanup() {
-        CONFIG_CACHE.size();
-    }
-
-    public synchronized static <T extends AccountConfigInterface> T get(Account account) {
+    public synchronized static <T extends AccountConfigInterface> T get(final Account account) {
         if (account.getHoster() == null) {
             throw new WTFException("Hoster not Set");
         }
         if (account.getPlugin() == null) {
             throw new WTFException("Plugin not Set");
         }
-        Class<T> configInterface = (Class<T>) account.getPlugin().getAccountConfigInterface(account);
-        final String ID = account.getHoster() + "/" + account.getId().getID();
-        final ClassLoader cl = configInterface.getClassLoader();
-        if (!(cl instanceof PluginClassLoaderChild)) {
-            final File storageFile = Application.getResource("cfg/accounts/" + ID);
-            return JsonConfig.create(storageFile, configInterface);
+        final Class<T> configInterface = (Class<T>) account.getPlugin().getAccountConfigInterface(account);
+        if (configInterface == null) {
+            throw new WTFException("no ConfigInterface");
         }
-        HashMap<String, WeakReference<ConfigInterface>> classLoaderMap = CONFIG_CACHE.get(cl);
+        final String CACHEID = account.getHoster() + "/" + account.getId().getID();
+        final ClassLoader classloader = configInterface.getClassLoader();
+        HashMap<String, WeakReference<ConfigInterface>> classLoaderMap = CONFIG_CACHE.get(classloader);
         if (classLoaderMap == null) {
             classLoaderMap = new HashMap<String, WeakReference<ConfigInterface>>();
-            CONFIG_CACHE.put(cl, classLoaderMap);
+            CONFIG_CACHE.put(classloader, classLoaderMap);
         }
-        final WeakReference<ConfigInterface> ret = classLoaderMap.get(ID);
+        final WeakReference<ConfigInterface> ret = classLoaderMap.get(CACHEID);
         ConfigInterface intf = null;
         if (ret != null && (intf = ret.get()) != null) {
             if (DEBUG) {
-                System.out.println("Reuse cached ConfigInterface " + ID);
+                System.out.println("Reuse cached ConfigInterface " + CACHEID);
             }
             return (T) intf;
         } else {
             if (DEBUG) {
-                System.out.println("Create new ConfigInterface " + ID);
+                System.out.println("Create new ConfigInterface " + CACHEID);
             }
         }
-        JsonKeyValueStorage storage = STORAGE_CACHE.get(ID);
-        if (storage == null) {
-            final File storageFile = Application.getResource("cfg/accounts/" + ID);
-            if (DEBUG) {
-                System.out.println("Create AccountJsonConfig for " + ID);
+        final Storage storage = new Storage() {
+
+            @Override
+            public void clear() throws StorageException {
+                for (final String key : account.getProperties().keySet()) {
+                    if (key.startsWith(PREFIX)) {
+                        account.removeProperty(key);
+                    }
+                }
             }
-            storage = StorageHandler.createPrimitiveStorage(storageFile, null, configInterface);
-            storage.setEnumCacheEnabled(false);
-            STORAGE_CACHE.put(ID, storage);
-        }
-        final StorageHandler<T> storageHandler = new StorageHandler<T>(storage, configInterface) {
+
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public <E> E get(String key, E def, Boolean autoPutValue) throws StorageException {
+                final boolean contains = hasProperty(key);
+                final boolean autoPutDefaultValue = autoPutValue == null ? isAutoPutValues() : Boolean.TRUE.equals(autoPutValue);
+                Object ret = contains ? account.getProperty(PREFIX + key) : null;
+                if (ret != null && def != null && ret.getClass() != def.getClass()) {
+                    /* ret class different from def class, so we have to convert */
+                    if (def instanceof Long) {
+                        if (ret instanceof Number) {
+                            ret = ((Number) ret).longValue();
+                        } else if (ret instanceof String) {
+                            ret = Long.parseLong((String) ret);
+                        }
+                    } else if (def instanceof Integer) {
+                        if (ret instanceof Number) {
+                            ret = ((Number) ret).intValue();
+                        } else if (ret instanceof String) {
+                            ret = Integer.parseInt((String) ret);
+                        }
+                    } else if (def instanceof Double) {
+                        if (ret instanceof Float) {
+                            ret = ((Double) ret).doubleValue();
+                        }
+                    } else if (def instanceof Float) {
+                        if (ret instanceof Double) {
+                            ret = ((Float) ret).floatValue();
+                        }
+                    }
+                }
+                // put entry if we have no entry
+                if (!contains) {
+                    ret = def;
+                    if (autoPutDefaultValue) {
+                        if (def instanceof Boolean) {
+                            this.put(key, (Boolean) def);
+                        } else if (def instanceof Long) {
+                            this.put(key, (Long) def);
+                        } else if (def instanceof Integer) {
+                            this.put(key, (Integer) def);
+                        } else if (def instanceof Byte) {
+                            this.put(key, (Byte) def);
+                        } else if (def instanceof String || def == null) {
+                            this.put(key, (String) def);
+                        } else if (def instanceof Enum<?>) {
+                            this.put(key, (Enum<?>) def);
+                        } else if (def instanceof Double) {
+                            this.put(key, (Double) def);
+                        } else if (def instanceof Float) {
+                            this.put(key, (Float) def);
+                        } else {
+                            throw new StorageException("Invalid datatype: " + (def != null ? def.getClass() : "null"));
+                        }
+                    }
+                }
+                if (def instanceof Enum<?> && ret instanceof String) {
+                    try {
+                        ret = Enum.valueOf(((Enum<?>) def).getDeclaringClass(), (String) ret);
+                    } catch (final Throwable e) {
+                        if (e instanceof IllegalArgumentException) {
+                            LogController.CL().info("Could not restore the enum. There is no value for " + ret + " in " + ((Enum<?>) def).getDeclaringClass());
+
+                        }
+                        LogController.CL().log(e);
+                        ret = def;
+                    }
+                }
+                return (E) ret;
+            }
+
+            @Override
+            public <E> E get(String key, E def) throws StorageException {
+                return get(key, def, null);
+            }
+
+            @Override
+            public byte[] getCryptKey() {
+                return null;
+            }
+
+            @Override
+            public String getID() {
+                return null;
+            }
+
+            @Override
+            public boolean hasProperty(String key) {
+                if (key != null) {
+                    return account.hasProperty(PREFIX + key);
+                }
+                return false;
+            }
+
+            @Override
+            public boolean isAutoPutValues() {
+                return false;
+            }
+
+            @Override
+            public void put(String key, Boolean value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public void put(String key, Byte value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public void put(String key, Double value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public void put(String key, Enum<?> value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public void put(String key, Float value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public void put(String key, Integer value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public void put(String key, Long value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public void put(String key, String value) throws StorageException {
+                if (key != null) {
+                    account.setProperty(PREFIX + key, value);
+                }
+            }
+
+            @Override
+            public Object remove(String key) {
+                if (key != null) {
+                    return account.removeProperty(PREFIX + key);
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public void save() throws StorageException {
+            }
+
+            @Override
+            public void setAutoPutValues(boolean b) {
+            }
+
+            @Override
+            public int size() {
+                int size = 0;
+                for (final String key : account.getProperties().keySet()) {
+                    if (key.startsWith(PREFIX)) {
+                        size++;
+                    }
+                }
+                return size;
+            }
+
+        };
+
+        final StorageHandler<T> storageHandler = new StorageHandler<T>(configInterface) {
             @Override
             protected void requestSave() {
-                super.requestSave();
-                SAVEDELAYER.resetAndStart();
+            }
+
+            @Override
+            public Storage getPrimitiveStorage() {
+                return storage;
+            }
+
+            @Override
+            protected boolean isDelayedWriteAllowed(KeyHandler<?> keyHandler) {
+                return false;
             }
 
             @Override
             protected void addStorageHandler(StorageHandler<? extends ConfigInterface> storageHandler, String interfaceName, String storage) {
+            }
+
+            @Override
+            public void write() {
             }
 
             @Override
@@ -140,7 +286,7 @@ public class AccountJsonConfig {
             }
         };
         intf = (T) Proxy.newProxyInstance(configInterface.getClassLoader(), new Class<?>[] { configInterface }, storageHandler);
-        classLoaderMap.put(ID, new WeakReference<ConfigInterface>(intf));
+        classLoaderMap.put(CACHEID, new WeakReference<ConfigInterface>(intf));
         return (T) intf;
     }
 }
