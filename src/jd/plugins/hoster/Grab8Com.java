@@ -53,7 +53,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM_asdfasdfaudfaja9ua17" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM_asdfasdfaudfaja9ua17" }, flags = { 2, 2 })
 public class Grab8Com extends antiDDoSForHost {
 
     private final String                                   NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
@@ -75,9 +75,7 @@ public class Grab8Com extends antiDDoSForHost {
 
     public Grab8Com(PluginWrapper wrapper) {
         super(wrapper);
-        if ("grab8.com".equals(getHost())) {
-            this.enablePremium("https://" + getHost() + "/");
-        }
+        this.enablePremium("https://" + getHost() + "/");
         setConfigElements();
     }
 
@@ -88,16 +86,12 @@ public class Grab8Com extends antiDDoSForHost {
 
     @Override
     protected boolean useRUA() {
-        return false;
+        return true;
     }
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            if (userAgent.get() == null) {
-                // this user-agent doesn't redirect grab8.com > prem.link
-                userAgent.set("Opera/9.80 (Windows NT 6.1; Win64; x64) Presto/2.12.388 Version/12.18");
-            }
             super.prepBrowser(prepBr, host);
             prepBr.setConnectTimeout(180 * 1000);
             prepBr.setReadTimeout(180 * 1000);
@@ -161,7 +155,7 @@ public class Grab8Com extends antiDDoSForHost {
         }
         br = new Browser();
         setConstants(account, link);
-        login(false);
+        login(account, true, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             getPage("https://" + getHost() + "/");
@@ -350,61 +344,7 @@ public class Grab8Com extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        br = new Browser();
-        final AccountInfo ai = new AccountInfo();
-        login(false);
-        br.setFollowRedirects(true);
-        getPage("https://" + getHost() + "/account");
-        final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+ (?:[KMG]{0,1}B)?)\\s*/\\s*([0-9\\.]+ GB)</p>").getRow(0);
-        if (traffic == null || traffic.length != 2) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        // they show traffic used not left.
-        ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
-        ai.setTrafficMax(SizeFormatter.getSize(traffic[1]));
-        final Long expire = getExpire();
-        if (expire != null && ai.setValidUntil(expire, br) && !ai.isExpired()) {
-            account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
-        } else {
-            account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
-            /* Free users cannot download anything! */
-            ai.setTrafficLeft(0);
-        }
-        account.setValid(true);
-        // get hostmap from /hosts, this shows if host is available to free mode and if its up and down...
-        getPage("/hosts");
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] tableRow = br.getRegex("<tr>\\s*<td>.*?</tr>").getColumn(-1);
-        final boolean freeAccount = account.getType() == AccountType.FREE;
-        for (final String row : tableRow) {
-            // we should be left with two cleanuped up lines
-            final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", "").trim();
-            String host = cleanup.split("\r\n")[0];
-            final String online = cleanup.split("\r\n")[1];
-            final boolean free = new Regex(row, ".*/themes/images/free\\.gif").matches();
-            if (host == null || online == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (StringUtils.endsWithCaseInsensitive(online, "offline") || StringUtils.endsWithCaseInsensitive(online, "fixing")) {
-                continue;
-            }
-            if (freeAccount && !free) {
-                continue;
-            }
-            supportedHosts.add(host);
-        }
-        // note: on the account page, they do have array of hosts but it only shows ones with traffic limits.
-        ai.setMultiHostSupport(this, supportedHosts);
-
-        return ai;
+        return login(account, true, true);
     }
 
     private Long getExpire() {
@@ -427,52 +367,120 @@ public class Grab8Com extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    private void login(final boolean force) throws Exception {
+    private AccountInfo login(final Account account, final boolean cachedLogin, final boolean fetchAccountInfo) throws Exception {
         synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
             try {
-                if (!force && loadCookies(br)) {
-                    return;
-                }
                 // new browser
                 final Browser br = new Browser();
-                getPage(br, "https://" + getHost() + "/");
-                // find the form
-                Form login = br.getFormByInputFieldKeyValue("username", null);
-                if (login == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                login.setAction("/ajax/action.php");
-                login.put("username", Encoding.urlEncode(currAcc.getUser()));
-                login.put("password", Encoding.urlEncode(currAcc.getPass()));
-                login.put("rememberme", "true");
-                if (login.containsHTML("name=\"g-recaptcha-response\"")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
-                    final DownloadLink odl = this.getDownloadLink();
-                    this.setDownloadLink(dummyLink);
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    if (odl != null) {
-                        this.setDownloadLink(odl);
+                if (!fetchAccountInfo && cachedLogin && loadCookies(this.br)) {
+                    return account.getAccountInfo();
+                } else if (cachedLogin && loadCookies(br)) {
+                    // empty
+                } else {
+                    getPage(br, "https://" + getHost() + "/");
+                    // find the form
+                    Form login = br.getFormByInputFieldKeyValue("username", null);
+                    if (login == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    login.setAction("/ajax/action.php");
+                    login.put("username", Encoding.urlEncode(currAcc.getUser()));
+                    login.put("password", Encoding.urlEncode(currAcc.getPass()));
+                    login.put("rememberme", "true");
+                    if (login.containsHTML("name=\"g-recaptcha-response\"")) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                        final DownloadLink odl = this.getDownloadLink();
+                        this.setDownloadLink(dummyLink);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        if (odl != null) {
+                            this.setDownloadLink(odl);
+                        }
+                    }
+                    submitFormAPISafe(br, login);
+                    if (inValidateCookies(br, new String[] { "auth", "user" })) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
-                submitFormAPISafe(br, login);
-                if (inValidateCookies(br, new String[] { "auth", "user" })) {
+                // following ensures account is premium still, and expire time/hosts are set.
+                br.setFollowRedirects(true);
+                getPage(br, "https://" + getHost() + "/account");
+                // available traffic
+                final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+ (?:[KMG]{0,1}B)?)\\s*/\\s*([0-9\\.]+ GB)</p>").getRow(0);
+                if (traffic == null || traffic.length != 2) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                // they show traffic used not left.
+                ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
+                ai.setTrafficMax(SizeFormatter.getSize(traffic[1]));
+                // is account free account?
+                boolean freeAccount = isAccountFree(br);
+                final Long expire = getExpire();
+                if (!freeAccount && expire != null && ai.setValidUntil(expire, br) && !ai.isExpired()) {
+                    account.setType(AccountType.PREMIUM);
+                    ai.setStatus("Premium Account");
+                } else {
+                    account.setType(AccountType.FREE);
+                    ai.setStatus("Free Account");
+                }
+                account.setValid(true);
+                // get hostmap from /hosts, this shows if host is available to free mode and if its up and down...
+                getPage(br, "/hosts");
+                final ArrayList<String> supportedHosts = new ArrayList<String>();
+                final String[] tableRow = br.getRegex("<tr>\\s*<td>.*?</tr>").getColumn(-1);
+                freeAccount = account.getType() == AccountType.FREE;
+                for (final String row : tableRow) {
+                    // we should be left with two cleanuped up lines
+                    final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", "").trim();
+                    String host = cleanup.split("\r\n")[0];
+                    final String online = cleanup.split("\r\n")[1];
+                    final boolean free = new Regex(row, ".*/themes/images/free\\.gif").matches();
+                    if (host == null || online == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (StringUtils.endsWithCaseInsensitive(online, "offline") || StringUtils.endsWithCaseInsensitive(online, "fixing")) {
+                        continue;
+                    }
+                    if (freeAccount && !free) {
+                        continue;
+                    }
+                    supportedHosts.add(host);
+                }
+                // note: on the account page, they do have array of hosts but it only shows ones with traffic limits.
+                ai.setMultiHostSupport(this, supportedHosts);
+
                 currAcc.setProperty("name", Encoding.urlEncode(currAcc.getUser()));
                 currAcc.setProperty("pass", Encoding.urlEncode(currAcc.getPass()));
                 currAcc.setProperty("cookies", fetchCookies(br, getHost()));
                 // load cookies to this.br
                 loadCookies(this.br);
+                return ai;
             } catch (final PluginException e) {
                 currAcc.setProperty("cookies", Property.NULL);
                 throw e;
             }
         }
+    }
+
+    private final boolean isAccountFree(final Browser br) {
+        // prem.link seems to be free only service?
+        // following is from /account '<p><b>Account type</b>:&nbsp;Register</p>'
+        // but / has 'You are currently a <font color="#FF4C4C"><b>FREE</b> </font>member<br>'
+        if (br.containsHTML(">Account type</b>:(?:\\s*|&nbsp;)?(Register|Free|Free Account)</p>")) {
+            return true;
+        }
+        return false;
     }
 
     /**
