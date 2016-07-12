@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -20,7 +20,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" }, flags = { 0 })
 public class UseNetEwekaNl extends UseNet {
-
     public UseNetEwekaNl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.eweka.nl/en/usenet_toegang/specificaties/");
@@ -31,13 +30,8 @@ public class UseNetEwekaNl extends UseNet {
         return "https://www.eweka.nl/en/av/";
     }
 
-    public static interface EwekaNlConfigInterface extends UsenetConfigInterface {
+    public static interface EwekaNlConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<EwekaNlConfigInterface> getConfigInterface() {
-        return EwekaNlConfigInterface.class;
-    }
 
     private final String USENET_USERNAME = "USENET_USERNAME";
 
@@ -113,5 +107,4 @@ public class UseNetEwekaNl extends UseNet {
         ret.addAll(UsenetServer.createServerList("sslreader.eweka.nl", true, 563, 443));// resolves to 3 IP
         return ret;
     }
-
 }

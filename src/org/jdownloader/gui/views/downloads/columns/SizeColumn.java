@@ -58,7 +58,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         this.countRenderer.setHorizontalAlignment(SwingConstants.LEFT);
         fileCountVisible = JsonConfig.create(GraphicalUserInterfaceSettings.class).isFileCountInSizeColumnVisible();
         maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
-        this.renderer = new RendererMigPanel("ins 0,debug", "[]0[grow,fill]", "[grow,fill]");
+        this.renderer = new RendererMigPanel("ins 0", "[]0[grow,fill]", "[grow,fill]");
         if (fileCountVisible) {
             renderer.add(countRenderer);
             renderer.add(sizeRenderer);

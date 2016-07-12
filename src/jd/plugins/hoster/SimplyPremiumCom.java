@@ -13,22 +13,20 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,23 +39,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.swing.dialog.ContainerDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class SimplyPremiumCom extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-
     private static final String                            NICE_HOST          = "simply-premium.com";
     private static final String                            NICE_HOSTproperty  = "simplypremiumcom";
     private static String                                  APIKEY             = null;
@@ -119,7 +108,6 @@ public class SimplyPremiumCom extends PluginForHost {
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         final boolean resume_allowed = account.getBooleanProperty("resume_allowed", false);
-
         int maxChunks = (int) account.getLongProperty("maxconnections", 1);
         if (maxChunks > 20) {
             maxChunks = 0;
@@ -130,7 +118,6 @@ public class SimplyPremiumCom extends PluginForHost {
         if (!resume_allowed) {
             maxChunks = 1;
         }
-
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_allowed, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -183,7 +170,6 @@ public class SimplyPremiumCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -199,7 +185,6 @@ public class SimplyPremiumCom extends PluginForHost {
                 }
             }
         }
-
         getapikey(account);
         showMessage(link, "Task 1: Checking link");
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
@@ -207,7 +192,6 @@ public class SimplyPremiumCom extends PluginForHost {
             /* request download information */
             br.getPage("http://www.simply-premium.com/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
             downloadErrorhandling(account, link);
-
             /* request download */
             dllink = getXML("download");
             if (dllink == null) {
@@ -311,11 +295,10 @@ public class SimplyPremiumCom extends PluginForHost {
             if (max_traffic != null) {
                 ai.setTrafficMax(Long.parseLong(max_traffic));
             }
-            accdesc = getPhrase("ACCOUNT_TYPE_TIME");
+            accdesc = _JDT.T.plugins_simplypremiumcom_ACCOUNT_TYPE_TIME();
         } else {
-            accdesc = getPhrase("ACCOUNT_TYPE_VOLUME");
+            accdesc = _JDT.T.plugins_simplypremiumcom_ACCOUNT_TYPE_VOLUME();
         }
-
         int maxSimultanDls = Integer.parseInt(getXML("max_downloads"));
         if (maxSimultanDls < 1) {
             maxSimultanDls = 1;
@@ -333,7 +316,6 @@ public class SimplyPremiumCom extends PluginForHost {
         account.setProperty("max_downloads", maxSimultanDls);
         account.setProperty("acc_type", accdesc);
         account.setProperty("resume_allowed", resumeAllowed);
-
         /* online=1 == show only working hosts */
         br.getPage("http://www.simply-premium.com/api/hosts.php?online=1");
         final String[] hostDomains = br.getRegex("<host>([^<>\"]*?)</host>").getColumn(0);
@@ -399,7 +381,6 @@ public class SimplyPremiumCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-
         } else if (br.containsHTML("<error>no_longer_valid</error>")) {
             account.getAccountInfo().setExpired(true);
             account.setValid(false);
@@ -446,10 +427,10 @@ public class SimplyPremiumCom extends PluginForHost {
         return br.getRegex("<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
 
-    public void showAccountDetailsDialog(final Account account) {
+    @Override
+    public void extendAccountSettingsPanel(Account account, PluginConfigPanelNG panel) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            final String windowTitleLangText = "Account Zusatzinformationen";
             int maxChunks = (int) account.getLongProperty("maxconnections", 1);
             if (maxChunks < 0) {
                 maxChunks = maxChunks * -1;
@@ -459,159 +440,18 @@ public class SimplyPremiumCom extends PluginForHost {
             if (max_dls == -1) {
                 max_dls = 20;
             }
-            final String accType = account.getStringProperty("acc_type", "?");
             final boolean resume_allowed = account.getBooleanProperty("resume_allowed", false);
             String resume_string;
             if (resume_allowed) {
-                resume_string = getPhrase("DOWNLOAD_RESUMABLE_TRUE");
+                resume_string = _JDT.T.literally_yes();
             } else {
-                resume_string = getPhrase("DOWNLOAD_RESUMABLE_FALSE");
+                resume_string = _JDT.T.lit_no();
             }
-
-            /* it manages new panel */
-            final PanelGenerator panelGenerator = new PanelGenerator();
-
-            JLabel hostLabel = new JLabel("<html><b>" + account.getHoster() + "</b></html>");
-            hostLabel.setIcon(DomainInfo.getInstance(account.getHoster()).getFavIcon());
-            panelGenerator.addLabel(hostLabel);
-
-            String revision = "$Revision$";
-            try {
-                String[] revisions = revision.split(":");
-                revision = revisions[1].replace('$', ' ').trim();
-            } catch (final Exception e) {
-                logger.info("save.tv revision number error: " + e);
-            }
-
-            panelGenerator.addCategory("Account");
-            panelGenerator.addEntry("Name:", account.getUser());
-            panelGenerator.addEntry("Account Typ:", accType);
-
-            panelGenerator.addCategory("Download");
-            panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", Integer.toString(max_dls));
-            panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", Integer.toString(maxChunks));
-            panelGenerator.addEntry("Abgebrochene Downloads fortsetzbar:", resume_string);
-
-            panelGenerator.addEntry("Plugin Revision:", revision);
-
-            ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Schließen", "");
-            try {
-                Dialog.getInstance().showDialog(dialog);
-            } catch (DialogNoAnswerException e) {
-            }
+            panel.addHeader(_GUI.T.lit_download(), new AbstractIcon(IconKey.ICON_DOWNLOAD, 18));
+            panel.addStringPair(_GUI.T.lit_max_simultanous_downloads(), Integer.toString(max_dls));
+            panel.addStringPair(_GUI.T.lit_max_chunks_per_link(), Integer.toString(maxChunks));
+            panel.addStringPair(_GUI.T.lit_interrupted_downloads_are_resumable(), resume_string);
         }
-
-    }
-
-    public class PanelGenerator {
-        private JPanel panel = new JPanel();
-        private int    y     = 0;
-
-        public PanelGenerator() {
-            panel.setLayout(new GridBagLayout());
-            panel.setMinimumSize(new Dimension(270, 200));
-        }
-
-        public void addLabel(JLabel label) {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 0;
-            c.gridwidth = 2;
-            c.gridy = y;
-            c.insets = new Insets(0, 5, 0, 5);
-            panel.add(label, c);
-            y++;
-        }
-
-        public void addCategory(String categoryName) {
-            JLabel category = new JLabel("<html><u><b>" + categoryName + "</b></u></html>");
-
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 0;
-            c.gridwidth = 2;
-            c.gridy = y;
-            c.insets = new Insets(10, 5, 0, 5);
-            panel.add(category, c);
-            y++;
-        }
-
-        public void addEntry(String key, String value) {
-            GridBagConstraints c = new GridBagConstraints();
-            JLabel keyLabel = new JLabel(key);
-            // keyLabel.setFont(keyLabel.getFont().deriveFont(Font.BOLD));
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.weightx = 0.9;
-            c.gridx = 0;
-            c.gridy = y;
-            c.insets = new Insets(0, 5, 0, 5);
-            panel.add(keyLabel, c);
-
-            JLabel valueLabel = new JLabel(value);
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 1;
-            panel.add(valueLabel, c);
-
-            y++;
-        }
-
-        public void addTextField(JTextArea textfield) {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 0;
-            c.gridwidth = 2;
-            c.gridy = y;
-            c.insets = new Insets(0, 5, 0, 5);
-            panel.add(textfield, c);
-            y++;
-        }
-
-        public JPanel getPanel() {
-            return panel;
-        }
-
-    }
-
-    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("ACCOUNT_TYPE", "Account type:");
-                                                      put("ACCOUNT_TYPE_TIME", "Time account");
-                                                      put("ACCOUNT_TYPE_VOLUME", "Volume account");
-                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
-                                                      put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
-                                                      put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
-                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
-                                                      put("DOWNLOAD_RESUMABLE_FALSE", "No");
-                                                  }
-                                              };
-
-    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("ACCOUNT_TYPE", "Account Typ:");
-                                                      put("ACCOUNT_TYPE_TIME", "Zeitaccount");
-                                                      put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
-                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
-                                                      put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-                                                      put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
-                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
-                                                      put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
-                                                  }
-                                              };
-
-    /**
-     * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
-     * english (provider is german)
-     *
-     * @param key
-     * @return
-     */
-    private String getPhrase(String key) {
-        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
-            return phrasesDE.get(key);
-        } else if (phrasesEN.containsKey(key)) {
-            return phrasesEN.get(key);
-        }
-        return "Translation not found!";
     }
 
     @Override

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -22,6 +21,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,18 +41,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumy.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumyPl extends PluginForHost {
-
     private String                                         MAINPAGE           = "https://premiumy.pl/";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Object                                  LOCK               = new Object();
 
@@ -66,11 +65,9 @@ public class PremiumyPl extends PluginForHost {
         synchronized (LOCK) {
             try {
                 br.postPage(MAINPAGE + "login,process.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-
                 if (br.containsHTML("<div class=\"inputError\">Niepoprawny login i/lub hasło\\.</div>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_PREMIUM"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -85,14 +82,12 @@ public class PremiumyPl extends PluginForHost {
                 throw e;
             }
         }
-
     }
 
     List<String> getSupportedHosts(AccountInfo ai) {
         final ArrayList<String> availableHosts = new ArrayList<String>(Arrays.asList("catshare.net", "rapidu.net", "uploaded.to", "fileshark.pl", "turbobit.net", "devilshare.net"));
         List<String> supportedHosts = new ArrayList<String>();
         String accountInfoDetails = new String();
-
         String tableOfHosts = new Regex(br, "div class=\"contentTitle\">Statystyki i limity</div>[ \t\n\r\f]+<table class=\"table\">[ \t\n\r\f]+<tr class=\"tableHeader\"><td>Hosting</td><td>Pobrano dzisiaj</td><td>Limit dzienny</td></tr>(.*)</table>").getMatch(0);
         String hosters[][] = null;
         if (tableOfHosts != null) {
@@ -108,7 +103,6 @@ public class PremiumyPl extends PluginForHost {
                     for (String availableHost : availableHosts) {
                         if (availableHost.contains(hoster.toLowerCase())) {
                             supportedHosts.add(availableHost);
-
                             if (accountInfoDetails.contains(getPhrase("HOSTER"))) {
                                 accountInfoDetails += "\n" + getPhrase("HOSTER") + ": " + availableHost + ", " + getPhrase("DOWNLOADED") + ": " + hosterDownloaded + ", " + getPhrase("DAILYLIMIT") + ": " + hosterDailyLimit;
                             } else {
@@ -116,9 +110,7 @@ public class PremiumyPl extends PluginForHost {
                             }
                             break;
                         }
-
                     }
-
                 }
             }
             if (accountInfoDetails != null) {
@@ -139,10 +131,8 @@ public class PremiumyPl extends PluginForHost {
         br.setReadTimeout(60 * 1000);
         br.setFollowRedirects(true);
         login(account, true);
-
         br.getPage(MAINPAGE + "limits.html");
         List<String> supportedHosts = getSupportedHosts(ai);
-
         // hoster packages
         if (supportedHosts.size() > 0) {
             packageInfo = br.getRegex("<div class=\"contentTitleGreen\">Pakiety</div>[ \t\n\r\f]+<div class=\"packagesInfo\">[ \t\n\r\f]+(.*)<br /><div class=\"separator\"></div>[ \t\n\r\f]+</div>").getMatch(0);
@@ -153,7 +143,6 @@ public class PremiumyPl extends PluginForHost {
                         packageName = "Multi + Transfer";
                         ai.setProperty("DETAILS", (String) ai.getProperty("DETAILS") + "\n" + packageInfo.replace("<br /><div class=\"separator\"></div>", ", "));
                     } else {
-
                         packageName = "Transfer";
                         String trafficLeft = new Regex(packageInfo, "Transfer: (\\d+\\.?\\d?[MGT]?B)").getMatch(0);
                         ai.setTrafficLeft(trafficLeft);
@@ -161,14 +150,12 @@ public class PremiumyPl extends PluginForHost {
                     }
                 }
             } else {
-
                 // hoster package
                 if (packageInfo.contains("Multi")) {
                     packageName = "Multi";
                     ai.setProperty("DETAILS", (String) ai.getProperty("DETAILS") + "\n" + packageInfo);
                 } else {
                     packageName = getPhrase("HOSTER");
-
                     String pattern = getPhrase("HOSTER") + ": [^\"<>,]+, " + getPhrase("DOWNLOADED") + ": (\\d+[MGT]?B), " + getPhrase("DAILYLIMIT") + ": (\\d+[MGT]?B)";
                     String trafficUsed = new Regex(ai.getProperty("DETAILS"), pattern).getMatch(0);
                     String trafficLeft = new Regex(ai.getProperty("DETAILS"), pattern).getMatch(1);
@@ -182,14 +169,11 @@ public class PremiumyPl extends PluginForHost {
                 ai.setValidUntil(expireTime);
             }
         }
-
         if (packageInfo == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("UNSUPPORTED_PREMIUM"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         ai.setMultiHostSupport(this, supportedHosts);
-
         ai.setStatus("PREMIUM " + packageName);
-
         account.setValid(true);
         return ai;
     }
@@ -215,7 +199,6 @@ public class PremiumyPl extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -231,31 +214,24 @@ public class PremiumyPl extends PluginForHost {
                 }
             }
         }
-
         final String downloadUrl = link.getPluginPatternMatcher();
         boolean resume = true;
         showMessage(link, "Phase 1/3: Login");
         br.setFollowRedirects(true);
         login(account, true);
-
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         dl = null;
-
         String generatedLink = checkDirectLink(link, "generatedLink");
-
         if (generatedLink == null) {
-
             /* generate new downloadlink */
             String url = Encoding.urlEncode(downloadUrl);
             String postData = "links=" + url;
             showMessage(link, "Phase 2/3: Generating Link");
             br.postPage(MAINPAGE + "download,check.html", postData);
-
             if (br.containsHTML("<b class=\"inputError\">Błąd hostingu lub nieprawidłowy link</b>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             String pattern = "<a href=\"(.*)\"[^\"<>]+title=\"";
             generatedLink = br.getRegex(pattern).getMatch(0);
             if (generatedLink == null) {
@@ -265,7 +241,6 @@ public class PremiumyPl extends PluginForHost {
             }
             link.setProperty("generatedLink", generatedLink);
         }
-
         // wait, workaround
         sleep(1 * 1000l, link);
         int chunks = 0;
@@ -279,7 +254,6 @@ public class PremiumyPl extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -296,7 +270,6 @@ public class PremiumyPl extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
-
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     // try redirected link
                     boolean resetGeneratedLink = true;
@@ -309,7 +282,6 @@ public class PremiumyPl extends PluginForHost {
                             } else {
                                 resetGeneratedLink = false;
                             }
-
                         } else { // turbobit link is already redirected link
                             resetGeneratedLink = false;
                         }
@@ -367,39 +339,41 @@ public class PremiumyPl extends PluginForHost {
         link.setProperty("generatedLinkTb7", null);
     }
 
-    public void showAccountDetailsDialog(Account account) {
-        AccountInfo ai = account.getAccountInfo();
+    @Override
+    public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
+        AccountInfo ai = acc.getAccountInfo();
         String details = (String) (ai.getProperty("DETAILS"));
-        jd.gui.UserIO.getInstance().requestMessageDialog("premiumy.pl Account", details);
+        if (StringUtils.isNotEmpty(details)) {
+            panel.addDescription(details);
+        }
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("ERROR_PREMIUM", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-            put("HOSTER", "Hoster");
-            put("DOWNLOADED", "Downloaded");
-            put("DAILYLIMIT", "Daily Limit");
-            put("UNSUPPORTED_PREMIUM", "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
-            put("HOSTER", "Hoster");
-            put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
-            put("HOSTER_UNAVAILABLE", "Host is temporarily unavailable");
-            put("EXPIRE_DATE", "Expiration date");
-
+                                                  {
+                                                      put("ERROR_PREMIUM", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("HOSTER", "Hoster");
+                                                      put("DOWNLOADED", "Downloaded");
+                                                      put("DAILYLIMIT", "Daily Limit");
+                                                      put("UNSUPPORTED_PREMIUM", "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
+                                                      put("HOSTER", "Hoster");
+                                                      put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
+                                                      put("HOSTER_UNAVAILABLE", "Host is temporarily unavailable");
+                                                      put("EXPIRE_DATE", "Expiration date");
                                                   }
-    };
+                                              };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("ERROR_PREMIUM", "\r\nNieprawidłowy użytkownik/hasło!\r\nUpewnij się, że wprowadziłeś poprawnie użytkownika i hasło. Podpowiedzi:\r\n1. Jeśli w twoim haśle znajdują się znaki specjalne - usuń je/popraw i wprowadź ponownie hasło!\r\n2. Wprowadzając nazwę użytkownika i hasło - nie używaj operacji Kopiuj i Wklej.");
-            put("HOSTER", "Serwis");
-            put("DOWNLOADED", "Pobrano");
-            put("DAILYLIMIT", "Dzienny Limit");
-            put("UNSUPPORTED_PREMIUM", "\r\nNieobsługiwany typ konta!\r\nJesli uważasz, że informacja ta jest niepoprawna i chcesz aby dodac obsługę tego typu konta\r\nskontaktuj się z nami poprzez forum wsparcia.");
-            put("HOSTER", "Serwis");
-            put("PLUGIN_BROKEN", "\r\nProblem z wtyczką, skontaktuj się z zespołem wsparcia JDownloader!");
-            put("HOSTER_UNAVAILABLE", "Serwis jest niedostępny");
-            put("EXPIRE_DATE", "Data ważności");
-        }
-    };
+                                                  {
+                                                      put("ERROR_PREMIUM", "\r\nNieprawidłowy użytkownik/hasło!\r\nUpewnij się, że wprowadziłeś poprawnie użytkownika i hasło. Podpowiedzi:\r\n1. Jeśli w twoim haśle znajdują się znaki specjalne - usuń je/popraw i wprowadź ponownie hasło!\r\n2. Wprowadzając nazwę użytkownika i hasło - nie używaj operacji Kopiuj i Wklej.");
+                                                      put("HOSTER", "Serwis");
+                                                      put("DOWNLOADED", "Pobrano");
+                                                      put("DAILYLIMIT", "Dzienny Limit");
+                                                      put("UNSUPPORTED_PREMIUM", "\r\nNieobsługiwany typ konta!\r\nJesli uważasz, że informacja ta jest niepoprawna i chcesz aby dodac obsługę tego typu konta\r\nskontaktuj się z nami poprzez forum wsparcia.");
+                                                      put("HOSTER", "Serwis");
+                                                      put("PLUGIN_BROKEN", "\r\nProblem z wtyczką, skontaktuj się z zespołem wsparcia JDownloader!");
+                                                      put("HOSTER_UNAVAILABLE", "Serwis jest niedostępny");
+                                                      put("EXPIRE_DATE", "Data ważności");
+                                                  }
+                                              };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
@@ -417,5 +391,4 @@ public class PremiumyPl extends PluginForHost {
         }
         return "Translation not found!";
     }
-
 }

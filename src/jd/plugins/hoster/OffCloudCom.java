@@ -13,13 +13,8 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,13 +23,16 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -46,39 +44,27 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ContainerDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class OffCloudCom extends PluginForHost {
-
     /** Using API: https://github.com/offcloud/offcloud-api */
     private static final String                            CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK        = "CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK";
     private static final String                            CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT   = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
     private static final String                            CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD     = "CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD";
     private static final String                            CLEAR_ALLOWED_IP_ADDRESSES                = "CLEAR_ALLOWED_IP_ADDRESSES";
-
     /* Properties */
     private static final String                            PROPERTY_DOWNLOADTYPE                     = "offclouddownloadtype";
     private static final String                            PROPERTY_DOWNLOADTYPE_instant             = "instant";
     private static final String                            PROPERTY_DOWNLOADTYPE_cloud               = "cloud";
-
     /* Other constants & properties */
     private static final String                            DOMAIN                                    = "https://offcloud.com/api/";
     private static final String                            NICE_HOST                                 = "offcloud.com";
     private static final String                            NICE_HOSTproperty                         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NOCHUNKS                                  = NICE_HOSTproperty + "NOCHUNKS";
     private static final String                            NORESUME                                  = NICE_HOSTproperty + "NORESUME";
-
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME                    = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
@@ -89,7 +75,6 @@ public class OffCloudCom extends PluginForHost {
      */
     private static final long                              DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL = 1 * 60 * 60 * 1000l;
     private static final long                              CLOUD_MAX_WAITTIME                        = 600000l;
-
     private int                                            statuscode                                = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                        = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
@@ -111,7 +96,6 @@ public class OffCloudCom extends PluginForHost {
     public OffCloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://offcloud.com/");
-        this.setConfigElements();
     }
 
     @Override
@@ -190,7 +174,6 @@ public class OffCloudCom extends PluginForHost {
         String filename = null;
         String requestID = null;
         this.br = newBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -206,7 +189,6 @@ public class OffCloudCom extends PluginForHost {
                 }
             }
         }
-
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
@@ -218,7 +200,6 @@ public class OffCloudCom extends PluginForHost {
             }
         }
         setConstants(account, link);
-
         loginCheck();
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
@@ -458,7 +439,6 @@ public class OffCloudCom extends PluginForHost {
             }
             realhost = realhost.toLowerCase();
             boolean active = Arrays.asList("cloud only", "Cloud only", "healthy", "Healthy", "fragile", "Fragile", "limited", "Limited").contains(status);
-
             logger.info("offcloud.com status of host " + realhost + ": " + status);
             if (active) {
                 supportedHosts.add(realhost);
@@ -471,7 +451,6 @@ public class OffCloudCom extends PluginForHost {
         }
         ai.setMultiHostSupport(this, supportedHosts);
         getAndSetChunklimits();
-
         /* Let's handle some settings stuff. */
         if (this.getPluginConfig().getBooleanProperty(CLEAR_ALLOWED_IP_ADDRESSES, default_clear_allowed_ip_addresses)) {
             this.clearAllowedIPAddresses();
@@ -618,7 +597,6 @@ public class OffCloudCom extends PluginForHost {
                 isEnd = ((Boolean) entries.get("isEnd")).booleanValue();
                 page++;
             } while (!isEnd);
-
             final int req_ids_size = requestIDs.size();
             logger.info("Found " + req_ids_size + " requestIDs to delete - starting deletion");
             /* Now let's delete them */
@@ -970,7 +948,7 @@ public class OffCloudCom extends PluginForHost {
             case 15:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 * 
+                 *
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This cann be considered as a small workaround.
                  */
@@ -980,7 +958,7 @@ public class OffCloudCom extends PluginForHost {
             case 16:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 * 
+                 *
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This cann be considered as a small workaround.
                  */
@@ -1154,81 +1132,70 @@ public class OffCloudCom extends PluginForHost {
     private final boolean default_clear_download_history_complete_cloud   = false;
     private final boolean default_clear_allowed_ip_addresses              = false;
 
-    public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK, getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY")).setDefaultValue(default_clear_download_history_single_link));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT, getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT")).setDefaultValue(default_clear_download_history_complete_instant));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD, getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD")).setDefaultValue(default_clear_download_history_complete_cloud));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_ALLOWED_IP_ADDRESSES, getPhrase("SETTING_CLEAR_ALLOWED_IP_ADDRESSES")).setDefaultValue(default_clear_allowed_ip_addresses));
+    public static interface OffCloudComPluginConfigInterface extends PluginConfigInterface {
+        class Translation {
+            public String getDeleteDownloadHistorySingleLinkEnabled_description() {
+                return "<html>Delete downloaded link entry from the offcloud 'Instant' & 'Cloud' download history after successful download?\r\n<html><b>Note that this does NOT delete the complete download history but only the entry of the SUCCESSFULLY downloaded link!</b></html>";
+            }
+
+            public String getDeleteDownloadHistoryCompleteInstantEnabled_description() {
+                return "<html>Delete complete 'Instant' download history each 60 minutes when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the first time can take over 10 minutes!</p></html>";
+            }
+
+            public String getDeleteDownloadHistoryCompleteCloudEnabled_description() {
+                return "<html>Delete complete 'Cloud' download history each 60 minutes when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the first time can take over 10 minutes!\r\nOnly failed- and completed entries will be deleted - entries which are still downloading will NOT be deleted!</p></html>";
+            }
+
+            public String getClearAllowedIpAddressesEnabled_description() {
+                return "<html>Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>";
+            }
+        }
+
+        public static final Translation TRANSLATION = new Translation();
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig(CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK)
+        boolean isDeleteDownloadHistorySingleLinkEnabled();
+
+        void setDeleteDownloadHistorySingleLinkEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig(CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT)
+        boolean isDeleteDownloadHistoryCompleteInstantEnabled();
+
+        void setDeleteDownloadHistoryCompleteInstantEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig(CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD)
+        boolean isDeleteDownloadHistoryCompleteCloudEnabled();
+
+        void setDeleteDownloadHistoryCompleteCloudEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig(CLEAR_ALLOWED_IP_ADDRESSES)
+        boolean isClearAllowedIpAddressesEnabled();
+
+        void setClearAllowedIpAddressesEnabled(boolean b);
     }
 
+    // public void setConfigElements() {
+    // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK,
+    // getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY")).setDefaultValue(default_clear_download_history_single_link));
+    // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT,
+    // getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT")).setDefaultValue(default_clear_download_history_complete_instant));
+    // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD,
+    // getPhrase("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD")).setDefaultValue(default_clear_download_history_complete_cloud));
+    // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+    // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_ALLOWED_IP_ADDRESSES,
+    // getPhrase("SETTING_CLEAR_ALLOWED_IP_ADDRESSES")).setDefaultValue(default_clear_allowed_ip_addresses));
+    // }
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return maxPrem.get();
-    }
-
-    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded link entry from the offcloud 'Instant' & 'Cloud' download history after successful download?\r\n<html><b>Note that this does NOT delete the complete download history but only the entry of the SUCCESSFULLY downloaded link!</b></hml>");
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT", "Delete complete 'Instant' download history each 60 minutes when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the first time can take over 10 minutes!</p></html>");
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD", "Delete complete 'Cloud' download history each 60 minutes when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the first time can take over 10 minutes!\r\nOnly failed- and completed entries will be deleted - entries which are still downloading will NOT be deleted!</p></html>");
-            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>");
-            put("ACCOUNT_USERNAME", "Username:");
-            put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
-            put("ACCOUNT_TYPE", "Account type:");
-            put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
-            put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
-            put("ACCOUNT_CHUNKS_VALUE", "Depends on the host, see: offcloud.com/api/sites/chunks");
-            put("ACCOUNT_RESUME", "Resume of stopped downloads:");
-            put("ACCOUNT_YES", "Yes");
-            put("ACCOUNT_NO", "No");
-            put("ACCOUNT_HISTORYDELETED", "Last deletion of the complete download history before:");
-            put("ACCOUNT_HISTORYDELETED_COUNT", "Number of deleted entries:");
-            put("DETAILS_TITEL", "Account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimited");
-            put("LANG_GENERAL_CLOSE", "Close");
-            put("LANG_GENERAL_NEVER", "Never");
-        }
-    };
-
-    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Lösche heruntergeladenen Link nach jedem erfolgreichen Download aus der offcloud 'Instant' & 'Cloud' Download-Historie?\r\n<html><b>Bedenke, dass dies NICHT die komplette Historie löscht sondern nur jeweils den Eintrag des ERFOLGREICH heruntergeladenen Links!</b></hml>");
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT", "Lösche die komplette 'Instant' Download Historie alle 60 Minuten?\r\n<html><p style=\"color:#F62817\">Bedenke, dass diese Aktion während der Accountüberprüfung ausgeführt wird.\r\nDie erste Ausführung kann je nach Anzahl der History Einträge länger als 10 Minuten in Anspruch nehmen, weswegen es eventuell so aussieht, als würde die Accountüberprüfung hängen.</p></html>");
-            put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD", "Lösche die komplette 'Cloud' Download Historie alle 60 Minuten?\r\n<html><p style=\"color:#F62817\">Bedenke, dass diese Aktion während der Accountüberprüfung ausgeführt wird.\r\nDie erste Ausführung kann je nach Anzahl der History Einträge länger als 10 Minuten in Anspruch nehmen, weswegen es eventuell so aussieht, als würde die Accountüberprüfung hängen.\r\nEs werden nur fertig heruntergeladene- oder fehlgeschlagene Einträge gelöscht. Einträge, die noch am Herunterladen sind werden NICHT gelöscht!</p></html>");
-            put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Aktiviere 'IP-bestätigen' Workaround?\r\nFalls du oft E-Mails von offcloud bekommst mit der Aufforderung, deine aktuelle IP-Adresse zu bestätigen, könnte diese Einstellung helfen.\r\nSie wird immer alle erlaubten IPs außer deine aktuelle in deinem offcloud Konto löschen.\r\n<html><p style=\"color:#F62817\">WARNUNG: Benutze diese Einstellungsmöglichkeit NICHT, falls du\r\n-Mehrere Internetverbindungen (IPs) gleichzeitig nutzt\r\n-Deinen offcloud Account mit Freunden teilst\r\n-Einen oder mehrere Proxys (oder VPNs) nutzt</p></html>");
-            put("ACCOUNT_USERNAME", "Account Name:");
-            put("ACCOUNT_LINKSLEFT", "Verbleibende Anzahl von Instant-Download Links:");
-            put("ACCOUNT_TYPE", "Account Typ:");
-            put("ACCOUNT_SIMULTANDLS", "Max. Anzahl gleichzeitiger Downloads:");
-            put("ACCOUNT_CHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-            put("ACCOUNT_CHUNKS_VALUE", "Kommt auf den Hoster an, siehe: offcloud.com/api/sites/chunks");
-            put("ACCOUNT_RESUME", "Abgebrochene Downloads fortsetzbar:");
-            put("ACCOUNT_YES", "Ja");
-            put("ACCOUNT_NO", "Nein");
-            put("ACCOUNT_HISTORYDELETED", "Letzte Löschung der kompletten Download History vor:");
-            put("ACCOUNT_HISTORYDELETED_COUNT", "Anzahl der gelöschten Einträge:");
-            put("DETAILS_TITEL", "Additional account information");
-            put("LANG_GENERAL_UNLIMITED", "Unlimitiert");
-            put("LANG_GENERAL_CLOSE", "Schließen");
-            put("LANG_GENERAL_NEVER", "Nie");
-        }
-    };
-
-    /**
-     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
-     * English.
-     *
-     * @param key
-     * @return
-     */
-    private String getPhrase(String key) {
-        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
-            return phrasesDE.get(key);
-        } else if (phrasesEN.containsKey(key)) {
-            return phrasesEN.get(key);
-        }
-        return "Translation not found!";
     }
 
     @SuppressWarnings("unused")
@@ -1244,132 +1211,60 @@ public class OffCloudCom extends PluginForHost {
         return userchunks;
     }
 
-    public void showAccountDetailsDialog(final Account account) {
+    @Override
+    public void extendAccountSettingsPanel(Account account, PluginConfigPanelNG panel) {
         final AccountInfo ai = account.getAccountInfo();
-        if (ai != null) {
-            final String windowTitleLangText = getPhrase("DETAILS_TITEL");
-            final String accType = account.getStringProperty("acc_type", "Premium Account");
-            final String accUsername = account.getUser();
-            final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago(account);
-            final long last_deleted_links_count = account.getLongProperty("req_ids_size", -1);
-            final String deleted_links_user_display;
-            /* it manages new panel */
-            final PanelGenerator panelGenerator = new PanelGenerator();
-
-            JLabel hostLabel = new JLabel("<html><b>" + account.getHoster() + "</b></html>");
-            hostLabel.setIcon(DomainInfo.getInstance(account.getHoster()).getFavIcon());
-            panelGenerator.addLabel(hostLabel);
-
-            String revision = "$Revision$";
-            String lastDeletedCompleteDownloadlistUserDisplay;
-            if (last_deleted_complete_download_history_time_ago == 0) {
-                lastDeletedCompleteDownloadlistUserDisplay = getPhrase("LANG_GENERAL_NEVER");
-                deleted_links_user_display = "-";
-            } else {
-                lastDeletedCompleteDownloadlistUserDisplay = TimeFormatter.formatMilliSeconds(last_deleted_complete_download_history_time_ago, 0);
-                deleted_links_user_display = Long.toString(last_deleted_links_count);
-            }
-            String linksleft = account.getStringProperty("accinfo_linksleft", "?");
-            if (linksleft.equals("-1")) {
-                linksleft = getPhrase("LANG_GENERAL_UNLIMITED");
-            }
-            try {
-                String[] revisions = revision.split(":");
-                revision = revisions[1].replace('$', ' ').trim();
-            } catch (final Exception e) {
-                logger.info(this.getHost() + " revision number error: " + e);
-            }
-
-            panelGenerator.addCategory("Account");
-            panelGenerator.addEntry(getPhrase("ACCOUNT_USERNAME"), accUsername);
-            panelGenerator.addEntry(getPhrase("ACCOUNT_TYPE"), accType);
-
-            panelGenerator.addCategory("Download");
-            panelGenerator.addEntry(getPhrase("ACCOUNT_LINKSLEFT"), linksleft);
-            panelGenerator.addEntry(getPhrase("ACCOUNT_HISTORYDELETED"), lastDeletedCompleteDownloadlistUserDisplay);
-            panelGenerator.addEntry(getPhrase("ACCOUNT_HISTORYDELETED_COUNT"), deleted_links_user_display);
-            panelGenerator.addEntry(getPhrase("ACCOUNT_SIMULTANDLS"), getPhrase("ACCOUNT_CHUNKS_VALUE"));
-            panelGenerator.addEntry(getPhrase("ACCOUNT_CHUNKS"), getPhrase("ACCOUNT_CHUNKS_VALUE"));
-            panelGenerator.addEntry(getPhrase("ACCOUNT_RESUME"), getPhrase("ACCOUNT_YES"));
-
-            panelGenerator.addEntry("Plugin Revision:", revision);
-
-            ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, getPhrase("LANG_GENERAL_CLOSE"), "");
-            try {
-                Dialog.getInstance().showDialog(dialog);
-            } catch (DialogNoAnswerException e) {
-            }
+        if (ai == null) {
+            return;
         }
-
-    }
-
-    public class PanelGenerator {
-        private JPanel panel = new JPanel();
-        private int    y     = 0;
-
-        public PanelGenerator() {
-            panel.setLayout(new GridBagLayout());
-            panel.setMinimumSize(new Dimension(270, 200));
+        // put("SETTING_CLEAR_DOWNLOAD_HISTORY", "Delete downloaded link entry from the offcloud 'Instant' & 'Cloud' download history after
+        // successful download?\r\n<html><b>Note that this does NOT delete the complete download history but only the entry of the
+        // SUCCESSFULLY downloaded link!</b></hml>");
+        // put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT", "Delete complete 'Instant' download history each 60 minutes
+        // when?\r\n<html><p style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a
+        // lot of links, the first time can take over 10 minutes!</p></html>");
+        // put("SETTING_CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD", "Delete complete 'Cloud' download history each 60 minutes when?\r\n<html><p
+        // style=\"color:#F62817\">Note that this process happens during the account check.\r\nEspecially if you have a lot of links, the
+        // first time can take over 10 minutes!\r\nOnly failed- and completed entries will be deleted - entries which are still downloading
+        // will NOT be deleted!</p></html>");
+        // put("SETTING_CLEAR_ALLOWED_IP_ADDRESSES", "Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to
+        // confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP
+        // from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple
+        // internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or
+        // VPNs)</p></html>");
+        // put("ACCOUNT_USERNAME", "Username:");
+        // put("ACCOUNT_LINKSLEFT", "Instant download inputs left:");
+        // put("ACCOUNT_TYPE", "Account type:");
+        // put("ACCOUNT_SIMULTANDLS", "Max. simultaneous downloads:");
+        // put("ACCOUNT_CHUNKS", "Max number of chunks per file:");
+        // put("ACCOUNT_CHUNKS_VALUE", "Depends on the host, see: offcloud.com/api/sites/chunks");
+        // put("ACCOUNT_RESUME", "Resume of stopped downloads:");
+        // put("ACCOUNT_YES", "Yes");
+        // put("ACCOUNT_NO", "No");
+        // put("ACCOUNT_HISTORYDELETED", "Last deletion of the complete download history before:");
+        // put("ACCOUNT_HISTORYDELETED_COUNT", "Number of deleted entries:");
+        // put("DETAILS_TITEL", "Account information");
+        // put("LANG_GENERAL_UNLIMITED", "Unlimited");
+        // put("LANG_GENERAL_CLOSE", "Close");
+        // put("LANG_GENERAL_NEVER", "Never");
+        final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago(account);
+        final long last_deleted_links_count = account.getLongProperty("req_ids_size", -1);
+        final String deleted_links_user_display;
+        String lastDeletedCompleteDownloadlistUserDisplay;
+        if (last_deleted_complete_download_history_time_ago == 0) {
+            lastDeletedCompleteDownloadlistUserDisplay = _GUI.T.lit_never();
+            deleted_links_user_display = "-";
+        } else {
+            lastDeletedCompleteDownloadlistUserDisplay = TimeFormatter.formatMilliSeconds(last_deleted_complete_download_history_time_ago, 0);
+            deleted_links_user_display = Long.toString(last_deleted_links_count);
         }
-
-        public void addLabel(JLabel label) {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 0;
-            c.gridwidth = 2;
-            c.gridy = y;
-            c.insets = new Insets(0, 5, 0, 5);
-            panel.add(label, c);
-            y++;
+        String linksleft = account.getStringProperty("accinfo_linksleft", "?");
+        if (linksleft.equals("-1")) {
+            linksleft = _GUI.T.lit_unlimited();
         }
-
-        public void addCategory(String categoryName) {
-            JLabel category = new JLabel("<html><u><b>" + categoryName + "</b></u></html>");
-
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 0;
-            c.gridwidth = 2;
-            c.gridy = y;
-            c.insets = new Insets(10, 5, 0, 5);
-            panel.add(category, c);
-            y++;
-        }
-
-        public void addEntry(String key, String value) {
-            GridBagConstraints c = new GridBagConstraints();
-            JLabel keyLabel = new JLabel(key);
-            // keyLabel.setFont(keyLabel.getFont().deriveFont(Font.BOLD));
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.weightx = 0.9;
-            c.gridx = 0;
-            c.gridy = y;
-            c.insets = new Insets(0, 5, 0, 5);
-            panel.add(keyLabel, c);
-
-            JLabel valueLabel = new JLabel(value);
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 1;
-            panel.add(valueLabel, c);
-
-            y++;
-        }
-
-        public void addTextField(JTextArea textfield) {
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.gridx = 0;
-            c.gridwidth = 2;
-            c.gridy = y;
-            c.insets = new Insets(0, 5, 0, 5);
-            panel.add(textfield, c);
-            y++;
-        }
-
-        public JPanel getPanel() {
-            return panel;
-        }
-
+        panel.addStringPair(_GUI.T.plugins_offcloudcom_linksleft(), linksleft);
+        panel.addStringPair(_GUI.T.plugins_offcloudcom_historydeleted(), lastDeletedCompleteDownloadlistUserDisplay);
+        panel.addStringPair(_GUI.T.plugins_offcloudcom_ACCOUNT_HISTORYDELETED_COUNT(), deleted_links_user_display);
     }
 
     @Override
@@ -1385,5 +1280,4 @@ public class OffCloudCom extends PluginForHost {
         link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
         link.setProperty("offcloudrequestId", Property.NULL);
     }
-
 }

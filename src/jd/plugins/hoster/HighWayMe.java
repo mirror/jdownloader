@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -23,6 +22,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,29 +48,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HighWayMe extends UseNet {
-
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
-
     private static final String                            DOMAIN                              = "http://http.high-way.me/api.php";
     private static final String                            NICE_HOST                           = "high-way.me";
     private static final String                            NICE_HOSTproperty                   = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME                            = NICE_HOSTproperty + "NORESUME";
     private static final int                               ERRORHANDLING_MAXLOGINS             = 2;
-
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><Boolean resume possible|impossible> */
     private static HashMap<String, Boolean>                hostResumeMap                       = new HashMap<String, Boolean>();
@@ -71,28 +66,19 @@ public class HighWayMe extends UseNet {
     private static HashMap<String, Integer>                hostMaxdlsMap                       = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
-
     private static HashMap<String, Integer>                hostRabattMap                       = new HashMap<String, Integer>();
     private static Object                                  UPDATELOCK                          = new Object();
-
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS                 = 10;
     private static final int                               defaultMAXCHUNKS                    = -4;
     private static final boolean                           defaultRESUME                       = false;
-
     private int                                            statuscode                          = 0;
     private Account                                        currAcc                             = null;
     private DownloadLink                                   currDownloadLink                    = null;
     private long                                           currentWaittimeOnFailue             = 0;
 
-    public static interface HighWayMeConfigInterface extends UsenetConfigInterface {
-
+    public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<HighWayMeConfigInterface> getConfigInterface() {
-        return HighWayMeConfigInterface.class;
-    }
 
     public HighWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -175,7 +161,6 @@ public class HighWayMe extends UseNet {
         br.setFollowRedirects(true);
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
-
         final String thishost = link.getHost();
         synchronized (UPDATELOCK) {
             if (hostMaxchunksMap.containsKey(thishost)) {
@@ -185,7 +170,6 @@ public class HighWayMe extends UseNet {
                 resume = hostResumeMap.get(thishost);
             }
         }
-
         if (link.getBooleanProperty(NORESUME, false)) {
             resume = false;
         }
@@ -253,7 +237,6 @@ public class HighWayMe extends UseNet {
                     }
                 }
             }
-
             String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
             if (dllink == null) {
                 /* request creation of downloadlink */
@@ -348,7 +331,6 @@ public class HighWayMe extends UseNet {
         final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
         final long premium_traffic = ((Number) info_account.get("premium_traffic")).longValue();
         final long premium_traffic_max = ((Number) info_account.get("premium_max")).longValue();
-
         /* Set account type and related things */
         if (premium_bis > 0 && premium_traffic_max > 0) {
             ai.setTrafficLeft(premium_traffic);
@@ -379,7 +361,6 @@ public class HighWayMe extends UseNet {
         } else {
             account.setProperty("resume", false);
         }
-
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         synchronized (UPDATELOCK) {
             hostMaxchunksMap.clear();
@@ -405,7 +386,6 @@ public class HighWayMe extends UseNet {
                     } else {
                         hostResumeMap.put(domain, true);
                     }
-
                 }
             }
         }
@@ -707,7 +687,6 @@ public class HighWayMe extends UseNet {
             case 200:
                 if (!org.appwork.utils.Application.isHeadless()) {
                     BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-
                         @Override
                         public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
                             return new BasicNotify("Weniger als 10% Traffic verbleibend", "Weniger als 10% Traffic verbleibend", new AbstractIcon(IconKey.ICON_INFO, 32));
@@ -761,5 +740,4 @@ public class HighWayMe extends UseNet {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

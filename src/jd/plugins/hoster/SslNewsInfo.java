@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -20,7 +20,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "ssl-news.info" }, urls = { "" }, flags = { 0 })
 public class SslNewsInfo extends UseNet {
-
     public SslNewsInfo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.ssl-news.info/signup.php");
@@ -38,14 +37,8 @@ public class SslNewsInfo extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface SslNewsInfoConfigInterface extends UsenetConfigInterface {
-
+    public static interface SslNewsInfoConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<SslNewsInfoConfigInterface> getConfigInterface() {
-        return SslNewsInfoConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -132,5 +125,4 @@ public class SslNewsInfo extends UseNet {
         ret.addAll(UsenetServer.createServerList("reader.ssl-news.info", true, 443, 563, 600));
         return ret;
     }
-
 }

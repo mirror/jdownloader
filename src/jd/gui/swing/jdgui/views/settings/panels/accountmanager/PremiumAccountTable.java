@@ -8,10 +8,6 @@ import java.util.List;
 
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.jdgui.BasicJDTable;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
@@ -19,24 +15,23 @@ import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+
 public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
     private static final long serialVersionUID = -2166408567306279016L;
 
     public PremiumAccountTable(AccountListPanel accountListPanel) {
-        super(new PremiumAccountTableModel(accountListPanel));
+        this(new PremiumAccountTableModel(accountListPanel));
+
+    }
+
+    public PremiumAccountTable(PremiumAccountTableModel premiumAccountTableModel) {
+        super(premiumAccountTableModel);
         this.setSearchEnabled(true);
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>((LAFOptions.getInstance().getColorForTableSelectedRowsForeground()), (LAFOptions.getInstance().getColorForTableSelectedRowsBackground()), null) {
-            public int getPriority() {
-                return Integer.MAX_VALUE - 1;
-            }
-
-            @Override
-            public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
-                return selected;
-            }
-
-        });
+        addRowHighlighterSelected();
 
         this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(LAFOptions.getInstance().getColorForTableAccountTempErrorRowForeground(), LAFOptions.getInstance().getColorForTableAccountTempErrorRowBackground(), null) {
             public int getPriority() {
@@ -67,6 +62,20 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
             @Override
             public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
                 return !value.getAccount().isValid();
+            }
+
+        });
+    }
+
+    protected void addRowHighlighterSelected() {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>((LAFOptions.getInstance().getColorForTableSelectedRowsForeground()), (LAFOptions.getInstance().getColorForTableSelectedRowsBackground()), null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE - 1;
+            }
+
+            @Override
+            public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
+                return selected;
             }
 
         });
@@ -121,7 +130,7 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
         if (popup != null) {
             if (selection == null) {
                 popup.add(new NewAction());
-                popup.add(new RemoveAction(null, false));
+                addRemovePopupItem(popup);
                 popup.add(new BuyAction());
                 popup.add(new RefreshAction(null));
             } else {
@@ -132,6 +141,10 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
             }
         }
         return popup;
+    }
+
+    protected void addRemovePopupItem(JPopupMenu popup) {
+        popup.add(new RemoveAction(null, false));
     }
 
 }

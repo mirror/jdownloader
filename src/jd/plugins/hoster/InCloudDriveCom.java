@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -30,7 +29,6 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -45,10 +43,8 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(?:#/)?((?:file_download|link)/[0-9a-zA-Z=_-]+(?:/[^/]+)?|file/[0-9a-zA-Z=_-]+/[^/]+))" }, flags = { 2 })
 public class InCloudDriveCom extends PluginForHost {
-
     // DEV NOTE:
     // links are not correctable to a standard url format
-
     public InCloudDriveCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.inclouddrive.com/");
@@ -62,7 +58,6 @@ public class InCloudDriveCom extends PluginForHost {
 
     private String[]             hashTag;
     private Browser              ajax                         = null;
-
     /* Connection stuff */
     private final boolean        FREE_RESUME                  = false;
     private final int            FREE_MAXCHUNKS               = 1;
@@ -73,7 +68,6 @@ public class InCloudDriveCom extends PluginForHost {
     private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
     private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = -4;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -121,7 +115,6 @@ public class InCloudDriveCom extends PluginForHost {
                 filesize = br.getRegex("fileinfo [a-z0-9 ]+\">[^<>]*? \\(([0-9\\.]*? .?B)\\)<").getMatch(0);
             }
         }
-
         if (filename != null) {
             // this is what the filename is detected at for offline content. Don't set as url can contain say filename.rar and core will set
             // that!
@@ -329,7 +322,6 @@ public class InCloudDriveCom extends PluginForHost {
         } else if (inValidate(account.getPass())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password can not be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-
         final String lang = System.getProperty("user.language");
         final AccountInfo ai = new AccountInfo();
         try {
@@ -373,14 +365,12 @@ public class InCloudDriveCom extends PluginForHost {
                 /* not available in old Stable 0.9.581 */
             }
         }
-
         final String space = br.getRegex(">Used Space</div>\\s*<span[^>]*>(.*?) / \\d+ GB</span>").getMatch(0);
         if (space != null) {
             ai.setUsedSpace(SizeFormatter.getSize(space.trim()));
         } else {
             logger.warning("Could not determine Used Space! Account type: " + getAccountType(account));
         }
-
         final String[] traffic = br.getRegex(">Used Bandwidth</div>\\s*<span[^>]*>(.*?)\\s*/\\s*(\\d+ GB)<").getRow(0);
         if (traffic != null) {
             final long trafficused = SizeFormatter.getSize(traffic[0].contains("&nbsp;") ? "0" : traffic[0].replace("BT", "Byte"));
@@ -390,7 +380,6 @@ public class InCloudDriveCom extends PluginForHost {
         } else {
             logger.warning("Could not determine Used Bandwidth! Account type: " + getAccountType(account));
         }
-
         account.setValid(true);
         return ai;
     }
@@ -532,20 +521,6 @@ public class InCloudDriveCom extends PluginForHost {
         // "Process folder pages as individual links")).setDefaultValue(default_folderLinks));
     }
 
-    public void showAccountDetailsDialog(final Account account) {
-        AccountInfo ai = account.getAccountInfo();
-        String message = "";
-        message += "Account type: " + getAccountType(account) + "\r\n";
-        if (ai.getUsedSpace() != -1) {
-            message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
-        }
-        if (ai.getPremiumPoints() != -1) {
-            message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
-        }
-
-        jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " Account", message);
-    }
-
     private String getAccountType(final Account account) {
         return account.getBooleanProperty("free", false) ? "Free" : "Premium";
     }
@@ -576,5 +551,4 @@ public class InCloudDriveCom extends PluginForHost {
             return false;
         }
     }
-
 }

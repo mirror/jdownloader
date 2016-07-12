@@ -7,7 +7,7 @@ import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -38,14 +38,8 @@ public class SnelNLUsenet extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface SnelNLUsenetConfigInterface extends UsenetConfigInterface {
-
+    public static interface SnelNLUsenetConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<SnelNLUsenetConfigInterface> getConfigInterface() {
-        return SnelNLUsenetConfigInterface.class;
-    }
 
     private boolean containsSessionCookie(final Cookies cookies) {
         for (final Cookie cookie : cookies.getCookies()) {
@@ -145,5 +139,4 @@ public class SnelNLUsenet extends UseNet {
         ret.addAll(UsenetServer.createServerList("reader.snelnl.com", true, 563, 80, 81));
         return ret;
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.awt.Color;
@@ -28,6 +27,22 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -50,25 +65,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.UnavailableHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }, flags = { 2 })
 public class PremiumizeMe extends UseNet {
-
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
     private static final String                                       SENDDEBUGLOG       = "SENDDEBUGLOG";
     private static final String                                       NOCHUNKS           = "NOCHUNKS";
@@ -88,14 +86,8 @@ public class PremiumizeMe extends UseNet {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SENDDEBUGLOG, "Send debug logs to PremiumizeMe automatically?").setDefaultValue(true));
     }
 
-    public static interface PremiumizeMeConfigInterface extends UsenetConfigInterface {
-
+    public static interface PremiumizeMeConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<PremiumizeMeConfigInterface> getConfigInterface() {
-        return PremiumizeMeConfigInterface.class;
-    }
 
     @Override
     public String getAGBLink() {
@@ -248,12 +240,10 @@ public class PremiumizeMe extends UseNet {
             resume = (Boolean) ret;
             logger.info("Host:" + link.getHost() + " allows resume: " + resume);
         }
-
         if (resume == false) {
             logger.info("Host:" + link.getHost() + " does not allow resume, set chunks to 1");
             maxConnections = 1;
         }
-
         if (link.getBooleanProperty(PremiumizeMe.NOCHUNKS, false) == true) {
             maxConnections = 1;
         }
@@ -375,7 +365,6 @@ public class PremiumizeMe extends UseNet {
                     }
                 }
             }
-
             br = newBrowser();
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
@@ -437,7 +426,6 @@ public class PremiumizeMe extends UseNet {
         // https://secure.premiumize.me/<extuid>/<port>/proxy.pac
         String extuid = br.getRegex("extuid\":\"(.*?)\"").getMatch(0);
         account.setProperty("extuid", extuid);
-
         if (status == null) {
             status = "Unknown Account Type";
         }
@@ -526,7 +514,6 @@ public class PremiumizeMe extends UseNet {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -536,7 +523,6 @@ public class PremiumizeMe extends UseNet {
             unavailableMap.put(downloadLink.getHost(), nue);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
-
     }
 
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
@@ -699,7 +685,6 @@ public class PremiumizeMe extends UseNet {
          *
          */
         private static final long serialVersionUID = 1L;
-
         private final String      IDHELP           = "Enter your account id (9 digits)";
         private final String      PINHELP          = "Enter your pin";
 
@@ -734,9 +719,7 @@ public class PremiumizeMe extends UseNet {
         }
 
         private final ExtTextField     name;
-
         private final ExtPasswordField pass;
-
         private static String          EMPTYPW = "                 ";
         private final JLabel           idLabel;
 
@@ -746,24 +729,18 @@ public class PremiumizeMe extends UseNet {
             add(new JLink(getProtocol() + "www.premiumize.me/account"));
             add(idLabel = new JLabel(_GUI.T.premiumize_add_account_idlabel()));
             add(this.name = new ExtTextField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
                 }
-
             });
-
             name.setHelpText(IDHELP);
-
             add(new JLabel("PIN:"));
             add(this.pass = new ExtPasswordField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
                 }
-
             }, "");
             pass.setHelpText(PINHELP);
         }
@@ -797,5 +774,4 @@ public class PremiumizeMe extends UseNet {
             return new Account(getUsername(), getPassword());
         }
     }
-
 }

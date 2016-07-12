@@ -12,28 +12,33 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.swing.components.ExtTextField;
 
 public class TextInput extends ExtTextField implements SettingsComponent, GenericConfigEventListener<String> {
-
     /**
-     * 
+     *
      */
     private static final long                 serialVersionUID = 1L;
     private StateUpdateEventSender<TextInput> eventSender;
     private AtomicBoolean                     settings         = new AtomicBoolean(false);
     private StringKeyHandler                  keyhandler;
+
     {
         eventSender = new StateUpdateEventSender<TextInput>();
         this.getDocument().addDocumentListener(new DocumentListener() {
-
             public void removeUpdate(DocumentEvent e) {
-                if (!settings.get()) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                if (!settings.get()) {
+                    eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                }
             }
 
             public void insertUpdate(DocumentEvent e) {
-                if (!settings.get()) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                if (!settings.get()) {
+                    eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                }
             }
 
             public void changedUpdate(DocumentEvent e) {
-                if (!settings.get()) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                if (!settings.get()) {
+                    eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                }
             }
         });
     }
@@ -41,12 +46,13 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     public TextInput(String nick) {
         super();
         setText(nick);
-
     }
 
     @Override
     public void setText(String t) {
-        if (!settings.compareAndSet(false, true)) return;
+        if (!settings.compareAndSet(false, true)) {
+            return;
+        }
         try {
             super.setText(t);
         } finally {
@@ -61,13 +67,16 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     @Override
     public void onChanged() {
         super.onChanged();
-        if (!settings.compareAndSet(false, true)) { return; }
+        if (!settings.compareAndSet(false, true)) {
+            return;
+        }
         try {
-            if (keyhandler != null) keyhandler.setValue(getText());
+            if (keyhandler != null) {
+                keyhandler.setValue(getText());
+            }
         } finally {
             settings.set(false);
         }
-
     }
 
     public TextInput(StringKeyHandler keyhandler) {
@@ -82,7 +91,7 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     }
 
     public String getConstraints() {
-        return null;
+        return "sgy LINE";
     }
 
     public boolean isMultiline() {
@@ -103,5 +112,4 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
             setText(keyhandler.getValue());
         }
     }
-
 }

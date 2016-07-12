@@ -25,13 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.handler.BooleanKeyHandler;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -46,6 +42,7 @@ import org.jdownloader.plugins.components.realDebridCom.api.json.HostsResponse;
 import org.jdownloader.plugins.components.realDebridCom.api.json.TokenResponse;
 import org.jdownloader.plugins.components.realDebridCom.api.json.UnrestrictLinkResponse;
 import org.jdownloader.plugins.components.realDebridCom.api.json.UserResponse;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
@@ -54,7 +51,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -68,7 +64,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
@@ -120,7 +115,7 @@ public class RealDebridCom extends PluginForHost {
     private final String                                   mProt              = "https://";
 
     private Browser                                        apiBrowser;
-    private RealDebridConfigPanel                          panel;
+
     private TokenResponse                                  token;
     private Account                                        account;
     protected ClientSecret                                 clientSecret;
@@ -649,55 +644,8 @@ public class RealDebridCom extends PluginForHost {
     }
 
     @Override
-    public Class<? extends ConfigInterface> getConfigInterface() {
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
         return RealDebridComConfig.class;
-    }
-
-    // public void setConfigElements() {
-    // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IGNOREMAXCHUNKS, "Ignore max chunks set by
-    // real-debrid.com?").setDefaultValue(false));
-    // }
-    private static class RealDebridConfigPanel extends PluginConfigPanelNG {
-        private RealDebridComConfig cf;
-
-        public RealDebridConfigPanel() {
-            cf = PluginJsonConfig.get(RealDebridComConfig.class);
-
-            addPair("Ignore max chunks set by real-debrid.com?", null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("IgnoreServerSideChunksNum", BooleanKeyHandler.class), null));
-
-        }
-
-        @Override
-        public void reset() {
-            for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
-
-                m.setValue(m.getDefaultValue());
-            }
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    updateContents();
-                }
-            };
-        }
-
-        @Override
-        public void save() {
-        }
-
-        @Override
-        public void updateContents() {
-        }
-
-    }
-
-    @Override
-    public PluginConfigPanelNG createConfigPanel() {
-        if (panel == null) {
-            panel = new RealDebridConfigPanel();
-        }
-        return panel;
     }
 
     private void showMessage(DownloadLink link, String message) {

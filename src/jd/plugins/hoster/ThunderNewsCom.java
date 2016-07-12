@@ -7,7 +7,7 @@ import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -39,14 +39,8 @@ public class ThunderNewsCom extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface ThunderNewsConfigInterface extends UsenetConfigInterface {
-
+    public static interface ThunderNewsConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<ThunderNewsConfigInterface> getConfigInterface() {
-        return ThunderNewsConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -144,5 +138,4 @@ public class ThunderNewsCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("secure.us.thundernews.com", true, 563, 80, 81));
         return ret;
     }
-
 }

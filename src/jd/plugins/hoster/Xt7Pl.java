@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,18 +40,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xt7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class Xt7Pl extends PluginForHost {
-
     private String                                         MAINPAGE           = "http://xt7.pl/";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Object                                  LOCK               = new Object();
 
@@ -82,7 +81,6 @@ public class Xt7Pl extends PluginForHost {
                 throw e;
             }
         }
-
     }
 
     List<String> getSupportedHosts() {
@@ -114,7 +112,6 @@ public class Xt7Pl extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         login(account, true);
-
         if (!br.getURL().contains("mojekonto")) {
             br.getPage("/mojekonto");
         }
@@ -134,7 +131,6 @@ public class Xt7Pl extends PluginForHost {
             validUntil = validUntil.replace(" / ", " ");
             ai.setProperty("premium", "TRUE");
         }
-
         /*
          * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
          */
@@ -144,11 +140,9 @@ public class Xt7Pl extends PluginForHost {
         // "uploaded.net", "ul.to", "sharehost.eu"
         // // "oboom.com", "fileparadox.in", "bitshare.com", "freakshare.net", "freakshare.com"
         // ));
-
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
-
         // ai.setProperty("Turbobit traffic", "Unlimited");
         String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
@@ -192,7 +186,6 @@ public class Xt7Pl extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -208,11 +201,9 @@ public class Xt7Pl extends PluginForHost {
                 }
             }
         }
-
         final String downloadUrl = link.getPluginPatternMatcher();
         boolean resume = true;
         showMessage(link, "Phase 1/3: Login");
-
         login(account, false);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
@@ -224,9 +215,7 @@ public class Xt7Pl extends PluginForHost {
         // if so, then try to use it, generated link store in link properties
         // for future usage (broken download etc)
         String generatedLink = checkDirectLink(link, "generatedLinkXt7");
-
         if (generatedLink == null) {
-
             /* generate new downloadlink */
             String url = Encoding.urlEncode(downloadUrl);
             String postData = "step=1" + "&content=" + url;
@@ -238,7 +227,6 @@ public class Xt7Pl extends PluginForHost {
             }
             postData = "step=2" + "&0=on";
             br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
-
             // New Regex, but not tested if it works for all files (not video)
             // String generatedLink =
             // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> /
@@ -271,16 +259,13 @@ public class Xt7Pl extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("RETRY") + msg, 20 * 1000l);
             }
             link.setProperty("generatedLinkXt7", generatedLink);
         }
-
         // wait, workaround
         sleep(1 * 1000l, link);
         int chunks = 0;
-
         // generated fileshark/lunaticfiles link allows only 1 chunk
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
@@ -304,7 +289,6 @@ public class Xt7Pl extends PluginForHost {
                 link.setProperty("generatedLinkXt7", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-
             if (br.getBaseURL().contains("notransfer")) {
                 /* No traffic left */
                 account.getAccountInfo().setTrafficLeft(0);
@@ -327,7 +311,6 @@ public class Xt7Pl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("DOWNLOAD_LIMIT"), 1 * 60 * 1000l);
             }
         }
-
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -344,7 +327,6 @@ public class Xt7Pl extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
-
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     // try redirected link
                     boolean resetGeneratedLink = true;
@@ -357,7 +339,6 @@ public class Xt7Pl extends PluginForHost {
                             } else {
                                 resetGeneratedLink = false;
                             }
-
                         } else { // turbobit link is already redirected link
                             resetGeneratedLink = false;
                         }
@@ -415,16 +396,17 @@ public class Xt7Pl extends PluginForHost {
         link.setProperty("generatedLinkXt7", null);
     }
 
-    public void showAccountDetailsDialog(Account account) {
-        AccountInfo ai = account.getAccountInfo();
-        if ("FALSE".equals(ai.getProperty("premium"))) {
-            jd.gui.UserIO.getInstance().requestMessageDialog("Xt7.pl Account", getPhrase("ACCOUNT_TYPE") + ": " + getPhrase("FREE") + "\n");
-        } else {
+    @Override
+    public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
+        AccountInfo ai = acc.getAccountInfo();
+        if (ai == null) {
+            return;
+        }
+        if (!"FALSE".equals(ai.getProperty("premium"))) {
             long otherHostersLimit = Long.parseLong(ai.getProperty("TRAFFIC_LEFT").toString(), 10);
             String unlimited = (String) (ai.getProperty("UNLIMITED"));
-            jd.gui.UserIO.getInstance().requestMessageDialog("Xt7.pl Account", getPhrase("ACCOUNT_TYPE") + ": Premium\n" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(otherHostersLimit) + (unlimited == null ? "" : "\n" + unlimited + ": " + getPhrase("UNLIMITED")));
+            panel.addStringPair(_GUI.T.lit_traffic_left(), SizeFormatter.formatBytes(otherHostersLimit) + (unlimited == null ? "" : "\n" + unlimited + ": " + getPhrase("UNLIMITED")));
         }
-
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
@@ -484,5 +466,4 @@ public class Xt7Pl extends PluginForHost {
         }
         return "Translation not found!";
     }
-
 }

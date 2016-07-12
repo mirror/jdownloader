@@ -10,6 +10,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.plugins.Account;
 import net.miginfocom.swing.MigLayout;
 
 public class AccountListPanel extends SwitchPanel {
@@ -51,6 +52,14 @@ public class AccountListPanel extends SwitchPanel {
 
     @Override
     protected void onHide() {
+    }
+
+    public void selectAccount(Account account) {
+        for (AccountEntry ae : table.getModel().getTableData()) {
+            if (account.equals(ae.getAccount())) {
+                table.getModel().setSelectedObject(ae);
+            }
+        }
     }
 
 }

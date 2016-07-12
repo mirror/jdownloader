@@ -15,10 +15,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -28,6 +24,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.solver.browser.BrowserCaptchaSolverConfig;
 import org.jdownloader.captcha.v2.solver.browser.CFG_BROWSER_CAPTCHA_SOLVER;
@@ -43,15 +40,22 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.components.google.GoogleAccountConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.config.AccountJsonConfig;
+
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.Account;
 
 public class BrowserSolverService extends AbstractSolverService {
-
     public static final String                ID       = "browser";
     private static final BrowserSolverService INSTANCE = new BrowserSolverService();
+
     static {
         GenericConfigEventListener<String> cookiesTester = new GenericConfigEventListener<String>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
                 {
@@ -60,42 +64,31 @@ public class BrowserSolverService extends AbstractSolverService {
                     final AtomicReference<BufferedImage> niceOrg = new AtomicReference<BufferedImage>();
                     final AtomicReference<BufferedImage> badOrg = new AtomicReference<BufferedImage>();
                     if (StringUtils.isNotEmpty(sid) && StringUtils.isNotEmpty(hsid)) {
-
                         ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.Recaptcha_cookie_help_title(), _GUI.T.Recaptcha_cookie_help_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI.T.lit_close()) {
-
                             @Override
                             protected JComponent getIconComponent() {
-
                                 URLConnectionAdapter con;
                                 try {
-
                                     String siteKey = "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-";
                                     Browser br = new Browser();
                                     BrowserSolverService.fillCookies(br);
-
                                     br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
-
                                     String challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
                                     String server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
                                     niceOrg.set(ImageIO.read(br.openGetConnection(server + "image?c=" + challenge).getInputStream()));
                                     BufferedImage niceImage = IconIO.toBufferedImage(niceOrg.get());
-
                                     br = new Browser();
                                     br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
-
                                     challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
                                     server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
                                     badOrg.set(ImageIO.read(br.openGetConnection(server + "image?c=" + challenge).getInputStream()));
                                     BufferedImage badImage = IconIO.toBufferedImage(badOrg.get());
-
                                     Graphics2D niceGraphics = (Graphics2D) niceImage.getGraphics();
                                     Graphics2D badGraphics = (Graphics2D) badImage.getGraphics();
                                     Font font = new Font("Arial", Font.BOLD, 18);
-
                                     niceGraphics.setColor(Color.GREEN);
                                     niceGraphics.setFont(font);
                                     niceGraphics.drawString("Easy Captcha :-) ", 4, niceImage.getHeight() - 4);
-
                                     badGraphics.setColor(Color.RED);
                                     badGraphics.setFont(font);
                                     badGraphics.drawString("Hard Captcha :´( ", 4, badImage.getHeight() - 4);
@@ -115,7 +108,6 @@ public class BrowserSolverService extends AbstractSolverService {
                         };
                         d.setTimeout(120000);
                         UIOManager.I().show(ConfirmDialogInterface.class, d);
-
                         if (niceOrg.get() == null || niceOrg.get().getType() == 10) {
                             return;
                         }
@@ -123,7 +115,6 @@ public class BrowserSolverService extends AbstractSolverService {
                         UIOManager.I().showMessageDialog(_GUI.T.Recaptcha_cookie_help_msg_both_cookies());
                     }
                 }
-
             }
 
             @Override
@@ -138,7 +129,6 @@ public class BrowserSolverService extends AbstractSolverService {
 
     public static BrowserSolverService getInstance() {
         config = JsonConfig.create(BrowserCaptchaSolverConfig.class);
-
         return INSTANCE;
     }
 
@@ -160,13 +150,10 @@ public class BrowserSolverService extends AbstractSolverService {
     @Override
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
-
             {
                 addHeader(getTitle(), BrowserSolverService.this.getIcon(32));
                 addDescription(BrowserSolverService.this.getType());
-
                 addBlackWhiteList(config);
-
             }
 
             @Override
@@ -191,7 +178,6 @@ public class BrowserSolverService extends AbstractSolverService {
             @Override
             public void updateContents() {
             }
-
         };
         return ret;
     }
@@ -203,14 +189,12 @@ public class BrowserSolverService extends AbstractSolverService {
 
     @Override
     public BrowserCaptchaSolverConfig getConfig() {
-
         return JsonConfig.create(BrowserCaptchaSolverConfig.class);
     }
 
     @Override
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
-
         // ret.put(DialogClickCaptchaSolver.ID, 0);
         // ret.put(DialogBasicCaptchaSolver.ID, 0);
         // ret.put(CaptchaAPISolver.ID, 0);
@@ -231,17 +215,26 @@ public class BrowserSolverService extends AbstractSolverService {
     }
 
     public static void fillCookies(Browser rcBr) {
-
         if (StringUtils.isNotEmpty(getInstance().getConfig().getGoogleComCookieValueSID()) && StringUtils.isNotEmpty(getInstance().getConfig().getGoogleComCookieValueHSID())) {
             rcBr.setCookie("http://google.com", "SID", getInstance().getConfig().getGoogleComCookieValueSID());
             rcBr.setCookie("http://google.com", "HSID", getInstance().getConfig().getGoogleComCookieValueHSID());
         } else {
-
-            GoogleHelper helper = new GoogleHelper(rcBr);
-            helper.setCacheEnabled(true);
-            helper.login("google.com (Recaptcha)");
+            try {
+                for (Account acc : AccountController.getInstance().list("google.com (Recaptcha)")) {
+                    if (acc.isEnabled()) {
+                        GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc);
+                        if (cfg.isUsageRecaptchaV1Enabled()) {
+                            GoogleHelper helper = new GoogleHelper(rcBr);
+                            helper.setCacheEnabled(true);
+                            if (helper.login(acc)) {
+                                return;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
         }
-
     }
-
 }

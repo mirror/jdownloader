@@ -26,7 +26,7 @@ public class LeftBottomBar extends MigPanel {
     // private JToggleButton showHideSidebar;
 
     public LeftBottomBar(StreamingExtension plg, final VLCGui vlcGui) {
-        super("ins 0 0 1 0,debug", "[]1[]1[]", "[]");
+        super("ins 0 0 1 0", "[]1[]1[]", "[]");
         extension = plg;
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);

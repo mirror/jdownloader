@@ -51,6 +51,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginForHost;
@@ -61,17 +62,13 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
      *
      */
     private static final long             serialVersionUID = 1L;
-
     private Icon                          decryterIcon;
     private MigPanel                      card;
     protected SwitchPanel                 configPanel;
     protected List<Pattern>               filter;
     private Header                        header;
-
     private SearchComboBox<LazyPlugin<?>> searchCombobox;
-
     private ExtButton                     resetButton;
-
     private LogSource                     logger;
 
     public void addStateUpdateListener(StateUpdateListener listener) {
@@ -79,7 +76,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public Dimension getPreferredScrollableViewportSize() {
-
         return this.getPreferredSize();
     }
 
@@ -88,7 +84,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         decryterIcon = new AbstractIcon(IconKey.ICON_LINKGRABBER, 16);
         logger = LogController.getInstance().getLogger(PluginSettingsPanel.class.getName());
         searchCombobox = new SearchComboBox<LazyPlugin<?>>() {
-
             @Override
             protected Icon getIconForValue(LazyPlugin<?> value) {
                 if (value == null) {
@@ -100,7 +95,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             @Override
             public void onChanged() {
                 super.onChanged();
-
             }
 
             @Override
@@ -114,11 +108,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         searchCombobox.setActualMaximumRowCount(20);
         searchCombobox.addActionListener(this);
         setOpaque(false);
-
         // left.setBorder(new JTextField().getBorder());
         // selector.setPreferredSize(new Dimension(200, 20000));
         // sp.setBorder(null);
-
         resetButton = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_RESET);
@@ -133,18 +125,15 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         if (currentItem != null) {
                             Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.PluginSettingsPanel_are_you_sure(currentItem.getDisplayName()));
                             proto = currentItem.getPrototype(null);
-                            PluginConfigPanelNG ccp = proto.createConfigPanel();
+                            PluginConfigPanelNG ccp = proto.getConfigPanel();
                             if (ccp != null) {
                                 ccp.reset();
-
                             } else {
                                 proto.getPluginConfig().reset();
                                 AddonConfig.getInstance(proto.getConfig(), "", false).reload();
-
                             }
                             // avoid that the panel saves it's data on hide;
                             configPanel = null;
-
                             show(currentItem);
                             Dialog.getInstance().showMessageDialog(_GUI.T.PluginSettingsPanel_actionPerformed_reset_done(currentItem.getDisplayName()));
                         }
@@ -158,41 +147,32 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 }
             }
         });
-        this.card = new MigPanel("ins 3", "[grow,fill]", "[grow,fill]");
+        this.card = new MigPanel("ins 3 0 0 0", "[grow,fill]", "[grow,fill]");
         header = new Header("", null);
-
         card.setOpaque(false);
-
         if (CrawlerPluginController.list(false) == null) {
             MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow]", "50[][]");
             loaderPanel.setOpaque(false);
             loaderPanel.setBackground(null);
-
             CircledProgressBar loader = new CircledProgressBar();
             loader.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 1.0f));
-
             loader.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 0.1f));
             ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
             ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
             loader.setIndeterminate(true);
-
             loaderPanel.add(loader, "width 256!,height 256!,alignx center");
             loaderPanel.add(new JLabel(_GUI.T.PluginSettingsPanel_PluginSettingsPanel_waittext_()), "alignx center");
-
             add(loaderPanel, "spanx,pushx,growx,spany,growy,pushy");
         }
         new Thread("Plugin Init") {
             public void run() {
-
                 // try {
                 // Thread.sleep(5000);
                 // } catch (InterruptedException e) {
                 // e.printStackTrace();
                 // }
-
                 fill();
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         removeAll();
@@ -201,7 +181,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         add(resetButton, "width 22!,height 24!");
                         add(header, "growx,pushx,gaptop 10");
                         add(card, "spanx,pushx,growx");
-
                         if (searchCombobox.getModel().getSize() > 0) {
                             String active = JsonConfig.create(GraphicalUserInterfaceSettings.class).getActivePluginConfigPanel();
                             int selectIndex = 0;
@@ -212,22 +191,18 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                                         break;
                                     }
                                 }
-
                             }
                             searchCombobox.setSelectedIndex(selectIndex);
                             // show((LazyPlugin<?>) selector.getModel().getElementAt(selectIndex));
                         }
                     }
                 };
-
             }
         }.start();
-
     }
 
     public void setPlugin(final Class<? extends PluginForHost> class1) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (searchCombobox.getModel().getSize() > 0) {
@@ -240,7 +215,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                                 break;
                             }
                         }
-
                     }
                     searchCombobox.setSelectedIndex(selectIndex);
                     // show((LazyPlugin<?>) selector.getModel().getElementAt(selectIndex));
@@ -252,37 +226,27 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     private void fill() {
-
         searchCombobox.setList(fillModel());
-
     }
 
     public List<LazyPlugin<?>> fillModel() {
-
         ArrayList<LazyPlugin<?>> lst = new ArrayList<LazyPlugin<?>>();
-
         for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
-            if (plg.isHasConfig()) {
-
+            if (plg.isHasConfig() || plg.isPremium()) {
                 lst.add(plg);
-
             }
         }
         for (LazyCrawlerPlugin plg : CrawlerPluginController.getInstance().list()) {
             if (plg.isHasConfig()) {
-
                 lst.add(plg);
-
             }
         }
         Collections.sort(lst, new Comparator<LazyPlugin<?>>() {
-
             @Override
             public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
                 return o1.getDisplayName().compareToIgnoreCase(o2.getDisplayName());
             }
         });
-
         return lst;
     }
 
@@ -302,11 +266,13 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
     }
 
-    private LazyPlugin<?> currentItem = null;
+    private LazyPlugin<?>         currentItem = null;
+    private JScrollPane           sp;
+    protected PluginConfigPanelNG newCP;
+    private Account               scrollToAccount;
 
     private void show(final LazyPlugin<?> selectedItem) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 final long start = System.currentTimeMillis();
@@ -315,14 +281,34 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     configPanel.setHidden();
                 }
                 currentItem = selectedItem;
-
-                PluginConfigPanelNG newCP;
                 try {
                     JDGui.getInstance().setWaiting(true);
                     Plugin protoType = selectedItem.getPrototype(null);
-                    newCP = protoType.createConfigPanel();
+                    newCP = protoType.getConfigPanel();
+                    if (newCP == null) {
+                        if (selectedItem instanceof LazyHostPlugin) {
+                            if (!((LazyHostPlugin) selectedItem).isHasConfig()) {
+                                if (((LazyHostPlugin) selectedItem).isPremium()) {
+                                    newCP = new PluginConfigPanelNG() {
+                                        @Override
+                                        public void updateContents() {
+                                        }
 
+                                        @Override
+                                        public void save() {
+                                        }
+
+                                        @Override
+                                        public void reset() {
+                                        }
+                                    };
+                                }
+                            }
+                        }
+                    }
+                    sp = null;
                     if (newCP != null) {
+                        newCP.initLayout(protoType);
                         configPanel = scrollerWrapper(newCP);
                     } else {
                         configPanel = PluginConfigPanel.create(selectedItem);
@@ -330,15 +316,20 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     if (configPanel != null) {
                         configPanel.setShown();
                         card.add(configPanel);
-
                         if (selectedItem != null) {
-
                             if (selectedItem instanceof LazyHostPlugin) {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
-                                header.setIcon(DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon());
+                                // IconIO.
+                                Icon fav = DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon();
+                                header.setIcon(fav);
                             } else {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
-                                header.setIcon(decryterIcon);
+                                Icon fav = DomainInfo.getInstance(((LazyCrawlerPlugin) selectedItem).getDisplayName()).getFavIcon();
+                                if (fav == null) {
+                                    header.setIcon(decryterIcon);
+                                } else {
+                                    header.setIcon(fav);
+                                }
                             }
                             header.setVisible(true);
                         } else {
@@ -353,10 +344,10 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 revalidate();
                 System.out.println("Finished 1: " + (System.currentTimeMillis() - start));
                 SwingUtilities.invokeLater(new Runnable() {
-
                     @Override
                     public void run() {
                         System.out.println("Finished 2: " + (System.currentTimeMillis() - start));
+                        scrollToAccount(null);
                     }
                 });
             }
@@ -366,17 +357,14 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     public class Scroll extends JPanel implements Scrollable {
         public Scroll() {
             setOpaque(false);
-
         }
 
         @Override
         public Dimension getPreferredSize() {
-
             return super.getPreferredSize();
         }
 
         public Dimension getPreferredScrollableViewportSize() {
-
             return getPreferredSize();
         }
 
@@ -385,18 +373,15 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
 
         public int getScrollableUnitIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
-
             return Math.max(visibleRect.height / 10, 1);
         }
 
         public boolean getScrollableTracksViewportWidth() {
             Container p = getParent();
-
             if (p.getSize().width < getMinimumSize().width) {
                 // enable horizontal scrolling if the viewport size is less than the minimum panel size
                 return false;
             }
-
             return true;
         }
 
@@ -409,7 +394,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         Scroll ret = new Scroll();
         ret.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         ret.add(createConfigPanel);
-        JScrollPane sp;
         sp = new JScrollPane(ret);
         // sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sp.getVerticalScrollBar().setUnitIncrement(24);
@@ -417,7 +401,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         sp.setOpaque(false);
         sp.getViewport().setOpaque(false);
         sp.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
-
         SwitchPanel wrapper = new SwitchPanel() {
             {
                 setOpaque(false);
@@ -427,7 +410,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             @Override
             protected void onShow() {
                 createConfigPanel.setShown();
-
             }
 
             @Override
@@ -448,7 +430,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             card.removeAll();
         }
         currentItem = null;
-
     }
 
     public void setShown() {
@@ -457,4 +438,19 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
     }
 
+    public void scrollToAccount(Account account) {
+        if (account == null) {
+            account = scrollToAccount;
+        }
+        if (sp == null || newCP == null || account == null) {
+            scrollToAccount = account;
+            return;
+        }
+        Rectangle bounds = newCP.getAccountRectangle(account);
+        if (bounds == null) {
+            Dimension pref = newCP.getPreferredSize();
+            bounds = new Rectangle(0, pref.height - 3, pref.width, 3);
+        }
+        newCP.scrollRectToVisible(bounds);
+    }
 }

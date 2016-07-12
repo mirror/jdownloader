@@ -13,24 +13,13 @@ import java.util.LinkedList;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountCheckerEventListener;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.nutils.Formatter;
-import jd.plugins.AccountInfo;
-
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
-import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
@@ -44,36 +33,41 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.components.ColumnButton;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
+import jd.nutils.Formatter;
+import jd.plugins.AccountInfo;
+
 public class AccountListTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener, AccountControllerListener {
-
-    private static final long                serialVersionUID = 3120481189794897020L;
-
-    private DelayedRunnable                  delayedFill;
-
-    private volatile boolean                 checkRunning     = false;
-
-    private DelayedRunnable                  delayedUpdate;
-
-    private ExtComponentColumn<AccountEntry> details;
-
-    private LinkedList<AccountEntry>         accounts;
-
-    private AccountTooltipOwner              owner;
+    private static final long        serialVersionUID = 3120481189794897020L;
+    private DelayedRunnable          delayedFill;
+    private volatile boolean         checkRunning     = false;
+    private DelayedRunnable          delayedUpdate;
+    private LinkedList<AccountEntry> accounts;
+    private AccountTooltipOwner      owner;
 
     public AccountListTableModel(AccountTooltip accountTooltip, AccountTooltipOwner owner) {
         super("PremiumAccountfilteredTableModel3");
         this.owner = owner;
         ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
         delayedFill = new DelayedRunnable(scheduler, 250l) {
-
             @Override
             public String getID() {
                 return "PremiumAccountFilteredTableFill";
@@ -83,10 +77,8 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             public void delayedrun() {
                 _refill();
             }
-
         };
         delayedUpdate = new DelayedRunnable(scheduler, 250l) {
-
             @Override
             public String getID() {
                 return "PremiumAccountFilteredTableUpdate";
@@ -96,7 +88,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             public void delayedrun() {
                 _update();
             }
-
         };
         AccountController.getInstance().getEventSender().addListener(this, true);
         AccountChecker.getInstance().getEventSender().addListener(AccountListTableModel.this, true);
@@ -104,11 +95,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             onCheckStarted();
         }
         super.initModel();
-
     }
 
     protected void initModel() {
-
     }
 
     public void fill() {
@@ -119,13 +108,12 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
     protected void initColumns() {
         if (owner != null && owner instanceof ServicePanel) {
             this.addColumn(new ExtCheckColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_enabled()) {
-
                 private static final long serialVersionUID = 1515656228974789237L;
 
                 public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
                     final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-                        private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
+                        private final Icon ok = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
+
                         {
                             AccountListTable.setHeaderRendererColors(this);
                         }
@@ -140,9 +128,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                             setText(null);
                             return this;
                         }
-
                     };
-
                     return ret;
                 }
 
@@ -174,7 +160,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             });
         }
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_hoster()) {
-
             private static final long serialVersionUID = -3693931358975303164L;
 
             {
@@ -232,12 +217,10 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             public String getStringValue(AccountEntry value) {
                 return value.getAccount().getHosterByPlugin();
             }
-
         });
-
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_status()) {
-
             private static final long serialVersionUID = -3693931358975303164L;
+
             {
                 replaceSorter(this);
             }
@@ -269,7 +252,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 case EXPIRED:
                     return expired;
                 case INVALID:
-
                     return error;
                 case PLUGIN_ERROR:
                     return error;
@@ -291,7 +273,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             // protected String getTooltipText(AccountEntry obj) {
             // return obj.getAccount().getHoster();
             // }
-
             @Override
             public String getStringValue(AccountEntry value) {
                 if (value.getAccount().getError() == null) {
@@ -318,20 +299,17 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 case EXPIRED:
                     return _GUI.T.PremiumAccountTableModel_getStringValue_status_expired();
                 case INVALID:
-
                     return _GUI.T.PremiumAccountTableModel_getStringValue_status_invalid();
                 case PLUGIN_ERROR:
                     return _GUI.T.PremiumAccountTableModel_getStringValue_status_plugin_error();
                 default:
                     return _GUI.T.PremiumAccountTableModel_getStringValue_status_unknown_error();
                 }
-
             }
-
         });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_user()) {
-
             private static final long serialVersionUID = -8070328156326837828L;
+
             {
                 replaceSorter(this);
             }
@@ -347,7 +325,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
 
             protected Color getDefaultForeground() {
-
                 return LAFOptions.getInstance().getColorForTooltipForeground();
             }
 
@@ -376,7 +353,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 return GUIUtils.getAccountName(value.getAccount().getUser());
             }
         });
-
         this.addColumn(new ExtDateColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
 
@@ -395,7 +371,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
 
             protected Color getDefaultForeground() {
-
                 return LAFOptions.getInstance().getColorForTooltipForeground();
             }
 
@@ -403,7 +378,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             public void resetRenderer() {
                 super.resetRenderer();
                 rendererField.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
-
             }
 
             @Override
@@ -438,13 +412,11 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 }
             }
         });
-
         this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_trafficleft()) {
             private static final long serialVersionUID = -8376056840172682617L;
 
             {
                 setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
                     private int compareLong(long x, long y) {
                         return (x < y) ? -1 : ((x == y) ? 0 : 1);
                     }
@@ -472,7 +444,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                         }
                         return compareEnabled(b1, b2);
                     }
-
                 });
             }
 
@@ -487,7 +458,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
 
             protected Color getDefaultForeground() {
-
                 return null;
             }
 
@@ -499,7 +469,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                     return true;
                 }
                 return false;
-
             }
 
             @Override
@@ -518,7 +487,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                         return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
                     } else {
                         return Formatter.formatReadable(ai.getTrafficLeft()) + "/" + Formatter.formatReadable(ai.getTrafficMax());
-
                     }
                 }
             }
@@ -556,55 +524,70 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
         });
         if (owner != null && owner instanceof ServicePanel) {
-            this.addColumn(details = new ExtComponentColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_info()) {
-                private JButton      button;
-                private MigPanel     panel;
-                private JButton      rbutton;
-                private MigPanel     rpanel;
+            this.addColumn(new ExtComponentColumn<AccountEntry>(_GUI.T.lit_settings()) {
+                private ColumnButton button;
+                private ColumnButton rbutton;
                 private AccountEntry editing;
 
                 {
-                    button = new JButton(_GUI.T.premiumaccounttablemodel_column_info_button());
-
-                    panel = new RendererMigPanel("ins 2", "[]", "[16!]");
-                    panel.add(button);
-                    button.setOpaque(false);
-
-                    rbutton = new JButton(_GUI.T.premiumaccounttablemodel_column_info_button());
-
+                    button = new ColumnButton(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+                    rbutton = new ColumnButton(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
                     rbutton.addActionListener(new ActionListener() {
-
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            if (editing != null) {
-                                editing.showAccountInfoDialog();
-                            }
+                            JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                            ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
+                            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(editing.getAccount().getPlugin().getClass());
+                            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).scrollToAccount(editing.getAccount());
                         }
                     });
+                }
 
-                    rpanel = new MigPanel("ins 2", "[]", "[18!]");
-                    rpanel.add(rbutton);
-                    rbutton.setOpaque(false);
+                protected Color getDefaultForeground() {
+                    return LAFOptions.getInstance().getColorForTooltipForeground();
+                }
+
+                public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+                    final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+                        @Override
+                        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                            setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+                            setHorizontalAlignment(CENTER);
+                            setText(null);
+                            return this;
+                        }
+                    };
+                    {
+                        AccountListTable.setHeaderRendererColors(ret);
+                    }
+                    return ret;
                 }
 
                 @Override
-                public int getMaxWidth() {
-                    return panel.getPreferredSize().width;
+                public boolean isResizable() {
+                    return true;
+                }
+
+                @Override
+                public boolean isAutoWidthEnabled() {
+                    return true;
+                }
+
+                @Override
+                protected boolean isDefaultResizable() {
+                    return true;
                 }
 
                 @Override
                 public boolean isEnabled(AccountEntry obj) {
-                    return obj.getAccount().isEnabled() && obj.isDetailsDialogSupported();
+                    return true;
                 }
 
                 @Override
-                public int getDefaultWidth() {
-                    return panel.getPreferredSize().width;
-                }
-
-                @Override
-                public int getMinWidth() {
-                    return panel.getPreferredSize().width;
+                public boolean isHidable() {
+                    return false;
                 }
 
                 @Override
@@ -619,39 +602,30 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
                 @Override
                 protected JComponent getInternalEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
-                    return rpanel;
+                    return rbutton;
                 }
 
                 @Override
                 protected JComponent getInternalRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-
-                    return panel;
+                    return button;
                 }
 
                 @Override
                 public void configureEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
                     editing = value;
-                    // rbutton.setEnabled(isEnabled(value));
                 }
 
                 @Override
                 public void configureRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-                    // button.setEnabled(isEnabled(value));
-                    ;
                 }
 
                 @Override
                 public void resetEditor() {
-                    rpanel.setBackground(null);
-                    rpanel.setOpaque(false);
                 }
 
                 @Override
                 public void resetRenderer() {
-                    panel.setBackground(null);
-                    panel.setOpaque(false);
                 }
-
             });
         }
     }
@@ -660,7 +634,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         if (column != null) {
             final ExtDefaultRowSorter<AccountEntry> oldSorter = column.getRowSorter();
             column.setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-
                 public int compare(boolean x, boolean y) {
                     return (x == y) ? 0 : (x ? -1 : 1);
                 }
@@ -678,7 +651,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                     }
                     return compare(b1, b2);
                 }
-
             });
         }
     }
@@ -693,31 +665,16 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
     }
 
     protected void _update() {
-
         new EDTRunner() {
             @Override
             protected void runInEDT() {
                 AccountListTableModel.this.getTable().repaint();
             }
         };
-
     }
 
     protected void _refill() {
-
         final java.util.List<AccountEntry> newtableData = new ArrayList<AccountEntry>(accounts);
-        boolean hasDetailsButton = false;
-
-        for (AccountEntry acc : accounts) {
-
-            if (acc.isDetailsDialogSupported() && acc.getAccount().isValid()) {
-                hasDetailsButton = true;
-
-            }
-        }
-        if (details != null) {
-            setColumnVisible(details, hasDetailsButton);
-        }
         _fireTableStructureChanged(newtableData, true);
     }
 

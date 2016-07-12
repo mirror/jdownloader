@@ -10,7 +10,6 @@ import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 
 @Defaults(lngs = { "en" })
 public interface GuiTranslation extends TranslateInterface {
-
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String action_aboutaction();
 
@@ -226,7 +225,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Watch As you download" })
     // String gui_table_contextmenu_watch_as_you_download();
-
     @Default(lngs = { "en" }, values = { "Plugin error" })
     String gui_treetable_error_plugin();
 
@@ -440,7 +438,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Use for Proxy Rotation" })
     // String gui_column_proxytype_rotation_check();
-
     @Default(lngs = { "en" }, values = { "Direct Gateway" })
     String gui_column_proxytype_direct();
 
@@ -462,7 +459,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Proxy Rotation requires at least one active entry." })
     // String proxytablemodel_atleast_one_rotate_required();
-
     @Default(lngs = { "en" }, values = { "Buy a Premium Account" })
     String buyaction_title();
 
@@ -1180,7 +1176,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     // @Default(lngs = { "en" }, values = { "Enter Filename Filter Expression..." })
     // String SearchField_SearchField_helptext();
-
     @Default(lngs = { "en" }, values = { "Start Downloads" })
     String ConfirmAction_ConfirmAction_context_add_and_start();
 
@@ -1202,7 +1197,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Watch As You Download" })
     // String WatchAsYouDownload_WatchAsYouDownloadAction_();
-
     @Default(lngs = { "en" }, values = { "Enable" })
     String EnabledAction_EnabledAction_enable();
 
@@ -2454,7 +2448,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Default Connection" })
     // String ProxyConfig_ProxyConfig_defaultproxy_();
-
     @Default(lngs = { "en" }, values = { "Found Proxies: %s1" })
     String ProxyAutoAction_run_added_proxies_(int size);
 
@@ -2521,7 +2514,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Settings" })
     // String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_settings_();
-
     @Default(lngs = { "en" }, values = { "Email" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_();
 
@@ -2554,15 +2546,12 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Disconnect" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_disconnect_();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Auto connect" })
     // String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Auto connect on JDownloader start" })
     // String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_tt();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Enable direct connections" })
     // String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_directconnect_();
@@ -2570,7 +2559,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Direct connections increase speed/reduce latency" })
     // String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_directconnect_tt();
-
     @Default(lngs = { "en" }, values = { "Save Changes" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_reconnect_();
 
@@ -3000,7 +2988,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Blacklistcheck" })
     // String NinekwService_createPanel_blacklistcheck();
-
     @Default(lngs = { "en" }, values = { "Whitelist" })
     String NinekwService_createPanel_whitelist();
 
@@ -3010,7 +2997,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Whitelistcheck" })
     // String NinekwService_createPanel_whitelistcheck();
-
     @Default(lngs = { "en" }, values = { "Blacklist (Prio)" })
     String NinekwService_createPanel_blacklistprio();
 
@@ -3020,7 +3006,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Blacklistcheck (Prio)" })
     // String NinekwService_createPanel_blacklistpriocheck();
-
     @Default(lngs = { "en" }, values = { "Whitelist (Prio)" })
     String NinekwService_createPanel_whitelistprio();
 
@@ -3030,7 +3015,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Whitelistcheck (Prio)" })
     // String NinekwService_createPanel_whitelistpriocheck();
-
     @Default(lngs = { "en" }, values = { "Blacklist (Timeout)" })
     String NinekwService_createPanel_blacklisttimeout();
 
@@ -3040,7 +3024,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Blacklistcheck (Timeout)" })
     // String NinekwService_createPanel_blacklisttimeoutcheck();
-
     @Default(lngs = { "en" }, values = { "Whitelist (Timeout)" })
     String NinekwService_createPanel_whitelisttimeout();
 
@@ -3050,7 +3033,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Whitelistcheck (Timeout)" })
     // String NinekwService_createPanel_whitelisttimeoutcheck();
-
     @Default(lngs = { "en" }, values = { "Feedback" })
     String NinekwService_createPanel_feedback();
 
@@ -3203,7 +3185,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "ms" })
     String NinekwService_createPanel_ms();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Useragent" })
     // String NinekwService_createPanel_useragent();
@@ -3212,7 +3193,6 @@ public interface GuiTranslation extends TranslateInterface {
     // @Default(lngs = { "en" }, values = {
     // "A user agent may have an effect for captchas of Recaptcha and Solvemedia have to get any easier images." })
     // String NinekwService_createPanel_useragent_description();
-
     @Default(lngs = { "en" }, values = { "Records on activation all processes with captchas and 9kw.eu in a temporary log." })
     String NinekwService_createPanel_debug_description();
 
@@ -3974,27 +3954,21 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Ok, but what now?" })
     String FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Step %s1:" })
     // String lit_step_x(int i);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg static build for linux\"" })
     // String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_linux();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg binary for mac\"" })
     // String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_mac();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg.exe build for windows\"" })
     // String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows2();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg build for %s1\"" })
     // String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_others(String osString);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Install it" })
     // String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_install();
@@ -4002,7 +3976,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Tell JDownloader the Installation Location" })
     // String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_path();
-
     @Default(lngs = { "en" }, values = { "What's the matter?" })
     String FFMpegInstallTypeChooserDialog_layoutDialogContent_problem();
 
@@ -4011,11 +3984,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "<html>If you want JDownloader to download and install the required official (http://phantomjs.org) PhantomJS Package, please click [Install PhantomJS now].</html>" })
     String Phantom_JS_Explain_download();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Searching for the FFmpeg™ Binary" })
     // String FFMpegInstallTypeChooserDialog_run_searching_();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Please wait..." })
     // String lit_please_wait_dotdotdot();
@@ -4023,14 +3994,12 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Please choose the correct path to the FFmpeg™ binary..." })
     // String FFMpegInstallTypeChooserDialog_layoutDialogContent_help_();
-
     @Default(lngs = { "en" }, values = { "FFmpeg™ Setup" })
     String FFMpegInstallProgress_getMessage();
 
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "FFmpeg™ is missing" })
     // String YoutubeDash_handleFree_ffmpegmissing();
-
     @Default(lngs = { "en" }, values = { "Converting/Demuxing..." })
     String FFMpegProgress_getMessage_merging();
 
@@ -4090,16 +4059,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Information overwrites packagizer rules" })
     String AddLinksDialog_getDefaultButtonPanel_overwrite_packagizer();
-
     //
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "New Survey available!" })
     // String osr_label();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Open Source Survey" })
     // String osr_dialog_title();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = {
     // "<html><b>JDownloader</b> has partnered with the <b>Open Source Research Group at Friedrich-Alexander University
@@ -4112,7 +4078,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Start Survey" })
     // String osr_start();
-
     @Default(lngs = { "en" }, values = { "Copy Information" })
     String CopyGenericContextAction();
 
@@ -4212,7 +4177,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Group Variants by" })
     // String YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping();
-
     @Default(lngs = { "en" }, values = { "Proxy" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_proxy_header();
 
@@ -4355,7 +4319,6 @@ public interface GuiTranslation extends TranslateInterface {
     // @Default(lngs = { "en" }, values = {
     // "Accurate updated publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[yyyy/MM/dd hh:mm]*" })
     // String YoutubeHelper_getDescription_updatedate_accurate();
-
     @Default(lngs = { "en" }, values = { "Playlist Number. *videonumber* or e.g. *videonumber[000]*" })
     String YoutubeHelper_getDescription_videonumber();
 
@@ -4874,15 +4837,12 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Best Video Resolution available (e.g. 360p, if there is no better video quality)" })
     String YoutubeHelper_getDescription_resolution_best();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Direct Feedback: " })
     // String vote_label();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Direct Feedback" })
     // String VoteFinderWindow_VoteFinderWindow_title_();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Press [CTRL] & Click here if you like:" })
     // String VoteFinderWindow_VoteFinderWindow_msg_positive();
@@ -4890,17 +4850,14 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Press [CTRL] & Click here if you do not like:" })
     // String VoteFinderWindow_VoteFinderWindow_msg_negative();
-
     @Default(lngs = { "en" }, values = { "<html>Please click on the failed Download<br>to report a Problem.</html>" })
     String DownloadBugFinderWindow_default();
 
     @Default(lngs = { "en" }, values = { "Click here to report a problem with the Download." })
     String DownloadsTable_layoutDirectFeedback_direct_feedback_line1_negative();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "<html>Click here if the <br>'%s1'-Button<br> does NOT work as intended.</html>" })
     // String VoteFinderWindow_VoteFinderWindow_action_negative(String name);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "<html>Click here if there is a problem with this option:<br>\"<b>%s1</b>\"</html>" })
     // String AbstractConfigPanel_layoutDirectFeedback_vote_negative(String text);
@@ -4908,7 +4865,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Thank you for your Feedback." })
     // String VoteFinderWindow_runInEDT_thankyou_();
-
     @Default(lngs = { "en" }, values = { "More Details required!" })
     String StatsManager_run_requestMessage_title();
 
@@ -4933,13 +4889,11 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Free OBOOM.com Pro Account" })
     // String special_deal_oboom();
-
     @Default(lngs = { "en" }, values = { "Autoproxy(PAC) Script address" })
     String gui_column_proxytype_pac_tt();
 
     @Default(lngs = { "en" }, values = { "Autoproxy(PAC)" })
     String gui_column_proxytype_pac();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Status" })
     // String gui_column_status();
@@ -4947,7 +4901,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Details" })
     // String lit_details();
-
     @Default(lngs = { "en" }, values = { "Domain Filter for %s1" })
     String proxyDetailsDialog_filter_title(String name);
 
@@ -4962,11 +4915,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enter a list (Newline seperated) of domains to use this proxy either only for these domains (whitelist), or never for these domains (blacklist)" })
     String proxyDetailsDialog_white_blacklist_explain();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Domain Problems" })
     // String proxyDetailsDialog_white_bans();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = {
     // "If this proxy does not work with certain domains, JDownloader will ban the proxy for a few minutes. If the proxy is banned right
@@ -4977,7 +4928,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { " - %s1 banned for %s2 until %s3" })
     // String proxyDetailsDialog_ban(String proxy, String domain, String string2);
-
     @Default(lngs = { "en" }, values = { "Auto Proxy.pac" })
     String jd_gui_swing_dialog_ProxyDialog_pac();
 
@@ -4986,31 +4936,24 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Proxy.pac url" })
     String jd_gui_swing_dialog_ProxyDialog_pac_url();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "%s1 is disabled until %s2" })
     // String proxyDetailsDialog_ban_time_global_proxySpecific(String proxy, String string);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "%s1 is disabled forever" })
     // String proxyDetailsDialog_ban_endless_global_proxySpecific(String proxy);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "%s1 is disabled for %s2 until %s3" })
     // String proxyDetailsDialog_ban_time_domain_proxySpecific(String proxy, String domain, String string);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "%s1 is disabled for %s2 forever" })
     // String proxyDetailsDialog_ban_endless_domain_proxySpecific(String proxy, String domain);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Proxy is disabled until %s1" })
     // String proxyDetailsDialog_ban_time_global(String string);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Proxy is disabled forever" })
     // String proxyDetailsDialog_ban_endless_global();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Proxy is disabled for %s1 until %s2" })
     // String proxyDetailsDialog_ban_time_domain(String domain, String string);
@@ -5018,19 +4961,15 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Proxy is disabled for %s1 forever" })
     // String proxyDetailsDialog_ban_endless_domain(String domain);
-
     @Default(lngs = { "en" }, values = { "There is no known problem right now." })
     String proxyDetailsDialog_ban_noban();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Use for Account Connections (Premium Downloads)" })
     // String gui_column_use_premium();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = {
     // "To download through Premium Accounts, JDownloader requires at least one active Gateway or Proxy!" })
     // String proxytablemodel_atleastone_premium();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "To download, JDownloader requires at least one active Gateway or Proxy!" })
     // String proxytablemodel_atleastone_free();
@@ -5038,7 +4977,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Use for Free Connections (Download without an Account)" })
     // String gui_column_use_free();
-
     @Default(lngs = { "en" }, values = { "Problems" })
     String lit_problems();
 
@@ -5051,7 +4989,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "edit" })
     // String lit_edit();
-
     @Default(lngs = { "en" }, values = { "edit (B%s1)" })
     String proxytable_edit_btn_blacklist(int string);
 
@@ -6175,27 +6112,21 @@ public interface GuiTranslation extends TranslateInterface {
     String ClickCaptchaChallenge_click_dashed_circle();
 
     @Default(lngs = { "en" }, values = { "antiDDoS Provider 'Clouldflare' requires Captcha" })
-
     String cloudFlare_requires_captcha_context();
 
     @Default(lngs = { "en" }, values = { "Account Login: %s1" })
-
     String Captcha_context_account_login(String host);
 
     @Default(lngs = { "en" }, values = { "This server is under maintenance" })
-
     String lit_this_server_is_under_maintainance();
 
     @Default(lngs = { "en" }, values = { "Waiting till new downloads can be started" })
-
     String plugins_xfilesharingpro_waiting_until_new_downloads_can_be_started();
 
     @Default(lngs = { "en" }, values = { "Max downloadable filesize for free users: %s1" })
-
     String plugins_xfilesharingpro_max_downloadable_Filesize_for_free_user(String filesizelimit);
 
     @Default(lngs = { "en" }, values = { "Only downloadable with premium or registered account" })
-
     String plugins_xfilesharingpro_premium_or_registered_required();
 
     @Default(lngs = { "en" }, values = { "Account is OK." })
@@ -6229,7 +6160,6 @@ public interface GuiTranslation extends TranslateInterface {
     String HosterChooserTableModel_column_domain();
 
     @Default(lngs = { "en" }, values = { "Typ/Features" })
-
     String HosterChooserTableModel_column_features();
 
     @Default(lngs = { "en" }, values = { "2. Enter your %s1 Login Information" })
@@ -6239,18 +6169,15 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_menu_action_premium_buy_name2(String tld);
 
     @Default(lngs = { "en" }, values = { "The hoster you are looking for is not supported yet..." })
-
     String AddAccountDialog_empty_table();
 
     @Default(lngs = { "en" }, values = { "360° VR Video" })
-
     String YoutubeBasicVariant_getLabel_video360();
 
     @Default(lngs = { "en" }, values = { "360° 3D VR Video" })
     String YoutubeBasicVariant_getLabel_video360_3D();
 
     @Default(lngs = { "en" }, values = { "Name" })
-
     String YOUTUBE_CONFIG_PANEL_TABLE_NAME();
 
     @Default(lngs = { "en" }, values = { "Filetype" })
@@ -6269,7 +6196,6 @@ public interface GuiTranslation extends TranslateInterface {
     String YOUTUBE_CONFIG_PANEL_TABLE_FPS();
 
     @Default(lngs = { "en" }, values = { "Video Codec" })
-
     String YOUTUBE_CONFIG_PANEL_TABLE_VIDEO_CODEC();
 
     @Default(lngs = { "en" }, values = { "Audio Codec" })
@@ -6288,14 +6214,12 @@ public interface GuiTranslation extends TranslateInterface {
     String lit_desciption();
 
     @Default(lngs = { "en" }, values = { "Image/Video Resolution" })
-
     String YOUTUBE_CONFIG_PANEL_TABLE_RESOLUTION();
 
     @Default(lngs = { "en" }, values = { "Please choose which media file combination your are interested in.\r\nExample: If JDownloader should not even offer you any 3gp videos or subtitles, simply disable these types below." })
     String YoutubeDashConfigPanel_allowedtypoes_quick();
 
     @Default(lngs = { "en" }, values = { "Let's get into detail. This table shows you all media file options remaining from your selection above. If there is anything left you do not want, simple disable it by clicking the checkbox.\r\nMerge ID:\r\nYou will not see all of these variants in the linkgrabber because several variants will be encapsulated according to their Merge ID. For each unique Merge ID, there will be one entry, that contains the best variant available." })
-
     String YoutubeDashConfigPanel_allowedtypoes_table();
 
     @Default(lngs = { "en" }, values = { "Enable" })
@@ -6308,7 +6232,6 @@ public interface GuiTranslation extends TranslateInterface {
     String youtube_empty_table();
 
     @Default(lngs = { "en" }, values = { "Adds 'Sperical' if this is a sperical 360° Video" })
-
     String YoutubeHelper_getDescription_spherical();
 
     @Default(lngs = { "en" }, values = { "Merge ID" })
@@ -6330,7 +6253,6 @@ public interface GuiTranslation extends TranslateInterface {
     String Youtube_bestcollection(Projection p, VariantGroup g);
 
     @Default(lngs = { "en" }, values = { "Best %s1" })
-
     String Youtube_bestcollection_2(LabelInterface g);
 
     @Default(lngs = { "en" }, values = { "Collection Size" })
@@ -6343,36 +6265,30 @@ public interface GuiTranslation extends TranslateInterface {
     String lit_more_point_point_point();
 
     @Default(lngs = { "en" }, values = { "Select" })
-
     String lit_choose();
 
     @Default(lngs = { "en" }, values = { "Choose a Variant for %s1" })
-
     String youtube_variant_selection_dialog_title(String title);
 
     @Default(lngs = { "en" }, values = { "Choose a Variant and click select or double-click a variant to choose it quickly." })
-
     String youtube_coose_variant_help();
 
     @Default(lngs = { "en" }, values = { "Change Variant..." })
     String youtube_choose_variant();
 
     @Default(lngs = { "en" }, values = { "Loading video to scan Variants..." })
-
     String youtube_scan_variants();
 
     @Default(lngs = { "en" }, values = { "Add additional Variants (new Link)..." })
     String youtube_add_variant();
 
     @Default(lngs = { "en" }, values = { "Add additional Variants for %s1" })
-
     String youtube_variant_selection_dialog_title_additional(String title);
 
     @Default(lngs = { "en" }, values = { "Select at least one new variant. JDownloader will create a new link for every selected entry." })
     String youtube_add_variant_help();
 
     @Default(lngs = { "en" }, values = { "Choose a Variant for %s2 %s1 Link/s" })
-
     String youtube_variant_selection_dialog_title2(String string, int count);
 
     @Default(lngs = { "en" }, values = { "%s1 Variant" })
@@ -6385,59 +6301,45 @@ public interface GuiTranslation extends TranslateInterface {
     String youtube_mass_change_or_add_choose_alternative(String group, int matching, int linksCount);
 
     @Default(lngs = { "en" }, values = { "Please choose a new Variant" })
-
     String youtube_mass_change_or_add_choose_help();
 
     @Default(lngs = { "en" }, values = { "The choosen Variant is available for all %s1 Links (%s2)" })
-
     String youtube_mass_change_or_add_choose_ok(String group, int count);
 
     @Default(lngs = { "en" }, values = { "Links" })
-
     String youtube_matching_links();
 
     @Default(lngs = { "en" }, values = { "Add additional Variants" })
-
     String youtube_variant_add_variant_dialog_title();
 
     @Default(lngs = { "en" }, values = { "Auto-choose an alternative if a variant is not available for all links" })
-
     String youtube_variant_add_variant_dialog_help();
 
     @Default(lngs = { "en" }, values = { "Choose at least one Variant. JDownloader then will try to add a new Variant link for each selected video." })
-
     String youtube_add_variants_help(int linksCount);
 
     @Default(lngs = { "en" }, values = { "Playlist ID e.g. PLD3J3Pup7M00BeAyuplpWoGRFpT3enHPq" })
-
     String YoutubeHelper_getDescription_playlist_id();
 
     @Default(lngs = { "en" }, values = { "Playlist Name e.g. Canadian Animals" })
-
     String YoutubeHelper_getDescription_playlist_name();
 
     @Default(lngs = { "en" }, values = { "Audio Stream name. e.g. DASH_AUDIO_128K_AAC" })
-
     String YoutubeHelper_getDescription_itag_audio_name();
 
     @Default(lngs = { "en" }, values = { "Video Stream name. e.g. DASH_WEBM_VIDEO_240P_VP9" })
-
     String YoutubeHelper_getDescription_itag_video_name();
 
     @Default(lngs = { "en" }, values = { "Audio Stream id. e.g. 140" })
-
     String YoutubeHelper_getDescription_itag_audio_id();
 
     @Default(lngs = { "en" }, values = { "Video Stream id. e.g. 242" })
-
     String YoutubeHelper_getDescription_itag_video_id();
 
     @Default(lngs = { "en" }, values = { "Edit Dropdown column entries" })
-
     String youtube_edit_variant_dropdown_list();
 
     @Default(lngs = { "en" }, values = { "'%s1' Variants dropdown entries" })
-
     String youtube_choose_quick_selection_dropdown_table(String string);
 
     @Default(lngs = { "en" }, values = { "Choose all Variant that should be in the linkgrabber variants column dropdown list for the selected collections" })
@@ -6447,7 +6349,6 @@ public interface GuiTranslation extends TranslateInterface {
     String RECAPTCHA_2_Dialog_help_tile_selection(String string);
 
     @Default(lngs = { "en" }, values = { "Ignore greyed out pieces. Empty selections are valid as well." })
-
     String RECAPTCHA_2_Dialog_help_dynamic();
 
     @Default(lngs = { "en" }, values = { "Continue empty" })
@@ -6469,39 +6370,30 @@ public interface GuiTranslation extends TranslateInterface {
     String phantom_js_installation_dialog_title();
 
     @Default(lngs = { "en" }, values = { "Install PhantomJS now" })
-
     String phantom_js_install_now();
 
     @Default(lngs = { "en" }, values = { "automate Download- and Linkcrawling tasks" })
-
     String phantomjs_usage();
 
     @Default(lngs = { "en" }, values = { "Installation" })
-
     String lit_installation();
 
     @Default(lngs = { "en" }, values = { "Please wait until JDownloader has downloaded and installed PhantomJS" })
-
     String phantomjs_installation_message();
 
     @Default(lngs = { "en" }, values = { "Download: %s2% %s1/s" })
-
     String phantom_downloading_status(String formatBytes, long progress);
 
     @Default(lngs = { "en" }, values = { "Installation ..." })
-
     String phantom_installation_status();
 
     @Default(lngs = { "en" }, values = { "PhantomJS Installation has been successful" })
-
     String phantomjs_installation_message_success();
 
     @Default(lngs = { "en" }, values = { "PhantomJS Installation failed.\r\nPlease contact the support." })
-
     String phantomjs_installation_message_failed();
 
     @Default(lngs = { "en" }, values = { "Improve Captcha Solving..." })
-
     String phantomjs_recaptcha_google_account_title();
 
     @Default(lngs = { "en" }, values = { "If you get many hard to solve image captchas, \r\nyou should think about adding 'google.com (recaptcha)' account at Settings->Accountmanager.\r\nAfterwards, you will probably get less and easier captcha images." })
@@ -6511,11 +6403,95 @@ public interface GuiTranslation extends TranslateInterface {
     String OAUTH_DIALOG_TITLE(String tld);
 
     @Default(lngs = { "en" }, values = { "Browser öffnen" })
-
     String lit_open_browser();
 
     @Default(lngs = { "en" }, values = { "Filename for Description files" })
-
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_description();
 
+    @Default(lngs = { "en" }, values = { "Add an account to get the best our of this plugin. By using a premium account, JDownloader is able to bypass all limitations  for this plugin (like speed limits, banned IPs,...)" })
+    String description_accountmanager_button();
+
+    @Default(lngs = { "en" }, values = { "Account Settings" })
+    String account_settings_header();
+
+    @Default(lngs = { "en" }, values = { "If there are account specific options for your premium accounts, or if there is any additional information that might interst you, you will find it here." })
+    String account_settings_description();
+
+    @Default(lngs = { "en" }, values = { "ID: %s1" })
+    String plugin_account_header(String user);
+
+    @Default(lngs = { "en" }, values = { "Download traffic" })
+    String lit_download_traffic();
+
+    @Default(lngs = { "en" }, values = { "Added" })
+    String lit_added();
+
+    @Default(lngs = { "en" }, values = { "Type" })
+    String lit_type();
+
+    @Default(lngs = { "en" }, values = { "Used Space" })
+    String lit_used_space();
+
+    @Default(lngs = { "en" }, values = { "Premium Points" })
+    String lit_premium_points();
+
+    @Default(lngs = { "en" }, values = { "Traffic Left" })
+    String lit_traffic_left();
+
+    @Default(lngs = { "en" }, values = { "Version %s1" })
+    String version(long version);
+
+    @Default(lngs = { "en" }, values = { "Never" })
+    String lit_never();
+
+    @Default(lngs = { "en" }, values = { "Unlimited" })
+    String lit_unlimited();
+
+    @Default(lngs = { "en" }, values = { "Instant download inputs left" })
+    String plugins_offcloudcom_linksleft();
+
+    @Default(lngs = { "en" }, values = { "Last deletion of the complete download history before" })
+    String plugins_offcloudcom_historydeleted();
+
+    @Default(lngs = { "en" }, values = { "Number of deleted entries" })
+    String plugins_offcloudcom_ACCOUNT_HISTORYDELETED_COUNT();
+
+    @Default(lngs = { "en" }, values = { "Usenet Settings" })
+    String lit_usenet_settings();
+
+    @Default(lngs = { "en" }, values = { "Supported Websites & Services" })
+    String multihoster_account_settings_header();
+
+    @Default(lngs = { "en" }, values = { "This is a Multihoster Account. You can use it to download from the following websites and services." })
+    String multihoster_account_settings_description();
+
+    @Default(lngs = { "en" }, values = { "Account type" })
+    String lit_account_type();
+
+    @Default(lngs = { "en" }, values = { "Package" })
+    String lit_package();
+
+    @Default(lngs = { "en" }, values = { "Run-time" })
+    String lit_runtime();
+
+    @Default(lngs = { "en" }, values = { "Expire date" })
+    String lit_expire_date();
+
+    @Default(lngs = { "en" }, values = { "Price" })
+    String lit_price();
+
+    @Default(lngs = { "en" }, values = { "Download" })
+    String lit_download();
+
+    @Default(lngs = { "en" }, values = { "Max. simultanous Downloads" })
+    String lit_max_simultanous_downloads();
+
+    @Default(lngs = { "en" }, values = { "Max. connections per Downloadlink" })
+    String lit_max_chunks_per_link();
+
+    @Default(lngs = { "en" }, values = { "Interrupted Downloads are resumable" })
+    String lit_interrupted_downloads_are_resumable();
+
+    @Default(lngs = { "en" }, values = { "Account(s) for %s1" })
+    String lit_your_accounts(String host);
 }

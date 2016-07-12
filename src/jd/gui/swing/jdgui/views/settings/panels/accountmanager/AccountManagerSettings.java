@@ -18,8 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -29,6 +27,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 
 public class AccountManagerSettings extends AbstractConfigPanel {
 
@@ -79,4 +79,5 @@ public class AccountManagerSettings extends AbstractConfigPanel {
     public void updateContents() {
 
     }
+
 }

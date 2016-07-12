@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.captcha.v2.solver.browser;
 
 import java.awt.Component;
@@ -94,22 +93,17 @@ import net.miginfocom.swing.MigLayout;
  * This Dialog is used to display a Inputdialog for the captchas
  */
 public class BrowserCaptchaDialog extends AbstractDialog<String> {
-
     private AbstractBrowserChallenge challenge;
 
     public BrowserCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, AbstractBrowserChallenge captchaChallenge) {
-
         super(flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), null, null, null);
-
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
         } else {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
         }
-
         this.hosterInfo = domainInfo;
         this.type = type;
-
         this.challenge = captchaChallenge;
         setPlugin(captchaChallenge.getPlugin());
     }
@@ -120,7 +114,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                 return FrameState.TO_FRONT_FOCUSED;
             }
         }
-
         FrameState ret = (FrameState) CFG_GUI.NEW_DIALOG_FRAME_STATE.getValue();
         if (ret == null) {
             ret = FrameState.TO_FRONT;
@@ -130,9 +123,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         case TO_BACK:
             JDGui.getInstance().flashTaskbar();
         }
-
         return ret;
-
     }
 
     @Override
@@ -154,11 +145,8 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     }
 
     private LocationStorage config;
-
     protected boolean       hideCaptchasForHost    = false;
-
     protected boolean       hideCaptchasForPackage = false;
-
     private boolean         hideAllCaptchas;
 
     public boolean isHideAllCaptchas() {
@@ -167,30 +155,20 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     private DomainInfo                                hosterInfo;
     protected AbstractConfigPanel                     iconPanel;
-
     protected Point                                   offset;
-
     private Plugin                                    plugin;
-
     protected boolean                                 stopDownloads    = false;
-
     private DialogType                                type;
-
     protected boolean                                 refresh;
-
     protected boolean                                 stopCrawling;
-
     protected boolean                                 stopShowingCrawlerCaptchas;
-
     protected final AtomicReference<BrowserReference> browserReference = new AtomicReference<BrowserReference>(null);
-
     private volatile String                           responseCode;
 
     private void createPopup() {
         final JPopupMenu popup = new JPopupMenu();
         JMenuItem mi;
         if (getType() == DialogType.HOSTER) {
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from(getHost()));
@@ -207,11 +185,8 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_disable_package(getPackageName()));
@@ -224,13 +199,9 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
-
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download());
                     setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_CLEAR, 16));
@@ -242,11 +213,8 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads());
@@ -259,13 +227,9 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
         } else {
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_cancel_linkgrabbing());
@@ -278,11 +242,8 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs());
@@ -295,17 +256,12 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
         }
-
         Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
-
         Dimension pref = popup.getPreferredSize();
         pref.height = popup.getComponentCount() * 24 + insets.top + insets.bottom;
-
         popup.setPreferredSize(pref);
         popup.show(cancelButton, +insets.left - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
     }
@@ -320,7 +276,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     @Override
     protected String createReturnValue() {
-
         return responseCode;
     }
 
@@ -349,17 +304,13 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             return ((PluginForDecrypt) plugin).getCrawlerStatusString();
         default:
             return null;
-
         }
     }
 
     @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
-
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
-
             // refresh button shouldn't be needed, since you f5 in browser, or in flash tool refresh/get a new image
-
             // @Override
             // public void addOKButton(JButton okButton) {
             // final ExtButton refreshBtn = new ExtButton(new AppAction() {
@@ -394,31 +345,23 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // super.addOKButton(okButton);
             //
             // }
-
             @Override
             public void addCancelButton(final JButton cancelButton) {
                 super.addCancelButton(cancelButton);
-
                 final JButton bt = new JButton(new AbstractIcon(IconKey.ICON_POPDOWNSMALL, -1)) {
-
                     public void setBounds(int x, int y, int width, int height) {
                         int delta = 5;
                         super.setBounds(x - delta, y, width + delta, height);
                     }
-
                 };
-
                 bt.addActionListener(new ActionListener() {
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         createPopup();
                     }
-
                 });
                 super.add(bt, "gapleft 0,width 8!");
             }
-
         };
         ret.setOpaque(false);
         ExtButton premium = new ExtButton(new AppAction() {
@@ -506,7 +449,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                 return null;
             }
             return ((PluginForHost) plugin).getDownloadLink().getFilePackage().getName();
-
         case CRAWLER:
             return null;
         }
@@ -527,7 +469,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     // }
     // return config.getX();
     // }
-
     public DialogType getType() {
         return type;
     }
@@ -561,14 +502,10 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         final JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[grow,fill]10[]"));
         SwingUtils.setOpaque(panel, false);
         LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelBackground(), field);
-
         Header headerPanel = null;
         if (type == DialogType.HOSTER) {
-
             // setBorder(new JTextField().getBorder());
-
             headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[]");
-
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
@@ -598,15 +535,12 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                         setting = false;
                     }
                     super.paintComponent(g);
-
                 }
 
                 // public Dimension getPreferredSize() {
                 // return new Dimension(10, 10);
                 // }
-
                 public void repaint() {
-
                     if (setting) {
                         return;
                     }
@@ -620,9 +554,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                     super.revalidate();
                 }
             };
-
             header.setIcon(hosterInfo.getFavIcon());
-
             // if (col >= 0) {
             // header.setBackground(new Color(col));
             // header.setOpaque(false);
@@ -630,17 +562,13 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // header.setOpaque(false);
             // header.setLabelMode(true);
             if (getFilename() != null) {
-
                 headerPanel.add(header);
             } else {
                 headerPanel = null;
             }
-
         } else {
             // setBorder(new JTextField().getBorder());
-
             headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
-
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
             final String headerText;
@@ -648,7 +576,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                 headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
             } else {
                 headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header_crawler2(getCrawlerStatus(), hosterInfo.getTld()));
-
             }
             // headerPanel.setOpaque(false);
             JLabel header = new JLabel() {
@@ -664,19 +591,15 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                             e.printStackTrace();
                             setText(headerText);
                         }
-
                         setting = false;
                     }
                     super.paintComponent(g);
-
                 }
 
                 // public Dimension getPreferredSize() {
                 // return new Dimension(10, 10);
                 // }
-
                 public void repaint() {
-
                     if (setting) {
                         return;
                     }
@@ -691,29 +614,24 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
                 }
             };
             header.setIcon(hosterInfo.getFavIcon());
-
             // if (col >= 0) {
             // header.setBackground(new Color(col));
             // header.setOpaque(false);
             // }
             // header.setOpaque(false);
             // header.setLabelMode(true);
-
             headerPanel.add(header);
         }
         config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogSize/" + Hash.getMD5(getHost() + "." + challenge.getClass().getSimpleName() + "." + challenge.getTypeID())), LocationStorage.class);
-
         HeaderScrollPane sp;
-
         iconPanel = new AbstractConfigPanel(5) {
-
             @Override
             public Icon getIcon() {
                 return null;
             }
 
             @Override
-            protected String getLeftGap() {
+            public String getLeftGap() {
                 return "0";
             }
 
@@ -729,7 +647,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             @Override
             public void updateContents() {
             }
-
         };
         // JLabel lbl = new JLabel("<html>" + _GUI.T.BrowserCaptchaDialog_layoutDialogContent_explain_() + "</html>");
         //
@@ -737,27 +654,20 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         iconPanel.addDescriptionPlain(_GUI.T.BrowserCaptchaDialog_layoutDialogContent_explain_());
         iconPanel.addPair(_GUI.T.BrowserCaptchaDialog_layoutDialogContent_autoclick(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_CLICK_ENABLED));
         iconPanel.addPair(_GUI.T.BrowserCaptchaDialog_layoutDialogContent_autoopen(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_OPEN_BROWSER_ENABLED));
-
         SwingUtils.setOpaque(iconPanel, false);
-
         // iconPanel.add(refreshBtn, "alignx right,aligny bottom");
         iconPanel.addMouseMotionListener(new MouseAdapter() {
-
             @Override
             public void mouseMoved(MouseEvent e) {
                 cancel();
             }
         });
-
         field.add(iconPanel);
-
         sp = new HeaderScrollPane(field);
         if (!CFG_GUI.CFG.isCaptchaDialogBorderAroundImageEnabled()) {
             sp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
             SwingUtils.setOpaque(field, false);
-
         }
-
         panel.add(sp);
         if (headerPanel != null) {
             sp.setColumnHeaderView(headerPanel);
@@ -765,18 +675,12 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // images[0].getHeight(null) + headerPanel.getPreferredSize().height));
         }
         if (BrowserSolverService.getInstance().getConfig().isAutoOpenBrowserEnabled()) {
-
             if (CFG_GUI.CFG.getNewDialogFrameState() != FrameState.TO_BACK) {
-
                 openBrowser();
-
             } else {
-
                 getDialog().addWindowFocusListener(new WindowFocusListener() {
-
                     @Override
                     public void windowLostFocus(WindowEvent e) {
-
                     }
 
                     @Override
@@ -800,7 +704,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     @Override
     public String getOKButtonText() {
-
         return _GUI.T.BrowserCaptchaDialog_getOKButtonText_open_browser();
     }
 
@@ -808,7 +711,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         JLabel lbl = new JLabel(str);
         lbl.setEnabled(false);
         SwingUtils.toBold(lbl);
-
         return lbl;
     }
 
@@ -849,9 +751,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     public void pack() {
         getDialog().pack();
-
         getDialog().setMinimumSize(getDialog().getRawPreferredSize());
-
     }
 
     public void setPlugin(Plugin plugin) {
@@ -864,19 +764,16 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             lBrowserReference.dispose();
         }
         lBrowserReference = new BrowserReference(challenge) {
-
             @Override
             public void onResponse(String parameter) {
                 responseCode = parameter;
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         setReturnmask(true);
                         BrowserCaptchaDialog.this.dispose();
                     }
                 };
-
             }
         };
         try {
@@ -887,5 +784,4 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             lBrowserReference.dispose();
         }
     }
-
 }

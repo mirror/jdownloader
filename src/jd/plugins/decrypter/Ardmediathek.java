@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -25,8 +24,20 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.plugins.config.Group;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.Type;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -39,25 +50,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
 public class Ardmediathek extends PluginForDecrypt {
-
-    /* Settings */
-    private static final String                 Q_LOW                          = "Q_LOW";
-    private static final String                 Q_MEDIUM                       = "Q_MEDIUM";
-    private static final String                 Q_HIGH                         = "Q_HIGH";
-    private static final String                 Q_HD                           = "Q_HD";
-    private static final String                 Q_BEST                         = "Q_BEST";
-    private static final String                 Q_HTTP_ONLY                    = "Q_HTTP_ONLY";
-    private static final String                 Q_SUBTITLES                    = "Q_SUBTITLES";
-    private static final String                 FASTLINKCHECK                  = "FASTLINKCHECK";
-    private boolean                             BEST                           = false;
-    private boolean                             HTTP_ONLY                      = true;
-    private boolean                             FASTLINKCHECK_boolean          = false;
     private static final String                 EXCEPTION_LINKOFFLINE          = "EXCEPTION_LINKOFFLINE";
-
     /* Constants */
     private static final String                 AGE_RESTRICTED                 = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
     private static final String                 type_unsupported               = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
@@ -65,19 +60,15 @@ public class Ardmediathek extends PluginForDecrypt {
     private static final String                 type_ard_mediathek             = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
     private static final String                 type_ardvideo                  = "http://www\\.daserste\\.de/.+";
     private static final String                 type_rbb_mediathek             = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
-    private SubConfiguration                    cfg                            = null;
-
     /* Variables */
     private final ArrayList<DownloadLink>       newRet                         = new ArrayList<DownloadLink>();
     private final HashMap<String, DownloadLink> bestMap                        = new HashMap<String, DownloadLink>();
     private String                              subtitleLink                   = null;
-    private boolean                             grab_subtitle                  = false;
     private String                              parameter                      = null;
     private String                              title                          = null;
     private String                              date                           = null;
     private String                              date_formatted                 = null;
     ArrayList<DownloadLink>                     decryptedLinks                 = new ArrayList<DownloadLink>();
-
     private long                                existingQualityNum             = 0;
     private long                                selectedAndAvailableQualityNum = 0;
 
@@ -85,23 +76,110 @@ public class Ardmediathek extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public static class Translation {
+        public String getSubtitlesEnabled_label() {
+            return _JDT.T.lit_add_subtitles();
+        }
+
+        public String getOnlyBestVideoQualityEnabled_label() {
+            return _JDT.T.lit_add_only_the_best_video_quality();
+        }
+    }
+
+    @PluginHost(host = "ardmediathek.de", type = Type.CRAWLER)
+    public static interface RbbOnlineConfig extends ArdConfigInterface {
+    }
+
+    @PluginHost(host = "rbb-online.de", type = Type.CRAWLER)
+    public static interface ArdConfigInterface extends PluginConfigInterface {
+        public static final Group[]     GROUPS      = new Group[] { new Group("Video Settings", ".*VideoQuality.*", IconKey.ICON_VIDEO) };
+        public static final Translation TRANSLATION = new Translation();
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isSubtitlesEnabled();
+
+        void setSubtitlesEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isOnlyBestVideoQualityEnabled();
+
+        void setOnlyBestVideoQualityEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isLowVideoQualityVersionEnabled();
+
+        void setLowVideoQualityVersionEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isMediumVideoQualityVersionEnabled();
+
+        void setMediumVideoQualityVersionEnabled(boolean b);
+
+        @Order(50)
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        boolean isHighVideoQualityVersionEnabled();
+
+        void setHighVideoQualityVersionEnabled(boolean b);
+
+        @Order(60)
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        boolean isHDVideoQualityVersionEnabled();
+
+        void setHDVideoQualityVersionEnabled(boolean b);
+
+        @Order(70)
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        boolean isDossierAudioContentEnabled();
+
+        void setDossierAudioContentEnabled(boolean b);
+
+        @Order(80)
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        boolean isRTMPEnabled();
+
+        void setRTMPEnabled(boolean b);
+
+        @Order(90)
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @DescriptionForConfigEntry("If enabled, the linkcheck will be faster, but the filesize might not be available before the actual download")
+        boolean isFastLinkCheckEnabled();
+
+        void setFastLinkCheckEnabled(boolean b);
+    }
+
+    @Override
+    public Class<? extends ArdConfigInterface> getConfigInterface() {
+        if ("ardmediathek.de".equalsIgnoreCase(getHost())) {
+            return ArdConfigInterface.class;
+        }
+        return RbbOnlineConfig.class;
+    }
+
     /**
      * Examples of other, unsupported linktypes:
      *
      * http://daserste.ndr.de/panorama/aktuell/Mal-eben-die-Welt-retten-Studie-belegt-Gefahren-durch-Voluntourismus-,volontourismus136.html
      *
-     * */
+     */
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        cfg = SubConfiguration.getConfig("ard.de");
-        BEST = cfg.getBooleanProperty(Q_BEST, false);
-        HTTP_ONLY = cfg.getBooleanProperty(Q_HTTP_ONLY, false);
-        FASTLINKCHECK_boolean = cfg.getBooleanProperty(FASTLINKCHECK, false);
-        grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
+        PluginConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         String fsk = null;
         parameter = Encoding.htmlDecode(param.toString());
-
         if (parameter.matches(type_unsupported) || parameter.matches(type_invalid)) {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
@@ -129,13 +207,11 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             throw e;
         }
-
         if (existingQualityNum > 0 && selectedAndAvailableQualityNum == 0) {
             logger.info("User selected qualities that are not available --> Returning offline link");
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             if (fsk != null) {
                 logger.info("ARD-Mediathek: " + fsk);
@@ -210,13 +286,11 @@ public class Ardmediathek extends PluginForDecrypt {
             subtitleLink = "http://www.ardmediathek.de" + subtitleLink;
         }
         int streaming_type = 0;
-
         final String extension = ".mp4";
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         final ArrayList<Object> _mediaArray = (ArrayList) entries.get("_mediaArray");
         final LinkedHashMap<String, Object> _mediaArray_lastentry = (LinkedHashMap<String, Object>) _mediaArray.get(_mediaArray.size() - 1);
         final ArrayList<Object> mediaStreamArray = (ArrayList) _mediaArray_lastentry.get("_mediaStreamArray");
-
         for (final Object stream : mediaStreamArray) {
             String directlink = null;
             final LinkedHashMap<String, Object> streammap = (LinkedHashMap<String, Object>) stream;
@@ -233,12 +307,10 @@ public class Ardmediathek extends PluginForDecrypt {
             int quality = ((Number) streammap.get("_quality")).intValue();
             final Object stream_o = streammap.get("_stream");
             long filesize_max = -1;
-
             existingQualityNum++;
             if (!userWantsQuality(quality)) {
                 continue;
             }
-
             if (stream_o instanceof ArrayList) {
                 /*
                  * Array with even more qualities? Find the best - usually every array consists of max 2 entries so this should not take
@@ -285,7 +357,6 @@ public class Ardmediathek extends PluginForDecrypt {
             if (!isHTTPUrl(directlink)) {
                 continue;
             }
-
             addQuality(network, title, extension, isRTMP, directlink, quality, streaming_type, filesize_max);
             selectedAndAvailableQualityNum++;
         }
@@ -314,10 +385,8 @@ public class Ardmediathek extends PluginForDecrypt {
         /* TODO: Implement this */
         subtitleLink = null;
         int t = 0;
-
         final String extension = ".mp4";
         final String[] mediaStreamArray = br.getRegex("(<asset type=\".*?</asset>)").getColumn(0);
-
         for (final String stream : mediaStreamArray) {
             existingQualityNum++;
             final String assettype = new Regex(stream, "<asset type=\"([^<>\"]*?)\">").getMatch(0);
@@ -339,21 +408,18 @@ public class Ardmediathek extends PluginForDecrypt {
             if (!directlink.startsWith("http://") && isEmpty(server)) {
                 continue;
             }
-
             directlink += "@";
             // rtmp t=?
             if (isRTMP) {
                 directlink = server + "@" + directlink.split("\\?")[0];
             }
             /* Skip rtmp streams if user wants http only */
-            if (isRTMP && HTTP_ONLY) {
+            if (isRTMP && PluginJsonConfig.get(getConfigInterface()).isRTMPEnabled()) {
                 continue;
             }
-
             if (!userWantsQuality(Integer.valueOf(quality))) {
                 continue;
             }
-
             addQuality(network, title, extension, isRTMP, directlink, quality, t, -1);
             selectedAndAvailableQualityNum++;
         }
@@ -367,24 +433,26 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     private boolean userWantsQuality(final int quality) {
+        ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
+        boolean best = cfg.isOnlyBestVideoQualityEnabled();
         switch (quality) {
         case 0:
-            if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
+            if ((cfg.isLowVideoQualityVersionEnabled() || best) == false) {
                 return false;
             }
             return true;
         case 1:
-            if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
+            if ((cfg.isMediumVideoQualityVersionEnabled() || best) == false) {
                 return false;
             }
             return true;
         case 2:
-            if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+            if ((cfg.isHighVideoQualityVersionEnabled() || best) == false) {
                 return false;
             }
             return true;
         case 3:
-            if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
+            if ((cfg.isHDVideoQualityVersionEnabled() || best) == false) {
                 return false;
             }
             return true;
@@ -434,7 +502,7 @@ public class Ardmediathek extends PluginForDecrypt {
     private void findBEST() {
         String lastQualityFMT = null;
         if (newRet.size() > 0) {
-            if (BEST) {
+            if (PluginJsonConfig.get(getConfigInterface()).isOnlyBestVideoQualityEnabled()) {
                 /* only keep best quality */
                 DownloadLink keep = bestMap.get("hd");
                 if (keep == null) {
@@ -452,9 +520,8 @@ public class Ardmediathek extends PluginForDecrypt {
                 if (keep != null) {
                     newRet.clear();
                     newRet.add(keep);
-
                     /* We have to re-add the subtitle for the best quality if wished by the user */
-                    if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
+                    if (PluginJsonConfig.get(getConfigInterface()).isSubtitlesEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
                         final String plain_name = keep.getStringProperty("plain_name", null);
                         final String orig_streamingtype = keep.getStringProperty("streamingType", null);
                         final String linkid = plain_name + "_" + orig_streamingtype + "_subtitle";
@@ -470,7 +537,6 @@ public class Ardmediathek extends PluginForDecrypt {
                         dl_subtitle.setLinkID(linkid);
                         newRet.add(dl_subtitle);
                     }
-
                 }
             }
             if (newRet.size() > 1) {
@@ -484,11 +550,11 @@ public class Ardmediathek extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     private void addQuality(final String network, final String title, final String extension, final boolean isRTMP, final String url, final int quality_int, final int streaming_type, final long filesize) {
+        ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         final String fmt = getFMT(quality_int);
         final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
         final String plain_name = title + "@" + quality_part;
         final String full_name = plain_name + extension;
-
         String linkid = plain_name + "_" + streaming_type;
         final DownloadLink link = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
         /* RTMP links have no filesize anyways --> No need to check them in host plugin */
@@ -510,16 +576,15 @@ public class Ardmediathek extends PluginForDecrypt {
         link.setProperty("directQuality", Integer.toString(quality_int));
         link.setProperty("streamingType", streaming_type);
         link.setProperty("mainlink", this.parameter);
-        if (FASTLINKCHECK_boolean) {
+        if (cfg.isFastLinkCheckEnabled()) {
             link.setAvailable(true);
         }
         if (filesize > -1) {
             link.setDownloadSize(filesize);
             link.setAvailable(true);
         }
-
         /* Add subtitle link for every quality so players will automatically find it */
-        if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
+        if (cfg.isSubtitlesEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
             linkid = plain_name + "_subtitle_" + streaming_type;
             final String subtitle_filename = plain_name + ".xml";
             final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
@@ -534,29 +599,11 @@ public class Ardmediathek extends PluginForDecrypt {
             dl_subtitle.setProperty("mainlink", this.parameter);
             newRet.add(dl_subtitle);
         }
-
         final DownloadLink best = bestMap.get(fmt);
         if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
             bestMap.put(fmt, link);
         }
         newRet.add(link);
-    }
-
-    /*
-     * Special workaround for HDS only streams.
-     */
-    private String fixWDRdirectlink(final String mainsource, String wdrlink) {
-        final Regex wdrwtf = new Regex(wdrlink, "http://ondemand-de.wdr.de/medstdp/(fsk\\d+)/(\\d+)/(\\d+)/([0-9_]+)\\.mp4");
-        String region = new Regex(mainsource, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/([a-z]{2})/").getMatch(0);
-        final String fsk = wdrwtf.getMatch(0);
-        final String number = wdrwtf.getMatch(1);
-        final String main_id = wdrwtf.getMatch(2);
-        final String quality_id = wdrwtf.getMatch(3);
-        if (region != null && fsk != null && number != null && main_id != null && quality_id != null) {
-            region = jd.plugins.decrypter.WdrDeDecrypt.correctRegionString(region);
-            wdrlink = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk + "/" + number + "/" + main_id + "/" + quality_id + ".mp4";
-        }
-        return wdrlink;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
@@ -666,5 +713,4 @@ public class Ardmediathek extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

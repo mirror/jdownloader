@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -39,6 +38,11 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,7 +53,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -71,15 +74,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easybytez.com" }, urls = { "https?://(www\\.)?easybytez\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class EasyBytezCom extends PluginForHost {
-
     // Site Setters
     // primary website url, take note of redirects
     public final String                COOKIE_HOST                  = "http://easybytez.com";
@@ -101,7 +98,6 @@ public class EasyBytezCom extends PluginForHost {
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
-
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(5);
@@ -113,7 +109,6 @@ public class EasyBytezCom extends PluginForHost {
     // other: no redirects
     // mods:fetchAccountInfo [Treat expired premium accounts as free accounts], dllinkRegex
     // other: ex-sister site, zingload.com
-
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
@@ -169,7 +164,7 @@ public class EasyBytezCom extends PluginForHost {
      * @author raztoki
      *
      * @category 'Experimental', Mods written July 2012 - 2013
-     * */
+     */
     public EasyBytezCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -178,7 +173,7 @@ public class EasyBytezCom extends PluginForHost {
 
     /**
      * defines custom browser requirements.
-     * */
+     */
     public Browser prepBrowser(final Browser prepBr) {
         HashMap<String, String> map = null;
         synchronized (cloudflareCookies) {
@@ -217,15 +212,11 @@ public class EasyBytezCom extends PluginForHost {
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
         prepBrowser(br);
-
         String[] fileInfo = new String[2];
-
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
         }
-
         getPage(downloadLink.getDownloadURL());
-
         if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
@@ -246,7 +237,6 @@ public class EasyBytezCom extends PluginForHost {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-
         if (cbr.containsHTML("No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file ((?:has )?expired|deleted by (its owner|administration)|of the above link no longer exists\\.|contained illegal contents? and was deleted)|>The file of the above link no longer exists\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -341,7 +331,7 @@ public class EasyBytezCom extends PluginForHost {
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
      *
-     * */
+     */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
@@ -429,7 +419,6 @@ public class EasyBytezCom extends PluginForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
                 // custom form inputs
-
                 final long timeBefore = System.currentTimeMillis();
                 if (cbr.containsHTML(PASSWORDTEXT)) {
                     logger.info("The downloadlink seems to be password protected.");
@@ -470,7 +459,6 @@ public class EasyBytezCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         } catch (UnknownHostException e) {
             // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-
             // dump the saved host from directlinkproperty
             downloadLink.setProperty(directlinkproperty, Property.NULL);
             // remove usedHost slot from hostMap
@@ -493,7 +481,6 @@ public class EasyBytezCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
                 logger.warning("The final dllink seems not to be a file!");
@@ -529,11 +516,8 @@ public class EasyBytezCom extends PluginForHost {
      */
     public void correctBR() throws Exception {
         String toClean = br.toString();
-
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
@@ -543,7 +527,6 @@ public class EasyBytezCom extends PluginForHost {
         }
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
             if (results != null) {
@@ -616,7 +599,6 @@ public class EasyBytezCom extends PluginForHost {
             }
         }
         // monitor this
-
         // 12th april 2014: <font style="color:#d33;">You have reached the download-limit: 1024 Mb for last 1 days</font>
         if (cbr.containsHTML("You have reached the download(-| )limit[^<]+for last[^<]+")) {
             /*
@@ -1066,45 +1048,36 @@ public class EasyBytezCom extends PluginForHost {
 
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
-
     public Browser                                                  cbr                    = new Browser();
-
     private String                                                  acctype                = null;
     private String                                                  directlinkproperty     = null;
     private String                                                  dllink                 = null;
     private String                                                  fuid                   = null;
     private String                                                  passCode               = null;
     private String                                                  usedHost               = null;
-
     private int                                                     chunks                 = 1;
-
     private boolean                                                 resumes                = false;
     private boolean                                                 skipWaitTime           = false;
-
     private final String                                            language               = System.getProperty("user.language");
     private final String                                            preferHTTPS            = "preferHTTPS";
     private final String                                            ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private final String                                            MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-
     private static AtomicInteger                                    maxFree                = new AtomicInteger(1);
     private static AtomicInteger                                    maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
     private static AtomicInteger                                    maxNonAccSimDlPerHost  = new AtomicInteger(20);
     private static AtomicInteger                                    maxFreeAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicInteger                                    maxPremAccSimDlPerHost = new AtomicInteger(20);
-
     private static AtomicReference<String>                          userAgent              = new AtomicReference<String>(null);
-
     private static HashMap<String, String>                          cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, AtomicInteger>> hostMap                = new HashMap<Account, HashMap<String, AtomicInteger>>();
-
     public static Object                                            ACCLOCK                = new Object();
     private static Object                                           CTRLLOCK               = new Object();
 
     /**
      * Rules to prevent new downloads from commencing
      *
-     * */
+     */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
             // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
@@ -1138,7 +1111,7 @@ public class EasyBytezCom extends PluginForHost {
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
      *
      * @author raztoki
-     * */
+     */
     @SuppressWarnings("unused")
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
@@ -1164,21 +1137,6 @@ public class EasyBytezCom extends PluginForHost {
         } else {
             return "http://";
         }
-    }
-
-    public void showAccountDetailsDialog(final Account account) {
-        setConstants(account);
-        AccountInfo ai = account.getAccountInfo();
-        String message = "";
-        message += "Account type: " + acctype + "\r\n";
-        if (ai.getUsedSpace() != -1) {
-            message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
-        }
-        if (ai.getPremiumPoints() != -1) {
-            message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
-        }
-
-        jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " Account", message);
     }
 
     @Override
@@ -1360,7 +1318,7 @@ public class EasyBytezCom extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -1450,7 +1408,7 @@ public class EasyBytezCom extends PluginForHost {
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
      *
      * @author raztoki
-     * */
+     */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align")) {
@@ -1544,7 +1502,6 @@ public class EasyBytezCom extends PluginForHost {
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
             String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha, getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
-
             if (result == null || "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -1559,7 +1516,7 @@ public class EasyBytezCom extends PluginForHost {
      * @param source
      *            for the Regular Expression match against
      * @return String result
-     * */
+     */
     private String regexDllink(final String source) {
         if (inValidate(source)) {
             return null;
@@ -1588,29 +1545,24 @@ public class EasyBytezCom extends PluginForHost {
      * @param source
      *            String for decoder to process
      * @return String result
-     * */
+     */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         if (!inValidate(decoded)) {
             dllink = regexDllink(decoded);
         }
@@ -1628,7 +1580,7 @@ public class EasyBytezCom extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
@@ -1650,7 +1602,7 @@ public class EasyBytezCom extends PluginForHost {
      * @param account
      *
      * @category 'Experimental', Mod written February 2013
-     * */
+     */
     private void controlSimHost(final Account account) {
         synchronized (CTRLLOCK) {
             if (usedHost != null) {
@@ -1688,7 +1640,7 @@ public class EasyBytezCom extends PluginForHost {
      * @param action
      *            To add or remove slot, true == adds, false == removes
      * @throws Exception
-     * */
+     */
     private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
         synchronized (CTRLLOCK) {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
@@ -1701,13 +1653,10 @@ public class EasyBytezCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
             downloadLink.setProperty(directlinkproperty, dllink);
-
             // place account into a place holder, for later references;
             Account accHolder = account;
-
             // allows concurrent logic
             boolean thisAccount = allowsConcurrent(account);
             boolean continu = true;
@@ -1722,9 +1671,7 @@ public class EasyBytezCom extends PluginForHost {
                     // current account allows concurrent
                     // hostmap entries c
                 }
-
             }
-
             String user = null;
             Integer simHost;
             if (accHolder != null) {
@@ -1741,7 +1688,6 @@ public class EasyBytezCom extends PluginForHost {
                 simHost = maxNonAccSimDlPerHost.get();
             }
             user = user + " @ " + acctype;
-
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 // Improvised workaround for fatal XFS3 bug
@@ -1756,7 +1702,6 @@ public class EasyBytezCom extends PluginForHost {
                 }
             } else {
                 // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
-
                 /*
                  * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
                  * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
@@ -1800,7 +1745,7 @@ public class EasyBytezCom extends PluginForHost {
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * @throws PluginException
-     * */
+     */
     private int setHashedHashKeyValue(final Account account, final int delta) throws PluginException {
         synchronized (CTRLLOCK) {
             if (usedHost != null) {
@@ -1815,7 +1760,6 @@ public class EasyBytezCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-
                 AtomicInteger atomicValue = getHashedHashedValue(account);
                 if (atomicValue == null) {
                     atomicValue = new AtomicInteger(0);
@@ -1847,7 +1791,7 @@ public class EasyBytezCom extends PluginForHost {
      *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private AtomicInteger getHashedHashedValue(final Account account) {
         synchronized (CTRLLOCK) {
             if (usedHost != null) {
@@ -1867,7 +1811,7 @@ public class EasyBytezCom extends PluginForHost {
      *            Account that's been used, can be null
      * @param key
      *            String of what ever you want to find
-     * */
+     */
     private boolean containsHashedHashedKey(final Account account, final String key) {
         synchronized (CTRLLOCK) {
             if (key != null) {
@@ -1885,7 +1829,7 @@ public class EasyBytezCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -1904,7 +1848,7 @@ public class EasyBytezCom extends PluginForHost {
      *            expected value
      * @param ibr
      *            import browser
-     * */
+     */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();
         if (workaround != null) {
@@ -1931,7 +1875,7 @@ public class EasyBytezCom extends PluginForHost {
      * TODO: remove after JD2 goes stable!
      *
      * @author raztoki
-     * */
+     */
     private Form cleanForm(Form form) {
         if (form == null) {
             return null;
@@ -1965,13 +1909,12 @@ public class EasyBytezCom extends PluginForHost {
      * @param t
      *            Provided replacement string output browser
      * @author raztoki
-     * */
+     */
     private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
         String dMD5 = JDHash.getMD5(ibr.toString());
         // preserve valuable original request components.
         final String oURL = ibr.getURL();
         final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
-
         Request req = new Request(oURL) {
             {
                 boolean okay = false;
@@ -1990,7 +1933,6 @@ public class EasyBytezCom extends PluginForHost {
                         e.printStackTrace();
                     }
                 }
-
                 httpConnection = con;
                 setHtmlCode(t);
             }
@@ -2002,7 +1944,6 @@ public class EasyBytezCom extends PluginForHost {
             public void preRequest() throws IOException {
             }
         };
-
         ibr.setRequest(req);
         if (ibr.isDebug()) {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
@@ -2036,7 +1977,6 @@ public class EasyBytezCom extends PluginForHost {
     public static void showSSLWarning(final String domain) {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
@@ -2093,7 +2033,7 @@ public class EasyBytezCom extends PluginForHost {
 
     /**
      * because stable is lame!
-     * */
+     */
     public void setBrowser(final Browser ibr) {
         this.br = ibr;
     }
@@ -2102,5 +2042,4 @@ public class EasyBytezCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

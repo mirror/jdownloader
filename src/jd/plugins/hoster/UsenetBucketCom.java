@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -21,7 +21,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenetbucket.com" }, urls = { "" }, flags = { 0 })
 public class UsenetBucketCom extends UseNet {
-
     public UsenetBucketCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.usenetbucket.com/de/order/");
@@ -45,14 +44,8 @@ public class UsenetBucketCom extends UseNet {
         return account.getStringProperty(USENET_PASSWORD, account.getUser());
     }
 
-    public static interface UsenetBucketConfigInterface extends UsenetConfigInterface {
-
+    public static interface UsenetBucketConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<UsenetBucketConfigInterface> getConfigInterface() {
-        return UsenetBucketConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -143,5 +136,4 @@ public class UsenetBucketCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("reader.usenetbucket.com", true, 563, 443));
         return ret;
     }
-
 }

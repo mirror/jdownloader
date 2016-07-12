@@ -25,11 +25,8 @@ import java.security.GeneralSecurityException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -41,30 +38,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "http://ardmediathekdecrypted/\\d+" }, flags = { 32 })
 public class ARDMediathek extends PluginForHost {
 
-    private static final String Q_LOW                 = "Q_LOW";
-    private static final String Q_MEDIUM              = "Q_MEDIUM";
-    private static final String Q_HIGH                = "Q_HIGH";
-    private static final String Q_HD                  = "Q_HD";
-    private static final String Q_BEST                = "Q_BEST";
-    private static final String Q_HTTP_ONLY           = "Q_HTTP_ONLY_3";
-    private static final String AUDIO                 = "AUDIO";
-    private static final String Q_SUBTITLES           = "Q_SUBTITLES";
-    private static final String FASTLINKCHECK         = "FASTLINKCHECK";
-
-    private static final String EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
-
-    private String              DLLINK                = null;
+    private String DLLINK = null;
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
+
     }
 
     @Override
@@ -147,14 +130,6 @@ public class ARDMediathek extends PluginForHost {
         download(downloadLink);
     }
 
-    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath(stream[1]);
-        rtmp.setUrl(stream[0]);
-        rtmp.setResume(true);
-        rtmp.setTimeOut(10);
-    }
-
     private void download(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getStringProperty("directURL", null) == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -206,13 +181,9 @@ public class ARDMediathek extends PluginForHost {
         }
     }
 
-    private String getMainlink(final DownloadLink dl) {
-        return dl.getStringProperty("mainlink", null);
-    }
-
     /**
      * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @return The success of the conversion.
      */
     private boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -344,13 +315,8 @@ public class ARDMediathek extends PluginForHost {
         return colorCode;
     }
 
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
     private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
+
         return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
@@ -364,38 +330,6 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private boolean isEmpty(final String ip) {
-        return ip == null || ip.trim().length() == 0;
-    }
-
-    @Override
-    public String getDescription() {
-        return "JDownloader's ARD Plugin helps downloading videoclips from ardmediathek.de and daserste.de. You can choose between different video qualities.";
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.ardmediathek.subtitles", "Untertitel herunterladen")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: "));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.ard.best", "Immer nur die bestmöglichste Qualitätsstufe herunterladen?")).setDefaultValue(false);
-        getConfig().addEntry(bestonly);
-        /* Disabled because not needed at the moment (rtmp streams) */
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HTTP_ONLY,
-        // JDL.L("plugins.hoster.ard.best", "Only download HTTP streams (avoid [RTMP] versions)")).setDefaultValue(true).setEnabled(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.ard.loadlow", "low version herunterladen")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.ard.loadmedium", "medium version herunterladen")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.ard.loadhigh", "high version herunterladen")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.ard.loadhd", "HD version herunterladen")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "For Dossier links:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        /* Disabled because not possible at the moment (audio content) */
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUDIO, JDL.L("plugins.hoster.ard.audio", "Audio Inhalte herunterladen")).setDefaultValue(false).setEnabled(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.ard.fastlinkcheck", "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!")).setDefaultValue(false));
     }
 
 }

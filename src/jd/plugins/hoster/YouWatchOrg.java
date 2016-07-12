@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -55,7 +54,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -79,7 +77,6 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chouhaa.info" }, urls = { "https?://(?:www\\.)?(?:chouhaa\\.info|youwatch\\.org)/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class YouWatchOrg extends PluginForHost {
-
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://chouhaa.info";
@@ -100,7 +97,6 @@ public class YouWatchOrg extends PluginForHost {
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
-
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -114,14 +110,11 @@ public class YouWatchOrg extends PluginForHost {
     // mods: heavily modified, do NOT upgrade!
     @Override
     public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
-
         if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
-
             return "http://youwatch.org/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         } else {
             return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         }
-
     }
 
     @Override
@@ -235,15 +228,11 @@ public class YouWatchOrg extends PluginForHost {
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
         prepBrowser(br);
-
         String[] fileInfo = new String[2];
-
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
         }
-
         getPage(downloadLink.getDownloadURL());
-
         if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
@@ -264,7 +253,6 @@ public class YouWatchOrg extends PluginForHost {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-
         if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|File was deleted by DMCA)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -433,7 +421,6 @@ public class YouWatchOrg extends PluginForHost {
             }
             if (inValidate(dllink) && useAltEmbed) {
                 /* They often have multiple embed-redirects until we can finally get the downloadurl */
-
                 try {
                     logger.info("Trying to get link via embed");
                     String embed_url = null;
@@ -469,7 +456,6 @@ public class YouWatchOrg extends PluginForHost {
                     /* If failed, go back to the beginning */
                     getPage(downloadLink.getDownloadURL());
                 }
-
                 // alternative embed format
                 // getPage("/embed-" + fuid + ".html");
                 // getDllink();
@@ -505,7 +491,6 @@ public class YouWatchOrg extends PluginForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
                 // custom form inputs
-
                 final long timeBefore = System.currentTimeMillis();
                 if (cbr.containsHTML(PASSWORDTEXT)) {
                     logger.info("The downloadlink seems to be password protected.");
@@ -546,7 +531,6 @@ public class YouWatchOrg extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         } catch (UnknownHostException e) {
             // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-
             // dump the saved host from directlinkproperty
             downloadLink.setProperty(directlinkproperty, Property.NULL);
             // remove usedHost slot from hostMap
@@ -569,7 +553,6 @@ public class YouWatchOrg extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
                 logger.warning("The final dllink seems not to be a file!");
@@ -605,11 +588,8 @@ public class YouWatchOrg extends PluginForHost {
      */
     public void correctBR() throws Exception {
         String toClean = br.toString();
-
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
@@ -620,7 +600,6 @@ public class YouWatchOrg extends PluginForHost {
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
             if (results != null) {
@@ -649,12 +628,10 @@ public class YouWatchOrg extends PluginForHost {
                 }
             }
         }
-
         /* Streams */
         if (inValidate(dllink)) {
             dllink = cbr.getRegex("file:\"(http[^<>\"]*?)\"").getMatch(0);
         }
-
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -1083,7 +1060,6 @@ public class YouWatchOrg extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
-
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
                 } else {
                     logger.warning("The final dllink seems not to be a file!");
@@ -1114,38 +1090,29 @@ public class YouWatchOrg extends PluginForHost {
 
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
-
     private Browser                                           cbr                    = new Browser();
-
     private String                                            acctype                = null;
     private String                                            directlinkproperty     = null;
     private String                                            dllink                 = null;
     private String                                            fuid                   = null;
     private String                                            passCode               = null;
     private String                                            usedHost               = null;
-
     private int                                               chunks                 = 1;
-
     private boolean                                           resumes                = false;
     private boolean                                           skipWaitTime           = false;
-
     private final String                                      language               = System.getProperty("user.language");
     private final String                                      preferHTTPS            = "preferHTTPS";
     private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-
     private static AtomicInteger                              maxFree                = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
     private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
     private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
-
     private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
-
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
-
     private static Object                                     ACCLOCK                = new Object();
     private static Object                                     CTRLLOCK               = new Object();
 
@@ -1212,21 +1179,6 @@ public class YouWatchOrg extends PluginForHost {
         } else {
             return "http://";
         }
-    }
-
-    public void showAccountDetailsDialog(final Account account) {
-        setConstants(account);
-        AccountInfo ai = account.getAccountInfo();
-        String message = "";
-        message += "Account type: " + acctype + "\r\n";
-        if (ai.getUsedSpace() != -1) {
-            message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
-        }
-        if (ai.getPremiumPoints() != -1) {
-            message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
-        }
-
-        jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " Account", message);
     }
 
     @Override
@@ -1570,7 +1522,6 @@ public class YouWatchOrg extends PluginForHost {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-
             final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             String code = "";
@@ -1633,26 +1584,21 @@ public class YouWatchOrg extends PluginForHost {
      */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         if (!inValidate(decoded)) {
             dllink = regexDllink(decoded);
         }
@@ -1747,13 +1693,10 @@ public class YouWatchOrg extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
             downloadLink.setProperty(directlinkproperty, dllink);
-
             // place account into a place holder, for later references;
             Account accHolder = account;
-
             // allows concurrent logic
             boolean thisAccount = allowsConcurrent(account);
             boolean continu = true;
@@ -1768,9 +1711,7 @@ public class YouWatchOrg extends PluginForHost {
                     // current account allows concurrent
                     // hostmap entries c
                 }
-
             }
-
             String user = null;
             Integer simHost;
             if (accHolder != null) {
@@ -1787,7 +1728,6 @@ public class YouWatchOrg extends PluginForHost {
                 simHost = maxNonAccSimDlPerHost.get();
             }
             user = user + " @ " + acctype;
-
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1802,7 +1742,6 @@ public class YouWatchOrg extends PluginForHost {
                 }
             } else {
                 // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
-
                 /*
                  * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
                  * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
@@ -2037,7 +1976,6 @@ public class YouWatchOrg extends PluginForHost {
         // preserve valuable original request components.
         final String oURL = ibr.getURL();
         final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
-
         Request req = new Request(oURL) {
             {
                 boolean okay = false;
@@ -2056,7 +1994,6 @@ public class YouWatchOrg extends PluginForHost {
                         e.printStackTrace();
                     }
                 }
-
                 httpConnection = con;
                 setHtmlCode(t);
             }
@@ -2068,7 +2005,6 @@ public class YouWatchOrg extends PluginForHost {
             public void preRequest() throws IOException {
             }
         };
-
         ibr.setRequest(req);
         if (ibr.isDebug()) {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
@@ -2102,7 +2038,6 @@ public class YouWatchOrg extends PluginForHost {
     public static void showSSLWarning(final String domain) {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
@@ -2161,5 +2096,4 @@ public class YouWatchOrg extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

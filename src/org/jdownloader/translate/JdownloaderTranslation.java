@@ -8,7 +8,6 @@ import org.appwork.txtresource.TranslateInterface;
 @Defaults(lngs = { "en" })
 public interface JdownloaderTranslation extends TranslateInterface {
     //
-
     @Default(lngs = { "en", "de" }, values = { "Error occured!", "Fehler aufgetreten!" })
     String dialog_title_exception();
 
@@ -555,7 +554,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Proxy authentication is required!" })
     String ProxyController_updateProxy_proxy_auth_required_title();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en", "de" }, values = {
     // "JDownloader cannot connect to %s1! Your Proxy Server requires authentication. \r\nCheck your credentials...",
@@ -565,14 +563,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Authentication failed" })
     // String ProxyController_updateProxy_baned_auth();
-
     @Default(lngs = { "en" }, values = { "How to use the Connection Manager: \r\nYou can add several proxies or gateways to this list. Use the filter option to enable or disable a proxy for a certain domain only. For Free Downloads, JDownloader will try to use all available proxies simultanous. For Premium Downloads, the first available Proxy will be used." })
     String gui_settings_proxy_description_new();
 
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "No Gateway or Proxy found." })
     // String plugins_errors_proxy_connection_nogateway();
-
     @Default(lngs = { "en" }, values = { "No Gateway or Proxy found." })
     String AccountController_updateAccountInfo_no_gateway();
 
@@ -1084,11 +1080,95 @@ public interface JdownloaderTranslation extends TranslateInterface {
     String youtube_segment();
 
     @Default(lngs = { "en" }, values = { "PhantomJS is missing!" })
-
     String DownloadLink_setSkipped_statusmessage_phantom();
 
     @Default(lngs = { "en" }, values = { "Please open the login page in your browser and follow the login steps.\r\nJDownloader will continue as soon as you finished the login." })
-
     String OAUTH_CHALLENGE_EXPLAIN();
 
+    @Default(lngs = { "en" }, values = { "Prefer reconnect" })
+    String lit_prefer_reconnect();
+
+    @Default(lngs = { "en" }, values = { "Prefer SSL/HTTPS" })
+    String lit_prefer_ssl();
+
+    @Default(lngs = { "en" }, values = { "Add Subtitles" })
+    String lit_add_subtitles();
+
+    @Default(lngs = { "en" }, values = { "Add only the best video quality" })
+    String lit_add_only_the_best_video_quality();
+
+    @Default(lngs = { "en" }, values = { "Port" })
+    String lit_port();
+
+    @Default(lngs = { "en" }, values = { "Host" })
+    String lit_host();
+
+    @Default(lngs = { "en" }, values = { "SSL Enabled" })
+    String lit_ssl_enabled();
+
+    @Default(lngs = { "en" }, values = { "Connections" })
+    String lit_connections();
+
+    @Default(lngs = { "en" }, values = { "Username" })
+    String lit_username();
+
+    @Default(lngs = { "en" }, values = { "Time account" })
+    String plugins_simplypremiumcom_ACCOUNT_TYPE_TIME();
+
+    @Default(lngs = { "en" }, values = { "No" })
+    String lit_no();
+
+    @Default(lngs = { "en" }, values = { "Volume account" })
+    String plugins_simplypremiumcom_ACCOUNT_TYPE_VOLUME();
+
+    @Default(lngs = { "en" }, values = { "Invalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste." })
+    String plugins_tb7pl_PREMIUM_ERROR();
+
+    @Default(lngs = { "en" }, values = { "Expired" })
+    String lit_expired();
+
+    @Default(lngs = { "en" }, values = { "Unsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum." })
+    String plugins_tb7pl_UNSUPPORTED_PREMIUM();
+
+    @Default(lngs = { "en" }, values = { "Plugin Defect. Please contact support@jdownloader.org" })
+    String lit_plugin_defect_pls_contact_support();
+
+    @Default(lngs = { "en" }, values = { "Unknown" })
+    String lit_unknown();
+
+    @Default(lngs = { "en" }, values = { "Traffic Left" })
+    String lit_traffic_left();
+
+    @Default(lngs = { "en" }, values = { "Unlimited" })
+    String lit_unlimited();
+
+    @Default(lngs = { "en" }, values = { "Host is temporarily unavailable via %s1" })
+    String plugins_tb7pl_HOSTER_UNAVAILABLE(String string);
+
+    @Default(lngs = { "en" }, values = { "Download limit exceeded!" })
+    String lit_download_limit_exceeded();
+
+    @Default(lngs = { "en" }, values = { "Tb7 reports the link is as inactive!" })
+    String plugins_tb7pl_LINK_INACTIVE();
+
+    @Default(lngs = { "en" }, values = { "Retry in few seconds" })
+    String lit_retry_in_a_few_seconds();
+
+    @Default(lngs = { "en" }, values = { "Previously generated Link expired!" })
+    String plugins_tb7pl_LINK_EXPIRED();
+
+    @Default(lngs = { "en" }, values = { "Traffic limit reached" })
+    String lit_traffic_limit_reached();
+
+    @Default(lngs = { "en" }, values = { "Unable to handle this errorcode!" })
+    String plugins_tb7pl_UNKNOWN_ERROR();
+
+    @Default(lngs = { "en" }, values = { "Use for Recaptcha 1 (write off images)" })
+    String plugins_google_use_for_recaptcha1();
+
+    @Default(lngs = { "en" }, values = { "JDownloader can use this google account to improve Recaptcha Image Challenges. If you use this account for Recaptcha, you probably will get easier to solve, and less captcha challenges." })
+    String plugins_google_recaptcha2_description();
+
+    @Default(lngs = { "en" }, values = { "Use for Recaptcha 2 (click on image category)" })
+    String plugins_google_use_for_recaptcha2();
 }

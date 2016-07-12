@@ -11,10 +11,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,7 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -43,11 +41,6 @@ public class DropboxCom extends PluginForHost {
 
     }
 
-    @Override
-    public boolean hasConfig() {
-        return true;
-    }
-
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("dropboxdecrypted.com/", "dropbox.com/").replaceAll("#", "%23").replaceAll("\\?dl=\\d", ""));
@@ -55,7 +48,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     @Override
-    public Class<? extends ConfigInterface> getConfigInterface() {
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
         return DropboxConfig.class;
     }
 
@@ -434,15 +427,6 @@ public class DropboxCom extends PluginForHost {
         }
         url += "&oauth_signature=" + Encoding.urlEncode(signature);
         return url;
-    }
-
-    @Override
-    public PluginConfigPanelNG createConfigPanel() {
-        BasicAdvancedConfigPluginPanel panel = this.configPanel;
-        if (panel == null) {
-            panel = this.configPanel = new BasicAdvancedConfigPluginPanel(getDescription(), PluginJsonConfig.get(DropboxConfig.class), "Dropbox");
-        }
-        return panel;
     }
 
 }

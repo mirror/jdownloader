@@ -11,6 +11,7 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
 
+import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 
 public class PluginSettings extends AbstractConfigPanel {
@@ -72,5 +73,9 @@ public class PluginSettings extends AbstractConfigPanel {
         } else {
             psp.setPlugin(class1);
         }
+    }
+
+    public void scrollToAccount(Account account) {
+        getPanel().scrollToAccount(account);
     }
 }

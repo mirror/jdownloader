@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -39,6 +38,12 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -69,32 +74,21 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
-
     // DEV NOTES:
     // other: respects https in download methods, even though final download
     // link isn't https (free tested).
-
     /* Enable/disable usage of multiple free accounts at the same time */
     private static final boolean           ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE    = true;
     private static final boolean           ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE = true;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS                 = 1;
-
     /* Premium */
     private static final int               FREE_MAXDOWNLOADS                         = 1;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
-
     private static AtomicInteger           maxPrem                                   = new AtomicInteger(1);
     // spaces will be '_'(checkLinks) and ' '(requestFileInformation), '_' stay '_'
     private char[]                         FILENAMEREPLACES                          = new char[] { ' ', '_', '[', ']' };
-
     /* Reconnect-workaround-related */
     private static final long              FREE_RECONNECTWAIT                        = 3 * 60 * 60 * 1000L;
     private String                         PROPERTY_LASTIP                           = "UPLOADEDNET_PROPERTY_LASTIP";
@@ -107,7 +101,6 @@ public class Uploadedto extends PluginForHost {
     private static HashMap<String, Long>   blockedIPsMap                             = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                                  = new Object();
     private static String[]                IPCHECK                                   = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-
     private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
     private static final String            NOCHUNKS                                  = "NOCHUNKS";
     private static final String            NORESUME                                  = "NORESUME";
@@ -117,9 +110,7 @@ public class Uploadedto extends PluginForHost {
     private static final String            DISABLE_START_INTERVAL                    = "DISABLE_START_INTERVAL";
     private boolean                        PREFERSSL                                 = true;
     private boolean                        avoidHTTPS                                = false;
-
     private static final String            UPLOADED_FINAL_FILENAME                   = "UPLOADED_FINAL_FILENAME";
-
     private static final String            CURRENT_DOMAIN                            = "http://uploaded.net/";
     private static final String            HTML_MAINTENANCE                          = ">uploaded\\.net - Maintenance|Dear User, Uploaded is in maintenance mode|Lieber Kunde, wir führen kurze Wartungsarbeiten durch";
 
@@ -264,7 +255,6 @@ public class Uploadedto extends PluginForHost {
             try {
                 final IvParameterSpec ivSpec = new IvParameterSpec(key);
                 final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-
                 cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
                 cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                 return new String(cipher.doFinal(b), "UTF-8");
@@ -272,22 +262,18 @@ public class Uploadedto extends PluginForHost {
                 e.printStackTrace();
                 final IvParameterSpec ivSpec = new IvParameterSpec(key);
                 final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-
                 try {
                     cipher = Cipher.getInstance("AES/CBC/nopadding");
-
                     cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                     return new String(cipher.doFinal(b), "UTF-8");
                 } catch (final Exception e1) {
                     e.printStackTrace();
                 }
-
             }
             return null;
         }
 
         private byte[] key;
-
         private byte[] prep;
 
         @SuppressWarnings("deprecation")
@@ -297,9 +283,7 @@ public class Uploadedto extends PluginForHost {
         }
 
         public String run() {
-
             return new String(new byte[] { 97, 112, 105, 107, 101, 121 }) + "=" + d(prep, key);
-
         }
     }
 
@@ -319,7 +303,6 @@ public class Uploadedto extends PluginForHost {
         } else {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-
                     @Override
                     public void run() {
                         try {
@@ -766,12 +749,10 @@ public class Uploadedto extends PluginForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-
         workAroundTimeOut(br);
         String id = getID(downloadLink);
         br.setFollowRedirects(false);
         prepBrowser();
-
         /**
          * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting when a limit is reached
          */
@@ -807,7 +788,6 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
-
         final String addedDownloadlink = baseURL + "file/" + id;
         getPage(br, addedDownloadlink);
         String dllink = null;
@@ -861,17 +841,13 @@ public class Uploadedto extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             final long timebefore = System.currentTimeMillis();
-
             final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int i = 0; i <= 15; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-
                 String c = getCaptchaCode("recaptcha", cf, downloadLink);
-
                 if (c == null || c.length() == 0) {
                     rc.reload();
                     continue;
@@ -888,7 +864,6 @@ public class Uploadedto extends PluginForHost {
                 break;
             }
             if (br.containsHTML("\\{succ:true\\}") || br.containsHTML("\"err\":\"captcha\"")) {
-
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             generalFreeErrorhandling(account);
@@ -1061,7 +1036,6 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "API doesn't accept account (error 500).", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 8000:
                 //
-
                 /* traffic exhausted */
                 if (acc != null) {
                     String reset = br.getRegex("reset\":\\s*?\"?(\\d+)").getMatch(0);
@@ -1096,7 +1070,6 @@ public class Uploadedto extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
     }
 
     private void checkGeneralErrors() throws PluginException {
@@ -1130,16 +1103,6 @@ public class Uploadedto extends PluginForHost {
         if (br.getURL().contains("view=error")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
         }
-    }
-
-    // Attention!! Do not use Override here for stable compatibility reasons
-    // @Override
-    public void showAccountDetailsDialog(Account account) {
-        String type = "Premium";
-        if (account.getBooleanProperty("free", false)) {
-            type = "Free";
-        }
-        jd.gui.UserIO.getInstance().requestMessageDialog("Uploaded.to Account", "Account type: " + type);
     }
 
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
@@ -1235,7 +1198,6 @@ public class Uploadedto extends PluginForHost {
                         c = s.charAt(i);
                     }
                 }
-
                 // A trailing, incomplete byte encoding such as
                 // "%x" will cause an exception to be thrown
                 if (bytes != null && pos > 0) {
@@ -1302,10 +1264,8 @@ public class Uploadedto extends PluginForHost {
                 }
                 getPage(br, getProtocol() + "api.uploaded.net/api/user/jdownloader?access_token=" + token);
                 tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
-
                 if (tokenType == null) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
-
                 }
                 account.setProperty("tokenType", tokenType);
                 if ("premium".equals(tokenType)) {
@@ -1451,9 +1411,7 @@ public class Uploadedto extends PluginForHost {
                     ((RAFDownload) dl).getRequest().setReadTimeout(60000);
                 } catch (final Throwable ee) {
                 }
-
                 handleGeneralServerErrors();
-
                 if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
                     try {
                         br.followConnection();
@@ -1894,7 +1852,6 @@ public class Uploadedto extends PluginForHost {
                                                       put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
                                                   }
                                               };
-
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
                                                       put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
@@ -1936,7 +1893,6 @@ public class Uploadedto extends PluginForHost {
         getConfig().addEntry(cfe);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", getPhrase("SETTING_DOWNLOAD_ABUSED"))).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLE_START_INTERVAL, "Disable start interval. Warning: This may cause IP blocks from uploaded.to").setDefaultValue(false));
-
     }
 
     @Override
@@ -1959,5 +1915,4 @@ public class Uploadedto extends PluginForHost {
         JDUtilities.getPluginForHost("youtube.com");
         return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
-
 }

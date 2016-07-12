@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -21,7 +21,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "newshosting.com" }, urls = { "" }, flags = { 0 })
 public class NewsHostingCom extends UseNet {
-
     public NewsHostingCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://controlpanel.newshosting.com/signup/signup.php");
@@ -39,14 +38,8 @@ public class NewsHostingCom extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface NewsHostingComConfigInterface extends UsenetConfigInterface {
-
+    public static interface NewsHostingComConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<NewsHostingComConfigInterface> getConfigInterface() {
-        return NewsHostingComConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -141,5 +134,4 @@ public class NewsHostingCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("news.newshosting.com", true, 563, 563));
         return ret;
     }
-
 }

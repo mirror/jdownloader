@@ -5,6 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -16,27 +21,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "hitnews.com" }, urls = { "" }, flags = { 0 })
 public class HitNewsCom extends UseNet {
-
     public HitNewsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://member.hitnews.com/signup.php");
     }
 
-    public static interface HitNewsConfigInterface extends UsenetConfigInterface {
-
+    public static interface HitNewsConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<HitNewsConfigInterface> getConfigInterface() {
-        return HitNewsConfigInterface.class;
-    }
 
     @Override
     public String getAGBLink() {
@@ -145,7 +138,6 @@ public class HitNewsCom extends UseNet {
             }
         }
         return ret;
-
     }
 
     @Override
@@ -155,5 +147,4 @@ public class HitNewsCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("ssl.hitnews.com", true, 563, 995));
         return ret;
     }
-
 }

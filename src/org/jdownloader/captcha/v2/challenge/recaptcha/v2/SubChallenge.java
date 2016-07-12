@@ -117,11 +117,14 @@ public class SubChallenge {
     }
 
     public void fillGrid(String mainPayloadUrl) {
-        this.mainImageUrl = mainPayloadUrl;
-        for (int x = 0; x < getGridWidth(); x++) {
-            for (int y = 0; y < getGridHeight(); y++) {
-                grid[x][y] = new TileContent(x, y, payloads.get(mainPayloadUrl));
+        synchronized (payloads) {
 
+            this.mainImageUrl = mainPayloadUrl;
+            for (int x = 0; x < getGridWidth(); x++) {
+                for (int y = 0; y < getGridHeight(); y++) {
+                    grid[x][y] = new TileContent(x, y, payloads.get(mainPayloadUrl));
+
+                }
             }
         }
     }
@@ -146,7 +149,10 @@ public class SubChallenge {
     }
 
     public Payload getPayloadByUrl(String tileUrl) {
-        return payloads.get(tileUrl);
+        synchronized (payloads) {
+
+            return payloads.get(tileUrl);
+        }
     }
 
     public int getTileCount() {
@@ -154,7 +160,10 @@ public class SubChallenge {
     }
 
     public Payload getMainPayload() {
-        return payloads.get(getMainImageUrl());
+        synchronized (payloads) {
+
+            return payloads.get(getMainImageUrl());
+        }
     }
 
     public BufferedImage paintImage() {
@@ -231,6 +240,7 @@ public class SubChallenge {
     }
 
     private ArrayList<Response> responses = new ArrayList<Response>();
+    private HashSet<Integer>    annotatedIndices;
 
     public ArrayList<Response> getResponses() {
         synchronized (responses) {
@@ -241,22 +251,20 @@ public class SubChallenge {
     public void addResponse(Response resp) {
         synchronized (responses) {
 
-            int unchangedFor = 0;
+            HashSet<Integer> remove = new HashSet<Integer>();
             for (Integer num : resp.getClickedIndices()) {
 
                 if (num >= 0 && !isSlotAnnotated(num % getGridWidth(), num / getGridWidth())) {
                     resp.getResponse().setValidation(ValidationResult.INVALID);
-                    resp.remove(num);
+                    remove.add(num);
                 }
-                // unchangedFor = Math.max(unchangedFor, min);
-                // if (unchangedFor > 1) {
-                //
-                // }
 
             }
+            resp.remove(remove);
             // this response selects an image that has not been selected for *unchangedFor* rounds.
 
             responses.add(resp);
+            updateAnnotations();
             HashSet<Integer> selected = new HashSet<Integer>(resp.getClickedIndices());
 
             for (int i = 0; i < getTileCount(); i++) {
@@ -305,7 +313,29 @@ public class SubChallenge {
         return unchanged;
     }
 
-    public boolean isSlotAnnotated(int xslot, int yslot) {
+    private void updateAnnotations() {
+        HashSet<Integer> annotated = new HashSet<Integer>();
+        for (int x = 0; x < getGridWidth(); x++) {
+            for (int y = 0; y < getGridHeight(); y++) {
+                int num = x + y * getGridWidth();
+                if (isSlotAnnotatedInternal(x, y)) {
+                    annotated.add(num);
+                }
+            }
+        }
+        if (annotated.size() == 0) {
+            // error;
+            annotated = null;
+        }
+        this.annotatedIndices = annotated;
+    }
+
+    public boolean isSlotAnnotated(int x, int y) {
+        int num = x + y * getGridWidth();
+        return annotatedIndices == null || annotatedIndices.contains(num);
+    }
+
+    private boolean isSlotAnnotatedInternal(int xslot, int yslot) {
 
         int num = xslot + yslot * getGridWidth();
         synchronized (responses) {
@@ -321,6 +351,32 @@ public class SubChallenge {
 
         }
         return true;
+    }
+
+    public boolean isDynamicAndHasZerosInARow(int amount) {
+        if (getChallengeType() != ChallengeType.DYNAMIC) {
+            return false;
+        }
+        synchronized (responses) {
+            int count = 0;
+            for (int i = responses.size() - 1; i >= 0; i--) {
+                if (responses.get(i).isSelected(-1) && responses.get(i).getSize() == 1) {
+                    count++;
+                }
+            }
+            if (count >= amount) {
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    public boolean hasPayload() {
+        synchronized (payloads) {
+
+            return payloads.size() > 0;
+        }
     }
 
 }

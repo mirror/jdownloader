@@ -29,7 +29,6 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
-
     private static final String       PAIR_CONDITION   = "PAIR_CONDITION";
     private static final long         serialVersionUID = -8483438886830392777L;
     protected java.util.List<Pair<?>> pairs;
@@ -46,16 +45,13 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         }
         for (Field f : getClass().getDeclaredFields()) {
             try {
-
                 if (f.getType() == input.getClass()) {
                     f.setAccessible(true);
                     if (f.get(this) == input) {
                         return f.getName();
                     }
-
                 }
             } catch (Exception e) {
-
             }
         }
         return null;
@@ -73,12 +69,11 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     public JLabel addDescription(String description) {
         JLabel txt = addDescriptionPlain(description);
-        add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5");
+        add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5" + getRightGap());
         return txt;
     }
 
     public JLabel addDescriptionPlain(String description) {
-
         if (!description.toLowerCase().startsWith("<html>")) {
             description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
         }
@@ -86,16 +81,13 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         SwingUtils.setOpaque(txt, false);
         // txt.setEnabled(false);
         LAFOptions.getInstance().applyConfigDescriptionTextColor(txt);
-
         txt.setText(description);
-        add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
-
+        add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10" + getRightGap());
         return txt;
     }
 
     public void addTopHeader(String name, Icon icon) {
-        add(new Header(name, icon), "spanx,growx,pushx");
-
+        add(new Header(name, icon), "spanx,growx,pushx" + getRightGap());
     }
 
     protected void showRestartRequiredMessage() {
@@ -108,8 +100,8 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     }
 
     @Deprecated
-    protected void addHeader(String name, String iconKey) {
-        this.addHeader(name, NewTheme.I().getIcon(iconKey, 32));
+    protected Header addHeader(String name, String iconKey) {
+        return this.addHeader(name, NewTheme.I().getIcon(iconKey, 32));
     }
 
     public abstract Icon getIcon();
@@ -117,7 +109,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     public abstract String getTitle();
 
     public <T extends SettingsComponent> Pair<T> addPair(String name, BooleanKeyHandler enabled, T comp) {
-        String lblConstraints = "gapleft" + getLeftGap() + ",aligny " + (comp.isMultiline() ? "top" : "center");
+        String lblConstraints = "gapleft " + getLeftGap() + ",aligny " + (comp.isMultiline() ? "top" : "center");
         return addPair(name, lblConstraints, enabled, comp);
     }
 
@@ -135,8 +127,8 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         if (comp.getConstraints() != null) {
             con += "," + comp.getConstraints();
         }
+        con += getRightGap();
         add((JComponent) comp, con);
-
         Pair<T> p = new Pair<T>(lbl, comp, cb);
         pairs.add(p);
         return p;
@@ -167,7 +159,6 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
             @Override
             public void setEnabled(boolean paramBoolean) {
-
                 if (paramBoolean) {
                     if (!LAFOptions.getInstance().applyConfigLabelEnabledTextColor(this)) {
                         super.setEnabled(true);
@@ -181,13 +172,9 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
                         super.setEnabled(true);
                     }
                 }
-
             }
-
         };
-
         return lbl;
-
     }
 
     public Component add(Component comp) {
@@ -198,7 +185,6 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
             }
             super.add(comp, con);
             return comp;
-
         } else if (comp instanceof JScrollPane) {
             super.add(comp, "gapleft" + getLeftGap() + ",spanx,growx,pushx,height 60:n:n,pushy,growy");
             return comp;
@@ -208,17 +194,22 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         }
     }
 
-    protected String getLeftGap() {
+    public String getRightGap() {
+        return "";
+    }
+
+    public String getLeftGap() {
         return LAFOptions.getInstance().getCfg().getConfigPanelLeftIndent() + "";
     }
 
-    protected void addHeader(String name, Icon icon) {
+    protected Header addHeader(String name, Icon icon) {
+        Header header;
         if (getComponentCount() == 0) {
             // first header
-            add(new Header(name, icon), "spanx,growx,pushx");
+            add(header = new Header(name, icon), "spanx,growx,pushx");
         } else {
-            add(new Header(name, icon), "spanx,newline,growx,pushx");
+            add(header = new Header(name, icon), "spanx,newline,growx,pushx");
         }
+        return header;
     }
-
 }

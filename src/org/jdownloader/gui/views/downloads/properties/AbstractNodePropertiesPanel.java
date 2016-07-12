@@ -113,7 +113,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     }
 
     public AbstractNodePropertiesPanel() {
-        super("ins 0,debug", "[grow,fill]", "[grow,fill]");
+        super("ins 0", "[grow,fill]", "[grow,fill]");
         addComponentListener(new ComponentListener() {
 
             @Override

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,18 +41,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidtraffic.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class RapidtrafficPl extends PluginForHost {
-
     private String                                         MAINPAGE           = "http://rapidtraffic.pl/";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Object                                  LOCK               = new Object();
 
@@ -78,7 +77,6 @@ public class RapidtrafficPl extends PluginForHost {
                 } else {
                     if (br.containsHTML("Podano nieprawidłową parę login - hasło lub konto nie zostało aktywowane")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("INVALID_LOGIN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
-
                     }
                 }
                 // Save cookies
@@ -95,7 +93,6 @@ public class RapidtrafficPl extends PluginForHost {
                 throw e;
             }
         }
-
     }
 
     @Override
@@ -112,26 +109,20 @@ public class RapidtrafficPl extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-
         if (!br.getURL().contains("konto")) {
             br.getPage(MAINPAGE + "konto");
         }
-
         final String hosterNames = " " + br.getRegex("Tutaj wklej linki do plików z <strong>(.*)</strong>, które chcesz ściągnąć").getMatch(0) + ",";
         final String[] hostDomains = new Regex(hosterNames, " ([^,<>\"]*?),").getColumn(0);
-
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
-
         account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
         String transferLeft = br.getRegex("Pozostały transfer: <b>(\\d+\\.\\d+ [GM]B)</b>").getMatch(0).replace(".", ",");
         long trafficLeftLong = ((transferLeft == null) ? 0 : SizeFormatter.getSize(transferLeft));
-
         if (br.containsHTML("Konto ważne do: <b>nieaktywne</b>")) {
             ai.setExpired(true);
             ai.setProperty("free", true);
             ai.setTrafficLeft(trafficLeftLong);
-
             ai.setStatus(getPhrase("PREMIUM_EXPIRED"));
             return ai;
         } else {
@@ -139,14 +130,12 @@ public class RapidtrafficPl extends PluginForHost {
             if (validUntil == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-
             ai.setProperty("free", false);
             ai.setUnlimitedTraffic();
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", Locale.ENGLISH));
             ai.setProperty("Available traffic", trafficLeftLong);
             ai.setStatus(getPhrase("PREMIUM") + " (" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(trafficLeftLong) + ")");
         }
-
         return ai;
     }
 
@@ -171,7 +160,6 @@ public class RapidtrafficPl extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -187,24 +175,18 @@ public class RapidtrafficPl extends PluginForHost {
                 }
             }
         }
-
         boolean resume = true;
         showMessage(link, "Phase 1/4: Login");
-
         login(account);
         String userId = br.getRegex("<input type='hidden' name='usr' value='(\\d+)' id='usr_check' />").getMatch(0);
         if (userId == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         dl = null;
-
         String generatedLink = checkDirectLink(link, "generatedLinkRapidtraffic");
-
         if (generatedLink == null) {
-
             /* generate new downloadlink */
             String url = Encoding.urlEncode(link.getDownloadURL());
             String postData = "v=usr%2Csprawdzone%7Cusr%2Clinki&c=pob&f=sprawdzLinki&usr=" + userId + "&progress_type=check&linki=" + url;
@@ -220,14 +202,11 @@ public class RapidtrafficPl extends PluginForHost {
             if (br.containsHTML("Rozmiar pobieranych plików przekracza dostępny transfer")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-
             postData = "v=usr%2Cpliki%7Cusr%2Clinki&c=pob&f=zapiszRozpoczete&usr=" + userId + "&progress_type=verified&link_ok%5B1%5D=" + url;
             br.postPage(MAINPAGE + "index.php", postData);
             String fileId = "";
             sleep(2 * 1000l, link);
-
             for (int i = 1; i <= 3; i++) {
-
                 if (!br.containsHTML(">Gotowy</td>")) {
                     sleep(3 * 1000l, link);
                     br.getPage(MAINPAGE + "index.php");
@@ -237,7 +216,6 @@ public class RapidtrafficPl extends PluginForHost {
                         break;
                     }
                 }
-
             }
             if (fileId == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -246,7 +224,6 @@ public class RapidtrafficPl extends PluginForHost {
             showMessage(link, "Phase 3/4: Generating Link");
             br.postPage(MAINPAGE + "index.php", postData);
             sleep(2 * 1000l, link);
-
             generatedLink = br.getRegex("<h2>Wygenerowane linki bezpośrednie</h2><textarea rows='1' style='width: 650px; height: 40px'>(.*)</textarea>").getMatch(0);
             if (generatedLink == null) {
                 logger.severe("Rapidtraffic.pl (Error): " + generatedLink);
@@ -265,11 +242,10 @@ public class RapidtrafficPl extends PluginForHost {
             }
             link.setProperty("generatedLinkRapidtraffic", generatedLink);
         }
-
         sleep(1 * 1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, 0);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-            // error
+        // error
         {
             br.followConnection();
             // not tested!
@@ -282,7 +258,6 @@ public class RapidtrafficPl extends PluginForHost {
                 link.setProperty("generatedLinkRapidtraffic", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-
             // not tested! - test if the error occurs
             if (br.getBaseURL().contains("notransfer")) {
                 /* No traffic left */
@@ -299,7 +274,6 @@ public class RapidtrafficPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -316,7 +290,6 @@ public class RapidtrafficPl extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
-
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     // try redirected link
                     boolean resetGeneratedLink = true;
@@ -329,7 +302,6 @@ public class RapidtrafficPl extends PluginForHost {
                             } else {
                                 resetGeneratedLink = false;
                             }
-
                         }
                     }
                     if (resetGeneratedLink) {
@@ -384,46 +356,51 @@ public class RapidtrafficPl extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void showAccountDetailsDialog(Account account) {
+    @Override
+    public void extendAccountSettingsPanel(Account account, PluginConfigPanelNG panel) {
         AccountInfo ai = account.getAccountInfo();
-        long availableTraffic = Long.parseLong(ai.getProperty("Available traffic").toString(), 10);
-        jd.gui.UserIO.getInstance().requestMessageDialog("Rapidtraffic.pl", getPhrase("ACCOUNT_TYPE") + ": Premium\n" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(availableTraffic));
+        if (ai != null) {
+            long availableTraffic = Long.parseLong(ai.getProperty("Available traffic").toString(), 10);
+            if (availableTraffic >= 0) {
+                panel.addStringPair(_GUI.T.lit_traffic_left(), SizeFormatter.formatBytes(availableTraffic));
+            }
+        }
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-            put("LOGIN_ERROR", "Rapidtraffic.pl: Login Error");
-            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-            put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
-            put("HOST_UNAVAILABLE", "Host is temporarily unavailable via ");
-            put("RETRY", "Retry in few secs");
-            put("NO_TRAFFIC", "No traffic left");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-            put("PREMIUM", "Premium User");
-            put("TRAFFIC_LEFT", "Traffic Left");
-            put("PREMIUM_EXPIRED", "Premium expired");
-            put("ACCOUNT_TYPE", "Account type");
-            put("BAD_LINK", "Multihoster rapidtraffic.pl reports: Bad link!");
-        }
-    };
+                                                  {
+                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("LOGIN_ERROR", "Rapidtraffic.pl: Login Error");
+                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+                                                      put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
+                                                      put("HOST_UNAVAILABLE", "Host is temporarily unavailable via ");
+                                                      put("RETRY", "Retry in few secs");
+                                                      put("NO_TRAFFIC", "No traffic left");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+                                                      put("PREMIUM", "Premium User");
+                                                      put("TRAFFIC_LEFT", "Traffic Left");
+                                                      put("PREMIUM_EXPIRED", "Premium expired");
+                                                      put("ACCOUNT_TYPE", "Account type");
+                                                      put("BAD_LINK", "Multihoster rapidtraffic.pl reports: Bad link!");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-            put("LOGIN_ERROR", "Rapidtraffic.pl: Błąd logowania");
-            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-            put("PLUGIN_BROKEN", "\r\nBłąd wtyczki, skontaktuj się z działem wsparcia JDownloadera!");
-            put("HOST_UNAVAILABLE", "Pobieranie z tego serwisu jest tymczasowo niedostępne w ");
-            put("RETRY", "Ponowna próba za kilka sekund");
-            put("NO_TRAFFIC", "Brak dostępnego transferu");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-            put("PREMIUM", "Użytkownik Premium");
-            put("TRAFFIC_LEFT", "Pozostały transfer");
-            put("PREMIUM_EXPIRED", "Konto Premium wygasło");
-            put("ACCOUNT_TYPE", "Typ konta");
-            put("BAD_LINK", "Serwis rapidtraffic.pl zgłasza: Błędny Link!");
-        }
-    };
+                                                  {
+                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+                                                      put("LOGIN_ERROR", "Rapidtraffic.pl: Błąd logowania");
+                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+                                                      put("PLUGIN_BROKEN", "\r\nBłąd wtyczki, skontaktuj się z działem wsparcia JDownloadera!");
+                                                      put("HOST_UNAVAILABLE", "Pobieranie z tego serwisu jest tymczasowo niedostępne w ");
+                                                      put("RETRY", "Ponowna próba za kilka sekund");
+                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+                                                      put("PREMIUM", "Użytkownik Premium");
+                                                      put("TRAFFIC_LEFT", "Pozostały transfer");
+                                                      put("PREMIUM_EXPIRED", "Konto Premium wygasło");
+                                                      put("ACCOUNT_TYPE", "Typ konta");
+                                                      put("BAD_LINK", "Serwis rapidtraffic.pl zgłasza: Błędny Link!");
+                                                  }
+                                              };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
@@ -440,5 +417,4 @@ public class RapidtrafficPl extends PluginForHost {
         }
         return "Translation not found!";
     }
-
 }

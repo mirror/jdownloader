@@ -10,18 +10,6 @@ import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.SpinnerNumberModel;
 
-import jd.PluginWrapper;
-import jd.controlling.proxy.ProxyController;
-import jd.http.Browser;
-import jd.http.SocketConnectionFactory;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DefaultEditAccountPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
@@ -33,27 +21,55 @@ import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
+import jd.PluginWrapper;
+import jd.controlling.proxy.ProxyController;
+import jd.http.Browser;
+import jd.http.SocketConnectionFactory;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DefaultEditAccountPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "genericusenet" }, urls = { "" }, flags = { 0 })
 public class GenericUseNet extends UseNet {
-
     public GenericUseNet(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium();
     }
 
-    private final String USENET_PORT = "USENET_PORT";
-    private final String USENET_SSL  = "USENET_SSL";
-    private final String USENET_HOST = "USENET_HOST";
+    public static interface GenericUsenetAccountConfig extends UsenetAccountConfigInterface {
+    }
 
     @Override
-    public Class<? extends UsenetConfigInterface> getConfigInterface() {
-        return null;
+    public GenericUsenetAccountConfig getAccountJsonConfig(Account acc) {
+        return (GenericUsenetAccountConfig) super.getAccountJsonConfig(acc);
+    }
+
+    @Override
+    protected PluginConfigPanelNG createConfigPanel() {
+        return new PluginConfigPanelNG() {
+            @Override
+            public void updateContents() {
+            }
+
+            @Override
+            public void save() {
+            }
+        };
+    }
+
+    @Override
+    public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
     }
 
     @Override
@@ -127,7 +143,6 @@ public class GenericUseNet extends UseNet {
                 label.setForeground(Color.RED);
                 add(label = new JLabel("Please contact us via support@jdownloader.org!"));
                 label.setForeground(Color.RED);
-
                 add(new JLabel(_GUI.T.UsenetConfigPanel_Server()));
                 add(host = new ExtTextField() {
                     @Override
@@ -136,13 +151,10 @@ public class GenericUseNet extends UseNet {
                     }
                 });
                 host.setHelpText(_GUI.T.jd_gui_userio_defaulttitle_input());
-
                 add(new JLabel(_GUI.T.UsenetConfigPanel_ssl()));
                 add(ssl = new ExtCheckBox());
-
                 add(new JLabel(_GUI.T.UsenetConfigPanel_port()));
                 add(port = new ExtSpinner(new SpinnerNumberModel(119, 80, 65535, 1)));
-
                 add(new JLabel(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_chunks()));
                 add(connections = new ExtSpinner(new SpinnerNumberModel(1, 1, 100, 1)));
             }
@@ -151,9 +163,14 @@ public class GenericUseNet extends UseNet {
             public void setAccount(Account defaultAccount) {
                 super.setAccount(defaultAccount);
                 if (defaultAccount != null) {
-                    ssl.setSelected(defaultAccount.getBooleanProperty(USENET_SSL, false));
-                    host.setText(defaultAccount.getStringProperty(USENET_HOST, null));
-                    port.setValue(defaultAccount.getIntegerProperty(USENET_PORT, ssl.isSelected() ? 563 : 119));
+                    GenericUsenetAccountConfig cfg = getAccountJsonConfig(defaultAccount);
+                    ssl.setSelected(cfg.isSSLEnabled());
+                    host.setText(cfg.getHost());
+                    int p = cfg.getPort();
+                    if (p <= 0) {
+                        p = ssl.isSelected() ? 563 : 119;
+                    }
+                    port.setValue(p);
                     connections.setValue(Math.max(1, defaultAccount.getMaxSimultanDownloads()));
                 }
             }
@@ -167,9 +184,15 @@ public class GenericUseNet extends UseNet {
             @Override
             public boolean updateAccount(Account input, Account output) {
                 super.updateAccount(input, output);
-                output.setProperty(USENET_SSL, input.getBooleanProperty(USENET_SSL, false));
-                output.setProperty(USENET_HOST, input.getStringProperty(USENET_HOST, null));
-                output.setProperty(USENET_PORT, input.getIntegerProperty(USENET_PORT, ssl.isSelected() ? 563 : 119));
+                GenericUsenetAccountConfig outCfg = getAccountJsonConfig(output);
+                GenericUsenetAccountConfig inCfg = getAccountJsonConfig(input);
+                outCfg.setSSLEnabled(inCfg.isSSLEnabled());
+                outCfg.setHost(inCfg.getHost());
+                int p = inCfg.getPort();
+                if (p <= 0) {
+                    p = ssl.isSelected() ? 563 : 119;
+                }
+                outCfg.setPort(p);
                 output.setMaxSimultanDownloads(input.getMaxSimultanDownloads());
                 return true;
             }
@@ -177,9 +200,10 @@ public class GenericUseNet extends UseNet {
             @Override
             public Account getAccount() {
                 final Account acc = super.getAccount();
-                acc.setProperty(USENET_SSL, ssl.isSelected());
-                acc.setProperty(USENET_HOST, host.getText().trim());
-                acc.setProperty(USENET_PORT, port.getValue());
+                GenericUsenetAccountConfig cfg = getAccountJsonConfig(acc);
+                cfg.setSSLEnabled(ssl.isSelected());
+                cfg.setHost(host.getText().trim());
+                cfg.setPort(((Number) port.getValue()).intValue());
                 acc.setMaxSimultanDownloads(Math.max(1, (Integer) connections.getValue()));
                 return acc;
             }
@@ -193,9 +217,13 @@ public class GenericUseNet extends UseNet {
 
     @Override
     protected UsenetServer getUsenetServer(Account account) throws Exception {
-        final boolean ssl = account.getBooleanProperty(USENET_SSL, false);
-        final int port = account.getIntegerProperty(USENET_PORT, ssl ? 563 : 119);
-        final String host = account.getStringProperty(USENET_HOST, null);
+        GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
+        final boolean ssl = cfg.isSSLEnabled();
+        int port = cfg.getPort();
+        if (port <= 0) {
+            port = ssl ? 563 : 119;
+        }
+        final String host = cfg.getHost();
         if (host == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -206,7 +234,8 @@ public class GenericUseNet extends UseNet {
     @Override
     public String getHost(final DownloadLink link, Account account) {
         if (account != null) {
-            final String host = account.getStringProperty(USENET_HOST, null);
+            GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
+            final String host = cfg.getHost();
             if (host != null) {
                 return Browser.getHost(host, true);
             }

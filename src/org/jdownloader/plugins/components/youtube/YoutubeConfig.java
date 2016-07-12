@@ -30,10 +30,13 @@ import org.jdownloader.plugins.components.youtube.keepForCompatibilitye.YoutubeC
 import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.Type;
 import org.jdownloader.translate._JDT;
 
 @CustomStorageName("youtube/Youtube")
 @StorageHandlerFactoryAnnotation(YoutubeConfigStorageHandlerFactory.class)
+@PluginHost(host = "youtube.com", type = Type.HOSTER)
 public interface YoutubeConfig extends PluginConfigInterface {
     public abstract static class AbstractEnumOrderFixList extends AbstractCustomValueGetter<String[]> {
         private Class<? extends Enum> cls;
@@ -48,11 +51,9 @@ public interface YoutubeConfig extends PluginConfigInterface {
             String[] ret = new String[enums.size()];
             for (int i = 0; i < ret.length; i++) {
                 ret[i] = enums.get(i).name();
-
             }
             return ret;
         }
-
     }
 
     public static enum IfUrlisAPlaylistAction implements LabelInterface {
@@ -77,7 +78,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     }
 
     public static enum IfUrlisAVideoAndPlaylistAction implements LabelInterface {
-
         ASK {
             @Override
             public String getLabel() {
@@ -102,73 +102,61 @@ public interface YoutubeConfig extends PluginConfigInterface {
                 return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
             }
         },;
-
     }
 
     public static class NotNullCustomGetter extends AbstractCustomValueGetter<String> {
-
         @Override
         public String getValue(KeyHandler<String> keyHandler, String value) {
             if (StringUtils.isEmpty(value)) {
                 value = keyHandler.getDefaultValue();
             }
             return value;
-
         }
-
     }
 
     public static class QualitySortIdentifierOrderAudioBitrate extends AbstractEnumOrderFixList {
-
         public QualitySortIdentifierOrderAudioBitrate() {
             super(AudioBitrate.class);
         }
     }
 
     public static class QualitySortIdentifierOrderAudioCodec extends AbstractEnumOrderFixList {
-
         public QualitySortIdentifierOrderAudioCodec() {
             super(AudioCodec.class);
         }
     }
 
     public static class QualitySortIdentifierOrderDefaultGetter extends AbstractEnumOrderFixList {
-
         public QualitySortIdentifierOrderDefaultGetter() {
             super(QualitySortIdentifier.class);
         }
     }
 
     public static class QualitySortIdentifierOrderFiletype extends AbstractEnumOrderFixList {
-
         public QualitySortIdentifierOrderFiletype() {
             super(FileContainer.class);
         }
     }
 
     public static class QualitySortIdentifierOrderResolution extends AbstractEnumOrderFixList {
-
         public QualitySortIdentifierOrderResolution() {
             super(VideoResolution.class);
         }
     }
 
     public static class QualitySortIdentifierOrderVideoCodec extends AbstractEnumOrderFixList {
-
         public QualitySortIdentifierOrderVideoCodec() {
             super(VideoCodec.class);
         }
     }
 
     public static class QualitySortIdentifierOrderVideoFramerate extends AbstractEnumOrderFixList {
-
         public QualitySortIdentifierOrderVideoFramerate() {
             super(VideoFrameRate.class);
         }
     }
 
     public static final double AVOID_DOUBLE_MOD = 100000d;
-
     static Object              NOTHING          = YoutubeCompatibility.moveJSonFiles("youtube/Youtube");
 
     @AboutConfig
@@ -181,7 +169,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     List<AudioBitrate> getBlacklistedAudioBitrates();
 
     @AboutConfig
-
     List<AudioCodec> getBlacklistedAudioCodecs();
 
     @AboutConfig
@@ -245,7 +232,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
     List<VariantIDStorable> getDisabledVariants();
-
     // @DefaultBooleanValue(false)
     // @AboutConfig
     // boolean isPreferHttpsEnabled();
@@ -257,7 +243,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     // boolean isBestGroupVariantEnabled();
     //
     // void setBestGroupVariantEnabled(boolean b);
-
     @AboutConfig
     ArrayList<String> getExtraSubtitles();
 
@@ -298,37 +283,30 @@ public interface YoutubeConfig extends PluginConfigInterface {
     String[] getQualitySortIdentifierOrder();
 
     @CustomValueGetter(QualitySortIdentifierOrderAudioBitrate.class)
-
     @AboutConfig
     String[] getQualitySortIdentifierOrderAudioBitrate();
 
     @AboutConfig
     @CustomValueGetter(QualitySortIdentifierOrderAudioCodec.class)
-
     String[] getQualitySortIdentifierOrderAudioCodec();
 
     // @AboutConfig
     // ArrayList<YoutubeCustomVariantStorable> getCustomVariants();
     //
     // void setCustomVariants(ArrayList<YoutubeCustomVariantStorable> list);
-
     @AboutConfig
     @CustomValueGetter(QualitySortIdentifierOrderFiletype.class)
-
     String[] getQualitySortIdentifierOrderFiletype();
 
     @AboutConfig
     @CustomValueGetter(QualitySortIdentifierOrderResolution.class)
-
     String[] getQualitySortIdentifierOrderResolution();
 
     @CustomValueGetter(QualitySortIdentifierOrderVideoCodec.class)
-
     @AboutConfig
     String[] getQualitySortIdentifierOrderVideoCodec();
 
     @CustomValueGetter(QualitySortIdentifierOrderVideoFramerate.class)
-
     @AboutConfig
     String[] getQualitySortIdentifierOrderVideoFramerate();
 
@@ -342,7 +320,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**AUDIO_BITRATE**AUDIO_CODEC**DEMUX**SPATIAL*")
-
     @CustomValueGetter(NotNullCustomGetter.class)
     @DefaultStringValue("*CONTAINER* *AUDIO_BITRATE* *SPATIAL* kbit/s")
     @RequiresRestart("A JDownloader Restart is Required")
@@ -352,7 +329,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @DefaultStringValue("*3D* *360* *HEIGHT*p *FPS*fps *CONTAINER* - Video *AUDIO_CODEC* - Audio")
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**HEIGHT**FPS**AUDIO_CODEC**3D**AUDIO_BITRATE**SPATIAL*")
-
     @CustomValueGetter(NotNullCustomGetter.class)
     String getVariantNamePatternVideo();
 
@@ -445,7 +421,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     void setChunksCount(int count);
 
     @AboutConfig
-
     void setCollections(List<YoutubeVariantCollection> links);
 
     void setCustomChunkValueEnabled(boolean b);
@@ -516,7 +491,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Preload 200kb and use FFProbe to detect the actual Audio Bitrate.")
-
     boolean isDoExtendedAudioBitrateLookupEnabled();
 
     void setDoExtendedAudioBitrateLookupEnabled(boolean b);
@@ -524,7 +498,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultIntValue(5)
     @DescriptionForConfigEntry("If a Variant is not available, JD will try up to * alternatives")
-
     int getAutoAlternativeSearchDepths();
 
     void setAutoAlternativeSearchDepths(int i);
@@ -532,7 +505,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If disabled, JD will ignore the Youtube Collections, but create an extra link for every variant")
-
     boolean isCollectionMergingEnabled();
 
     void setCollectionMergingEnabled(boolean b);

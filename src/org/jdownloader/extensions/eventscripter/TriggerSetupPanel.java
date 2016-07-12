@@ -15,7 +15,7 @@ public abstract class TriggerSetupPanel extends AbstractConfigPanel {
     }
 
     @Override
-    protected String getLeftGap() {
+    public String getLeftGap() {
         return "0";
     }
 

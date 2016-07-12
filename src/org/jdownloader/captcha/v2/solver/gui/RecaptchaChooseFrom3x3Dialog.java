@@ -58,6 +58,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
 
     private HashSet<Integer>                    selected;
     private AbstractRecaptcha2FallbackChallenge challenge;
+    private SubChallenge                        sub;
 
     // public RecaptchaChooseFrom3x3Dialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String
     // explain) {
@@ -68,6 +69,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
         super(captchaChallenge, flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, null, (Image[]) null);
 
         this.challenge = challenge;
+        sub = challenge.getSubChallenge();
         BufferedImage img;
         try {
             img = IconIO.getImage(challenge.getImageFile().toURI().toURL(), false);
@@ -82,7 +84,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
     @Override
     protected void addBeforeImage(MigPanel field) {
         super.addBeforeImage(field);
-        SubChallenge sub = challenge.getSubChallenge();
+
         String key = sub.getSearchKey();
 
         field.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
@@ -111,7 +113,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
         if (bounds == null) {
             return;
         }
-        SubChallenge sub = challenge.getSubChallenge();
+
         double columnWidth = bounds.getWidth() / sub.getGridWidth();
         double rowHeight = bounds.getHeight() / sub.getGridHeight();
         double imgColumnWidth = images[0].getWidth(null) / sub.getGridWidth();
@@ -167,7 +169,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
     @Override
     public JComponent layoutDialogContent() {
         JComponent ret = super.layoutDialogContent();
-        final SubChallenge sub = challenge.getSubChallenge();
+
         this.selected = new HashSet<Integer>();
         iconPanel.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
         iconPanel.setToolTipText(getHelpText());
