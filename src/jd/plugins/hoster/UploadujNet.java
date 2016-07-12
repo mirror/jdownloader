@@ -62,7 +62,7 @@ public class UploadujNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().matches("http://uploaduj.net/(faq|konto).*?/.*?")) {
+        if (link.getDownloadURL().matches("http://uploaduj.net/(faq|konto|premium)/.*?")) {
             return AvailableStatus.FALSE;
         }
         this.setBrowserExclusive();
