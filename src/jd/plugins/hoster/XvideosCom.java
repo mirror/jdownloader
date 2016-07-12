@@ -92,6 +92,7 @@ public class XvideosCom extends PluginForHost {
         parameter.setName(new Regex(parameter.getDownloadURL(), "xvideos\\.com/(.+)").getMatch(0));
         br.setFollowRedirects(false);
         br.getHeaders().put("Accept-Encoding", "gzip");
+        br.getHeaders().put("Accept-Language", "en-gb");
         br.getPage(parameter.getDownloadURL());
         // fixes embed links back to normal links
         if (parameter.getDownloadURL().contains(".com/embedframe/")) {
