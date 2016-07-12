@@ -18,10 +18,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,40 +29,30 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" }, flags = { 0 })
-public class MxCloudCom extends PluginForDecrypt {
+public class MxCloudCom extends antiDDoSForDecrypt {
 
     public MxCloudCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String            INVALIDLINKS = "https?://(?:www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
-    private static AtomicReference<String> agent        = new AtomicReference<String>();
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> tempLinks = new ArrayList<String>();
         final String parameter = param.toString().replace("http://", "https://");
-        br.setReadTimeout(3 * 60 * 1000);
-        if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Link invalid: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (parameter.matches("https?://(?:www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
-        br.getHeaders().put("User-Agent", agent.get());
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
             final DownloadLink offline = this.createOfflinelink(parameter);
@@ -78,13 +68,13 @@ public class MxCloudCom extends PluginForDecrypt {
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (theName == null) {
             theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
-        }
-        if (theName == null) {
-            theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        }
-        if (theName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (theName == null) {
+                theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                if (theName == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+            }
         }
 
         final String playInfo = br.getRegex("m\\-play\\-info=\"([^\"]+)\"").getMatch(0);
@@ -92,9 +82,9 @@ public class MxCloudCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String url_mp3_preview = this.br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
+        final String url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
         if (url_mp3_preview != null) {
-            final Regex originalinfo = new Regex(url_mp3_preview, "\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]*?\\.mp3)\"");
+            final Regex originalinfo = new Regex(url_mp3_preview, "(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]+\\.mp3)");
             final String previewLinkpart = originalinfo.getMatch(1);
             if (previewLinkpart != null) {
                 /* 2016-05-01: It seems like it is not possibly anymore to download the original uploaded file (mp3) :( */
@@ -115,8 +105,6 @@ public class MxCloudCom extends PluginForDecrypt {
             return null;
         }
 
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
         final String[] links = new Regex(result, "\"(.*?)\"").getColumn(0);
         if (links != null && links.length != 0) {
             for (final String temp : links) {
@@ -128,10 +116,13 @@ public class MxCloudCom extends PluginForDecrypt {
             return null;
         }
         final HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
+        br.setFollowRedirects(true);
         for (final String dl : tempLinks) {
             if (!dl.endsWith(".mp3") && !dl.endsWith(".m4a")) {
                 continue;
             }
+            URLConnectionAdapter con = null;
+            final Browser br = this.br.cloneBrowser();
             final DownloadLink dlink = createDownloadlink("directhttp://" + dl);
             dlink.setFinalFileName(Encoding.htmlDecode(theName).trim() + new Regex(dl, "(\\..{3}$)").getMatch(0));
             /* Nicht alle Links im Array sets[] sind verfügbar. */
