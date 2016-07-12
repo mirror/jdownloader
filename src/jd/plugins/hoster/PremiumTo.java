@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -23,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -44,27 +47,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends UseNet {
-
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
     private static HashMap<String, Integer>                    connectionLimits               = new HashMap<String, Integer>();
     private static AtomicBoolean                               shareOnlineLocked              = new AtomicBoolean(false);
-
     private final String                                       noChunks                       = "noChunks";
     private static Object                                      LOCK                           = new Object();
     private final String                                       normalTraffic                  = "normalTraffic";
     private final String                                       specialTraffic                 = "specialTraffic";
-
     private static final String                                lang                           = System.getProperty("user.language");
     private static final String                                CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
     private static final String                                type_storage                   = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
     private static final String                                type_torrent                   = "https?://torrent\\d*\\.premium\\.to/.+";
-
     private static final String                                API_BASE                       = "http://api.premium.to/";
 
     public PremiumTo(PluginWrapper wrapper) {
@@ -81,14 +76,8 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    public static interface PremiumToConfigInterface extends UsenetConfigInterface {
-
+    public static interface PremiumToConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<PremiumToConfigInterface> getConfigInterface() {
-        return PremiumToConfigInterface.class;
-    }
 
     @Override
     public String rewriteHost(String host) {
@@ -274,11 +263,9 @@ public class PremiumTo extends UseNet {
                     }
                 }
             }
-
             try {
                 dl = null;
                 String url = link.getDownloadURL().replaceFirst("https?://", "");
-
                 // this here is bullshit... multihoster side should do all the corrections.
                 /* begin code from premium.to support */
                 if (url.startsWith("http://")) {
@@ -307,7 +294,6 @@ public class PremiumTo extends UseNet {
                 showMessage(link, "Phase 1/3: Login...");
                 login(account, false);
                 showMessage(link, "Phase 2/3: Get link");
-
                 int connections = getConnections(link.getHost());
                 if (link.getChunks() != -1) {
                     connections = link.getChunks();
@@ -315,7 +301,6 @@ public class PremiumTo extends UseNet {
                 if (link.getBooleanProperty(noChunks, false)) {
                     connections = 1;
                 }
-
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, API_BASE + "getfile.php?link=" + url, true, connections);
                 if (dl.getConnection().getResponseCode() == 404) {
                     /* file offline */
@@ -338,7 +323,6 @@ public class PremiumTo extends UseNet {
                         }
                     }
                     br.followConnection();
-
                     logger.severe("PremiumTo Error");
                     if (br.toString().matches("File not found")) {
                         // we can not trust multi-hoster file not found returns, they could be wrong!
@@ -417,7 +401,6 @@ public class PremiumTo extends UseNet {
             URLConnectionAdapter con = null;
             long fileSize = -1;
             ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
-
             if (accs == null || accs.size() == 0) {
                 if (link.getDownloadURL().matches(type_storage)) {
                     /* This linktype can only be downloaded/checked via account */
@@ -455,12 +438,10 @@ public class PremiumTo extends UseNet {
                     } catch (Throwable e) {
                     }
                 }
-
             } else {
                 // if accounts available try all whether the link belongs to it links with token should work anyway
                 for (Account acc : accs) {
                     login(acc, false);
-
                     try {
                         con = br.openGetConnection(dlink);
                         if (!con.getContentType().contains("html")) {
@@ -470,7 +451,6 @@ public class PremiumTo extends UseNet {
                             }
                             link.setDownloadSize(fileSize);
                             String name = con.getHeaderField("Content-Disposition");
-
                             if (name != null) {
                                 // filter the filename from content disposition and decode it...
                                 name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
@@ -598,5 +578,4 @@ public class PremiumTo extends UseNet {
         ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 563, 444));
         return ret;
     }
-
 }

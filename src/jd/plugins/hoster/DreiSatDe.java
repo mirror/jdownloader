@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
@@ -25,9 +24,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -41,26 +48,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "https?://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" }, flags = { 32 })
 public class DreiSatDe extends PluginForHost {
-
-    private static final String Q_LOW      = "Q_LOW";
-    private static final String Q_HIGH     = "Q_HIGH";
-    private static final String Q_VERYHIGH = "Q_VERYHIGH";
-    private static final String Q_HD       = "Q_HD";
-    private static final String Q_BEST     = "Q_BEST";
-
     public DreiSatDe(final PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     @Override
@@ -70,11 +62,16 @@ public class DreiSatDe extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\?mode=play", "?display=1&mode=play"));
     }
 
+    @Override
+    public DreiSatConfigInterface getPluginJsonConfig() {
+        return (DreiSatConfigInterface) super.getPluginJsonConfig();
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
         ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-
+        DreiSatConfigInterface cfg = getPluginJsonConfig();
         try {
             if (ret != null && ret.size() > 0) {
                 /*
@@ -90,7 +87,6 @@ public class DreiSatDe extends PluginForHost {
                     final String parameter = "http://www.3sat.de/mediathek/?mode=play&display=1&obj=" + ID;
                     Browser br = new Browser();
                     br.getPage(parameter);
-
                     String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
                     String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
                     if (title == null) {
@@ -102,7 +98,6 @@ public class DreiSatDe extends PluginForHost {
                     if (title == null) {
                         title = "UnknownTitle_" + System.currentTimeMillis();
                     }
-
                     if (br.containsHTML("<debuginfo>Kein Beitrag mit ID") || br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
                         sourceLink.setAvailable(false);
                         ret.set(0, sourceLink);
@@ -110,15 +105,12 @@ public class DreiSatDe extends PluginForHost {
                     }
                     Map<String, HashMap<String, String>> MediaEntrys = new TreeMap<String, HashMap<String, String>>();
                     HashMap<String, String> MediaEntry = null;
-
                     Document doc = JDUtilities.parseXmlString(br.getPage("http://www.3sat.de/mediathek/xmlservice/web/beitragsDetails?ak=web&id=" + ID).toString(), false);
-
                     /* xmlData --> HashMap */
                     // /response/video/formitaeten/formitaet... --> name, quality, stream url
                     final NodeList nl_details = doc.getElementsByTagName("details");
                     final Node childNodemain = nl_details.item(0);
                     NodeList nl = doc.getElementsByTagName("formitaet");
-
                     NodeList t = childNodemain.getChildNodes();
                     MediaEntry = new HashMap<String, String>();
                     for (int j = 0; j < t.getLength(); j++) {
@@ -128,13 +120,11 @@ public class DreiSatDe extends PluginForHost {
                         }
                         MediaEntry.put(g.getNodeName(), g.getTextContent());
                     }
-
                     final String date = MediaEntry.get("airtime");
                     if (date == null) {
                         return null;
                     }
                     final String date_formatted = formatDate(date);
-
                     for (int i = 0; i < nl.getLength(); i++) {
                         Node childNode = nl.item(i);
                         String mediaType = ((Element) childNode).getAttribute("basetype");
@@ -162,28 +152,23 @@ public class DreiSatDe extends PluginForHost {
                         }
                         MediaEntrys.put(title + "@" + mediaType + MediaEntry.get("quality") + MediaEntry.get("videoBitrate"), MediaEntry);
                     }
-
                     if (br.containsHTML("(>Dieser Beitrag ist leider.*?nicht \\(mehr\\) verf&uuml;gbar|>Das Video ist in diesem Format.*?aktuell leider nicht verf&uuml;gbar)")) {
                         sourceLink.setAvailable(false);
                         ret.set(0, sourceLink);
                         return ret;
                     }
-
                     /*
                      * little pause needed so the next call does not return trash
                      */
                     Thread.sleep(1000);
-
                     ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                     HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                     for (Entry<String, HashMap<String, String>> next : MediaEntrys.entrySet()) {
                         MediaEntry = new HashMap<String, String>(next.getValue());
-
                         String name = next.getKey();
                         String protocol = MediaEntry.get("basetype").split("_")[3];
                         String url = MediaEntry.get("url");
                         String fmt = MediaEntry.get("quality");
-
                         if (fmt != null) {
                             fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
                         }
@@ -194,32 +179,31 @@ public class DreiSatDe extends PluginForHost {
                         if (fmt != null) {
                             /* best selection is done at the end */
                             if ("low".equals(fmt)) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_LOW, true) == false) {
+                                if (!cfg.isLoadLowVersionEnabled()) {
                                     continue;
                                 } else {
                                     fmt = "low";
                                 }
                             } else if ("high".equals(fmt)) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_HIGH, true) == false) {
+                                if (!cfg.isLoadHighVersionEnabled()) {
                                     continue;
                                 } else {
                                     fmt = "high";
                                 }
                             } else if ("veryhigh".equals(fmt)) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_VERYHIGH, true) == false) {
+                                if (!cfg.isLoadVeryHighVersionEnabled()) {
                                     continue;
                                 } else {
                                     fmt = "veryhigh";
                                 }
                             } else if ("hd".equals(fmt)) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_HD, true) == false) {
+                                if (!cfg.isLoadHDVersionEnabled()) {
                                     continue;
                                 } else {
                                     fmt = "hd";
                                 }
                             }
                         }
-
                         String ext = MediaEntry.get("basetype").split("_")[2];
                         name = date_formatted + "_3sat_" + name.split("@")[0] + "__" + MediaEntry.get("quality") + "_" + protocol + "@" + MediaEntry.get("videoBitrate") + "bps." + ext;
                         final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
@@ -231,12 +215,10 @@ public class DreiSatDe extends PluginForHost {
                         link.setProperty("streamingType", protocol);
                         link.setProperty("LINKDUPEID", "3sat" + JDHash.getMD5(ID + name + fmt + MediaEntry.get("videoBitrate")));
                         link.setContentUrl(parameter);
-
                         try {
                             link.setDownloadSize(Long.parseLong(MediaEntry.get("filesize")));
                         } catch (Throwable e) {
                         }
-
                         DownloadLink best = bestMap.get(fmt);
                         if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
                             bestMap.put(fmt, link);
@@ -244,7 +226,7 @@ public class DreiSatDe extends PluginForHost {
                         newRet.add(link);
                     }
                     if (newRet.size() > 0) {
-                        if (this.getPluginConfig().getBooleanProperty(Q_BEST, false)) {
+                        if (cfg.isLoadBestVersionOnlyEnabled()) {
                             /* only keep best quality */
                             DownloadLink keep = bestMap.get("hd");
                             if (keep == null) {
@@ -336,7 +318,6 @@ public class DreiSatDe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-
         } else {
             br.setFollowRedirects(true);
             if (dllink.startsWith("mms")) {
@@ -367,14 +348,12 @@ public class DreiSatDe extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             String mediaUrl = br.getRegex("Flashvars\\.mediaURL\\s+?=\\s+?\"([^\"]+)\"").getMatch(0);
-
             if (br.containsHTML("(>Dieser Beitrag ist leider.*?nicht \\(mehr\\) verf&uuml;gbar|>Das Video ist in diesem Format.*?aktuell leider nicht verf&uuml;gbar)") || mediaUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(mediaUrl);
             String app = br.getRegex("<param name=\"app\" value=\"([^\"]+)\"").getMatch(0);
             String host = br.getRegex("<param name=\"host\" value=\"([^\"]+)\"").getMatch(0);
-
             if (app == null && host == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -422,14 +401,40 @@ public class DreiSatDe extends PluginForHost {
         return ip == null || ip.trim().length() == 0;
     }
 
-    private void setConfigElements() {
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.dreisat.best", "Load Best Version ONLY")).setDefaultValue(false);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(bestonly);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.dreisat.loadlow", "Load Low Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.dreisat.loadhigh", "Load High Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.dreisat.loadveryhigh", "Load VeryHigh Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.dreisat.loadhd", "Load HD Version")).setDefaultValue(false).setEnabled(false));
-    }
+    public static interface DreiSatConfigInterface extends PluginConfigInterface {
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig("Q_BEST")
+        boolean isLoadBestVersionOnlyEnabled();
 
+        void setLoadBestVersionOnlyEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @TakeValueFromSubconfig("Q_LOW")
+        boolean isLoadLowVersionEnabled();
+
+        void setLoadLowVersionEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @TakeValueFromSubconfig("Q_HIGH")
+        boolean isLoadHighVersionEnabled();
+
+        void setLoadHighVersionEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @TakeValueFromSubconfig("Q_VERYHIGH")
+        boolean isLoadVeryHighVersionEnabled();
+
+        void setLoadVeryHighVersionEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig("Q_HD")
+        boolean isLoadHDVersionEnabled();
+
+        void setLoadhDVersionEnabled(boolean b);
+    }
 }

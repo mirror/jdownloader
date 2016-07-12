@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Cookie;
@@ -17,14 +22,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "news.astraweb.com" }, urls = { "" }, flags = { 0 })
 public class NewsAstraWebCom extends UseNet {
-
     public NewsAstraWebCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.news.astraweb.com/signup.html");
@@ -42,14 +41,8 @@ public class NewsAstraWebCom extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface NewsAstraWebComConfigInterface extends UsenetConfigInterface {
-
+    public static interface NewsAstraWebComConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<NewsAstraWebComConfigInterface> getConfigInterface() {
-        return NewsAstraWebComConfigInterface.class;
-    }
 
     private final String EXPIREDCOOKIE = "expired";
 
@@ -170,5 +163,4 @@ public class NewsAstraWebCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("ssl-us.astraweb.com", true, 563, 443));
         return ret;
     }
-
 }

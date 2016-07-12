@@ -16,7 +16,6 @@ public class PasswordInput extends ExtPasswordField implements SettingsComponent
         this.keyhandler = keyhandler;
         setText(keyhandler.getValue());
         keyhandler.getEventSender().addListener(this, true);
-
     }
 
     private final AtomicInteger setting = new AtomicInteger(0);
@@ -34,7 +33,7 @@ public class PasswordInput extends ExtPasswordField implements SettingsComponent
 
     @Override
     public String getConstraints() {
-        return null;
+        return "sgy LINE";
     }
 
     @Override
@@ -53,5 +52,4 @@ public class PasswordInput extends ExtPasswordField implements SettingsComponent
         }
         setText(keyhandler.getValue());
     }
-
 }

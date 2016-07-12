@@ -1,19 +1,20 @@
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.google.GoogleAccountConfig;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.components.google.GoogleHelper;
 
 @HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "google.com (Recaptcha)" }, urls = { "google://.+" }, flags = { 2 })
 public class GooglePremium extends PluginForHost {
-
     @Override
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
@@ -51,8 +52,8 @@ public class GooglePremium extends PluginForHost {
     }
 
     @Override
-    public ConfigContainer getConfig() {
-        return null;
+    public Class<GoogleAccountConfig> getAccountConfigInterface(Account account) {
+        return GoogleAccountConfig.class;
     }
 
     public GooglePremium(PluginWrapper wrapper) {
@@ -70,8 +71,9 @@ public class GooglePremium extends PluginForHost {
         handlePremium(downloadLink, null);
     }
 
-    public boolean hasConfig() {
-        return false;
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return null;
     }
 
     @Override
@@ -85,14 +87,15 @@ public class GooglePremium extends PluginForHost {
     }
 
     @Override
+    public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
+    }
+
+    @Override
     public void resetDownloadlink(DownloadLink downloadLink) {
     }
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    protected void setConfigElements() {
     }
 
     @Override

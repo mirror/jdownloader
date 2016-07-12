@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -22,7 +22,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenext.com" }, urls = { "" }, flags = { 0 })
 public class UsenextCom extends UseNet {
-
     public UsenextCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.usenext.com/signup");
@@ -40,14 +39,8 @@ public class UsenextCom extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface UsenextConfigInterface extends UsenetConfigInterface {
-
+    public static interface UsenextConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<UsenextConfigInterface> getConfigInterface() {
-        return UsenextConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -84,7 +77,6 @@ public class UsenextCom extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-
             br.getPage("/UseNeXTDE/MemberAreaInt/obj/user/usEdit.cfm?sLangToken=ENG");
             account.saveCookies(br.getCookies(getHost()), "");
             final String userName = br.getRegex("Username</label>.*?value=\"(avi-.*?)\"").getMatch(0);
@@ -137,5 +129,4 @@ public class UsenextCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("news.usenext.de", true, 563));
         return ret;
     }
-
 }

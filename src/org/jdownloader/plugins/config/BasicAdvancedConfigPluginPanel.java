@@ -4,13 +4,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedValueColumn;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.EditColumn;
-import jd.plugins.PluginConfigPanelNG;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DevConfig;
@@ -18,6 +11,14 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedValueColumn;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.EditColumn;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
 
 public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
     private final class BasicAdvancedConfigTable extends AdvancedTable {
@@ -98,7 +99,6 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
 
                 @Override
                 protected int adjustWidth(int w) {
-
                     return this.calculateMinimumHeaderWidth();
                 }
 
@@ -111,7 +111,6 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
                 public boolean isPaintWidthLockIcon() {
                     return false;
                 }
-
             });
             addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI.T.AdvancedTableModel_initColumns_desc_()) {
                 private static final long serialVersionUID = 1L;
@@ -147,9 +146,7 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
                     return true;
                 }
             });
-
             addColumn(new AdvancedValueColumn() {
-
                 @Override
                 public boolean isHidable() {
                     return false;
@@ -182,7 +179,6 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
 
                 @Override
                 protected int adjustWidth(int w) {
-
                     return this.calculateMinimumHeaderWidth();
                 }
 
@@ -240,7 +236,6 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
 
                 @Override
                 protected int adjustWidth(int w) {
-
                     return this.calculateMinimumHeaderWidth();
                 }
 
@@ -253,7 +248,6 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
                 public boolean isPaintWidthLockIcon() {
                     return false;
                 }
-
             });
             addColumn(new EditColumn());
         }
@@ -261,24 +255,27 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
 
     private AdvancedConfigTableModel model;
     private ConfigInterface          cfg;
+    private String                   description;
+    private String                   filter;
 
     public BasicAdvancedConfigPluginPanel(String description, ConfigInterface cfg, String filter) {
-
         this.cfg = cfg;
+        this.description = description;
+        this.filter = filter;
+    }
 
+    @Override
+    protected void initPluginSettings(Plugin protoType) {
         if (description != null) {
             addStartDescription(description);
         }
-
         // JLabel lbl;
-
         // lbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
         add(new BasicAdvancedConfigTable(model = new BasicAdvancedConfigTableModel("ConfigPanel_" + cfg.getClass().getSimpleName())), "gapleft" + getLeftGap() + ",aligny top,pushx,growx,spanx");
         model.refresh(filter);
-
     }
 
-    protected String getLeftGap() {
+    public String getLeftGap() {
         return "32";
     }
 
@@ -316,5 +313,4 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
     @Override
     public void updateContents() {
     }
-
 }

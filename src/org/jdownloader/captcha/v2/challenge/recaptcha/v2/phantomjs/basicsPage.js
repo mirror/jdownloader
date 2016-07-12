@@ -10,7 +10,7 @@
 	clickBox = function(num) {
 
 		if (document.getElementsByClassName('rc-image-tile-target')[num].parentNode.className) {
-			console.log("Already clicked: "+num);
+			console.log("Already clicked: " + num);
 			return;
 		}
 		boxes = document.getElementsByClassName("rc-image-tile-target");
@@ -22,6 +22,22 @@
 				return;
 			}
 		}
+
+	}
+	clickReload = function() {
+
+		var evt = document.createEvent("MouseEvents");
+		evt.initEvent("mouseover", true, true);
+		verifyButton = document.getElementById("recaptcha-reload-button");
+		verifyButton.dispatchEvent(evt);
+		console.log("Dispatch Click event on reload Button " + verifyButton);
+		var evt = document.createEvent("MouseEvents");
+		evt.initEvent("mousedown", true, true);
+		verifyButton.dispatchEvent(evt);
+
+		var evt = document.createEvent("MouseEvents");
+		evt.initEvent("mouseup", true, true);
+		verifyButton.dispatchEvent(evt);
 
 	}
 	clickVerify = function() {

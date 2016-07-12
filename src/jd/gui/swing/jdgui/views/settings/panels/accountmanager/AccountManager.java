@@ -20,6 +20,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.HosterOrderPanel;
+import jd.plugins.Account;
 import net.miginfocom.swing.MigLayout;
 
 public class AccountManager extends SwitchPanel implements SettingsComponent {
@@ -135,6 +136,14 @@ public class AccountManager extends SwitchPanel implements SettingsComponent {
 
         add(tab);
 
+    }
+
+    public void setTab(int i) {
+        tab.setSelectedIndex(i);
+    }
+
+    public void selectAccount(Account account) {
+        accountListPanel.selectAccount(account);
     }
 
     public JTabbedPane getTabbedPane() {

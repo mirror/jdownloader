@@ -5,6 +5,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 import jd.captcha.utils.RecaptchaTypeTester;
 import jd.captcha.utils.RecaptchaTypeTester.RecaptchaType;
@@ -15,6 +19,7 @@ import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
 public class Recaptcha {
@@ -150,6 +155,11 @@ public class Recaptcha {
                 this.rcBr.setRequest(null);
             }
             try {
+                LazyHostPlugin lPlg = HostPluginController.getInstance().get("google.com (Recaptcha)");
+                PluginForHost googlePlugin = lPlg.newInstance(null);
+
+                PluginConfigInterface config = PluginJsonConfig.get(googlePlugin.getConfigInterface());
+
                 org.jdownloader.captcha.v2.solver.service.BrowserSolverService.fillCookies(rcBr);
                 if (rcBr.getCookie("http://google.com", "SID") != null) {
 

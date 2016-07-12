@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -20,7 +20,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "bitusenet.com" }, urls = { "" }, flags = { 0 })
 public class NewsBitUsenetCom extends UseNet {
-
     public NewsBitUsenetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.bitusenet.com");
@@ -31,14 +30,8 @@ public class NewsBitUsenetCom extends UseNet {
         return "https://www.bitusenet.com/tos";
     }
 
-    public static interface NewsBitConfigInterface extends UsenetConfigInterface {
-
+    public static interface NewsBitConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<NewsBitConfigInterface> getConfigInterface() {
-        return NewsBitConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -91,5 +84,4 @@ public class NewsBitUsenetCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("news.bitusenet.com", true, 563));
         return ret;
     }
-
 }

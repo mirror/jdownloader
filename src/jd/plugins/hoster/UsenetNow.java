@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -21,7 +21,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenetnow.net" }, urls = { "" }, flags = { 0 })
 public class UsenetNow extends UseNet {
-
     public UsenetNow(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://billing.usenetnow.net/signup");
@@ -39,14 +38,8 @@ public class UsenetNow extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
-    public static interface UsenetNowConfigInterface extends UsenetConfigInterface {
-
+    public static interface UsenetNowConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<UsenetNowConfigInterface> getConfigInterface() {
-        return UsenetNowConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -136,5 +129,4 @@ public class UsenetNow extends UseNet {
         ret.addAll(UsenetServer.createServerList("eunews2.usenetnow.net", true, 443, 563, 5563));
         return ret;
     }
-
 }

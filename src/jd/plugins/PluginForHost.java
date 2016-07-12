@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.awt.Component;
@@ -44,34 +43,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
-
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.http.Browser;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -144,6 +115,10 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.SleepPluginProgress;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.AccountJsonConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -153,31 +128,48 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
-/**
- * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
- *
- * @author astaldo
- */
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.http.Browser;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 public abstract class PluginForHost extends Plugin {
-
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
-
     private static final Pattern[] PATTERNS       = new Pattern[] {
-
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
-
+            /**
+             * these patterns should split filename and fileextension (extension must include the point)
+             */
+            // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
      */
-
     private boolean                dlSet          = false;
 
     public LazyHostPlugin getLazyP() {
@@ -203,10 +195,6 @@ public abstract class PluginForHost extends Plugin {
 
     public void setLazyP(LazyHostPlugin lazyP) {
         this.lazyP = lazyP;
-    }
-
-    // override to let the plugin show an account details dialog
-    public void showAccountDetailsDialog(Account account) {
     }
 
     @Deprecated
@@ -318,7 +306,6 @@ public abstract class PluginForHost extends Plugin {
             this.setDownloadLink(link);
         }
         final BasicCaptchaChallenge c = createChallenge(method, copy, flag, link, defaultValue, explain);
-
         return handleCaptchaChallenge(link, c);
     }
 
@@ -392,7 +379,6 @@ public abstract class PluginForHost extends Plugin {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
-
                 case TIMEOUT:
                     onCaptchaTimeout(link, e.getChallenge());
                     // TIMEOUT may fallthrough to SINGLE
@@ -446,17 +432,11 @@ public abstract class PluginForHost extends Plugin {
     protected volatile DownloadInterface dl                                           = null;
     private static final String          AUTO_FILE_NAME_CORRECTION_NAME_SPLIT         = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT";
     private static final String          AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN = "AUTO_FILE_NAfME_CORRECTION_NAME_SPLIT_PATTERN";
-
     private long                         WAIT_BETWEEN_STARTS                          = 0;
-
     private boolean                      enablePremium                                = false;
-
     private boolean                      accountWithoutUsername                       = false;
-
     private String                       premiumurl                                   = null;
-
     private DownloadLink                 link                                         = null;
-
     protected DownloadInterfaceFactory   customizedDownloadFactory                    = null;
 
     public DownloadInterfaceFactory getCustomizedDownloadFactory() {
@@ -483,9 +463,24 @@ public abstract class PluginForHost extends Plugin {
         return SubConfiguration.getConfig(lazyP.getHost());
     }
 
+    protected PluginConfigPanelNG createConfigPanel() {
+        if (getConfigInterface() != null || isPremiumEnabled()) {
+            PluginConfigPanelNG ret = new PluginConfigPanelNG() {
+                @Override
+                public void updateContents() {
+                }
+
+                @Override
+                public void save() {
+                }
+            };
+            return ret;
+        }
+        return null;
+    }
+
     @Override
     public void clean() {
-
         try {
             try {
                 final DownloadInterface dl = getDownloadInterface();
@@ -588,7 +583,6 @@ public abstract class PluginForHost extends Plugin {
                     while (url.charAt(url.length() - 1) == '"') {
                         url = url.substring(0, url.length() - 1);
                     }
-
                     /*
                      * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
                      */
@@ -732,7 +726,6 @@ public abstract class PluginForHost extends Plugin {
         for (Entry<String, Object> es : props.entrySet()) {
             String key = es.getKey();
             Object value = es.getValue();
-
             if (value != null) {
                 ret.addPair(key, value.toString());
             }
@@ -1306,10 +1299,8 @@ public abstract class PluginForHost extends Plugin {
                     // FileCreationManager.getInstance().delete(f, null);
                     // IO.writeStringToFile(f, src);
                     // }
-
                 }
             }
-
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -1406,7 +1397,6 @@ public abstract class PluginForHost extends Plugin {
     // DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
     // return null;
     // }
-
     public char[] getFilenameReplaceMap() {
         return new char[0];
     }
@@ -1527,18 +1517,15 @@ public abstract class PluginForHost extends Plugin {
                         return newName + fileNameSplit[1];
                     }
                 }
-
                 if ((!StringUtils.isEmpty(MD5) && MD5.equalsIgnoreCase(next.getMD5Hash())) || (!StringUtils.isEmpty(SHA1) && SHA1.equalsIgnoreCase(next.getSha1Hash())) || (!StringUtils.isEmpty(SHA256) && SHA256.equalsIgnoreCase(next.getSha256Hash()))) {
                     // 100% mirror! ok and now? these files should have the
                     // same filename!!
                     return next.getView().getDisplayName();
                 }
             }
-
         } catch (Throwable e) {
             LogController.CL().log(e);
         }
-
         return null;
     }
 
@@ -1676,8 +1663,21 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public AvailableStatus checkLink(DownloadLink downloadLink) throws Exception {
-
         return requestFileInformation(downloadLink);
+    }
+
+    public AccountConfigInterface getAccountJsonConfig(Account acc) {
+        if (acc.getPlugin() == null) {
+            acc.setPlugin(this);
+        }
+        if (acc.getHoster() == null) {
+            acc.setHoster(getHost());
+        }
+        return AccountJsonConfig.get(acc);
+    }
+
+    public PluginConfigInterface getPluginJsonConfig() {
+        return PluginJsonConfig.get(getConfigInterface());
     }
 
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
@@ -1697,7 +1697,6 @@ public abstract class PluginForHost extends Plugin {
 
     public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
         return downloadLink.getVariant(GenericVariants.class);
-
     }
 
     public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
@@ -1718,12 +1717,9 @@ public abstract class PluginForHost extends Plugin {
             final JMenu setVariants = new JMenu(_GUI.T.PluginForHost_extendLinkgrabberContextMenu_generic_convert());
             setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
             setVariants.setEnabled(false);
-
             final JMenu addVariants = new JMenu("Add converted variant...");
-
             addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
             addVariants.setEnabled(false);
-
             // setVariants.setVisible(false);
             // addVariants.setVisible(false);
             new Thread("Collect Variants") {
@@ -1754,23 +1750,19 @@ public abstract class PluginForHost extends Plugin {
                         return;
                     }
                     Collections.sort(list, new Comparator<GenericVariants>() {
-
                         @Override
                         public int compare(GenericVariants o1, GenericVariants o2) {
                             return o1.name().compareTo(o2.name());
                         }
                     });
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             setVariants.setEnabled(true);
                             addVariants.setEnabled(true);
                             setVariants.setVisible(true);
                             addVariants.setVisible(true);
-
                             for (final GenericVariants gv : list) {
-
                                 setVariants.add(new JMenuItem(new BasicAction() {
                                     {
                                         setName(gv._getName(link));
@@ -1793,7 +1785,6 @@ public abstract class PluginForHost extends Plugin {
                                         linkChecker.check(checkableLinks);
                                     }
                                 }));
-
                                 addVariants.add(new JMenuItem(new BasicAction() {
                                     {
                                         setName(gv._getName(link));
@@ -1802,7 +1793,6 @@ public abstract class PluginForHost extends Plugin {
                                     @Override
                                     public void actionPerformed(ActionEvent e) {
                                         java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
                                         for (CrawledLink cl : pv.getChildren()) {
                                             List<GenericVariants> variants = new ArrayList<GenericVariants>();
                                             for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
@@ -1820,7 +1810,6 @@ public abstract class PluginForHost extends Plugin {
                                         LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                                         linkChecker.check(checkableLinks);
                                     }
-
                                 }));
                             }
                         }
@@ -1842,7 +1831,6 @@ public abstract class PluginForHost extends Plugin {
                 public Browser getContextBrowser() {
                     return br.cloneBrowser();
                 }
-
             };
         }
         return new DownloadLinkDownloadable(downloadLink);
@@ -2030,7 +2018,6 @@ public abstract class PluginForHost extends Plugin {
         }
         progress.setFile(newFile);
         revertList.add(new ExceptionRunnable() {
-
             @Override
             public void run() throws Exception {
                 renameOrMove(progress, downloadLink, newFile, currentFile);
@@ -2040,7 +2027,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private void renameOrMove(MovePluginProgress progress, final DownloadLink downloadLink, File old, File newFile) throws FileExistsException, CouldNotRenameException, IOException {
-
         // TODO: what if newFile exists?
         if (newFile.exists()) {
             throw new FileExistsException(old, newFile);
@@ -2092,7 +2078,6 @@ public abstract class PluginForHost extends Plugin {
                         Thread.sleep(3000);
                         // System.out.println("Dialog go");
                         ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
                             @Override
                             public void run() throws Exception {
                                 while (true) {
@@ -2108,7 +2093,6 @@ public abstract class PluginForHost extends Plugin {
                             @Override
                             public int getProgress() {
                                 double perc = progress.getPercent();
-
                                 return Math.min(99, (int) (perc));
                             }
 
@@ -2129,28 +2113,23 @@ public abstract class PluginForHost extends Plugin {
                             }
 
                             protected void extendLayout(JPanel p) {
-
                                 if (p.getComponentCount() == 0) {
                                     final JPanel subp = new MigPanel("ins 0,wrap 1", "[]", "[][]");
                                     p.add(subp, "wrap");
                                     p = subp;
-
                                     String packagename = downloadLink.getParentNode().getName();
-
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_hoster())), "split 2,sizegroup left,alignx left");
                                     DomainInfo di = downloadLink.getDomainInfo();
                                     JLabel ret = new JLabel(di.getTld());
                                     ret.setHorizontalAlignment(SwingConstants.LEFT);
                                     ret.setIcon(di.getFavIcon());
                                     p.add(ret);
-
                                     if (downloadLink.getParentNode() != FilePackage.getDefaultFilePackage()) {
                                         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(packagename));
                                     }
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filesize())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(SizeFormatter.formatBytes(old.length())));
-
                                     if (newFile.getName().equals(old.getName())) {
                                         p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(newFile.getName()));
@@ -2160,21 +2139,17 @@ public abstract class PluginForHost extends Plugin {
                                         p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_NEWFILENAME())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(newFile.getName()));
                                     }
-
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_OLD())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(old.getParent()));
-
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_NEW())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(newFile.getParent()));
                                 }
                             }
-
                         };
                         UIOManager.I().show(null, dialog);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-
                 }
             };
             thread.start();
@@ -2183,7 +2158,6 @@ public abstract class PluginForHost extends Plugin {
         }
         try {
             IO.copyFile(new ProgressFeedback() {
-
                 @Override
                 public void setBytesTotal(long length) {
                     progress.setTotal(length);
@@ -2224,7 +2198,6 @@ public abstract class PluginForHost extends Plugin {
      *
      * @return
      */
-
     public String getMirrorID(DownloadLink link) {
         return null;
     }
@@ -2298,4 +2271,15 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
+    public Class<? extends AccountConfigInterface> getAccountConfigInterface(Account account) {
+        for (Class<?> cls : getClass().getClasses()) {
+            if (AccountConfigInterface.class.isAssignableFrom(cls)) {
+                return (Class<? extends AccountConfigInterface>) cls;
+            }
+        }
+        return null;
+    }
+
+    public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
+    }
 }

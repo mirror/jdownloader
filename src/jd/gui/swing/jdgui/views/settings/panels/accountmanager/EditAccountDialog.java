@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import java.awt.Component;
@@ -24,12 +23,6 @@ import java.awt.event.WindowFocusListener;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.gui.swing.dialog.InputOKButtonAdapter;
-import jd.plugins.Account;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
@@ -37,12 +30,15 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.gui.swing.dialog.InputOKButtonAdapter;
+import jd.plugins.Account;
+import net.miginfocom.swing.MigLayout;
+
 public class EditAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
-
     private final Account           acc;
-
     private AccountBuilderInterface accountBuilderUI;
-
     private JPanel                  content;
 
     public EditAccountDialog(Account acc) {
@@ -53,7 +49,6 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
     @Override
     protected Integer createReturnValue() {
         return this.getReturnmask();
-
     }
 
     protected void initFocus(final JComponent focus) {
@@ -62,13 +57,10 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
     @Override
     public JComponent layoutDialogContent() {
         content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
-
         getDialog().addWindowFocusListener(new WindowFocusListener() {
-
             @Override
             public void windowLostFocus(final WindowEvent windowevent) {
                 // TODO Auto-generated method stub
-
             }
 
             @Override
@@ -84,16 +76,11 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
         });
         final AccountBuilderInterface accountFactory = acc.getPlugin().getAccountFactory(this);
         accountBuilderUI = accountFactory;
-        content.add(accountBuilderUI.getComponent(), "gapleft 32,spanx");
+        content.add(accountBuilderUI.getComponent(), "gapleft 32,spanx,wmin 450");
         accountBuilderUI.setAccount(acc);
-
         onChangedInput(null);
         getDialog().pack();
         return content;
-    }
-
-    protected int getPreferredWidth() {
-        return 450;
     }
 
     @Override
@@ -102,7 +89,6 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
             if (accountBuilderUI.validateInputs()) {
                 final Account newAcc = accountBuilderUI.getAccount();
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         if (accountBuilderUI.updateAccount(newAcc, acc)) {
@@ -127,5 +113,4 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
     public void onChangedInput(Object component) {
         InputOKButtonAdapter.register(this, accountBuilderUI);
     }
-
 }

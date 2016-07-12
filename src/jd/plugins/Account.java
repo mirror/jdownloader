@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.util.ArrayList;
@@ -24,12 +23,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -42,27 +35,24 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+
 public class Account extends Property {
-
     private static final String VALID_UNTIL                    = "VALID_UNTIL";
-
     private static final String ACCOUNT_TYPE                   = "ACCOUNT_TYPE";
-
     private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
-
     public static final String  IS_MULTI_HOSTER_ACCOUNT        = "IS_MULTI_HOSTER_ACCOUNT";
-
     private static final long   serialVersionUID               = -7578649066389032068L;
-
     private String              user;
     private String              pass;
-
     private boolean             enabled                        = true;
     private boolean             concurrentUsePossible          = true;
-
     public static final String  PROPERTY_TEMP_DISABLED_TIMEOUT = "PROPERTY_TEMP_DISABLED_TIMEOUT";
     public static final String  PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
-
     private static final String COOKIE_STORAGE                 = "COOKIE_STORAGE";
 
     public boolean isConcurrentUsePossible() {
@@ -141,7 +131,6 @@ public class Account extends Property {
     }
 
     private transient UniqueAlltimeID id            = new UniqueAlltimeID();
-
     /* keep for comp. reasons */
     private String                    hoster        = null;
     private List<String>              hosterHistory = null;
@@ -159,18 +148,13 @@ public class Account extends Property {
     }
 
     private AccountInfo                     accinfo       = null;
-
     private long                            updatetime    = 0;
     private int                             maxDownloads  = 0;
-
     private transient AccountController     ac            = null;
     private transient PluginForHost         plugin        = null;
     private transient boolean               isMulti       = false;
-
     private transient boolean               isMultiPlugin = false;
-
     private transient volatile AccountError error;
-
     private transient volatile String       errorString;
 
     public PluginForHost getPlugin() {
@@ -757,5 +741,4 @@ public class Account extends Property {
             return AccountType.PREMIUM;
         }
     }
-
 }

@@ -13,12 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,6 +33,34 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.Icon;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.auth.Login;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
+import org.jdownloader.gui.dialog.AskForPasswordDialog;
+import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
+import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.UserIOProgress;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -55,50 +83,20 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.auth.Login;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
-import org.jdownloader.gui.dialog.AskForPasswordDialog;
-import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
-import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.UserIOProgress;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.translate._JDT;
-
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
  *
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin implements ActionListener {
-
     public static final String                                    HTTP_LINKS_HOST     = "http links";
     public static final String                                    DIRECT_HTTP_HOST    = "DirectHTTP";
     public static final String                                    FTP_HOST            = "ftp";
-
     /* to keep 0.95xx comp */
     /* switch this on every stable update */
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
-
     /* after 0.95xx */
     protected LogInterface                                        logger              = LogController.TRASH;
-
     protected final CopyOnWriteArrayList<File>                    cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
     private static final HashMap<String, HashMap<String, Object>> CACHE               = new HashMap<String, HashMap<String, Object>>();
     private CrawledLink                                           currentLink         = null;
@@ -296,7 +294,6 @@ public abstract class Plugin implements ActionListener {
         // final String password = PluginUtils.askPassword(message, link);
         // if (password == null) { throw new DecrypterException(DecrypterException.PASSWORD); }
         // return password;
-
         // UserIOProgress prg = new UserIOProgress(message);
         // PluginProgress old = null;
         try {
@@ -304,7 +301,6 @@ public abstract class Plugin implements ActionListener {
             AskCrawlerPasswordDialogInterface handle = UIOManager.I().show(AskCrawlerPasswordDialogInterface.class, new AskForCryptedLinkPasswordDialog(message, link, getCurrentActivePlugin()));
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getText();
-
                 if (StringUtils.isEmpty(password)) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
@@ -439,7 +435,6 @@ public abstract class Plugin implements ActionListener {
             AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog(message, link));
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getText();
-
                 if (StringUtils.isEmpty(password)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
                 }
@@ -447,14 +442,12 @@ public abstract class Plugin implements ActionListener {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
             }
-
         } finally {
             link.removePluginProgress(prg);
         }
     }
 
     private volatile ConfigContainer config;
-
     protected Browser                br = null;
 
     public Plugin() {
@@ -640,11 +633,46 @@ public abstract class Plugin implements ActionListener {
         return false;
     }
 
-    public PluginConfigPanelNG createConfigPanel() {
+    private WeakReference<PluginConfigPanelNG> configPanel = null;
+
+    public PluginConfigPanelNG getConfigPanel() {
+        PluginConfigPanelNG panel = configPanel == null ? null : configPanel.get();
+        if (panel == null) {
+            panel = createConfigPanel();
+            configPanel = new WeakReference<PluginConfigPanelNG>(panel);
+        }
+        return panel;
+    }
+
+    protected PluginConfigPanelNG createConfigPanel() {
+        if (getConfigInterface() != null) {
+            PluginConfigPanelNG ret = new PluginConfigPanelNG() {
+                @Override
+                public void updateContents() {
+                }
+
+                @Override
+                public void save() {
+                }
+            };
+            return ret;
+        }
         return null;
     }
 
-    public Class<? extends ConfigInterface> getConfigInterface() {
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        for (Class<?> cls : getClass().getClasses()) {
+            if (PluginConfigInterface.class.isAssignableFrom(cls) && !AccountConfigInterface.class.isAssignableFrom(cls)) {
+                PluginHost anno = cls.getAnnotation(PluginHost.class);
+                if (anno != null) {
+                    if (StringUtils.equals(anno.host(), getHost())) {
+                        return (Class<? extends PluginConfigInterface>) cls;
+                    }
+                } else {
+                    return (Class<? extends PluginConfigInterface>) cls;
+                }
+            }
+        }
         return null;
     }
 
@@ -784,7 +812,6 @@ public abstract class Plugin implements ActionListener {
                         } else {
                             LoggerFactory.getDefaultLogger().log(e);
                         }
-
                     }
                 }
             }

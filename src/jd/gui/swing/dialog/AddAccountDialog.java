@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.dialog;
 
 import java.awt.AWTEvent;
@@ -35,6 +34,7 @@ import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -89,10 +89,8 @@ import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
-
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
         final AddAccountDialog dialog = new AddAccountDialog(pluginForHost, acc);
-
         try {
             Dialog.getInstance().showDialog(dialog);
             if (dialog.getHoster() == null) {
@@ -100,15 +98,12 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             }
             final Account ac = dialog.getAccount();
             ac.setHoster(dialog.getHoster().getDisplayName());
-
             if (!addAccount(ac)) {
                 showDialog(dialog.getHoster().getPrototype(null), ac);
             }
-
         } catch (Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
-
     }
 
     private Account getAccount() {
@@ -179,7 +174,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
 
     public static ProgressDialog checkAccount(final Account ac) throws Throwable {
         ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
-
             public void run() throws Exception {
                 final PluginForHost hostPlugin = new PluginFinder().assignPlugin(ac, true);
                 if (hostPlugin != null) {
@@ -203,7 +197,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             }
         }, 0, _GUI.T.accountdialog_check(), _GUI.T.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHosterByPlugin()).getFavIcon());
         try {
-
             Dialog.getInstance().showDialog(pd);
         } catch (DialogCanceledException e) {
             if (pd.getThrowable() == null) {
@@ -211,29 +204,19 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             } else {
                 throw pd.getThrowable();
             }
-
         }
         return pd;
     }
 
     private HosterChooserTable           hoster;
-
     private PluginForHost                plugin;
-
     private Account                      defaultAccount;
-
     AccountBuilderInterface              accountBuilderUI;
-
     private JPanel                       content;
-
     private final PluginClassLoaderChild cl;
-
     protected MouseAdapter               mouseAdapter;
-
     private ExtTextField                 filter;
-
     private JLabel                       header2;
-
     private JButton                      link;
 
     private AddAccountDialog(final PluginForHost plugin, Account acc) {
@@ -248,52 +231,43 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     @Override
     protected Integer createReturnValue() {
         return this.getReturnmask();
-
     }
 
     protected void initFocus(final JComponent focus) {
     }
 
-    private LazyHostPlugin lazyHostPlugin = null;
+    private LazyHostPlugin  lazyHostPlugin = null;
+    private List<Component> inputComponents;
 
     @Override
     public JComponent layoutDialogContent() {
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-
         for (LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
                 plugins.add(lhp);
             }
         }
-
         if (plugins.size() == 0) {
             throw new RuntimeException("No Plugins Loaded Exception");
             // final HostPluginWrapper[] array = plugins.toArray(new
             // HostPluginWrapper[plugins.size()]);
         }
-
         filter = new ExtTextField() {
-
             private static final long serialVersionUID = 1L;
 
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-
                 Graphics2D g2 = (Graphics2D) g;
                 Composite comp = g2.getComposite();
-
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
                 new AbstractIcon(IconKey.ICON_SEARCH, 16).paintIcon(this, g2, 3, 3);
-
                 g2.setComposite(comp);
             }
-
         };
         filter.addFocusListener(new FocusListener() {
-
             @Override
             public void focusLost(FocusEvent e) {
             }
@@ -305,10 +279,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         });
         filter.setHelpText("Search Plugins");
         filter.addKeyListener(new KeyListener() {
-
             @Override
             public void keyTyped(KeyEvent e) {
-
             }
 
             @Override
@@ -329,9 +301,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         // filterText.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         // filterText.setBorder(null);
         filter.setBorder(BorderFactory.createCompoundBorder(filter.getBorder(), BorderFactory.createEmptyBorder(0, 20, 0, 0)));
-
         hoster = new HosterChooserTable(plugins) {
-
             @Override
             protected void processEvent(AWTEvent e) {
                 if (e instanceof KeyEvent) {
@@ -345,7 +315,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
 
             @Override
             protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
-
                 return super.processKeyBinding(stroke, evt, condition, pressed);
             }
 
@@ -370,7 +339,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         };
         filter.getDocument().addDocumentListener(new DocumentListener() {
             private DelayedRunnable delayedRefresh = new DelayedRunnable(200, 1000) {
-
                 String lastText = null;
 
                 @Override
@@ -381,7 +349,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 @Override
                 public void delayedrun() {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             final String text = filter.getText();
@@ -409,12 +376,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 delayedRefresh.resetAndStart();
             }
         });
-
         link = new JButton(new AbstractIcon(IconKey.ICON_MONEY, 16));
         link.setText(_GUI.T.gui_menu_action_premium_buy_name());
         link.setToolTipText(_GUI.T.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
-
             public void actionPerformed(final ActionEvent e) {
                 try {
                     final PluginForHost plugin = hoster.getSelectedPlugin().newInstance(cl);
@@ -427,7 +392,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             }
         });
         link.setFocusable(false);
-
         content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
         content.add(header(_GUI.T.AddAccountDialog_layoutDialogContent_choosehoster_()), "gapleft 15,spanx,pushx,growx");
         content.add(filter, "gapleft 32,pushx,growx");
@@ -438,7 +402,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         sp.getViewport().setFocusable(false);
         content.add(link, "height 20!,gapleft 32");
         content.add(header2 = header(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
-
         final LazyHostPlugin lazyp;
         if (this.plugin != null) {
             lazyp = plugin.getLazyP();
@@ -448,13 +411,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         if (lazyp != null) {
             hoster.setSelectedPlugin(lazyp);
         }
-
         getDialog().addWindowFocusListener(new WindowFocusListener() {
-
             @Override
             public void windowLostFocus(final WindowEvent windowevent) {
                 // TODO Auto-generated method stub
-
             }
 
             @Override
@@ -466,11 +426,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 }
                 /* we only want to force focus on first window open */
                 getDialog().removeWindowFocusListener(this);
-                hoster.requestFocus();
+                focusFirstInputComponent();
             }
         });
         getDialog().setMinimumSize(new Dimension(400, 300));
-
         return content;
     }
 
@@ -525,7 +484,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             accountBuilderUI.setAccount(defaultAccount);
             final ArrayList<Component> focusOrder = new ArrayList<Component>();
             focusOrder.add(filter);
-            focusOrder.addAll(ListFocusTraversalPolicy.getFocusableComponents(comp));
+            focusOrder.addAll(inputComponents = ListFocusTraversalPolicy.getFocusableComponents(comp));
             focusOrder.add(okButton);
             focusOrder.add(cancelButton);
             dialog.setFocusTraversalPolicyProvider(true);
@@ -597,7 +556,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
     @Override
     public void windowGainedFocus(WindowEvent e) {
         super.windowGainedFocus(e);
-        filter.requestFocus();
+        focusFirstInputComponent();
     }
 
     @Override
@@ -605,4 +564,13 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         InputOKButtonAdapter.register(this, accountBuilderUI);
     }
 
+    protected void focusFirstInputComponent() {
+        // if (focusOnUserName) {
+        // Component f = inputComponents.get(0);
+        // f.requestFocus();
+        //
+        // } else {
+        hoster.requestFocus();
+        // }
+    }
 }

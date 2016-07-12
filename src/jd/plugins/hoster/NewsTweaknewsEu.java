@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -14,12 +20,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "tweaknews.eu" }, urls = { "" }, flags = { 0 })
 public class NewsTweaknewsEu extends UseNet {
@@ -33,14 +33,8 @@ public class NewsTweaknewsEu extends UseNet {
         return "http://www.tweaknews.eu/en/conditions";
     }
 
-    public static interface NewsTweaknewsEuConfig extends UsenetConfigInterface {
-
+    public static interface NewsTweaknewsEuConfig extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<NewsTweaknewsEuConfig> getConfigInterface() {
-        return NewsTweaknewsEuConfig.class;
-    }
 
     private final String USENET_USERNAME = "USENET_USERNAME";
 
@@ -163,5 +157,4 @@ public class NewsTweaknewsEu extends UseNet {
         ret.addAll(UsenetServer.createServerList("news.tweaknews.eu", true, 563, 443));
         return ret;
     }
-
 }

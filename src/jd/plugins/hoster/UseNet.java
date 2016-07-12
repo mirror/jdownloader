@@ -8,6 +8,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
+import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.appwork.utils.net.usenet.UUInputStream;
+import org.appwork.utils.net.usenet.UnrecognizedCommandException;
+import org.appwork.utils.net.usenet.YEncInputStream;
+import org.jdownloader.plugins.components.usenet.SimpleUseNetDownloadInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetFile;
+import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.proxy.ProxyController;
 import jd.http.BrowserSettingsThread;
@@ -24,27 +42,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
-import org.appwork.utils.net.usenet.SimpleUseNet;
-import org.appwork.utils.net.usenet.UUInputStream;
-import org.appwork.utils.net.usenet.UnrecognizedCommandException;
-import org.appwork.utils.net.usenet.YEncInputStream;
-import org.jdownloader.plugins.components.usenet.SimpleUseNetDownloadInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetFile;
-import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {
-
     public UseNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,19 +52,31 @@ public class UseNet extends PluginForHost {
         return link != null && "usenet".equals(link.getHost());
     }
 
-    protected UsenetConfigPanel<?> configPanel;
-
     @Override
-    public PluginConfigPanelNG createConfigPanel() {
-        if (!"usenet".equals(getHost())) {
-            UsenetConfigPanel<?> panel = this.configPanel;
-            if (panel == null) {
-                panel = new UsenetConfigPanel(getHost(), getAvailableUsenetServer().toArray(new UsenetServer[0]), getUsenetConfig());
-                this.configPanel = panel;
+    public UsenetAccountConfigInterface getAccountJsonConfig(Account acc) {
+        return (UsenetAccountConfigInterface) super.getAccountJsonConfig(acc);
+    }
+
+    // @Override
+    // public PluginConfigPanelNG createConfigPanel() {r
+    // if (!"usenet".equals(getHost())) {
+    // UsenetConfigPanel<?> panel = this.configPanel;
+    // if (panel == null) {
+    // panel = new UsenetConfigPanel(getHost(), getAvailableUsenetServer().toArray(new UsenetServer[0]), getUsenetConfig());
+    // this.configPanel = panel;
+    // }
+    // return panel;
+    // }
+    // return null;
+    // }
+    @Override
+    protected PluginConfigPanelNG createConfigPanel() {
+        return new UsenetConfigPanel() {
+            @Override
+            protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> cf) {
+                extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
             }
-            return panel;
-        }
-        return null;
+        };
     }
 
     @Override
@@ -78,19 +89,6 @@ public class UseNet extends PluginForHost {
             } else {
                 return super.canHandle(downloadLink, account);
             }
-        }
-    }
-
-    protected UsenetConfigInterface getUsenetConfig() {
-        return PluginJsonConfig.get(getConfigInterface());
-    }
-
-    @Override
-    public Class<? extends UsenetConfigInterface> getConfigInterface() {
-        if (!"usenet".equals(getHost())) {
-            return UsenetConfigInterface.class;
-        } else {
-            return null;
         }
     }
 
@@ -151,7 +149,7 @@ public class UseNet extends PluginForHost {
     private final String                        PRECHECK_DONE = "PRECHECK_DONE";
 
     protected UsenetServer getUsenetServer(Account account) throws Exception {
-        final UsenetConfigInterface config = getUsenetConfig();
+        final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
         UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
         if (server == null || !getAvailableUsenetServer().contains(server)) {
             server = getAvailableUsenetServer().get(0);

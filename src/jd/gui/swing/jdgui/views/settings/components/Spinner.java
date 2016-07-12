@@ -13,9 +13,8 @@ import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.appwork.swing.components.ExtSpinner;
 
 public class Spinner extends ExtSpinner implements SettingsComponent {
-
     /**
-     * 
+     *
      */
     private static final long               serialVersionUID = 1L;
     private StateUpdateEventSender<Spinner> eventSender;
@@ -28,12 +27,10 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
     public Spinner(SpinnerNumberModel extSpinnerConfigModel) {
         super(extSpinnerConfigModel);
         init();
-
     }
 
     protected void init() {
         setEditor(new JSpinner.NumberEditor(this, "#"));
-
         eventSender = new StateUpdateEventSender<Spinner>();
         // JComponent comp = getEditor();
         // JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
@@ -48,7 +45,6 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
         // }
         // });
         this.addChangeListener(new ChangeListener() {
-
             public void stateChanged(ChangeEvent e) {
                 // System.out.println(1 + " -c " + (setting.get() == 0));
                 if (setting.get() == 0) {
@@ -71,7 +67,6 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
         } finally {
             setting.decrementAndGet();
         }
-
     }
 
     public void setValue(Number value) {
@@ -105,13 +100,11 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
      * @deprecated USer {@link #setValue(int)} or {@link #setValue(long)} or {@link #setValue(Number)} instead!!
      */
     public void setValue(Object value) {
-
         super.setValue(value);
-
     }
 
     public String getConstraints() {
-        return "height 26!";
+        return "sgy LINE";
     }
 
     public boolean isMultiline() {
@@ -120,7 +113,7 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
 
     /**
      * Set the Spinner renderer and editor format.
-     * 
+     *
      * @see http ://download.oracle.com/javase/1.4.2/docs/api/java/text/DecimalFormat .html
      * @param formatString
      */
@@ -131,5 +124,4 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
     public void addStateUpdateListener(StateUpdateListener listener) {
         eventSender.addListener(listener);
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -47,7 +46,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -72,7 +70,6 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class BackinNet extends antiDDoSForHost {
-
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://backin.net";
@@ -92,7 +89,6 @@ public class BackinNet extends antiDDoSForHost {
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
-
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
@@ -108,7 +104,6 @@ public class BackinNet extends antiDDoSForHost {
     // captchatype: recaptcha
     // mods: many, do NOT upgrade!
     // other: no redirects
-
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
@@ -187,15 +182,11 @@ public class BackinNet extends antiDDoSForHost {
         correctDownloadLink(downloadLink);
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
-
         String[] fileInfo = new String[2];
-
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
         }
-
         getPage(downloadLink.getDownloadURL());
-
         if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
@@ -216,7 +207,6 @@ public class BackinNet extends antiDDoSForHost {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-
         if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -226,7 +216,6 @@ public class BackinNet extends antiDDoSForHost {
         }
         // scan the first page
         scanInfo(downloadLink, fileInfo);
-
         // abbreviated over x chars long
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;")) {
             logger.warning("filename length is larrrge");
@@ -236,7 +225,6 @@ public class BackinNet extends antiDDoSForHost {
                 fileInfo[0] = HTMLEntities.unhtmlentities(fileInfo[0]);
             }
         }
-
         // scan the second page. filesize[1] isn't mission critical
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
@@ -450,7 +438,6 @@ public class BackinNet extends antiDDoSForHost {
                 for (int i = 0; i <= repeat; i++) {
                     dlForm = cleanForm(dlForm);
                     // custom form inputs
-
                     final long timeBefore = System.currentTimeMillis();
                     if (cbr.containsHTML(PASSWORDTEXT)) {
                         logger.info("The downloadlink seems to be password protected.");
@@ -492,7 +479,6 @@ public class BackinNet extends antiDDoSForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         } catch (UnknownHostException e) {
             // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-
             // dump the saved host from directlinkproperty
             downloadLink.setProperty(directlinkproperty, Property.NULL);
             // remove usedHost slot from hostMap
@@ -515,7 +501,6 @@ public class BackinNet extends antiDDoSForHost {
             if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
                 logger.warning("The final dllink seems not to be a file!");
@@ -551,11 +536,8 @@ public class BackinNet extends antiDDoSForHost {
      */
     public void correctBR() throws Exception {
         String toClean = br.toString();
-
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         // for (final Form f : br.getForms()) {
@@ -569,7 +551,6 @@ public class BackinNet extends antiDDoSForHost {
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         regexStuff.add("<span><a href=\"([^<>\"]*?)\"><font color=\"#fff\">");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
             if (results != null) {
@@ -1021,7 +1002,6 @@ public class BackinNet extends antiDDoSForHost {
                 if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
-
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
                 } else {
                     logger.warning("The final dllink seems not to be a file!");
@@ -1052,38 +1032,29 @@ public class BackinNet extends antiDDoSForHost {
 
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
-
     private Browser                                           cbr                    = new Browser();
-
     private String                                            acctype                = null;
     private String                                            directlinkproperty     = null;
     private String                                            dllink                 = null;
     private String                                            fuid                   = null;
     private String                                            passCode               = null;
     private String                                            usedHost               = null;
-
     private int                                               chunks                 = 1;
-
     private boolean                                           resumes                = false;
     private boolean                                           skipWaitTime           = false;
-
     private final String                                      language               = System.getProperty("user.language");
     private final String                                      preferHTTPS            = "preferHTTPS";
     private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-
     private static AtomicInteger                              maxFree                = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
     private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
     private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
-
     private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
-
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
-
     private static Object                                     ACCLOCK                = new Object();
     private static Object                                     CTRLLOCK               = new Object();
 
@@ -1150,21 +1121,6 @@ public class BackinNet extends antiDDoSForHost {
         } else {
             return "http://";
         }
-    }
-
-    public void showAccountDetailsDialog(final Account account) {
-        setConstants(account);
-        AccountInfo ai = account.getAccountInfo();
-        String message = "";
-        message += "Account type: " + acctype + "\r\n";
-        if (ai.getUsedSpace() != -1) {
-            message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
-        }
-        if (ai.getPremiumPoints() != -1) {
-            message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
-        }
-
-        jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " Account", message);
     }
 
     @Override
@@ -1405,7 +1361,6 @@ public class BackinNet extends antiDDoSForHost {
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
             String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha, getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
-
             if (result == null || "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -1462,26 +1417,21 @@ public class BackinNet extends antiDDoSForHost {
      */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         if (!inValidate(decoded)) {
             dllink = regexDllink(decoded);
         }
@@ -1576,13 +1526,10 @@ public class BackinNet extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
             downloadLink.setProperty(directlinkproperty, dllink);
-
             // place account into a place holder, for later references;
             Account accHolder = account;
-
             // allows concurrent logic
             boolean thisAccount = allowsConcurrent(account);
             boolean continu = true;
@@ -1597,9 +1544,7 @@ public class BackinNet extends antiDDoSForHost {
                     // current account allows concurrent
                     // hostmap entries c
                 }
-
             }
-
             String user = null;
             Integer simHost;
             if (accHolder != null) {
@@ -1616,7 +1561,6 @@ public class BackinNet extends antiDDoSForHost {
                 simHost = maxNonAccSimDlPerHost.get();
             }
             user = user + " @ " + acctype;
-
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1631,7 +1575,6 @@ public class BackinNet extends antiDDoSForHost {
                 }
             } else {
                 // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
-
                 /*
                  * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
                  * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
@@ -1850,7 +1793,6 @@ public class BackinNet extends antiDDoSForHost {
         // preserve valuable original request components.
         final String oURL = ibr.getURL();
         final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
-
         Request req = new Request(oURL) {
             {
                 boolean okay = false;
@@ -1869,7 +1811,6 @@ public class BackinNet extends antiDDoSForHost {
                         e.printStackTrace();
                     }
                 }
-
                 httpConnection = con;
                 setHtmlCode(t);
             }
@@ -1881,7 +1822,6 @@ public class BackinNet extends antiDDoSForHost {
             public void preRequest() throws IOException {
             }
         };
-
         ibr.setRequest(req);
         if (ibr.isDebug()) {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
@@ -1906,5 +1846,4 @@ public class BackinNet extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

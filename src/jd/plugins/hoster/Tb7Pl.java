@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,15 +43,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tb7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class Tb7Pl extends PluginForHost {
-
     private String                                         MAINPAGE           = "http://tb7.pl/";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Object                                  LOCK               = new Object();
 
@@ -66,7 +64,7 @@ public class Tb7Pl extends PluginForHost {
             try {
                 br.postPage(MAINPAGE + "login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "autologin") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PREMIUM_ERROR"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, _JDT.T.plugins_tb7pl_PREMIUM_ERROR(), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -82,7 +80,6 @@ public class Tb7Pl extends PluginForHost {
                 throw e;
             }
         }
-
     }
 
     List<String> getSupportedHosts() {
@@ -114,60 +111,54 @@ public class Tb7Pl extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         login(account, true);
-
         if (!br.getURL().contains("mojekonto")) {
             br.getPage("/mojekonto");
         }
         if (br.containsHTML("Brak ważnego dostępu Premium")) {
             ai.setExpired(true);
-            ai.setStatus(getPhrase("EXPIRED"));
+            ai.setStatus(_JDT.T.lit_expired());
             ai.setProperty("premium", "FALSE");
             return ai;
         } else if (br.containsHTML(">Brak ważnego dostępu Premium<")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("UNSUPPORTED_PREMIUM"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, _JDT.T.plugins_tb7pl_UNSUPPORTED_PREMIUM(), PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do <b>(.*?)</b><br />").getMatch(0);
             if (validUntil == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, _JDT.T.lit_plugin_defect_pls_contact_support(), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             validUntil = validUntil.replace(" / ", " ");
             ai.setProperty("premium", "TRUE");
         }
-
         /*
          * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
          */
-
         /*
          * final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList( // "turbobit.net", "catshare.net", "fileshark.pl",
          * "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploaded.to", "uploaded.net", "ul.to", "sharehost.eu" //
          * "oboom.com", "fileparadox.in", "bitshare.com", "freakshare.net", "freakshare.com" ));
          */
-
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
-
         // ai.setProperty("Turbobit traffic", "Unlimited");
         String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
-                br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
+        br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         if (otherHostersLimitLeft == null) {
             otherHostersLimitLeft = br.getRegex("Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         }
         // ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
-        ai.setProperty("TRAFFIC_LEFT", otherHostersLimitLeft == null ? getPhrase("UNKNOWN") : SizeFormatter.getSize(otherHostersLimitLeft));
+        ai.setProperty("TRAFFIC_LEFT", otherHostersLimitLeft == null ? _JDT.T.lit_unknown() : SizeFormatter.getSize(otherHostersLimitLeft));
         // ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
         String unlimited = br.getRegex("<br />(.*): <b>Bez limitu</b> \\|").getMatch(0);
         if (unlimited != null) {
             ai.setProperty("UNLIMITED", unlimited);
         }
-        ai.setStatus("Premium" + " (" + getPhrase("TRAFFIC_LEFT") + ": " + (otherHostersLimitLeft == null ? getPhrase("UNKNOWN") : otherHostersLimitLeft) + (unlimited == null ? "" : ", " + unlimited + ": " + getPhrase("UNLIMITED")) + ")");
+        ai.setStatus("Premium" + " (" + _JDT.T.lit_traffic_left() + ": " + (otherHostersLimitLeft == null ? _JDT.T.lit_unknown() : otherHostersLimitLeft) + (unlimited == null ? "" : ", " + unlimited + ": " + _JDT.T.lit_unlimited()) + ")");
         if (otherHostersLimitLeft != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(otherHostersLimitLeft));
         }
         List<String> supportedHostsList = getSupportedHosts();
         ai.setMultiHostSupport(this, supportedHostsList);
-
         return ai;
     }
 
@@ -192,14 +183,13 @@ public class Tb7Pl extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
                 Long lastUnavailable = unavailableMap.get(link.getHost());
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("HOSTER_UNAVAILABLE") + " " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.plugins_tb7pl_HOSTER_UNAVAILABLE(this.getHost()), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -208,11 +198,9 @@ public class Tb7Pl extends PluginForHost {
                 }
             }
         }
-
         final String downloadUrl = link.getPluginPatternMatcher();
         boolean resume = true;
         showMessage(link, "Phase 1/3: Login");
-
         login(account, false);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
@@ -224,9 +212,7 @@ public class Tb7Pl extends PluginForHost {
         // if so, then try to use it, generated link store in link properties
         // for future usage (broken download etc)
         String generatedLink = checkDirectLink(link, "generatedLinkTb7");
-
         if (generatedLink == null) {
-
             /* generate new downloadlink */
             String url = Encoding.urlEncode(downloadUrl);
             String postData = "step=1" + "&content=" + url;
@@ -234,11 +220,10 @@ public class Tb7Pl extends PluginForHost {
             br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
             if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
                 logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("DOWNLOAD_LIMIT"), 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.lit_download_limit_exceeded(), 1 * 60 * 1000l);
             }
             postData = "step=2" + "&0=on";
             br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
-
             // New Regex, but not tested if it works for all files (not video)
             // String generatedLink =
             // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> /
@@ -266,21 +251,18 @@ public class Tb7Pl extends PluginForHost {
                     link.getLinkStatus().setRetryCount(0);
                     final String inactiveLink = br.getRegex("textarea id=\"listInactive\" class=\"small\" readonly>(.*?)[ \t\n\r]+</textarea>").getMatch(0);
                     if (downloadUrl.compareTo(inactiveLink) != 0) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("LINK_INACTIVE"), 30 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.plugins_tb7pl_LINK_INACTIVE(), 30 * 1000l);
                     }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
-
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("RETRY") + msg, 20 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.lit_retry_in_a_few_seconds() + msg, 20 * 1000l);
             }
             link.setProperty("generatedLinkTb7", generatedLink);
         }
-
         // wait, workaround
         sleep(1 * 1000l, link);
         int chunks = 0;
-
         // generated fileshark/lunaticfiles link allows only 1 chunk
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
@@ -299,16 +281,15 @@ public class Tb7Pl extends PluginForHost {
                 // previously generated link expired,
                 // clear the property and restart the download
                 // and generate new link
-                sleep(10 * 1000l, link, getPhrase("LINK_EXPIRED"));
+                sleep(10 * 1000l, link, _JDT.T.plugins_tb7pl_LINK_EXPIRED());
                 logger.info("Tb7.pl: previously generated link expired - removing it and restarting download process.");
                 link.setProperty("generatedLinkTb7", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-
             if (br.getBaseURL().contains("notransfer")) {
                 /* No traffic left */
                 account.getAccountInfo().setTrafficLeft(0);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, _JDT.T.lit_traffic_limit_reached(), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (br.getBaseURL().contains("serviceunavailable")) {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
@@ -317,17 +298,16 @@ public class Tb7Pl extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             if (br.getBaseURL().contains("invaliduserpass")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PREMIUM_ERROR"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, _JDT.T.plugins_tb7pl_PREMIUM_ERROR(), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if ((br.getBaseURL().contains("notfound")) || (br.containsHTML("404 Not Found"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
                 logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("DOWNLOAD_LIMIT"), 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.lit_download_limit_exceeded(), 1 * 60 * 1000l);
             }
         }
-
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -344,7 +324,6 @@ public class Tb7Pl extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
-
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     // try redirected link
                     boolean resetGeneratedLink = true;
@@ -357,7 +336,6 @@ public class Tb7Pl extends PluginForHost {
                             } else {
                                 resetGeneratedLink = false;
                             }
-
                         } else { // turbobit link is already redirected link
                             resetGeneratedLink = false;
                         }
@@ -387,7 +365,7 @@ public class Tb7Pl extends PluginForHost {
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("UNKNOWN_ERROR"));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT.T.plugins_tb7pl_UNKNOWN_ERROR());
         }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -413,18 +391,6 @@ public class Tb7Pl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("generatedLinkTb7", null);
-    }
-
-    public void showAccountDetailsDialog(Account account) {
-        AccountInfo ai = account.getAccountInfo();
-        if ("FALSE".equals(ai.getProperty("premium"))) {
-            jd.gui.UserIO.getInstance().requestMessageDialog("Xt7.pl Account", getPhrase("ACCOUNT_TYPE") + ": " + getPhrase("FREE") + "\n");
-        } else {
-            long otherHostersLimit = Long.parseLong(ai.getProperty("TRAFFIC_LEFT").toString(), 10);
-            String unlimited = (String) (ai.getProperty("UNLIMITED"));
-            jd.gui.UserIO.getInstance().requestMessageDialog("Tb7.pl Account", getPhrase("ACCOUNT_TYPE") + ": Premium\n" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(otherHostersLimit) + (unlimited == null ? "" : "\n" + unlimited + ": " + getPhrase("UNLIMITED")));
-        }
-
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
@@ -482,5 +448,4 @@ public class Tb7Pl extends PluginForHost {
         }
         return "Translation not found!";
     }
-
 }

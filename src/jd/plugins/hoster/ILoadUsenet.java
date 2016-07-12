@@ -7,7 +7,7 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -28,14 +28,8 @@ public class ILoadUsenet extends UseNet {
         this.enablePremium("https://www.iload-usenet.com/prices");
     }
 
-    public static interface ILoadUsenetConfigInterface extends UsenetConfigInterface {
-
+    public static interface ILoadUsenetConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<ILoadUsenetConfigInterface> getConfigInterface() {
-        return ILoadUsenetConfigInterface.class;
-    }
 
     @Override
     public String getAGBLink() {
@@ -137,5 +131,4 @@ public class ILoadUsenet extends UseNet {
         ret.addAll(UsenetServer.createServerList("secure.news.iload-usenet.com", true, 563, 81, 81));
         return ret;
     }
-
 }

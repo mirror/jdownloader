@@ -10,6 +10,7 @@ import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.util.EventObject;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -172,7 +173,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f, b, null) {
             @Override
             public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
-                return mouseOverRow == row;
+                return mouseOverRow == row || (getCellEditor() != null && editingRow == row);
             }
 
             @Override
@@ -185,6 +186,12 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             }
 
         });
+    }
+
+    @Override
+    public boolean editCellAt(int row, int column, EventObject e) {
+
+        return super.editCellAt(row, column, e);
     }
 
     /**

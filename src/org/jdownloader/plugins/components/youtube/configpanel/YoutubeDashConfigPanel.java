@@ -46,6 +46,7 @@ import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.Plugin;
 import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
@@ -129,6 +130,10 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         addStartDescription(description);
 
+    }
+
+    @Override
+    protected void initPluginSettings(Plugin protoType) {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist(), null, null, new ComboBox<IfUrlisAPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsPlaylistUrlAction", KeyHandler.class), IfUrlisAPlaylistAction.values(), null));
 

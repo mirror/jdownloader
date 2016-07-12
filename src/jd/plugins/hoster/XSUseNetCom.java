@@ -7,7 +7,7 @@ import java.util.List;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 import jd.PluginWrapper;
@@ -22,7 +22,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" }, flags = { 0 })
 public class XSUseNetCom extends UseNet {
-
     public XSUseNetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.xsusenet.com/sign-up/");
@@ -33,13 +32,8 @@ public class XSUseNetCom extends UseNet {
         return "https://www.xsusenet.com/terms-of-service/";
     }
 
-    public static interface XSUseNetComConfigInterface extends UsenetConfigInterface {
+    public static interface XSUseNetComConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<XSUseNetComConfigInterface> getConfigInterface() {
-        return XSUseNetComConfigInterface.class;
-    }
 
     private final String USENET_USERNAME = "USENET_USERNAME";
 
@@ -172,5 +166,4 @@ public class XSUseNetCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("sslreader.eweka.nl", true, 563, 443));
         return ret;
     }
-
 }

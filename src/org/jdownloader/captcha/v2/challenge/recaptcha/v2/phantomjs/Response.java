@@ -59,4 +59,9 @@ public class Response {
 
     }
 
+    public void remove(HashSet<Integer> remove) {
+        clickedSet.removeAll(remove);
+        clickedIndices.removeAll(remove);
+    }
+
 }

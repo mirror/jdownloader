@@ -5,6 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -15,14 +20,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "giganews.com" }, urls = { "" }, flags = { 0 })
 public class GiganewsCom extends UseNet {
-
     public GiganewsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.giganews.com/signup/");
@@ -33,14 +32,8 @@ public class GiganewsCom extends UseNet {
         return "http://www.giganews.com/legal/tos_personal.html";
     }
 
-    public static interface GiganewsComConfigInterface extends UsenetConfigInterface {
-
+    public static interface GiganewsComConfigInterface extends UsenetAccountConfigInterface {
     };
-
-    @Override
-    public Class<GiganewsComConfigInterface> getConfigInterface() {
-        return GiganewsComConfigInterface.class;
-    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -120,5 +113,4 @@ public class GiganewsCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("news.giganews.com", true, 563, 443));
         return ret;
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -22,9 +21,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -46,13 +51,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
-
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe)";
-
     private final String         PROPERTY_FREELINK            = "freeLink";
     private final String         PROPERTY_HOTLINK             = "hotlink";
     private final String         PROPERTY_PREMLINK            = "premLink";
@@ -62,7 +63,6 @@ public class OneFichierCom extends PluginForHost {
     private boolean              pwProtected                  = false;
     private Account              currAcc                      = null;
     private DownloadLink         currDownloadLink             = null;
-
     /* Max total connections for premium = 50 (RE: admin) */
     private static final boolean resume_account_premium       = true;
     private static final int     maxchunks_account_premium    = -4;
@@ -81,7 +81,6 @@ public class OneFichierCom extends PluginForHost {
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.1fichier.com/en/register.pl");
-        setConfigElements();
     }
 
     @Override
@@ -420,8 +419,7 @@ public class OneFichierCom extends PluginForHost {
         // downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
         isBlocked |= br.containsHTML("you must wait \\d+ minutes between each downloads<");
         if (isBlocked) {
-            final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
-
+            final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
             if (waittime != null && preferReconnect) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
             } else if (waittime != null && Integer.parseInt(waittime) >= 10) {
@@ -632,7 +630,6 @@ public class OneFichierCom extends PluginForHost {
                     }
                 }
             }
-
             if (con.getResponseCode() == 401) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -741,7 +738,7 @@ public class OneFichierCom extends PluginForHost {
     /* Returns postPage key + data based on the users' SSL preference. */
     private String getSSLFormValue() {
         String formdata;
-        if (this.getPluginConfig().getBooleanProperty(PREFER_SSL, false)) {
+        if (PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
             logger.info("User prefers download with SSL");
             formdata = "dlssl=SSL+Download";
         } else {
@@ -843,22 +840,32 @@ public class OneFichierCom extends PluginForHost {
         return test;
     }
 
-    /** Returns the file/link-ID of the current downloadLink. */
-    private String getFID() {
-        return getFID(this.currDownloadLink);
-    }
+    public static interface OneFichierConfigInterface extends PluginConfigInterface {
+        public static class OneFichierConfigInterfaceTranslation {
+            public String getPreferReconnectEnabled_label() {
+                return _JDT.T.lit_prefer_reconnect();
+            }
 
-    private boolean default_prefer_reconnect = false;
-    private boolean default_prefer_ssl       = true;
+            public String getPreferSSLEnabled_label() {
+                return _JDT.T.lit_prefer_ssl();
+            }
+        }
 
-    private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(default_prefer_reconnect));
-        /*
-         * The site mainly works via SSL so this is not necessarily needed. At the moment this setting only has an influence if either the
-         * user downloads a password protected link (premium + free) or the user downloads via premium and has the 'direct downloads'
-         * setting disabled.
-         */
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_SSL, JDL.L("plugins.hoster.onefichiercom.preferSSL", "Prefer SSL?")).setDefaultValue(default_prefer_ssl));
+        public static final OneFichierConfigInterfaceTranslation TRANSLATION = new OneFichierConfigInterfaceTranslation();
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig("PREFER_RECONNECT")
+        boolean isPreferReconnectEnabled();
+
+        void setPreferReconnectEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @TakeValueFromSubconfig("PREFER_SSL")
+        boolean isPreferSSLEnabled();
+
+        void setPreferSSLEnabled(boolean b);
     }
 
     private void prepareBrowser(final Browser br) {
@@ -885,5 +892,4 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

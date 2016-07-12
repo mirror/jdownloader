@@ -17,17 +17,16 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 
 public class ComboBox<ContentType> extends JComboBox implements SettingsComponent, GenericConfigEventListener<ContentType> {
-
     private static final long                             serialVersionUID = -1580999899097054630L;
     private ListCellRenderer                              orgRenderer;
     private String[]                                      translations;
     private StateUpdateEventSender<ComboBox<ContentType>> eventSender;
     private boolean                                       setting;
     private KeyHandler<ContentType>                       keyHandler;
+
     {
         eventSender = new StateUpdateEventSender<ComboBox<ContentType>>();
         this.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 // do not throw events of changed programmatically
                 if (!setting) {
@@ -52,7 +51,6 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
                     return orgRenderer.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
                 }
                 Component ret;
-
                 renderComponent(ret = orgRenderer.getListCellRendererComponent(list, getLabel(index, (ContentType) value), index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
                 return ret;
             }
@@ -75,14 +73,11 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
 
     public ContentType getSelectedItem() {
         return (ContentType) super.getSelectedItem();
-
     }
 
     public ComboBox(ContentType[] values, String[] names) {
         this(values);
-
         this.translations = names;
-
     }
 
     protected String getLabel(int index, ContentType value) {
@@ -97,11 +92,9 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
                         }
                     }
                 } catch (Exception e) {
-
                     e.printStackTrace();
                 }
             }
-
             if (value instanceof LabelInterface) {
                 return ((LabelInterface) value).getLabel();
             }
@@ -111,7 +104,6 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     }
 
     protected void renderComponent(Component component, JList list, ContentType value, int index, boolean isSelected, boolean cellHasFocus) {
-
     }
 
     public ComboBox(org.appwork.storage.config.handler.KeyHandler<ContentType> keyHandler, ContentType[] values, String[] strings) {
@@ -126,7 +118,7 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     }
 
     public String getConstraints() {
-        return "height 26!";
+        return "sgy LINE";
     }
 
     public boolean isMultiline() {
@@ -135,7 +127,6 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         eventSender.addListener(listener);
-
     }
 
     @Override
