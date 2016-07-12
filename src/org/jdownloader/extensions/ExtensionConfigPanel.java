@@ -2,7 +2,6 @@ package org.jdownloader.extensions;
 
 import java.awt.Component;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import javax.swing.Icon;
 
@@ -14,7 +13,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
@@ -38,11 +36,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     public ArrayList<AdvancedConfigEntry> register() {
         final ArrayList<AdvancedConfigEntry> configInterfaces = new ArrayList<AdvancedConfigEntry>();
-        final HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
-        for (KeyHandler m : getExtension().getSettings()._getStorageHandler().getMap().values()) {
-            if (map.containsKey(m)) {
-                continue;
-            }
+        for (final KeyHandler m : getExtension().getSettings()._getStorageHandler().getKeyHandler()) {
             if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
                 if (m.getSetMethod() == null) {
                     throw new RuntimeException("Setter for " + m.getKey() + " missing");
@@ -52,7 +46,6 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
                     synchronized (configInterfaces) {
                         configInterfaces.add(new AdvancedConfigEntry(getExtension().getSettings(), m));
                     }
-                    map.put(m, true);
                 }
             }
         }
