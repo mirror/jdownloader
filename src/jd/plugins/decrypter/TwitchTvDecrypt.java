@@ -47,7 +47,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class TwitchTvDecrypt extends PluginForDecrypt {
 
     public TwitchTvDecrypt(PluginWrapper wrapper) {
@@ -77,14 +77,14 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
     }
 
     private final String FASTLINKCHECK  = "FASTLINKCHECK";
-    private final String videoSingleWeb = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(?:www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
-    private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/v/\\d+)";
+    private final String videoSingleWeb = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(?:www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
+    private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/v/\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredLinks = new ArrayList<DownloadLink>();
         // currently they redirect https to http
-        String parameter = param.toString().replaceFirst("^http://", "https://").replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
+        String parameter = param.toString().replaceFirst("^http://", "https://").replaceAll("://([a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
         final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
 
         final SubConfiguration cfg = this.getPluginConfig();
