@@ -6,11 +6,28 @@ import javax.swing.SwingConstants;
 
 public class Label extends JLabel implements SettingsComponent {
     public Label(String txt, Icon icon) {
-        super(txt, icon, SwingConstants.LEFT);
+        super(htmlize(txt), icon, SwingConstants.LEFT);
     }
 
     public Label(String txt) {
-        super(txt);
+        super(htmlize(txt));
+    }
+
+    private static String htmlize(String txt) {
+        txt = txt.trim();
+        if (!txt.startsWith("<html>")) {
+            txt = "<html>" + txt;
+        }
+        if (!txt.endsWith("</html>")) {
+            txt += "</html>";
+        }
+        txt = txt.replaceAll("[\r\n]{1,2}", "<br>");
+        return txt;
+    }
+
+    @Override
+    public void setText(String text) {
+        super.setText(htmlize(text));
     }
 
     @Override
