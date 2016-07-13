@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -176,9 +175,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 return super.add(e);
             }
         };
+        br = new Browser();
         br.setFollowRedirects(true);
-        br.setCookiesExclusive(true);
-        br.clearCookies("youtube.com");
         br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
 
         String cleanedurl = Encoding.urlDecode(cryptedLink, false);
@@ -211,10 +209,7 @@ public class TbCmV2 extends PluginForDecrypt {
         userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         channelID = new Regex(cleanedurl, "/channel/([A-Za-z0-9\\-_]+)").getMatch(0);
         if (StringUtils.isEmpty(channelID) && StringUtils.isNotEmpty(userChannel)) {
-            // we could already be on this url
-            if (!br.getURL().matches("https?://(www\\.)?youtube\\.com/c/" + Pattern.quote(userChannel))) {
-                br.getPage("https://youtube.com/c/" + userChannel);
-            }
+            br.getPage("https://www.youtube.com/c/" + userChannel);
             channelID = br.getRegex("/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
             if (StringUtils.isEmpty(channelID)) {
                 // its within meta tags multiple times (ios/ipad/iphone) also
