@@ -570,7 +570,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         // f.requestFocus();
         //
         // } else {
-        hoster.requestFocus();
+        filter.requestFocus();
         // }
     }
 }
