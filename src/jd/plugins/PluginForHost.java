@@ -44,6 +44,35 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
@@ -128,42 +157,14 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-            /**
-             * these patterns should split filename and fileextension (extension must include the point)
-             */
-            // multipart rar archives
+                                                  /**
+                                                   * these patterns should split filename and fileextension (extension must include the
+                                                   * point)
+                                                   */
+                                                  // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
@@ -466,7 +467,7 @@ public abstract class PluginForHost extends Plugin {
 
     protected PluginConfigPanelNG createConfigPanel() {
         if (getConfigInterface() != null || isPremiumEnabled()) {
-            PluginConfigPanelNG ret = new PluginConfigPanelNG() {
+            final PluginConfigPanelNG ret = new PluginConfigPanelNG() {
                 private PluginConfigPanel oldStyle;
 
                 @Override
@@ -476,15 +477,19 @@ public abstract class PluginForHost extends Plugin {
                 @Override
                 protected void initPluginSettings(Plugin plugin) {
                     super.initPluginSettings(plugin);
-                    oldStyle = PluginConfigPanel.create(getLazyP());
-                    if (oldStyle != null) {
-                        add(oldStyle, "pushx,growx,spanx");
+                    if (hasOldConfigContainer()) {
+                        final PluginConfigPanel oldStyle = PluginConfigPanel.create(getLazyP());
+                        if (oldStyle != null) {
+                            add(oldStyle, "pushx,growx,spanx");
+                        }
+                        this.oldStyle = oldStyle;
                     }
                 }
 
                 @Override
                 protected void onHide() {
                     super.onHide();
+                    final PluginConfigPanel oldStyle = this.oldStyle;
                     if (oldStyle != null) {
                         oldStyle.setHidden();
                     }
@@ -493,6 +498,7 @@ public abstract class PluginForHost extends Plugin {
                 @Override
                 protected void onShow() {
                     super.onShow();
+                    final PluginConfigPanel oldStyle = this.oldStyle;
                     if (oldStyle != null) {
                         oldStyle.setShown();
                     }
@@ -946,16 +952,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
