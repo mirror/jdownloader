@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -52,7 +51,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flash-x.tv" }, urls = { "https?://(?:www\\.)?(?:flashx\\.(?:tv|pw)|flash-x\\.tv)/(?:(?:vid)?embed\\-|dl\\?)?[a-z0-9]{12}" }, flags = { 2 })
 public class FlashxTv extends antiDDoSForHost {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "flashx.tv", "flash-x.tv", "flashx.pw" };
@@ -105,7 +103,6 @@ public class FlashxTv extends antiDDoSForHost {
     // protocol: no https
     // captchatype: null
     // other:
-
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -278,7 +275,6 @@ public class FlashxTv extends antiDDoSForHost {
                         getPage(playthis);
                     }
                     stream_dllink = getDllink();
-
                     if (stream_dllink == null) {
                         logger.info("Failed to get link via embed because: " + br.toString());
                     } else {
@@ -451,14 +447,11 @@ public class FlashxTv extends antiDDoSForHost {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -469,7 +462,12 @@ public class FlashxTv extends antiDDoSForHost {
         }
     }
 
-    public String getDllink() {
+    public String getDllink() throws Exception {
+        Form form = br.getFormbyKey("hash");
+        if (form != null) {
+            br.submitForm(form);
+            this.correctBR();
+        }
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "file: \"(https?://[a-z0-9\\-]+\\." + DOMAINS + "/[^<>\"]*?\\.mp4)\"").getMatch(0);
@@ -519,26 +517,21 @@ public class FlashxTv extends antiDDoSForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -990,6 +983,9 @@ public class FlashxTv extends antiDDoSForHost {
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().endsWith(".html")) {
+                    getPage(br.getRedirectLocation());
+                }
                 dllink = getDllink();
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
@@ -1045,5 +1041,4 @@ public class FlashxTv extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
