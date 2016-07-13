@@ -3,6 +3,7 @@ package jd.controlling.linkcollector.autostart;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -129,6 +130,10 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
 
     public void onLinkAdded(CrawledLink link) {
         if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled() || link.isForcedAutoStartEnabled()) {
+            final LinkCollectingInformation collectingInfo = link.getCollectingInfo();
+            if (collectingInfo != null && collectingInfo.getLinkCrawler().isCollecting()) {
+                return;
+            }
             delayer.resetAndStart();
             if (eventSender.hasListener()) {
                 eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RESET));
