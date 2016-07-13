@@ -147,6 +147,7 @@ import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
@@ -466,8 +467,35 @@ public abstract class PluginForHost extends Plugin {
     protected PluginConfigPanelNG createConfigPanel() {
         if (getConfigInterface() != null || isPremiumEnabled()) {
             PluginConfigPanelNG ret = new PluginConfigPanelNG() {
+                private PluginConfigPanel oldStyle;
+
                 @Override
                 public void updateContents() {
+                }
+
+                @Override
+                protected void initPluginSettings(Plugin plugin) {
+                    super.initPluginSettings(plugin);
+                    oldStyle = PluginConfigPanel.create(getLazyP());
+                    if (oldStyle != null) {
+                        add(oldStyle, "pushx,growx,spanx");
+                    }
+                }
+
+                @Override
+                protected void onHide() {
+                    super.onHide();
+                    if (oldStyle != null) {
+                        oldStyle.setHidden();
+                    }
+                }
+
+                @Override
+                protected void onShow() {
+                    super.onShow();
+                    if (oldStyle != null) {
+                        oldStyle.setShown();
+                    }
                 }
 
                 @Override

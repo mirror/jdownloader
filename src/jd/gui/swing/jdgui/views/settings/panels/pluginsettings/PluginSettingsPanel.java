@@ -19,18 +19,7 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -57,6 +46,18 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 public class PluginSettingsPanel extends JPanel implements SettingsComponent, ActionListener {
     /**
@@ -249,7 +250,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             }
         });
         Collections.sort(lst, new Comparator<LazyPlugin<?>>() {
-
             public int compare(int x, int y) {
                 return (x < y) ? -1 : ((x == y) ? 0 : 1);
             }
@@ -309,19 +309,26 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         if (selectedItem instanceof LazyHostPlugin) {
                             if (!((LazyHostPlugin) selectedItem).isHasConfig()) {
                                 if (((LazyHostPlugin) selectedItem).isPremium()) {
-                                    newCP = new PluginConfigPanelNG() {
-                                        @Override
-                                        public void updateContents() {
-                                        }
-
-                                        @Override
-                                        public void save() {
-                                        }
-
-                                        @Override
-                                        public void reset() {
-                                        }
-                                    };
+                                    throw new WTFException("Should not happen");
+                                    // newCP = new PluginConfigPanelNG() {
+                                    // @Override
+                                    // public void updateContents() {
+                                    // }
+                                    //
+                                    // @Override
+                                    // protected void initPluginSettings(Plugin plugin) {
+                                    // super.initPluginSettings(plugin);
+                                    // add(PluginConfigPanel.create(selectedItem), "pushx,growx,spanx");
+                                    // }
+                                    //
+                                    // @Override
+                                    // public void save() {
+                                    // }
+                                    //
+                                    // @Override
+                                    // public void reset() {
+                                    // }
+                                    // };
                                 }
                             }
                         }
@@ -362,11 +369,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     JDGui.getInstance().setWaiting(false);
                 }
                 revalidate();
-                System.out.println("Finished 1: " + (System.currentTimeMillis() - start));
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        System.out.println("Finished 2: " + (System.currentTimeMillis() - start));
                         scrollToAccount(null);
                     }
                 });
