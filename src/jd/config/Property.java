@@ -102,10 +102,9 @@ public class Property implements Serializable {
                     }
                 }
             }
-            return def;
         } catch (final Exception e) {
-            return def;
         }
+        return def;
     }
 
     /**
@@ -127,10 +126,9 @@ public class Property implements Serializable {
             } else if (value instanceof Number) {
                 return ((Number) value).intValue();
             }
-            return def;
         } catch (final Exception e) {
-            return def;
         }
+        return def;
     }
 
     /**
@@ -146,10 +144,9 @@ public class Property implements Serializable {
             } else if (value instanceof Number) {
                 return ((Number) value).longValue();
             }
-            return def;
         } catch (final Exception e) {
-            return def;
         }
+        return def;
     }
 
     /**
