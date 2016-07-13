@@ -805,7 +805,7 @@ public class LinkCrawler {
                         userNameAndPassword = null;
                     }
                     if (StringUtils.isEmpty(userNameAndPassword)) {
-                        return connection;
+                        return openCrawlDeeperConnection(br, connection);
                     } else {
                         basicAuth = "Basic " + Encoding.Base64Encode(userNameAndPassword);
                     }
@@ -819,7 +819,7 @@ public class LinkCrawler {
                 connection = br.openRequestConnection(request);
                 if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
                     if (connection.getHeaderField("WWW-Authenticate") == null) {
-                        return connection;
+                        return openCrawlDeeperConnection(br, connection);
                     }
                     if (StringUtils.isNotEmpty(basicAuth)) {
                         try {
@@ -841,7 +841,7 @@ public class LinkCrawler {
                     }
                     break authLoop;
                 } else {
-                    return connection;
+                    return openCrawlDeeperConnection(br, connection);
                 }
             }
             final String location = request.getLocation();
@@ -851,14 +851,23 @@ public class LinkCrawler {
                 } catch (Throwable e) {
                 }
                 if (loopAvoid.add(location) == false) {
-                    return connection;
+                    return openCrawlDeeperConnection(br, connection);
                 }
                 request = br.createRedirectFollowingRequest(request);
             } else {
-                return connection;
+                return openCrawlDeeperConnection(br, connection);
             }
         }
-        return connection;
+        return openCrawlDeeperConnection(br, connection);
+    }
+
+    protected URLConnectionAdapter openCrawlDeeperConnection(Browser br, URLConnectionAdapter urlConnection) throws IOException {
+        if (urlConnection != null && urlConnection.isOK() && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
+            final Request request = urlConnection.getRequest().cloneRequest();
+            urlConnection.disconnect();
+            urlConnection = br.openRequestConnection(request);
+        }
+        return urlConnection;
     }
 
     protected void crawlDeeperOrFollowRedirect(final int generation, final CrawledLink source) {

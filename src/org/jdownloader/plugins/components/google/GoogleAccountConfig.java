@@ -33,4 +33,5 @@ public interface GoogleAccountConfig extends AccountConfigInterface {
     boolean isUsageRecaptchaV2Enabled();
 
     void setUsageRecaptchaV2Enabled(boolean b);
+
 }

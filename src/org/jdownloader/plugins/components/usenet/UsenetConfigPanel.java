@@ -8,6 +8,11 @@ import java.util.List;
 
 import javax.swing.Box;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
@@ -15,11 +20,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.config.PluginConfigPanelEventSenderListener;
-
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
 
 public class UsenetConfigPanel extends PluginConfigPanelNG {
     @Override

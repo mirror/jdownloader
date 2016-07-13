@@ -91,4 +91,5 @@ public interface UsenetAccountConfigInterface extends AccountConfigInterface {
     void setConnections(int con);
 
     int getConnections();
+
 }

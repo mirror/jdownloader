@@ -1,10 +1,14 @@
 package org.jdownloader.plugins.config;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import jd.plugins.Account;
 
@@ -13,17 +17,20 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.InterfaceParseException;
 import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.handler.ListHandler;
 import org.appwork.storage.config.handler.StorageHandler;
+import org.appwork.utils.IO;
+import org.appwork.utils.encoding.Base64;
 import org.jdownloader.logging.LogController;
 
 public class AccountJsonConfig {
-    private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
+    private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE     = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
 
-    private final static boolean                                                                   DEBUG        = false;
-    private final static String                                                                    PREFIX       = "configInterface.";
+    private final static boolean                                                                   DEBUG            = false;
+    private final static String                                                                    PREFIX_PRIMITIVE = "configInterface.primitive.";
+    private final static String                                                                    PREFIX_OBJECT    = "configInterface.object.";
 
     public synchronized static <T extends AccountConfigInterface> T get(final Account account) {
         if (account.getHoster() == null) {
@@ -60,7 +67,7 @@ public class AccountJsonConfig {
             @Override
             public void clear() throws StorageException {
                 for (final String key : account.getProperties().keySet()) {
-                    if (key.startsWith(PREFIX)) {
+                    if (key.startsWith(PREFIX_PRIMITIVE)) {
                         account.removeProperty(key);
                     }
                 }
@@ -74,7 +81,7 @@ public class AccountJsonConfig {
             public <E> E get(String key, E def, Boolean autoPutValue) throws StorageException {
                 final boolean contains = hasProperty(key);
                 final boolean autoPutDefaultValue = autoPutValue == null ? isAutoPutValues() : Boolean.TRUE.equals(autoPutValue);
-                Object ret = contains ? account.getProperty(PREFIX + key) : null;
+                Object ret = contains ? account.getProperty(PREFIX_PRIMITIVE + key) : null;
                 if (ret != null && def != null && ret.getClass() != def.getClass()) {
                     /* ret class different from def class, so we have to convert */
                     if (def instanceof Long) {
@@ -157,7 +164,7 @@ public class AccountJsonConfig {
             @Override
             public boolean hasProperty(String key) {
                 if (key != null) {
-                    return account.hasProperty(PREFIX + key);
+                    return account.hasProperty(PREFIX_PRIMITIVE + key);
                 }
                 return false;
             }
@@ -169,64 +176,54 @@ public class AccountJsonConfig {
 
             @Override
             public void put(String key, Boolean value) throws StorageException {
-                if (key != null) {
-                    account.setProperty(PREFIX + key, value);
-                }
+                putInternal(key, value);
             }
 
             @Override
             public void put(String key, Byte value) throws StorageException {
-                if (key != null) {
-                    account.setProperty(PREFIX + key, value);
-                }
+                putInternal(key, value);
             }
 
             @Override
             public void put(String key, Double value) throws StorageException {
-                if (key != null) {
-                    account.setProperty(PREFIX + key, value);
-                }
+                putInternal(key, value);
             }
 
             @Override
             public void put(String key, Enum<?> value) throws StorageException {
-                if (key != null) {
-                    account.setProperty(PREFIX + key, value);
-                }
+                putInternal(key, value);
             }
 
             @Override
             public void put(String key, Float value) throws StorageException {
-                if (key != null) {
-                    account.setProperty(PREFIX + key, value);
-                }
+                putInternal(key, value);
             }
 
             @Override
             public void put(String key, Integer value) throws StorageException {
-                if (key != null) {
-                    account.setProperty(PREFIX + key, value);
-                }
+                putInternal(key, value);
             }
 
             @Override
             public void put(String key, Long value) throws StorageException {
-                if (key != null) {
-                    account.setProperty(PREFIX + key, value);
-                }
+                putInternal(key, value);
             }
 
             @Override
             public void put(String key, String value) throws StorageException {
+                putInternal(key, value);
+            }
+
+            private void putInternal(String key, Object value) {
                 if (key != null) {
-                    account.setProperty(PREFIX + key, value);
+                    account.setProperty(PREFIX_PRIMITIVE + key, value);
                 }
             }
 
             @Override
             public Object remove(String key) {
                 if (key != null) {
-                    return account.removeProperty(PREFIX + key);
+                    return account.removeProperty(PREFIX_PRIMITIVE + key);
                 } else {
                     return null;
                 }
@@ -244,7 +241,7 @@ public class AccountJsonConfig {
             public int size() {
                 int size = 0;
                 for (final String key : account.getProperties().keySet()) {
-                    if (key.startsWith(PREFIX)) {
+                    if (key.startsWith(PREFIX_PRIMITIVE)) {
                         size++;
                     }
                 }
@@ -277,12 +274,41 @@ public class AccountJsonConfig {
             }
 
             @Override
-            protected void validateKeys(CryptedStorage crypted) {
-                if (getPrimitiveStorage() != null) {
-                    if (!Arrays.equals(getPrimitiveStorage().getCryptKey(), crypted == null ? JSonStorage.KEY : crypted.key())) {
-                        throw new InterfaceParseException("Key Mismatch!");
-                    }
+            protected void writeObject(final ListHandler<?> keyHandler, final Object object) {
+                final String key = PREFIX_OBJECT + keyHandler.getKey();
+                final String jsonString = JSonStorage.serializeToJson(object);
+                final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                try {
+                    final GZIPOutputStream gzip = new GZIPOutputStream(bos);
+                    gzip.write(jsonString.getBytes("UTF-8"));
+                    gzip.close();
+                    final String compressedJSonString = Base64.encodeToString(bos.toByteArray(), false);
+                    account.setProperty(key, compressedJSonString);
+                } catch (Exception e) {
+                    LogController.CL().log(e);
                 }
+            }
+
+            @Override
+            protected Object readObject(final ListHandler<?> keyHandler, final AtomicBoolean readFlag) {
+                Object readObject = null;
+                try {
+                    final String key = PREFIX_OBJECT + keyHandler.getKey();
+                    final String compressedJSonString = account.getStringProperty(key);
+                    if (compressedJSonString != null) {
+                        final byte[] bytes = Base64.decode(compressedJSonString);
+                        final String jsonString = IO.readInputStreamToString(new GZIPInputStream(new ByteArrayInputStream(bytes)));
+                        readFlag.set(true);
+                        readObject = JSonStorage.restoreFromString(jsonString, ((ListHandler<?>) keyHandler).getTypeRef(), null);
+                    }
+                } catch (Exception e) {
+                    LogController.CL().log(e);
+                }
+                return readObject;
+            }
+
+            @Override
+            protected void validateKeys(CryptedStorage crypted) {
             }
         };
         intf = (T) Proxy.newProxyInstance(configInterface.getClassLoader(), new Class<?>[] { configInterface }, storageHandler);
