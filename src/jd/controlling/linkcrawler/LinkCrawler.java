@@ -863,6 +863,7 @@ public class LinkCrawler {
 
     protected URLConnectionAdapter openCrawlDeeperConnection(Browser br, URLConnectionAdapter urlConnection) throws IOException {
         if (urlConnection != null && urlConnection.isOK() && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
+            // retry request because it set some cookies, maybe response is different now
             final Request request = urlConnection.getRequest().cloneRequest();
             urlConnection.disconnect();
             urlConnection = br.openRequestConnection(request);
