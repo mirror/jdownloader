@@ -512,7 +512,11 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         }
         final Date date = new Date(validUntil);
         final long left = validUntil - System.currentTimeMillis();
-        return formatDate(date) + " (" + TimeFormatter.formatMilliSeconds(left, TimeFormatter.HIDE_SECONDS) + ")";
+        if (left <= 0) {
+            return formatDate(date) + " (" + _GUI.T.PremiumAccountTableModel_getStringValue_status_expired() + ")";
+        } else {
+            return formatDate(date) + " (" + TimeFormatter.formatMilliSeconds(left, TimeFormatter.HIDE_SECONDS) + ")";
+        }
     }
 
     protected String formatDate(Date date) {
