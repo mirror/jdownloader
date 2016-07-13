@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.WeakHashMap;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.PackageController;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storable;
@@ -18,8 +22,6 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 
-import jd.controlling.linkcrawler.CrawledLink;
-
 @ScriptAPI(description = "The context download list link")
 public class CrawledLinkSandbox {
 
@@ -31,7 +33,6 @@ public class CrawledLinkSandbox {
     public CrawledLinkSandbox(CrawledLink link) {
         this.link = link;
         storable = LinkCollectorAPIImplV2.toStorable(CrawledLinkQueryStorable.FULL, link);
-
     }
 
     public String getAvailableState() {
@@ -51,16 +52,31 @@ public class CrawledLinkSandbox {
     }
 
     public Object getSessionProperty(final String key) {
-        final CrawledLink link = this.link;
-        if (link != null) {
+        if (this.link != null) {
             synchronized (SESSIONPROPERTIES) {
-                final HashMap<String, Object> properties = SESSIONPROPERTIES.get(link);
+                final HashMap<String, Object> properties = SESSIONPROPERTIES.get(this.link);
                 if (properties != null) {
                     return properties.get(key);
                 }
             }
         }
         return null;
+    }
+
+    public boolean remove() {
+        if (this.link != null) {
+            final CrawledPackage pkg = this.link.getParentNode();
+            if (pkg != null) {
+                final PackageController<CrawledPackage, CrawledLink> controller = pkg.getControlledBy();
+                if (controller != null) {
+                    final ArrayList<CrawledLink> children = new ArrayList<CrawledLink>();
+                    children.add(link);
+                    controller.removeChildren(children);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void setSessionProperty(final String key, final Object value) {
@@ -146,7 +162,6 @@ public class CrawledLinkSandbox {
     public void setName(String name) {
         if (link != null) {
             link.setName(name);
-
         }
     }
 

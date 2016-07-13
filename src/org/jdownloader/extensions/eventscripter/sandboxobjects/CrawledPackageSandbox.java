@@ -3,14 +3,15 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.packagecontroller.PackageController;
+
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
-
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
 
 @ScriptAPI(description = "The context linkgabber list package")
 public class CrawledPackageSandbox {
@@ -43,6 +44,17 @@ public class CrawledPackageSandbox {
             });
             return list.toArray(new ArchiveSandbox[] {});
         }
+    }
+
+    public boolean remove() {
+        if (filePackage != null) {
+            final PackageController<CrawledPackage, CrawledLink> controller = filePackage.getControlledBy();
+            if (controller != null) {
+                controller.removePackage(filePackage);
+                return true;
+            }
+        }
+        return false;
     }
 
     public CrawledLinkSandbox[] getDownloadLinks() {

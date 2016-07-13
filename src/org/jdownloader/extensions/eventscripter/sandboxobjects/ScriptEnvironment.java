@@ -35,6 +35,9 @@ import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -440,12 +443,40 @@ public class ScriptEnvironment {
         }
     }
 
+    @ScriptAPI(description = "Get a CrawledLink Link by it's uuid", parameters = { "uuid" })
+    public static CrawledLinkSandbox getCrawledLinkByUUID(long uuid) throws EnvironmentException {
+        try {
+            final CrawledLink link = LinkCollector.getInstance().getLinkByID(uuid);
+            if (link != null) {
+                return new CrawledLinkSandbox(link);
+            } else {
+                return null;
+            }
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
     @ScriptAPI(description = "Get a DownloadList Package by it's uuid", parameters = { "uuid" })
     public static FilePackageSandBox getDownloadPackageByUUID(long uuid) throws EnvironmentException {
         try {
             final FilePackage pkg = DownloadController.getInstance().getPackageByID(uuid);
             if (pkg != null) {
                 return new FilePackageSandBox(pkg);
+            } else {
+                return null;
+            }
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @ScriptAPI(description = "Get a CrawledLink Package by it's uuid", parameters = { "uuid" })
+    public static CrawledPackageSandbox getCrawledPackageByUUID(long uuid) throws EnvironmentException {
+        try {
+            final CrawledPackage pkg = LinkCollector.getInstance().getPackageByID(uuid);
+            if (pkg != null) {
+                return new CrawledPackageSandbox(pkg);
             } else {
                 return null;
             }
@@ -510,8 +541,19 @@ public class ScriptEnvironment {
         final List<FilePackage> list = DownloadController.getInstance().getPackagesCopy();
         final FilePackageSandBox[] ret = new FilePackageSandBox[list.size()];
         int i = 0;
-        for (final FilePackage dlc : list) {
-            ret[i++] = new FilePackageSandBox(dlc);
+        for (final FilePackage pkg : list) {
+            ret[i++] = new FilePackageSandBox(pkg);
+        }
+        return ret;
+    }
+
+    @ScriptAPI(description = "Get a list of all crawledpackages")
+    public static CrawledPackageSandbox[] getAllCrawledPackages() {
+        final List<CrawledPackage> list = LinkCollector.getInstance().getPackagesCopy();
+        final CrawledPackageSandbox[] ret = new CrawledPackageSandbox[list.size()];
+        int i = 0;
+        for (final CrawledPackage pkg : list) {
+            ret[i++] = new CrawledPackageSandbox(pkg);
         }
         return ret;
     }
@@ -524,8 +566,20 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Remove a package by uuid")
     public static boolean removeFilePackageByUUID(final String uuid) {
-        final FilePackage filePackage = DownloadController.getInstance().getPackageByID(Long.parseLong(uuid));
-        return filePackage != null && new FilePackageSandBox(filePackage).remove();
+        final FilePackage pkg = DownloadController.getInstance().getPackageByID(Long.parseLong(uuid));
+        return pkg != null && new FilePackageSandBox(pkg).remove();
+    }
+
+    @ScriptAPI(description = "Remove a crawledlink by uuid")
+    public static boolean removeCrawledLinkByUUID(final String uuid) {
+        final CrawledLink link = LinkCollector.getInstance().getLinkByID(Long.parseLong(uuid));
+        return link != null && new CrawledLinkSandbox(link).remove();
+    }
+
+    @ScriptAPI(description = "Remove a crawledpackage by uuid")
+    public static boolean removeCrawledPackageByUUID(final String uuid) {
+        final CrawledPackage pkg = LinkCollector.getInstance().getPackageByID(Long.parseLong(uuid));
+        return pkg != null && new CrawledPackageSandbox(pkg).remove();
     }
 
     @ScriptAPI(description = "Get a list of all downloadlinks")
@@ -535,6 +589,17 @@ public class ScriptEnvironment {
         int i = 0;
         for (final DownloadLink link : links) {
             ret[i++] = new DownloadLinkSandBox(link);
+        }
+        return ret;
+    }
+
+    @ScriptAPI(description = "Get a list of all crawledlinks")
+    public static CrawledLinkSandbox[] getAllCrawledLinks() {
+        final List<CrawledLink> links = LinkCollector.getInstance().getAllChildren();
+        final CrawledLinkSandbox[] ret = new CrawledLinkSandbox[links.size()];
+        int i = 0;
+        for (final CrawledLink link : links) {
+            ret[i++] = new CrawledLinkSandbox(link);
         }
         return ret;
     }
