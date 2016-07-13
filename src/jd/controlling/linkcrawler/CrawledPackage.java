@@ -28,56 +28,56 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public static final PackageControllerComparator<CrawledLink> SORTER_ASC  = new PackageControllerComparator<CrawledLink>() {
 
-        public int compare(CrawledLink o1, CrawledLink o2) {
-            String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-            String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-            if (o1s == null) {
-                o1s = "";
-            }
-            if (o2s == null) {
-                o2s = "";
-            }
-            return o1s.compareTo(o2s);
+                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
+                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
+                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
+                                                                                     if (o1s == null) {
+                                                                                         o1s = "";
+                                                                                     }
+                                                                                     if (o2s == null) {
+                                                                                         o2s = "";
+                                                                                     }
+                                                                                     return o1s.compareTo(o2s);
 
-        }
+                                                                                 }
 
-        @Override
-        public String getID() {
-            return "jd.controlling.linkcrawler.CrawledPackage";
-        }
+                                                                                 @Override
+                                                                                 public String getID() {
+                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
+                                                                                 }
 
-        @Override
-        public boolean isAsc() {
-            return true;
-        }
-    };
+                                                                                 @Override
+                                                                                 public boolean isAsc() {
+                                                                                     return true;
+                                                                                 }
+                                                                             };
     public static final PackageControllerComparator<CrawledLink> SORTER_DESC = new PackageControllerComparator<CrawledLink>() {
 
-        public int compare(CrawledLink o1, CrawledLink o2) {
-            String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-            ;
-            String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-            ;
-            if (o1s == null) {
-                o1s = "";
-            }
-            if (o2s == null) {
-                o2s = "";
-            }
-            return o2s.compareTo(o1s);
+                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
+                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
+                                                                                     ;
+                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
+                                                                                     ;
+                                                                                     if (o1s == null) {
+                                                                                         o1s = "";
+                                                                                     }
+                                                                                     if (o2s == null) {
+                                                                                         o2s = "";
+                                                                                     }
+                                                                                     return o2s.compareTo(o1s);
 
-        }
+                                                                                 }
 
-        @Override
-        public String getID() {
-            return "jd.controlling.linkcrawler.CrawledPackage";
-        }
+                                                                                 @Override
+                                                                                 public String getID() {
+                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
+                                                                                 }
 
-        @Override
-        public boolean isAsc() {
-            return false;
-        }
-    };
+                                                                                 @Override
+                                                                                 public boolean isAsc() {
+                                                                                     return false;
+                                                                                 }
+                                                                             };
 
     public static enum TYPE {
         NORMAL,
@@ -246,6 +246,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public void setComment(String comment) {
         if (!StringUtils.equals(comment, this.comment)) {
             this.comment = comment;
+            setType(TYPE.NORMAL);
             if (hasNotificationListener()) {
                 nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.COMMENT, getComment()));
             }

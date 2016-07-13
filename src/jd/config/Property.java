@@ -89,19 +89,22 @@ public class Property implements Serializable {
 
     public Boolean getBooleanProperty(final String key, final boolean def) {
         try {
-            Object r = getProperty(key, def);
-            if (!(r instanceof Boolean)) {
-                r = r + "";
-                if ("false".equalsIgnoreCase(((String) r))) {
-                    r = false;
-                } else {
-                    r = ((String) r).length() > 0;
+            final Object value = getProperty(key, def);
+            if (value instanceof Boolean) {
+                return (Boolean) value;
+            } else {
+                final String stringValue = String.valueOf(value);
+                if (stringValue != null) {
+                    if ("false".equalsIgnoreCase(stringValue)) {
+                        return false;
+                    } else {
+                        return stringValue.length() > 0;
+                    }
                 }
             }
-            final Boolean ret = (Boolean) r;
-            return ret;
+            return def;
         } catch (final Exception e) {
-            return false;
+            return def;
         }
     }
 
@@ -118,11 +121,11 @@ public class Property implements Serializable {
 
     public int getIntegerProperty(final String key, final int def) {
         try {
-            Object r = getProperty(key, def);
-            if (r instanceof String) {
-                r = Integer.parseInt((String) r);
-            } else if (r instanceof Number) {
-                r = ((Number) r).intValue();
+            final Object value = getProperty(key, def);
+            if (value instanceof String) {
+                return Integer.parseInt((String) value);
+            } else if (value instanceof Number) {
+                return ((Number) value).intValue();
             }
             return def;
         } catch (final Exception e) {
@@ -137,11 +140,11 @@ public class Property implements Serializable {
      */
     public long getLongProperty(final String key, final long def) {
         try {
-            Object r = getProperty(key, def);
-            if (r instanceof String) {
-                r = Long.parseLong((String) r);
-            } else if (r instanceof Number) {
-                r = ((Number) r).longValue();
+            final Object value = getProperty(key, def);
+            if (value instanceof String) {
+                return Long.parseLong((String) value);
+            } else if (value instanceof Number) {
+                return ((Number) value).longValue();
             }
             return def;
         } catch (final Exception e) {
