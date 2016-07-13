@@ -794,6 +794,19 @@ public class AccountController implements AccountControllerListener, AccountProp
         return false;
     }
 
+    public int getAccountsSize(final String host) {
+        if (host != null) {
+            synchronized (AccountController.this) {
+                final List<Account> ret = ACCOUNTS.get(host.toLowerCase(Locale.ENGLISH));
+                if (ret != null && ret.size() > 0) {
+                    return ret.size();
+                }
+                return 0;
+            }
+        }
+        return 0;
+    }
+
     public void addAccount(final Account account) {
         addAccount(account, true);
     }

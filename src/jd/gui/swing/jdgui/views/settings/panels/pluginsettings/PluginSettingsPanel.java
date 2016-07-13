@@ -19,6 +19,18 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -45,17 +57,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
 
 public class PluginSettingsPanel extends JPanel implements SettingsComponent, ActionListener {
     /**
@@ -245,6 +246,25 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             @Override
             public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
                 return o1.getDisplayName().compareToIgnoreCase(o2.getDisplayName());
+            }
+        });
+        Collections.sort(lst, new Comparator<LazyPlugin<?>>() {
+
+            public int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            @Override
+            public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
+                int o1Num = 0;
+                if (o1 instanceof LazyHostPlugin && ((LazyHostPlugin) o1).isPremium()) {
+                    o1Num = AccountController.getInstance().getAccountsSize(o1.getDisplayName());
+                }
+                int o2Num = 0;
+                if (o2 instanceof LazyHostPlugin && ((LazyHostPlugin) o2).isPremium()) {
+                    o2Num = AccountController.getInstance().getAccountsSize(o2.getDisplayName());
+                }
+                return compare(o2Num, o1Num);
             }
         });
         return lst;
