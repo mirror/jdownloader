@@ -395,26 +395,28 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
     protected void initAccountSettings(final Plugin plugin, ArrayList<Account> accounts) {
         String gapbefore = gapleft;
         String gaprightBefore = getRightGap();
-        Collections.sort(accounts, new Comparator<Account>() {
+        if (accounts != null) {
+            Collections.sort(accounts, new Comparator<Account>() {
 
-            public int compare(boolean x, boolean y) {
-                return (x == y) ? 0 : (x ? 1 : -1);
-            }
-
-            @Override
-            public int compare(Account o1, Account o2) {
-                final boolean e1 = o1.isEnabled();
-                final boolean e2 = o2.isEnabled();
-                int ret = compare(e2, e1);
-                if (ret == 0) {
-                    boolean error1 = o1.getError() == null;
-                    boolean error2 = o2.getError() == null;
-                    ret = compare(error2, error1);
+                public int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? 1 : -1);
                 }
-                return ret;
-            }
 
-        });
+                @Override
+                public int compare(Account o1, Account o2) {
+                    final boolean e1 = o1.isEnabled();
+                    final boolean e2 = o2.isEnabled();
+                    int ret = compare(e2, e1);
+                    if (ret == 0) {
+                        boolean error1 = o1.getError() == null;
+                        boolean error2 = o2.getError() == null;
+                        ret = compare(error2, error1);
+                    }
+                    return ret;
+                }
+
+            });
+        }
         try {
             if (plugin instanceof PluginForHost) {
                 final PluginForHost plgh = ((PluginForHost) plugin);
