@@ -4,7 +4,7 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 
-public class Captcha9kwClickResponse extends ClickCaptchaResponse {
+public class Captcha9kwClickResponse extends ClickCaptchaResponse implements Captcha9KWResponseInterface {
 
     private final String Captcha9kwID;
 
@@ -13,6 +13,7 @@ public class Captcha9kwClickResponse extends ClickCaptchaResponse {
         this.Captcha9kwID = captcha9kwID;
     }
 
+    @Override
     public String getCaptcha9kwID() {
         return Captcha9kwID;
     }

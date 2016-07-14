@@ -84,7 +84,6 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
     @Override
     protected void parseResponse(CESSolverJob<ClickedPoint> solverJob, Challenge<ClickedPoint> captchaChallenge, String captchaID, String antwort) {
         String[] splitResult = antwort.split("x");
-
         solverJob.setAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
     }
 
