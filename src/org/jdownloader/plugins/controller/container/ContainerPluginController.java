@@ -122,8 +122,7 @@ public class ContainerPluginController {
     }
 
     public PluginsC get(String displayName) {
-        lazyInit();
-        for (PluginsC p : list) {
+        for (PluginsC p : list()) {
             if (p.getName().equalsIgnoreCase(displayName)) {
                 return p;
             }
@@ -132,9 +131,8 @@ public class ContainerPluginController {
     }
 
     public Pattern getContainerExtensions(final String filter) {
-        lazyInit();
         final StringBuilder sb = new StringBuilder(".*(");
-        for (final PluginsC act : list) {
+        for (final PluginsC act : list()) {
             if (filter != null && !new Regex(act.getName(), filter).matches()) {
                 continue;
             }
