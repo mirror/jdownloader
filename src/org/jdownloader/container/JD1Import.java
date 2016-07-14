@@ -42,6 +42,10 @@ public class JD1Import extends PluginsC {
         super("JD1 Import", "file:/.+(\\.jdc|database\\.script)$", "$Revision: 21176 $");
     }
 
+    public JD1Import newPluginInstance() {
+        return new JD1Import();
+    }
+
     @SuppressWarnings("unchecked")
     public ContainerStatus callDecryption(File jdcFile) {
         final ContainerStatus cs = new ContainerStatus(jdcFile);

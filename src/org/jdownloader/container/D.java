@@ -77,6 +77,10 @@ public class D extends PluginsC {
         //
     }
 
+    public D newPluginInstance() {
+        return new D();
+    }
+
     public static String filterString(final String str) {
         final String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnmöäü;:,._-&$%(){}#~+ 1234567890<>='\"/";
         return Encoding.filterString(str, allowed);

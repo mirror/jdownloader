@@ -20,6 +20,10 @@ public class NZB extends PluginsC {
         super("NZB", "file:/.+\\.nzb$", "$Revision: 13393 $");
     }
 
+    public NZB newPluginInstance() {
+        return new NZB();
+    }
+
     public ContainerStatus callDecryption(final File nzbFile) {
         final ContainerStatus cs = new ContainerStatus(nzbFile);
         final ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();

@@ -45,6 +45,10 @@ public class C extends PluginsC {
         super("CFF", "file:/.+\\.ccf$", "$Revision$");
     }
 
+    public C newPluginInstance() {
+        return new C();
+    }
+
     private String decryptCCF5(InputStream inputStream) throws Exception {
         final String[][] CCF50 = (String[][]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("CCF50").invoke(null);
         final KeyParameter keyParam1 = new KeyParameter(HexFormatter.hexToByteArray(CCF50[0][0]));

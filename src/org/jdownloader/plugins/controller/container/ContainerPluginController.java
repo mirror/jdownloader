@@ -97,6 +97,30 @@ public class ContainerPluginController {
         }
     }
 
+    public synchronized boolean add(PluginsC plugin) {
+        if (plugin != null) {
+            final List<PluginsC> plugins = new ArrayList<PluginsC>(list());
+            if (plugins.contains(plugin)) {
+                return false;
+            } else {
+                plugins.add(plugin);
+                list = Collections.unmodifiableList(plugins);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public synchronized boolean remove(PluginsC plugin) {
+        if (plugin != null) {
+            final List<PluginsC> plugins = new ArrayList<PluginsC>(list());
+            final boolean ret = plugins.remove(plugin);
+            list = Collections.unmodifiableList(plugins);
+            return ret;
+        }
+        return false;
+    }
+
     public PluginsC get(String displayName) {
         lazyInit();
         for (PluginsC p : list) {

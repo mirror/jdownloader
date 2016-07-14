@@ -37,6 +37,7 @@ import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.plugins.AddonPanel;
+import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -76,9 +77,10 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     private FolderWatchConfigPanel   configPanel;
     private ScheduledExecutorService scheduler;
-    private final Object             lock           = new Object();
-    private ScheduledFuture<?>       job            = null;
-    private boolean                  isDebugEnabled = false;
+    private final Object             lock                      = new Object();
+    private ScheduledFuture<?>       job                       = null;
+    private boolean                  isDebugEnabled            = false;
+    private PluginsC                 crawlerJobContainerPlugin = null;
 
     @Override
     public boolean isHeadlessRunnable() {
@@ -104,6 +106,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     protected void stop() throws StopException {
+        final PluginsC crawlerJobContainerPlugin = this.crawlerJobContainerPlugin;
+        this.crawlerJobContainerPlugin = null;
+        ContainerPluginController.getInstance().remove(crawlerJobContainerPlugin);
         if (!Application.isHeadless()) {
             MenuManagerMainToolbar.getInstance().unregisterExtender(this);
             MenuManagerMainmenu.getInstance().unregisterExtender(this);
@@ -133,6 +138,47 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
         }
         CFG_FOLDER_WATCH.CHECK_INTERVAL.getEventSender().addListener(this, true);
         isDebugEnabled = CFG_FOLDER_WATCH.CFG.isDebugEnabled();
+        crawlerJobContainerPlugin = new CrawlerJobContainer(this);
+        ContainerPluginController.getInstance().add(crawlerJobContainerPlugin);
+    }
+
+    // very primitive container support for .crawljob files. does add them as new job=bypass the original linkcrawler
+    public static class CrawlerJobContainer extends PluginsC {
+        private final FolderWatchExtension extension;
+
+        public CrawlerJobContainer(FolderWatchExtension extension) {
+            super("CrawlerJob", "file:/.+(\\.crawljob)$", "$Revision: 21176 $");
+            this.extension = extension;
+        }
+
+        public CrawlerJobContainer newPluginInstance() {
+            return new CrawlerJobContainer(extension);
+        }
+
+        @Override
+        public String[] encrypt(String plain) {
+            return null;
+        }
+
+        @Override
+        public ContainerStatus callDecryption(File file) throws Exception {
+            final ContainerStatus cs = new ContainerStatus(file);
+            try {
+                final String str = IO.readFileToString(file);
+                if (str.trim().startsWith("[")) {
+                    extension.parseJson(file, str);
+                } else {
+                    extension.parseProperties(file, str);
+                }
+                cls = new ArrayList<CrawledLink>();
+                cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                return cs;
+            } catch (final Exception e) {
+                logger.log(e);
+                cs.setStatus(ContainerStatus.STATUS_FAILED);
+                return cs;
+            }
+        }
     }
 
     private boolean isDebugEnabled() {

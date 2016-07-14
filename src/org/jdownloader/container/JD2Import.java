@@ -32,6 +32,10 @@ public class JD2Import extends PluginsC {
         super("JD2 Import", "file:/.+((downloadList|linkcollector)(\\d+)?(\\.zip|\\.zip\\.backup))$", "$Revision: 21176 $");
     }
 
+    public JD2Import newPluginInstance() {
+        return new JD2Import();
+    }
+
     @Override
     public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
         final LinkOriginDetails origin = source.getOrigin();

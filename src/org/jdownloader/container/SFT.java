@@ -20,6 +20,10 @@ public class SFT extends PluginsC {
         super("SFT", "file:/.+\\.sft$", "$Revision$");
     }
 
+    public SFT newPluginInstance() {
+        return new SFT();
+    }
+
     @Override
     public ContainerStatus callDecryption(File file) {
         ContainerStatus cs = new ContainerStatus(file);
