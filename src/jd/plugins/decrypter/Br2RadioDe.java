@@ -1,9 +1,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,7 +44,27 @@ public class Br2RadioDe extends PluginForDecrypt {
                 fp.setName(encodeUnicode(title));
                 fp.addLinks(ret);
             }
+        } else {
+            final String prev = br.getRegex("class=\"df_prev\".*?href=\"(/radio/bayern2/[^<>\"']*?100\\.html)\"").getMatch(0);
+            final String next = br.getRegex("class=\"df_next\".*?href=\"(/radio/bayern2/[^<>\"']*?100\\.html)\"").getMatch(0);
+            final String additionals[] = br.getRegex("href=\"(/radio/bayern2/[^<>\"']*?100\\.html)\" class=\"link_audio").getColumn(0);
+            final HashSet<String> followUps = new HashSet<String>(Arrays.asList(additionals));
+            followUps.remove(prev);
+            followUps.remove(next);
+            for (String additional : additionals) {
+                final DownloadLink link = createDownloadlink(br.getURL(additional).toString());
+                ret.add(link);
+            }
+            final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (title != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(encodeUnicode(title));
+                fp.addLinks(ret);
+                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+            }
+
         }
+
         return ret;
     }
 
