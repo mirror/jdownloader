@@ -2955,7 +2955,6 @@ public class LinkCrawler {
                 if (br != null) {
                     br.setLoadLimit(limit);
                 }
-
                 final String contentType = urlConnection.getContentType();
                 if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(contentType, "text") || urlConnection.getCompleteContentLength() > limit)) {
                     try {
