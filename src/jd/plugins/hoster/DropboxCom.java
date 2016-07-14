@@ -11,10 +11,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,6 +27,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }, flags = { 2 })
 public class DropboxCom extends PluginForHost {
@@ -50,6 +53,15 @@ public class DropboxCom extends PluginForHost {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return DropboxConfig.class;
+    }
+
+    public interface DropboxConfig extends PluginConfigInterface {
+        @DefaultBooleanValue(false)
+        @AboutConfig
+        @DescriptionForConfigEntry("If enabled, the Linkgrabber will offer a zip archive to download folders")
+        boolean isZipFolderDownloadEnabled();
+
+        void setZipFolderDownloadEnabled(boolean b);
     }
 
     private static final String             TYPE_S            = "https?://(www\\.)?dropbox\\.com/s/.+";
