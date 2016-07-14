@@ -28,7 +28,10 @@ public class AMZ extends PluginsC {
 
     public AMZ() {
         super("Amazon Mp3", "file:/.+\\.amz$", "$Revision$");
+    }
 
+    public AMZ newPluginInstance() {
+        return new AMZ();
     }
 
     @Override

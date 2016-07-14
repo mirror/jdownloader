@@ -33,6 +33,10 @@ public class MetaLink extends PluginsC {
         super("MetaLink", "file:/.+\\.(metalink|meta4)$", "$Revision: 13393 $");
     }
 
+    public MetaLink newPluginInstance() {
+        return new MetaLink();
+    }
+
     public ContainerStatus callDecryption(File lc) {
         ContainerStatus cs = new ContainerStatus(lc);
 

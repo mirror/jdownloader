@@ -88,6 +88,8 @@ public abstract class PluginsC {
         this.version = version;
     }
 
+    public abstract PluginsC newPluginInstance();
+
     protected ArrayList<CrawledLink> cls             = new ArrayList<CrawledLink>();
 
     protected String                 md5;

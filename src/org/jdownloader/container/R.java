@@ -38,6 +38,10 @@ public class R extends PluginsC {
         // TODO Auto-generated constructor stub
     }
 
+    public R newPluginInstance() {
+        return new R();
+    }
+
     public static String asHex(byte buf[]) {
         StringBuffer strbuf = new StringBuffer(buf.length * 2);
         int i;

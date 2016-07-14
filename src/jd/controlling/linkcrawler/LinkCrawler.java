@@ -2322,7 +2322,7 @@ public class LinkCrawler {
                 /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
                 PluginsC plg = null;
                 try {
-                    plg = oplg.getClass().newInstance();
+                    plg = oplg.newPluginInstance();
                 } catch (final Throwable e) {
                     LogController.CL().log(e);
                     return;
