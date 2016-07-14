@@ -25,7 +25,7 @@ public class Br2RadioDe extends PluginForDecrypt {
         final String dataURL = br.getRegex("dataURL:'(/radio/bayern2/.*xml)'").getMatch(0);
         if (dataURL != null) {
             br.getPage(dataURL);
-            final String assets[][] = br.getRegex("<asset type=\"(STANDARD|MOBILEAAC|STANDARDAAC)\">.*?<downloadurl>(https?://.*?)</downloadurl>.*?<size>(\\d+)</size>").getMatches();
+            final String assets[][] = br.getRegex("<asset type=\"(STANDARD|MOBILEAAC|STANDARDAAC|PREMIUM|PREMIUMAAC)\">.*?<downloadurl>(https?://.*?)</downloadurl>.*?<size>(\\d+)</size>").getMatches();
             final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
             for (String asset[] : assets) {
                 final DownloadLink link = createDownloadlink(asset[1]);
