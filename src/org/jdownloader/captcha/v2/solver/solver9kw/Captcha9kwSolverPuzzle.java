@@ -13,7 +13,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaImages;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaResponse;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 
@@ -116,7 +115,7 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
         token = ((KeyCaptchaPuzzleChallenge) challenge).getHelper().sendPuzzleResult(marray, ret.substring("OK-answered-".length()));
 
         counterSolved.incrementAndGet();
-        solverJob.setAnswer(new KeyCaptchaResponse((challenge), this, token, 95));
+        solverJob.setAnswer(new Captcha9kwPuzzleResponse((challenge), this, token, 95, captchaID));
     }
 
 }

@@ -187,15 +187,13 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
 
     @Override
     public boolean setInvalid(final AbstractResponse<?> response) {
-        if (config.isfeedback()) {
+        if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
             threadPool.execute(new Runnable() {
 
                 @Override
                 public void run() {
                     try {
-                        final String captchaTypeID = ((Captcha9kwResponse) response).getChallenge().getTypeID();
-
-                        final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                        final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
                         final Browser br = new Browser();
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
@@ -226,13 +224,13 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
 
     @Override
     public boolean setUnused(final AbstractResponse<?> response) {
-        if (config.isfeedback()) {
+        if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
             threadPool.execute(new Runnable() {
 
                 @Override
                 public void run() {
                     try {
-                        final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                        final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
                         final Browser br = new Browser();
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
@@ -259,13 +257,13 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
 
     @Override
     public boolean setValid(final AbstractResponse<?> response) {
-        if (config.isfeedback()) {
+        if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
             threadPool.execute(new Runnable() {
 
                 @Override
                 public void run() {
                     try {
-                        final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                        final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
                         final Browser br = new Browser();
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
