@@ -6,8 +6,6 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-import jd.plugins.decrypter.Ardmediathek.Translation;
-
 @PluginHost(host = "real-debrid.com", type = Type.HOSTER)
 public interface RealDebridComConfig extends PluginConfigInterface {
     public static class TRANSLATION {
@@ -20,7 +18,7 @@ public interface RealDebridComConfig extends PluginConfigInterface {
         }
     }
 
-    public static final Translation TRANSLATION = new Translation();
+    public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
     @AboutConfig
     @DefaultBooleanValue(false)
