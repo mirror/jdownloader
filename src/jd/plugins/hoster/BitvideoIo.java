@@ -19,20 +19,21 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" }, flags = { 0, 0 })
 public class BitvideoIo extends PluginForHost {
@@ -72,7 +73,7 @@ public class BitvideoIo extends PluginForHost {
         link.setName(fid + ".mp4");
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         /* Only use one of their domains */
-        br.getPage("http://www.bitporno.sx/?v=" + fid);
+        br.getPage("https://www.bitporno.sx/?v=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -87,6 +88,17 @@ public class BitvideoIo extends PluginForHost {
         if (this.br.containsHTML(html_video_encoding)) {
             return AvailableStatus.TRUE;
         }
+        // from iframe
+        br.getPage("/embed/" + fid);
+        Form f = br.getForm(0);
+        if (f == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
+            f.put("confirm.x", "62");
+            f.put("confirm.y", "70");
+        }
+        br.submitForm(f);
         String dllink_temp = null;
         final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
         final String json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
