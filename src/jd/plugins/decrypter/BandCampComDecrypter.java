@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -134,6 +135,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
 
         final String videos[][] = br.getRegex("<a class=\"has-video\"\\s*href=\"(/video/t/\\d+)\"\\s*data-href-mobile=\"(/.*?)\"").getMatches();
         if (videos != null) {
+            final HashSet<String> dups = new HashSet<String>();
             for (final String video[] : videos) {
                 final String original = URLHelper.parseLocation(new URL("http://bandcamp.23video.com"), video[1]);
                 String nameResult = null;
@@ -148,32 +150,33 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 }
                 for (final String format : new String[] { "video_mobile_high", "video_hd", "video_1080p", }) {
                     final String url = original.replace("video_mobile_high", format);
-                    final DownloadLink dl = createDownloadlink("directhttp://" + url.toString());
-                    if (nameResult != null) {
-                        dl.setFinalFileName(nameResult + "_" + format + Plugin.getFileNameExtensionFromURL(url));
-                    }
-                    if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
-                        dl.setAvailable(true);
-                        decryptedLinks.add(dl);
-                    } else {
-                        Browser br2 = br.cloneBrowser();
-                        URLConnectionAdapter con = null;
-                        try {
-                            con = br2.openHeadConnection(url);
-                            if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "video")) {
-                                dl.setAvailable(true);
-                                dl.setVerifiedFileSize(con.getLongContentLength());
-                                decryptedLinks.add(dl);
-                            }
-                        } catch (IOException e) {
-                            logger.log(e);
-                        } finally {
-                            if (con != null) {
-                                con.disconnect();
+                    if (dups.add(url)) {
+                        final DownloadLink dl = createDownloadlink("directhttp://" + url.toString());
+                        if (nameResult != null) {
+                            dl.setFinalFileName(nameResult + "_" + format + Plugin.getFileNameExtensionFromURL(url));
+                        }
+                        if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
+                            dl.setAvailable(true);
+                            decryptedLinks.add(dl);
+                        } else {
+                            Browser br2 = br.cloneBrowser();
+                            URLConnectionAdapter con = null;
+                            try {
+                                con = br2.openHeadConnection(url);
+                                if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "video")) {
+                                    dl.setAvailable(true);
+                                    dl.setVerifiedFileSize(con.getLongContentLength());
+                                    decryptedLinks.add(dl);
+                                }
+                            } catch (IOException e) {
+                                logger.log(e);
+                            } finally {
+                                if (con != null) {
+                                    con.disconnect();
+                                }
                             }
                         }
                     }
-
                 }
             }
         }
