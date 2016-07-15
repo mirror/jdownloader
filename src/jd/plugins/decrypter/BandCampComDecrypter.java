@@ -16,6 +16,8 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,6 +27,8 @@ import java.util.Date;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,10 +36,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+" }, flags = { 0 })
 public class BandCampComDecrypter extends PluginForDecrypt {
@@ -122,6 +130,52 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             final String formattedFilename = ((jd.plugins.hoster.BandCampCom) hostPlugin).getFormattedFilename(thumb);
             thumb.setFinalFileName(formattedFilename);
             decryptedLinks.add(thumb);
+        }
+
+        final String videos[][] = br.getRegex("<a class=\"has-video\"\\s*href=\"(/video/t/\\d+)\"\\s*data-href-mobile=\"(/.*?)\"").getMatches();
+        if (videos != null) {
+            for (final String video[] : videos) {
+                final String original = URLHelper.parseLocation(new URL("http://bandcamp.23video.com"), video[1]);
+                String nameResult = null;
+                final String names[][] = br.getRegex("<div class=\"title\">.*?<span itemprop=\"name\">(.*?)</span>(.*?)</div>").getMatches();
+                if (names != null) {
+                    for (String name[] : names) {
+                        if (name[1].contains(video[0])) {
+                            nameResult = name[0];
+                            break;
+                        }
+                    }
+                }
+                for (final String format : new String[] { "video_mobile_high", "video_hd", "video_1080p", }) {
+                    final String url = original.replace("video_mobile_high", format);
+                    final DownloadLink dl = createDownloadlink("directhttp://" + url.toString());
+                    if (nameResult != null) {
+                        dl.setFinalFileName(nameResult + "_" + format + Plugin.getFileNameExtensionFromURL(url));
+                    }
+                    if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                    } else {
+                        Browser br2 = br.cloneBrowser();
+                        URLConnectionAdapter con = null;
+                        try {
+                            con = br2.openHeadConnection(url);
+                            if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "video")) {
+                                dl.setAvailable(true);
+                                dl.setVerifiedFileSize(con.getLongContentLength());
+                                decryptedLinks.add(dl);
+                            }
+                        } catch (IOException e) {
+                            logger.log(e);
+                        } finally {
+                            if (con != null) {
+                                con.disconnect();
+                            }
+                        }
+                    }
+
+                }
+            }
         }
 
         final FilePackage fp = FilePackage.getInstance();
