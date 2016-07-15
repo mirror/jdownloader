@@ -56,7 +56,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                                = "vk.com";
@@ -64,7 +64,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_VIDEOLINK                        = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_DIRECT                           = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]";
     private static final String TYPE_PICTURELINK                      = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
-    private static final String TYPE_DOCLINK                          = "https?://vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
+    private static final String TYPE_DOCLINK                          = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                             = 1;
     public static final long    trust_cookie_age                      = 300000l;
     private static final String TEMPORARILYBLOCKED                    = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
@@ -196,6 +196,9 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             MAXCHUNKS = 0;
             br.getPage(link.getDownloadURL());
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
+                br.getPage(br.getRedirectLocation());
+            }
             if (br.containsHTML("File deleted")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
