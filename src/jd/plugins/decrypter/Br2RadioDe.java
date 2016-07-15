@@ -34,7 +34,7 @@ public class Br2RadioDe extends PluginForDecrypt {
             br2.getPage(dataURL);
             final String assets[][] = br2.getRegex("<asset type=\"(STANDARD|MOBILEAAC|STANDARDAAC|PREMIUM|PREMIUMAAC)\">.*?<downloadurl>(https?://.*?)</downloadurl>.*?<size>(\\d+)</size>").getMatches();
             final String title = br2.getRegex("<title>(.*?)</title>").getMatch(0);
-            for (String asset[] : assets) {
+            for (final String asset[] : assets) {
                 final DownloadLink link = createDownloadlink(asset[1]);
                 link.setAvailable(true);
                 link.setVerifiedFileSize(Long.parseLong(asset[2]));
@@ -44,7 +44,7 @@ public class Br2RadioDe extends PluginForDecrypt {
                 audio.add(link);
             }
             if (title != null) {
-                FilePackage fp = FilePackage.getInstance();
+                final FilePackage fp = FilePackage.getInstance();
                 fp.setName(encodeUnicode(title));
                 fp.addLinks(audio);
             }
@@ -59,14 +59,24 @@ public class Br2RadioDe extends PluginForDecrypt {
                 final HashSet<String> followUps = new HashSet<String>(Arrays.asList(additionals));
                 followUps.remove(prev);
                 followUps.remove(next);
-                for (String additional : additionals) {
+                for (final String additional : additionals) {
                     final DownloadLink link = createDownloadlink(br.getURL(additional).toString());
+                    rest.add(link);
+                }
+            }
+            final String images[] = br.getRegex("class=\"picturebox\">\\s*<div class=\"pb_content\">\\s*<a.*? href=\"(/radio/bayern2/[^<>\"']*?\\.(jpg|png|gif|jpeg)\\?version=[^<>\"']*?)\"").getColumn(0);
+            if (images != null) {
+                for (final String image : images) {
+                    final URL url = br.getURL(image);
+                    final DownloadLink link = createDownloadlink(url.toString());
+                    link.setAvailable(true);
+                    link.setName(Plugin.getFileNameFromURL(url));
                     rest.add(link);
                 }
             }
             final Form[] forms = br.getForms();
             if (forms != null) {
-                for (Form form : forms) {
+                for (final Form form : forms) {
                     if (form.containsHTML("download_button")) {
                         final URL url = br.getURL(form.getAction());
                         final DownloadLink link = createDownloadlink(url.toString());
@@ -77,7 +87,7 @@ public class Br2RadioDe extends PluginForDecrypt {
                 }
             }
             if (rest.size() > 0 && title != null && parameter.getCryptedUrl().endsWith("100.html")) {
-                FilePackage fp = FilePackage.getInstance();
+                final FilePackage fp = FilePackage.getInstance();
                 fp.setName(encodeUnicode(title));
                 fp.addLinks(rest);
                 fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);

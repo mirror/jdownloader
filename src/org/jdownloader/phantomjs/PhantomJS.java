@@ -20,12 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
 
 import jd.http.Browser;
 import jd.http.ProxySelectorInterface;
-import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.plugins.components.UserAgents;
 
@@ -54,6 +55,7 @@ import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -129,7 +131,7 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     private Browser    br;
-    private HttpServer server;
+    private HttpServer server = null;
 
     public Browser getBr() {
         return br;
@@ -143,15 +145,11 @@ public class PhantomJS implements HttpRequestHandler {
         server = new HttpServer(0);
         server.setLocalhostOnly(true);
         server.start();
-
         server.registerRequestHandler(this);
-
     }
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) {
-        boolean requestOkay = false;
-
         try {
             String id = request.getParameterbyKey("id");
             if (Long.parseLong(id) != this.id) {
@@ -170,8 +168,6 @@ public class PhantomJS implements HttpRequestHandler {
             return true;
         } catch (Exception e) {
             logger.log(e);
-        } finally {
-
         }
         return false;
     }
@@ -377,15 +373,15 @@ public class PhantomJS implements HttpRequestHandler {
         this.ignoreSslErrors = ignoreSslErrors;
     }
 
-    private boolean               ignoreSslErrors      = false;
-    private Thread                phantomProcessThread;
-    protected long                id;
+    private boolean                       ignoreSslErrors      = false;
+    private final AtomicReference<Thread> phantomProcessThread = new AtomicReference<Thread>(null);
+    protected long                        id;
 
-    private HashMap<Long, String> results;
-    private int                   phantomJSPort;
-    private File                  scriptFile;
-    private boolean               processServerRunning = false;
-    private Thread                psjPinger;
+    private HashMap<Long, String>         results;
+    private int                           phantomJSPort;
+    private File                          scriptFile           = null;
+    private final AtomicBoolean           processServerRunning = new AtomicBoolean(false);
+    private final AtomicReference<Thread> psjPinger            = new AtomicReference<Thread>(null);
 
     private class LoggerStream extends OutputStream {
         @Override
@@ -402,7 +398,6 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     private String replace(String js) {
-
         js = js.replace("null/* %%%localPort%%% */", server.getPort() + "");
         js = js.replace("null/* %%%localID%%% */", id + "");
         js = js.replace("null/* %%%debugger%%% */", DEBUGGER + "");
@@ -427,10 +422,15 @@ public class PhantomJS implements HttpRequestHandler {
         return localhost;
     }
 
+    protected void finalize() throws Throwable {
+        final File scriptFile = this.scriptFile;
+        if (scriptFile != null && scriptFile.exists() && !scriptFile.delete()) {
+            scriptFile.deleteOnExit();
+        }
+    };
+
     public void init() throws IOException, InterruptedException, PhantomJSBinariesMissingException {
-
         accessToken = new BigInteger(130, new SecureRandom()).toString(32);
-
         ipcBrowser = new Browser();
         ipcBrowser.setAllowedResponseCodes(new int[] { 511 });
         ipcBrowser.setVerbose(false);
@@ -469,7 +469,7 @@ public class PhantomJS implements HttpRequestHandler {
         // find free port for phantomjs
 
         final SocketAddress socketAddress = new InetSocketAddress(this.getLocalHost(), 0);
-        ServerSocket controlSocket = new ServerSocket();
+        final ServerSocket controlSocket = new ServerSocket();
         controlSocket.setReuseAddress(true);
         controlSocket.bind(socketAddress);
         phantomJSPort = controlSocket.getLocalPort();
@@ -533,49 +533,54 @@ public class PhantomJS implements HttpRequestHandler {
             }
         };
 
-        phantomProcessThread = new Thread("Phantom.JS") {
+        phantomProcessThread.set(new Thread("Phantom.JS") {
             public void run() {
                 try {
-
                     ProcessBuilderFactory.runCommand(pb, stream, stdStream);
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } finally {
-                    onDisposed();
-                    phantomProcessThread = null;
+                    try {
+                        onDisposed();
+                    } finally {
+                        phantomProcessThread.set(null);
+                    }
                 }
-
             };
-        };
-        psjPinger = new Thread("Phantom.JS Ping") {
+        });
+        psjPinger.set(new Thread("Phantom.JS Ping") {
             public void run() {
                 try {
-                    while (phantomProcessThread != null) {
-
-                        Thread.sleep(5000);
-
-                        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
-                        if (!"OK".equals(result)) {
-
-                            throw new IOException("IPC JD->PJS Failed: " + result);
-
+                    while (true) {
+                        final Thread phantomProcessThread = PhantomJS.this.phantomProcessThread.get();
+                        if (phantomProcessThread != null) {
+                            Thread.sleep(5000);
+                            final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+                            if (!"OK".equals(result)) {
+                                throw new IOException("IPC JD->PJS Failed: " + result);
+                            }
+                        } else {
+                            break;
                         }
                     }
                 } catch (Throwable e) {
                     logger.log(e);
                     kill();
                 }
-
             };
-        };
-        psjPinger.start();
-        phantomProcessThread.start();
-        while (phantomProcessThread != null && !processServerRunning) {
-            synchronized (results) {
-                results.wait(1000);
-
+        });
+        psjPinger.get().start();
+        phantomProcessThread.get().start();
+        while (true) {
+            final Thread phantomProcessThread = this.phantomProcessThread.get();
+            if (phantomProcessThread != null && !processServerRunning.get()) {
+                synchronized (results) {
+                    results.wait(1000);
+                }
+            } else {
+                break;
             }
         }
         eval("page.settings.userAgent=\"" + UserAgents.stringUserAgent() + "\";");
@@ -583,7 +588,6 @@ public class PhantomJS implements HttpRequestHandler {
             Thread.sleep(2000);
             CrossSystem.openURL("http://127.0.0.1:9999/webkit/inspector/inspector.html?page=1");
         }
-
     }
 
     protected void onDisposed() {
@@ -593,19 +597,16 @@ public class PhantomJS implements HttpRequestHandler {
         if (jobID == -1) {
             // SERVER Status;
             logger.info("Server Status: " + string);
-            processServerRunning = JSonStorage.restoreFromString(string, TypeRef.BOOLEAN) == Boolean.TRUE;
-            if (!processServerRunning) {
+            processServerRunning.set(JSonStorage.restoreFromString(string, TypeRef.BOOLEAN) == Boolean.TRUE);
+            if (!processServerRunning.get()) {
                 logger.info("Could not start Phantom Server");
                 kill();
-            } else {
-
             }
         }
     }
 
     protected List<String> createCmd() throws IOException {
-        ArrayList<String> lst = new ArrayList<String>();
-
+        final ArrayList<String> lst = new ArrayList<String>();
         lst.add(exe.getAbsolutePath());
         // lst.add("--debug=true");
         lst.add("--output-encoding=utf8");
@@ -615,27 +616,25 @@ public class PhantomJS implements HttpRequestHandler {
             lst.add("--remote-debugger-port=9999");
             lst.add("--remote-debugger-autorun=true");
         }
-
         lst.add(scriptFile.getAbsolutePath());
         return lst;
     }
 
     public void loadPage(String url) throws InterruptedException, IOException {
-        long jobID = new UniqueAlltimeID().getID();
-
-        String result = execute(jobID, "loadPage(" + jobID + ",'" + url + "');");
+        final long jobID = new UniqueAlltimeID().getID();
+        final String result = execute(jobID, "loadPage(" + jobID + ",'" + url + "');");
         if (!"success".equals(JSonStorage.restoreFromString(result, TypeRef.STRING))) {
             throw new IOException("Could not load page");
         }
-
     }
 
     private String waitForJob(long jobID) throws InterruptedException {
-        long started = System.currentTimeMillis();
+        final long started = System.currentTimeMillis();
         while (true) {
             if (System.currentTimeMillis() - started > 60000) {
                 throw new InterruptedException("Timeout");
             }
+            final Thread phantomProcessThread = this.phantomProcessThread.get();
             if (phantomProcessThread == null || !phantomProcessThread.isAlive()) {
                 throw new InterruptedException("Process died");
             }
@@ -646,131 +645,124 @@ public class PhantomJS implements HttpRequestHandler {
                     return results.remove(jobID);
                 }
             }
-
         }
     }
 
     public void kill() {
-
+        final File scriptFile = this.scriptFile;
+        if (scriptFile.exists() && !scriptFile.delete()) {
+            scriptFile.deleteOnExit();
+        }
+        final Thread phantomProcessThread = this.phantomProcessThread.getAndSet(null);
         if (phantomProcessThread != null) {
             phantomProcessThread.interrupt();
-            phantomProcessThread = null;
         }
+        final Thread psjPinger = this.psjPinger.getAndSet(null);
         if (psjPinger != null) {
             psjPinger.interrupt();
-            psjPinger = null;
         }
+        final HttpServer server = this.server;
         if (server != null) {
             server.stop();
         }
     }
 
     public Image getScreenShot() throws InterruptedException, IOException {
-        long jobID = new UniqueAlltimeID().getID();
-
-        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/screenshot", new UrlQuery().addAndReplace("jobID", jobID + "").addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+        final long jobID = new UniqueAlltimeID().getID();
+        final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/screenshot", new UrlQuery().addAndReplace("jobID", jobID + "").addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
         if ("OK".equals(result)) {
-            String base64JSon = waitForJob(jobID);
-            String base64 = JSonStorage.restoreFromString(base64JSon, TypeRef.STRING);
+            final String base64JSon = waitForJob(jobID);
+            final String base64 = JSonStorage.restoreFromString(base64JSon, TypeRef.STRING);
             return ImageIO.read(new ByteArrayInputStream(Base64.decode(base64)));
         } else {
             throw new IOException("IPC JD->PJS Failed: " + result);
         }
-
     }
 
     public void waitUntilDOM(String conditionJS) throws InterruptedException, IOException {
-        long started = System.currentTimeMillis();
+        final long started = System.currentTimeMillis();
         while (true) {
             if (System.currentTimeMillis() - started > 30000) {
                 throw new InterruptedException("Timeout");
             }
-            long jobID = new UniqueAlltimeID().getID();
-            String js = "var evalResult=page.evaluate(function(){try{ret= " + conditionJS + ";return ret; } catch (err){console.log(err);return false;}}); endJob(" + jobID + ",evalResult);";
-            String result = execute(jobID, "(function(){" + js + "})()");
+            final long jobID = new UniqueAlltimeID().getID();
+            final String js = "var evalResult=page.evaluate(function(){try{ret= " + conditionJS + ";return ret; } catch (err){console.log(err);return false;}}); endJob(" + jobID + ",evalResult);";
+            final String result = execute(jobID, "(function(){" + js + "})()");
             if (JSonStorage.restoreFromString(result, TypeRef.BOOLEAN) == Boolean.TRUE) {
                 return;
             }
-
         }
     }
 
     private Browser ipcBrowser;
 
     public void eval(String domjs) throws InterruptedException, IOException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         String result = execute(jobID, domjs + "; endJob(" + jobID + ",null);");
-
     }
 
     public String execute(long jobID, String js) throws IOException, InterruptedException {
-
-        String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new UrlQuery().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+        final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new UrlQuery().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
         if ("OK".equals(result)) {
             return waitForJob(jobID);
         } else {
             throw new IOException("IPC JD->PJS Failed: " + result);
         }
-
     }
 
     public Object get(String domjs) throws InterruptedException, IOException {
-        long jobID = new UniqueAlltimeID().getID();
-        String s = execute(jobID, " endJob(" + jobID + "," + domjs + ");");
+        final long jobID = new UniqueAlltimeID().getID();
+        final String s = execute(jobID, " endJob(" + jobID + "," + domjs + ");");
         return JSonStorage.restoreFromString(s, new TypeRef<Object>() {
         });
-
     }
 
     public Object evalInPageContext(String domjs) throws InterruptedException, IOException {
-
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         String s = execute(jobID, "(function(){var result= page.evaluate(function(){ return " + domjs + ";}); endJob(" + jobID + ",result);})()");
-
         return JSonStorage.restoreFromString(s, new TypeRef<Object>() {
         });
     }
 
     public void setVariable(String key, String string) throws IOException, InterruptedException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         execute(jobID, " _global['" + key + "']=\"" + string + "\"; endJob(" + jobID + ",null);");
     }
 
     public void setVariable(String key, int integer) throws IOException, InterruptedException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         execute(jobID, " _global['" + key + "']=" + integer + "; endJob(" + jobID + ",null);");
     }
 
     public void setVariable(String key, boolean b) throws IOException, InterruptedException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         execute(jobID, " _global['" + key + "']=" + b + "; endJob(" + jobID + ",null);");
     }
 
     public void switchFrameToMain() throws IOException, InterruptedException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         execute(jobID, "page.switchToMainFrame(); endJob(" + jobID + ",null);");
-
     }
 
     public void switchFrameToChild(int index) throws IOException, InterruptedException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         execute(jobID, "page.switchToChildFrame(" + index + "); endJob(" + jobID + ",null);");
-
     }
 
     public String getFrameHtml() throws IOException, InterruptedException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         return JSonStorage.restoreFromString(execute(jobID, "endJob(" + jobID + ",page.frameContent);"), TypeRef.STRING);
     }
 
     public String execute(String string) throws IOException, InterruptedException {
-        long jobID = new UniqueAlltimeID().getID();
+        final long jobID = new UniqueAlltimeID().getID();
         return execute(jobID, string + "; endJob(" + jobID + ",null);");
-
     }
 
     public boolean isRunning() {
-        return server.isRunning() && processServerRunning && phantomProcessThread != null && phantomProcessThread.isAlive();
+        final Thread phantomProcessThread = this.phantomProcessThread.get();
+        final HttpServer server = this.server;
+        return server != null && server.isRunning() && processServerRunning.get() && phantomProcessThread != null && phantomProcessThread.isAlive();
     }
 
 }
