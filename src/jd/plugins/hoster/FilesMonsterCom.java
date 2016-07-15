@@ -468,7 +468,7 @@ public class FilesMonsterCom extends PluginForHost {
             br.getPage("http://filesmonster.com/");
         }
         ai.setUnlimitedTraffic();
-        String expires = br.getRegex("<span>\\s*Valid until: <span class='green'>([^<>\"]+)</span>").getMatch(0);
+        String expires = br.getRegex("Valid until: <span class='[^<>]+'>([^<>\"]+)</span>").getMatch(0);
         long expireTimeStamp = -1;
         if (expires != null) {
             expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
