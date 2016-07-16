@@ -20,6 +20,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.mozilla.javascript.ConsString;
@@ -31,7 +32,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import org.appwork.utils.parser.UrlQuery;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -271,6 +271,19 @@ public abstract class antiDDoSForHost extends PluginForHost {
      */
     protected void postPageRaw(final String page, final String post, final boolean isJson) throws Exception {
         postPageRaw(br, page, post, isJson);
+    }
+
+    /**
+     * Wrapper into postPageRaw(importBrowser, page, post, false);
+     *
+     * @param ibr
+     * @param page
+     * @param post
+     * @author raztoki
+     * @throws Exception
+     */
+    protected void postPageRaw(final Browser ibr, final String page, final String post) throws Exception {
+        postPageRaw(ibr, page, post, false);
     }
 
     protected void submitForm(final Browser ibr, final Form form) throws Exception {

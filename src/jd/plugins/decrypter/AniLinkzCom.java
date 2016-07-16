@@ -36,7 +36,7 @@ import jd.plugins.FilePackage;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends antiDDoSForDecrypt {
 
-    private final String            supported_hoster = "(4shared\\.com|4vid\\.me|aniupload\\.com|animegg\\.tv|animeuploads\\.com|animeultima\\.tv|arkvid\\.tv|auengine\\.(?:com|io)|bakavideo\\.tv|byzoo\\.org|chia\\-anime\\.com|cheesestream\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|easyvideo\\.me|facebook\\.com/video|gogoanime\\.com|gorillavid\\.in|mp4star\\.com|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|playbb\\.me|playpanda\\.net|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|uploadcrazy\\.net|veevr\\.com|veoh\\.com|vidbox\\.yt|vidbull\\.com|vidcrazy\\.net|video44\\.net|videobb\\.com|videobam\\.com|videobull\\.com|videodrive\\.tv|videofun\\.me|videonest\\.net|videous\\.tv|videoweed\\.com|videowing\\.me|vidzur\\.com|videozoo\\.me|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
+    private final String            supported_hoster = "(4shared\\.com|4vid\\.me|aniupload\\.com|animegg\\.tv|animeultima\\.tv|arkvid\\.tv|auengine\\.(?:com|io)|bakavideo\\.tv|byzoo\\.org|chia\\-anime\\.com|cheesestream\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|easyvideo\\.me|facebook\\.com/video|gogoanime\\.com|gorillavid\\.in|mp4star\\.com|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|(putlocker|firedrive)\\.com|playbb\\.me|playpanda\\.net|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|uploadcrazy\\.net|veevr\\.com|veoh\\.com|vidbox\\.yt|vidbull\\.com|vidcrazy\\.net|video44\\.net|videobb\\.com|videobam\\.com|videobull\\.com|videodrive\\.tv|videofun\\.me|videonest\\.net|videous\\.tv|videoweed\\.com|videowing\\.me|vidzur\\.com|videozoo\\.me|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
     private final String            invalid_links    = "http://(?:www\\.)?anilinkz\\.(?:com|tv)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                  parameter        = null;
     private String                  fpName           = null;
@@ -191,7 +191,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 escapeAll = Encoding.htmlDecode(escapeAll);
                 escapeAll = Encoding.urlDecode(escapeAll, false);
                 // cleanup crap.. wondering why we do this now?? there are hoster plugins exist of these two
-                // if (new Regex(escapeAll, "(?:https?:)?//[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) {
+                // if (new Regex(escapeAll, "(?:https?:)?//[^\"]+(cizgifilmlerizle\\.com)/[^\"]+<div[^>]+").matches()) {
                 // escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
                 // }
             }
