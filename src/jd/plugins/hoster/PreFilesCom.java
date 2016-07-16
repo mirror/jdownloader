@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
@@ -36,6 +38,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -53,7 +56,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision: 31456 $", interfaceVersion = 2, names = { "prefiles.com" }, urls = { "https?://(www\\.)?prefiles\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 31456 $", interfaceVersion = 2, names = { "prefiles.com" }, urls = { "https?://(www\\.)?prefiles\\.com/[a-z0-9]{12}(?:/\\S+)?" }, flags = { 2 })
 public class PreFilesCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -77,7 +80,7 @@ public class PreFilesCom extends antiDDoSForHost {
     // free account: untested, set same as free
     // premium account: 20 * 20
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: 4dignum
     // other: no redirects, no www.
 
     @Override
@@ -97,7 +100,7 @@ public class PreFilesCom extends antiDDoSForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -111,6 +114,11 @@ public class PreFilesCom extends antiDDoSForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     @Override
@@ -400,7 +408,7 @@ public class PreFilesCom extends antiDDoSForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\"(http://(?:srv\\d+\\.prefiles\\.com|[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9])(:\\d+)?/files/\\d+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "\"(http://(?:[0-9\\.]+prefil\\.es|[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9])/(cgi\\-bin/dl\\.cgi/|files/\\d+/[a-z0-9]+/)[^<>\"]*?)\"").getMatch(0);
+                dllink = new Regex(correctedBR, "(http://(?:[0-9\\.]+prefil\\.es|[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9]\\.[1-2]{0,1}[0-9]{0,1}[0-9])/(cgi\\-bin/dl\\.cgi/|files/\\d+/[a-z0-9]+/)[^<>\"]*?)\"").getMatch(0);
             }
         }
         return dllink;
@@ -410,18 +418,21 @@ public class PreFilesCom extends antiDDoSForHost {
     protected void getPage(String page) throws Exception {
         super.getPage(page);
         correctBR();
+        simulateBrowser();
     }
 
     @Override
     protected void postPage(String page, String postdata) throws Exception {
         super.postPage(page, postdata);
         correctBR();
+        simulateBrowser();
     }
 
     @Override
     protected void submitForm(Form form) throws Exception {
         super.submitForm(form);
         correctBR();
+        simulateBrowser();
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
@@ -880,6 +891,74 @@ public class PreFilesCom extends antiDDoSForHost {
             }
         }
         return null;
+    }
+
+    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+
+    /**
+     * request series of content
+     *
+     * @author raztoki
+     */
+    private void simulateBrowser() throws InterruptedException {
+        // dupe.clear();
+
+        final AtomicInteger requestQ = new AtomicInteger(0);
+        final AtomicInteger requestS = new AtomicInteger(0);
+        final ArrayList<String> links = new ArrayList<String>();
+
+        String[] l1 = new Regex(correctedBR, "\\s+(?:src)=(\"|')((?!'.*?\\').*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = new Regex(correctedBR, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        for (final String link : links) {
+            // lets only add links related to this hoster.
+            final String correctedLink = Request.getLocation(link, br.getRequest());
+            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.matches(".+" + Pattern.quote(this.getHost()) + "/?$") && !correctedLink.contains(".html") && !correctedLink.contains("?op=") && !correctedLink.equals(br.getURL())) {
+                if (dupe.add(correctedLink)) {
+
+                    final Thread simulate = new Thread("SimulateBrowser") {
+
+                        public void run() {
+                            final Browser rb = br.cloneBrowser();
+                            rb.getHeaders().put("Cache-Control", null);
+                            // open get connection for images, need to confirm
+                            if (correctedLink.matches(".+\\.(png|je?pg).*")) {
+                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                            } else if (correctedLink.matches(".+\\.js.*")) {
+                                rb.getHeaders().put("Accept", "*/*");
+                            } else if (correctedLink.matches(".+\\.css.*")) {
+                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                            }
+                            URLConnectionAdapter con = null;
+                            try {
+                                requestQ.getAndIncrement();
+                                con = rb.openGetConnection(correctedLink);
+                            } catch (final Exception e) {
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Exception e) {
+                                }
+                                requestS.getAndIncrement();
+                            }
+                            return;
+                        }
+
+                    };
+                    simulate.start();
+                    Thread.sleep(100);
+
+                }
+            }
+        }
+        while (requestQ.get() != requestS.get()) {
+            Thread.sleep(1000);
+        }
     }
 
     @Override
