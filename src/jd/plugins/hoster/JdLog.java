@@ -22,6 +22,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.HTACCESSController;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -35,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
 
 /**
  * alternative log downloader
@@ -126,9 +126,30 @@ public class JdLog extends PluginForHost {
                     // not set as offline! have to throw exception!!
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+            } else if (dlsize < 125) {
+                // delete method
+                downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+
+                    @Override
+                    public void interrupt() {
+                    }
+
+                    @Override
+                    public void execute(DownloadSession currentSession) {
+                        final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
+                        delete.add(downloadLink);
+                        DownloadWatchDog.getInstance().delete(delete, null);
+                    }
+
+                    @Override
+                    public boolean isHighPriority() {
+                        return false;
+                    }
+                });
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // dllink = "http://update3.jdownloader.org/jdserv/UploadInterface/logsorted?" + uid;
             }
         }
-
     }
 
     private String[] getBasicAuth(final DownloadLink link) throws PluginException {

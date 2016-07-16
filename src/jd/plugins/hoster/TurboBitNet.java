@@ -64,12 +64,12 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|dz-files\\.ru|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com|twobit\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com|twobit\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "ifolder.com.ua", "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "dz-files.ru", "mnogofiles.com", "sibit.net", "turbobit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "savebit.net", "filemaster.ru", "файлообменник.рф", "turboot.ru", "filez.ninja", "kilofile.com", "twobit.ru" };
+        return new String[] { "ifolder.com.ua", "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "mnogofiles.com", "sibit.net", "turbobit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "savebit.net", "filemaster.ru", "файлообменник.рф", "turboot.ru", "filez.ninja", "kilofile.com", "twobit.ru" };
     }
 
     /**

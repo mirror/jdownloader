@@ -29,10 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.se" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se)/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.info" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se|info)/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
 public class AnitubeCo extends PluginForHost {
 
-    // note: .co, .tv, .com.br, .jp don't respond only .se -raztoki20160422
+    // note: .co, .tv, .com.br, .jp, .se don't respond only .info -raztoki20160716
+    // https://www.facebook.com/anitubebr/ or google "anitube"
 
     private String dllink = null;
 
@@ -47,10 +48,9 @@ public class AnitubeCo extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp|se)", ".se"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp|se|info)", ".info"));
     }
 
-    // Maybe broken, 01.01.12
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
@@ -70,7 +70,7 @@ public class AnitubeCo extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String[] matches = br.getRegex("((?:https?:)?//(?:www\\.)?anitube\\.[^ \"']+/config\\.php\\?key=[0-9a-f]+)").getColumn(0);
+        final String[] matches = br.getRegex("((?:https?:)?//(?:www\\.)?anitube\\.[^ \"']+/config\\.php\\?(?:vid)?=[0-9a-f]+)").getColumn(0);
         if (matches == null || matches.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

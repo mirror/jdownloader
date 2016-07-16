@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.com|rmz\\.cr)/release/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.com|rmz\\.rezavn|rmz\\.cr)/release/[a-z0-9\\-]+" }, flags = { 0 })
 public class RpdMvzCm extends antiDDoSForDecrypt {
 
     public RpdMvzCm(PluginWrapper wrapper) {
@@ -46,9 +46,9 @@ public class RpdMvzCm extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // no https
-        String parameter = param.toString().replace("https://", "http://").replace("rmz.rezavn.com/", "rapidmoviez.com/");
+        final String parameter = param.toString().replace("https://", "http://").replace("rmz.rezavn.com/", "rapidmoviez.com/");
 
         getPage(parameter);
 
