@@ -40,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://s\\d+\\.alldebrid\\.com/dl/[a-z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:s\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" }, flags = { 2 })
 public class AllDebridCom extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -84,7 +84,7 @@ public class AllDebridCom extends antiDDoSForHost {
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String type = accDetails.get("type");
         if ("premium".equals(type)) {
-            /* only platinium and premium support */
+            /* only platinum and premium support */
             getPage("https://www.alldebrid.com/api.php?action=get_host");
             String hoster[] = br.toString().split(",\\s*");
             if (hoster != null) {
@@ -140,7 +140,7 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         if (account.isValid()) {
             ac.setMultiHostSupport(this, supportedHosts);
-            ac.setStatus("Account valid");
+            ac.setStatus("Premium Account");
         } else {
             ac.setProperty("multiHostSupport", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
