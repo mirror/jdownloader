@@ -236,11 +236,11 @@ public class EHentaiOrg extends PluginForHost {
         if (new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
     @SuppressWarnings("deprecation")
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         if (downloadLink.getDownloadSize() < minimal_filesize) {
             /* E.h. "403 picture" is smaller than 1 KB */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);
@@ -260,6 +260,15 @@ public class EHentaiOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
+            if (br.containsHTML("¿You have exceeded your image viewing limits\\. Note that you can reset these limits by going")) {
+                br.getPage("http://exhentai.org/home.php");
+                if (account != null) { // todo: ensure this works?
+                    saveCookies(br, account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -331,19 +340,25 @@ public class EHentaiOrg extends PluginForHost {
                     }
                 }
                 br.getPage("http://exhentai.org/");
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                saveCookies(br, account);
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
+        }
+    }
+
+    private void saveCookies(final Browser br, final Account account) {
+        synchronized (LOCK) {
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
         }
     }
 
@@ -369,7 +384,7 @@ public class EHentaiOrg extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         /* No need to login here as we already logged in in availablecheck */
-        doFree(link);
+        doFree(link, account);
     }
 
     private String getMainlink(final DownloadLink dl) {
