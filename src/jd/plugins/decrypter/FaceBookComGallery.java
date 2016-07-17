@@ -1310,7 +1310,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private String getPageAlbumTitle() {
-        String albumTitle = br.getRegex("<h1 class=\"fbPhotoAlbumTitle\">(.*?)</h1>").getMatch(0);
+        String albumTitle = br.getRegex("<h1 class=\"fbPhotoAlbumTitle\">([^<>]*?)<").getMatch(0);
         if (albumTitle != null) {
             albumTitle = HTMLEntities.unhtmlentities(albumTitle);
             albumTitle = albumTitle.trim();
