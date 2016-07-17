@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,8 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/folder/([A-Z0-9]+)" }, flags = { 0 })
 public class FShareVnFolder extends PluginForDecrypt {
@@ -52,27 +52,27 @@ public class FShareVnFolder extends PluginForDecrypt {
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String fpName = br.getRegex("data-id=\"" + uid + "\" data-path=\"/(.*?)\"").getMatch(0);
         String[] linkinformation = new String[0];
-        for (int i = 0; linkinformation != null; i++) {
+        for (int i = 0; i <= linkinformation.length; i++) {
             final Browser br = this.br.cloneBrowser();
-            if (i != 0) {
+            if (i != 0 && linkinformation.length > 0) {
+                if (true) {
+                    // at this stage no spanning page support
+                    break;
+                }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "*/*");
-                if (i == 1) {
-                    br.getPage(parameter);
-                } else {
-                    br.getPage(parameter + "?pageIndex=" + i);
-                }
+                br.getPage(parameter + "?pageIndex=" + i);
             }
             linkinformation = br.getRegex("<li[^>]*>(\\s*<div[^>]+class=\"[^\"]+file_name[^\"]*.*?)</li>").getColumn(0);
             if (linkinformation == null || linkinformation.length == 0) {
                 failed = true;
                 linkinformation = br.getRegex("(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getColumn(0);
-            }
-            if (linkinformation == null || linkinformation.length == 0) {
-                if (i == 0) {
-                    return null;
+                if (linkinformation == null || linkinformation.length == 0) {
+                    if (i == 0) {
+                        return null;
+                    }
+                    break;
                 }
-                break;
             }
             for (final String data : linkinformation) {
                 if (failed) {
