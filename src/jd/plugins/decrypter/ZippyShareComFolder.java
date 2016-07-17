@@ -22,6 +22,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -33,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/([a-z0-9\\-_%,]+/[a-z0-9\\-_%]+/dir\\.html|[a-z0-9A-Z_-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/[a-z0-9\\-_%,]+(/[a-z0-9\\-_%]+/dir\\.html)?" }, flags = { 0 })
 public class ZippyShareComFolder extends PluginForDecrypt {
 
     public ZippyShareComFolder(PluginWrapper wrapper) {
@@ -44,17 +46,27 @@ public class ZippyShareComFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+        br.addAllowedResponseCodes(500);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        // offline ?
+        if (br.containsHTML(">User [^<]+ does not exist\\.</div>")) {
+            // not worth adding offline link
+            return decryptedLinks;
+        }
         // Over 50 links? Maybe there is more...
         final String[] userDir = new Regex(parameter, "zippyshare\\.com/([a-z0-9\\-_,]+)(?:/([a-z0-9\\-_]+)/)?").getRow(0);
         final int r = 250;
         while (true) {
+            final Browser br = this.br.cloneBrowser();
             final int dsize = decryptedLinks.size();
-            if (dsize == 0) {
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/fragments/publicDir/filetable.jsp", "page=" + (dsize / r) + "&user=" + userDir[0] + "&dir=" + (userDir[1] != null ? userDir[1] : "0") + "&sort=nameasc&pageSize=" + r + "&search=&viewType=default");
-            parseLinks(decryptedLinks);
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                // invalid directory
+                return decryptedLinks;
+            }
+            parseLinks(decryptedLinks, br);
             if (decryptedLinks.size() != dsize + r) {
                 break;
             }
@@ -68,7 +80,7 @@ public class ZippyShareComFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void parseLinks(final ArrayList<DownloadLink> decryptedLinks) throws PluginException {
+    private void parseLinks(final ArrayList<DownloadLink> decryptedLinks, final Browser br) throws PluginException {
         // lets parse each of the results and keep them trusted as online... this will reduce server loads
         String[] results = br.getRegex("<tr[^>]+class=(\"|')filerow even\\1.*?</tr>").getColumn(-1);
         if (results == null || results.length == 0) {
@@ -84,7 +96,7 @@ public class ZippyShareComFolder extends PluginForDecrypt {
                 }
                 final DownloadLink dl = createDownloadlink(link);
                 if (name != null) {
-                    dl.setName(name);
+                    dl.setName(Encoding.htmlOnlyDecode(name));
                     dl.setAvailableStatus(AvailableStatus.TRUE);
                 }
                 if (size != null) {
