@@ -667,19 +667,29 @@ public class RockFileEu extends antiDDoSForHost {
     @Override
     protected void getPage(final String page) throws Exception {
         super.getPage(page);
+        setLanguageCookie(br);
         correctBR();
     }
 
     @Override
     protected void postPage(final String page, final String postdata) throws Exception {
         super.postPage(page, postdata);
+        setLanguageCookie(br);
         correctBR();
     }
 
     @Override
     protected void submitForm(final Form form) throws Exception {
         super.submitForm(form);
+        setLanguageCookie(br);
         correctBR();
+    }
+
+    private void setLanguageCookie(final Browser br) {
+        // cookie can change from english to german based on geo-location or site default?, this will fuck up plugin else where!
+        if (!"english".equals(br.getCookie(COOKIE_HOST, "lang"))) {
+            br.setCookie(COOKIE_HOST, "lang", "english");
+        }
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -968,6 +978,7 @@ public class RockFileEu extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        br = new Browser();
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -1027,7 +1038,6 @@ public class RockFileEu extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br, this.getHost());
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -1045,7 +1055,7 @@ public class RockFileEu extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST + "/?op=login");
                 br.getRequest().setHtmlCode(correctedBR);
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
