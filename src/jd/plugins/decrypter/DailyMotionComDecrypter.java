@@ -25,6 +25,8 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -43,8 +45,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }, flags = { 0 })
@@ -183,15 +183,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         boolean has_more = false;
-        /* Important - start from 1 ! */
-        int page = 1;
+        int page = 0;
         do {
+            page++;
             if (this.isAbort()) {
                 logger.info("Decrypt process aborted by user on page " + page);
                 return;
             }
-            this.br.getPage("https://api.dailymotion.com/user/" + username + "/videos?limit=" + api_limit_items + "&page=" + page);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final String json = this.br.cloneBrowser().getPage("https://api.dailymotion.com/user/" + username + "/videos?limit=" + api_limit_items + "&page=" + page);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
             has_more = ((Boolean) entries.get("has_more")).booleanValue();
             final ArrayList<Object> list = (ArrayList) entries.get("list");
             for (final Object video_o : list) {
