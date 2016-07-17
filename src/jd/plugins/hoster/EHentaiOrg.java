@@ -93,6 +93,14 @@ public class EHentaiOrg extends PluginForHost {
         return "http://g.e-hentai.org/tos.php";
     }
 
+    @Override
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
+            return false;
+        }
+        return super.canHandle(downloadLink, account);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -233,9 +241,6 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
         doFree(downloadLink, null);
     }
 
