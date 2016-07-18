@@ -148,7 +148,6 @@ public class VipCocoleechCom extends PluginForHost {
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
             }
         }
-
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
         /* Then check if we got an individual host limit. */
@@ -175,7 +174,6 @@ public class VipCocoleechCom extends PluginForHost {
         if (!resume) {
             maxChunks = 1;
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
@@ -191,6 +189,7 @@ public class VipCocoleechCom extends PluginForHost {
         }
         try {
             controlSlot(+1);
+            link.setProperty(NICE_HOSTproperty + "directlink", dllink);
             this.dl.startDownload();
         } finally {
             // remove usedHost slot from hostMap
@@ -241,19 +240,23 @@ public class VipCocoleechCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
+        downloadLink.removeProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (!con.isOK() || con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
+                    return null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return dllink;
