@@ -138,9 +138,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         setWindowOpacity(this, 0f);
 
         fader = new Fader(this);
-        timeout = CFG_BUBBLE.DEFAULT_TIMEOUT.getValue();
-        if (timeout > 0) {
-        }
+        setTimeout(CFG_BUBBLE.DEFAULT_TIMEOUT.getValue());
 
         if (bubbleSupport != null) {
             List<Element> elements = bubbleSupport.getElements();
@@ -438,7 +436,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     protected int getTimeout() {
-
         return timeout;
     }
 

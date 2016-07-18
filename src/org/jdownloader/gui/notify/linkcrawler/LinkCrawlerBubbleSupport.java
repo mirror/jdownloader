@@ -66,7 +66,7 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
                         if (finalBubble.getContentComponent().askForClose(crawler.get())) {
                             finalBubble.getContentComponent().stop();
                             ((Timer) e.getSource()).stop();
-                            finalBubble.hideBubble(finalBubble.getSuperTimeout());
+                            finalBubble.hideBubble(finalBubble.getTimeout());
                             bubble = null;
                         }
                     }
