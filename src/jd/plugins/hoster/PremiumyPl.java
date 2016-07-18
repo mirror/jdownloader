@@ -22,11 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,6 +39,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumy.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumyPl extends PluginForHost {
@@ -64,7 +64,7 @@ public class PremiumyPl extends PluginForHost {
     private void login(Account account, boolean force) throws PluginException, IOException {
         synchronized (LOCK) {
             try {
-                br.postPage(MAINPAGE + "login,process.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE + "login,signin.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("<div class=\"inputError\">Niepoprawny login i/lub hasło\\.</div>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_PREMIUM"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -378,7 +378,7 @@ public class PremiumyPl extends PluginForHost {
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
      * English.
-     *
+     * 
      * @param key
      * @return
      */
