@@ -1,8 +1,10 @@
 package org.jdownloader.api.downloads.v2;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.Icon;
 
@@ -118,24 +120,39 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
         DownloadController dlc = DownloadController.getInstance();
 
-        List<FilePackage> packages = null;
-
+        final List<FilePackage> packages;
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
-
             packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
-
         } else {
             packages = dlc.getPackagesCopy();
         }
-
-        // collect children of the selected packages and convert to storables for response
-        List<DownloadLink> links = new ArrayList<DownloadLink>();
-        for (FilePackage pkg : packages) {
-            boolean b = pkg.getModifyLock().readLock();
-            try {
-                links.addAll(pkg.getChildren());
-            } finally {
-                pkg.getModifyLock().readUnlock(b);
+        final List<DownloadLink> links = new ArrayList<DownloadLink>();
+        if (queryParams.getJobUUIDs() != null && queryParams.getJobUUIDs().length > 0) {
+            final Set<Long> jobUUIDs = new HashSet<Long>();
+            for (final long id : queryParams.getJobUUIDs()) {
+                jobUUIDs.add(id);
+            }
+            for (FilePackage pkg : packages) {
+                final boolean readL = pkg.getModifyLock().readLock();
+                try {
+                    for (DownloadLink link : pkg.getChildren()) {
+                        if (jobUUIDs.contains(link.getJobID())) {
+                            links.add(link);
+                        }
+                    }
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL);
+                }
+            }
+        } else {
+            // collect children of the selected packages and convert to storables for response
+            for (FilePackage pkg : packages) {
+                final boolean b = pkg.getModifyLock().readLock();
+                try {
+                    links.addAll(pkg.getChildren());
+                } finally {
+                    pkg.getModifyLock().readUnlock(b);
+                }
             }
         }
 

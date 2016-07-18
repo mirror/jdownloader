@@ -201,22 +201,40 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         ArrayList<CrawledLinkAPIStorableV2> result = new ArrayList<CrawledLinkAPIStorableV2>();
         LinkCollector lc = LinkCollector.getInstance();
 
-        List<CrawledPackage> matched = null;
-
+        final List<CrawledPackage> matched;
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
             matched = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
         } else {
             matched = lc.getPackagesCopy();
         }
+        final List<CrawledLink> links = new ArrayList<CrawledLink>();
+        if (queryParams.getJobUUIDs() != null && queryParams.getJobUUIDs().length > 0) {
+            final Set<Long> jobUUIDs = new HashSet<Long>();
+            for (final long id : queryParams.getJobUUIDs()) {
+                jobUUIDs.add(id);
+            }
+            for (CrawledPackage pkg : matched) {
+                final boolean readL = pkg.getModifyLock().readLock();
+                try {
+                    for (CrawledLink link : pkg.getChildren()) {
+                        if (jobUUIDs.contains(link.getJobID())) {
+                            links.add(link);
+                        }
+                    }
 
-        // collect children of the selected packages and convert to storables for response
-        List<CrawledLink> links = new ArrayList<CrawledLink>();
-        for (CrawledPackage pkg : matched) {
-            boolean readL = pkg.getModifyLock().readLock();
-            try {
-                links.addAll(pkg.getChildren());
-            } finally {
-                pkg.getModifyLock().readUnlock(readL);
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL);
+                }
+            }
+        } else {
+            // collect children of the selected packages and convert to storables for response
+            for (CrawledPackage pkg : matched) {
+                final boolean readL = pkg.getModifyLock().readLock();
+                try {
+                    links.addAll(pkg.getChildren());
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL);
+                }
             }
         }
 
