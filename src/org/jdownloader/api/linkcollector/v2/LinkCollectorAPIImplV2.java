@@ -12,6 +12,21 @@ import java.util.Set;
 
 import javax.swing.Icon;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.plugins.DownloadLink;
+
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -39,21 +54,6 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.UrlDisplayType;
-
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.plugins.DownloadLink;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -369,6 +369,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
 
         final LinkCollectingJob lcj = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), sb.toString());
+        lcj.setAssignJobID(Boolean.TRUE.equals(query.isAssignJobID()));
         final boolean overwritePackagizerRules = Boolean.TRUE.equals(query.isOverwritePackagizerRules());
 
         final HashSet<String> finalExtPws;

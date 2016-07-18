@@ -134,6 +134,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                         URL_CONTENT                         = "URL_CONTENT";
     private static final String                         URL_CUSTOM                          = "URL_CUSTOM";
     private static final String                         VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
+    public static final String                          PROPERTY_JOB_ID                     = "JOB_ID";
 
     private transient volatile AvailableStatus          availableStatus                     = AvailableStatus.UNCHECKED;
 
@@ -211,6 +212,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (!Boolean.FALSE.equals(notAnArchive) || Files.getExtension(getName()) != null) {
             this.partOfAnArchive = notAnArchive;
         }
+    }
+
+    public long getJobID() {
+        final long jobID = getLongProperty(PROPERTY_JOB_ID, -1l);
+        return jobID;
     }
 
     public FilePackage getLastValidFilePackage() {

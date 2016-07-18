@@ -10,6 +10,15 @@ public class LinkCollectingJob {
     private String                customSourceUrl;
     private CrawledLinkModifier   crawledLinkModifierPrePackagizer = null;
     private final UniqueAlltimeID uniqueAlltimeID                  = new UniqueAlltimeID();
+    private boolean               assignJobID                      = false;
+
+    public boolean isAssignJobID() {
+        return assignJobID;
+    }
+
+    public void setAssignJobID(boolean assignJobID) {
+        this.assignJobID = assignJobID;
+    }
 
     public UniqueAlltimeID getUniqueAlltimeID() {
         return uniqueAlltimeID;
