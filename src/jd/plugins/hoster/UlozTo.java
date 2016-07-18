@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/(?!\\s+).+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
 
     private boolean              passwordProtected            = false;
@@ -119,8 +119,9 @@ public class UlozTo extends PluginForHost {
         } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
             /* 2016-05-24: This might be outdated */
             br.setFollowRedirects(true);
-            final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
-            br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
+            String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
+            currenturlpart = Encoding.urlEncode(currenturlpart);
+            br.postPage("/porn-disclaimer/?back=" + currenturlpart, "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
             br.setFollowRedirects(false);
         } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
             /*
@@ -154,16 +155,16 @@ public class UlozTo extends PluginForHost {
             String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
             if (filesize == null) {
                 filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
-            }
-            if (filesize == null) {
-                filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
-            }
-            // For file links
-            if (filesize == null) {
-                filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
-            }
-            if (filesize == null) {
-                filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
+                    // For file links
+                    if (filesize == null) {
+                        filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
+                        if (filesize == null) {
+                            filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
+                        }
+                    }
+                }
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -177,7 +178,7 @@ public class UlozTo extends PluginForHost {
     }
 
     private String getFilename() {
-        final String filename = br.getRegex("<title>\\s*([^<>/]*?)\\s*(\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
+        final String filename = br.getRegex("<title>\\s*(.*?)\\s*(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
         return filename;
     }
 
