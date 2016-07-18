@@ -7,6 +7,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public class LinkCrawlerRule {
 
     public static enum RULE {
+        SUBMITFORM,
         DIRECTHTTP,
         DEEPDECRYPT,
         FOLLOWREDIRECT
@@ -103,8 +104,31 @@ public class LinkCrawlerRule {
 
     protected Pattern               packageNamePattern = null;
 
+    protected Pattern               formPattern        = null;
+
     public Pattern _getPackageNamePattern() {
         return packageNamePattern;
+    }
+
+    public Pattern _getFormPattern() {
+        return formPattern;
+    }
+
+    public String getFormPattern() {
+        final Pattern lPattern = _getFormPattern();
+        if (lPattern != null) {
+            return lPattern.pattern();
+        } else {
+            return null;
+        }
+    }
+
+    public void setFormPattern(String pattern) {
+        if (pattern == null) {
+            this.formPattern = null;
+        } else {
+            this.formPattern = Pattern.compile(pattern);
+        }
     }
 
     public String getPackageNamePattern() {
