@@ -48,6 +48,9 @@ public class FShareVnFolder extends PluginForDecrypt {
         if (!br.containsHTML("filename")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        } else if (br.containsHTML(">No results found<")) {
+            logger.info("Empty folder");
+            return decryptedLinks;
         }
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String fpName = br.getRegex("data-id=\"" + uid + "\" data-path=\"/(.*?)\"").getMatch(0);
