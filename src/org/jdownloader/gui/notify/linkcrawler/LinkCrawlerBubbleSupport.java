@@ -18,9 +18,7 @@ import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcollector.event.LinkCollectorCrawlerListener;
 import jd.controlling.linkcrawler.CrawledLink;
 
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.notify.AbstractBubbleSupport;
-import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
@@ -48,22 +46,9 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
             this.crawler = new WeakReference<LinkCollectorCrawler>(crawler);
         }
 
-        private void close() {
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    if (bubble != null) {
-                        BubbleNotify.getInstance().hide(bubble);
-                        bubble = null;
-                    }
-                }
-            };
-        }
-
         @Override
         public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-            LinkCollectorCrawler crwl = crawler.get();
+            final LinkCollectorCrawler crwl = crawler.get();
             if (crwl != null) {
                 final LinkCrawlerBubble finalBubble = new LinkCrawlerBubble(LinkCrawlerBubbleSupport.this, crwl);
                 final Timer t = new Timer(1000, new ActionListener() {

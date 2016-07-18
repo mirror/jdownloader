@@ -74,6 +74,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             }
             // we need to escape $ because it has special meaning in String.replaceFirst
             modifiedFilaNamePattern = modifiedFilaNamePattern.replace("$", "\\$");
+
             final String modifiedFilePathPattern = filePathPattern.replaceFirst(Pattern.quote(fileNamePattern) + "$", modifiedFilaNamePattern);
             final String ret = pattern.replace("^\\Q" + filePathPattern + "\\E", "^\\Q" + modifiedFilePathPattern + "\\E");
             return ret;

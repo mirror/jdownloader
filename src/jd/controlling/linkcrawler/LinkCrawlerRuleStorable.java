@@ -22,6 +22,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         this.setMaxDecryptDepth(rule.getMaxDecryptDepth());
         this.setPackageNamePattern(rule.getPackageNamePattern());
         this.setFormPattern(rule.getFormPattern());
+        this.setDeepPattern(rule.getDeepPattern());
     }
 
     public void setId(long id) {
@@ -37,6 +38,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         ret.setRule(getRule());
         ret.setPackageNamePattern(getPackageNamePattern());
         ret.setFormPattern(getFormPattern());
+        ret.setDeepPattern(getDeepPattern());
         return ret;
     }
 

@@ -43,10 +43,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         if (offline != null) {
             offline.setVisible(false);
         }
-        if (progressCircle != null) {
-            progressCircle.setIndeterminate(true);
-            progressCircle.setValue(0);
-        }
+        startProgressCircle();
     }
 
     protected void addProgress() {
@@ -141,6 +138,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     packages.setText(dupe.size() + "");
                 }
                 final boolean isCollecting = jlc.isCollecting();
+
                 if (status != null) {
                     if (jlc.isRunning()) {
                         status.setText(_GUI.T.LinkCrawlerBubbleContent_update_runnning());
@@ -166,8 +164,28 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                         duration.setText(TimeFormatter.formatMilliSeconds(lastChange - startTime, 0));
                     }
                 }
+                if (isCollecting) {
+                    startProgressCircle();
+                } else {
+                    stopProgressCircle();
+                }
             }
         }.waitForEDT();
+    }
+
+    private void stopProgressCircle() {
+        if (progressCircle != null) {
+            progressCircle.setIndeterminate(false);
+            progressCircle.setMaximum(100);
+            progressCircle.setValue(100);
+        }
+    }
+
+    private void startProgressCircle() {
+        if (progressCircle != null) {
+            progressCircle.setIndeterminate(true);
+            progressCircle.setValue(0);
+        }
     }
 
     public boolean askForClose(LinkCollectorCrawler caller) {
