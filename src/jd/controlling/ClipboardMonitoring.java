@@ -115,13 +115,12 @@ public class ClipboardMonitoring {
 
     protected static class ClipboardChangeDetector {
 
-        protected final int           minWaitTimeout = 200;
-        protected final int           maxWaitTimeout = 1000;
-        protected int                 waitTimeout    = minWaitTimeout;
+        protected volatile int        waitTimeout;
         protected final AtomicBoolean skipChangeFlag;
 
         protected ClipboardChangeDetector(final AtomicBoolean skipChangeFlag) {
             this.skipChangeFlag = skipChangeFlag;
+            waitTimeout = getMinWaitTimeout();
         }
 
         protected void waitForClipboardChanges() throws InterruptedException {
@@ -135,12 +134,24 @@ public class ClipboardMonitoring {
             }
         }
 
+        protected int getMinWaitTimeout() {
+            return 200;
+        }
+
+        protected int getMaxWaitTimeout() {
+            return 1000;
+        }
+
+        protected int getWaitTimeoutInc() {
+            return 200;
+        }
+
         protected boolean hasChanges() {
             if (skipChangeFlag.get()) {
-                waitTimeout = maxWaitTimeout;
+                waitTimeout = getMinWaitTimeout();
                 return false;
             } else {
-                waitTimeout = Math.min(waitTimeout + 200, maxWaitTimeout);
+                waitTimeout = Math.min(waitTimeout + getWaitTimeoutInc(), getMaxWaitTimeout());
                 return true;
             }
         }
@@ -150,7 +161,7 @@ public class ClipboardMonitoring {
         }
 
         protected void restart() {
-            waitTimeout = minWaitTimeout;
+            waitTimeout = getMinWaitTimeout();
         }
     }
 
