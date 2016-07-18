@@ -42,6 +42,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     private final psapi     psapi;
     private final Kernel32  kernel32;
     private final Pattern[] blackListPatterns;
+    private final boolean   isProcessBlacklisted;
 
     protected WindowsClipboardChangeDetector(final AtomicBoolean skipChangeFlag, final LogSource logger) {
         super(skipChangeFlag);
@@ -60,6 +61,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
             }
         }
         this.blackListPatterns = blackListPatterns.toArray(new Pattern[0]);
+        this.isProcessBlacklisted = this.blackListPatterns.length > 0;
     }
 
     // http://stackoverflow.com/questions/7521693/converting-c-sharp-to-java-jna-getmodulefilename-from-hwnd
@@ -99,21 +101,32 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     protected void slowDown(Throwable e) {
     }
 
+    protected void waitForClipboardChanges() throws InterruptedException {
+        while (true) {
+            if (hasChanges()) {
+                return;
+            }
+            synchronized (this) {
+                this.wait(100);
+            }
+        }
+    }
+
     @Override
     protected boolean hasChanges() {
         final int currentClipboardSequenceNumber = user32.GetClipboardSequenceNumber();
         if (currentClipboardSequenceNumber != 0) {
             if (currentClipboardSequenceNumber != lastClipboardSequenceNumber) {
                 lastClipboardSequenceNumber = currentClipboardSequenceNumber;
-                final String process = getClipboardOwnerProcess();
-                if (process != null) {
-                    return !isProcessBlacklisted(process);
+                if (isProcessBlacklisted) {
+                    final String process = getClipboardOwnerProcess();
+                    if (process != null) {
+                        return !isProcessBlacklisted(process);
+                    }
                 }
                 return true;
-            } else {
-                return false;
             }
         }
-        return super.hasChanges();
+        return false;
     }
 }
