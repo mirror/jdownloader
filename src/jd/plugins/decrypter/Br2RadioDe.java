@@ -43,6 +43,16 @@ public class Br2RadioDe extends PluginForDecrypt {
                 }
                 audio.add(link);
             }
+            final String images2[] = br.getRegex("class=\"(lead_picture|play)\">\\s*(</span>)?\\s*?<img.*? src=\"(/radio/bayern2/[^<>\"']*?\\.(jpg|png|gif|jpeg)\\?version=[^<>\"']*?)\"").getColumn(2);
+            if (images2 != null) {
+                for (final String image : images2) {
+                    final URL url = br.getURL(image);
+                    final DownloadLink link = createDownloadlink(url.toString());
+                    link.setAvailable(true);
+                    link.setName(Plugin.getFileNameFromURL(url));
+                    audio.add(link);
+                }
+            }
             if (title != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(encodeUnicode(title));
@@ -67,6 +77,16 @@ public class Br2RadioDe extends PluginForDecrypt {
             final String images[] = br.getRegex("class=\"picturebox\">\\s*<div class=\"pb_content\">\\s*<a.*? href=\"(/radio/bayern2/[^<>\"']*?\\.(jpg|png|gif|jpeg)\\?version=[^<>\"']*?)\"").getColumn(0);
             if (images != null) {
                 for (final String image : images) {
+                    final URL url = br.getURL(image);
+                    final DownloadLink link = createDownloadlink(url.toString());
+                    link.setAvailable(true);
+                    link.setName(Plugin.getFileNameFromURL(url));
+                    rest.add(link);
+                }
+            }
+            final String images2[] = br.getRegex("class=\"(lead_picture|play)\">\\s*(</span>)?\\s*?<img.*? src=\"(/radio/bayern2/[^<>\"']*?\\.(jpg|png|gif|jpeg)\\?version=[^<>\"']*?)\"").getColumn(2);
+            if (images2 != null) {
+                for (final String image : images2) {
                     final URL url = br.getURL(image);
                     final DownloadLink link = createDownloadlink(url.toString());
                     link.setAvailable(true);
