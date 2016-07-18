@@ -40,6 +40,7 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.HTMLParser.HtmlParserCharSequence;
 import jd.parser.html.HTMLParser.HtmlParserResultSet;
@@ -875,7 +876,7 @@ public class LinkCrawler {
         return urlConnection;
     }
 
-    protected void crawlDeeperOrFollowRedirect(final int generation, final CrawledLink source) {
+    protected void crawlDeeperOrMatchingRule(final int generation, final CrawledLink source) {
         final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
         source.setCustomCrawledLinkModifier(null);
         source.setBrokenCrawlerHandler(null);
@@ -947,49 +948,79 @@ public class LinkCrawler {
                                     crawl(generation, inspectedLinks);
                                 }
                             } else {
-                                /* try to load the webpage and find links on it */
-                                // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
-                                // relative
-                                // path.
-
-                                final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
-                                final String browserContent = br.toString();
-                                final List<CrawledLink> possibleCryptedLinks = find(br.getURL(), null, false);
-                                if (possibleCryptedLinks != null) {
-                                    final boolean singleDest = possibleCryptedLinks.size() == 1;
-                                    for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                        forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                final PackageInfo fpi;
+                                if (matchingRule != null && matchingRule._getPackageNamePattern() != null) {
+                                    final String packageName = new Regex(br.toString(), matchingRule._getPackageNamePattern()).getMatch(0);
+                                    if (StringUtils.isNotEmpty(packageName)) {
+                                        fpi = new PackageInfo();
+                                        fpi.setName(packageName.trim());
+                                    } else {
+                                        fpi = null;
                                     }
-                                    if (possibleCryptedLinks.size() == 1) {
-                                        /* first check if the url itself can be handled */
-                                        final CrawledLink link = possibleCryptedLinks.get(0);
-                                        link.setUnknownHandler(new UnknownCrawledLinkHandler() {
-
-                                            @Override
-                                            public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-                                                /* unhandled url, lets parse the content on it */
-                                                final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
-                                                if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
-                                                    if (matchingRule != null && matchingRule._getPackageNamePattern() != null) {
-                                                        final String packageName = new Regex(browserContent, matchingRule._getPackageNamePattern()).getMatch(0);
-                                                        if (StringUtils.isNotEmpty(packageName)) {
-                                                            final PackageInfo fpi = new PackageInfo();
-                                                            fpi.setName(packageName.trim());
-                                                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                                possibleCryptedLink.setDesiredPackageInfo(fpi);
-                                                            }
-                                                        }
-                                                    }
-                                                    final boolean singleDest = possibleCryptedLinks2.size() == 1;
-                                                    for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                        forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
-                                                    }
-                                                    lc.crawl(generation, possibleCryptedLinks2);
+                                } else {
+                                    fpi = null;
+                                }
+                                /* try to load the webpage and find links on it */
+                                if (matchingRule != null && LinkCrawlerRule.RULE.SUBMITFORM.equals(matchingRule.getRule())) {
+                                    final Form[] forms = br.getForms();
+                                    final Pattern formPattern = matchingRule._getFormPattern();
+                                    final ArrayList<CrawledLink> formLinks = new ArrayList<CrawledLink>();
+                                    if (forms != null && formPattern != null) {
+                                        for (final Form form : forms) {
+                                            if (formPattern.matcher(form.getAction()).matches()) {
+                                                final Browser clone = br.cloneBrowser();
+                                                clone.setFollowRedirects(false);
+                                                clone.submitForm(form);
+                                                final String url = clone.getRedirectLocation();
+                                                if (url != null) {
+                                                    formLinks.add(crawledLinkFactorybyURL(url));
                                                 }
                                             }
-                                        });
+                                        }
                                     }
-                                    crawl(generation, possibleCryptedLinks);
+                                    if (formLinks != null && formLinks.size() > 0) {
+                                        final boolean singleDest = formLinks.size() == 1;
+                                        for (final CrawledLink formLink : formLinks) {
+                                            formLink.setDesiredPackageInfo(fpi);
+                                            forwardCrawledLinkInfos(source, formLink, lm, sourceURLs, singleDest);
+                                        }
+                                        crawl(generation, formLinks);
+                                    }
+                                } else {
+                                    // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
+                                    // relative
+                                    // path.
+                                    final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
+                                    final String browserContent = br.toString();
+                                    final List<CrawledLink> possibleCryptedLinks = find(br.getURL(), null, false);
+                                    if (possibleCryptedLinks != null) {
+                                        final boolean singleDest = possibleCryptedLinks.size() == 1;
+                                        for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                                            possibleCryptedLink.setDesiredPackageInfo(fpi);
+                                            forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                        }
+                                        if (possibleCryptedLinks.size() == 1) {
+                                            /* first check if the url itself can be handled */
+                                            final CrawledLink link = possibleCryptedLinks.get(0);
+                                            link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+
+                                                @Override
+                                                public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                                    /* unhandled url, lets parse the content on it */
+                                                    final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
+                                                    if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
+                                                        final boolean singleDest = possibleCryptedLinks2.size() == 1;
+                                                        for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
+                                                            possibleCryptedLink.setDesiredPackageInfo(fpi);
+                                                            forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                                        }
+                                                        lc.crawl(generation, possibleCryptedLinks2);
+                                                    }
+                                                }
+                                            });
+                                        }
+                                        crawl(generation, possibleCryptedLinks);
+                                    }
                                 }
                             }
                         }
@@ -1245,7 +1276,7 @@ public class LinkCrawler {
         return null;
     }
 
-    protected Boolean distributeDeeperOrFollowRedirect(final int generation, final String url, final CrawledLink link) {
+    protected Boolean distributeDeeperOrMatchingRule(final int generation, final String url, final CrawledLink link) {
         try {
             new URL(link.getURL());
         } catch (MalformedURLException e) {
@@ -1254,7 +1285,7 @@ public class LinkCrawler {
         try {
             LinkCrawlerRule rule = null;
             /* do not change order, it is important to check redirect first */
-            if ((rule = matchesFollowRedirectRule(link, url)) != null || (link.isCrawlDeep() || (rule = matchesDeepDecryptRule(link, url)) != null)) {
+            if ((rule = getFirstMatchingRule(link, url, LinkCrawlerRule.RULE.SUBMITFORM, LinkCrawlerRule.RULE.FOLLOWREDIRECT, LinkCrawlerRule.RULE.DEEPDECRYPT)) != null || link.isCrawlDeep()) {
                 if (link != null) {
                     link.setMatchingRule(rule);
                 }
@@ -1264,7 +1295,7 @@ public class LinkCrawler {
                         /* LinkCrawler got aborted! */
                         return false;
                     }
-                    crawlDeeperOrFollowRedirect(generation, link);
+                    crawlDeeperOrMatchingRule(generation, link);
                 } else {
                     if (checkStartNotify(generation)) {
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
@@ -1280,7 +1311,7 @@ public class LinkCrawler {
 
                             @Override
                             void crawling() {
-                                crawlDeeperOrFollowRedirect(generation, link);
+                                crawlDeeperOrMatchingRule(generation, link);
                             }
                         });
                     } else {
@@ -1411,7 +1442,7 @@ public class LinkCrawler {
                                         // DirectHTTPPermission.FORBIDDEN
                                         continue mainloop;
                                     }
-                                } else if ((rule = matchesDirectHTTPRule(possibleCryptedLink, url)) != null) {
+                                } else if ((rule = getFirstMatchingRule(possibleCryptedLink, url, LinkCrawlerRule.RULE.DIRECTHTTP)) != null) {
                                     if (!DirectHTTPPermission.FORBIDDEN.equals(directHTTPPermission)) {
                                         // no need to check directHTTPPermission as it is ALWAYS or RULES_ONLY
                                         final String newURL = "directhttp://" + url;
@@ -1494,7 +1525,7 @@ public class LinkCrawler {
                         }
                         if (!isFtp && !isHttpJD && !isDirect) {
                             // only process non directhttp/https?viajd/ftp
-                            final Boolean deeperOrFollow = distributeDeeperOrFollowRedirect(generation, url, possibleCryptedLink);
+                            final Boolean deeperOrFollow = distributeDeeperOrMatchingRule(generation, url, possibleCryptedLink);
                             if (Boolean.FALSE.equals(deeperOrFollow)) {
                                 return;
                             } else if (Boolean.TRUE.equals(deeperOrFollow)) {
@@ -1606,46 +1637,26 @@ public class LinkCrawler {
         return null;
     }
 
-    protected LinkCrawlerRule matchesDirectHTTPRule(CrawledLink link, String url) {
-        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
-            for (final LinkCrawlerRule rule : linkCrawlerRules) {
-                if (rule.isEnabled() && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
-                    return rule;
-                }
-            }
-        }
-        return null;
-    }
-
-    protected LinkCrawlerRule matchesFollowRedirectRule(CrawledLink link, String url) {
-        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
-            for (final LinkCrawlerRule rule : linkCrawlerRules) {
-                if (rule.isEnabled() && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(rule.getRule()) && rule.matches(url)) {
-                    return rule;
-                }
-            }
-        }
-        return null;
-    }
-
-    protected LinkCrawlerRule matchesDeepDecryptRule(CrawledLink link, String url) {
+    protected LinkCrawlerRule getFirstMatchingRule(CrawledLink link, String url, LinkCrawlerRule.RULE... ruleTypes) {
         if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "file:/") || StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
-            for (final LinkCrawlerRule rule : linkCrawlerRules) {
-                if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(url)) {
-                    if (rule.getMaxDecryptDepth() == -1) {
-                        return rule;
-                    } else {
-                        final Iterator<CrawledLink> it = link.iterator();
-                        int depth = 0;
-                        while (it.hasNext()) {
-                            final CrawledLink next = it.next();
-                            final LinkCrawlerRule matchingRule = next.getMatchingRule();
-                            if (matchingRule != null && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(matchingRule.getRule())) {
-                                depth++;
-                            }
-                        }
-                        if (depth <= rule.getMaxDecryptDepth()) {
+            for (final LinkCrawlerRule.RULE ruleType : ruleTypes) {
+                for (final LinkCrawlerRule rule : linkCrawlerRules) {
+                    if (rule.isEnabled() && ruleType.equals(rule.getRule()) && rule.matches(url)) {
+                        if (rule.getMaxDecryptDepth() == -1) {
                             return rule;
+                        } else {
+                            final Iterator<CrawledLink> it = link.iterator();
+                            int depth = 0;
+                            while (it.hasNext()) {
+                                final CrawledLink next = it.next();
+                                final LinkCrawlerRule matchingRule = next.getMatchingRule();
+                                if (matchingRule != null && ruleType.equals(matchingRule.getRule())) {
+                                    depth++;
+                                }
+                            }
+                            if (depth <= rule.getMaxDecryptDepth()) {
+                                return rule;
+                            }
                         }
                     }
                 }
