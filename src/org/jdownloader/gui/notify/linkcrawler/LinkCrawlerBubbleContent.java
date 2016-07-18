@@ -13,11 +13,13 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.Element;
+import org.jdownloader.gui.notify.gui.BubbleNotifyConfig;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -38,7 +40,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private int              onlineCount  = -1;
     private Pair             packages;
     private Pair             online;
-    private final long       CLOSETIMEOUT = 5000;
+    private final long       CLOSETIMEOUT = JsonConfig.create(BubbleNotifyConfig.class).getBubbleNotifyOnNewLinkgrabberLinksEndNotifyDelay();
     private final LinkOrigin origin;
 
     public LinkCrawlerBubbleContent(JobLinkCrawler crawler) {
