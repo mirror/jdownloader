@@ -21,6 +21,11 @@ import java.util.List;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -35,11 +40,6 @@ import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
 public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements StateUpdateListener, GenericConfigEventListener<Enum> {
 
@@ -82,7 +82,7 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
 
         boxes = new ArrayList<Pair<Checkbox>>();
         for (AbstractBubbleSupport pt : BubbleNotify.getInstance().getTypes()) {
-            boxes.add(addPair(_GUI.T.lit_or() + " " + pt.getLabel(), "skip 1,split 2,pushx,growx", null, new Checkbox(pt.getKeyHandler())));
+            boxes.add(addPair(_GUI.T.lit_and() + " " + pt.getLabel(), "skip 1,split 2,pushx,growx", null, new Checkbox(pt.getKeyHandler())));
         }
         this.addHeader(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
 
