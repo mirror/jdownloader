@@ -12,6 +12,7 @@ import javax.swing.Timer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
@@ -38,17 +39,17 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
     private class LinkCrawlerBubbleWrapper implements AbstractNotifyWindowFactory, LinkCollectorCrawlerListener {
 
-        private final WeakReference<LinkCollectorCrawler> crawler;
-        private final AtomicBoolean                       registered = new AtomicBoolean(false);
-        private volatile LinkCrawlerBubble                bubble     = null;
+        private final WeakReference<JobLinkCrawler> crawler;
+        private final AtomicBoolean                 registered = new AtomicBoolean(false);
+        private volatile LinkCrawlerBubble          bubble     = null;
 
-        private LinkCrawlerBubbleWrapper(LinkCollectorCrawler crawler) {
-            this.crawler = new WeakReference<LinkCollectorCrawler>(crawler);
+        private LinkCrawlerBubbleWrapper(JobLinkCrawler crawler) {
+            this.crawler = new WeakReference<JobLinkCrawler>(crawler);
         }
 
         @Override
         public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-            final LinkCollectorCrawler crwl = crawler.get();
+            final JobLinkCrawler crwl = crawler.get();
             if (crwl != null) {
                 final LinkCrawlerBubble finalBubble = new LinkCrawlerBubble(LinkCrawlerBubbleSupport.this, crwl);
                 final Timer t = new Timer(1000, new ActionListener() {
@@ -113,9 +114,9 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
     @Override
     public void onLinkCrawlerAdded(final LinkCollectorCrawler crawler) {
-        if (isEnabled()) {
+        if (isEnabled() && crawler instanceof JobLinkCrawler) {
             synchronized (map) {
-                final LinkCrawlerBubbleWrapper wrapper = new LinkCrawlerBubbleWrapper(crawler);
+                final LinkCrawlerBubbleWrapper wrapper = new LinkCrawlerBubbleWrapper((JobLinkCrawler) crawler);
                 crawler.getEventSender().addListener(wrapper, true);
                 map.put(crawler, wrapper);
             }

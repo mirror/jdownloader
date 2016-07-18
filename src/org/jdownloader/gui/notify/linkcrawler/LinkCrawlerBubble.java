@@ -8,7 +8,6 @@ import java.net.URL;
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -42,11 +41,11 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
 
     }
 
-    private final WeakReference<LinkCollectorCrawler> crawler;
+    private final WeakReference<JobLinkCrawler> crawler;
 
-    public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, LinkCollectorCrawler crawler) {
-        super(linkCrawlerBubbleSupport, _GUI.T.balloon_new_links(), new LinkCrawlerBubbleContent());
-        this.crawler = new WeakReference<LinkCollectorCrawler>(crawler);
+    public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, JobLinkCrawler crawler) {
+        super(linkCrawlerBubbleSupport, _GUI.T.balloon_new_links(), new LinkCrawlerBubbleContent(crawler));
+        this.crawler = new WeakReference<JobLinkCrawler>(crawler);
     }
 
     @Override
@@ -60,22 +59,22 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
 
     private final DelayedRunnable update = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500l, 1000l) {
 
-                                             @Override
-                                             public String getID() {
-                                                 return "LinkCrawlerBubble";
-                                             }
+        @Override
+        public String getID() {
+            return "LinkCrawlerBubble";
+        }
 
-                                             @Override
-                                             public void delayedrun() {
-                                                 delayedUpdate();
-                                             }
-                                         };
+        @Override
+        public void delayedrun() {
+            delayedUpdate();
+        }
+    };
 
     private final void delayedUpdate() {
-        final LinkCollectorCrawler crwl = crawler.get();
+        final JobLinkCrawler crwl = crawler.get();
         if (crwl != null) {
             if (crwl instanceof JobLinkCrawler) {
-                final JobLinkCrawler jlc = (JobLinkCrawler) crwl;
+                final JobLinkCrawler jlc = crwl;
                 final LinkCollectingJob job = jlc.getJob();
                 final LinkOrigin src;
                 if (job != null) {
@@ -121,7 +120,7 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
     }
 
     protected void update() {
-        final LinkCollectorCrawler crwl = crawler.get();
+        final JobLinkCrawler crwl = crawler.get();
         if (crwl != null) {
             update.resetAndStart();
         }

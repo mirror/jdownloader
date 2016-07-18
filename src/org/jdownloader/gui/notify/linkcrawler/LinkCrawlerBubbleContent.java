@@ -1,5 +1,6 @@
 package org.jdownloader.gui.notify.linkcrawler;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import net.miginfocom.swing.MigLayout;
@@ -18,6 +20,7 @@ import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
@@ -36,9 +39,11 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private Pair             packages;
     private Pair             online;
     private final long       CLOSETIMEOUT = 10000l;
+    private final LinkOrigin origin;
 
-    public LinkCrawlerBubbleContent() {
-        super("linkgrabber");
+    public LinkCrawlerBubbleContent(JobLinkCrawler crawler) {
+        super(IconKey.ICON_LINKGRABBER);
+        origin = crawler.getJob().getOrigin().getOrigin();
         layoutComponents();
         if (offline != null) {
             offline.setVisible(false);
@@ -52,6 +57,32 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     protected void layoutComponents() {
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ANIMATED_ICON_VISIBLE.isEnabled()) {
             setLayout(new MigLayout("ins 3 3 0 3,wrap 3", "[][fill][grow,fill]", "[]"));
+            String iconKey = IconKey.ICON_LINKGRABBER;
+            if (origin != null) {
+                switch (origin) {
+                case CLIPBOARD:
+                    iconKey = IconKey.ICON_CLIPBOARD;
+                    break;
+                case ADD_CONTAINER_ACTION:
+                case DOWNLOADED_CONTAINER:
+                    iconKey = IconKey.ICON_ADDCONTAINER;
+                    break;
+                case CNL:
+                    iconKey = IconKey.ICON_LOGO_CNL;
+                    break;
+                case MYJD:
+                    iconKey = IconKey.ICON_LOGO_MYJDOWNLOADER;
+                    break;
+                case ADD_LINKS_DIALOG:
+                case DRAG_DROP_ACTION:
+                    iconKey = IconKey.ICON_ADD;
+                    break;
+                default:
+                    iconKey = IconKey.ICON_WAIT;
+                    break;
+                }
+            }
+            progressCircle.updatePainter(NewTheme.I().getIcon(iconKey, 20), Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
             add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany,aligny top");
         } else {
             setLayout(new MigLayout("ins 3 3 0 3,wrap 2", "[fill][grow,fill]", "[]"));
