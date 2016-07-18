@@ -104,10 +104,10 @@ public class FlickrCom extends PluginForDecrypt {
             if (!this.loggedin) {
                 logger.info("Login failed or no accounts active/existing -> Continuing without account");
             }
-            if (!parameter.matches(TYPE_FAVORITES)) {
-                api_handleAPI();
-            } else {
+            if (parameter.matches(TYPE_FAVORITES)) {
                 site_handleSite();
+            } else {
+                api_handleAPI();
             }
         } catch (final DecrypterException e) {
             if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
@@ -442,7 +442,9 @@ public class FlickrCom extends PluginForDecrypt {
         int maxEntriesPerPage = 25;
         String fpName;
         br.getPage(parameter);
-        if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/")) && !this.loggedin) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        } else if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/")) && !this.loggedin) {
             logger.info("Account needed to decrypt this link: " + parameter);
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (parameter.matches(TYPE_FAVORITES) && br.containsHTML("id=\"no\\-faves\"")) {
