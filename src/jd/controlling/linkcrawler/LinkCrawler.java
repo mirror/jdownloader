@@ -950,7 +950,7 @@ public class LinkCrawler {
                             } else {
                                 final PackageInfo fpi;
                                 if (matchingRule != null && matchingRule._getPackageNamePattern() != null) {
-                                    final String packageName = new Regex(br.toString(), matchingRule._getPackageNamePattern()).getMatch(0);
+                                    final String packageName = br.getRegex(matchingRule._getPackageNamePattern()).getMatch(0);
                                     if (StringUtils.isNotEmpty(packageName)) {
                                         fpi = new PackageInfo();
                                         fpi.setName(packageName.trim());
@@ -990,8 +990,6 @@ public class LinkCrawler {
                                     // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
                                     // relative
                                     // path.
-                                    final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
-                                    final String browserContent = br.toString();
                                     final List<CrawledLink> possibleCryptedLinks = find(br.getURL(), null, false);
                                     if (possibleCryptedLinks != null) {
                                         final boolean singleDest = possibleCryptedLinks.size() == 1;
@@ -1000,6 +998,13 @@ public class LinkCrawler {
                                             forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
                                         }
                                         if (possibleCryptedLinks.size() == 1) {
+                                            final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
+                                            final String crawlContent;
+                                            if (matchingRule != null && matchingRule._getDeepPattern() != null) {
+                                                crawlContent = br.getRegex(matchingRule._getDeepPattern()).getMatch(0);
+                                            } else {
+                                                crawlContent = br.toString();
+                                            }
                                             /* first check if the url itself can be handled */
                                             final CrawledLink link = possibleCryptedLinks.get(0);
                                             link.setUnknownHandler(new UnknownCrawledLinkHandler() {
@@ -1007,7 +1012,7 @@ public class LinkCrawler {
                                                 @Override
                                                 public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                                                     /* unhandled url, lets parse the content on it */
-                                                    final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
+                                                    final List<CrawledLink> possibleCryptedLinks2 = lc.find(crawlContent, finalBaseUrl, false);
                                                     if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
                                                         final boolean singleDest = possibleCryptedLinks2.size() == 1;
                                                         for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
