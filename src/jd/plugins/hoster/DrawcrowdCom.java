@@ -65,7 +65,10 @@ public class DrawcrowdCom extends PluginForHost {
         /* This time we'll get a json answer. */
         br.getPage(downloadLink.getDownloadURL());
         LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final String full_name = downloadLink.getStringProperty("full_name", null);
+        String full_name = downloadLink.getStringProperty("user_name", null);
+        if (full_name == null) {
+            full_name = downloadLink.getStringProperty("full_name", null);
+        }
         json = (LinkedHashMap<String, Object>) json.get("project");
         String filename = (String) json.get("title");
         if (inValidate(filename)) {

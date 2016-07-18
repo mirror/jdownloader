@@ -56,6 +56,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
         LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         json = (LinkedHashMap<String, Object>) json.get("user");
         final String full_name = (String) json.get("full_name");
+        final String user_name = (String) json.get("username");
         final Integer userId = (Integer) json.get("id");
 
         final short entries_per_page = 200;
@@ -64,7 +65,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
         Integer metaTotal = 0;
 
         fp = FilePackage.getInstance();
-        fp.setName(full_name);
+        fp.setName(full_name + "@" + user_name);
 
         do {
             br = org.cloneBrowser();
@@ -77,7 +78,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
                 final String id = (String) json.get("slug");
                 final String description = (String) json.get("raw_description");
                 final String title = (String) json.get("title");
-                createDownloadLink(id, full_name, title, description);
+                createDownloadLink(id, full_name, user_name, title, description);
                 offset++;
             }
         } while (offset < metaTotal);
@@ -96,13 +97,12 @@ public class DrawcrowdCom extends PluginForDecrypt {
                     final String id = (String) json.get("slug");
                     final String description = (String) json.get("raw_description");
                     final String title = (String) json.get("title");
-                    createDownloadLink(id, full_name, title, description);
+                    createDownloadLink(id, full_name, user_name, title, description);
                     offset++;
                 }
                 /*
                  * because no spanning support at this stage.. I would like to confirm that there are pages with more pins than offset. So
                  * we will break.. raztoki20160311
-                 *
                  */
                 if (true) {
                     break;
@@ -114,7 +114,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void createDownloadLink(final String id, final String full_name, final String title, final String description) {
+    private void createDownloadLink(final String id, final String full_name, final String user_name, final String title, final String description) {
         if (inValidate(id)) {
             return;
         }
@@ -125,8 +125,9 @@ public class DrawcrowdCom extends PluginForDecrypt {
             dl.setComment(description.replaceAll("[\r\n]{1,}", " "));
         }
         dl.setLinkID(id);
-        dl.setName(full_name + " - " + (!inValidate(title) ? title + " - " : "") + id + ".jpg");
+        dl.setName(user_name + " - " + (!inValidate(title) ? title + " - " : "") + id + ".jpg");
         dl.setProperty("full_name", full_name);
+        dl.setProperty("user_name", user_name);
         dl.setAvailable(true);
         fp.add(dl);
         decryptedLinks.add(dl);
