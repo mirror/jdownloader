@@ -139,6 +139,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return sourceJob;
     }
 
+    public long getJobID() {
+        final DownloadLink link = getDownloadLink();
+        if (link != null) {
+            return link.getJobID();
+        }
+        return -1;
+    }
+
     /**
      * @param sourceJob
      *            the sourceJob to set
