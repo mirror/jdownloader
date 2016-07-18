@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -97,11 +98,12 @@ public class ClipboardMonitoring {
             try {
                 try {
                     openClipboard.invoke(clipboard, new Object[] { null });
-                    String sstr = new String((byte[]) getClipboardData.invoke(clipboard, new Object[] { cf_html }), "UTF-8");
+                    final String sstr = new String((byte[]) getClipboardData.invoke(clipboard, new Object[] { cf_html }), "UTF-8");
                     return new Regex(sstr, "SourceURL:([^\r\n]*)").getMatch(0);
                 } finally {
                     closeClipboard.invoke(clipboard, new Object[] {});
                 }
+            } catch (final InvocationTargetException ignore) {
             } catch (final IllegalStateException ignore) {
             } catch (final IOException ignore) {
             } catch (final Throwable e) {
