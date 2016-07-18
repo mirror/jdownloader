@@ -38,7 +38,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private int              onlineCount  = -1;
     private Pair             packages;
     private Pair             online;
-    private final long       CLOSETIMEOUT = 10000l;
+    private final long       CLOSETIMEOUT = 5000;
     private final LinkOrigin origin;
 
     public LinkCrawlerBubbleContent(JobLinkCrawler crawler) {
