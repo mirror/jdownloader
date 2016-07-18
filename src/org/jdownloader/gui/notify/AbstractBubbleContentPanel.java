@@ -95,9 +95,11 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
     }
 
     public void stop() {
-        progressCircle.setIndeterminate(false);
-        progressCircle.setMaximum(100);
-        progressCircle.setValue(100);
+        if (progressCircle != null) {
+            progressCircle.setIndeterminate(false);
+            progressCircle.setMaximum(100);
+            progressCircle.setValue(100);
+        }
     }
 
     protected JLabel createHeaderLabel(String lbl, Icon icon) {

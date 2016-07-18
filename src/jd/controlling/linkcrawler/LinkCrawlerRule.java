@@ -103,8 +103,29 @@ public class LinkCrawlerRule {
     protected RULE                  rule               = null;
 
     protected Pattern               packageNamePattern = null;
-
     protected Pattern               formPattern        = null;
+    protected Pattern               deepPattern        = null;
+
+    public Pattern _getDeepPattern() {
+        return deepPattern;
+    }
+
+    public String getDeepPattern() {
+        final Pattern lPattern = _getDeepPattern();
+        if (lPattern != null) {
+            return lPattern.pattern();
+        } else {
+            return null;
+        }
+    }
+
+    public void setDeepPattern(String pattern) {
+        if (pattern == null) {
+            this.deepPattern = null;
+        } else {
+            this.deepPattern = Pattern.compile(pattern);
+        }
+    }
 
     public Pattern _getPackageNamePattern() {
         return packageNamePattern;
