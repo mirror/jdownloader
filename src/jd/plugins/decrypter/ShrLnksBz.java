@@ -26,10 +26,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -44,18 +50,8 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
 public class ShrLnksBz extends antiDDoSForDecrypt {
-
-    private String MAINPAGE = "http://share-links.biz/";
-    private String ua       = RandomUserAgent.generate();
 
     public ShrLnksBz(final PluginWrapper wrapper) {
         super(wrapper);
@@ -69,8 +65,46 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
     }
 
     @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            // we want new agent each time we have virgin browser
+            userAgent.set(null);
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            correctLanguageCookie(prepBr, host);
+            prepBr.getHeaders().put("Cache-Control", null);
+            prepBr.getHeaders().put("Accept", "*/*");
+            prepBr.getHeaders().put("Accept-Encoding", "gzip,deflate");
+            prepBr.getHeaders().put("Accept-Charset", "utf-8,*");
+        }
+        return prepBr;
+    }
+
+    private void correctLanguageCookie(final Browser prepBr, final String host) {
+        if (host.matches("(?i)share-links\\.biz|s2l\\.biz")) {
+            /* Prefer English */
+            prepBr.setCookie(host, "SLlng", "en");
+        }
+    }
+
+    @Override
+    protected void getPage(Browser ibr, String page) throws Exception {
+        super.getPage(ibr, page);
+        // they do stupid shit like switch cookies!
+        if (!"en".equals(ibr.getCookie(Browser.getHost(page), "SLlng"))) {
+            correctLanguageCookie(ibr, page);
+        }
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br = new Browser();
         String parameter = param.toString();
 
         if (parameter.contains("s2l.biz")) {
@@ -80,18 +114,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         }
         setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getHeaders().clear();
-        br.getHeaders().put("Cache-Control", null);
-        br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("User-Agent", ua);
-        br.getHeaders().put("Accept", "*/*");
-        /* Prefer English */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
-        br.getHeaders().put("Accept-Charset", "utf-8,*");
-        /* Prefer English */
-        br.setCookie(MAINPAGE, "SLlng", "en");
-        // br.getHeaders().put("Connection", "close");
 
         /* Prefer English */
         parameter += "?lng=en";
@@ -111,7 +133,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             final Browser br2 = br.cloneBrowser();
             for (final String template : gifList) {
                 try {
-                    con = br2.openGetConnection(template);
+                    con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(template));
                 } finally {
                     try {
                         con.disconnect();
@@ -145,7 +167,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                     latestPassword = Plugin.getUserInput("Enter password for: " + parameter, param);
                 }
                 pwform.put("password", latestPassword);
-                br.submitForm(pwform);
+                submitForm(pwform);
                 if (br.containsHTML("This folder requires a password\\.")) {
                     getPluginConfig().setProperty("PASSWORD", null);
                     getPluginConfig().save();
@@ -179,26 +201,20 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 final File file = this.getLocalCaptchaFile();
                 final Browser temp = br.cloneBrowser();
-                temp.getDownload(file, "http://share-links.biz" + Captchamap + "&legend=1");
-                temp.getDownload(file, "http://share-links.biz" + Captchamap);
+                temp.getDownload(file, Captchamap + "&legend=1");
+                temp.getDownload(file, Captchamap);
                 String nexturl = null;
-                if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000 || !auto) {
-                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                    nexturl = getNextUrl(cp.getX(), cp.getY());
-                } else {
-                    try {
-                        final String[] code = this.getCaptchaCode(file, param).split(":");
-                        nexturl = getNextUrl(Integer.parseInt(code[0]), Integer.parseInt(code[1]));
-                    } catch (final Exception e) {
-                        final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                        nexturl = getNextUrl(cp.getX(), cp.getY());
-                    }
-                }
+                final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                nexturl = getNextUrl(cp.getX(), cp.getY());
                 if (nexturl == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.setFollowRedirects(true);
-                getPage(MAINPAGE + nexturl);
+                // they can switch to german here, within REDIRECT we can't have that!
+                // br.setFollowRedirects(true);
+                getPage(nexturl);
+                while (br.getRedirectLocation() != null) {
+                    getPage(br.getRedirectLocation());
+                }
                 if (br.containsHTML("> Your choice was wrong\\.<")) {
                     getPage(parameter);
                     if (i == max && auto) {
@@ -224,8 +240,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 flashVars = br.getRegex("file[\n\t\r ]*?=[\n\t\r ]*?\"([^<>\"]+)\"").getMatch(0);
             }
             if (flashVars != null) {
-                final Browser cnlbr = new Browser();
-                getPage(cnlbr, MAINPAGE + "get/cnl2/" + flashVars);
+                final Browser cnlbr = br.cloneBrowser();
+                getPage(cnlbr, "/get/cnl2/" + flashVars);
                 String test = cnlbr.toString();
                 String[] encVars = null;
                 if (test != null) {
@@ -255,7 +271,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         /* Load Contents. Container handling (DLC) */
         final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
-            decryptedLinks = loadcontainer(br, MAINPAGE + "get/dlc/" + dlclink);
+            decryptedLinks = loadcontainer(br, "/get/dlc/" + dlclink);
             if (!decryptedLinks.isEmpty()) {
                 return decryptedLinks;
             }
@@ -268,7 +284,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         }
         final LinkedList<String> links = new LinkedList<String>();
         for (int i = 1; i <= pages; i++) {
-            getPage(MAINPAGE + pattern);
+            getPage(pattern);
             final String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'").getColumn(0);
             if (linki.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -282,11 +298,11 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             return null;
         }
         for (final String tmplink : links) {
-            getPage(MAINPAGE + "get/lnk/" + tmplink);
+            getPage("/get/lnk/" + tmplink);
             final String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
             if (clink0 != null) {
                 try {
-                    getPage(new Regex(Encoding.htmlDecode(clink0), "\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0));
+                    getPage(new Regex(Encoding.htmlDecode(clink0), "\"(https?://share-links\\.biz/get/frm/.*?)\"").getMatch(0));
                 } catch (final Throwable e) {
                     continue;
                 }
@@ -352,7 +368,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 if (con.isContentDisposition()) {
                     test = Plugin.getFileNameFromDispositionHeader(con);
                 } else {
-                    test = test.replaceAll("(http://share-links\\.biz/|/|\\?)", "") + ".dlc";
+                    test = test.replaceAll("(https?://share-links\\.biz/|/|\\?)", "") + ".dlc";
                 }
                 file = JDUtilities.getResourceFile("tmp/sharelinks/" + test);
                 if (file == null) {
