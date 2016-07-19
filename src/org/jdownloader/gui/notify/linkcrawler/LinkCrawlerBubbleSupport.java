@@ -19,20 +19,23 @@ import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcollector.event.LinkCollectorCrawlerListener;
 import jd.controlling.linkcrawler.CrawledLink;
 
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.notify.AbstractBubbleSupport;
 import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.gui.notify.gui.BubbleNotifyConfig;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
 
 public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements LinkCollectorListener {
 
-    private ArrayList<Element> elements;
+    private ArrayList<Element>                                    elements         = new ArrayList<Element>();
+    private final BubbleNotifyConfig.LINKGRABBER_BUBBLE_NOTIFY_ON notifyOn         = JsonConfig.create(BubbleNotifyConfig.class).getBubbleNotifyOnNewLinkgrabberLinksOn();
+    private final boolean                                         registerOnPlugin = BubbleNotifyConfig.LINKGRABBER_BUBBLE_NOTIFY_ON.PLUGIN.equals(notifyOn);
 
     public LinkCrawlerBubbleSupport() {
         super(_GUI.T.plugins_optional_JDLightTray_ballon_newlinks3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED);
-        elements = new ArrayList<Element>();
         LinkCrawlerBubbleContent.fill(elements);
         LinkCollector.getInstance().getEventsender().addListener(this, true);
     }
@@ -41,6 +44,7 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
         private final WeakReference<JobLinkCrawler> crawler;
         private final AtomicBoolean                 registered = new AtomicBoolean(false);
+
         private volatile LinkCrawlerBubble          bubble     = null;
 
         private LinkCrawlerBubbleWrapper(JobLinkCrawler crawler) {
@@ -92,6 +96,9 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
         @Override
         public void onProcessingCrawlerPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
+            if (registerOnPlugin) {
+                register();
+            }
         }
 
         @Override
@@ -101,6 +108,9 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
         @Override
         public void onProcessingContainerPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
+            if (registerOnPlugin) {
+                register();
+            }
         }
 
     }
@@ -115,10 +125,13 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
     @Override
     public void onLinkCrawlerAdded(final LinkCollectorCrawler crawler) {
         if (isEnabled() && crawler instanceof JobLinkCrawler) {
+            final LinkCrawlerBubbleWrapper wrapper = new LinkCrawlerBubbleWrapper((JobLinkCrawler) crawler);
             synchronized (map) {
-                final LinkCrawlerBubbleWrapper wrapper = new LinkCrawlerBubbleWrapper((JobLinkCrawler) crawler);
                 crawler.getEventSender().addListener(wrapper, true);
                 map.put(crawler, wrapper);
+            }
+            if (BubbleNotifyConfig.LINKGRABBER_BUBBLE_NOTIFY_ON.ALWAYS.equals(notifyOn)) {
+                wrapper.register();
             }
         }
     }
