@@ -159,6 +159,14 @@ public interface GeneralSettings extends ConfigInterface {
     void setAutoMaxDownloadsSpeedLimitMaxDownloads(int maxDownloads);
 
     @AboutConfig
+    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, minimum delay to wait after last started download")
+    @DefaultIntValue(10000)
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
+    int getAutoMaxDownloadsSpeedLimitMinDelay();
+
+    void setAutoMaxDownloadsSpeedLimitMinDelay(int minDelay);
+
+    @AboutConfig
     @DefaultLongValue(30 * 60 * 1000l)
     @DescriptionForConfigEntry("Waittime in ms if a Download Temp Unavailable Failed")
     long getDownloadTempUnavailableRetryWaittime();
