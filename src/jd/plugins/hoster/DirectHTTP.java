@@ -35,6 +35,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
+import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -686,7 +687,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         }
                     }
                     if (fileName != null && downloadLink.getBooleanProperty("urlDecodeFinalFileName", true)) {
-                        fileName = Encoding.urlDecode(fileName, false);
+                        fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
                     }
                 }
                 if (fileName == null) {
