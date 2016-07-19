@@ -4,14 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.extraction.ArchiveStatusStorable.ArchiveFileStatus;
@@ -31,8 +25,14 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.ExtractionInterface;
 
-public class ExtractionAPIImpl implements ExtractionAPI {
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
+public class ExtractionAPIImpl implements ExtractionAPI {
     private final PackageControllerUtils<FilePackage, DownloadLink>   packageControllerDownloadList;
     private final PackageControllerUtils<CrawledPackage, CrawledLink> packageControllerLinkCollector;
 
@@ -138,7 +138,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
     }
 
     @Override
-    public Boolean cancelExtraction(final long controllerID) {
+    public boolean cancelExtraction(final long controllerID) {
         final ExtractionExtension extension = ArchiveValidator.EXTENSION;
         if (extension != null) {
             final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
@@ -188,7 +188,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
     }
 
     @Override
-    public Boolean setArchiveSettings(final String archiveId, final ArchiveSettingsAPIStorable remoteSettings) throws BadParameterException {
+    public boolean setArchiveSettings(final String archiveId, final ArchiveSettingsAPIStorable remoteSettings) throws BadParameterException {
         if (remoteSettings == null) {
             throw new BadParameterException("settings == null");
         }
@@ -196,6 +196,8 @@ public class ExtractionAPIImpl implements ExtractionAPI {
             throw new BadParameterException("invalid archive id");
         }
         final ArchiveSettings localSettings = ArchiveController.getInstance().getArchiveSettings(archiveId, null);
+        System.out.println("Local Settings " + JSonStorage.serializeToJson(localSettings));
+        System.out.println("remoteSettings Settings " + JSonStorage.serializeToJson(remoteSettings));
         if (localSettings != null) {
             if (remoteSettings.getAutoExtract() != null) {
                 localSettings.setAutoExtract(BooleanStatus.convert(remoteSettings.getAutoExtract()));
@@ -207,6 +209,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                 localSettings.setRemoveFilesAfterExtraction(BooleanStatus.convert(remoteSettings.getRemoveFilesAfterExtraction()));
             }
             if (!StringUtils.isEmpty(remoteSettings.getExtractPath())) {
+                System.out.println("Set ExtractPath");
                 localSettings.setExtractPath(remoteSettings.getExtractPath());
             }
             if (!StringUtils.isEmpty(remoteSettings.getFinalPassword())) {
