@@ -174,19 +174,20 @@ public abstract class SimpleFTP {
             ignore.printStackTrace();
         }
         final List<String> bestMatchRound1 = new ArrayList<String>();
-        int bestCountRound1 = -1;
+        int best = -1;
         for (final Entry<String, String> result : results.entrySet()) {
             int count = 0;
-            for (int index = 0; index < result.getValue().length(); index++) {
-                if ('\uFFFD' == result.getValue().charAt(index)) {
+            final String value = result.getValue();
+            for (int index = 0; index < value.length(); index++) {
+                if ('\uFFFD' == value.charAt(index)) {
                     count++;
                 }
             }
-            if (bestCountRound1 == -1 || bestCountRound1 == count) {
-                bestCountRound1 = count;
+            if (best == -1 || best == count) {
+                best = count;
                 bestMatchRound1.add(result.getKey());
-            } else {
-                bestCountRound1 = count;
+            } else if (count < best) {
+                best = count;
                 bestMatchRound1.clear();
                 bestMatchRound1.add(result.getKey());
             }
