@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -29,7 +30,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -101,9 +101,25 @@ public class EHentaiOrg extends PluginForHost {
         return super.canHandle(downloadLink, account);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        return requestFileInformation(downloadLink, null);
+    }
+
+    /**
+     * take account from download candidate!
+     *
+     * @param downloadLink
+     * @param account
+     * @return
+     * @throws PluginException
+     * @throws IOException
+     */
+    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account account) throws PluginException, IOException {
+        // from manual 'online check', we don't want to 'try' as it uses up quota...
+        if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         dupe.clear();
         dllink = null;
         String dllink_fullsize = null;
@@ -111,18 +127,13 @@ public class EHentaiOrg extends PluginForHost {
         final String mainlink = getMainlink(downloadLink);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
+        if (account != null) {
             try {
-                login(this.br, aa, false);
+                login(this.br, account, false);
                 loggedin = true;
             } catch (final Throwable e) {
                 loggedin = false;
             }
-        }
-        if (!loggedin && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
-            downloadLink.getLinkStatus().setStatusText("Account needed to check this linktype");
-            return AvailableStatus.UNCHECKABLE;
         }
         if (ENABLE_RANDOM_UA) {
             /*
@@ -240,7 +251,7 @@ public class EHentaiOrg extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink, null);
         doFree(downloadLink, null);
     }
 
@@ -387,7 +398,7 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account);
         /* No need to login here as we already logged in in availablecheck */
         doFree(link, account);
     }
