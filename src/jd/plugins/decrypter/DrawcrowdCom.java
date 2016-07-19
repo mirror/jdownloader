@@ -125,7 +125,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
             dl.setComment(description.replaceAll("[\r\n]{1,}", " "));
         }
         dl.setLinkID(id);
-        dl.setName(user_name + " - " + (!inValidate(title) ? title + " - " : "") + id + ".jpg");
+        dl.setName(full_name + " - " + user_name + " - " + (!inValidate(title) ? title + " - " : "") + id + ".jpg");
         dl.setProperty("full_name", full_name);
         dl.setProperty("user_name", user_name);
         dl.setAvailable(true);
