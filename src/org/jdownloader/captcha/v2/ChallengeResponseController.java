@@ -265,13 +265,29 @@ public class ChallengeResponseController {
             logger.info("Fire New Job Event");
             fireNewJobEvent(job);
             logger.info("Wait");
+            boolean timeout = false;
             while (!job.isSolved() && !job.isDone()) {
                 synchronized (job) {
-                    job.getChallenge().poll(job);
+                    final Challenge<T> challenge = job.getChallenge();
+                    challenge.poll(job);
                     if (!job.isSolved() && !job.isDone()) {
+                        final long expired = System.currentTimeMillis() - challenge.getCreated();
+                        final int jobTimeout = challenge.getTimeout();
+                        if (jobTimeout != -1 && expired > jobTimeout) {
+                            timeout = true;
+                            break;
+                        }
                         job.wait(1000);
+                    } else {
+                        break;
                     }
                 }
+            }
+            if (timeout && job.setSkipRequest(SkipRequest.TIMEOUT)) {
+                final Challenge<T> challenge = job.getChallenge();
+                final long expired = System.currentTimeMillis() - challenge.getCreated();
+                final int jobTimeout = challenge.getTimeout();
+                logger.info("Challenge Timeout detected|Job:" + job + "|Expired:" + expired + "|Timeout:" + jobTimeout);
             }
             if (job.getSkipRequest() != null) {
                 throw new SkipException(c, job.getSkipRequest());

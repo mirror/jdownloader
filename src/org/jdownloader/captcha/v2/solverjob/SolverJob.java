@@ -7,7 +7,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipRequest;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
@@ -18,32 +22,29 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.ValidationResult;
 
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipRequest;
-
 public class SolverJob<T> {
 
-    private final Challenge<T>                     challenge;
+    private final Challenge<T>                            challenge;
 
-    private final CaptchaSettings                  config;
+    private final CaptchaSettings                         config;
 
-    private final ChallengeResponseController      controller;
-    private volatile ArrayList<ResponseList<T>>    cumulatedList;
-    private final HashSet<ChallengeSolver<T>>      doneList  = new HashSet<ChallengeSolver<T>>();
-    private volatile ChallengeSolverJobEventSender eventSender;
-    private final List<AbstractResponse<T>>        responses = new ArrayList<AbstractResponse<T>>();
+    private final ChallengeResponseController             controller;
+    private volatile ArrayList<ResponseList<T>>           cumulatedList;
+    private final HashSet<ChallengeSolver<T>>             doneList  = new HashSet<ChallengeSolver<T>>();
+    private volatile ChallengeSolverJobEventSender        eventSender;
+    private final List<AbstractResponse<T>>               responses = new ArrayList<AbstractResponse<T>>();
 
-    private final HashSet<ChallengeSolver<T>>      solverList;
+    private final CopyOnWriteArraySet<ChallengeSolver<T>> solverList;
 
-    private LogSource                              logger;
+    private LogSource                                     logger;
 
-    private volatile SkipRequest                   skipRequest;
+    private volatile SkipRequest                          skipRequest;
 
-    private final Object                           LOCK      = new Object();
+    private final Object                                  LOCK      = new Object();
 
-    private final AtomicBoolean                    alive     = new AtomicBoolean(true);
+    private final AtomicBoolean                           alive     = new AtomicBoolean(true);
 
-    private long                                   created;
+    private long                                          created;
 
     public String toString() {
         return "CaptchaJob: " + new Date(created) + " " + challenge + " Solver: " + solverList;
@@ -53,7 +54,7 @@ public class SolverJob<T> {
         this.challenge = c;
         created = System.currentTimeMillis();
         this.controller = controller;
-        this.solverList = new HashSet<ChallengeSolver<T>>(solver);
+        this.solverList = new CopyOnWriteArraySet<ChallengeSolver<T>>(solver);
         config = JsonConfig.create(CaptchaSettings.class);
     }
 
@@ -324,7 +325,7 @@ public class SolverJob<T> {
         return skipRequest;
     }
 
-    public void setSkipRequest(SkipRequest skipRequest) {
+    public boolean setSkipRequest(SkipRequest skipRequest) {
         boolean kill = false;
         synchronized (LOCK) {
             if (alive.compareAndSet(true, false)) {
@@ -338,6 +339,7 @@ public class SolverJob<T> {
         if (kill) {
             kill();
         }
+        return kill;
     }
 
     public Collection<ChallengeSolver<T>> getSolverList() {

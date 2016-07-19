@@ -4,16 +4,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
-import org.jdownloader.captcha.v2.solverjob.ResponseList;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
-
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -24,12 +14,22 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
+
 public abstract class Challenge<T> {
     private static final int      REDUCER      = 100;
     private final UniqueAlltimeID id           = new UniqueAlltimeID();
     private final Class<T>        resultType;
-    private final long            created;
-    private int                   timeout;
+    private final long            created      = System.currentTimeMillis();
+    private int                   timeout      = -1;
     private volatile boolean      accountLogin = false;
     private final boolean         createdInsideAccountChecker;
     private int                   round        = -1;
@@ -158,8 +158,6 @@ public abstract class Challenge<T> {
 
         }
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
-        created = System.currentTimeMillis();
-        timeout = -1;
 
     }
 
@@ -168,7 +166,7 @@ public abstract class Challenge<T> {
     }
 
     public int getTimeout() {
-        return timeout;
+        return Math.max(-1, timeout);
     }
 
     public void setTimeout(int timeout) {
