@@ -3,6 +3,9 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+import jd.utils.JDUtilities;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -24,9 +27,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-import jd.utils.JDUtilities;
 
 public interface GeneralSettings extends ConfigInterface {
 
@@ -142,10 +142,21 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("If >0, JD will start additional downloads when total speed is below this value")
     @DefaultIntValue(0)
-    @SpinnerValidator(min = -1, max = Integer.MAX_VALUE)
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getAutoMaxDownloadsSpeedLimit();
 
     void setAutoMaxDownloadsSpeedLimit(int speed);
+
+    final static int SOFT_MAX_DOWNLOADS = 20;
+    final static int HARD_MAX_DOWNLOADS = SOFT_MAX_DOWNLOADS * 2;
+
+    @AboutConfig
+    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, if >0, JD will auto start max x downloads")
+    @DefaultIntValue(5)
+    @SpinnerValidator(min = 0, max = HARD_MAX_DOWNLOADS)
+    int getAutoMaxDownloadsSpeedLimitMaxDownloads();
+
+    void setAutoMaxDownloadsSpeedLimitMaxDownloads(int maxDownloads);
 
     @AboutConfig
     @DefaultLongValue(30 * 60 * 1000l)
@@ -202,7 +213,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("max buffer size for write operations in kb")
-    @SpinnerValidator(min = 100, max = 50240)
+    @SpinnerValidator(min = 100, max = 100480)
     @DefaultIntValue(500)
     int getMaxBufferSize();
 
@@ -220,13 +231,13 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("How many downloads should Jdownloader download at once? Note that most hosters allow only one download at a time in freemode")
-    @SpinnerValidator(min = 1, max = 20)
+    @SpinnerValidator(min = 1, max = SOFT_MAX_DOWNLOADS)
     @DefaultIntValue(3)
     int getMaxSimultaneDownloads();
 
     @AboutConfig
     @DescriptionForConfigEntry("How many downloads more than getMaxSimultaneDownloads should JDownloader download at once when forced?")
-    @SpinnerValidator(min = 1, max = 40)
+    @SpinnerValidator(min = 1, max = HARD_MAX_DOWNLOADS)
     @DefaultIntValue(5)
     int getMaxForcedDownloads();
 
@@ -234,7 +245,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(1)
-    @SpinnerValidator(min = 1, max = 100)
+    @SpinnerValidator(min = 1, max = HARD_MAX_DOWNLOADS)
     int getMaxSimultaneDownloadsPerHost();
 
     @AboutConfig
@@ -451,8 +462,10 @@ public interface GeneralSettings extends ConfigInterface {
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
     public static enum CreateFolderTrigger {
-        @EnumLabel("When the actual Download starts") ON_DOWNLOAD_START,
-        @EnumLabel("When the links are added to the Downloadlist") ON_LINKS_ADDED,
+        @EnumLabel("When the actual Download starts")
+        ON_DOWNLOAD_START,
+        @EnumLabel("When the links are added to the Downloadlist")
+        ON_LINKS_ADDED,
 
     }
 
