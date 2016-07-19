@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -148,10 +149,10 @@ public class FlickrCom extends PluginForDecrypt {
     /**
      * Handles decryption via API
      *
-     * @throws ParseException
+     * @throws Exception
      */
     @SuppressWarnings("deprecation")
-    private void api_handleAPI() throws IOException, DecrypterException, ParseException {
+    private void api_handleAPI() throws Exception {
         /* TODO: Fix csrf handling to make requests as logged-in user possible. */
         br.clearCookies(MAINPAGE);
         String fpName = null;
@@ -199,8 +200,11 @@ public class FlickrCom extends PluginForDecrypt {
             fpName = "flickr.com favourites of user " + this.username;
         } else if (parameter.matches(TYPE_GROUPS)) {
             br.getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.urls.lookupGroup&url=" + Encoding.urlEncode(parameter));
-            final String group_id = PluginJSonUtils.getJson(br, "id");
-            final String groupname = br.getRegex("\"groupname\":\\{\"_content\":\"([^<>\"]*?)\"\\}").getMatch(0);
+            final String json = br.getRegex("^jsonFlickrApi\\((\\{.*?\\})\\)$").getMatch(0);
+            final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final HashMap<String, Object> group = (HashMap<String, Object>) entries.get("group");
+            final String group_id = (String) group.get("id");
+            final String groupname = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(group, "groupname/_content");
             path_alias = new Regex(parameter, "flickr\\.com/groups/([^<>\"/]+)").getMatch(0);
             if (group_id == null || path_alias == null || groupname == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
