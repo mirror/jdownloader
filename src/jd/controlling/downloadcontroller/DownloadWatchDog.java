@@ -2328,7 +2328,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     public boolean checkForAdditionalDownloadSlots(final DownloadSession session) {
         final long autoMaxDownloadSpeedLimit = config.getAutoMaxDownloadsSpeedLimit();
-        if (autoMaxDownloadSpeedLimit > 0) {
+        final int autoMaxDownloadsMaxDownloads = config.getAutoMaxDownloadsSpeedLimitMaxDownloads();
+        final Set<SingleDownloadController> controllers = session.getControllers();
+        if (autoMaxDownloadSpeedLimit > 0 && (autoMaxDownloadsMaxDownloads == 0 || controllers.size() < autoMaxDownloadsMaxDownloads)) {
             try {
                 final long currentDownloadSpeed = getDownloadSpeedManager().getSpeedMeter().getSpeedMeter();
                 if (currentDownloadSpeed < autoMaxDownloadSpeedLimit) {
@@ -2338,7 +2340,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         return false;
                     }
                     long latestStart = 0;
-                    for (final SingleDownloadController s : session.getControllers()) {
+                    for (final SingleDownloadController s : controllers) {
                         latestStart = Math.max(latestStart, s.getStartTimestamp());
                         long left = s.getDownloadLink().getView().getBytesTotal() - s.getDownloadLink().getView().getBytesLoaded();
                         if (left <= 0) {
@@ -3313,39 +3315,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                                                          @Override
-                                                          public void delayedrun() {
-                                                              enqueueJob(new DownloadWatchDogJob() {
+                            @Override
+                            public void delayedrun() {
+                                enqueueJob(new DownloadWatchDogJob() {
 
-                                                                  @Override
-                                                                  public void interrupt() {
-                                                                  }
+                                    @Override
+                                    public void interrupt() {
+                                    }
 
-                                                                  @Override
-                                                                  public void execute(DownloadSession currentSession) {
-                                                                      /* reset CONNECTION_UNAVAILABLE */
-                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        /* reset CONNECTION_UNAVAILABLE */
+                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                                                          @Override
-                                                                          public int returnMaxResults() {
-                                                                              return 0;
-                                                                          }
+                                            @Override
+                                            public int returnMaxResults() {
+                                                return 0;
+                                            }
 
-                                                                          @Override
-                                                                          public boolean acceptNode(DownloadLink node) {
-                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                                                          }
-                                                                      });
-                                                                      unSkip(unSkip);
-                                                                  }
+                                            @Override
+                                            public boolean acceptNode(DownloadLink node) {
+                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                            }
+                                        });
+                                        unSkip(unSkip);
+                                    }
 
-                                                                  @Override
-                                                                  public boolean isHighPriority() {
-                                                                      return false;
-                                                                  }
-                                                              });
-                                                          }
-                                                      };
+                                    @Override
+                                    public boolean isHighPriority() {
+                                        return false;
+                                    }
+                                });
+                            }
+                        };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
