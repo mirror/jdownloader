@@ -953,7 +953,7 @@ public class LinkCrawler {
                                     final String packageName = br.getRegex(matchingRule._getPackageNamePattern()).getMatch(0);
                                     if (StringUtils.isNotEmpty(packageName)) {
                                         fpi = new PackageInfo();
-                                        fpi.setName(packageName.trim());
+                                        fpi.setName(Encoding.htmlDecode(packageName.trim()));
                                     } else {
                                         fpi = null;
                                     }
