@@ -45,7 +45,7 @@ public class FilesloopCom extends PluginForHost {
 
     /* Using similar API (and same owner): esoubory.cz, filesloop.com */
 
-    private static final String                            DOMAIN               = "http://www.filesloop.com/api/";
+    private static final String                            DOMAIN               = "https://www.filesloop.com/api/";
     private static final String                            NICE_HOST            = "filesloop.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
@@ -78,12 +78,12 @@ public class FilesloopCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public FilesloopCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.filesloop.com/premium/");
+        this.enablePremium("https://www.filesloop.com/premium/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.filesloop.com/terms-of-use/";
+        return "https://www.filesloop.com/terms-of-use/";
     }
 
     private Browser newBrowser() {
