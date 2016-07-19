@@ -87,11 +87,13 @@ public class ArchiveController {
                 if (ret != null) {
                     return ret;
                 }
-                ret = createSettingsObject(internalID, archiveFactory.isDeepExtraction());
-                final BooleanStatus defaultAuto = BooleanStatus.get(archiveFactory.getDefaultAutoExtract());
-                if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
-                    /* only set AutoExtract value when it is UNSET */
-                    ret.setAutoExtract(defaultAuto);
+                ret = createSettingsObject(internalID, archiveFactory != null && archiveFactory.isDeepExtraction());
+                if (archiveFactory != null) {
+                    final BooleanStatus defaultAuto = BooleanStatus.get(archiveFactory.getDefaultAutoExtract());
+                    if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
+                        /* only set AutoExtract value when it is UNSET */
+                        ret.setAutoExtract(defaultAuto);
+                    }
                 }
                 map.put(internalID, ret);
                 return ret;
