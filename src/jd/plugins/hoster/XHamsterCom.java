@@ -70,7 +70,7 @@ public class XHamsterCom extends PluginForHost {
     private static final boolean  default_allow_multihoster_usage = false;
 
     private static final String   HTML_PASSWORD_PROTECTED         = "id=\\'videoPass\\'";
-    private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"";
+    private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
     private static final String   DOMAIN_CURRENT                  = "xhamster.com";
     final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
     /* The list of qualities/formats displayed to the user */
@@ -107,7 +107,7 @@ public class XHamsterCom extends PluginForHost {
     private static final String NORESUME    = "NORESUME";
     private static Object       ctrlLock    = new Object();
     private final String        recaptchav2 = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
-    private String              DLLINK      = null;
+    private String              dllink      = null;
     private String              vq          = null;
 
     @SuppressWarnings("deprecation")
@@ -242,8 +242,8 @@ public class XHamsterCom extends PluginForHost {
             // urlmode fails, eg: 1099006
             dllink = br.getRegex("video\\s*:\\s*\\{[^\\}]+file\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
         }
-        DLLINK = Encoding.htmlDecode(dllink);
-        return DLLINK;
+        dllink = Encoding.htmlDecode(dllink);
+        return dllink;
     }
 
     @Override
@@ -318,24 +318,24 @@ public class XHamsterCom extends PluginForHost {
             } else if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
                 downloadLink.getLinkStatus().setStatusText("This video is password protected");
                 return AvailableStatus.TRUE;
-            } else if (br.containsHTML(HTML_PAID_VIDEO)) {
-                downloadLink.getLinkStatus().setStatusText("To download, you have to buy this video");
-                if (filename != null) {
-                    downloadLink.setName(fid + "_" + filename + ".mp4");
-                }
-                return AvailableStatus.TRUE;
             }
-            if (downloadLink.getFinalFileName() == null || DLLINK == null) {
+            if (downloadLink.getFinalFileName() == null || dllink == null) {
                 filename = getFilename();
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 downloadLink.setFinalFileName(fid + "_" + filename);
+                if (br.containsHTML(HTML_PAID_VIDEO)) {
+                    downloadLink.getLinkStatus().setStatusText("To download, you have to buy this video");
+                    return AvailableStatus.TRUE;
+                } else if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             if (downloadLink.getDownloadSize() <= 0) {
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openHeadConnection(DLLINK);
+                    con = br.openHeadConnection(dllink);
                     if (!con.getContentType().contains("html")) {
                         downloadLink.setDownloadSize(con.getLongContentLength());
                     }
@@ -366,10 +366,10 @@ public class XHamsterCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = getDllink();
+        dllink = getDllink();
         String ext;
-        if (DLLINK != null) {
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (dllink != null) {
+            ext = dllink.substring(dllink.lastIndexOf("."));
             if (ext == null || ext.length() > 5) {
                 ext = ".mp4";
             }
@@ -397,14 +397,7 @@ public class XHamsterCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
         if (onlyfor != null) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for friends of " + onlyfor);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -416,14 +409,7 @@ public class XHamsterCom extends PluginForHost {
             }
             downloadLink.setFinalFileName(getFilename());
         } else if (br.containsHTML(HTML_PAID_VIDEO)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "To download, you have to buy this video");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         final String dllink = getDllink();
 
