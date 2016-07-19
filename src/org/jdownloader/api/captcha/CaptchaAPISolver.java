@@ -31,9 +31,6 @@ import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
-import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
-import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -331,17 +328,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
-        if (solver == this) {
-            return;
-        }
-        if (Application.isHeadless()) {
-            // dispose(job);
-        } else {
-            if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance(), BrowserSolver.getInstance())) {
-                // dialogs and jac is done. let's kill this one,
-                dispose(job);
-            }
-        }
     }
 
     @Override
