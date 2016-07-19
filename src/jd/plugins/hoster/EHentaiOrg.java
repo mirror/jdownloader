@@ -242,7 +242,7 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     private void getDllink() {
-        dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/(?:h|im)/[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/[a-z]{1,3}/[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);
         }
