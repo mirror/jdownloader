@@ -9,6 +9,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -31,17 +32,35 @@ public class MagentaCloudDe extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String param = parameter.getCryptedUrl();
         final String paramID = new Regex(param, "(?:share|lnk)/([a-z0-9\\-]+)").getMatch(0);
+        br.setAllowedResponseCodes(new int[] { 401, 403 });
         if (param.contains("/lnk/")) {
             br.getPage("https://www.magentacloud.de/api/sharelink/info?id=" + paramID);
             Map<String, Object> info = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
             if (paramID.equals(info.get("id")) && !info.containsKey("code")) {
-                br.postPage("https://www.magentacloud.de/api/sharelink/info", UrlQuery.parse("id=" + Encoding.urlEncode(paramID) + "&fields=name%2Ctype%2Csize"));
+                if (Boolean.TRUE.equals(info.get("has_password"))) {
+                    final String password = getUserInput("Password?", parameter);
+                    if (password == null || "".equals(password)) {
+                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    }
+                    br.postPage("https://www.magentacloud.de/api/sharelink/info", UrlQuery.parse("id=" + Encoding.urlEncode(paramID) + "&fields=name%2Ctype%2Csize%2Cdownload_code&password=" + Encoding.urlEncode(password)));
+                } else {
+                    br.postPage("https://www.magentacloud.de/api/sharelink/info", UrlQuery.parse("id=" + Encoding.urlEncode(paramID) + "&fields=name%2Ctype%2Csize"));
+                }
+                if (br.getRequest().getHttpConnection().getResponseCode() == 401 || br.getRequest().getHttpConnection().getResponseCode() == 403) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
                 info = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
                 final String type = (String) info.get("type");
                 if ("file".equals(type)) {
                     final String name = (String) info.get("name");
+                    final String download_code = (String) info.get("download_code");
                     final Number size = (Number) info.get("size");
-                    final DownloadLink link = createDownloadlink("directhttp://https://www.magentacloud.de/api/sharelink/download?id=" + paramID);
+                    final DownloadLink link;
+                    if (download_code != null) {
+                        link = createDownloadlink("directhttp://https://www.magentacloud.de/api/sharelink/download?id=" + paramID + "&download_code=" + download_code);
+                    } else {
+                        link = createDownloadlink("directhttp://https://www.magentacloud.de/api/sharelink/download?id=" + paramID);
+                    }
                     if (name != null) {
                         link.setFinalFileName(URLDecoder.decode(name, "UTF-8"));
                     }
@@ -58,7 +77,18 @@ public class MagentaCloudDe extends PluginForDecrypt {
             br.getPage("https://www.magentacloud.de/api/share/info?id=" + paramID);
             Map<String, Object> info = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
             if (!info.containsKey("code")) {
-                br.postPage("https://www.magentacloud.de/api/share/token", UrlQuery.parse("id=" + Encoding.urlEncode(paramID)));
+                if (Boolean.TRUE.equals(info.get("has_password"))) {
+                    final String password = getUserInput("Password?", parameter);
+                    if (password == null || "".equals(password)) {
+                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    }
+                    br.postPage("https://www.magentacloud.de/api/share/token", UrlQuery.parse("id=" + Encoding.urlEncode(paramID) + "&password=" + Encoding.urlEncode(password)));
+                } else {
+                    br.postPage("https://www.magentacloud.de/api/share/token", UrlQuery.parse("id=" + Encoding.urlEncode(paramID)));
+                }
+                if (br.getRequest().getHttpConnection().getResponseCode() == 401 || br.getRequest().getHttpConnection().getResponseCode() == 403) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
                 info = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
                 final String root_name = (String) info.get("root_name");
                 final String token_type = (String) info.get("token_type");
