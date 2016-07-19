@@ -9,6 +9,7 @@ import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface BubbleNotifyConfig extends ConfigInterface {
@@ -19,6 +20,12 @@ public interface BubbleNotifyConfig extends ConfigInterface {
         TOP_LEFT,
         TOP_RIGHT,
         SYSTEM_DEFAULT
+    }
+
+    public static enum LINKGRABBER_BUBBLE_NOTIFY_ON {
+        LINK,
+        PLUGIN,
+        ALWAYS
     }
 
     @AboutConfig
@@ -166,6 +173,13 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public int getBubbleNotifyOnNewLinkgrabberLinksEndNotifyDelay();
 
     public void setBubbleNotifyOnNewLinkgrabberLinksEndNotifyDelay(int ms);
+
+    @AboutConfig
+    @DefaultEnumValue("LINK")
+    @RequiresRestart("A JDownloader Restart is Required")
+    public LINKGRABBER_BUBBLE_NOTIFY_ON getBubbleNotifyOnNewLinkgrabberLinksOn();
+
+    public void setBubbleNotifyOnNewLinkgrabberLinksOn(LINKGRABBER_BUBBLE_NOTIFY_ON b);
 
     @AboutConfig
     @DefaultIntValue(900)
