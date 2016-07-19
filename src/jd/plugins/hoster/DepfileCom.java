@@ -184,7 +184,7 @@ public class DepfileCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private AccountInfo login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -206,7 +206,7 @@ public class DepfileCom extends PluginForHost {
                             final String value = "sdlanguageid".equals(key) && !"2".equals(cookieEntry.getValue()) ? "2" : cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        return null;
                     }
                 }
                 br.setFollowRedirects(true);
@@ -227,11 +227,37 @@ public class DepfileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                // pre-determiner, doesn't VALIDATE expire time!
                 if (isAccountPremium() || isAccountAffiliate()) {
                     account.setType(AccountType.PREMIUM);
                 } else {
                     account.setType(AccountType.FREE);
                 }
+                final AccountInfo ai = new AccountInfo();
+                if (AccountType.FREE.equals(account.getType())) {
+                    // free accounts can still have captcha.
+                    account.setMaxSimultanDownloads(1);
+                    account.setConcurrentUsePossible(false);
+                    ai.setStatus("Free Account");
+                } else {
+                    String expire = br.getRegex("href='/myspace/space/premium'>(\\d{2}[\\.\\-]\\d{2}[\\.\\-]\\d{2} \\d{2}:\\d{2})<").getMatch(0);
+                    // only premium accounts expire, affiliate doesn't.. they are a form of premium according to admin.
+                    if (expire == null && isAccountPremium()) {
+                        ai.setExpired(true);
+                        account.setValid(false);
+                        return ai;
+                    } else if (expire != null && isAccountPremium()) {
+                        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, (expire.contains(".") ? "dd.MM.yy hh:mm" : "MM-dd-yy hh:mm"), null), br);
+                        ai.setStatus("Premium Account");
+                    } else if (expire == null && isAccountAffiliate()) {
+                        ai.setStatus("Affiliate Account");
+                    }
+                    /* Max 20 downloads * each 1 connection in total */
+                    account.setMaxSimultanDownloads(-1);
+                    account.setConcurrentUsePossible(true);
+                }
+                account.setValid(true);
+                ai.setUnlimitedTraffic();
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -241,6 +267,7 @@ public class DepfileCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                return ai;
             } catch (PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -260,12 +287,13 @@ public class DepfileCom extends PluginForHost {
     }
 
     private boolean isAccountPremium() {
-        return br.containsHTML("/myspace/space/premium");
+        // they expire accounts slightly before time.... Link; 3654971887641.log; 398264;
+        // jdlog://3654971887641
+        return br.containsHTML("/myspace/space/premium") && !br.containsHTML("src='/images/i_premium_end\\.png'");
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -274,36 +302,11 @@ public class DepfileCom extends PluginForHost {
             }
         }
         try {
-            login(account, true);
+            return login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        if (AccountType.FREE.equals(account.getType())) {
-            // free accounts can still have captcha.
-            account.setMaxSimultanDownloads(1);
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Free Account");
-        } else {
-            String expire = br.getRegex("href='/myspace/space/premium'>(\\d{2}[\\.\\-]\\d{2}[\\.\\-]\\d{2} \\d{2}:\\d{2})<").getMatch(0);
-            // only premium accounts expire, affiliate doesn't.. they are a form of premium according to admin.
-            if (expire == null && isAccountPremium()) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else if (expire != null && isAccountPremium()) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, (expire.contains(".") ? "dd.MM.yy hh:mm" : "MM-dd-yy hh:mm"), null), br);
-                ai.setStatus("Premium Account");
-            } else if (expire == null && isAccountAffiliate()) {
-                ai.setStatus("Affiliate Account");
-            }
-            /* Max 20 downloads * each 1 connection in total */
-            account.setMaxSimultanDownloads(-1);
-            account.setConcurrentUsePossible(true);
-        }
-        return ai;
     }
 
     @Override
@@ -319,15 +322,7 @@ public class DepfileCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             checkForTwoFactor();
-            if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours")) {
-                logger.info("Daily limit reached, temp disabling premium");
-                synchronized (LOCK) {
-                    final AccountInfo ai = account.getAccountInfo();
-                    ai.setTrafficLeft(0);
-                    account.setAccountInfo(ai);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-            }
+            checkForStupidFileDownloadQuota(account);
             {
                 // they now have captcha for premium users, nice hey?
                 int count = -1;
@@ -343,6 +338,8 @@ public class DepfileCom extends PluginForHost {
                         }
                         br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&prem_plus=Next");
                     } while ((verifycode = getVerifyCode()) != null);
+                    // can be another output after captcha... Link; 7944971887641.log; 4880971; jdlog://7944971887641
+                    checkForStupidFileDownloadQuota(account);
                 }
             }
             String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(https?://.*?)\"").getMatch(0);
@@ -363,6 +360,18 @@ public class DepfileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
+        }
+    }
+
+    private void checkForStupidFileDownloadQuota(final Account account) throws PluginException {
+        if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours")) {
+            logger.info("Daily limit reached, temp disabling premium");
+            synchronized (LOCK) {
+                final AccountInfo ai = account.getAccountInfo();
+                ai.setTrafficLeft(0);
+                account.setAccountInfo(ai);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
         }
     }
 
