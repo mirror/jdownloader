@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -30,11 +33,13 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.ExtractionInterf
 
 public class ExtractionAPIImpl implements ExtractionAPI {
 
-    private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
+    private final PackageControllerUtils<FilePackage, DownloadLink>   packageControllerDownloadList;
+    private final PackageControllerUtils<CrawledPackage, CrawledLink> packageControllerLinkCollector;
 
     public ExtractionAPIImpl() {
         RemoteAPIController.validateInterfaces(ExtractionAPI.class, ExtractionInterface.class);
-        packageControllerUtils = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
+        packageControllerDownloadList = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
+        packageControllerLinkCollector = new PackageControllerUtils<CrawledPackage, CrawledLink>(LinkCollector.getInstance());
     }
 
     @Override
@@ -48,11 +53,10 @@ public class ExtractionAPIImpl implements ExtractionAPI {
     @Override
     public HashMap<String, Boolean> startExtractionNow(final long[] linkIds, final long[] packageIds) {
         final HashMap<String, Boolean> ret = new HashMap<String, Boolean>();
-        final ExtractionExtension extension = ExtractionExtension.getInstance();
+        final ExtractionExtension extension = ArchiveValidator.EXTENSION;
         if (extension != null) {
-            final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
-            if (selection != null && !selection.isEmpty()) {
-                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
+            final List<Archive> archives = getArchives(linkIds, packageIds);
+            if (archives.size() > 0) {
                 for (final Archive archive : archives) {
                     try {
                         final DummyArchive da = extension.createDummyArchive(archive);
@@ -68,30 +72,49 @@ public class ExtractionAPIImpl implements ExtractionAPI {
         return ret;
     }
 
+    private List<Archive> getArchives(final long[] linkIds, final long[] packageIds) {
+        final ExtractionExtension extension = ArchiveValidator.EXTENSION;
+        final ArrayList<Archive> ret = new ArrayList<Archive>();
+        if (extension != null) {
+            final SelectionInfo<FilePackage, DownloadLink> downloadListSelection = packageControllerDownloadList.getSelectionInfo(linkIds, packageIds);
+            if (downloadListSelection != null && !downloadListSelection.isEmpty()) {
+                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(downloadListSelection.getChildren());
+                if (archives != null) {
+                    ret.addAll(archives);
+                }
+            }
+            final SelectionInfo<CrawledPackage, CrawledLink> linkCollectorSelection = packageControllerLinkCollector.getSelectionInfo(linkIds, packageIds);
+            if (linkCollectorSelection != null && !linkCollectorSelection.isEmpty()) {
+                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(linkCollectorSelection.getChildren());
+                if (archives != null) {
+                    ret.addAll(archives);
+                }
+            }
+        }
+        return ret;
+    }
+
     public List<ArchiveStatusStorable> getArchiveInfo(final long[] linkIds, final long[] packageIds) {
         final List<ArchiveStatusStorable> ret = new ArrayList<ArchiveStatusStorable>();
         final ExtractionExtension extension = ArchiveValidator.EXTENSION;
         if (extension != null) {
-            final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
-            if (selection != null && !selection.isEmpty()) {
-                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
-                if (archives.size() > 0) {
-                    final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
-                    for (final Archive archive : archives) {
-                        final ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archive, getArchiveFileStatusMap(archive));
-                        for (final ExtractionController controller : jobs) {
-                            if (StringUtils.equals(controller.getArchive().getArchiveID(), archive.getArchiveID())) {
-                                archiveStatus.setControllerId(controller.getUniqueID().getID());
-                                if (controller.gotStarted()) {
-                                    archiveStatus.setControllerStatus(ControllerStatus.RUNNING);
-                                } else {
-                                    archiveStatus.setControllerStatus(ControllerStatus.QUEUED);
-                                }
-                                break;
+            final List<Archive> archives = getArchives(linkIds, packageIds);
+            if (archives.size() > 0) {
+                final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
+                for (final Archive archive : archives) {
+                    final ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archive, getArchiveFileStatusMap(archive));
+                    for (final ExtractionController controller : jobs) {
+                        if (StringUtils.equals(controller.getArchive().getArchiveID(), archive.getArchiveID())) {
+                            archiveStatus.setControllerId(controller.getUniqueID().getID());
+                            if (controller.gotStarted()) {
+                                archiveStatus.setControllerStatus(ControllerStatus.RUNNING);
+                            } else {
+                                archiveStatus.setControllerStatus(ControllerStatus.QUEUED);
                             }
+                            break;
                         }
-                        ret.add(archiveStatus);
                     }
+                    ret.add(archiveStatus);
                 }
             }
         }
