@@ -247,7 +247,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                         ((CustomizableAppAction) action).requestUpdate(this);
                     }
                     if (!action.isEnabled()) {
-
                         Toolkit.getDefaultToolkit().beep();
                     } else {
                         actionNotified = SwingUtilities.notifyAction(action, stroke, evt, this, evt.getModifiers());
