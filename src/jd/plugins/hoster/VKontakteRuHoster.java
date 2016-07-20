@@ -18,16 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,6 +34,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -54,6 +49,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }, flags = { 2 })
@@ -118,28 +118,6 @@ public class VKontakteRuHoster extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    public static String URLDecode(String urlCoded) throws IOException {
-        final String cp1251 = URLDecoder.decode(urlCoded, "cp1251");
-        final String utf8 = URLDecoder.decode(urlCoded, "UTF-8");
-        int cp1251Count = 0;
-        int utf8Count = 0;
-        for (int index = 0; index < cp1251.length(); index++) {
-            if ('\uFFFD' == cp1251.charAt(index)) {
-                cp1251Count++;
-            }
-        }
-        for (int index = 0; index < utf8.length(); index++) {
-            if ('\uFFFD' == utf8.charAt(index)) {
-                utf8Count++;
-            }
-        }
-        if (cp1251Count < utf8Count) {
-            return cp1251;
-        } else {
-            return utf8;
-        }
-    }
-
     @Override
     public CrawledLink convert(DownloadLink link) {
         final CrawledLink ret = super.convert(link);
@@ -148,7 +126,7 @@ public class VKontakteRuHoster extends PluginForHost {
             final String filename = new Regex(url, "/([^<>\"/]+\\.mp[34])$").getMatch(0);
             if (filename != null) {
                 try {
-                    final String urlDecoded = URLDecode(filename);
+                    final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
                     link.setFinalFileName(urlDecoded);
                 } catch (final Throwable e) {
                     link.setName(filename);
@@ -272,7 +250,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/audio", getAudioAlbumPostString(mainlink, ownerID));
