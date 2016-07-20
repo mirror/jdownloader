@@ -3,15 +3,22 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+" }, flags = { 0 })
 public class VideoGoogle extends PluginForHost {
@@ -89,6 +96,17 @@ public class VideoGoogle extends PluginForHost {
             con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
+                String fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
+                if (fileName == null) {
+                    fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
+                    if (StringUtils.equalsIgnoreCase("php", Files.getExtension(fileName))) {
+                        fileName = null;
+                    }
+                }
+                fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
+                if (fileName != null) {
+                    downloadLink.setFinalFileName(fileName);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
