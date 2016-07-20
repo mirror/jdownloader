@@ -46,10 +46,15 @@ public class ThreeADiskCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.3adisk.com/error.htm?aspxerrorpath=/down.aspx")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.3adisk.com/error.htm?aspxerrorpath=/down.aspx")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("class=\"downtb\" title=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("<strong>文件大小</strong></td>[\t\n\r ]+<td bgcolor=\"#FFFFFF\" class=\"downtb\">([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String filesize = br.getRegex("class=\"downtb\"><span[^<>]+>?([^<>\"]*?)<").getMatch(0);
+        if (filename == null || filesize == null) {
+            logger.info("filename = " + filename + ", filesize = " + filesize);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -59,11 +64,15 @@ public class ThreeADiskCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String dllink = br.getRegex("\"(http://(www\\.)?3adisk\\.com/mypane\\.aspx\\?[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("<script>alert\\(\\'文件不存在\\！\\'\\);history\\.back\\(\\);</script>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("<script>alert\\(\\'文件不存在\\！\\'\\);history\\.back\\(\\);</script>")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
