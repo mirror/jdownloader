@@ -96,7 +96,7 @@ public class Cloud1und1De extends PluginForDecrypt {
             final Map<String, Object> child_ui_fs = (Map<String, Object>) child.get("ui:fs");
             if ("file".equalsIgnoreCase((String) child_ui_fs.get("resourceType"))) {
                 final Map<String, Object> child_ui_link = (Map<String, Object>) child.get("ui:link");
-                final DownloadLink link = createDownloadlink((String) child_ui_link.get("downloadURI"));
+                final DownloadLink link = createDownloadlink("directhttp://" + (String) child_ui_link.get("downloadURI"));
                 link.setVerifiedFileSize(((Number) child_ui_fs.get("size")).longValue());
                 link.setAvailable(true);
                 link.setFinalFileName((String) child_ui_fs.get("name"));
