@@ -148,6 +148,7 @@ public class VipCocoleechCom extends PluginForHost {
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
             }
         }
+        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
         /* Then check if we got an individual host limit. */
@@ -189,7 +190,6 @@ public class VipCocoleechCom extends PluginForHost {
         }
         try {
             controlSlot(+1);
-            link.setProperty(NICE_HOSTproperty + "directlink", dllink);
             this.dl.startDownload();
         } finally {
             // remove usedHost slot from hostMap
@@ -241,25 +241,26 @@ public class VipCocoleechCom extends PluginForHost {
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         final String dllink = downloadLink.getStringProperty(property);
-        downloadLink.removeProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
                 if (!con.isOK() || con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
-                    return null;
+                    downloadLink.removeProperty(property);
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                return null;
+                downloadLink.removeProperty(property);
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     /**
