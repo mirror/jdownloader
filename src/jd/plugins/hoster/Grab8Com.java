@@ -410,6 +410,9 @@ public class Grab8Com extends antiDDoSForHost {
                 // following ensures account is premium still, and expire time/hosts are set.
                 br.setFollowRedirects(true);
                 getPage(br, "https://" + getHost() + "/account");
+                if (br.containsHTML("You are currently a FREE User")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are currently a FREE User!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // available traffic
                 final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+ (?:[KMG]{0,1}B)?)\\s*/\\s*([0-9\\.]+ GB)</p>").getRow(0);
                 if (traffic == null || traffic.length != 2) {
@@ -442,7 +445,7 @@ public class Grab8Com extends antiDDoSForHost {
                 freeAccount = account.getType() == AccountType.FREE;
                 for (final String row : tableRow) {
                     // we should be left with two cleanuped up lines
-                    final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", "").trim();
+                    final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", "").replaceAll("[\r\n\t]+", "\r\n").trim();
                     String host = cleanup.split("\r\n")[0];
                     final String online = cleanup.split("\r\n")[1];
                     final boolean free = new Regex(row, ".*/themes/images/free\\.gif").matches();
