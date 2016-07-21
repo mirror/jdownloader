@@ -23,6 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,11 +54,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }, flags = { 2 })
@@ -250,7 +250,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/audio", getAudioAlbumPostString(mainlink, ownerID));
@@ -632,7 +632,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
-    public static void login(Browser br, final Account account) throws Exception {
+    public void login(Browser br, final Account account) throws Exception {
         synchronized (VKontakteRuHoster.LOCK) {
             try {
                 /* Load cookies */
@@ -678,8 +678,13 @@ public class VKontakteRuHoster extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage(getBaseURL() + "/login.php", "op=a_login_attempt&login=" + Encoding.urlEncode(account.getUser()));
                 br.postPage(getProtocol() + "login.vk.com/", "act=login&to=&ip_h=" + damnIPH + "&lg_h=" + damnlg_h + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
+                // language set in user profile, so after login it could be changed! We don't want this, we need to save and use ENGLISH
+                if ("3".equals(br.getCookie(DOMAIN, "remixlang"))) {
+                    br.setCookie(DOMAIN, "remixlang", "3");
+                    br.getPage(br.getURL());
+                }
                 /* Do NOT check based on cookies as they sometimes change them! */
-                if (!br.containsHTML("id=\"logout_link\"")) {
+                if (!br.containsHTML("id=\"(?:top_)?logout_link\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
