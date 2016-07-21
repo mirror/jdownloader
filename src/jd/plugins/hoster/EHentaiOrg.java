@@ -156,7 +156,7 @@ public class EHentaiOrg extends PluginForHost {
                 downloadLink.setDownloadSize(SizeFormatter.getSize(html_filesize));
             }
         }
-        getDllink();
+        getDllink(account);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -191,7 +191,7 @@ public class EHentaiOrg extends PluginForHost {
                     final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image fails loading</a>").getRow(0);
                     if (failed != null && failed.length == 2) {
                         br.getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                        getDllink();
+                        getDllink(account);
                         if (dllink != null) {
                             continue;
                         } else {
@@ -208,7 +208,7 @@ public class EHentaiOrg extends PluginForHost {
                     final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image fails loading</a>").getRow(0);
                     if (failed != null && failed.length == 2) {
                         br.getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                        getDllink();
+                        getDllink(account);
                         if (dllink != null) {
                             continue;
                         } else {
@@ -241,10 +241,34 @@ public class EHentaiOrg extends PluginForHost {
         }
     }
 
-    private void getDllink() {
-        dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/[a-z]{1,3}/[^<>\"]+)\"").getMatch(0);
+    private void getDllink(final Account account) throws PluginException, IOException {
+        // g.e-hentai.org = free no account
+        // error
+        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img" src="http://ehgt.org/g/509.gif" style="margin:20px auto" /></a></div>
+        // working
+        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img" src="http://153.149.98.104:65000/h/40e8a3da0fac1b0ec40b5c58489f7b8d46b1a2a2-436260-1200-1600-jpg/keystamp=1469074200-e1ec68e0ef/093.jpg" style="height:1600px;width:1200px" /></a></div>
+        
+        // exhentai.org = account
+        // error 
+        // <div id="i3"><a onclick="return load_image(26, '2fb043446a')" href="http://exhentai.org/s/2fb043446a/706165-26"><img id="img" src="http://exhentai.org/img/509.gif" style="margin:20px auto" /></a></div>
+        // working
+        // <div id="i3"><a onclick="return load_image(54, 'cd7295ee9c')" href="http://exhentai.org/s/cd7295ee9c/940613-54"><img id="img" src="http://130.234.205.178:25565/h/f21818f4e9d04169de22f31407df68da84f30719-935516-1273-1800-jpg/keystamp=1468656900-b9873b14ab/ow_013.jpg" style="height:1800px;width:1273px" /></a></div>
+        dllink = br.getRegex("<img id=(\"|')img\\1 src=(\"|')(.*?)\\2").getMatch(2);
         if (dllink == null) {
-            dllink = br.getRegex("src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("<div id=\"i3\">\\s*<a[^>]+>\\s*<img[^>]*\\s+src=(\"|')(.*?)\\1").getMatch(1);
+        }
+        // ok so we want to make sure it isn't 509.gif
+        final String filename = extractFileNameFromURL(dllink);
+        if (filename != null && filename.equals("509.gif")) {
+            if (account == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+            } else {
+                br.getPage("http://exhentai.org/home.php");
+                if (account != null) { // todo: ensure this works?
+                    saveCookies(br, account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } 
+            }
         }
     }
 
@@ -282,7 +306,7 @@ public class EHentaiOrg extends PluginForHost {
                     saveCookies(br, account);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
                 }
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
