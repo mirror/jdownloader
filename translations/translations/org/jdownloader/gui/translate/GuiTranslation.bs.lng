@@ -1861,6 +1861,7 @@ lit_account_type=Tip naloga
 lit_accountid=ID Naloga
 lit_add=Dodaj
 lit_added=Dodano
+lit_and=i
 lit_apply=Primijeni
 lit_are_you_sure=Jeste li sigurni?
 lit_audio=Audio
