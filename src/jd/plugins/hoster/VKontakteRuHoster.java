@@ -679,7 +679,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 br.postPage(getBaseURL() + "/login.php", "op=a_login_attempt&login=" + Encoding.urlEncode(account.getUser()));
                 br.postPage(getProtocol() + "login.vk.com/", "act=login&to=&ip_h=" + damnIPH + "&lg_h=" + damnlg_h + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
                 // language set in user profile, so after login it could be changed! We don't want this, we need to save and use ENGLISH
-                if ("3".equals(br.getCookie(DOMAIN, "remixlang"))) {
+                if (!"3".equals(br.getCookie(DOMAIN, "remixlang"))) {
                     br.setCookie(DOMAIN, "remixlang", "3");
                     br.getPage(br.getURL());
                 }
