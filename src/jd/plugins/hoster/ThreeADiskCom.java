@@ -50,7 +50,7 @@ public class ThreeADiskCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("class=\"downtb\" title=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("class=\"downtb\"><span[^<>]+>?([^<>\"]*?)<").getMatch(0);
+        final String filesize = br.getRegex("class=\"downtb\".*?>([^<>]*?B)<").getMatch(0);
         if (filename == null || filesize == null) {
             logger.info("filename = " + filename + ", filesize = " + filesize);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
