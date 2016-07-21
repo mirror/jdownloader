@@ -1,5 +1,6 @@
 package org.jdownloader.gui.packagehistorycontroller;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +38,16 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
     public void add(String packageName) {
         CFG_LINKGRABBER.CFG.setLatestDownloadDestinationFolder(packageName);
         super.add(packageName);
+    }
+
+    public synchronized boolean setLastIfExists(String packageName) {
+        final DownloadPath existing = get(packageName);
+        if (existing != null) {
+            existing.setTime(System.currentTimeMillis());
+            Collections.sort(packageHistory);
+            return true;
+        }
+        return false;
     }
 
     private void superadd(String packageName) {

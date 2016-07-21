@@ -98,15 +98,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
 
-                                    @Override
-                                    public void killQueue() {
-                                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
-                                        /*
-                                         * this queue can't be killed
-                                         */
-                                    }
+        @Override
+        public void killQueue() {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
 
-                                };
+    };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this

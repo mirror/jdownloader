@@ -216,6 +216,20 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     @Override
+    public void dispose() {
+        try {
+            if (isInitialized() && destination != null) {
+                final String finalDestination = destination.getFile() != null ? destination.getFile().getAbsolutePath() : null;
+                if (StringUtils.isNotEmpty(finalDestination)) {
+                    DownloadPathHistoryManager.getInstance().add(finalDestination);
+                }
+            }
+        } finally {
+            super.dispose();
+        }
+    }
+
+    @Override
     protected LinkCollectingJob createReturnValue() {
         final LinkCollectingJob ret = new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails(), input.getText());
         final boolean overwritePackagizerRules = isOverwritePackagizerEnabled();
@@ -223,9 +237,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         final String finalComment = getComment().trim();
         final String finalDownloadPassword = downloadPassword.getText();
         final String finalDestination = destination.getFile() != null ? destination.getFile().getAbsolutePath() : null;
-        if (StringUtils.isNotEmpty(finalDestination)) {
-            DownloadPathHistoryManager.getInstance().add(finalDestination);
-        }
         if (StringUtils.isNotEmpty(finalPackageName)) {
             PackageHistoryManager.getInstance().add(finalPackageName);
         }
@@ -389,12 +400,12 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         comment = new ExtTextField();
         comment.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_comment_help());
         comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
-
-        destination.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+        final String defaultFolder = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+        destination.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(defaultFolder));
 
         final String latest = config.getLatestDownloadDestinationFolder();
         if (!config.isUseLastDownloadDestinationAsDefault() || StringUtils.isEmpty(latest)) {
-            destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+            destination.setFile(new File(defaultFolder));
         } else {
             destination.setFile(new File(latest));
         }
