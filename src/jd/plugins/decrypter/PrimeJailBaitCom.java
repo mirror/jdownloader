@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,6 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "primejailbait.com" }, urls = { "https?://(?:www\\.)?(?:primejailbait\\.com|primejb\\.net)/(id/\\d+|profile/[A-Za-z0-9\\-_]+(?:/fav/\\d+)?|setview/\\d+)/?$" }, flags = { 0 })
 public class PrimeJailBaitCom extends antiDDoSForDecrypt {
@@ -44,7 +44,7 @@ public class PrimeJailBaitCom extends antiDDoSForDecrypt {
     }
 
     private final String TYPE_SINGLE       = "^https?://(?:www\\.)?(?:primejailbait\\.com|primejb\\.net)/id/\\d+/?$";
-    private final String TYPE_SETVIEW      = "^https?://(?:www\\.)?(?:primejailbait\\.com|primejb\\.net)/setview/\\d+/?$";
+    private final String TYPE_SETVIEW      = "^https?://(?:www\\.)?(?:primejailbait\\.com|primejb\\.net)/setview/(\\d+)/?$";
     private final String TYPE_PROFILE_FAVS = "^https?://(?:www\\.)?(?:primejailbait\\.com|primejb\\.net)/profile/([A-Za-z0-9\\-_]+)/fav/(\\d+)/?$";
     private final String TYPE_PROFILE_ALL  = "^https?://(?:www\\.)?(?:primejailbait\\.com|primejb\\.net)/profile/([A-Za-z0-9\\-_]+)/?$";
 
@@ -61,11 +61,17 @@ public class PrimeJailBaitCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches(TYPE_PROFILE_FAVS) || parameter.matches(TYPE_PROFILE_ALL) || parameter.matches(TYPE_SETVIEW)) {
-            FilePackage fp = null;
+            final FilePackage fp;
             if (parameter.matches(TYPE_PROFILE_ALL)) {
                 final String fpName = new Regex(parameter, TYPE_PROFILE_ALL).getMatch(0);
                 fp = FilePackage.getInstance();
-                fp.setName("Profile - " + fpName);
+                fp.setName(fpName);
+            } else if (parameter.matches(TYPE_SETVIEW)) {
+                final String fpName = new Regex(parameter, TYPE_SETVIEW).getMatch(0);
+                fp = FilePackage.getInstance();
+                fp.setName(fpName);
+            } else {
+                fp = null;
             }
             String getpage = null;
 
