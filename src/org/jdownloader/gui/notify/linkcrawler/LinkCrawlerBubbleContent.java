@@ -192,7 +192,6 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                         long lastChange = LinkCrawlerBubbleContent.this.lastChange.get();
                         if (lastChange == -1) {
                             lastChange = System.currentTimeMillis();
-                            LinkCrawlerBubbleContent.this.lastChange.compareAndSet(-1, lastChange);
                         }
                         duration.setText(TimeFormatter.formatMilliSeconds(lastChange - startTime, 0));
                     }

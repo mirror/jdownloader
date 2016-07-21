@@ -12,7 +12,7 @@ import org.appwork.utils.StringUtils;
 
 public abstract class HistoryManager<T extends HistoryEntry> {
 
-    private final ArrayList<T> packageHistory;
+    protected final ArrayList<T> packageHistory;
 
     public HistoryManager(final List<T> packageNameHistory, final int max) {
         try {
@@ -52,6 +52,28 @@ public abstract class HistoryManager<T extends HistoryEntry> {
 
     public synchronized void clear() {
         packageHistory.clear();
+    }
+
+    protected synchronized boolean contains(String packageName) {
+        if (!StringUtils.isEmpty(packageName)) {
+            for (final T existing : packageHistory) {
+                if (existing.getName().equalsIgnoreCase(packageName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected synchronized T get(String packageName) {
+        if (!StringUtils.isEmpty(packageName)) {
+            for (final T existing : packageHistory) {
+                if (existing.getName().equalsIgnoreCase(packageName)) {
+                    return existing;
+                }
+            }
+        }
+        return null;
     }
 
     public synchronized void add(String packageName) {
