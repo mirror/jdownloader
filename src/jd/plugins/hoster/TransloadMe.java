@@ -37,6 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -330,45 +331,63 @@ public class TransloadMe extends PluginForHost {
 
     /* Please do not remove this function - future usage!! */
     private void updatestatuscode() {
-        // if (br.containsHTML("Wybierz linki z innego hostingu\\.")) {
-        // statuscode = 1;
-        // } else if (br.containsHTML("Jeśli widzisz ten komunikat prosimy niezwłocznie skontaktować się z nami pod")) {
-        // statuscode = 2;
-        // } else {
-        // statuscode = 0;
-        // }
+        final String errorcode = PluginJSonUtils.getJson(this.br, "error");
+        if (errorcode != null && errorcode.matches("\\d+")) {
+            statuscode = Integer.parseInt(errorcode);
+        } else if (errorcode != null) {
+            statuscode = 666;
+        }
     }
 
     /* Please do not remove this function - future usage!! */
     private void handleAPIErrors(final Browser br) throws PluginException {
-        // String statusMessage = null;
-        // try {
-        // switch (statuscode) {
-        // case 0:
-        // /* Everything ok */
-        // break;
-        // case 1:
-        // /* Host currently not supported --> deactivate it for some hours. */
-        // statusMessage = "Host is currently not supported";
-        // tempUnavailableHoster(5 * 60 * 1000l);
-        // break;
-        // case 2:
-        // /* Host currently not supported --> deactivate it for some hours. */
-        // statusMessage = "Your IP is banned";
-        // final String userLanguage = System.getProperty("user.language");
-        // if ("de".equalsIgnoreCase(userLanguage)) {
-        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP wurde gebannt!",
-        // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        // } else {
-        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\ntest!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        // }
-        // default:
-        // handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
-        // }
-        // } catch (final PluginException e) {
-        // logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
-        // throw e;
-        // }
+        String statusMessage = null;
+        try {
+            switch (statuscode) {
+            case 0:
+                /* Everything ok */
+                break;
+            case 1:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 2:
+                /* Host currently not supported --> deactivate it after some tries */
+                statusMessage = "Unsupported host";
+                handleErrorRetries("unsupported_host", 5, 5 * 60 * 1000l);
+                final String userLanguage = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(userLanguage)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP wurde gebannt!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\ntest!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+            case 3:
+                statusMessage = "Temporary error occured";
+                handleErrorRetries("temporary_error", 50, 2 * 60 * 1000l);
+            case 4:
+            case 5:
+                if (System.getProperty("user.language").equals("de")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            case 6:
+                statusMessage = "Invalid API request - this should never happen!";
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            case 7:
+                /*
+                 * From API docs: You asked for too many links, wait a few minutes, or refill your account. (This occurs when the user has
+                 * generated a lot of links, though lacking means for downloading, you need to wait a few minutes before clearing balance).
+                 */
+                handleErrorRetries("temporary_error", 50, 2 * 60 * 1000l);
+
+            default:
+                // handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
+                /* TODO: Remove this once plugin is in a stable state */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } catch (final PluginException e) {
+            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            throw e;
+        }
     }
 
     /**

@@ -38,16 +38,15 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
- * 
+ *
  * @author raztoki
- * 
+ *
  */
 @HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(ile)?/[a-z0-9]{13,}" }, flags = { 2 })
 public class TezFilesCom extends K2SApi {
@@ -88,7 +87,7 @@ public class TezFilesCom extends K2SApi {
 
     /**
      * easiest way to set variables, without the need for multiple declared references
-     * 
+     *
      * @param account
      */
     private void setConstants(final Account account) {
@@ -120,8 +119,11 @@ public class TezFilesCom extends K2SApi {
     /* end of K2SApi stuff */
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.FileBoomMe.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.FileBoomMe.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
+        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, "Use API (recommended!)").setDefaultValue(default_USE_API);
+        getConfig().addEntry(cfgapi);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode!)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
 
     @Override
@@ -132,6 +134,7 @@ public class TezFilesCom extends K2SApi {
         }
         correctDownloadLink(link);
         this.setBrowserExclusive();
+        super.prepBrowserForWebsite(this.br);
         getPage(link.getDownloadURL());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -275,7 +278,7 @@ public class TezFilesCom extends K2SApi {
                         wait = Integer.parseInt(waittime);
                     }
                     this.sleep(wait * 1001l, downloadLink);
-                    // postPage(br.getURL(), "free=1&uniqueId=" + id);
+                    postPage(br.getURL(), "free=1&uniqueId=" + id);
                     if (br.containsHTML(freeAccConLimit)) {
                         // could be shared network or a download hasn't timed out yet or user downloading in another program?
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
@@ -458,7 +461,7 @@ public class TezFilesCom extends K2SApi {
 
     private String getDllink() throws Exception {
         String dllink = br.getRegex("(\"|')(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
-        if (inValidate(dllink)) {
+        if (!inValidate(dllink)) {
             getPage(dllink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (inValidate(dllink)) {

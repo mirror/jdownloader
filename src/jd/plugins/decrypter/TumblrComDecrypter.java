@@ -16,13 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -45,34 +45,47 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/dashboard/blog/[^/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/dashboard/blog/[^/]+)(?:\\?password=.+)?" }, flags = { 0 })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     GENERALOFFLINE      = ">Not found\\.<";
+    private static final String     GENERALOFFLINE         = ">Not found\\.<";
 
-    private static final String     TYPE_FILE           = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
-    private static final String     TYPE_POST           = ".+tumblr\\.com/post/\\d+";
-    private static final String     TYPE_IMAGE          = ".+tumblr\\.com/image/\\d+";
-    private static final String     TYPE_USER_LOGGEDIN  = "https?://(?:www\\.)?tumblr\\.com/dashboard/blog/([^/]+)";
-    private static final String     TYPE_USER_LOGGEDOUT = "https?://[^/]+\\.tumblr\\.com/.*?";
+    private static final String     TYPE_FILE              = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
+    private static final String     TYPE_POST              = ".+tumblr\\.com/post/\\d+";
+    private static final String     TYPE_IMAGE             = ".+tumblr\\.com/image/\\d+";
+    private static final String     TYPE_USER_LOGGEDIN     = "https?://(?:www\\.)?tumblr\\.com/dashboard/blog/([^/]+)";
+    private static final String     TYPE_USER_LOGGEDOUT    = "https?://[^/]+\\.tumblr\\.com/.*?";
 
-    private static final String     PLUGIN_DEFECT       = "PLUGINDEFECT";
-    private static final String     OFFLINE             = "OFFLINE";
+    private static final String     urlpart_passwordneeded = "/blog_auth";
 
-    private ArrayList<DownloadLink> decryptedLinks      = null;
-    private LinkedHashSet<String>   dupe                = null;
-    private String                  parameter           = null;
+    private static final String     PLUGIN_DEFECT          = "PLUGINDEFECT";
+    private static final String     OFFLINE                = "OFFLINE";
+
+    private ArrayList<DownloadLink> decryptedLinks         = null;
+    private CryptedLink             param;
+    private String                  parameter              = null;
+    private String                  passCode               = null;
+
+    /** 2016-07-22: Right now this is empty but please keep it for future usage! */
+    private Browser prepBR(final Browser br) {
+        return br;
+    }
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         decryptedLinks = new ArrayList<DownloadLink>();
-        dupe = new LinkedHashSet<String>();
+        this.param = param;
         parameter = param.toString().replace("www.", "");
+        passCode = new Regex(parameter, "\\?password=(.+)").getMatch(0);
+        if (passCode != null) {
+            /* Remove this from our url as it is only needed for this decrypter internally. */
+            parameter = parameter.replace("?password=" + passCode, "");
+        }
         boolean loggedin = false;
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa != null) {
@@ -93,10 +106,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.addAll(processImage(parameter, null, null));
             } else {
                 if (loggedin) {
-                    parameter = convertUserToLoggedInUser();
                     decryptUserLoggedIn();
                 } else {
-                    parameter = convertUserToLoggedOutUser();
+                    parameter = convertUserUrlToLoggedOutUser();
                     decryptUser();
                 }
             }
@@ -119,11 +131,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String convertUserToLoggedInUser() {
+    private String convertUserUrlToLoggedInUser() {
         return "https://www.tumblr.com/dashboard/blog/" + getUsername(this.parameter);
     }
 
-    private String convertUserToLoggedOutUser() {
+    private String convertUserUrlToLoggedOutUser() {
         return "http://" + getUsername(this.parameter) + ".tumblr.com/";
     }
 
@@ -166,10 +178,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             logger.info("Link offline (error 404): " + parameter);
             return;
         }
-        /* Workaround for bad redirects --> Redirectloop */
-        String redirect = br.getRedirectLocation();
-        if (br.getRedirectLocation() != null) {
-            br.getPage(redirect);
+        /* Workaround for bad redirects --> Redirectloop --> 2016-07-22: (temporarily) REMOVED */
+        // final String redirect = br.getRedirectLocation();
+        // if (br.getRedirectLocation() != null) {
+        // br.getPage(redirect);
+        // }
+        if (this.handlePassword()) {
+            br.getPage(parameter);
         }
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
@@ -500,7 +515,6 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
     private String cleanupName(final String name) {
         final String result = name != null ? name.replaceFirst("\\.{1,}$", "") : null;
-        ;
         return result;
     }
 
@@ -513,6 +527,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return;
         }
+        handlePassword();
         final FilePackage fp = FilePackage.getInstance();
         String fpName = new Regex(parameter, "//(.+?)\\.tumblr").getMatch(0);
         fp.setName(fpName);
@@ -546,7 +561,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     for (final Object result : results) {
                         final LinkedHashMap<String, Object> j = (LinkedHashMap<String, Object>) result;
                         final String url = (String) j.get("url");
-                        final DownloadLink dl = createDownloadlink(url);
+                        final DownloadLink dl = createDownloadlinkTumblr(url);
                         fp.add(dl);
                         distribute(dl);
                         decryptedLinks.add(dl);
@@ -563,16 +578,69 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
     }
 
+    private boolean handlePassword() throws DecrypterException, IOException {
+        final boolean passwordRequired;
+        if ((this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains(urlpart_passwordneeded)) || this.br.getURL().contains(urlpart_passwordneeded)) {
+            logger.info("Blog password needed");
+            passwordRequired = true;
+
+            // final String password_required_url;
+            // if (this.br.getRedirectLocation() != null) {
+            // password_required_url = this.br.getRedirectLocation();
+            // } else {
+            // password_required_url = this.br.getURL();
+            // }
+            // final String blog_user = new Regex(password_required_url, "/blog_auth/(.+)").getMatch(0);
+            // if (blog_user != null) {
+            // this.br = prepBR(new Browser());
+            // this.br.setFollowRedirects(true);
+            // this.br.getPage("https://www.tumblr.com/blog_auth/" + blog_user);
+            // } else {
+            // this.br.setFollowRedirects(true);
+            // }
+
+            boolean success = false;
+            for (int i = 0; i <= 2; i++) {
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", this.param);
+                }
+                this.br.postPage(this.br.getURL(), "password=" + Encoding.urlEncode(passCode));
+                if (this.br.getURL().contains(urlpart_passwordneeded)) {
+                    passCode = null;
+                    continue;
+                }
+                success = true;
+                break;
+            }
+            if (!success) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            this.br.setFollowRedirects(false);
+        } else {
+            passwordRequired = false;
+        }
+        return passwordRequired;
+    }
+
     @SuppressWarnings({ "unchecked", "deprecation" })
     private void decryptUserLoggedIn() throws Exception {
         final int limit = 10;
         int offset = 0;
         boolean decryptSingle = parameter.matches("/page/\\d+");
-        br.getPage(parameter);
+        /* Access url for logged-out-users first because if we don't we cannot see whether a password is needed or not! */
+        final String url_for_logged_out_users = convertUserUrlToLoggedOutUser();
+        this.br.setFollowRedirects(false);
+        this.br.getPage(url_for_logged_out_users);
+        if (this.handlePassword()) {
+            /* Bullshit - if a blog is password protected we can only display it in the "logged out" mode ... */
+            decryptUser();
+            return;
+        }
         if (br.containsHTML(GENERALOFFLINE) || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return;
         }
+        handlePassword();
         final FilePackage fp = FilePackage.getInstance();
         final String username = getUsername(this.parameter);
         String fpName = username;
@@ -641,6 +709,14 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         } while (ressourcelist.size() >= limit);
         logger.info("Decryption done");
 
+    }
+
+    /** For urls which will go back into the decrypter. */
+    private DownloadLink createDownloadlinkTumblr(String url) {
+        if (this.passCode != null) {
+            url += "?password=" + this.passCode;
+        }
+        return super.createDownloadlink(url);
     }
 
     /**

@@ -102,12 +102,15 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             final String bandwidth = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
             final String resolution = new Regex(media, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
             final String codecs = new Regex(media, "CODECS=\"([^<>\"]+)\"").getMatch(0);
+            int lineCounter = 0;
             final String[] lines = Regex.getLines(media);
             for (final String line : lines) {
-                if (line.contains(".m3u8")) {
+                /* Usually hls url is the last line! */
+                if (line.contains(".m3u8") || lineCounter == lines.length - 1) {
                     hlsurl = line;
                     break;
                 }
+                lineCounter++;
             }
             if (bandwidth == null || hlsurl == null) {
                 continue;
@@ -152,6 +155,10 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         @Override
         public String toString() {
             return codecs + "_" + width + "x" + height;
+        }
+
+        public String getResolution() {
+            return width + "x" + height;
         }
 
         public String getStandardFilename() {

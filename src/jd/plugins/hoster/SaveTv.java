@@ -29,14 +29,6 @@ import java.util.Random;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,7 +52,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
     /**
      * Status 2015-06-26: HD downloads via API work fine again. They have not been working for ~ a month but it's all back to normal now!
@@ -123,6 +123,9 @@ public class SaveTv extends PluginForHost {
     public static final String    PROPERTY_acc_package                      = "acc_package";
     public static final String    PROPERTY_acc_price                        = "acc_price";
     public static final String    PROPERTY_acc_runtime                      = "acc_runtime";
+
+    public static final String    PROPERTY_downloadable_via                 = "downloadable_via";
+
     /* Settings stuff */
     private static final String   USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
     private static final String   PREFERADSFREE                             = "PREFERADSFREE";
@@ -228,15 +231,16 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        String url = link.getDownloadURL();
+        String url = link.getDownloadURL().toLowerCase();
         final String telecastID;
         if (url.matches(LINKTYPE_DIRECT)) {
             telecastID = new Regex(url, "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_(\\d+)").getMatch(0);
         } else {
-            telecastID = new Regex(url, "(\\d+)$").getMatch(0);
+            telecastID = new Regex(url, "telecastid=(\\d+)$").getMatch(0);
         }
-        url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecastID;
-        link.setUrlDownload(url);
+        /* Create new url */
+        url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastID=" + telecastID;
+        link.setContentUrl(url);
     }
 
     @Override
@@ -273,10 +277,6 @@ public class SaveTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         link.setProperty(PROPERTY_type, EXTENSION_default);
-        /* Set linkID for correct dupe-check */
-        if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
-            link.setLinkID(getTelecastId(link));
-        }
         /* Show telecast-ID + extension as dummy name for all error cases */
         if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
             link.setName(getTelecastId(link) + EXTENSION_default);
@@ -286,6 +286,11 @@ public class SaveTv extends PluginForHost {
             link.getLinkStatus().setStatusText("Kann Links ohne gültigen Account nicht überprüfen");
             checkAccountNeededDialog();
             return AvailableStatus.UNCHECKABLE;
+        }
+        /* Set linkID for correct dupe-check */
+        if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
+            /* Every account has individual telecastIDs. */
+            link.setLinkID(aa.getUser() + getTelecastId(link));
         }
         setConstants(aa, link);
         if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
@@ -305,7 +310,7 @@ public class SaveTv extends PluginForHost {
         } else {
             login_site(this.br, aa, false);
             final String telecast_ID = getTelecastId(link);
-            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
+            getPageSafe("https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
             if (!br.getURL().contains("/JSON/") || this.br.getHttpConnection().getResponseCode() == 404) {
                 /* Offline#1 - offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -355,7 +360,7 @@ public class SaveTv extends PluginForHost {
          * No custom filename if not all required tags are given, if the user prefers original filenames or if custom user regexes for
          * specified series or movies match to force original filenames
          */
-        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final boolean force_original_general = (cfg.getBooleanProperty(USEORIGINALFILENAME) || getLongProperty(dl, PROPERTY_category, 0l) == 0);
         final String site_title = dl.getStringProperty(PROPERTY_plainfilename);
         final String server_filename = dl.getStringProperty(PROPERTY_server_filename, null);
@@ -615,7 +620,7 @@ public class SaveTv extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         synchronized (LOCK) {
@@ -623,7 +628,7 @@ public class SaveTv extends PluginForHost {
             checkFeatureDialogCrawler();
             // checkFeatureDialogNew();
         }
-        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE, false);
         String downloadWithoutAds_request_value = Boolean.toString(preferAdsFree);
         FORCE_LINKCHECK = true;
@@ -877,10 +882,10 @@ public class SaveTv extends PluginForHost {
                  * uses multiple JDs it might happen that they "steal" themselves this cookie but it should still work fine for up to 3
                  * JDownloader instances.
                  */
-                String long_cookie = br.getCookie("http://save.tv/", "SLOCO");
+                String long_cookie = br.getCookie("http://" + this.getHost(), "SLOCO");
                 if (long_cookie == null || long_cookie.trim().equals("bAutoLoginActive=1")) {
                     logger.info("Long session cookie does not exist yet/anymore - enabling it");
-                    br.postPage("https://www.save.tv/STV/M/obj/user/submit/submitAutoLogin.cfm", "IsAutoLogin=true&Messages=");
+                    br.postPage("https://www." + this.getHost() + "/STV/M/obj/user/submit/submitAutoLogin.cfm", "IsAutoLogin=true&Messages=");
                     long_cookie = br.getCookie("http://save.tv/", "SLOCO");
                     if (long_cookie == null || long_cookie.trim().equals("")) {
                         logger.info("Failed to get long session cookie");
@@ -893,7 +898,7 @@ public class SaveTv extends PluginForHost {
                 }
                 /* Find account details */
                 String price = null;
-                br.getPage("https://www.save.tv/STV/M/obj/user/JSON/userConfigApi.cfm?iFunction=2");
+                br.getPage("https://www." + this.getHost() + "/STV/M/obj/user/JSON/userConfigApi.cfm?iFunction=2");
                 final String acc_username = br.getRegex("\"SUSERNAME\":(\\d+)").getMatch(0);
                 final String user_packet_id = getJson(br.toString(), "CURRENTARTICLEID");
                 /* Find the price of the package which the user uses. */
@@ -934,7 +939,7 @@ public class SaveTv extends PluginForHost {
                 if (acc_username != null) {
                     this.getPluginConfig().setProperty(PROPERTY_acc_username, correctData(acc_username));
                 }
-                br.getPage("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1");
+                br.getPage("https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1");
                 final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
                 if (totalLinks != null) {
                     account.setProperty(PROPERTY_acc_count_telecast_ids, totalLinks);
@@ -977,9 +982,9 @@ public class SaveTv extends PluginForHost {
                     return;
                 }
                 final String postData = "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&bAutoLoginActivate=1";
-                br.postPage("https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM", postData);
+                br.postPage("https://www." + NICE_HOST + "/STV/M/Index.cfm?sk=PREMIUM", postData);
                 if (br.containsHTML("No htmlCode read")) {
-                    br.getPage("https://www.save.tv/STV/M/obj/TVProgCtr/tvctShow.cfm");
+                    br.getPage("https://www." + NICE_HOST + "/STV/M/obj/TVProgCtr/tvctShow.cfm");
                 }
                 if (!br.containsHTML("class=\"member\\-nav\\-li member\\-nav\\-account \"") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -1013,7 +1018,7 @@ public class SaveTv extends PluginForHost {
             api_sessionid = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
             final String errorcode = br.getRegex("<ErrorCodeID xmlns=\"http://schemas\\.datacontract\\.org/2004/07/SmilingBits\\.Data\\.BusinessLayer\\.Stv\\.Api\\.Contract\\.Common\">(\\d+)</ErrorCodeID>").getMatch(0);
             if ("1400".equals(errorcode)) {
-                if (SubConfiguration.getConfig("save.tv").getStringProperty(SaveTv.CONFIGURED_APIKEY, SaveTv.defaultCONFIGURED_APIKEY) == SaveTv.defaultCONFIGURED_APIKEY) {
+                if (SubConfiguration.getConfig(NICE_HOST).getStringProperty(SaveTv.CONFIGURED_APIKEY, SaveTv.defaultCONFIGURED_APIKEY) == SaveTv.defaultCONFIGURED_APIKEY) {
                     /* Should never ever happen! */
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI-Key ungültig, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1208,7 +1213,7 @@ public class SaveTv extends PluginForHost {
             if (apiActive()) {
                 login_site(this.br, acc, false);
             }
-            final String deleteurl = "https://www.save.tv/STV/M/obj/cRecordOrder/croDelete.cfm?TelecastID=" + getTelecastId(dl);
+            final String deleteurl = "https://www." + NICE_HOST + "/STV/M/obj/cRecordOrder/croDelete.cfm?TelecastID=" + getTelecastId(dl);
             this.br.getPage(deleteurl);
             if (br.containsHTML("\"ok\"")) {
                 logger.info("Successfully deleted telecastID: " + getTelecastId(dl));
@@ -1318,7 +1323,7 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public static int getConfiguredVideoFormat() {
-        switch (SubConfiguration.getConfig("save.tv").getIntegerProperty(SELECTED_VIDEO_FORMAT, -1)) {
+        switch (SubConfiguration.getConfig(NICE_HOST).getIntegerProperty(SELECTED_VIDEO_FORMAT, -1)) {
         case 0:
             return 0;
         case 1:
@@ -1451,7 +1456,7 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     public static String api_getAPIKey() {
         String apikey;
-        final String configuredKey = SubConfiguration.getConfig("save.tv").getStringProperty(CONFIGURED_APIKEY, defaultCONFIGURED_APIKEY).trim();
+        final String configuredKey = SubConfiguration.getConfig(NICE_HOST).getStringProperty(CONFIGURED_APIKEY, defaultCONFIGURED_APIKEY).trim();
         if (configuredKey.equals(defaultCONFIGURED_APIKEY)) {
             apikey = Encoding.Base64Decode(SaveTv.APIKEY_android_1_9_2);
         } else {
@@ -1482,7 +1487,7 @@ public class SaveTv extends PluginForHost {
         output = output.replace("_", " ");
         output = output.trim();
         output = output.replaceAll("(\r|\n)", "");
-        output = output.replace("/", SubConfiguration.getConfig("save.tv").getStringProperty(CUSTOM_FILENAME_SEPERATION_MARK, defaultCustomSeperationMark));
+        output = output.replace("/", SubConfiguration.getConfig(NICE_HOST).getStringProperty(CUSTOM_FILENAME_SEPERATION_MARK, defaultCustomSeperationMark));
         /* Correct spaces */
         final String[] unneededSpaces = new Regex(output, ".*?([ ]{2,}).*?").getColumn(0);
         if (unneededSpaces != null && unneededSpaces.length != 0) {
@@ -1495,7 +1500,8 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private static String getTelecastId(final DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "TelecastID=(\\d+)").getMatch(0);
+        /** TODO: Remove the "toLowerCase()" after 2016-08-01 */
+        return new Regex(link.getDownloadURL().toLowerCase(), "telecastid=(\\d+)").getMatch(0);
     }
 
     /**
@@ -1514,7 +1520,7 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink dl) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
         final String acc_username = cfg.getStringProperty(PROPERTY_acc_username, customStringForEmptyTags);
         final String server_filename = dl.getStringProperty(PROPERTY_server_filename, customStringForEmptyTags);
@@ -1609,7 +1615,7 @@ public class SaveTv extends PluginForHost {
     /** Returns either the original server filename or one that is very similar to the original */
     @SuppressWarnings("deprecation")
     public static String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final String ext = downloadLink.getStringProperty(PROPERTY_type, EXTENSION_default);
         final long date = getLongProperty(downloadLink, PROPERTY_originaldate, 0l);
         String formattedDate = null;
@@ -1708,7 +1714,7 @@ public class SaveTv extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     public static String getCustomStringForEmptyTags() {
-        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
         return customStringForEmptyTags;
     }
