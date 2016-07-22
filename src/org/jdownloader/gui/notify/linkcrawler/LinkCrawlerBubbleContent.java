@@ -33,11 +33,6 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private Pair             offline;
     private Pair             status;
 
-    private int              joblessCount = -1;
-    private int              offlineCount = -1;
-    private int              linksCount   = -1;
-    private final AtomicLong lastChange   = new AtomicLong(-1);
-    private int              onlineCount  = -1;
     private Pair             packages;
     private Pair             online;
     private final long       CLOSETIMEOUT = JsonConfig.create(BubbleNotifyConfig.class).getBubbleNotifyOnNewLinkgrabberLinksEndNotifyDelay();
@@ -109,6 +104,12 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         }
     }
 
+    private int              joblessCount = -1;
+    private int              offlineCount = -1;
+    private int              linksCount   = -1;
+    private int              onlineCount  = -1;
+    private final AtomicLong lastChange   = new AtomicLong(-1);
+
     public void update(final JobLinkCrawler jlc) {
         final List<CrawledLink> linklist = jlc.getCrawledLinks();
         final HashSet<CrawledPackage> dupe = new HashSet<CrawledPackage>();
@@ -142,8 +143,12 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         this.onlineCount = onlineCnt;
         this.joblessCount = jobless;
         this.linksCount = linksCnt;
+        final long lastChange;
         if (changes) {
-            this.lastChange.set(System.currentTimeMillis());
+            lastChange = System.currentTimeMillis();
+            this.lastChange.set(lastChange);
+        } else {
+            lastChange = LinkCrawlerBubbleContent.this.lastChange.get();
         }
         new EDTRunner() {
             @Override
@@ -171,7 +176,6 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     packages.setText(dupe.size() + "");
                 }
                 final boolean isCollecting = jlc.isCollecting();
-
                 if (status != null) {
                     if (jlc.isRunning()) {
                         status.setText(_GUI.T.LinkCrawlerBubbleContent_update_runnning());
@@ -189,11 +193,11 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                         duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
                     } else {
                         // show complete duration
-                        long lastChange = LinkCrawlerBubbleContent.this.lastChange.get();
                         if (lastChange == -1) {
-                            lastChange = System.currentTimeMillis();
+                            duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+                        } else {
+                            duration.setText(TimeFormatter.formatMilliSeconds(lastChange - startTime, 0));
                         }
-                        duration.setText(TimeFormatter.formatMilliSeconds(lastChange - startTime, 0));
                     }
                 }
                 if (isCollecting) {
@@ -228,7 +232,6 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
             } else {
                 final long lastChange = this.lastChange.get();
                 if (lastChange == -1) {
-                    this.lastChange.compareAndSet(-1, System.currentTimeMillis());
                     return false;
                 } else {
                     return System.currentTimeMillis() - lastChange > CLOSETIMEOUT;
