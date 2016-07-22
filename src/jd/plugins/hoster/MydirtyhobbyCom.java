@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydirtyhobby.com" }, urls = { "https?://(?:www\\.)?mydirtyhobby\\.com/profil/\\d+[A-Za-z0-9\\-]+/videos/\\d+[A-Za-z0-9\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydirtyhobby.com" }, urls = { "https?://(?:www\\.)?mydirtyhobby\\.(?:com|de)/profil/\\d+[A-Za-z0-9\\-]+/videos/\\d+[A-Za-z0-9\\-]+" }, flags = { 2 })
 public class MydirtyhobbyCom extends PluginForHost {
 
     public MydirtyhobbyCom(PluginWrapper wrapper) {
@@ -178,11 +178,17 @@ public class MydirtyhobbyCom extends PluginForHost {
                     this.br = prepBR(new Browser());
                 }
                 br.getPage("http://www.mydirtyhobby.com/n/login");
+
                 /*
-                 * In case we need a captcha it will only appear after the first login attempt so we need (max) 2 attempts to ensure that
-                 * user can enter the captcha if needed.
+                 * 2016-07-22: In browser it might happen too that the first login attempt will always fail with correct logindata - second
+                 * attempt must not even require a captcha but will usually be successful!!
                  */
-                for (int i = 0; i <= 1; i++) {
+                boolean loginFailed = true;
+                for (int totalCounter = 0; totalCounter <= 1; totalCounter++) {
+                    /*
+                     * In case we need a captcha it will only appear after the first login attempt so we need (max) 2 attempts to ensure
+                     * that user can enter the captcha if needed.
+                     */
                     String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                     if (this.br.containsHTML("class=\"g\\-recaptcha\"")) {
                         if (this.getDownloadLink() == null) {
@@ -193,12 +199,14 @@ public class MydirtyhobbyCom extends PluginForHost {
                         postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                     }
                     br.postPage("/n/login", postdata);
-                    if (!this.br.containsHTML(html_logout) && this.br.containsHTML("class=\"g\\-recaptcha\"")) {
+                    if (!this.br.containsHTML(html_logout) || this.br.containsHTML("class=\"g\\-recaptcha\"")) {
                         continue;
+                    } else {
+                        loginFailed = false;
+                        break;
                     }
-                    break;
                 }
-                if (!this.br.containsHTML(html_logout)) {
+                if (loginFailed) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

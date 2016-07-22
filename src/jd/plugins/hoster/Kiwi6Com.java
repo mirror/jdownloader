@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwi6.com" }, urls = { "http://((www\\.)?kiwi6\\.com/file/[a-z0-9]+|(www\\.)?[a-z0-9]+\\.kiwi6\\.com/hotlink/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwi6.com" }, urls = { "https://(?:(?:www\\.)?kiwi6\\.com/file/[a-z0-9]+|[a-z0-9]+\\.kiwi6\\.com/hotlink/[a-z0-9]+)" }, flags = { 0 })
 public class Kiwi6Com extends PluginForHost {
 
     public Kiwi6Com(PluginWrapper wrapper) {
@@ -51,22 +51,35 @@ public class Kiwi6Com extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.setAllowedResponseCodes(410);
+        // this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0");
+        // br.getPage("http://k006.kiwi6.com/hotlink/91o1502u93");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Upload not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410 || br.containsHTML(">Upload not found<") || this.br.getURL().length() < 22) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String artist = br.getRegex("=\"/artists/([^<>\"]*?)\"").getMatch(0);
         String filename = br.getRegex("<h2>About <i>([^<>\"]*?)</i>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Listen and download mp3").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Listen and download mp3").getMatch(0);
+        }
         // For MP3s
         String filesize = br.getRegex(">Download MP3</a></h1>([^<>\"]*?)</div>").getMatch(0);
         // For all the other links
-        if (filesize == null) filesize = br.getRegex(">Download File</a></h1>([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex(">Download File</a></h1>([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (artist != null) {
             link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3"));
         } else {
             link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim()) + ".mp3"));
         }
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -82,7 +95,9 @@ public class Kiwi6Com extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("You are downloading too quickly")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads started in a short time!", 5 * 60 * 1000l);
+            if (br.containsHTML("You are downloading too quickly")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads started in a short time!", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

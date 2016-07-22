@@ -46,10 +46,9 @@ public class RabbitFileComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.toString().length() < 300 || br.getHttpConnection().getResponseCode() == 404) {
-            main.setFinalFileName(code);
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName(code);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 

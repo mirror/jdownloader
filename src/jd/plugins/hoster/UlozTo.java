@@ -22,9 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +42,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
@@ -137,7 +137,7 @@ public class UlozTo extends PluginForHost {
             br.setFollowRedirects(false);
         }
         // Wrong links show the mainpage so here we check if we got the mainpage or not
-        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)")) {
+        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
@@ -452,9 +452,9 @@ public class UlozTo extends PluginForHost {
                     /*
                      * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                      * 1800542995541.log; 2422576; jdlog://1800542995541
-                     *
+                     * 
                      * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                     *
+                     * 
                      * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                      */
                     // logger.info("No traffic available!");

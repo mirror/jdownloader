@@ -42,9 +42,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SaveTv;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -90,7 +88,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private long                         time_crawl_started                   = 0;
     private long                         time_last_crawl_ended                = 0;
     private boolean                      decryptAborted                       = false;
-    private Account                      acc                                  = null;
 
     /* Settings */
     private boolean                      crawler_DialogsDisabled              = false;
@@ -132,25 +129,30 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             logger.info("save.tv: Decrypting save.tv archives is disabled, doing nothing...");
             return decryptedLinks;
         }
-        if (!getUserLogin(false)) {
-            logger.info("Failed to decrypt link because no account is available: " + parameter);
-            return decryptedLinks;
-        }
-        if (only_grab_new_entries) {
-            /* Load list of saved IPs + timestamp of last download */
-            final Object crawledIDSMap = cfg.getProperty(CRAWLER_PROPERTY_TELECASTIDS_ADDED);
-            if (crawledIDSMap != null && crawledIDSMap instanceof HashMap) {
-                crawledTelecastIDsMap = (HashMap<String, Long>) crawledIDSMap;
-            }
-        } else {
-            tdifference_milliseconds = grab_last_hours_num * 60 * 60 * 1000;
-        }
 
         try {
-            if (api_enabled) {
-                api_decrypt_All();
-            } else {
-                site_decrypt_All();
+            final ArrayList<Account> all_stv_accounts = AccountController.getInstance().getValidAccounts(this.getHost());
+            for (final Account stvacc : all_stv_accounts) {
+                if (!getUserLogin(stvacc, false)) {
+                    logger.info("Failed to log in account: " + stvacc.getUser());
+                    continue;
+                }
+                if (only_grab_new_entries) {
+                    /* Load list of saved IPs + timestamp of last download */
+                    final Object crawledIDSMap = cfg.getProperty(CRAWLER_PROPERTY_TELECASTIDS_ADDED);
+                    if (crawledIDSMap != null && crawledIDSMap instanceof HashMap) {
+                        crawledTelecastIDsMap = (HashMap<String, Long>) crawledIDSMap;
+                    }
+                } else {
+                    tdifference_milliseconds = grab_last_hours_num * 60 * 60 * 1000;
+                }
+                if (api_enabled) {
+                    api_decrypt_All(stvacc);
+                } else {
+                    site_decrypt_All(stvacc);
+                }
+                /** TODO: Remove this and implement support for multiple accounts. */
+                break;
             }
             /*
              * Let's clean our ID map. TelecastIDs automatically get deleted after 30 days (when this documentation was written) so we do
@@ -252,7 +254,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /** This will first grab alle IDs, then their details as the 2nd used request returns more information than the first one. */
-    private void api_decrypt_All() throws Exception {
+    private void api_decrypt_All(final Account acc) throws Exception {
         final ArrayList<String> temp_telecastIDs = new ArrayList<String>();
         int offset = 0;
         /* API does not tell us the total number of telecastIDs so let's find that out first! */
@@ -308,7 +310,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 break;
             }
             for (final String entry : entries) {
-                addID_api(entry);
+                addID_api(acc, entry);
                 foundLinksNum++;
                 added_entries++;
             }
@@ -326,11 +328,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
-    private void site_decrypt_All() throws Exception {
+    private void site_decrypt_All(final Account acc) throws Exception {
         boolean is_groups_enabled = false;
         boolean groups_enabled_by_user = false;
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
+        getPageSafe(acc, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
         is_groups_enabled = !br.containsHTML("\"IGROUPCOUNT\":1\\.0");
         groups_enabled_by_user = is_groups_enabled;
         final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
@@ -360,16 +362,16 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 if (is_groups_enabled) {
                     /* Disable stupid groups setting to crawl faster and to make it work anyways */
                     logger.info("Disabling groups setting");
-                    postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
+                    postPageSafe(acc, this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
                     is_groups_enabled = false;
                 }
-                this.postPageSafe(this.br, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&iFilterType=1&sSearchString=&iTextSearchType=2&iChannelId=0&iTvCategoryId=0&iTvSubCategoryId=0&bShowNoFollower=false&iRecordingState=1&sSortOrder=StartDateDESC&iTvStationGroupId=0&iRecordAge=0&iDaytime=0");
+                this.postPageSafe(acc, this.br, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&iFilterType=1&sSearchString=&iTextSearchType=2&iChannelId=0&iTvCategoryId=0&iTvSubCategoryId=0&bShowNoFollower=false&iRecordingState=1&sSortOrder=StartDateDESC&iTvStationGroupId=0&iRecordAge=0&iDaytime=0");
 
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
                 final ArrayList<Object> resource_data_list = (ArrayList) entries.get("ARRVIDEOARCHIVEENTRIES");
 
                 for (final Object singleid_information : resource_data_list) {
-                    addID_site(singleid_information);
+                    addID_site(acc, singleid_information);
                     added_entries++;
                     foundLinksNum++;
                 }
@@ -385,7 +387,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 if (groups_enabled_by_user && !is_groups_enabled) {
                     /* Restore users' groups-setting after decryption if changed */
                     logger.info("Re-enabling groups setting");
-                    postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=true");
+                    postPageSafe(acc, this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=true");
                     logger.info("Successfully re-enabled groups setting");
                 }
             } catch (final Throwable settingfail) {
@@ -394,9 +396,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void addID_api(final String id_source) throws ParseException, DecrypterException, PluginException {
+    private void addID_api(final Account acc, final String id_source) throws ParseException, DecrypterException, PluginException {
         final String telecast_id = new Regex(id_source, "<a:Id>(\\d+)</a:Id>").getMatch(0);
-        final DownloadLink dl = createStvDownloadlink(telecast_id);
+        final DownloadLink dl = createStvDownloadlink(acc, telecast_id);
         jd.plugins.hoster.SaveTv.parseFilenameInformation_api(dl, id_source);
         jd.plugins.hoster.SaveTv.parseQualityTag(dl, null);
         final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(getLongProperty(dl, "site_runtime_minutes", 0));
@@ -410,12 +412,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void addID_site(final Object object_source) throws ParseException, DecrypterException, PluginException {
+    private void addID_site(final Account acc, final Object object_source) throws ParseException, DecrypterException, PluginException {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) object_source;
         entries = (LinkedHashMap<String, Object>) entries.get("STRTELECASTENTRY");
         final String telecastURL = (String) entries.get("SDETAILSURL");
         final String telecast_id = new Regex(telecastURL, "(\\d+)$").getMatch(0);
-        final DownloadLink dl = createStvDownloadlink(telecast_id);
+        final DownloadLink dl = createStvDownloadlink(acc, telecast_id);
         jd.plugins.hoster.SaveTv.parseFilenameInformation_site(dl, entries);
         jd.plugins.hoster.SaveTv.parseQualityTag(dl, (ArrayList) entries.get("ARRALLOWDDOWNLOADFORMATS"));
         final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(getLongProperty(dl, "site_runtime_minutes", 0));
@@ -428,7 +430,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    private DownloadLink createStvDownloadlink(final String telecastID) {
+    private DownloadLink createStvDownloadlink(final Account acc, final String telecastID) {
+        final String account_username = acc.getUser();
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecastID;
         final DownloadLink dl = createDownloadlink(telecast_url);
         dl.setName(telecastID + ".mp4");
@@ -436,7 +439,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             dl.setAvailable(true);
         }
         dl.setContentUrl(telecast_url);
-        dl.setLinkID(telecastID);
+        dl.setLinkID(account_username + telecastID);
+        /* Property is needed to later determine which url is downloadable via which account. */
+        dl.setProperty(jd.plugins.hoster.SaveTv.PROPERTY_downloadable_via, account_username);
         return dl;
     }
 
@@ -446,9 +451,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String telecastID = dl.getStringProperty("LINKDUPEID", null);
         boolean isAllowed = false;
         if (only_grab_new_entries && !crawledTelecastIDsMap.containsKey(telecastID)) {
+            /* User only wants telecastIDs which he did not add before and this ID has not been added before --> Allow to add it! */
             crawledTelecastIDsMap.put(telecastID, datemilliseconds);
             isAllowed = true;
         } else if (!only_grab_new_entries && (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds)) {
+            /* User only wants to add telecastIDs of a user-defined time-range. */
             isAllowed = true;
         }
         return isAllowed;
@@ -460,26 +467,24 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("save.tv");
-        acc = AccountController.getInstance().getValidAccount(hostPlugin);
-        if (acc == null) {
+    private boolean getUserLogin(final Account aa, final boolean force) throws Exception {
+        if (aa == null) {
             return false;
         }
         try {
             if (api_enabled) {
-                jd.plugins.hoster.SaveTv.login_api(this.br, acc, force);
+                jd.plugins.hoster.SaveTv.login_api(this.br, aa, force);
             } else {
-                jd.plugins.hoster.SaveTv.login_site(this.br, acc, force);
+                jd.plugins.hoster.SaveTv.login_site(this.br, aa, force);
             }
         } catch (final PluginException e) {
-            acc.setValid(false);
+            aa.setValid(false);
             return false;
         }
         return true;
     }
 
-    private void getPageSafe(final String url) throws Exception {
+    private void getPageSafe(final Account acc, final String url) throws Exception {
         // Limits made by me (pspzockerscene):
         // Max 6 logins possible
         // Max 15 accesses of the link possible
@@ -505,7 +510,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     logger.info("Link redirected to login page, logging in again to retry this: " + url);
                     logger.info("Try " + i2 + " of 1");
                     try {
-                        getUserLogin(true);
+                        getUserLogin(acc, true);
                     } catch (final BrowserException e) {
                         logger.info("Login " + i2 + "of 1 failed, re-trying...");
                         continue;
@@ -520,7 +525,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "deprecation" })
-    private void postPageSafe(final Browser br, final String url, final String postData) throws Exception {
+    private void postPageSafe(final Account acc, final Browser br, final String url, final String postData) throws Exception {
         // Limits made by me (pspzockerscene):
         // Max 6 logins possible
         // Max 15 accesses of the link possible
@@ -551,7 +556,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     logger.info("Link redirected to login page, logging in again to retry this: " + url);
                     logger.info("Try " + i2 + " of 1");
                     try {
-                        getUserLogin(true);
+                        getUserLogin(acc, true);
                     } catch (final BrowserException e) {
                         logger.info("Login " + i2 + "of 1 failed, re-trying...");
                         continue;

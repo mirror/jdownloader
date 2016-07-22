@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,15 +35,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "http://it\\.dplay\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "http://it\\.dplay\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" }, flags = { 2, 2, 2 })
 public class DplayCom extends PluginForHost {
 
     public DplayCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -49,11 +53,15 @@ public class DplayCom extends PluginForHost {
         return "http://www.dplay.com/";
     }
 
-    private static final String           TYPE_SHORT = "https?://[^/]+/\\?p=\\d+";
+    private static final String           TYPE_SHORT            = "https?://[^/]+/\\?p=\\d+";
 
-    private LinkedHashMap<String, Object> entries    = null;
-    private String                        videoid    = null;
-    private String                        host       = null;
+    /* The list of qualities displayed to the user */
+    private final String[]                FORMATS               = new String[] { "1920x1080", "1280x720", "1024x576", "768x432", "640x360", "480x270", "320x180" };
+    private final String                  SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
+
+    private LinkedHashMap<String, Object> entries               = null;
+    private String                        videoid               = null;
+    private String                        host                  = null;
 
     /**
      * Example hds: <br />
@@ -213,14 +221,33 @@ public class DplayCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
         }
 
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
-        if (hlsbest == null) {
+        HlsContainer hlsSelected = null;
+        final String selectedResolution = getConfiguredVideoFormat();
+        final ArrayList<HlsContainer> allContainers = jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br);
+        for (final HlsContainer currentContainer : allContainers) {
+            final String currResolution = currentContainer.getResolution();
+            if (currResolution.equals(selectedResolution)) {
+                /* We found users' selected videoresolution. */
+                hlsSelected = currentContainer;
+                break;
+            }
+        }
+        if (hlsSelected == null) {
+            logger.info("Failed to find user selected videoresolution - trying to download highest resolution possible instead ...");
+            hlsSelected = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(allContainers);
+        }
+        if (hlsSelected == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String url_hls = hlsbest.downloadurl;
+        final String url_hls = hlsSelected.downloadurl;
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();
+    }
+
+    private String getConfiguredVideoFormat() {
+        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        return FORMATS[selection];
     }
 
     private String formatDate(final String input) {
@@ -268,6 +295,10 @@ public class DplayCom extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, JDL.L("plugins.hoster.DplayCom.prefer_format", "Select preferred videoresolution:")).setDefaultValue(0));
     }
 
     @Override

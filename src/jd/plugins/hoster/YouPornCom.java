@@ -103,9 +103,9 @@ public class YouPornCom extends PluginForHost {
         if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?) - Free Porn Videos - YouPorn</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos \\- YouPorn</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) Video - Youporn.com</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) Video \\- Youporn\\.com</title>").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("addthis:title=\"YouPorn \\- (.*?)\"></a>").getMatch(0);

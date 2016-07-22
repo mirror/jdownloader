@@ -219,17 +219,17 @@ public class ZdfDeMediathek extends PluginForHost {
                     text = text.replace("</p>", "");
                     text = text.replace("<span ", "").replace("</span>", "");
 
-                    final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
+                    final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.*?)($|tts:))").getMatches();
                     if (textReplaces != null && textReplaces.length != 0) {
                         for (final String[] singleText : textReplaces) {
-                            final String colorCode = singleText[0].trim();
-                            final String plainText = singleText[1].trim();
+                            final String originalText = singleText[0];
+                            final String colorCode = singleText[1].trim();
+                            final String plainText = singleText[2].trim();
                             final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
-                            dest.write(completeNewText + lineseparator + lineseparator);
+                            text = text.replace(originalText, completeNewText);
                         }
-                    } else {
-                        dest.write(text + lineseparator + lineseparator);
                     }
+                    dest.write(text + lineseparator + lineseparator);
 
                 }
             } catch (Exception e) {
