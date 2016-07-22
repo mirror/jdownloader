@@ -125,7 +125,6 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
 
     public AbstractBubbleContentPanel(String iconKey) {
         this(NewTheme.I().getIcon(iconKey, 20));
-
     }
 
     public AbstractBubbleContentPanel(Icon icon) {

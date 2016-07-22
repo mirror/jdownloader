@@ -1,7 +1,6 @@
 package org.jdownloader.gui.notify.linkcrawler;
 
 import java.awt.event.MouseEvent;
-import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -30,7 +29,6 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
         super.onMouseClicked(m);
         JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-
     }
 
     protected void onSettings() {
@@ -38,14 +36,17 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
-
     }
 
-    private final WeakReference<JobLinkCrawler> crawler;
+    private final JobLinkCrawler crawler;
+
+    public JobLinkCrawler getCrawler() {
+        return crawler;
+    }
 
     public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, JobLinkCrawler crawler) {
         super(linkCrawlerBubbleSupport, _GUI.T.balloon_new_links(), new LinkCrawlerBubbleContent(crawler));
-        this.crawler = new WeakReference<JobLinkCrawler>(crawler);
+        this.crawler = crawler;
     }
 
     @Override
@@ -59,70 +60,62 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
 
     private final DelayedRunnable update = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500l, 1000l) {
 
-        @Override
-        public String getID() {
-            return "LinkCrawlerBubble";
-        }
+                                             @Override
+                                             public String getID() {
+                                                 return "LinkCrawlerBubble";
+                                             }
 
-        @Override
-        public void delayedrun() {
-            delayedUpdate();
-        }
-    };
+                                             @Override
+                                             public void delayedrun() {
+                                                 delayedUpdate();
+                                             }
+                                         };
 
     private final void delayedUpdate() {
-        final JobLinkCrawler crwl = crawler.get();
-        if (crwl != null) {
-            if (crwl instanceof JobLinkCrawler) {
-                final JobLinkCrawler jlc = crwl;
-                final LinkCollectingJob job = jlc.getJob();
-                final LinkOrigin src;
-                if (job != null) {
-                    src = job.getOrigin().getOrigin();
-                } else {
-                    src = null;
-                }
-                if (src == null) {
-                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
-                } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
-                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
-                } else if (src == LinkOrigin.CLIPBOARD) {
-                    final String sourceURL;
-                    if (job != null) {
-                        sourceURL = job.getCustomSourceUrl();
-                    } else {
-                        sourceURL = null;
-                    }
-                    if (StringUtils.isNotEmpty(sourceURL)) {
-                        try {
-                            final URL url = new URL(sourceURL);
-                            setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard_url(url.getHost()));
-                        } catch (MalformedURLException e) {
-                            setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
-                        }
-                    } else {
-                        setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
-                    }
-                } else {
-                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
-                }
-                getContentComponent().update(jlc);
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        pack();
-                        BubbleNotify.getInstance().relayout();
-                    }
-                }.waitForEDT();
-            }
+        final JobLinkCrawler jlc = getCrawler();
+        final LinkCollectingJob job = jlc.getJob();
+        final LinkOrigin src;
+        if (job != null) {
+            src = job.getOrigin().getOrigin();
+        } else {
+            src = null;
         }
+        if (src == null) {
+            setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
+        } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
+            setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
+        } else if (src == LinkOrigin.CLIPBOARD) {
+            final String sourceURL;
+            if (job != null) {
+                sourceURL = job.getCustomSourceUrl();
+            } else {
+                sourceURL = null;
+            }
+            if (StringUtils.isNotEmpty(sourceURL)) {
+                try {
+                    final URL url = new URL(sourceURL);
+                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard_url(url.getHost()));
+                } catch (MalformedURLException e) {
+                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
+                }
+            } else {
+                setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
+            }
+        } else {
+            setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
+        }
+        getContentComponent().update(jlc);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                pack();
+                BubbleNotify.getInstance().relayout();
+            }
+        }.waitForEDT();
     }
 
-    protected void update() {
-        final JobLinkCrawler crwl = crawler.get();
-        if (crwl != null) {
-            update.resetAndStart();
-        }
+    protected void requestUpdate() {
+        update.resetAndStart();
     }
 }

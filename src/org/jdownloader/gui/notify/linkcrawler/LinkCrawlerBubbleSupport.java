@@ -2,7 +2,6 @@ package org.jdownloader.gui.notify.linkcrawler;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
@@ -30,7 +29,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements LinkCollectorListener {
 
-    private ArrayList<Element>                                    elements         = new ArrayList<Element>();
+    private final ArrayList<Element>                              elements         = new ArrayList<Element>();
     private final BubbleNotifyConfig.LINKGRABBER_BUBBLE_NOTIFY_ON notifyOn         = JsonConfig.create(BubbleNotifyConfig.class).getBubbleNotifyOnNewLinkgrabberLinksOn();
     private final boolean                                         registerOnPlugin = BubbleNotifyConfig.LINKGRABBER_BUBBLE_NOTIFY_ON.PLUGIN.equals(notifyOn);
 
@@ -42,36 +41,38 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
     private class LinkCrawlerBubbleWrapper implements AbstractNotifyWindowFactory, LinkCollectorCrawlerListener {
 
-        private final WeakReference<JobLinkCrawler> crawler;
-        private final AtomicBoolean                 registered = new AtomicBoolean(false);
-
-        private volatile LinkCrawlerBubble          bubble     = null;
+        private volatile JobLinkCrawler    crawler    = null;
+        private volatile LinkCrawlerBubble bubble     = null;
+        private final AtomicBoolean        registered = new AtomicBoolean(false);
 
         private LinkCrawlerBubbleWrapper(JobLinkCrawler crawler) {
-            this.crawler = new WeakReference<JobLinkCrawler>(crawler);
+            this.crawler = crawler;
         }
 
         @Override
         public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-            final JobLinkCrawler crwl = crawler.get();
-            if (crwl != null) {
-                final LinkCrawlerBubble finalBubble = new LinkCrawlerBubble(LinkCrawlerBubbleSupport.this, crwl);
+            if (bubble == null && crawler != null) {
+                final LinkCrawlerBubble finalBubble = new LinkCrawlerBubble(LinkCrawlerBubbleSupport.this, crawler);
                 final Timer t = new Timer(1000, new ActionListener() {
+
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (finalBubble.isClosed() || finalBubble.isDisposed()) {
+                            crawler = null;
+                            bubble = null;
                             finalBubble.getContentComponent().stop();
                             ((Timer) e.getSource()).stop();
-                            bubble = null;
-                        }
-                        if (finalBubble.isVisible()) {
-                            finalBubble.update();
-                        }
-                        if (finalBubble.getContentComponent().askForClose(crawler.get())) {
-                            finalBubble.getContentComponent().stop();
-                            ((Timer) e.getSource()).stop();
-                            finalBubble.hideBubble(finalBubble.getTimeout());
-                            bubble = null;
+                        } else {
+                            if (finalBubble.isVisible()) {
+                                finalBubble.requestUpdate();
+                            }
+                            if (finalBubble.getContentComponent().askForClose(finalBubble.getCrawler())) {
+                                crawler = null;
+                                bubble = null;
+                                finalBubble.getContentComponent().stop();
+                                ((Timer) e.getSource()).stop();
+                                finalBubble.hideBubble(finalBubble.getTimeout());
+                            }
                         }
                     }
 
@@ -86,11 +87,8 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
         private void register() {
             if (registered.compareAndSet(false, true)) {
-                final LinkCollectorCrawler crwl = crawler.get();
-                if (crwl != null) {
-                    crwl.getEventSender().removeListener(this);
-                    show(this);
-                }
+                crawler.getEventSender().removeListener(this);
+                show(this);
             }
         }
 
@@ -115,23 +113,24 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
     }
 
-    private final WeakHashMap<LinkCollectorCrawler, LinkCrawlerBubbleWrapper> map = new WeakHashMap<LinkCollectorCrawler, LinkCrawlerBubbleWrapper>();
-
     @Override
     public List<Element> getElements() {
         return elements;
     }
 
+    private final WeakHashMap<LinkCollectorCrawler, LinkCrawlerBubbleWrapper> map = new WeakHashMap<LinkCollectorCrawler, LinkCrawlerBubbleWrapper>();
+
     @Override
     public void onLinkCrawlerAdded(final LinkCollectorCrawler crawler) {
         if (isEnabled() && crawler instanceof JobLinkCrawler) {
             final LinkCrawlerBubbleWrapper wrapper = new LinkCrawlerBubbleWrapper((JobLinkCrawler) crawler);
-            synchronized (map) {
-                crawler.getEventSender().addListener(wrapper, true);
-                map.put(crawler, wrapper);
-            }
             if (BubbleNotifyConfig.LINKGRABBER_BUBBLE_NOTIFY_ON.ALWAYS.equals(notifyOn)) {
                 wrapper.register();
+            } else {
+                crawler.getEventSender().addListener(wrapper);
+                synchronized (map) {
+                    map.put(crawler, wrapper);
+                }
             }
         }
     }
@@ -143,7 +142,13 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
 
     @Override
     public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
-        // Bubbles stop and cleanup themself by polling the askForClose method
+        final LinkCrawlerBubbleWrapper wrapper;
+        synchronized (map) {
+            wrapper = map.remove(crawler);
+        }
+        if (wrapper != null) {
+            crawler.getEventSender().removeListener(wrapper);
+        }
     }
 
     @Override
