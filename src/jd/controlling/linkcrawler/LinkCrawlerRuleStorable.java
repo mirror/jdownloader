@@ -23,6 +23,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         this.setPackageNamePattern(rule.getPackageNamePattern());
         this.setFormPattern(rule.getFormPattern());
         this.setDeepPattern(rule.getDeepPattern());
+        this.setRewriteReplaceWith(rule.getRewriteReplaceWith());
     }
 
     public void setId(long id) {
@@ -39,6 +40,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         ret.setPackageNamePattern(getPackageNamePattern());
         ret.setFormPattern(getFormPattern());
         ret.setDeepPattern(getDeepPattern());
+        ret.setRewriteReplaceWith(getRewriteReplaceWith());
         return ret;
     }
 
