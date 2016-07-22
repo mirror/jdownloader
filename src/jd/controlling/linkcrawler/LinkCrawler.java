@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1281,17 +1282,61 @@ public class LinkCrawler {
         return null;
     }
 
-    protected Boolean distributeDeeperOrMatchingRule(final int generation, final String url, final CrawledLink link) {
+    protected DISTRIBUTE rewrite(final int generation, final String url, final CrawledLink source) {
         try {
-            new URL(link.getURL());
-        } catch (MalformedURLException e) {
-            return null;
+            final LinkCrawlerRule rule = getFirstMatchingRule(source, url, LinkCrawlerRule.RULE.REWRITE);
+            if (rule != null && rule.getRewriteReplaceWith() != null) {
+                source.setMatchingRule(rule);
+                final String newURL = url.replaceAll(rule.getPattern(), rule.getRewriteReplaceWith());
+                if (!url.equals(newURL)) {
+                    final CrawledLinkModifier lm = source.getCustomCrawledLinkModifier();
+                    source.setCustomCrawledLinkModifier(null);
+                    source.setBrokenCrawlerHandler(null);
+                    final CrawledLink rewritten = crawledLinkFactorybyURL(newURL);
+                    final String[] sourceURLs = getAndClearSourceURLs(source);
+                    forwardCrawledLinkInfos(source, rewritten, lm, sourceURLs, true);
+                    if (insideCrawlerPlugin()) {
+                        if (!checkAllowStart(generation)) {
+                            /* LinkCrawler got aborted! */
+                            return DISTRIBUTE.STOP;
+                        }
+                        distribute(generation, rewritten);
+                        return DISTRIBUTE.NEXT;
+                    } else if (checkStartNotify(generation)) {
+                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                            @Override
+                            public long getAverageRuntime() {
+                                final Long ret = getDefaultAverageRuntime();
+                                if (ret != null) {
+                                    return ret;
+                                } else {
+                                    return super.getAverageRuntime();
+                                }
+                            }
+
+                            @Override
+                            void crawling() {
+                                distribute(generation, rewritten);
+                            }
+                        });
+                        return DISTRIBUTE.NEXT;
+                    } else {
+                        return DISTRIBUTE.STOP;
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            LogController.CL().log(e);
         }
+        return DISTRIBUTE.CONTINUE;
+    }
+
+    protected Boolean distributeDeeperOrMatchingRule(final int generation, final String url, final CrawledLink link) {
         try {
             LinkCrawlerRule rule = null;
             /* do not change order, it is important to check redirect first */
             if ((rule = getFirstMatchingRule(link, url, LinkCrawlerRule.RULE.SUBMITFORM, LinkCrawlerRule.RULE.FOLLOWREDIRECT, LinkCrawlerRule.RULE.DEEPDECRYPT)) != null || link.isCrawlDeep()) {
-                if (link != null) {
+                if (rule != null) {
                     link.setMatchingRule(rule);
                 }
                 /* the link is allowed to crawlDeep */
@@ -1331,7 +1376,13 @@ public class LinkCrawler {
         return null;
     }
 
-    protected void distribute(int generation, java.util.List<CrawledLink> possibleCryptedLinks) {
+    protected void distribute(int generation, CrawledLink... possibleCryptedLinks) {
+        if (possibleCryptedLinks != null && possibleCryptedLinks.length > 0) {
+            distribute(generation, Arrays.asList(possibleCryptedLinks));
+        }
+    }
+
+    protected void distribute(int generation, List<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) {
             return;
         }
@@ -1354,6 +1405,15 @@ public class LinkCrawler {
                         if (url == null) {
                             /* WTF, no URL?! let's continue */
                             continue mainloop;
+                        } else {
+                            final DISTRIBUTE ret = rewrite(generation, url, possibleCryptedLink);
+                            switch (ret) {
+                            case STOP:
+                                return;
+                            case SKIP:
+                            case NEXT:
+                                continue mainloop;
+                            }
                         }
                         final boolean isDirect = url.startsWith("directhttp://");
                         final boolean isFtp = url.startsWith("ftp://") || url.startsWith("ftpviajd://");

@@ -7,6 +7,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public class LinkCrawlerRule {
 
     public static enum RULE {
+        REWRITE,
         SUBMITFORM,
         DIRECTHTTP,
         DEEPDECRYPT,
@@ -103,6 +104,15 @@ public class LinkCrawlerRule {
     protected Pattern               packageNamePattern = null;
     protected Pattern               formPattern        = null;
     protected Pattern               deepPattern        = null;
+    protected String                rewriteReplaceWith = null;
+
+    public String getRewriteReplaceWith() {
+        return rewriteReplaceWith;
+    }
+
+    public void setRewriteReplaceWith(String rewriteReplaceWith) {
+        this.rewriteReplaceWith = rewriteReplaceWith;
+    }
 
     public Pattern _getDeepPattern() {
         return deepPattern;
