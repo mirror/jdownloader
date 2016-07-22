@@ -43,7 +43,6 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
 
     @Override
     protected void solveCES(CESSolverJob<String> solverJob) throws InterruptedException, SolverException {
-
         checkInterruption();
         KeyCaptchaPuzzleChallenge captchaChallenge = (KeyCaptchaPuzzleChallenge) solverJob.getChallenge();
         RequestOptions options = prepare(solverJob);
