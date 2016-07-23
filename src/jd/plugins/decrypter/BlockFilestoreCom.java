@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,8 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 /**
  * @author raztoki
@@ -73,7 +73,7 @@ public class BlockFilestoreCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> process(final Browser br, final String parameter, final String uid) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String fpName = br.getRegex("<input type=\"hidden\" name=\"ctl00\\$ContentPlaceHolder1\\$hddRutaVirtual\" id=\"ContentPlaceHolder1_hddRutaVirtual\" value=\"[^\"]+/([^\"]+)/\"").getMatch(0);
+        final String fpName = br.getRegex("<a id=\"ContentPlaceHolder1_rptNiveles_lnkGo_0\"[^>]*>(.*?)</a>").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
