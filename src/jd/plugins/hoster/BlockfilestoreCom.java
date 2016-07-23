@@ -58,12 +58,18 @@ public class BlockfilestoreCom extends PluginForHost {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         this.br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        this.br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         this.br.setAllowedResponseCodes(500);
         this.br.getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setName(new Regex(link.getDownloadURL(), "blockfilestore\\.com/down/([a-z0-9\\-]+)").getMatch(0));
+        if (!link.isNameSet()) {
+            final String filename = new Regex(link.getDownloadURL(), "blockfilestore\\.com/down/([a-z0-9\\-]+)").getMatch(0);
+            if (filename != null) {
+                link.setName(filename);
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -74,7 +80,7 @@ public class BlockfilestoreCom extends PluginForHost {
             isFolder = true;
         }
         if (isFolder) {
-            final Form f = br.getFormbyAction(downloadLink.getStringProperty("folderUID", ""));
+            final Form f = br.getFormbyActionRegex(".*" + downloadLink.getStringProperty("folderUID", ""));
             if (f == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
