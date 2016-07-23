@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -25,8 +26,14 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,10 +41,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.RuTubeVariant;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" }, flags = { 0 })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
@@ -51,8 +54,9 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
     private String parameter = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br = new Browser();
 
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = param.toString();
 
         uid = new Regex(parameter, "/([a-f0-9]{32})").getMatch(0);
@@ -124,6 +128,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
         try {
             if (vid == null) {
+                final Browser br = this.br.cloneBrowser();
                 // since we know the embed url for player/embed link types no need todo this step
                 br.getPage("http://rutube.ru/api/video/" + id);
                 if (br.containsHTML("<root><detail>Not found</detail></root>")) {
@@ -139,16 +144,18 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                     return createOfflinelink(parameter, vid + " - " + msg, msg);
                 }
             }
-            final String b = HTMLEntities.unhtmlentities(HTMLEntities.unhtmlDoubleQuotes(br.toString()));
-            String videoBalancer = new Regex(b, "(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
-
+            // swf requests over json
+            Browser ajax = cloneBrowser(br);
+            ajax.getPage("/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
+            final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(ajax.toString());
+            final String videoBalancer = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "video_balancer/default");
             if (videoBalancer != null) {
                 final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 final XPath xPath = XPathFactory.newInstance().newXPath();
+                ajax = cloneBrowser(br);
+                ajax.getPage(videoBalancer);
 
-                br.getPage(videoBalancer);
-
-                Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+                Document d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
                 String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
 
                 NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
@@ -161,10 +168,10 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                     String height = getAttByNamedItem(best, "height");
                     String bitrate = getAttByNamedItem(best, "bitrate");
                     String f4murl = getAttByNamedItem(best, "href");
+                    ajax = cloneBrowser(br);
+                    ajax.getPage(baseUrl + f4murl);
 
-                    br.getPage(baseUrl + f4murl);
-
-                    d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+                    d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
                     // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
                     double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
 
@@ -197,6 +204,13 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         }
         return null;
 
+    }
+
+    private Browser cloneBrowser(Browser br) {
+        final Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.209");
+        return ajax;
     }
 
     /**
