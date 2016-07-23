@@ -44,7 +44,7 @@ public class FoldrUs extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title>(.*?) \\| foldr\\.us</title>").getMatch(0);
         // as of 20130520, site doesn't return any links...
-        String[] links = br.getRegex("\"(http://relink\\.us/view\\.php\\?id=.*?)\"").getColumn(0);
+        String[] links = br.getRegex("\"(http://relink\\.[a-z]+/view\\.php\\?id=.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML(">W\\&auml;hlen Sie ihren bevorzugten Mirror")) {
                 logger.info("Can't find any downloadable links for link: " + parameter);
@@ -52,8 +52,9 @@ public class FoldrUs extends PluginForDecrypt {
             }
             return null;
         }
-        for (String dl : links)
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
