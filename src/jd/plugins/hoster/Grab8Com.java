@@ -21,6 +21,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,12 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * Note: prem.link redirects to grab8
@@ -161,8 +161,8 @@ public class Grab8Com extends antiDDoSForHost {
             getPage("https://" + getHost() + "/");
             postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = PluginJSonUtils.getJson(ajax, "linkdown");
-            if (StringUtils.isEmpty(dllink)) {
-                final boolean transload = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(ajax, "use_transload"));
+            final boolean transload = StringUtils.containsIgnoreCase(PluginJSonUtils.getJson(ajax, "message"), "Transloading in progress") || PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(ajax, "use_transload"));
+            if (transload || StringUtils.isEmpty(dllink)) {
                 if (transload) {
                     // TODO: transload/api error handling.
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
