@@ -16,6 +16,23 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
+import jd.nutils.Formatter;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtMergedIcon;
@@ -40,23 +57,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountCheckerEventListener;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
-import jd.nutils.Formatter;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
 
 public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener {
     public static class TrafficColumn extends ExtProgressColumn<AccountEntry> {
@@ -196,11 +196,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         @Override
         public boolean isEnabled(AccountEntry obj) {
             return obj.getAccount().isEnabled();
-        }
-
-        @Override
-        public boolean isResizable() {
-            return true;
         }
 
         @Override
@@ -367,11 +362,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             }
 
             @Override
-            public boolean isResizable() {
-                return true;
-            }
-
-            @Override
             public boolean isAutoWidthEnabled() {
                 return true;
             }
@@ -383,7 +373,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public int getDefaultWidth() {
-                return getMinWidth();
+                return getMinWidth() + 10;
             }
 
             @Override
@@ -598,11 +588,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     }
                 };
                 return ret;
-            }
-
-            @Override
-            public boolean isResizable() {
-                return true;
             }
 
             @Override

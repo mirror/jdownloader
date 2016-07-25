@@ -5,6 +5,16 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerEvent;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkchecker.LinkCheckerListener;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginProgress;
+
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.IconKey;
@@ -13,14 +23,6 @@ import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginProgress;
 
 public class CheckStatusAction extends CustomizableTableContextAppAction {
 
@@ -76,15 +78,27 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
                         link.addPluginProgress(linkCheckProgress);
                     }
                 }
-                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
 
+                    @Override
+                    public void onLinkCheckerEvent(LinkCheckerEvent event) {
+                        if (event.getCaller() == linkChecker && LinkCheckerEvent.Type.STOPPED.equals(event.getType())) {
+                            LinkChecker.getEventSender().removeListener(this);
+                            for (CheckableLink checkableLink : checkableLinks) {
+                                if (checkableLink instanceof DownloadLink) {
+                                    ((DownloadLink) (checkableLink)).removePluginProgress(linkCheckProgress);
+                                }
+                            }
+                        }
+                    }
+                });
                 linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CheckableLink>() {
 
                     @Override
-                    public void linkCheckDone(CheckableLink l) {
-                        if (l instanceof DownloadLink) {
-                            final DownloadLink link = (DownloadLink) l;
-                            link.removePluginProgress(linkCheckProgress);
+                    public void linkCheckDone(CheckableLink checkableLink) {
+                        if (checkableLink instanceof DownloadLink) {
+                            ((DownloadLink) (checkableLink)).removePluginProgress(linkCheckProgress);
                         }
                     }
                 });
