@@ -746,6 +746,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 throw e2;
             }
         } catch (IOException e) {
+            logger.log(e);
             resetDownloadlink(downloadLink);
             if (!isConnectionOffline(e)) {
                 final int nextIOExceptions = ioExceptions + 1;

@@ -119,6 +119,10 @@ public class RapidGatorNet extends PluginForHost {
             url = url.replaceFirst("rg.to/", "rapidgator.net/");
             link.setUrlDownload(url);
         }
+        final String linkID = new Regex(link.getPluginPatternMatcher(), "/file/([a-z0-9]{32}|\\d+)").getMatch(0);
+        if (linkID != null) {
+            link.setLinkID(getHost() + "://" + linkID);
+        }
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
