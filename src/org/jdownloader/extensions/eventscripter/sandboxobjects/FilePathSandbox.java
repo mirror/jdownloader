@@ -76,7 +76,7 @@ public class FilePathSandbox {
 
     @Override
     public String toString() {
-        return "Filepath Instance: " + getPath();
+        return getPath();
     }
 
     public boolean delete() throws EnvironmentException {
