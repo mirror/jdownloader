@@ -349,6 +349,10 @@ public class FileFactory extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        final String fid = getFUID(link);
+        if (fid != null) {
+            link.setLinkID(getHost() + "://" + fid);
+        }
     }
 
     @Override

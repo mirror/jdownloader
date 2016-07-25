@@ -176,6 +176,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     packages.setText(dupe.size() + "");
                 }
                 final boolean isCollecting = jlc.isCollecting();
+                final long createdTime = jlc.getCreated();
                 if (status != null) {
                     if (jlc.isRunning()) {
                         status.setText(_GUI.T.LinkCrawlerBubbleContent_update_runnning());
@@ -190,13 +191,13 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 if (duration != null) {
                     if (isCollecting) {
                         // still collecting
-                        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+                        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0));
                     } else {
                         // show complete duration
                         if (lastChange == -1) {
-                            duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+                            duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0));
                         } else {
-                            duration.setText(TimeFormatter.formatMilliSeconds(lastChange - startTime, 0));
+                            duration.setText(TimeFormatter.formatMilliSeconds(lastChange - createdTime, 0));
                         }
                     }
                 }
