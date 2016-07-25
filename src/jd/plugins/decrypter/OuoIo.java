@@ -22,6 +22,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -61,9 +62,19 @@ public class OuoIo extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (br.getRedirectLocation() != null) {
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-        } else if (!br.containsHTML("class=\"content\"")) {
+        do {
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                if (!Browser.getHost(redirect).equals(Browser.getHost(parameter))) {
+                    // don't follow redirects to other hosts
+                    decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+                    return decryptedLinks;
+                } else {
+                    getPage(redirect);
+                }
+            }
+        } while (br.getRedirectLocation() != null);
+        if (!br.containsHTML("class=\"content\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
