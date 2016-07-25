@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.ScriptThread;
@@ -12,8 +14,6 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
-
-import jd.plugins.DownloadLink;
 
 public class ArchiveSandbox {
 
@@ -86,7 +86,6 @@ public class ArchiveSandbox {
 
     public String[] getExtractedFiles() {
         if (archive != null && archive.getExtractedFiles() != null && archive.getExtractedFiles().size() > 0) {
-
             final ArrayList<String> lst = new ArrayList<String>();
             for (final File s : archive.getExtractedFiles()) {
                 lst.add(s.getAbsolutePath());
@@ -108,7 +107,6 @@ public class ArchiveSandbox {
 
     public String getFolder() {
         if (archive != null) {
-
             return archive.getFolder().getAbsolutePath();
         } else {
             return null;
