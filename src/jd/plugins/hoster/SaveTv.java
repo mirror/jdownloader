@@ -117,6 +117,7 @@ public class SaveTv extends PluginForHost {
     public static final String    PROPERTY_acc_count_archive_entries        = "acc_count_archive_entries";
     public static final String    PROPERTY_lastuse                          = "lastuse";
     public static final String    PROPERTY_category                         = "category";
+    public static final String    PROPERTY_stv_randomnumber                 = "stv_randomnumber";
     public static final String    PROPERTY_originaldate_end                 = "originaldate_end";
     public static final String    PROPERTY_site_runtime_minutes             = "site_runtime_minutes";
     public static final String    PROPERTY_acc_expire                       = "acc_expire";
@@ -1509,11 +1510,11 @@ public class SaveTv extends PluginForHost {
      *          saves it.
      */
     private static String getRandomNumber(final DownloadLink dl) {
-        String randomnumber = dl.getStringProperty("stv_randomnumber", null);
+        String randomnumber = dl.getStringProperty(PROPERTY_stv_randomnumber, null);
         if (randomnumber == null) {
             final DecimalFormat df = new DecimalFormat("0000");
             randomnumber = df.format(new Random().nextInt(10000));
-            dl.setProperty("stv_randomnumber", randomnumber);
+            dl.setProperty(PROPERTY_stv_randomnumber, randomnumber);
         }
         return randomnumber;
     }

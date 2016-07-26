@@ -30,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "http://(www\\.)?eporner\\.com/hd\\-porn/\\w+(/[^/]+)?" }, flags = { 0 })
 public class EPornerCom extends PluginForHost {
 
@@ -71,42 +73,71 @@ public class EPornerCom extends PluginForHost {
             /* linkid inside url */
             filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/(\\w+)").getMatch(0);
         }
-        final String correctedBR = br.toString().replace("\\", "");
-        final String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\w+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);
-        if (continueLink == null || filename == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(Encoding.htmlDecode(continueLink) + (continueLink.endsWith("/") ? "1920" : "/1920"));
-        dllink = br.getRegex("<hd\\.file>(https?://.*?)</hd\\.file>").getMatch(0);
+
+        /* First try to get DOWNLOADurls */
+        long filesize = 0;
+        final String[][] dloadinfo = this.br.getRegex("href=\"(/dload/[^<>\"]+)\">Download MP4 \\(\\d+p, ([^<>\"]+)\\)</a>").getMatches();
+        if (dloadinfo != null && dloadinfo.length != 0) {
+            String tempurl = null;
+            String tempsize = null;
+            long tempsizel = 0;
+            for (final String[] dlinfo : dloadinfo) {
+                tempurl = dlinfo[0];
+                tempsize = dlinfo[1];
+                tempsizel = SizeFormatter.getSize(tempsize);
+                if (tempsizel > filesize) {
+                    filesize = tempsizel;
+                    dllink = "http://www.eporner.com" + tempurl;
+                }
+            }
+        }
+
+        /* Failed to find DOWNLOADurls? Try to get STREAMurl. */
         if (dllink == null) {
-            dllink = br.getRegex("<file>(https?://.*?)</file>").getMatch(0);
+            final String correctedBR = br.toString().replace("\\", "");
+            final String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\w+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);
+            if (continueLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(Encoding.htmlDecode(continueLink) + (continueLink.endsWith("/") ? "1920" : "/1920"));
+            dllink = br.getRegex("<hd\\.file>(https?://.*?)</hd\\.file>").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("file:[\r\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("<file>(https?://.*?)</file>").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("file:[\r\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (filesize == 0) {
+            /* Only get filesize from url if we were not able to find it in html --> Saves us time! */
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br2.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    filesize = con.getLongContentLength();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        downloadLink.setDownloadSize(filesize);
+        return AvailableStatus.TRUE;
     }
 
     @Override
