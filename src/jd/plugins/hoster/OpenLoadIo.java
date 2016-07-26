@@ -49,34 +49,34 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class OpenLoadIo extends antiDDoSForHost {
 
     public OpenLoadIo(PluginWrapper wrapper) {
         super(wrapper);
         /* Server doesn't like it when we open too many connections in a short time */
         this.setStartIntervall(2000);
-        this.enablePremium("https://openload.co/register");
+        this.enablePremium("https://oload.co/register");
     }
 
     @Override
     public String rewriteHost(final String host) {
-        if ("openload.io".equals(host)) {
-            return "openload.co";
+        if ("openload.io".equals(host) || "openload.co".equals(host)) {
+            return "oload.co";
         }
         return super.rewriteHost(host);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://openload.co/tos";
+        return "https://oload.co/tos";
     }
 
     /* Constants */
     /* Status 2015-09-08: free API working again, site-handling remains broken! */
     private static final boolean          enable_api_free              = true;
     private static final boolean          enable_api_login             = true;
-    private static final String           api_base                     = "https://api.openload.co/1";
+    private static final String           api_base                     = "https://api.oload.co/1";
     private static final long             api_responsecode_private     = 403;
     /* Connection stuff */
     private static final boolean          FREE_RESUME                  = true;
@@ -102,7 +102,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Force https & correct embedded urls */
-        link.setUrlDownload("https://openload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
+        link.setUrlDownload("https://oload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
     }
 
     @Override
@@ -279,12 +279,12 @@ public class OpenLoadIo extends antiDDoSForHost {
                 if (rwlink != null) {
                     /** TODO: Fix that. */
                     try {
-                        getPage(br.cloneBrowser(), "https://openload.co/reward/" + rwlink + "?adblock=0");
+                        getPage(br.cloneBrowser(), "https://" + this.getHost() + "/reward/" + rwlink + "?adblock=0");
                     } catch (final Throwable e) {
                         /* Don't fail here! */
                     }
                 }
-                dllink = br.getRegex("\"(https?://[a-z0-9\\.\\-]+\\.dl\\.openload\\.io/[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://[a-z0-9\\.\\-]+\\.dl\\.(?:openload\\.io|oload\\.co)/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -385,7 +385,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                getPage("https://openload.co/login");
+                getPage("https://" + this.getHost() + "/login");
                 final String csrftoken = br.getRegex("name=\"csrf\\-token\" content=\"([^<>\"]*?)\"").getMatch(0);
                 if (csrftoken == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -689,7 +689,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                 usertext_uid = "FTP Username/API Login";
             }
             add(new JLabel(usertext_finddata));
-            add(new JLink("https://openload.co/account"));
+            add(new JLink("https://oload.co/account"));
             add(idLabel = new JLabel(usertext_uid));
             add(this.name = new ExtTextField() {
 
