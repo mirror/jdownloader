@@ -668,7 +668,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* Not needed! */
             // br.getHeaders().put("X-tumblr-form-key", "blaTest");
-            br.getPage("/svc/indash_blog/posts?tumblelog_name_or_id=" + username + "&post_id=&limit=" + limit + "&offset=" + offset);
+            br.getPage("//www.tumblr.com/svc/indash_blog/posts?tumblelog_name_or_id=" + username + "&post_id=&limit=" + limit + "&offset=" + offset);
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             ressourcelist = (ArrayList<Object>) DummyScriptEnginePlugin.walkJson(entries, "response/posts");
             for (final Object posto : ressourcelist) {
