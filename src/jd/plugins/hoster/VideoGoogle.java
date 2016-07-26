@@ -103,12 +103,10 @@ public class VideoGoogle extends PluginForHost {
                         fileName = null;
                     }
                 }
-                // filenames can be set by other plugins.. ie. decrypters, dont fuck with this.
-                if (!downloadLink.isNameSet()) {
-                    fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
-                    if (fileName != null) {
-                        downloadLink.setFinalFileName(fileName);
-                    }
+                fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
+                if (fileName != null) {
+                    // filenames can be set by other plugins.. ie. decrypters, dont fuck with this.
+                    downloadLink.setName(fileName);
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
