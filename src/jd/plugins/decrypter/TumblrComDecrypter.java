@@ -32,6 +32,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -119,10 +120,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             logger.info("UnknownHostException, couldn't decrypt link: " + parameter);
             return decryptedLinks;
         } catch (final DecrypterException d) {
-            if (StringUtils.equals(d.getCause().toString(), PLUGIN_DEFECT)) {
+            if (StringUtils.equals(d.getMessage(), PLUGIN_DEFECT)) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
-            } else if (StringUtils.equals(d.getCause().toString(), OFFLINE)) {
+            } else if (StringUtils.equals(d.getMessage(), OFFLINE)) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
@@ -178,13 +179,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             logger.info("Link offline (error 404): " + parameter);
             return;
         }
-        /* Workaround for bad redirects --> Redirectloop --> 2016-07-22: (temporarily) REMOVED */
-        // final String redirect = br.getRedirectLocation();
-        // if (br.getRedirectLocation() != null) {
-        // br.getPage(redirect);
-        // }
+        br.followRedirect(true);
         if (this.handlePassword()) {
             br.getPage(parameter);
+            br.followRedirect(true);
         }
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
@@ -475,6 +473,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(url));
             return decryptedLinks;
         }
+        br.followRedirect(true);
         final String filename;
         if (name != null) {
             filename = name;
@@ -523,11 +522,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         int counter = 1;
         boolean decryptSingle = parameter.matches("/page/\\d+");
         br.getPage(parameter);
+        br.followRedirect(true);
         if (br.containsHTML(GENERALOFFLINE)) {
             logger.info("Link offline: " + parameter);
             return;
         }
         handlePassword();
+        br.followRedirect(true);
         final FilePackage fp = FilePackage.getInstance();
         String fpName = new Regex(parameter, "//(.+?)\\.tumblr").getMatch(0);
         fp.setName(fpName);
@@ -604,7 +605,17 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 if (passCode == null) {
                     passCode = getUserInput("Password?", this.param);
                 }
-                this.br.postPage(this.br.getURL(), "password=" + Encoding.urlEncode(passCode));
+                Form form = br.getFormbyKey("auth");
+                if (form == null) {
+                    form = br.getFormbyKey("password");
+                }
+                form.put("password", Encoding.urlEncode(passCode));
+                br.submitForm(form);
+                form = br.getFormbyKey("auth");
+                if (form != null) {
+                    form.put("password", Encoding.urlEncode(passCode));
+                    br.submitForm(form);
+                }
                 if (this.br.getURL().contains(urlpart_passwordneeded)) {
                     passCode = null;
                     continue;
@@ -631,6 +642,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         final String url_for_logged_out_users = convertUserUrlToLoggedOutUser();
         this.br.setFollowRedirects(false);
         this.br.getPage(url_for_logged_out_users);
+        br.followRedirect(true);
         if (this.handlePassword()) {
             /* Bullshit - if a blog is password protected we can only display it in the "logged out" mode ... */
             decryptUser();
@@ -697,6 +709,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     if (filename != null) {
                         dl.setName(filename);
                     }
+                    fp.add(dl);
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
