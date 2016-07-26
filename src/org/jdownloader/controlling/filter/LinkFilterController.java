@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -17,10 +21,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.event.queue.QueueAction;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawlerFilter;
+import org.jdownloader.logging.LogController;
 
 public class LinkFilterController implements LinkCrawlerFilter {
     private static final LinkFilterController INSTANCE = new LinkFilterController(false);
@@ -184,11 +185,18 @@ public class LinkFilterController implements LinkCrawlerFilter {
         final ArrayList<LinkgrabberFilterRuleWrapper> newAcceptlFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
         for (final LinkgrabberFilterRule lgr : filter) {
             if (lgr.isEnabled() && lgr.isValid()) {
-                final LinkgrabberFilterRuleWrapper compiled = lgr.compile();
-                if (lgr.isAccept()) {
-                    newAcceptlFilters.add(compiled);
-                } else {
-                    newDenyFilters.add(compiled);
+                try {
+                    final LinkgrabberFilterRuleWrapper compiled = lgr.compile();
+                    lgr._setBroken(false);
+                    if (lgr.isAccept()) {
+                        newAcceptlFilters.add(compiled);
+                    } else {
+                        newDenyFilters.add(compiled);
+                    }
+                } catch (final Throwable e) {
+                    lgr.setEnabled(false);
+                    lgr._setBroken(true);
+                    LogController.CL().log(e);
                 }
             }
         }

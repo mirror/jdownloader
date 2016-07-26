@@ -52,6 +52,7 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.jd1import.JD1Importer;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
@@ -576,8 +577,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         synchronized (this) {
             for (PackagizerRule lgr : list) {
                 if (lgr.isEnabled() && lgr.isValid()) {
-                    final PackagizerRuleWrapper compiled = lgr.compile();
-                    newRules.add(compiled);
+                    try {
+                        final PackagizerRuleWrapper compiled = lgr.compile();
+                        lgr._setBroken(false);
+                        newRules.add(compiled);
+                    } catch (final Throwable e) {
+                        lgr.setEnabled(false);
+                        lgr._setBroken(true);
+                        LogController.CL().log(e);
+                    }
                 }
             }
         }
