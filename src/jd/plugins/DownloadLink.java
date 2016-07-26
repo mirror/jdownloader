@@ -164,11 +164,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private transient PluginForHost                     liveplugin;
 
-    /*
-     * we need to keep this some time to perform conversion from variable to property
-     */
-    private String                                      finalFileName;
-
     /**
      * Do not rename urlDownload. We need this field to restore old downloadlinks from the jd09 database
      */
@@ -414,11 +409,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             e.printStackTrace();
         }
         try {
-            this.finalFileName = (String) fields.get("finalFileName", null);
+            final String finalFileName = (String) fields.get("finalFileName", null);
+            if (finalFileName != null) {
+                this.setFinalFileName(finalFileName);
+            }
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-
         try {
             final LinkStatus linkStatus = (LinkStatus) fields.get("linkStatus", null);
             if (linkStatus != null) {
@@ -1099,12 +1096,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return Statischer Dateiname
      */
     public String getFinalFileName() {
-        if (finalFileName != null) {
-            /* convert existing finalFileName into Property System */
-            String lfinalFileName = finalFileName;
-            finalFileName = null;
-            this.setFinalFileName(lfinalFileName);
-        }
         return this.getStringProperty(PROPERTY_FINALFILENAME, null);
     }
 
@@ -1145,7 +1136,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1620,9 +1611,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setFinalFileName(String newfinalFileName) {
         final String oldName = getName();
-
-        finalFileName = null;
-
         if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");

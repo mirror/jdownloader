@@ -20,7 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import jd.controlling.ClipboardMonitoring;
+
 import org.appwork.exceptions.WTFException;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging2.LogSourceProvider;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
@@ -49,9 +52,12 @@ public class LogAction extends AbstractLogAction {
         id = null;
         new ThreadDump().run(null, new String[0]);
         super.createPackage(selection);
+        final String id = this.id;
         if (id != null) {
-            String name = format(selection.get(0).getCreated()) + " <--> " + format(selection.get(selection.size() - 1).getLastModified());
-            Dialog.getInstance().showInputDialog(0, _GUI.T.LogAction_actionPerformed_givelogid_(), name + " jdlog://" + id + "/");
+            final String name = format(selection.get(0).getCreated()) + " <--> " + format(selection.get(selection.size() - 1).getLastModified());
+            final String jdLog = "jdlog://" + id + "/";
+            ClipboardMonitoring.getINSTANCE().setCurrentContent(jdLog);
+            Dialog.getInstance().showInputDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.LogAction_actionPerformed_givelogid_(), name + " " + jdLog);
         }
     }
 
@@ -61,13 +67,10 @@ public class LogAction extends AbstractLogAction {
             if (Thread.currentThread().isInterrupted()) {
                 throw new WTFException("INterrupted");
             }
-
             id = JDServUtils.uploadLog(zip, id);
-
             if (Thread.currentThread().isInterrupted()) {
                 throw new WTFException("INterrupted");
             }
-
         } catch (Exception e) {
             Dialog.getInstance().showExceptionDialog("Exception ocurred", e.getMessage(), e);
         }

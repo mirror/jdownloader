@@ -778,12 +778,15 @@ public class SecondLevelLaunch {
                     if (Application.getJavaVersion() < Application.JAVA17) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
                         LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: java version < 1.7");
-                    } else if (StringUtils.containsIgnoreCase(System.getProperty("java.vm.name"), "OpenJDK Zero VM")) {
+                    } else if (StringUtils.containsIgnoreCase(System.getProperty("java.vm.name"), "OpenJDK")) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: OpenJDK Zero VM detected");
+                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: OpenJDK VM detected");
                     } else if (CFG_GENERAL.CFG.isPreferBouncyCastleForTLS()) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
                         LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: enabled");
+                    } else if (!UJCECheck.isSuccessful()) {
+                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
+                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: UJCECheck was not successful");
                     } else {
                         LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory!");
                     }
