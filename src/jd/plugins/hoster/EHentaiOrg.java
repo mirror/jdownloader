@@ -267,16 +267,9 @@ public class EHentaiOrg extends PluginForHost {
         // <div id="i3"><a onclick="return load_image(54, 'cd7295ee9c')" href="http://exhentai.org/s/cd7295ee9c/940613-54"><img id="img" src="http://130.234.205.178:25565/h/f21818f4e9d04169de22f31407df68da84f30719-935516-1273-1800-jpg/keystamp=1468656900-b9873b14ab/ow_013.jpg" style="height:1800px;width:1273px" /></a></div>
         
         // best solution is to apply cleanup?
-        String cleanup = null;
-        String log = br.toString(); // "";
-        {
-            final String[] results = new Regex(log, ".*?<a[^>]*\\s+href=(\"|')(?:https?://g\\.e-hentai\\.org|//g\\.e-hentai\\.org)?/s/[a-f0-9]{10}/" + uid_chapter + "-" + (Integer.parseInt(uid_page) + 1) + "\\1[^>]*>\\s*<img[^>]*\\s+src=(\"|')(.*?)\\2[^>]+>").getColumn(-1);
-            // remove first and last
-            if (results != null && results.length == 3 && results[0] != null && results[1] != null && results[2] != null) {
-                cleanup = results[1];
-            } else {
-                cleanup = br.toString();
-            }
+        String cleanup = br.getRegex("<iframe[^>]*>(.*?)<iframe").getMatch(0);
+        if (cleanup == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         dllink = new Regex(cleanup, "<img id=(\"|')img\\1 src=(\"|')(.*?)\\2").getMatch(2);
