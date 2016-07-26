@@ -32,7 +32,6 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -287,9 +286,24 @@ public class SaveTv extends PluginForHost {
         if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
             link.setName(getTelecastId(link) + EXTENSION_default);
         }
-        final Account aa = AccountController.getInstance().getValidAccount(this);
+        Account aa = null;
+        final String account_username_via_which_url_is_downloadable = getDownloadableVia(link);
+        final ArrayList<Account> all_stv_accounts = AccountController.getInstance().getValidAccounts(this.getHost());
+        if (account_username_via_which_url_is_downloadable == null && all_stv_accounts.size() == 1) {
+            /* User probably added save.tv urls manually and has only one account --> Allow these to be downloaded via this account! */
+            aa = all_stv_accounts.get(0);
+            link.setProperty(PROPERTY_downloadable_via, aa.getUser());
+        } else {
+            /* Find account via which we can download our url. */
+            for (final Account aatemp : all_stv_accounts) {
+                if (this.canHandle(link, aatemp)) {
+                    aa = aatemp;
+                    break;
+                }
+            }
+        }
         if (aa == null) {
-            link.getLinkStatus().setStatusText("Kann Links ohne gültigen Account nicht überprüfen");
+            link.getLinkStatus().setStatusText("Kann Links ohne güntigen und dazugehörigen Account nicht überprüfen");
             checkAccountNeededDialog();
             return AvailableStatus.UNCHECKABLE;
         }
@@ -349,7 +363,7 @@ public class SaveTv extends PluginForHost {
             final long page_size = SizeFormatter.getSize(filesize.replace(".", ""));
             link.setDownloadSize(page_size);
         } else {
-            link.setDownloadSize(calculateFilesize(link, getLongProperty(link, PROPERTY_site_runtime_minutes, 0)));
+            link.setDownloadSize(calculateFilesize(link, link.getLongProperty(PROPERTY_site_runtime_minutes, 0)));
         }
         /* TODO: Check if this errormessage still exists */
         if (this.br.containsHTML(HTML_SITE_DL_IMPOSSIBLE)) {
@@ -367,7 +381,7 @@ public class SaveTv extends PluginForHost {
          * specified series or movies match to force original filenames
          */
         final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
-        final boolean force_original_general = (cfg.getBooleanProperty(USEORIGINALFILENAME) || getLongProperty(dl, PROPERTY_category, 0l) == 0);
+        final boolean force_original_general = (cfg.getBooleanProperty(USEORIGINALFILENAME) || dl.getLongProperty(PROPERTY_category, 0l) == 0);
         final String site_title = dl.getStringProperty(PROPERTY_plainfilename);
         final String server_filename = dl.getStringProperty(PROPERTY_server_filename, null);
         final String fake_original_filename = getFakeOriginalFilename(dl);
@@ -640,7 +654,7 @@ public class SaveTv extends PluginForHost {
         requestFileInformation(link);
         setConstants(account, link);
         /* Check if the content has been recorded already! */
-        final long runtime_end = getLongProperty(link, PROPERTY_originaldate_end, System.currentTimeMillis() + 1);
+        final long runtime_end = link.getLongProperty(PROPERTY_originaldate_end, System.currentTimeMillis() + 1);
         final long released_since = System.currentTimeMillis() - runtime_end;
         if (released_since < 0) {
             /*
@@ -696,8 +710,8 @@ public class SaveTv extends PluginForHost {
          */
         if (preferAdsFree && !this.ISADSFREEAVAILABLE) {
             logger.info("Ad-free version is unavailable");
-            final long maxRetries = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_MAXRETRIES, defaultADS_FREE_UNAVAILABLE_MAXRETRIES);
-            long currentTryCount = getLongProperty(link, PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
+            final long maxRetries = cfg.getLongProperty(ADS_FREE_UNAVAILABLE_MAXRETRIES, defaultADS_FREE_UNAVAILABLE_MAXRETRIES);
+            long currentTryCount = link.getLongProperty(PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
             final boolean load_with_ads = (maxRetries != 0 && currentTryCount >= maxRetries);
             /* Always increase error counter, even if the user downloads the version with ads. */
             currentTryCount++;
@@ -708,7 +722,7 @@ public class SaveTv extends PluginForHost {
             } else {
                 logger.info("Ad-free version is unavailable --> Waiting");
                 logger.info("--> Throw Exception_no_ads_free_1 | Try " + currentTryCount + "/" + maxRetries);
-                final long userDefinedWaitHours = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
+                final long userDefinedWaitHours = cfg.getLongProperty(ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_NOCUTAVAILABLE, userDefinedWaitHours * 60 * 60 * 1000l);
             }
         }
@@ -1021,7 +1035,7 @@ public class SaveTv extends PluginForHost {
         api_prepBrowser(br);
         final String lang = System.getProperty("user.language");
         String api_sessionid = account.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null);
-        final long lastUse = getLongProperty(account, PROPERTY_lastuse, -1l);
+        final long lastUse = account.getLongProperty(PROPERTY_lastuse, -1l);
         /* Only generate new sessionID if we have none or it's older than 6 hours */
         if (api_sessionid == null || (System.currentTimeMillis() - lastUse) > 360000 || force) {
             api_doSoapRequest(br, "http://tempuri.org/ISession/CreateSession", "<apiKey>" + api_getAPIKey() + "</apiKey>");
@@ -1140,8 +1154,8 @@ public class SaveTv extends PluginForHost {
             final ArrayList<Object> errorlist = (ArrayList) entries.get("ARRVIDEOURL");
             final String errormessage = (String) errorlist.get(2);
             if (errormessage.contains("Aufnahme zu betrachten, laden Sie bitte die ungeschnittene Version")) {
-                final long userDefinedWaitHours = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
-                long currentTryCount = getLongProperty(this.currDownloadLink, PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
+                final long userDefinedWaitHours = cfg.getLongProperty(ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
+                long currentTryCount = this.currDownloadLink.getLongProperty(PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
                 /* Always increase error counter, even if the user downloads the version with ads. */
                 currentTryCount++;
                 this.currDownloadLink.setProperty(PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, currentTryCount);
@@ -1584,7 +1598,7 @@ public class SaveTv extends PluginForHost {
         /* For series */
         final String episodename = dl.getStringProperty(PROPERTY_episodename, customStringForEmptyTags);
         final String episodenumber = getEpisodeNumber(dl);
-        final long date = getLongProperty(dl, PROPERTY_originaldate, 0l);
+        final long date = dl.getLongProperty(PROPERTY_originaldate, 0l);
         String formattedDate = null;
         final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
         Date theDate = new Date(date);
@@ -1663,7 +1677,7 @@ public class SaveTv extends PluginForHost {
     public static String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final String ext = downloadLink.getStringProperty(PROPERTY_type, EXTENSION_default);
-        final long date = getLongProperty(downloadLink, PROPERTY_originaldate, 0l);
+        final long date = downloadLink.getLongProperty(PROPERTY_originaldate, 0l);
         String formattedDate = null;
         /* Get correctly formatted date */
         String dateFormat = "yyyy-MM-dd";
@@ -1720,7 +1734,7 @@ public class SaveTv extends PluginForHost {
 
     private static String getEpisodeNumber(final DownloadLink dl) {
         /* Old way TODO: Remove after 11.2014 */
-        String episodenumber = Long.toString(getLongProperty(dl, PROPERTY_episodenumber, 0l));
+        String episodenumber = Long.toString(dl.getLongProperty(PROPERTY_episodenumber, 0l));
         if (episodenumber.equals("0")) {
             /* New way */
             episodenumber = dl.getStringProperty(PROPERTY_episodenumber, null);
@@ -1748,7 +1762,7 @@ public class SaveTv extends PluginForHost {
         /* If we have an episodename and/or episodenumber, we have a series, category does not matter then */
         final boolean forceSeries = (!inValidate(episodename) && !episodename.equals(customStringForEmptyTags) || episodenumber.matches("\\d+"));
         /* Check if we have a series or movie category */
-        long cat = getLongProperty(dl, PROPERTY_category, 0l);
+        long cat = dl.getLongProperty(PROPERTY_category, 0l);
         final boolean belongsToCategoryMovie = (cat == 0 || cat == 1 || cat == 3 || cat == 7);
         final boolean isSeries = (forceSeries || !belongsToCategoryMovie);
         return isSeries;
@@ -1763,6 +1777,10 @@ public class SaveTv extends PluginForHost {
         final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
         return customStringForEmptyTags;
+    }
+
+    private static String getDownloadableVia(final DownloadLink dl) {
+        return dl.getStringProperty(PROPERTY_downloadable_via, null);
     }
 
     /**
@@ -1803,26 +1821,6 @@ public class SaveTv extends PluginForHost {
             }
         }
         return parameter;
-    }
-
-    /* Stable workaround */
-    public static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
     }
 
     /* Helps to get good looking custom filenames out of server filenames */
@@ -1935,13 +1933,8 @@ public class SaveTv extends PluginForHost {
             /* without account its not possible to download any link for this host */
             return false;
         }
-        // return true;
-        /**
-         * TODO: Enable this code 2016-08-01. It ensures that download attempts are only made for urls which actually belong to their
-         * source-account!
-         */
         final String account_username = account.getUser();
-        final String account_username_from_which_url_was_added = downloadLink.getStringProperty(PROPERTY_downloadable_via, null);
+        final String account_username_from_which_url_was_added = getDownloadableVia(downloadLink);
         return account_username_from_which_url_was_added != null && account_username != null && account_username_from_which_url_was_added.equals(account_username);
     }
 
@@ -2338,8 +2331,8 @@ public class SaveTv extends PluginForHost {
             final String acc_count_telecast_ids = account.getStringProperty(PROPERTY_acc_count_telecast_ids, "?");
             final String user_lastcrawl_newlinks_date;
             final String user_lastcrawl_date;
-            final long time_last_crawl_ended_newlinks = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, 0);
-            final long time_last_crawl_ended = getLongProperty(this.getPluginConfig(), CRAWLER_PROPERTY_LASTCRAWL, 0);
+            final long time_last_crawl_ended_newlinks = this.getPluginConfig().getLongProperty(CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, 0);
+            final long time_last_crawl_ended = this.getPluginConfig().getLongProperty(CRAWLER_PROPERTY_LASTCRAWL, 0);
             final String maxchunks;
             if (ACCOUNT_PREMIUM_MAXCHUNKS == 0) {
                 maxchunks = "20";
