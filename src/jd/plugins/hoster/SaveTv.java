@@ -60,7 +60,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[3456])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
     /**
      * Status 2015-06-26: HD downloads via API work fine again. They have not been working for ~ a month but it's all back to normal now!
@@ -78,9 +78,9 @@ public class SaveTv extends PluginForHost {
      * Doc of an eventually soon existing new (finally public) API [Date added: 2015-06-25]: https://api.save.tv/v3/docs/index
      */
     /* Normal url */
-    private final String          LINKTYPE_NORMAL                           = "https?://(?:www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+";
+    private final String          LINKTYPE_NORMAL                           = ".+/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+";
     /* User has programmed something but it has not aired yet (is not downloadable yet) --> We will change these urls to LINKTYPE_NORMAL */
-    private final String          LINKTYPE_MAYBE_NOT_YET_DOWNLOADABLE       = "https?://(?:www\\.)?save\\.tv/STV/M/obj/TC/SendungsDetails\\.cfm\\?TelecastID=\\d+";
+    private final String          LINKTYPE_MAYBE_NOT_YET_DOWNLOADABLE       = ".+/STV/M/obj/TC/SendungsDetails\\.cfm\\?TelecastID=\\d+";
     /* Direct url --> We will change these to LINKTYPE_NORMAL */
     private final String          LINKTYPE_DIRECT                           = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
     public static final String    APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
@@ -90,7 +90,6 @@ public class SaveTv extends PluginForHost {
     private final static String   COOKIE_HOST                               = "http://save.tv";
     private static final String   NICE_HOST                                 = "save.tv";
     /* Properties */
-    private static final String   NICE_HOSTproperty                         = "savetv";
     private static final String   CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS       = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
     private static final String   CRAWLER_PROPERTY_LASTCRAWL                = "CRAWLER_PROPERTY_LASTCRAWL";
     /* Frequently used internal plugin properties */
@@ -207,6 +206,11 @@ public class SaveTv extends PluginForHost {
     private static final long     SITE_FORMAT_HD_L                          = 6;
     private static final long     SITE_FORMAT_HQ_L                          = 5;
     private static final long     SITE_FORMAT_LQ_L                          = 4;
+
+    private static final int      INTERNAL_FORMAT_HD_I                      = 0;
+    private static final int      INTERNAL_FORMAT_HQ_I                      = 1;
+    private static final int      INTERNAL_FORMAT_LQ_I                      = 2;
+    private static final int      INTERNAL_FORMAT_UNSET                     = 3;
     /* Other */
     private static Object         LOCK                                      = new Object();
     private static final int      MAX_RETRIES_LOGIN                         = 10;
@@ -261,6 +265,7 @@ public class SaveTv extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
@@ -344,7 +349,7 @@ public class SaveTv extends PluginForHost {
             final long page_size = SizeFormatter.getSize(filesize.replace(".", ""));
             link.setDownloadSize(page_size);
         } else {
-            link.setDownloadSize(calculateFilesize(getLongProperty(link, PROPERTY_site_runtime_minutes, 0)));
+            link.setDownloadSize(calculateFilesize(link, getLongProperty(link, PROPERTY_site_runtime_minutes, 0)));
         }
         /* TODO: Check if this errormessage still exists */
         if (this.br.containsHTML(HTML_SITE_DL_IMPOSSIBLE)) {
@@ -581,7 +586,7 @@ public class SaveTv extends PluginForHost {
     }
 
     public static void parseQualityTag(final DownloadLink dl, final ArrayList<Object> sourcelist) {
-        final int selected_video_format = getConfiguredVideoFormat();
+        final int selected_video_format = getConfiguredVideoFormat(dl);
         /*
          * If we have no source, we can select HQ if the user chose HQ because it is always available. If the user selects any other quality
          * we need to know whether it exists or not and then set the data.
@@ -594,17 +599,17 @@ public class SaveTv extends PluginForHost {
             final String quality_best = jsonGetBestQualityId(sourcelist);
             final boolean isHDAvailable = sourcelist.size() == 3 || quality_best.equals("");
             switch (selected_video_format) {
-            case 0:
+            case INTERNAL_FORMAT_HD_I:
                 if (isHDAvailable) {
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_HD);
                 } else {
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
                 }
                 break;
-            case 1:
+            case INTERNAL_FORMAT_HQ_I:
                 dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
                 break;
-            case 2:
+            case INTERNAL_FORMAT_LQ_I:
                 if (sourcelist.size() == 2) {
                     /* Mobile version available (should alyways be the case!) */
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_LQ);
@@ -623,20 +628,19 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         synchronized (LOCK) {
             checkFeatureDialogAll();
             checkFeatureDialogCrawler();
             // checkFeatureDialogNew();
         }
-        final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
-        final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE, false);
-        String downloadWithoutAds_request_value = Boolean.toString(preferAdsFree);
+        final boolean preferAdsFree = getPreferAdsFree(link);
+        String request_value_downloadWithoutAds = Boolean.toString(preferAdsFree);
         FORCE_LINKCHECK = true;
-        requestFileInformation(downloadLink);
-        setConstants(account, downloadLink);
+        requestFileInformation(link);
+        setConstants(account, link);
         /* Check if the content has been recorded already! */
-        final long runtime_end = getLongProperty(downloadLink, PROPERTY_originaldate_end, System.currentTimeMillis() + 1);
+        final long runtime_end = getLongProperty(link, PROPERTY_originaldate_end, System.currentTimeMillis() + 1);
         final long released_since = System.currentTimeMillis() - runtime_end;
         if (released_since < 0) {
             /*
@@ -647,16 +651,16 @@ public class SaveTv extends PluginForHost {
         }
         if (apiActive()) {
             /* Check if ads-free version is available */
-            api_doSoapRequestSafe(this.br, account, "http://tempuri.org/IVideoArchive/GetAdFreeState", "<telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
+            api_doSoapRequestSafe(this.br, account, "http://tempuri.org/IVideoArchive/GetAdFreeState", "<telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
             if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
                 /*
                  * TODO: If a telecastID is expired (deleted/not downloadable anymore), this is what will happen. There does not seem to be
                  * any possibility to get the correct status for this case via API.
                  */
-                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEANOTVAILABLE);
+                link.getLinkStatus().setStatusText(USERTEXT_ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
             } else {
-                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);
+                link.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);
                 ISADSFREEAVAILABLE = true;
             }
         } else {
@@ -669,21 +673,21 @@ public class SaveTv extends PluginForHost {
             /* TODO: Enhance ad-free check - check if selected format is available and if it is available in ad-free */
             final String ad_Free_availability = getJson(br.toString(), "BADFREEAVAILABLE");
             if (ad_Free_availability == null || ad_Free_availability.equals("3") || ad_Free_availability.equalsIgnoreCase("false")) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", USERTEXT_NOCUTAVAILABLE));
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", USERTEXT_NOCUTAVAILABLE));
             } else if (ad_Free_availability.equals("1") || ad_Free_availability.equalsIgnoreCase("true")) {
-                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);
+                link.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);
                 ISADSFREEAVAILABLE = true;
             } else {
                 /* ad_Free_availability == "2" */
-                downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEANOTVAILABLE);
+                link.getLinkStatus().setStatusText(USERTEXT_ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
             }
         }
         /* Set ad-free state on DownloadLink for e.g. usage in filename later. */
         if (this.ISADSFREEAVAILABLE) {
-            downloadLink.setProperty(PROPERTY_ad_free, STATE_ad_free_true);
+            link.setProperty(PROPERTY_ad_free, STATE_ad_free_true);
         } else {
-            downloadLink.setProperty(PROPERTY_ad_free, STATE_ad_free_false);
+            link.setProperty(PROPERTY_ad_free, STATE_ad_free_false);
         }
         String dllink = null;
         /*
@@ -693,14 +697,14 @@ public class SaveTv extends PluginForHost {
         if (preferAdsFree && !this.ISADSFREEAVAILABLE) {
             logger.info("Ad-free version is unavailable");
             final long maxRetries = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_MAXRETRIES, defaultADS_FREE_UNAVAILABLE_MAXRETRIES);
-            long currentTryCount = getLongProperty(downloadLink, PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
+            long currentTryCount = getLongProperty(link, PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
             final boolean load_with_ads = (maxRetries != 0 && currentTryCount >= maxRetries);
             /* Always increase error counter, even if the user downloads the version with ads. */
             currentTryCount++;
-            downloadLink.setProperty(PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, currentTryCount);
+            link.setProperty(PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, currentTryCount);
             if (load_with_ads) {
                 logger.info("Ad-free version is unavailable --> Downloading version with ads");
-                downloadWithoutAds_request_value = "false";
+                request_value_downloadWithoutAds = "false";
             } else {
                 logger.info("Ad-free version is unavailable --> Waiting");
                 logger.info("--> Throw Exception_no_ads_free_1 | Try " + currentTryCount + "/" + maxRetries);
@@ -711,11 +715,11 @@ public class SaveTv extends PluginForHost {
         /* Set download options (ads-free or with ads) and get download url */
         String stv_request_selected_format_value = null;
         if (apiActive()) {
-            stv_request_selected_format_value = api_get_format_request_value();
+            stv_request_selected_format_value = api_get_format_request_value(link);
             /* Small workaround to prevent incorrect errormessages */
             final String[] formats = { stv_request_selected_format_value, API_FORMAT_HQ, API_FORMAT_LQ };
             for (final String format : formats) {
-                api_postDownloadPage(downloadLink, format, downloadWithoutAds_request_value);
+                api_postDownloadPage(link, format, request_value_downloadWithoutAds);
                 /* TODO: Decide if we want to throw an error here or try until we find an existing format. */
                 if ((br.containsHTML(HTML_API_DL_IMPOSSIBLE) || this.br.getHttpConnection().getResponseCode() == 500) && stv_request_selected_format_value == API_FORMAT_HD) {
                     // continue;
@@ -731,13 +735,13 @@ public class SaveTv extends PluginForHost {
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             final ArrayList<Object> sourcelist = jsonGetVideoSourcelist(entries);
             final String best_quality_id = jsonGetBestQualityId(sourcelist);
-            stv_request_selected_format_value = site_get_format_request_value();
+            stv_request_selected_format_value = site_get_format_request_value(link);
             final boolean desired_format_is_available = jsonIsDesiredFormatAvailable(sourcelist, Long.parseLong(stv_request_selected_format_value));
             if (!desired_format_is_available) {
                 logger.info("Desired format is not available - falling back to highest format/quality possible");
                 stv_request_selected_format_value = best_quality_id;
             }
-            site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
+            site_AccessDownloadPage(link, stv_request_selected_format_value, request_value_downloadWithoutAds);
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             /* 2016-07-06: Collecting errors: */
             /*
@@ -763,37 +767,24 @@ public class SaveTv extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting download...");
         int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         boolean resume = ACCOUNT_PREMIUM_RESUME;
-        if (downloadLink.getBooleanProperty(PROPERTY_DOWNLOADLINK_NORESUME, false)) {
+        if (link.getBooleanProperty(PROPERTY_DOWNLOADLINK_NORESUME, false)) {
             resume = false;
         }
-        if (downloadLink.getBooleanProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, false) || resume == false) {
+        if (link.getBooleanProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, false) || resume == false) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 404", 60 * 60 * 1000l);
             }
             /* Handle (known) errors */
-            logger.warning("Save.tv: Received HTML code instead of the file!");
+            logger.warning("Received HTML code instead of the file!");
             br.followConnection();
             if (br.containsHTML(">Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden'");
             }
-            /* Handle unknown errors */
-            logger.info(NICE_HOST + ": timesfailed_unknown_dlerror");
-            int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown_dlerror", 0);
-            downloadLink.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_dlerror", timesFailed);
-                logger.info(NICE_HOST + ": timesfailed_unknown_dlerror -> Retrying");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_unknown_dlerror");
-            } else {
-                downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_dlerror", Property.NULL);
-                logger.info(NICE_HOST + ": timesfailed_unknown_dlerror - disabling current host!");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 1 - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
-            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 1 - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
         } else if (dl.getConnection().getLongContentLength() <= 1048576) {
             /* Avoid downloading (too small) trash data */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein", 60 * 60 * 1000l);
@@ -801,14 +792,14 @@ public class SaveTv extends PluginForHost {
         String server_filename = getFileNameFromHeader(dl.getConnection());
         server_filename = fixCharIssues(server_filename);
         server_filename = server_filename.substring(0, server_filename.lastIndexOf("."));
-        downloadLink.setProperty(PROPERTY_server_filename, server_filename);
+        link.setProperty(PROPERTY_server_filename, server_filename);
         /* This is for checking server speed. */
-        final String previouscomment = downloadLink.getComment();
+        final String previouscomment = link.getComment();
         if (previouscomment == null || previouscomment.contains("Aktuell/Zuletzt verwendeter direkter Downloadlink:")) {
-            downloadLink.setComment("Aktuell/Zuletzt verwendeter direkter Downloadlink: " + dllink);
+            link.setComment("Aktuell/Zuletzt verwendeter direkter Downloadlink: " + dllink);
         }
-        final String final_filename = getFilename(downloadLink);
-        downloadLink.setFinalFileName(final_filename);
+        final String final_filename = getFilename(link);
+        link.setFinalFileName(final_filename);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -818,36 +809,36 @@ public class SaveTv extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* Unknown error, we disable multiple chunks */
-                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getBooleanProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, Boolean.valueOf(true));
+                if (link.getLinkStatus().getErrorMessage() != null && link.getBooleanProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, false) == false) {
+                    link.setProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } else {
                 if (cfg.getBooleanProperty(DELETE_TELECAST_ID_AFTER_DOWNLOAD, defaultDeleteTelecastIDAfterDownload)) {
-                    logger.info("Download finished --> User WANTS telecastID " + getTelecastId(downloadLink) + " deleted");
-                    site_killTelecastID(account, downloadLink);
+                    logger.info("Download finished --> User WANTS telecastID " + getTelecastId(link) + " deleted");
+                    site_killTelecastID(account, link);
                 } else {
-                    logger.info("Download finished --> User does NOT want telecastID " + getTelecastId(downloadLink) + " deleted");
+                    logger.info("Download finished --> User does NOT want telecastID " + getTelecastId(link) + " deleted");
                 }
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
-                if (downloadLink.getBooleanProperty(PROPERTY_DOWNLOADLINK_NORESUME, false)) {
-                    downloadLink.setProperty(PROPERTY_DOWNLOADLINK_NORESUME, Boolean.valueOf(false));
+                if (link.getBooleanProperty(PROPERTY_DOWNLOADLINK_NORESUME, false)) {
+                    link.setProperty(PROPERTY_DOWNLOADLINK_NORESUME, Boolean.valueOf(false));
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 2", 30 * 60 * 1000l);
                 }
-                downloadLink.setProperty(PROPERTY_DOWNLOADLINK_NORESUME, Boolean.valueOf(true));
-                downloadLink.setChunksProgress(null);
+                link.setProperty(PROPERTY_DOWNLOADLINK_NORESUME, Boolean.valueOf(true));
+                link.setChunksProgress(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE --> Retrying");
             }
             try {
                 if (e.getLinkStatus() == LinkStatus.ERROR_ALREADYEXISTS) {
                     if (cfg.getBooleanProperty(DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, defaultDeleteTelecastIDIfFileAlreadyExists)) {
-                        logger.info("ERROR_ALREADYEXISTS --> User WANTS telecastID " + getTelecastId(downloadLink) + " deleted");
-                        site_killTelecastID(account, downloadLink);
+                        logger.info("ERROR_ALREADYEXISTS --> User WANTS telecastID " + getTelecastId(link) + " deleted");
+                        site_killTelecastID(account, link);
                     } else {
-                        logger.info("ERROR_ALREADYEXISTS --> User does NOT want telecastID " + getTelecastId(downloadLink) + " deleted");
+                        logger.info("ERROR_ALREADYEXISTS --> User does NOT want telecastID " + getTelecastId(link) + " deleted");
                     }
                     throw e;
                 }
@@ -857,12 +848,30 @@ public class SaveTv extends PluginForHost {
             }
             /* New V2 errorhandling */
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, false) == false) {
-                downloadLink.setProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, false) == false) {
+                link.setProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
         }
+    }
+
+    private boolean getPreferAdsFree(final DownloadLink dl) {
+        final String preferAdsFreeUrl = new Regex(dl.getDownloadURL(), "adsfree=(true|false)").getMatch(0);
+        final boolean preferAdsFree;
+        if (preferAdsFreeUrl != null) {
+            /* Parameters in urls can override plugin settings! */
+            preferAdsFree = Boolean.parseBoolean(preferAdsFreeUrl);
+        } else {
+            preferAdsFree = getPreferAdsFreePluginConfig();
+        }
+        return preferAdsFree;
+    }
+
+    private boolean getPreferAdsFreePluginConfig() {
+        final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
+        final boolean preferAdsFreeConfig = cfg.getBooleanProperty(PREFERADSFREE, defaultPreferAdsFree);
+        return preferAdsFreeConfig;
     }
 
     @SuppressWarnings("deprecation")
@@ -1247,36 +1256,36 @@ public class SaveTv extends PluginForHost {
         return false;
     }
 
-    public static long calculateFilesize(final String minutes) {
+    public static long calculateFilesize(final DownloadLink dl, final String minutes) {
         double calculated_filesize = 0;
         final long duration_minutes = Long.parseLong(minutes);
-        final int user_format = getConfiguredVideoFormat();
+        final int user_format = getConfiguredVideoFormat(dl);
         switch (user_format) {
-        case 0:
+        case INTERNAL_FORMAT_HD_I:
             calculated_filesize = QUALITY_HD_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
             break;
-        case 1:
+        case INTERNAL_FORMAT_HQ_I:
             calculated_filesize = QUALITY_H264_NORMAL_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
             break;
-        case 2:
+        case INTERNAL_FORMAT_LQ_I:
             calculated_filesize = QUALITY_H264_MOBILE_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
             break;
         }
         return (long) calculated_filesize;
     }
 
-    public static long calculateFilesize(final long minutes) {
+    public static long calculateFilesize(final DownloadLink dl, final long minutes) {
         double calculated_filesize = 0;
         final long duration_minutes = minutes;
-        final int user_format = getConfiguredVideoFormat();
+        final int user_format = getConfiguredVideoFormat(dl);
         switch (user_format) {
-        case 0:
+        case INTERNAL_FORMAT_HD_I:
             calculated_filesize = QUALITY_HD_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
             break;
-        case 1:
+        case INTERNAL_FORMAT_HQ_I:
             calculated_filesize = QUALITY_H264_NORMAL_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
             break;
-        case 2:
+        case INTERNAL_FORMAT_LQ_I:
             calculated_filesize = QUALITY_H264_MOBILE_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
             break;
         }
@@ -1285,19 +1294,19 @@ public class SaveTv extends PluginForHost {
 
     /**
      * Returns the format value needed for format specific requests TODO: Once serverside implemented, add support for HD - at the moment,
-     * if user selected HD, Normal H.264 will be downloaded instead
+     * if user selected HD, Normal H.264 will be downloaded instead. 2016-02-26: Website and API now use the same values!
      */
-    private String api_get_format_request_value() {
-        final int selected_video_format = getConfiguredVideoFormat();
+    private String api_get_format_request_value(final DownloadLink dl) {
+        final int selected_video_format = getConfiguredVideoFormat(dl);
         String stv_request_selected_format = null;
         switch (selected_video_format) {
-        case 0:
+        case INTERNAL_FORMAT_HD_I:
             stv_request_selected_format = API_FORMAT_HD;
             break;
-        case 1:
+        case INTERNAL_FORMAT_HQ_I:
             stv_request_selected_format = API_FORMAT_HQ;
             break;
-        case 2:
+        case INTERNAL_FORMAT_LQ_I:
             stv_request_selected_format = API_FORMAT_LQ;
             break;
         }
@@ -1305,49 +1314,85 @@ public class SaveTv extends PluginForHost {
     }
 
     /** Returns the format value needed for format specific requests */
-    private String site_get_format_request_value() {
-        final int selected_video_format = getConfiguredVideoFormat();
+    private String site_get_format_request_value(final DownloadLink dl) {
+        final int selected_video_format = getConfiguredVideoFormat(dl);
         String stv_request_selected_format = null;
         switch (selected_video_format) {
-        case 0:
+        case INTERNAL_FORMAT_HD_I:
             stv_request_selected_format = SITE_FORMAT_HD;
             break;
-        case 1:
+        case INTERNAL_FORMAT_HQ_I:
             stv_request_selected_format = SITE_FORMAT_HQ;
             break;
-        case 2:
+        case INTERNAL_FORMAT_LQ_I:
             stv_request_selected_format = SITE_FORMAT_LQ;
+            break;
+        default:
+            stv_request_selected_format = SITE_FORMAT_HD;
             break;
         }
         return stv_request_selected_format;
     }
 
+    public static int getConfiguredVideoFormat(final DownloadLink dl) {
+        final int videoformat;
+        final int videoformatURL = getConfiguredVideoFormatUrl(dl);
+        if (videoformatURL != INTERNAL_FORMAT_UNSET) {
+            videoformat = videoformatURL;
+        } else {
+            videoformat = getConfiguredVideoFormatConfig();
+        }
+        return videoformat;
+    }
+
     @SuppressWarnings("deprecation")
-    public static int getConfiguredVideoFormat() {
-        switch (SubConfiguration.getConfig(NICE_HOST).getIntegerProperty(SELECTED_VIDEO_FORMAT, -1)) {
-        case 0:
-            return 0;
-        case 1:
-            return 1;
-        case 2:
-            return 2;
+    public static int getConfiguredVideoFormatConfig() {
+        switch (SubConfiguration.getConfig(NICE_HOST).getIntegerProperty(SELECTED_VIDEO_FORMAT, INTERNAL_FORMAT_UNSET)) {
+        case INTERNAL_FORMAT_HD_I:
+            return INTERNAL_FORMAT_HD_I;
+        case INTERNAL_FORMAT_HQ_I:
+            return INTERNAL_FORMAT_HQ_I;
+        case INTERNAL_FORMAT_LQ_I:
+            return INTERNAL_FORMAT_LQ_I;
         default:
-            return 0;
+            return INTERNAL_FORMAT_HD_I;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static int getConfiguredVideoFormatUrl(final DownloadLink dl) {
+        if (dl == null) {
+            return INTERNAL_FORMAT_UNSET;
+        }
+        final String format_from_url = new Regex(dl.getDownloadURL(), "preferformat=(\\d+)").getMatch(0);
+        if (format_from_url == null) {
+            return INTERNAL_FORMAT_UNSET;
+        }
+        /* Convert official videoformat-number to internal number. */
+        switch (Integer.parseInt(format_from_url)) {
+        case (int) SITE_FORMAT_HD_L:
+            return INTERNAL_FORMAT_HD_I;
+        case (int) SITE_FORMAT_HQ_L:
+            return INTERNAL_FORMAT_HQ_I;
+        case (int) SITE_FORMAT_LQ_L:
+            return INTERNAL_FORMAT_LQ_I;
+        default:
+            return INTERNAL_FORMAT_HD_I;
         }
     }
 
     @SuppressWarnings("unused")
-    private double site_get_calculated_runtime_minutes(final long page_size_mb) {
+    private double site_get_calculated_runtime_minutes(final DownloadLink dl, final long page_size_mb) {
         double run_time_calculated = 0;
-        final int selected_video_format = getConfiguredVideoFormat();
+        final int selected_video_format = getConfiguredVideoFormat(dl);
         switch (selected_video_format) {
-        case 0:
+        case INTERNAL_FORMAT_HD_I:
             run_time_calculated = page_size_mb / QUALITY_HD_MB_PER_MINUTE;
             break;
-        case 1:
+        case INTERNAL_FORMAT_HQ_I:
             run_time_calculated = page_size_mb / QUALITY_H264_NORMAL_MB_PER_MINUTE;
             break;
-        case 2:
+        case INTERNAL_FORMAT_LQ_I:
             run_time_calculated = page_size_mb / QUALITY_H264_MOBILE_MB_PER_MINUTE;
             break;
         }
@@ -1361,8 +1406,8 @@ public class SaveTv extends PluginForHost {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
             recordingformat = Long.toString(jsonGetRecordingformatid(entries));
         } else {
-            /* Fallback */
-            recordingformat = Long.toString(API_FORMAT_HQ_L);
+            /* Fallback to a format which is always available. */
+            recordingformat = Long.toString(SITE_FORMAT_HQ_L);
         }
         return recordingformat;
     }
@@ -1890,7 +1935,14 @@ public class SaveTv extends PluginForHost {
             /* without account its not possible to download any link for this host */
             return false;
         }
-        return true;
+        // return true;
+        /**
+         * TODO: Enable this code 2016-08-01. It ensures that download attempts are only made for urls which actually belong to their
+         * source-account!
+         */
+        final String account_username = account.getUser();
+        final String account_username_from_which_url_was_added = downloadLink.getStringProperty(PROPERTY_downloadable_via, null);
+        return account_username_from_which_url_was_added != null && account_username != null && account_username_from_which_url_was_added.equals(account_username);
     }
 
     @Override

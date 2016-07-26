@@ -25,12 +25,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -53,44 +49,53 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadrocket.net" }, urls = { "https?://(www\\.)?uploadrocket\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class UploadRocketNet extends PluginForHost {
 
-    private String               correctedBR                  = "";
-    private String               passCode                     = null;
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String                         correctedBR                  = "";
+    private String                         passCode                     = null;
+    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://uploadrocket.net";
-    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                  = "http://uploadrocket.net";
+    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(uploadrocket\\.net)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean SUPPORTSHTTPS                = false;
-    private static final boolean SUPPORTS_ALT_AVAILABLECHECK  = true;
+    private static final String            DOMAINS                      = "(uploadrocket\\.net)";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean           VIDEOHOSTER                  = false;
+    private static final boolean           SUPPORTSHTTPS                = false;
+    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
+    /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
+    private final boolean                  ENABLE_RANDOM_UA             = true;
     // Connection stuff
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -2;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME          = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
-    private String               fuid                         = null;
+    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
+    private static Object                  LOCK                         = new Object();
+    private String                         fuid                         = null;
+    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.4
@@ -143,6 +148,12 @@ public class UploadRocketNet extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        if (ENABLE_RANDOM_UA) {
+            if (agent.get() == null) {
+                agent.set(UserAgents.stringUserAgent());
+            }
+            br.getHeaders().put("User-Agent", agent.get());
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -305,6 +316,7 @@ public class UploadRocketNet extends PluginForHost {
         // Second, check for streaming links on the first page
         if (dllink == null) {
             dllink = getDllink();
+            speedMod();
         }
         // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
@@ -466,7 +478,6 @@ public class UploadRocketNet extends PluginForHost {
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = getFormDownload2();
                     invalidateLastChallengeResponse();
-
                     continue;
                 } else {
                     validateLastChallengeResponse();
@@ -474,6 +485,7 @@ public class UploadRocketNet extends PluginForHost {
                 }
             }
         }
+        speedMod();
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -507,6 +519,20 @@ public class UploadRocketNet extends PluginForHost {
         } finally {
             // remove download slot
             controlFree(-1);
+        }
+    }
+
+    private void speedMod() {
+        final String fullspeed_cookie = new Regex(correctedBR, "if\\(document\\.getElementById\\(\\'[^<>\"\\']+\\'\\)\\)\\{[^=]*?document\\.cookie = \"sessionID=([^<>\"\\';]+);").getMatch(0);
+        if (fullspeed_cookie != null) {
+            /*
+             * Adblocked-sessionid-cookie = max ~150 KB/s, good sessionid-cookie = 1 MB/s. Sometimes we can even skip the
+             * pre-download-waittime via this!
+             */
+            logger.info("Speedmod cookie available!");
+            this.br.setCookie(this.br.getHost(), "sessionID", fullspeed_cookie);
+        } else {
+            logger.info("NO speedmod cookie available");
         }
     }
 
