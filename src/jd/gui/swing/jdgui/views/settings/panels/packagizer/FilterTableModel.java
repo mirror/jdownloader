@@ -10,6 +10,8 @@ import javax.swing.table.JTableHeader;
 
 import jd.controlling.linkcrawler.CrawledLink;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -21,16 +23,25 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class FilterTableModel extends ExtTableModel<PackagizerRule> implements PackagizerControllerListener {
 
     private static final long serialVersionUID = -7756459932564776739L;
-    private OrderColumn       prio;
 
     public FilterTableModel(String id) {
         super(id);
         PackagizerController.getInstance().getEventSender().addListener(this, false);
+        addExtComponentRowHighlighter(new ExtComponentRowHighlighter<PackagizerRule>(LAFOptions.getInstance().getColorForTableAccountErrorRowForeground(), LAFOptions.getInstance().getColorForTableAccountErrorRowBackground(), null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE;
+            }
 
+            @Override
+            public boolean accept(ExtColumn<PackagizerRule> column, PackagizerRule value, boolean selected, boolean focus, int row) {
+                return value._isBroken();
+            }
+        });
     }
 
     @Override
@@ -93,7 +104,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
                 PackagizerController.getInstance().update();
             }
         });
-        addColumn(prio = new OrderColumn());
+        addColumn(new OrderColumn());
 
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI.T.settings_linkgrabber_filter_columns_name()) {
 

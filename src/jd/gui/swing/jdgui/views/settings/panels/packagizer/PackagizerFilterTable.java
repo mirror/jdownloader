@@ -28,14 +28,16 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         this.setDragEnabled(true);
 
         setTransferHandler(new ExtTransferHandler<PackagizerRule>());
-        if (Application.getJavaVersion() >= Application.JAVA16) setDropMode(DropMode.INSERT_ROWS);
+        if (Application.getJavaVersion() >= Application.JAVA16) {
+            setDropMode(DropMode.INSERT_ROWS);
+        }
 
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.ArrayList,
      * org.appwork.swing.exttable.ExtColumn)
      */
@@ -72,7 +74,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList , java.awt.event.KeyEvent, boolean)
      */
     @Override

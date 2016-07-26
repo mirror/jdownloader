@@ -30,6 +30,16 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
         return conditionFilter;
     }
 
+    private boolean broken = false;
+
+    public boolean _isBroken() {
+        return broken;
+    }
+
+    public void _setBroken(boolean broken) {
+        this.broken = broken;
+    }
+
     public void setConditionFilter(ConditionFilter conditionFilter) {
         this.conditionFilter = conditionFilter;
     }
@@ -126,7 +136,7 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
 
     /**
      * Returns false if now filterrule is enabled
-     * 
+     *
      * @return
      */
     public boolean isValid() {
