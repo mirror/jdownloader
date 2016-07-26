@@ -54,6 +54,17 @@ public class PluginException extends Exception {
         return super.getMessage();
     }
 
+    @Override
+    public String toString() {
+        final String s = getClass().getName();
+        final String ret = super.getMessage();
+        if (ret != null) {
+            return s + ": " + ret + "->" + LinkStatus.toString(getLinkStatus());
+        } else {
+            return s + ": " + LinkStatus.toString(getLinkStatus());
+        }
+    }
+
     public long getValue() {
         return value;
     }

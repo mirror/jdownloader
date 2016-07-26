@@ -37,7 +37,12 @@ public class UJCECheck {
         return (vendor != null && vendor.contains("Oracle")) || "Java(TM) SE Runtime Environment".equals(name);
     }
 
-    private static final AtomicBoolean checked = new AtomicBoolean(false);
+    private static final AtomicBoolean checked    = new AtomicBoolean(false);
+    private static final AtomicBoolean successful = new AtomicBoolean(false);
+
+    public static boolean isSuccessful() {
+        return successful.get();
+    }
 
     public static final void check() {
         if (checked.compareAndSet(false, true)) {
@@ -158,6 +163,7 @@ public class UJCECheck {
                     throw e;
                 }
             }
+            successful.set(true);
             System.out.println("Successfully removed cryptography restrictions");
         } catch (final Throwable e) {
             System.out.println("Failed to remove cryptography restrictions:" + e);
