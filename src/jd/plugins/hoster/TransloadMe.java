@@ -235,7 +235,7 @@ public class TransloadMe extends PluginForHost {
         }
         account.setValid(true);
         this.getAPISafe("action=getsupporthost");
-        final String[] domains = this.br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
+        final String[] domains = this.br.getRegex("\"([^<>\"]+)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(domains));
         ai.setMultiHostSupport(this, supportedHosts);
 
