@@ -20,12 +20,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -39,29 +38,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class TransloadMe extends PluginForHost {
 
-    private static final String                            DOMAIN                       = "http://transload.me/";
+    private static final String                            API_BASE                     = "http://transload.me/api/";
     private static final String                            NICE_HOST                    = "transload.me";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
-    private final String                                   HTML_LOGGEDIN                = "user\\.php\\?action=logout\"";
 
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    /* How long do we want to wait until the file is on their servers so we can download it? */
-    private int                                            maxreloads                   = 200;
-    private int                                            wait_between_reload          = 3;
-    private static final String                            default_UA                   = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0";
 
-    private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
@@ -78,13 +70,9 @@ public class TransloadMe extends PluginForHost {
         return "http://en.transload.me/?p=login&redir=helpdesk";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    private Browser newBrowser(final Browser br) {
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", default_UA);
-        br.getHeaders().put("Accept-Language", "de,en;q=0.7,en-US;q=0.3");
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
+        br.getHeaders().put("User-Agent", "JDownloader");
         return br;
     }
 
@@ -126,7 +114,7 @@ public class TransloadMe extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        newBrowser(this.br);
         setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
@@ -147,14 +135,13 @@ public class TransloadMe extends PluginForHost {
 
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
-            this.getAPISafe("http://transload.me/download2.php?prev=false&my_url=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = this.br.getRegex("(https?://transload\\.me/download/\\?\\d+)").getMatch(0);
+        if (dllink == null || !dllink.startsWith("http")) {
+            this.getAPISafe("action=getdirectlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            dllink = PluginJSonUtils.getJson(this.br, "link");
             if (dllink == null) {
                 /* Should never happen */
-                handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
+                handleErrorRetries("dllinknull", 30, 2 * 60 * 1000l);
             }
-            dllink = dllink.replaceAll("\\\\/", "/");
         }
         handleDL(account, link, dllink);
     }
@@ -219,20 +206,19 @@ public class TransloadMe extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        this.br = newBrowser();
+        newBrowser(this.br);
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        br.getPage("/?p=download");
-        /* Language independant RegEx */
-        long traffic_available = 0;
-        final String traffic_available_str = br.getRegex("(\\d+(?:\\.\\d{1,4})? [A-Za-z]+) <a href=\"/\\?p=price\"").getMatch(0);
-        if (traffic_available_str != null) {
-            traffic_available = SizeFormatter.getSize(traffic_available_str);
+        /* Balance left in USD */
+        final String balance = PluginJSonUtils.getJson(this.br, "balance");
+        final String reg_date = PluginJSonUtils.getJson(this.br, "reg_date");
+        if (reg_date != null) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(reg_date, "yyyy-MM-dd", Locale.ENGLISH));
         }
         /*
-         * Free users = They have no package --> Accept them but set zero traffic left. Of couse traffic left <= 0 --> Also free account.
+         * Free users = They have no package (==no balance left) --> Accept them but set zero traffic left.
          */
-        if (traffic_available == 0) {
+        if (balance == null || Integer.parseInt(balance) <= 0) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             /* Free accounts have no traffic - set this so they will not be used (accidently) but still accept them. */
@@ -240,11 +226,16 @@ public class TransloadMe extends PluginForHost {
         } else {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setStatus("Premium account");
-            ai.setTrafficLeft(traffic_available);
+            ai.setStatus("Premium account balance " + balance + " USD");
+            /*
+             * Set unlimited traffic as each filehost costs a different amount of money per GB see:
+             * http://en.transload.me/index.php?p=statistic
+             */
+            ai.setUnlimitedTraffic();
         }
         account.setValid(true);
-        final String[] domains = this.br.getRegex("/host/small/[^/]+\\.png\" title=\"([^<>\"]*?)\"").getColumn(0);
+        this.getAPISafe("action=getsupporthost");
+        final String[] domains = this.br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(domains));
         ai.setMultiHostSupport(this, supportedHosts);
 
@@ -253,51 +244,9 @@ public class TransloadMe extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                this.br = newBrowser();
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (force) {
-                        /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                        br.getPage("http://en." + this.getHost() + "/");
-                        if (br.containsHTML(HTML_LOGGEDIN)) {
-                            return;
-                        }
-                        /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                        if (br.getCookies(DOMAIN) != null) {
-                            br.clearCookies(DOMAIN);
-                        }
-                    } else {
-                        /* Trust cookies! */
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-
-                this.getAPISafe("http://transload.me/?p=login");
-                String postData = "action=login&r=0&redir=&login=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass());
-                if (this.br.containsHTML("g\\-recaptcha")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), DOMAIN, true);
-                    this.setDownloadLink(dummyLink);
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
-                }
-                this.postAPISafe("/user.php", postData);
-                if (!this.br.containsHTML(HTML_LOGGEDIN)) {
-                    if (System.getProperty("user.language").equals("de")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
-            }
+            newBrowser(this.br);
+            br.setFollowRedirects(true);
+            this.getAPISafe("action=getaccountdetails");
         }
     }
 
@@ -311,20 +260,15 @@ public class TransloadMe extends PluginForHost {
                 unavailableMap = new HashMap<String, Long>();
                 hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait 30 mins to retry this host */
             unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
+    private void getAPISafe(final String parameters) throws IOException, PluginException {
+        String accesslink = API_BASE + "?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass());
+        accesslink += "&" + parameters;
         br.getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-    }
-
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        br.postPage(accesslink, postdata);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
@@ -410,7 +354,9 @@ public class TransloadMe extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(waittime);
+            // tempUnavailableHoster(waittime);
+            /* TODO: Remove this once plugin is in a stable state */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
