@@ -6,7 +6,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -26,6 +25,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.dialogs.NewPasswordDialog;
@@ -52,7 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
-
     private static final String COOKIES2                                      = "googleComCookies";
     private static final String META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39 = "<meta\\s+http-equiv=\"refresh\"\\s+content\\s*=\\s*\"(\\d+)\\s*;\\s*url\\s*=\\s*([^\"]+)";
     private Browser             br;
@@ -81,41 +80,34 @@ public class GoogleHelper {
 
     public GoogleHelper(Browser ytbr) {
         this.br = ytbr;
-
         Thread thread = Thread.currentThread();
         boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
-
         cacheEnabled = !forceUpdateAndBypassCache;
     }
 
     public boolean login(String type) {
-
         ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(type);
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();
             while (it.hasNext()) {
                 final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
-
                     try {
-
                         this.login(n);
                         if (n.isValid()) {
                             return true;
                         }
                     } catch (final Exception e) {
-
                         n.setValid(false);
                         return false;
                     }
-
                 }
             }
         }
         return false;
     }
 
-    private void postPageFollowRedirects(Browser br, String url, LinkedHashMap<String, String> post) throws IOException, InterruptedException {
+    private void postPageFollowRedirects(Browser br, String url, UrlQuery post) throws IOException, InterruptedException {
         boolean before = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         int wait = 0;
@@ -125,9 +117,7 @@ public class GoogleHelper {
             url = null;
             if (br.getRedirectLocation() != null) {
                 url = br.getRedirectLocation();
-
             }
-
             String[] redirect = br.getRegex(META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39).getRow(0);
             if (redirect != null) {
                 url = Encoding.htmlDecode(redirect[1]);
@@ -141,9 +131,7 @@ public class GoogleHelper {
                 Thread.sleep(wait);
             }
             getPageFollowRedirects(br, url);
-
         }
-
     }
 
     private void getPageFollowRedirects(Browser br, String url) throws IOException, InterruptedException {
@@ -167,7 +155,6 @@ public class GoogleHelper {
                     url = br.getRedirectLocation();
                     continue;
                 }
-
                 String[] redirect = br.getRegex(META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39).getRow(0);
                 if (redirect != null) {
                     url = Encoding.htmlDecode(redirect[1]);
@@ -187,7 +174,6 @@ public class GoogleHelper {
     }
 
     public boolean login(Account account) throws Exception {
-
         try {
             br.setHeader("User-Agent", "JDownloader2");
             this.br.setDebug(true);
@@ -198,10 +184,8 @@ public class GoogleHelper {
             this.br.setCookie("http://google.com", "PREF", "hl=en-GB");
             //
             if (account.getProperty(COOKIES2) != null) {
-
                 @SuppressWarnings("unchecked")
                 HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty(COOKIES2);
-
                 if (cookies != null) {
                     if (cookies.containsKey("SID") && cookies.containsKey("HSID")) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -220,32 +204,26 @@ public class GoogleHelper {
                     }
                 }
             }
-
             this.br.setFollowRedirects(true);
             /* first call to google */
-
             getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
-
             // Set-Cookie: GAPS=1:u14pnu_cVhnJlNpZ_xhGBJLeS1FDxA:R-JYyKg6DETne8XP;Path=/;Expires=Fri, 23-Jun-2017 13:04:05
             // GMT;Secure;HttpOnly;Priority=HIGH
-            LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
-
-            post.put("GALX", br.getCookie("http://google.com", "GALX"));
-            post.put("continue", getService().continueAfterServiceLoginAuth);
-            post.put("service", getService().serviceName);
-            post.put("hl", "en");
-            post.put("utf8", "☃");
-            post.put("pstMsg", "1");
-            post.put("dnConn", "");
-            post.put("checkConnection", getService().checkConnectionString);
-
-            post.put("checkedDomains", getService().serviceName);
-            post.put("Email", account.getUser());
-            post.put("Passwd", account.getPass());
-            post.put("signIn", "Sign in");
-            post.put("PersistentCookie", "yes");
-            post.put("rmShown", "1");
-
+            UrlQuery post = new UrlQuery();
+            post.appendEncoded("GALX", br.getCookie("http://google.com", "GALX"));
+            post.appendEncoded("continue", getService().continueAfterServiceLoginAuth);
+            post.appendEncoded("service", getService().serviceName);
+            post.appendEncoded("hl", "en");
+            post.appendEncoded("utf8", "☃");
+            post.appendEncoded("pstMsg", "1");
+            post.appendEncoded("dnConn", "");
+            post.appendEncoded("checkConnection", (getService().checkConnectionString));
+            post.appendEncoded("checkedDomains", (getService().serviceName));
+            post.appendEncoded("Email", (account.getUser()));
+            post.appendEncoded("Passwd", (account.getPass()));
+            post.appendEncoded("signIn", "Sign in");
+            post.appendEncoded("PersistentCookie", "yes");
+            post.appendEncoded("rmShown", "1");
             postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
             main: while (true) {
                 Form[] forms = br.getForms();
@@ -262,10 +240,8 @@ public class GoogleHelper {
                         NewPasswordDialogInterface handler = UIOManager.I().show(NewPasswordDialogInterface.class, d);
                         try {
                             handler.throwCloseExceptions();
-
                             changePassword.getInputField("Passwd").setValue(Encoding.urlEncode(handler.getPassword()));
                             changePassword.getInputField("PasswdAgain").setValue(Encoding.urlEncode(handler.getPasswordVerification()));
-
                             submitForm(br, changePassword);
                             if (!br.containsHTML("Please change your password")) {
                                 account.setPass(handler.getPassword());
@@ -278,7 +254,6 @@ public class GoogleHelper {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password change required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                 }
-
                 Form verifyItsYouByEmail = br.getFormByInputFieldKeyValue("challengetype", "RecoveryEmailChallenge");
                 if (verifyItsYouByEmail != null) {
                     String example = br.getRegex("<label.*?id=\"RecoveryEmailChallengeLabel\">.*?<span.*?>([^<]+)</span>.*?</label>").getMatch(0);
@@ -295,55 +270,41 @@ public class GoogleHelper {
                         InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
                         try {
                             handler.throwCloseExceptions();
-
                             String email = handler.getText();
                             verifyItsYouByEmail.getInputField("emailAnswer").setValue(Encoding.urlEncode(email));
-
                             submitForm(br, verifyItsYouByEmail);
-
                             continue;
                         } catch (DialogNoAnswerException e) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                         }
                     }
                 }
-
                 if (br.containsHTML("privacyreminder")) {
                     // google wants you to accept the new privacy policy
                     CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
-
                     if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message(account.getUser()), null, _GUI.T.lit_continue(), null)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-
                     while (true) {
-
                         postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
                         if (br.containsHTML("privacyreminder")) {
                             CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
-
                             if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message_retry(account.getUser()), null, _GUI.T.lit_continue(), null)) {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                             }
                         } else {
                             continue main;
                         }
-
                     }
                 }
-
                 Form form = this.br.getFormBySubmitvalue("Verify");
-
                 if (form == null) {
-
                     for (Form f : forms) {
                         if (f.getAction().startsWith("/signin/challenge") && !f.getAction().startsWith("/signin/challenge/skip")) {
                             form = f;
                         }
                     }
-
                 }
-
                 if (form != null) {
                     if ("SecondFactor".equals(form.getAction())) {
                         handle2FactorAuthSmsDeprecated(form);
@@ -360,14 +321,12 @@ public class GoogleHelper {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 break;
-
             }
             // if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
             //
             // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             //
             // }
-
             if (validateSuccess()) {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies cYT = this.br.getCookies("google.com");
@@ -380,13 +339,11 @@ public class GoogleHelper {
             } else {
                 return false;
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             account.setProperty(COOKIES2, null);
             throw e;
         }
-
     }
 
     protected boolean validateSuccess() {
@@ -398,7 +355,6 @@ public class GoogleHelper {
     }
 
     protected boolean hasBeenValidatedRecently(Account account) {
-
         long lastValidated = account.getLongProperty("LAST_VALIDATE_" + getService().name(), -1);
         if (lastValidated > 0 && System.currentTimeMillis() - lastValidated < getValidatedCacheTimeout()) {
             return true;
@@ -411,7 +367,6 @@ public class GoogleHelper {
     }
 
     private void handle2FactorAuthSmsDeprecated(Form form) throws Exception {
-
         // //*[@id="verifyText"]
         if (br.containsHTML("idv-delivery-error-container")) {
             // <div class="infobanner">
@@ -423,7 +378,6 @@ public class GoogleHelper {
             // </div>
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
-
         String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
         if (number != null) {
             StatsManager.I().track("google/twofactor/1");
@@ -437,7 +391,6 @@ public class GoogleHelper {
             form.remove("smsSend");
             form.remove("retry");
             submitForm(br, form);
-
         } else {
             // new version implemented on 31th july 2015
             StatsManager.I().track("google/twofactor/2");
@@ -452,7 +405,6 @@ public class GoogleHelper {
             form.remove("smsSend");
             form.remove("retry");
             submitForm(br, form);
-
         }
         handleIntersitial();
     }
@@ -529,7 +481,6 @@ public class GoogleHelper {
         form.remove("smsSend");
         form.remove("retry");
         submitForm(br, form);
-
         handleIntersitial();
     }
 
@@ -609,7 +560,6 @@ public class GoogleHelper {
         form.remove("smsSend");
         form.remove("retry");
         submitForm(br, form);
-
         handleIntersitial();
     }
 
@@ -630,7 +580,6 @@ public class GoogleHelper {
         if (remind != null && "SmsAuthInterstitial".equals(remind.getAction())) {
             remind.remove("addBackupPhone");
             submitForm(br, remind);
-
         }
     }
 
@@ -641,12 +590,9 @@ public class GoogleHelper {
         String url = null;
         try {
             br.submitForm(form);
-
             if (br.getRedirectLocation() != null) {
                 url = br.getRedirectLocation();
-
             }
-
             String[] redirect = br.getRegex(META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39).getRow(0);
             if (redirect != null) {
                 url = Encoding.htmlDecode(redirect[1]);
@@ -660,9 +606,7 @@ public class GoogleHelper {
                 Thread.sleep(wait);
             }
             getPageFollowRedirects(br, url);
-
         }
-
     }
 
     private String getText(Document doc, XPath xPath, String string) throws XPathExpressionException {
@@ -683,7 +627,6 @@ public class GoogleHelper {
     private boolean isCacheEnabled() {
         return cacheEnabled;
     }
-
     // public void followRedirect() throws IOException, InterruptedException {
     // int wait = 0;
     // String url = null;
@@ -706,5 +649,4 @@ public class GoogleHelper {
     //
     // }
     // }
-
 }
