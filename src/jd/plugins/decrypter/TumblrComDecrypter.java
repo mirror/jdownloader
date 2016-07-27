@@ -71,7 +71,6 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private String                  parameter              = null;
     private String                  passCode               = null;
 
-    /** 2016-07-22: Right now this is empty but please keep it for future usage! */
     private Browser prepBR(final Browser br) {
         return br;
     }
