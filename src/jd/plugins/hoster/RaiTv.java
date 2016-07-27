@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,7 +37,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "^https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" }, flags = { 0 })
 public class RaiTv extends PluginForHost {
 
     public RaiTv(PluginWrapper wrapper) {
@@ -48,7 +49,8 @@ public class RaiTv extends PluginForHost {
         return "http://www.rai.it/dl/rai/text/ContentItem-5a0d5bc3-9f0e-4f6b-8b65-13dd14385123.html";
     }
 
-    private String dllink = null;
+    private static final String TYPE_CONTENTITEM = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
+    private String              dllink           = null;
 
     private Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
@@ -63,9 +65,12 @@ public class RaiTv extends PluginForHost {
         this.setBrowserExclusive();
         prepBR(this.br);
         this.br.getPage(link.getDownloadURL());
+        String content_id_from_url = null;
+        if (link.getDownloadURL().matches(TYPE_CONTENTITEM)) {
+            content_id_from_url = new Regex(link.getDownloadURL(), "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
+        }
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
-        final String content_id_from_url = new Regex(link.getDownloadURL(), "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404 || (contentset_id == null && content_id_from_html == null)) {
             /* Probably not a video/offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -90,6 +95,10 @@ public class RaiTv extends PluginForHost {
                 ressourcelist = (ArrayList<Object>) entries.get("list");
             }
 
+            if (content_id_from_url == null) {
+                /* Hm probably not a video */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String content_id_temp = null;
             boolean foundVideoInfo = false;
             for (final Object videoo : ressourcelist) {
@@ -150,31 +159,18 @@ public class RaiTv extends PluginForHost {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
             logger.info("Download http .wmv video");
         } else {
-            final String cont = new Regex(this.dllink, "cont=([^<>\"=\\&]+)").getMatch(0);
+            final String cont = getContFromRelinkerUrl(this.dllink);
             if (cont == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Drop previous Headers & Cookies */
-            this.br = prepBR(new Browser());
-            /* Rai.tv android app User-Agent - not necessarily needed! */
-            this.br.getHeaders().put("User-Agent", "Apache-HttpClient/UNAVAILABLE (java 1.4)");
-            /**
-             * # output=20 url in body<br />
-             * # output=23 HTTP 302 redirect<br />
-             * # output=25 url and other parameters in body, space separated<br />
-             * # output=44 XML (not well formatted) in body<br />
-             * # output=45 XML (website standard) in body<br />
-             * # output=47 json in body<br />
-             * # pl=native,flash,silverlight<br />
-             * # BY DEFAULT (website): pl=mon,flash,native,silverlight<br />
-             * # A stream will be returned depending on the UA (and pl parameter?)<br />
-             */
-            this.br.getPage("http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=" + cont + "&output=45&pl=native,flash,silverlight&_=" + System.currentTimeMillis());
-            dllink = br.getRegex("<url type=\"content\">([^<>\"]+)<").getMatch(0);
+            this.br = prepVideoBrowser(new Browser());
+            accessCont(this.br, cont);
+            dllink = getDllink(this.br);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!dllink.startsWith("http")) {
+            if (!dllinkIsDownloadable(this.dllink)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
             }
         }
@@ -208,6 +204,42 @@ public class RaiTv extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    public static Browser prepVideoBrowser(final Browser br) {
+        /* Rai.tv android app User-Agent - not necessarily needed! */
+        br.getHeaders().put("User-Agent", "Apache-HttpClient/UNAVAILABLE (java 1.4)");
+        return br;
+    }
+
+    public static void accessCont(final Browser br, final String cont) throws IOException {
+        /**
+         * # output=20 url in body<br />
+         * # output=23 HTTP 302 redirect<br />
+         * # output=25 url and other parameters in body, space separated<br />
+         * # output=44 XML (not well formatted) in body<br />
+         * # output=45 XML (website standard) in body<br />
+         * # output=47 json in body<br />
+         * # pl=native,flash,silverlight<br />
+         * # BY DEFAULT (website): pl=mon,flash,native,silverlight<br />
+         * # A stream will be returned depending on the UA (and pl parameter?)<br />
+         */
+        br.getPage("http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=" + cont + "&output=45&pl=native,flash,silverlight&_=" + System.currentTimeMillis());
+    }
+
+    public static String getDllink(final Browser br) {
+        return br.getRegex("<url type=\"content\">([^<>\"]+)<").getMatch(0);
+    }
+
+    public static String getContFromRelinkerUrl(final String relinker) {
+        return new Regex(relinker, "cont=([^<>\"=\\&]+)").getMatch(0);
+    }
+
+    public static boolean dllinkIsDownloadable(final String dllink) {
+        if (dllink == null || !dllink.startsWith("http")) {
+            return false;
+        }
+        return true;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */

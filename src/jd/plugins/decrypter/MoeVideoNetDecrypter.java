@@ -31,8 +31,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "http://(www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/((?:\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
-public class MoeVideosNetDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "https?://(?:www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/.+" }, flags = { 0 })
+public class MoeVideoNetDecrypter extends PluginForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
@@ -40,7 +40,7 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
         // moevideos.net parked.
     }
 
-    public MoeVideosNetDecrypter(PluginWrapper wrapper) {
+    public MoeVideoNetDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -62,27 +62,25 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
 
-            if (br.containsHTML("Vídeo no existe posiblemente")) {
+            if (br.containsHTML("Vídeo no existe posiblemente") || this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
 
             final Form iAmHuman = br.getFormbyProperty("name", "formulario");
-            if (iAmHuman == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (iAmHuman != null) {
+                iAmHuman.remove("enviar");
+
+                /* Waittime is still skippable */
+                // String waittime = br.getRegex("var tiempo = (\\d+);").getMatch(0);
+                // int wait = 5;
+                // if (waittime != null) wait = Integer.parseInt(waittime);
+                // sleep(wait * 1001l, downloadLink);
+
+                br.submitForm(iAmHuman);
             }
-            iAmHuman.remove("enviar");
 
-            /* Waittime is still skippable */
-            // String waittime = br.getRegex("var tiempo = (\\d+);").getMatch(0);
-            // int wait = 5;
-            // if (waittime != null) wait = Integer.parseInt(waittime);
-            // sleep(wait * 1001l, downloadLink);
-
-            br.submitForm(iAmHuman);
-
-            if (br.containsHTML("Vídeo no existe posiblemente")) {
+            if (br.containsHTML("Vídeo no existe posiblemente") || this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
@@ -92,6 +90,11 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
             }
             uid = br.getRegex("(?:file=|/framevideo/)([0-9a-f\\.]+)(\\&|\"|\\'|\\?)").getMatch(0);
             if (uid == null) {
+                final String externID = this.br.getRegex("framevideo\\?vh=youtu\\&amp;id=([^<>\"\\'=\\&]+)").getMatch(0);
+                if (externID != null) {
+                    decryptedLinks.add(this.createDownloadlink("https://www.youtube.com/watch?v=" + externID));
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }

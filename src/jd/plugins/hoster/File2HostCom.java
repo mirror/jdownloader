@@ -48,12 +48,23 @@ public class File2HostCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex info = br.getRegex("<div style=\"text\\-align: right; margin\\-top: 2px;\">([^<>\"]*?) <font dir=\"ltr\"><br>\\(([^<>\"]*?)\\) </font>");
-        final String filename = info.getMatch(0);
-        final String filesize = info.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        String filename = info.getMatch(0);
+        if (filename == null) {
+            filename = this.br.getRegex("itemprop=\"name\">([^<>\"]+)<").getMatch(0);
+        }
+        String filesize = info.getMatch(1);
+        if (filesize == null) {
+            filesize = this.br.getRegex("itemprop=\"contentSize\" content=\"([^<>\"]+)\"").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Server sometimes sends encoded crap - use html-filename as final filename! */
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -61,8 +72,10 @@ public class File2HostCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("(http://(www\\.)?(file2host\\.com|serv\\d+\\.f2h\\.co\\.il)/files/\\d+\\|[a-z0-9]{32})").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = br.getRegex("\\'(files/\\d+\\|[^<>\"\\']+)\\'").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "", true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
