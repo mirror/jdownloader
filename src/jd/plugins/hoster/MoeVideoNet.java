@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "http://moevideosdecrypted\\.net/\\d+" }, flags = { 0 })
-public class MoeVideosNet extends PluginForHost {
+public class MoeVideoNet extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
@@ -40,7 +40,7 @@ public class MoeVideosNet extends PluginForHost {
     private String               dllink;
     private static AtomicBoolean isDled = new AtomicBoolean(false);
 
-    public MoeVideosNet(PluginWrapper wrapper) {
+    public MoeVideoNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
