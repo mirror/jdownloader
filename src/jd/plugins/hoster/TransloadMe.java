@@ -218,7 +218,7 @@ public class TransloadMe extends PluginForHost {
         /*
          * Free users = They have no package (==no balance left) --> Accept them but set zero traffic left.
          */
-        if (balance == null || Integer.parseInt(balance) <= 0) {
+        if (balance == null || Double.parseDouble(balance) <= 0) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             /* Free accounts have no traffic - set this so they will not be used (accidently) but still accept them. */
