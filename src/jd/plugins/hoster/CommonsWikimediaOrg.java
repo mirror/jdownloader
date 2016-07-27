@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.URLHelper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?File:.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9]+:.+" }, flags = { 0 })
 public class CommonsWikimediaOrg extends PluginForHost {
 
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
@@ -72,7 +72,11 @@ public class CommonsWikimediaOrg extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/File:(.+)").getMatch(0);
+        /*
+         * URL is different for every country e.g. https://en.wikipedia.org/wiki/File:Krak%C3%B3w_G%C5%82%C3%B3wny_(budynek_dworca).JPG,
+         * https://pl.wikipedia.org/wiki/Plik:Dworzec_Krak%C3%B3w_G%C5%82%C3%B3wny.jpg
+         */
+        final String url_filename = new Regex(link.getDownloadURL(), "/wiki/([^/]+/media/)?[A-Za-z0-9]+:(.+)").getMatch(0);
         String filename = br.getRegex("\"wgTitle\":\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
