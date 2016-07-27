@@ -54,9 +54,9 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String contentReleaseName = br.getRegex("<h2 class=\"post\\-title\">(.*?)</h2>").getMatch(0);
+        String contentReleaseName = br.getRegex("<h2 class=\"post-title\">(.*?)</h2>").getMatch(0);
         if (contentReleaseName == null) {
-            contentReleaseName = br.getRegex("<h1 class=\"post\\-title\">([^<>\"]*?)</h1>").getMatch(0);
+            contentReleaseName = br.getRegex("<h1 class=\"post-title\">([^<>\"]*?)</h1>").getMatch(0);
         }
         if (contentReleaseName == null) {
             // easier to return offline than throw error.
@@ -86,17 +86,17 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
 
         // check if DL is from the 'clips' section
         Regex categoryCheck = null;
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-clips.*\">");
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-clips.*\">");
         if (categoryCheck.matches()) {
             category = Category.CLIP;
         }
         // check if DL is from the 'movies' section
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-movies.*\">");
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-movies.*\">");
         if (categoryCheck.matches()) {
             category = Category.MOVIE;
         }
         // check if DL is from the 'siterips' section
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-siterips.*\">");
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-siterips.*\">");
         if (categoryCheck.matches()) {
             category = Category.SITERIP;
         }
@@ -105,23 +105,23 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(1);
+                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(1);
             }
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(1);
+                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post-title\">(.*?)class=\"comments\">Comments are closed").getMatch(1);
             }
         } else {
             // Get all links from title till comment field
-            contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+            contentReleaseLinks = br.getRegex("<h2 class=\"post-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h\\d+ class=\"post\\-title\">(.*?)class=\"comments\">").getMatch(0);
+                contentReleaseLinks = br.getRegex("<h\\d+ class=\"post-title\">(.*?)class=\"comments\">").getMatch(0);
             }
         }
         if (contentReleaseLinks == null) {
             logger.warning("contentReleaseLinks == null");
             return null;
         }
-        final String[] links = new Regex(contentReleaseLinks, "<a href=\"(https?://(www\\.)?[^\"]*?)\"").getColumn(0);
+        final String[] links = new Regex(contentReleaseLinks, "<a[^>]*\\s+href=(\"|')(https?://(www\\.)?[^\"]*?)\\1").getColumn(1);
         if (links == null || links.length == 0) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
