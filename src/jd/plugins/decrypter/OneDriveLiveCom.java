@@ -35,19 +35,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" }, flags = { 0 })
 public class OneDriveLiveCom extends PluginForDecrypt {
 
     public OneDriveLiveCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_DRIVE_ALL               = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+|redir\\?resid=[A-Za-z0-9\\&\\!=#\\.,\\-_]+))";
-    private static final String     TYPE_ONEDRIVE_REDIRECT_RESID = "https?://(www\\.)?onedrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+";
-    private static final String     TYPE_SKYDRIVE_REDIRECT_RESID = "https?://(www\\.)?skydrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+";
+    private static final String     TYPE_DRIVE_ALL               = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
+    private static final String     TYPE_ONEDRIVE_REDIRECT_RESID = "https?://(www\\.)?onedrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String     TYPE_SKYDRIVE_REDIRECT_RESID = "https?://(www\\.)?skydrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
     private static final String     TYPE_ONEDRIVE_VIEW_RESID     = "https?://(www\\.)?onedrive\\.live\\.com/view\\.aspx\\?resid=.+";
-    private static final String     TYPE_SKYDRIVE_REDIRECT       = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+";
-    private static final String     TYPE_SKYDRIVE_SHORT          = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9]+";
+    private static final String     TYPE_SKYDRIVE_REDIRECT       = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String     TYPE_SKYDRIVE_SHORT          = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
     private static final String     TYPE_ONEDRIVE_ROOT           = "https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
     /* Constants */
     private static final int        MAX_ENTRIES_PER_REQUEST      = 1000;
