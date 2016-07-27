@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -25,12 +25,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru" }, urls = { "http://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc)/Media\\-page\\-\\d+\\.html" }, flags = { 0 })
+public class PrimeMusicRu extends antiDDoSForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru" }, urls = { "http://(www\\.)?(primemusic\\.ru|prime\\-music\\.net)/Media\\-page\\-\\d+\\.html" }, flags = { 0 })
-public class PrimeMusicRu extends PluginForHost {
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "primemusic.ru", "prime-music.net", "primemusic.cc" };
+    }
 
     public PrimeMusicRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,20 +40,20 @@ public class PrimeMusicRu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://prime-music.net";
+        return "http://primemusic.cc";
     }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("primemusic.ru/", "prime-music.net/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(primemusic\\.ru|prime-music\\.net)/", "primemusic.cc/"));
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML("<h1 class=\"radio_title\">Композиция не найдена</h1>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -72,17 +74,20 @@ public class PrimeMusicRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-
-        br.getPage(downloadLink.getDownloadURL().replace("/Media-page-", "/Media-download-"));
-        String finallink = br.getRegex("<a class=\"download\" href=(http://[^<>\"]*?\\.mp3)\"").getMatch(0);
+        br.setFollowRedirects(false);
+        getPage(downloadLink.getDownloadURL().replace("/Media-page-", "/Media-download-"));
+        String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            finallink = br.getRegex("class=\"download_link\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
-        }
-        if (finallink == null) {
-            finallink = br.getRegex("\"(http://[a-z0-9]+\\.(primemusic\\.ru|prime\\-music\\.net)/dl\\d+/[^<>\"]*?)\"").getMatch(0);
-        }
-        if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getRegex("<a class=\"download\" href=(http://[^<>\"]*?\\.mp3)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("class=\"download_link\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("\"(http://[a-z0-9]+\\.(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc)/dl\\d+/[^<>\"]*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
