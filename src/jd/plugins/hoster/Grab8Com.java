@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM_asdfasdfaudfaja9ua17" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=\\d+", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=\\d+" }, flags = { 2, 2 })
 public class Grab8Com extends antiDDoSForHost {
 
     private final String                                   NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
@@ -101,7 +101,7 @@ public class Grab8Com extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+        return AvailableStatus.TRUE;
     }
 
     private void setConstants(final Account acc, final DownloadLink dl) {
@@ -124,9 +124,8 @@ public class Grab8Com extends antiDDoSForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws PluginException {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        handleDL(account, link, link.getDownloadURL());
     }
 
     @Override
