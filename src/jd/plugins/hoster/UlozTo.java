@@ -90,26 +90,25 @@ public class UlozTo extends PluginForHost {
         return -1;
     }
 
+    private Browser prepBR(final Browser br) {
+        br.setCustomCharset("utf-8");
+        br.setAllowedResponseCodes(400);
+        return br;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         passwordProtected = false;
         this.setBrowserExclusive();
         correctDownloadLink(downloadLink);
-        br.setCustomCharset("utf-8");
+        prepBR(this.br);
         br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
             downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        try {
-            handleDownloadUrl(downloadLink);
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 400) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw e;
-        }
+        handleDownloadUrl(downloadLink);
         /* For age restricted links */
         final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (ageFormToken != null) {
@@ -192,6 +191,9 @@ public class UlozTo extends PluginForHost {
             logger.info("Getting redirect-page");
             br.getPage(br.getRedirectLocation());
             i++;
+        }
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -318,7 +320,8 @@ public class UlozTo extends PluginForHost {
                         if (br2.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
                             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
                         }
-                        if (br2.containsHTML("\"errors\":\\[\"Chyba při ověření uživatele, zkus to znovu")) {
+                        if (br2.containsHTML("Chyba při ověření uživatele, zkus to znovu|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
+                            /* \"errors\":\\[\"Chyba při ověření uživatele, zkus to znovu */
                             // Error in user authentication, try again
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         }
