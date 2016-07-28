@@ -29,7 +29,13 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
     }
 
     public String getHost(DownloadLink link, Account account) {
-        return super.getHost(link, account);
+        if (link != null) {
+            return link.getHost();
+        }
+        if (account != null) {
+            return account.getHoster();
+        }
+        return null;
     };
 
     @Override

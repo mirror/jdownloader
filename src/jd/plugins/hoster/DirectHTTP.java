@@ -930,7 +930,10 @@ public class DirectHTTP extends antiDDoSForHost {
             // prefer domain via public suffic list
             return Browser.getHost(link.getDownloadURL());
         }
-        return super.getHost(link, account);
+        if (account != null) {
+            return account.getHoster();
+        }
+        return null;
     }
 
     @Override

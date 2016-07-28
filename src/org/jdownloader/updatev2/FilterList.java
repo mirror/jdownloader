@@ -92,6 +92,9 @@ public class FilterList implements Storable {
     private volatile String[] entries;
 
     public boolean validate(String host, String accUser) {
+        if (host == null) {
+            host = "";
+        }
         final Pattern[][] lPatterns = patterns;
         final Pattern[] accountPatterns = lPatterns[0];
         final Pattern[] domainPatterns = lPatterns[1];
