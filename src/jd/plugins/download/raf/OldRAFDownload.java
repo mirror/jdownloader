@@ -28,23 +28,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.translate._JDT;
-import org.jdownloader.updatev2.InternetConnectionSettings;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -68,41 +52,58 @@ import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.SparseFile;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.InternetConnectionSettings;
+
 public class OldRAFDownload extends DownloadInterface {
 
-    private RandomAccessFile                    outputPartFileRaf;
-    private File                                outputCompleteFile;
-    private File                                outputFinalCompleteFile;
-    private File                                outputPartFile;
-    private AtomicBoolean                       connected                = new AtomicBoolean(false);
-    private CopyOnWriteArrayList<RAFChunk>      chunks                   = new CopyOnWriteArrayList<RAFChunk>();
+    private final AtomicReference<RandomAccessFile> outputPartFileRaf        = new AtomicReference<RandomAccessFile>(null);
+    private volatile File                           outputCompleteFile;
+    private volatile File                           outputFinalCompleteFile;
+    private volatile File                           outputPartFile;
+    private final AtomicBoolean                     connected                = new AtomicBoolean(false);
+    private final CopyOnWriteArrayList<RAFChunk>    chunks                   = new CopyOnWriteArrayList<RAFChunk>();
 
-    protected long                              totalLinkBytesLoaded     = 0;
-    protected AtomicLong                        totalLinkBytesLoadedLive = new AtomicLong(0);
+    protected volatile long                         totalLinkBytesLoaded     = 0;
+    protected AtomicLong                            totalLinkBytesLoadedLive = new AtomicLong(0);
 
-    private int                                 readTimeout              = 100000;
-    private int                                 requestTimeout           = 100000;
+    private int                                     readTimeout              = 100000;
+    private int                                     requestTimeout           = 100000;
 
-    private AtomicBoolean                       terminated               = new AtomicBoolean(false);
-    private AtomicBoolean                       abort                    = new AtomicBoolean(false);
+    private final AtomicBoolean                     terminated               = new AtomicBoolean(false);
+    private final AtomicBoolean                     abort                    = new AtomicBoolean(false);
 
-    protected int                               chunkNum                 = 1;
-    private boolean                             resume                   = false;
+    protected int                                   chunkNum                 = 1;
+    private boolean                                 resume                   = false;
 
-    protected boolean                           dlAlreadyFinished        = false;
-    protected Browser                           browser;
-    protected URLConnectionAdapter              connection;
+    protected boolean                               dlAlreadyFinished        = false;
+    protected Browser                               browser;
+    protected URLConnectionAdapter                  connection;
 
-    protected Downloadable                      downloadable;
+    protected Downloadable                          downloadable;
 
-    protected PluginException                   caughtPluginException    = null;
-    public LogInterface                         logger;
+    protected PluginException                       caughtPluginException    = null;
+    public LogInterface                             logger;
 
-    public static final String                  PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
-    protected Request                           request                  = null;
-    protected ManagedThrottledConnectionHandler connectionHandler        = null;
-    private long                                startTimeStamp           = -1;
-    private boolean                             resumedDownload;
+    public static final String                      PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
+    protected Request                               request                  = null;
+    protected ManagedThrottledConnectionHandler     connectionHandler        = null;
+    private long                                    startTimeStamp           = -1;
+    private boolean                                 resumedDownload;
 
     /**
      * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks koennen nur vor dem Downloadstart gesetzt werden!
@@ -1042,7 +1043,7 @@ public class OldRAFDownload extends DownloadInterface {
                 }
             } catch (IOException e) {
             }
-            outputPartFileRaf = IO.open(outputPartFile, "rw");
+            outputPartFileRaf.set(IO.open(outputPartFile, "rw"));
 
         } catch (Exception e) {
             LogSource.exception(logger, e);
@@ -1089,8 +1090,9 @@ public class OldRAFDownload extends DownloadInterface {
     protected boolean writeChunkBytes(RAFChunk chunk) {
         try {
             synchronized (outputPartFile) {
-                outputPartFileRaf.seek(chunk.getWritePosition());
-                outputPartFileRaf.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
+                final RandomAccessFile raf = outputPartFileRaf.get();
+                raf.seek(chunk.getWritePosition());
+                raf.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
                 if (chunk.getID() >= 0) {
                     downloadable.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                 }
@@ -1106,27 +1108,28 @@ public class OldRAFDownload extends DownloadInterface {
 
     public void cleanupDownladInterface() {
         try {
-            downloadable.removeConnectionHandler(this.getManagedConnetionHandler());
-        } catch (final Throwable e) {
+            try {
+                downloadable.removeConnectionHandler(this.getManagedConnetionHandler());
+            } catch (final Throwable e) {
+            }
+            try {
+                this.connection.disconnect();
+            } catch (Throwable e) {
+            }
+        } finally {
+            closeOutputChannel();
         }
-        try {
-            this.connection.disconnect();
-        } catch (Throwable e) {
-        }
-        closeOutputChannel();
     }
 
     private void closeOutputChannel() {
         try {
-            RandomAccessFile loutputPartFileRaf = outputPartFileRaf;
+            final RandomAccessFile loutputPartFileRaf = outputPartFileRaf.getAndSet(null);
             if (loutputPartFileRaf != null) {
                 logger.info("Close File. Let AV programs run");
                 loutputPartFileRaf.close();
             }
         } catch (Throwable e) {
             LogSource.exception(logger, e);
-        } finally {
-            outputPartFileRaf = null;
         }
     }
 
