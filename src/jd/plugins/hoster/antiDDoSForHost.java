@@ -1,11 +1,8 @@
 package jd.plugins.hoster;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -18,15 +15,6 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -45,6 +33,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -383,46 +381,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
             // stable fail over
             is = con.getErrorStream();
         }
-        String encoding;
-        final String t = readInputStream(is, encoding = ibr.getRequest().getCustomCharset());
-        if (t != null) {
-            logger.fine("\r\n" + t);
-            ibr.getRequest().setHtmlCode(t);
-            if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
-                ibr.getRequest().setKeepByteArray(true);
-                ibr.getRequest().setResponseBytes(t.getBytes(encoding == null ? "UTF-8" : encoding));
-            }
-        }
-    }
-
-    /**
-     * @author razotki
-     * @author jiaz
-     * @param is
-     * @return
-     * @throws UnsupportedEncodingException
-     * @throws IOException
-     */
-    private String readInputStream(final InputStream is, final String encoding) throws UnsupportedEncodingException, IOException {
-        BufferedReader f = null;
-        try {
-            f = new BufferedReader(new InputStreamReader(is, encoding == null ? "UTF-8" : encoding));
-            String line;
-            final StringBuilder ret = new StringBuilder();
-            final String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                if (ret.length() > 0) {
-                    ret.append(sep);
-                }
-                ret.append(line);
-            }
-            return ret.toString();
-        } finally {
-            try {
-                is.close();
-            } catch (final Throwable e) {
-            }
-        }
+        final byte[] responseBytes = IO.readStream(-1, is);
+        ibr.getRequest().setResponseBytes(responseBytes);
+        ibr.getRequest().getHtmlCode();
     }
 
     private int     a_responseCode429    = 0;

@@ -47,6 +47,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.IO;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
@@ -687,11 +688,9 @@ public abstract class K2SApi extends PluginForHost {
             // stable fail over
             is = con.getErrorStream();
         }
-        final String t = readInputStream(is, ibr.getRequest().getCustomCharset());
-        if (t != null) {
-            logger.fine("\r\n" + t);
-            ibr.getRequest().setHtmlCode(t);
-        }
+        final byte[] responseBytes = IO.readStream(-1, is);
+        ibr.getRequest().setResponseBytes(responseBytes);
+        ibr.getRequest().getHtmlCode();
     }
 
     /**
