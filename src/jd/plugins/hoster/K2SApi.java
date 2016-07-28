@@ -21,10 +21,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,6 +43,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.IO;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -660,6 +660,10 @@ public abstract class K2SApi extends PluginForHost {
         final byte[] responseBytes = IO.readStream(-1, is);
         ibr.getRequest().setResponseBytes(responseBytes);
         logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
+        if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
+            ibr.getRequest().setKeepByteArray(true);
+            ibr.getRequest().setResponseBytes(responseBytes);
+        }
     }
 
     private boolean loginRequiresCaptcha(final Browser ibr) {
