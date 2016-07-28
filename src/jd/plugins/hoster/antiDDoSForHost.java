@@ -371,6 +371,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
         final byte[] responseBytes = IO.readStream(-1, is);
         ibr.getRequest().setResponseBytes(responseBytes);
         logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
+        if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
+            ibr.getRequest().setKeepByteArray(true);
+            ibr.getRequest().setResponseBytes(responseBytes);
+        }
     }
 
     private int     a_responseCode429    = 0;
