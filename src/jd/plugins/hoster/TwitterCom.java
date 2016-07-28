@@ -132,7 +132,7 @@ public class TwitterCom extends PluginForHost {
                 /* E.g. abused video */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK() && con.getLongContentLength() > 0) {
                 if (filename == null) {
                     filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
                 }

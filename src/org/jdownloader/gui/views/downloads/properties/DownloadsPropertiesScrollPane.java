@@ -1,7 +1,6 @@
 package org.jdownloader.gui.views.downloads.properties;
 
 import java.awt.Container;
-import java.util.Objects;
 
 import javax.swing.JComponent;
 
@@ -35,11 +34,15 @@ public class DownloadsPropertiesScrollPane extends OverviewHeaderScrollPane impl
         header.update(objectbyRow);
         panel.update(objectbyRow);
         Container parent = getParent();
-        if (parent != null && parent instanceof JComponent && !Objects.equals(selectedNode == null ? null : selectedNode.getClass(), objectbyRow == null ? null : objectbyRow.getClass())) {
+        if (parent != null && parent instanceof JComponent && !equals(selectedNode == null ? null : selectedNode.getClass(), objectbyRow == null ? null : objectbyRow.getClass())) {
             // revalidate the parent, because the panel hight may have changed
             ((JComponent) parent).revalidate();
         }
         selectedNode = objectbyRow;
+    }
+
+    private boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
     }
 
     public void refresh() {

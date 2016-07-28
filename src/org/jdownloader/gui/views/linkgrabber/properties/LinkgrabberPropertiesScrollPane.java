@@ -2,15 +2,14 @@ package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.awt.Container;
 import java.awt.Dimension;
-import java.util.Objects;
 
 import javax.swing.JComponent;
+
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.views.downloads.properties.PropertiesScrollPaneInterface;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-
-import jd.controlling.packagecontroller.AbstractNode;
 
 public class LinkgrabberPropertiesScrollPane extends OverviewHeaderScrollPane implements PropertiesScrollPaneInterface {
 
@@ -33,12 +32,16 @@ public class LinkgrabberPropertiesScrollPane extends OverviewHeaderScrollPane im
         panel.update(objectbyRow);
         Container parent = getParent();
 
-        if (parent != null && parent instanceof JComponent && !Objects.equals(selectedNode == null ? null : selectedNode.getClass(), objectbyRow == null ? null : objectbyRow.getClass())) {
+        if (parent != null && parent instanceof JComponent && !equals(selectedNode == null ? null : selectedNode.getClass(), objectbyRow == null ? null : objectbyRow.getClass())) {
             // revalidate the parent, because the panel hight may have changed
 
             ((JComponent) parent).revalidate();
         }
         selectedNode = objectbyRow;
+    }
+
+    private boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
     }
 
     @Override

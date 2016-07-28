@@ -9,7 +9,6 @@ import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.storage.Storable;
 import org.appwork.swing.exttable.ExtColumn;
-
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
@@ -22,7 +21,7 @@ public class CrawledPackageStorable implements Storable {
         VARIOUS
     }
 
-    private TYPE   type      = null;
+    private TYPE   type      = TYPE.NORMAL;
     private String packageID = null;
 
     /* this one is correct during JSON serialization */
