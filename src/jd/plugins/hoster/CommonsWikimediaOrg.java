@@ -76,9 +76,13 @@ public class CommonsWikimediaOrg extends PluginForHost {
          * URL is different for every country e.g. https://en.wikipedia.org/wiki/File:Krak%C3%B3w_G%C5%82%C3%B3wny_(budynek_dworca).JPG,
          * https://pl.wikipedia.org/wiki/Plik:Dworzec_Krak%C3%B3w_G%C5%82%C3%B3wny.jpg
          */
-        final String url_filename = new Regex(link.getDownloadURL(), "/wiki/([^/]+/media/)?[A-Za-z0-9]+:(.+)").getMatch(0);
+
         String filename = br.getRegex("\"wgTitle\":\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
+            String url_filename = new Regex(link.getDownloadURL(), "/wiki/([^/]+/media/)?[A-Za-z0-9]+:(.+)").getMatch(0);
+            if (url_filename == null) {
+                url_filename = new Regex(link.getDownloadURL(), "/File:(.+)").getMatch(0);
+            }
             filename = url_filename;
         }
         String filesize_str = this.br.getRegex("file size: (\\d+(?:\\.\\d{1,2})? [A-Za-z]+)").getMatch(0);
