@@ -1,11 +1,8 @@
 package jd.plugins.hoster;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -23,6 +20,10 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.IO;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -46,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.IO;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -202,10 +199,7 @@ public abstract class K2SApi extends PluginForHost {
     protected Browser prepBrowser(final Browser prepBr) {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
-        try {
-            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
-        } catch (final Throwable t) {
-        }
+        prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
@@ -235,10 +229,7 @@ public abstract class K2SApi extends PluginForHost {
         // prep site variables, this links back to prepADB from Override
         prepBrowser(prepBr);
         // api && dl server response codes
-        try {
-            prepBr.addAllowedResponseCodes(new int[] { 400, 401, 403, 406 });
-        } catch (final Throwable t) {
-        }
+        prepBr.addAllowedResponseCodes(new int[] { 400, 401, 403, 406 });
         return prepBr;
     }
 
@@ -253,12 +244,7 @@ public abstract class K2SApi extends PluginForHost {
             String linkID = getFUID(downloadLink);
             if (linkID != null) {
                 linkID = getDomain() + "://" + linkID;
-                try {
-                    downloadLink.setLinkID(linkID);
-                } catch (Throwable e) {
-                    // not in stable
-                    downloadLink.setProperty("LINKDUPEID", linkID);
-                }
+                downloadLink.setLinkID(linkID);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -320,23 +306,14 @@ public abstract class K2SApi extends PluginForHost {
                         // private = owner only..
                         dl.setProperty("access", access);
                         if ("premium".equalsIgnoreCase(access)) {
-                            try {
-                                dl.setComment(getErrorMessage(7));
-                            } catch (final Throwable t) {
-                            }
+                            dl.setComment(getErrorMessage(7));
                         } else if ("private".equalsIgnoreCase(access)) {
-                            try {
-                                dl.setComment(getErrorMessage(8));
-                            } catch (final Throwable t) {
-                            }
+                            dl.setComment(getErrorMessage(8));
                         }
                     }
                     if (!inValidate(isFolder) && "true".equalsIgnoreCase(isFolder)) {
                         dl.setAvailable(false);
-                        try {
-                            dl.setComment(getErrorMessage(23));
-                        } catch (final Throwable t) {
-                        }
+                        dl.setComment(getErrorMessage(23));
                     }
                     setFUID(dl);
                 }
@@ -495,7 +472,9 @@ public abstract class K2SApi extends PluginForHost {
             }
             logger.info("dllink = " + dllink);
 
-            /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
+            /*
+             * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
+             */
             synchronized (CTRLLOCK) {
                 if (account != null) {
                     account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
@@ -676,51 +655,11 @@ public abstract class K2SApi extends PluginForHost {
      * @throws PluginException
      */
     private void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
-        InputStream is = null;
-        try {
-            /* beta */
-            try {
-                con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
-            } catch (final Throwable e2) {
-            }
-            is = con.getInputStream();
-        } catch (IOException e) {
-            // stable fail over
-            is = con.getErrorStream();
-        }
+        con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
+        final InputStream is = con.getInputStream();
         final byte[] responseBytes = IO.readStream(-1, is);
         ibr.getRequest().setResponseBytes(responseBytes);
-        ibr.getRequest().getHtmlCode();
-    }
-
-    /**
-     * @author razotki
-     * @author jiaz
-     * @param is
-     * @return
-     * @throws UnsupportedEncodingException
-     * @throws IOException
-     */
-    private String readInputStream(final InputStream is, final String encoding) throws UnsupportedEncodingException, IOException {
-        BufferedReader f = null;
-        try {
-            f = new BufferedReader(new InputStreamReader(is, encoding == null ? "UTF-8" : encoding));
-            String line;
-            final StringBuilder ret = new StringBuilder();
-            final String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                if (ret.length() > 0) {
-                    ret.append(sep);
-                }
-                ret.append(line);
-            }
-            return ret.toString();
-        } finally {
-            try {
-                is.close();
-            } catch (final Throwable e) {
-            }
-        }
+        logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
     }
 
     private boolean loginRequiresCaptcha(final Browser ibr) {
@@ -1342,11 +1281,7 @@ public abstract class K2SApi extends PluginForHost {
 
     private String getLanguage() {
         try {
-            if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                return org.appwork.txtresource.TranslationFactory.getDesiredLocale().getLanguage().toLowerCase(Locale.ENGLISH);
-            } else {
-                return System.getProperty("user.language");
-            }
+            return org.appwork.txtresource.TranslationFactory.getDesiredLocale().getLanguage().toLowerCase(Locale.ENGLISH);
         } catch (final Throwable ignore) {
             return System.getProperty("user.language");
         }
