@@ -16,6 +16,16 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -33,16 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -76,10 +76,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         }
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
-        try {
-            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 504, 520, 521, 522, 523, 525 });
-        } catch (final Throwable t) {
-        }
+        prepBr.addAllowedResponseCodes(new int[] { 429, 503, 504, 520, 521, 522, 523, 525 });
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, Cookies> cookieEntry : antiDDoSCookies.entrySet()) {
@@ -369,21 +366,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @throws PluginException
      */
     public void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
-        InputStream is = null;
-        try {
-            /* beta */
-            try {
-                con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
-            } catch (final Throwable e2) {
-            }
-            is = con.getInputStream();
-        } catch (IOException e) {
-            // stable fail over
-            is = con.getErrorStream();
-        }
+        con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
+        final InputStream is = con.getInputStream();
         final byte[] responseBytes = IO.readStream(-1, is);
         ibr.getRequest().setResponseBytes(responseBytes);
-        ibr.getRequest().getHtmlCode();
+        logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
     }
 
     private int     a_responseCode429    = 0;
