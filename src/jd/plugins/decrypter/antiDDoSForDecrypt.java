@@ -1,11 +1,8 @@
 package jd.plugins.decrypter;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -389,36 +386,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         final byte[] responseBytes = IO.readStream(-1, is);
         ibr.getRequest().setResponseBytes(responseBytes);
         ibr.getRequest().getHtmlCode();
-    }
-
-    /**
-     * @author razotki
-     * @author jiaz
-     * @param is
-     * @return
-     * @throws UnsupportedEncodingException
-     * @throws IOException
-     */
-    private String readInputStream(final InputStream is, final String encoding) throws UnsupportedEncodingException, IOException {
-        BufferedReader f = null;
-        try {
-            f = new BufferedReader(new InputStreamReader(is, encoding == null ? "UTF-8" : encoding));
-            String line;
-            final StringBuilder ret = new StringBuilder();
-            final String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                if (ret.length() > 0) {
-                    ret.append(sep);
-                }
-                ret.append(line);
-            }
-            return ret.toString();
-        } finally {
-            try {
-                is.close();
-            } catch (final Throwable e) {
-            }
-        }
     }
 
     private int     a_responseCode429    = 0;
