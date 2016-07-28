@@ -246,10 +246,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 index++;
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     final PluginForHost plugin = sdc.getAccount().getPlugin();
-                    final Icon icon = DomainInfo.getInstance(plugin.getHost(dlLink, sdc.getAccount())).getFavIcon();
-                    labels[index].setIcon(icon);
-                    labels[index].setVisible(true);
-                    index++;
+                    final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(dlLink, sdc.getAccount()));
+                    if (domainInfo != null) {
+                        final Icon icon = domainInfo.getFavIcon();
+                        labels[index].setIcon(icon);
+                        labels[index].setVisible(true);
+                        index++;
+                    }
                 }
                 labels[index].setText("" + dli.getManagedConnetionHandler().size());
                 labels[index].setIcon(connections);
@@ -390,10 +393,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     /* account in use? */
                     final PluginForHost plugin = sdc.getAccount().getPlugin();
-                    final Icon icon = DomainInfo.getInstance(plugin.getHost(link, sdc.getAccount())).getFavIcon();
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
-                    SwingUtils.setOpaque(lbl, false);
-                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                    final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(link, sdc.getAccount()));
+                    if (domainInfo != null) {
+                        final Icon icon = domainInfo.getFavIcon();
+                        panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
+                        SwingUtils.setOpaque(lbl, false);
+                        lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                    }
                 }
             }
             if (dli != null) {
