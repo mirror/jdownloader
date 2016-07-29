@@ -61,8 +61,8 @@ public class RabbitFileComDecrypter extends PluginForDecrypt {
 
         final String[] links = br.getRegex("(<a class=\\'list\\-group\\-item\\'.*?</a>)").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Seems like this url is only available via premium account");
+            return decryptedLinks;
         }
         int part = 1;
         for (final String singleinfo : links) {

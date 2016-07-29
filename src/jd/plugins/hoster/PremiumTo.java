@@ -47,7 +47,7 @@ import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends UseNet {
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
     private static AtomicBoolean                               shareOnlineLocked              = new AtomicBoolean(false);
@@ -57,8 +57,8 @@ public class PremiumTo extends UseNet {
     private final String                                       specialTraffic                 = "specialTraffic";
     private static final String                                lang                           = System.getProperty("user.language");
     private static final String                                CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String                                type_storage                   = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
-    private static final String                                type_torrent                   = "https?://torrent\\d*\\.premium\\.to/.+";
+    private static final String                                type_storage                   = "https?://storage[a-z0-9]*?\\.premium\\.to/file/[A-Z0-9]+";
+    private static final String                                type_torrent                   = "https?://torrent[a-z0-9]*?\\.premium\\.to/.+";
     private static final String                                API_BASE                       = "http://api.premium.to/";
 
     public PremiumTo(PluginWrapper wrapper) {
@@ -485,7 +485,8 @@ public class PremiumTo extends UseNet {
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
         if (isUsenetLink(link)) {
-            return 10;
+            /* 2016-07-29: psp: Lowered this from 10 to 3 RE: admin */
+            return 3;
         } else {
             /* Not sure about this value. */
             return 20;

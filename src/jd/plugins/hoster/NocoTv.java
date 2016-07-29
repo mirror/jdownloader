@@ -30,6 +30,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -82,9 +83,12 @@ public class NocoTv extends PluginForHost {
             return ai;
         }
         br.getPage(MAINPAGE);
-        if (!br.containsHTML("Type d'abonnement : <strong>Archives<")) {
+        if (true) {
+            logger.info("Plugin does not have any working free account support and premium account support is broken ...");
             ai.setStatus("No premium account?!");
-            account.setValid(false);
+            account.setType(AccountType.FREE);
+            ai.setTrafficLeft(0);
+            account.setValid(true);
             return ai;
         }
         ai.setUnlimitedTraffic();
@@ -96,6 +100,7 @@ public class NocoTv extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", null));
         }
         account.setValid(true);
+        account.setType(AccountType.FREE);
         ai.setStatus("Premium User");
         return ai;
     }
@@ -172,9 +177,8 @@ public class NocoTv extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                final String pwhash = JDHash.getMD5(account.getPass());
-                br.postPage("http://forum.nolife-tv.com/login.php?do=login", "vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&cookieuser=1&vb_login_password=&s=&securitytoken=guest&do=login&vb_login_md5password=" + pwhash + "&vb_login_md5password_utf=" + pwhash);
-                if (br.getCookie(MAINPAGE, "bbuserid") == null || br.getCookie(MAINPAGE, "bbpassword") == null) {
+                br.postPage("http://" + this.getHost() + "/do.php", "cookie=1&a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "id_user") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies

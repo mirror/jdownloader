@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/dashboard/blog/[^/]+)(?:\\?password=.+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" }, flags = { 0 })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
@@ -58,7 +58,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private static final String     TYPE_FILE              = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
     private static final String     TYPE_POST              = ".+tumblr\\.com/post/\\d+";
     private static final String     TYPE_IMAGE             = ".+tumblr\\.com/image/\\d+";
-    private static final String     TYPE_USER_LOGGEDIN     = "https?://(?:www\\.)?tumblr\\.com/dashboard/blog/([^/]+)";
+    private static final String     TYPE_USER_LOGGEDIN     = "https?://(?:www\\.)?tumblr\\.com/(?:dashboard/)?blog/([^/]+)";
     private static final String     TYPE_USER_LOGGEDOUT    = "https?://[^/]+\\.tumblr\\.com/.*?";
 
     private static final String     urlpart_passwordneeded = "/blog_auth";
@@ -336,6 +336,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             if (pic != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + pic);
+                if (this.passCode != null) {
+                    dl.setDownloadPassword(this.passCode);
+                }
                 dl.setAvailable(true);
                 // determine file extension
                 final String ext = getFileNameExtensionFromURL(pic);
@@ -495,6 +498,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             throw new DecrypterException(PLUGIN_DEFECT);
         }
         final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+        if (this.passCode != null) {
+            dl.setDownloadPassword(this.passCode);
+        }
         // determine file extension
         final String ext = getFileNameExtensionFromURL(externID);
         dl.setFinalFileName(filename + ext);
@@ -601,14 +607,14 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
             boolean success = false;
             for (int i = 0; i <= 2; i++) {
-                if (passCode == null) {
-                    passCode = getUserInput("Password?", this.param);
+                if (this.passCode == null) {
+                    this.passCode = getUserInput("Password?", this.param);
                 }
                 Form form = br.getFormbyKey("auth");
                 if (form == null) {
                     form = br.getFormbyKey("password");
                 }
-                form.put("password", Encoding.urlEncode(passCode));
+                form.put("password", Encoding.urlEncode(this.passCode));
                 br.submitForm(form);
                 form = br.getFormbyKey("auth");
                 if (form != null) {
@@ -701,6 +707,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                         filename += extension;
                     }
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);
+                    if (this.passCode != null) {
+                        dl.setDownloadPassword(this.passCode);
+                    }
                     dl.setAvailable(true);
                     if (post_url != null) {
                         dl.setContentUrl(post_url);
@@ -728,7 +737,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         if (this.passCode != null) {
             url += "?password=" + this.passCode;
         }
-        return super.createDownloadlink(url);
+        final DownloadLink dl = super.createDownloadlink(url);
+        if (this.passCode != null) {
+            dl.setDownloadPassword(this.passCode);
+        }
+        return dl;
     }
 
     /**
