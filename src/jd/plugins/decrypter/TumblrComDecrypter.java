@@ -61,6 +61,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private static final String     TYPE_USER_LOGGEDIN     = "https?://(?:www\\.)?tumblr\\.com/(?:dashboard/)?blog/([^/]+)";
     private static final String     TYPE_USER_LOGGEDOUT    = "https?://[^/]+\\.tumblr\\.com/.*?";
 
+    private static final String     TYPE_USER_ARCHIVE      = "https?://[^/]+\\.tumblr\\.com/archive(?:/.*?)?";
+
     private static final String     urlpart_passwordneeded = "/blog_auth";
 
     private static final String     PLUGIN_DEFECT          = "PLUGINDEFECT";
@@ -132,11 +134,25 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     private String convertUserUrlToLoggedInUser() {
-        return "https://www.tumblr.com/dashboard/blog/" + getUsername(this.parameter);
+        final String url;
+        if (this.parameter.matches(TYPE_USER_ARCHIVE)) {
+            /* Do not modify these urls */
+            url = this.parameter;
+        } else {
+            url = "https://www.tumblr.com/dashboard/blog/" + getUsername(this.parameter);
+        }
+        return url;
     }
 
     private String convertUserUrlToLoggedOutUser() {
-        return "http://" + getUsername(this.parameter) + ".tumblr.com/";
+        final String url;
+        if (this.parameter.matches(TYPE_USER_ARCHIVE)) {
+            /* Do not modify these urls */
+            url = this.parameter;
+        } else {
+            url = "http://" + getUsername(this.parameter) + ".tumblr.com/";
+        }
+        return url;
     }
 
     private String getUsername(final String source) {

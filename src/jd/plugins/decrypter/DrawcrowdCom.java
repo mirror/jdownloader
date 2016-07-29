@@ -53,8 +53,25 @@ public class DrawcrowdCom extends PluginForDecrypt {
         jd.plugins.hoster.DrawcrowdCom.setHeaders(br);
         final Browser org = br.cloneBrowser();
         br.getPage("/users" + username);
-        LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> json = null;
+        try {
+            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        } catch (final Throwable e) {
+            /* No json --> url offline! */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        if (json == null) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
         json = (LinkedHashMap<String, Object>) json.get("user");
+        if (json == null) {
+            /* E.g. "{"users":[]}" */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         final String full_name = (String) json.get("full_name");
         final String user_name = (String) json.get("username");
         final Integer userId = (Integer) json.get("id");
