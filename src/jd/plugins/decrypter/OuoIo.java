@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
  * @author psp
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.(?:io|press)/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "https?://(?:www\\.)?ouo\\.(?:io|press)/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})" }, flags = { 0 })
 public class OuoIo extends antiDDoSForDecrypt {
 
     public OuoIo(PluginWrapper wrapper) {
@@ -48,7 +48,8 @@ public class OuoIo extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        set(param.toString());
+        // they don't support https.. redirects to http.
+        set(param.toString().replace("//www.", "//").replace("https://", "http://"));
         if (slink != null) {
             decryptedLinks.add(createDownloadlink(Encoding.urlDecode(slink, false)));
             return decryptedLinks;
