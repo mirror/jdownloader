@@ -54,11 +54,17 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected boolean supportsHTTPS() {
+        if (getHost().contains("keeplinks.me")) {
+            return true;
+        }
         return false;
     }
 
     @Override
     protected boolean enforcesHTTPS() {
+        if (getHost().contains("keeplinks.me")) {
+            return true;
+        }
         return false;
     }
 
