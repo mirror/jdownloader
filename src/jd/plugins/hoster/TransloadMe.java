@@ -324,9 +324,7 @@ public class TransloadMe extends PluginForHost {
                 handleErrorRetries("temporary_error", 50, 2 * 60 * 1000l);
 
             default:
-                // handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
-                /* TODO: Remove this once plugin is in a stable state */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
@@ -354,9 +352,7 @@ public class TransloadMe extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(waittime);
-            /* TODO: Remove this once plugin is in a stable state */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            tempUnavailableHoster(waittime);
         }
     }
 

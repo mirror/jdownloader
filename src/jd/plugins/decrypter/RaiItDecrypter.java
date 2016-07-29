@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}(?:\\&ch=\\d+)?" }, flags = { 0 })
 public class RaiItDecrypter extends PluginForDecrypt {
 
     public RaiItDecrypter(PluginWrapper wrapper) {
@@ -40,19 +40,46 @@ public class RaiItDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("unchecked")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        this.br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String date = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+        String chnumber_str = new Regex(parameter, "ch=(\\d+)").getMatch(0);
+        if (chnumber_str == null) {
+            /* Small fallback */
+            chnumber_str = "1";
+        }
         final String date_underscore = date.replace("-", "_");
-        this.br.setFollowRedirects(true);
-        this.br.getPage("http://www.rai.tv/dl/portale/html/palinsesti/replaytv/static/RaiUno_" + date_underscore + ".html?_=" + System.currentTimeMillis());
+        LinkedHashMap<String, Object> tempmap = null;
+        LinkedHashMap<String, Object> entries = null;
+        ArrayList<Object> ressourcelist = null;
+        /* Find the name of our channel */
+        this.br.getPage("http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html");
+        String channel_name = null;
+        try {
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            ressourcelist = (ArrayList<Object>) entries.get("Channels");
+            for (final Object channelo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) channelo;
+                final String channelnumber = (String) entries.get("id");
+                if (channelnumber.equals(chnumber_str)) {
+                    channel_name = (String) entries.get("tag");
+                    break;
+                }
+            }
+        } catch (final Throwable e) {
+        }
+        if (channel_name == null || channel_name.equals("")) {
+            channel_name = "RaiUno";
+        }
+
+        this.br.getPage("/dl/portale/html/palinsesti/replaytv/static/" + channel_name + "_" + date_underscore + ".html?_=" + System.currentTimeMillis());
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> tempmap = null;
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("1");
+        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get(chnumber_str);
         entries = (LinkedHashMap<String, Object>) entries.get(date);
 
         final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();

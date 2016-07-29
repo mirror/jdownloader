@@ -23,10 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -48,6 +44,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flash-x.tv" }, urls = { "https?://(?:www\\.)?(?:flashx\\.(?:tv|pw)|flash-x\\.tv)/(?:(?:vid)?embed\\-|dl\\?)?[a-z0-9]{12}" }, flags = { 2 })
 public class FlashxTv extends antiDDoSForHost {
@@ -80,13 +80,13 @@ public class FlashxTv extends antiDDoSForHost {
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
     private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 2;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 2;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 2;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -238,6 +238,7 @@ public class FlashxTv extends antiDDoSForHost {
         /* First, bring up saved final links */
         String file_dllink = null;
         String stream_dllink = null;
+        boolean temporary_issue = false;
         String final_downloadlink = checkDirectLink(downloadLink, directlinkproperty);
         if (final_downloadlink == null) {
             /* Second, check for streaming/direct links on the first page */
@@ -337,6 +338,9 @@ public class FlashxTv extends antiDDoSForHost {
                             getPage("/dl?op=download_orig&id=" + fuid + "&mode=" + mode + "&hash=" + hash);
                             file_dllink = new Regex(correctedBR, "\"(https?://[A-Za-z0-9\\-\\.]+\\." + DOMAINS + "/[a-z0-9]{20,}/[^<>\"/]*?)\"").getMatch(0);
                         } catch (final Throwable e) {
+                            if (this.br.containsHTML(">Download video<")) {
+                                temporary_issue = true;
+                            }
                             logger.warning("Failed to find file_dllink");
                         }
                         if (file_dllink != null) {
@@ -344,6 +348,9 @@ public class FlashxTv extends antiDDoSForHost {
                         }
                     }
                     if (stream_dllink == null && file_dllink == null) {
+                        if (temporary_issue) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
+                        }
                         logger.warning("Failed to find any valid downloadurl");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }

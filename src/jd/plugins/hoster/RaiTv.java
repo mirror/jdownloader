@@ -135,15 +135,15 @@ public class RaiTv extends PluginForHost {
         extension = "mp4";
         dllink = (String) entries.get("h264");
         if (dllink == null || dllink.equals("")) {
+            dllink = (String) entries.get("m3u8");
+            extension = "mp4";
+        }
+        if (dllink == null || dllink.equals("")) {
             dllink = (String) entries.get("wmv");
             extension = "wmv";
         }
         if (dllink == null || dllink.equals("")) {
             dllink = (String) entries.get("mediaUri");
-            extension = "mp4";
-        }
-        if (dllink == null || dllink.equals("")) {
-            dllink = (String) entries.get("m3u8");
             extension = "mp4";
         }
         filename = date_formatted + "_raitv_" + filename + "." + extension;
@@ -228,7 +228,12 @@ public class RaiTv extends PluginForHost {
     }
 
     public static String getDllink(final Browser br) {
-        return br.getRegex("<url type=\"content\">([^<>\"]+)<").getMatch(0);
+        String dllink = br.getRegex("<url type=\"content\">([^<>\"]+)<").getMatch(0);
+        if (dllink != null && dllink.startsWith("mms://")) {
+            /* Convert mms to http */
+            dllink = dllink.replace("mms://", "http://");
+        }
+        return dllink;
     }
 
     public static String getContFromRelinkerUrl(final String relinker) {

@@ -79,7 +79,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
 
         String filename = br.getRegex("\"wgTitle\":\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            String url_filename = new Regex(link.getDownloadURL(), "/wiki/([^/]+/media/)?[A-Za-z0-9]+:(.+)").getMatch(0);
+            String url_filename = new Regex(link.getDownloadURL(), "/wiki/(?:[^/]+/media/)?[A-Za-z0-9]+:(.+)").getMatch(0);
             if (url_filename == null) {
                 url_filename = new Regex(link.getDownloadURL(), "/File:(.+)").getMatch(0);
             }
