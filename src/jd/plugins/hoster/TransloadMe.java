@@ -297,12 +297,6 @@ public class TransloadMe extends PluginForHost {
                 /* Host currently not supported --> deactivate it after some tries */
                 statusMessage = "Unsupported host";
                 handleErrorRetries("unsupported_host", 5, 5 * 60 * 1000l);
-                final String userLanguage = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(userLanguage)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP wurde gebannt!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\ntest!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
             case 3:
                 statusMessage = "Temporary error occured";
                 handleErrorRetries("temporary_error", 50, 2 * 60 * 1000l);

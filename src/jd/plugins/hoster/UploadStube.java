@@ -43,23 +43,36 @@ public class UploadStube extends PluginForHost {
         return -1;
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        this.requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link);
-        dl.startDownload();
-    }
+    private boolean undermaintenance = false;
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
+        if (this.br.containsHTML("WARTUNGSARBEITEN")) {
+            undermaintenance = true;
+            return AvailableStatus.UNCHECKABLE;
+        } else {
+            undermaintenance = false;
+        }
         String filename = br.getRegex("<b>Dateiname: </b>(.*?) <br>").getMatch(0);
         String filesize = br.getRegex("<b>Dateigr..e:</b> (.*?)<br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        this.requestFileInformation(downloadLink);
+        if (undermaintenance) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Under maintenance", 3 * 60 * 60 * 1000l);
+        }
+        br.getPage(downloadLink.getDownloadURL());
+        String link = br.getRegex("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link);
+        dl.startDownload();
     }
 
     public void reset() {

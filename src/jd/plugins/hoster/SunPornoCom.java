@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "http://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" }, flags = { 0 })
@@ -59,12 +60,14 @@ public class SunPornoCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("sunporno.com/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404</title>|This video has been deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String betterDllink = null;
         String filename = br.getRegex("class=\"block-headline-right\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -79,7 +82,19 @@ public class SunPornoCom extends PluginForHost {
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        // DLLINK = Encoding.htmlDecode(DLLINK);
+        final String key = new Regex(DLLINK, "(key=.+)").getMatch(0);
+        if (key != null) {
+            /* Avoids 403 issues. */
+            this.br.getPage("http://www.sunporno.com/?area=movieFilePather&callback=movieFileCallbackFunc&id=1135032&url=" + Encoding.urlEncode(key) + "&_=" + System.currentTimeMillis());
+            DLLINK = PluginJSonUtils.getJson(this.br, "path");
+            betterDllink = PluginJSonUtils.getJson(this.br, "path");
+            if (betterDllink != null && betterDllink.startsWith("http")) {
+                DLLINK = betterDllink;
+            } else {
+                DLLINK = Encoding.htmlDecode(DLLINK);
+            }
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
         Browser br2 = br.cloneBrowser();
@@ -87,19 +102,27 @@ public class SunPornoCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
+            /* Workaround for buggy porn servers: */
+            if (con.getResponseCode() == 404) {
+                /*
+                 * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com
+                 */
+                final String redirect_url = con.getRequest().getUrl();
+                con = br.openHeadConnection(redirect_url);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
