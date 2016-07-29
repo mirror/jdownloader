@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,6 +33,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,8 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" }, flags = { 2 })
 public class InstaGramCom extends PluginForHost {
@@ -216,8 +217,9 @@ public class InstaGramCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage(MAINPAGE + "/accounts/login/");
+                br.getPage(MAINPAGE + "/");
                 try {
+                    br.setHeader("Accept", "*/*");
                     br.setHeader("X-Instagram-AJAX", "1");
                     br.setHeader("X-CSRFToken", br.getCookie("instagram.com", "csrftoken"));
                     br.setHeader("X-Requested-With", "XMLHttpRequest");
@@ -227,6 +229,40 @@ public class InstaGramCom extends PluginForHost {
                     br.setHeader("X-CSRFToken", null);
                     br.setHeader("X-Requested-With", null);
                 }
+                if ("fail".equals(PluginJSonUtils.getJson(br, "status"))) {
+                    // 2 factor (Coded semi blind).
+                    if ("checkpoint_required".equals(PluginJSonUtils.getJson(br, "message"))) {
+                        final String page = PluginJSonUtils.getJson(br, "checkpoint_url");
+                        br.getPage(page);
+                        // verify by email.
+                        Form f = br.getFormBySubmitvalue("Verify+by+Email");
+                        if (f == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.submitForm(f);
+                        f = br.getFormBySubmitvalue("Verify+Account");
+                        if (f == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        // dialog here to ask for 2factor verification 6 digit code.
+                        final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
+                        final String code = getUserInput("2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram linked email account", dummyLink);
+                        if (code == null) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                        f.put("response_code", Encoding.urlEncode(code));
+                        // correct or incorrect?
+                        if (br.containsHTML(">Please check the code we sent you and try again\\.<")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                        // now 2factor most likely wont have the authenticated json if statement below....
+                        // TODO: confirm what's next.
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unfinished code, please report issue with logs to Development Team.");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+
                 if (!br.containsHTML("\"authenticated\"\\s*:\\s*true\\s*")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -279,7 +315,7 @@ public class InstaGramCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36");
         br.setCookie(MAINPAGE, "ig_pr", "1");
         // 429 == too many requests, we need to rate limit requests.
-        br.setAllowedResponseCodes(429);
+        br.setAllowedResponseCodes(400, 429);
         br.setRequestIntervalLimit("instagram.com", 250);
         br.setFollowRedirects(true);
         return br;
