@@ -100,7 +100,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
             }
-            final String continu = br.getRegex("href=(\"|')([^\r\n]+)\\1\\s*>Continue").getMatch(1);
+            final String continu = br.getRegex("href=(\"|')([^\r\n]+)\\1 (?:onClick)?[^>]*>Continue").getMatch(1);
             if (continu == null) {
                 return null;
             }
