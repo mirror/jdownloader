@@ -39,7 +39,7 @@ public class VepornNet extends PluginForDecrypt {
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("video/")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("video/") || br.containsHTML("URL=http://www.veporn.net'")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
