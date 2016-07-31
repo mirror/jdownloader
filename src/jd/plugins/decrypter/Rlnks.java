@@ -22,6 +22,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,12 +42,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }, flags = { 0 })
 public class Rlnks extends antiDDoSForDecrypt {
@@ -77,7 +77,7 @@ public class Rlnks extends antiDDoSForDecrypt {
     }
 
     private boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        final String containerURL = new Regex(page, "(/download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
+        final String containerURL = new Regex(page, "(/?download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
         if (containerURL != null) {
             final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             final Browser browser = br.cloneBrowser();
@@ -197,7 +197,7 @@ public class Rlnks extends antiDDoSForDecrypt {
         try {
             Browser brc = null;
             for (final String match : matches) {
-                Thread.sleep(2333);
+                sleep(2333, param);
                 handleCaptchaAndPassword("/frame.php?" + match, param);
                 if (allForm != null && allForm.getRegex("captcha").matches()) {
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
@@ -211,7 +211,6 @@ public class Rlnks extends antiDDoSForDecrypt {
                     final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation()));
                     distribute(dl);
                     decryptedLinks.add(dl);
-                    break;
                 } else {
                     final String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
                     final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(url));
