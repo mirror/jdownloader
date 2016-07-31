@@ -202,7 +202,13 @@ public class MangaTradersOrg extends antiDDoSForHost {
             login(account, false);
         }
         getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRedirectLocation();
+        String dllink = null;
+        if (br.getHttpConnection().getContentType().equals("text/html")) {
+            // some other bullshit task.
+            dllink = processJS();
+        } else {
+            dllink = br.getRedirectLocation();
+        }
         if (dllink == null) {
             if (br.containsHTML(offlineFile)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
