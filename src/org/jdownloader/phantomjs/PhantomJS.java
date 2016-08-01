@@ -558,19 +558,21 @@ public class PhantomJS implements HttpRequestHandler {
                         final Thread phantomProcessThread = PhantomJS.this.phantomProcessThread.get();
                         if (phantomProcessThread != null) {
                             Thread.sleep(5000);
+                            final String result;
                             try {
-                                final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
-                                if (!isResultOkay(result)) {
-                                    throw new IOException("IPC JD->PJS Failed: '" + result + "'");
-                                }
-                                tryAgain = maxTry;
+                                result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
                             } catch (Throwable e) {
                                 if (--tryAgain == 0) {
                                     throw e;
                                 } else {
                                     logger.info(e.getMessage());
+                                    continue;
                                 }
                             }
+                            if (!isResultOkay(result)) {
+                                throw new IOException("IPC JD->PJS Failed: '" + result + "'");
+                            }
+                            tryAgain = maxTry;
                         } else {
                             break;
                         }
