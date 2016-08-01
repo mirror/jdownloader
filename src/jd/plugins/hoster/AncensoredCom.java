@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ancensored.com" }, urls = { "http://(www\\.)?ancensored\\.com/clip/.+" }, flags = { 0 })
 public class AncensoredCom extends PluginForHost {
@@ -43,14 +44,12 @@ public class AncensoredCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".flv";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -60,8 +59,8 @@ public class AncensoredCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
-        this.setBrowserExclusive();
+        dllink = null;
+        br = new Browser();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (!br.getURL().contains("/clip/") || br.getHttpConnection().getResponseCode() == 404) {
@@ -69,33 +68,48 @@ public class AncensoredCom extends PluginForHost {
         }
         String filename = br.getRegex("<title>([^<>\"]*?)Video Clip \\&lt; ANCENSORED</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?)(\\s*&lt; ANCENSORED)?</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("\"([a-z0-9\\-_]+\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("\"([a-z0-9\\-_]+\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            // this can't actually be downloaded.. but can be used for filename extension
+            dllink = br.getRegex("<source type=(\"|'|)\\S+\\1\\s+src=(\"|'|)(.*?)\\2").getMatch(2);
+        }
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        DLLINK = "http://ancensored.com/" + DLLINK;
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
+        {// final dllink...
+            final String hash = br.getRegex("data:\\s*\\{hash:\\s*'([a-f0-9]+)'\\}").getMatch(0);
+            if (hash != null) {
+                final Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br2.postPage("/video/get-link", "hash=" + Encoding.urlEncode(hash));
+                final String src = PluginJSonUtils.getJson(br2, "src");
+                if (src != null) {
+                    dllink = src;
+                }
+            }
+        }
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -104,7 +118,7 @@ public class AncensoredCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -117,7 +131,7 @@ public class AncensoredCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
