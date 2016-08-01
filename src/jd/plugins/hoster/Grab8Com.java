@@ -17,7 +17,11 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -31,6 +35,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -101,7 +106,56 @@ public class Grab8Com extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return AvailableStatus.TRUE;
+        Account account = null;
+        {
+            final List<Account> accounts = AccountController.getInstance().getValidAccounts(this.getHost());
+            if (accounts != null && accounts.size() != 0) {
+                // lets sort, premium > non premium
+                Collections.sort(accounts, new Comparator<Account>() {
+                    @Override
+                    public int compare(Account o1, Account o2) {
+                        final int io1 = AccountType.PREMIUM.equals(o1.getType()) ? 1 : 0;
+                        final int io2 = AccountType.PREMIUM.equals(o2.getType()) ? 1 : 0;
+                        return io1 >= io2 ? io1 : io2;
+                    }
+                });
+                final Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    account = it.next();
+                    break;
+                }
+            }
+            if (account == null) {
+                logger.info("No account present!");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        this.br = new Browser();
+        setConstants(account, link);
+        login(true, false);
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(link.getDownloadURL()));
+            if (con.isContentDisposition() && con.isOK()) {
+                link.setName(getFileNameFromHeader(con));
+                link.setVerifiedFileSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } catch (final Exception e) {
+            if (e instanceof PluginException) {
+                throw e;
+            }
+            return AvailableStatus.UNCHECKABLE;
+        } finally {
+            try {
+                /* make sure we close connection */
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     private void setConstants(final Account acc, final DownloadLink dl) {
@@ -112,7 +166,6 @@ public class Grab8Com extends antiDDoSForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account == null) {
-            /* without account its not possible to download the link */
             return false;
         }
         return true;
@@ -125,6 +178,9 @@ public class Grab8Com extends antiDDoSForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
+        // no need to linkcheck before download!
+        setConstants(account, link);
+        login(true, false);
         handleDL(account, link, link.getDownloadURL());
     }
 
@@ -154,7 +210,7 @@ public class Grab8Com extends antiDDoSForHost {
         }
         br = new Browser();
         setConstants(account, link);
-        login(account, true, false);
+        login(true, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             getPage("https://" + getHost() + "/");
@@ -240,6 +296,12 @@ public class Grab8Com extends antiDDoSForHost {
             }
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
+                if (new Regex(link.getDownloadURL(), this.getSupportedLinks()).matches()) {
+                    if (br.getURL().endsWith("/404")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.followConnection();
                 handleErrors(br);
                 handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
@@ -343,7 +405,7 @@ public class Grab8Com extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        return login(account, true, true);
+        return login(true, true);
     }
 
     private Long getExpire() {
@@ -366,14 +428,14 @@ public class Grab8Com extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    private AccountInfo login(final Account account, final boolean cachedLogin, final boolean fetchAccountInfo) throws Exception {
+    private AccountInfo login(final boolean cachedLogin, final boolean fetchAccountInfo) throws Exception {
         synchronized (LOCK) {
             AccountInfo ai = new AccountInfo();
             try {
                 // new browser
                 final Browser br = new Browser();
                 if (!fetchAccountInfo && cachedLogin && loadCookies(this.br)) {
-                    return account.getAccountInfo();
+                    return currAcc.getAccountInfo();
                 } else if (cachedLogin && loadCookies(br)) {
                     // empty
                 } else {
@@ -410,6 +472,8 @@ public class Grab8Com extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 getPage(br, "https://" + getHost() + "/account");
                 if (br.containsHTML("You are currently a FREE User")) {
+                    // this code is when user adds prem.link account to grab8 it will give you this error message. It's not that free
+                    // accounts are not supported!
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are currently a FREE User!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // available traffic
@@ -430,18 +494,18 @@ public class Grab8Com extends antiDDoSForHost {
                 boolean freeAccount = isAccountFree(br);
                 final Long expire = getExpire();
                 if (!freeAccount && expire != null && ai.setValidUntil(expire, br) && !ai.isExpired()) {
-                    account.setType(AccountType.PREMIUM);
+                    currAcc.setType(AccountType.PREMIUM);
                     ai.setStatus("Premium Account");
                 } else {
-                    account.setType(AccountType.FREE);
+                    currAcc.setType(AccountType.FREE);
                     ai.setStatus("Free Account");
                 }
-                account.setValid(true);
+                currAcc.setValid(true);
                 // get hostmap from /hosts, this shows if host is available to free mode and if its up and down...
                 getPage(br, "/hosts");
                 final ArrayList<String> supportedHosts = new ArrayList<String>();
                 final String[] tableRow = br.getRegex("<tr>\\s*<td>.*?</tr>").getColumn(-1);
-                freeAccount = account.getType() == AccountType.FREE;
+                freeAccount = currAcc.getType() == AccountType.FREE;
                 for (final String row : tableRow) {
                     // we should be left with two cleanuped up lines
                     final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", "").replaceAll("[\r\n\t]+", "\r\n").trim();
