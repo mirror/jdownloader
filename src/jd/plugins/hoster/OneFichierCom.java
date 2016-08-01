@@ -801,7 +801,9 @@ public class OneFichierCom extends PluginForHost {
                 dllink = null;
             } finally {
                 try {
-                    con.disconnect();
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 } catch (final Throwable e) {
                 }
             }
