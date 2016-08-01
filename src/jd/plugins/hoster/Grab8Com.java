@@ -58,7 +58,7 @@ import jd.utils.locale.JDL;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=\\d+", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=\\d+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" }, flags = { 2, 2 })
 public class Grab8Com extends antiDDoSForHost {
 
     private final String                                   NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
@@ -142,6 +142,9 @@ public class Grab8Com extends antiDDoSForHost {
                 link.setVerifiedFileSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
             } else {
+                if (!link.isNameSet()) {
+                    link.setName(new Regex(link, this.getSupportedLinks()).getMatch(0));
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } catch (final Exception e) {

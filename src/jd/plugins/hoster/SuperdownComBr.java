@@ -67,7 +67,6 @@ public class SuperdownComBr extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
             prepBr.setCustomCharset("utf-8");
-            // define custom browser headers and language settings.
             prepBr.setCookie(DOMAIN, "locale", "en");
         }
         return prepBr;
