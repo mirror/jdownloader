@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,9 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download_[^<>/\"]+((/tech)?/\\d+/)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(?:www\\.)?filehippo\\.com(?/:(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" }, flags = { 0 })
 public class FileHippoCom extends PluginForHost {
 
     private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found|Sorry an error occurred processing your request)";
@@ -66,6 +67,7 @@ public class FileHippoCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        br = new Browser();
         this.setBrowserExclusive();
         br.setCookie("http://filehippo.com/", "FH_PreferredCulture", "en-US");
         br.getPage(link.getDownloadURL());
@@ -92,27 +94,27 @@ public class FileHippoCom extends PluginForHost {
         String filename = br.getRegex("<b>Filename:</b></td><td>(.*?)</td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Download (.*?) \\- Technical Details \\- FileHippo\\.com</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+                    if (filename == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
         }
-        if (filename == null) {
-            filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        link.setName(filename.trim());
         String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("Download This Version\\s+<span class=\"normal\">\\(([^<>]*?)\\)<").getMatch(0);
         }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        }
         final String md5 = br.getRegex("MD5 Checksum:</span> <span class=\"field\\-value\">([^<>\"]*?)</span>").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5.trim());
-        }
-        link.setName(filename.trim());
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         }
         return AvailableStatus.TRUE;
     }
@@ -123,7 +125,7 @@ public class FileHippoCom extends PluginForHost {
         br.setFollowRedirects(false);
         String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
         if (normalPage == null) {
-            normalPage = br.getRegex("download\\-link green button\\-link active long\" href=\"(http://filehippo\\.com)?([^<>\"]*?)\"").getMatch(1);
+            normalPage = br.getRegex("download-link green button-link active long[^\"]*\"\\s+href=\"(?:https?://(?:www\\.)?filehippo\\.com)?(/[^<>\"]*?)\"").getMatch(0);
             if (normalPage == null) {
                 normalPage = br.getRegex("direct-download-link-container\"><a href=\"(/download_[^<>\"]*?)\"").getMatch(0);
             }
@@ -135,10 +137,9 @@ public class FileHippoCom extends PluginForHost {
         final String pages[] = new String[] { mirrorPage, normalPage };
         for (String page : pages) {
             if (page != null) {
-                page = MAINPAGE + page;
-                br.getPage(page + "?direct");
+                br.getPage(page);
             }
-            String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"\\d+; url=(/.*?)\"").getMatch(0);
+            String dllink = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(/.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("id=\"_ctl0_contentMain_lnkURL\" class=\"black\" href=\"(/.*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -148,7 +149,6 @@ public class FileHippoCom extends PluginForHost {
             if (dllink == null) {
                 continue;
             }
-            dllink = MAINPAGE + dllink;
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
