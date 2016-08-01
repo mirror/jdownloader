@@ -3,8 +3,8 @@ package org.jdownloader.plugins.components.usenet;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.Box;
 
@@ -143,7 +143,7 @@ public class UsenetConfigPanel extends PluginConfigPanelNG {
         cmbServer.setSelectedItem(cf.getHost());
         panel.getEventSender().addListener(new PluginConfigPanelEventSenderListener() {
             @Override
-            public void onConfigPanelReset(Plugin plugin, PluginConfigPanelNG pluginConfigPanelNG, HashSet<ConfigInterface> interfaces) {
+            public void onConfigPanelReset(Plugin plugin, PluginConfigPanelNG pluginConfigPanelNG, Set<ConfigInterface> interfaces) {
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {

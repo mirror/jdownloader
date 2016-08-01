@@ -558,7 +558,7 @@ public class PhantomJS implements HttpRequestHandler {
                         if (phantomProcessThread != null) {
                             Thread.sleep(5000);
                             final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
-                            if (!"OK".equals(result)) {
+                            if (!isResultOkay(result)) {
                                 throw new IOException("IPC JD->PJS Failed: " + result);
                             }
                         } else {
@@ -667,10 +667,18 @@ public class PhantomJS implements HttpRequestHandler {
         }
     }
 
+    private static boolean isResultOkay(final String string) {
+        if (string != null) {
+            final String check = string.replaceAll("\\s", "");
+            return StringUtils.equalsIgnoreCase(check, "OK");
+        }
+        return false;
+    }
+
     public Image getScreenShot() throws InterruptedException, IOException {
         final long jobID = new UniqueAlltimeID().getID();
         final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/screenshot", new UrlQuery().addAndReplace("jobID", jobID + "").addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
-        if ("OK".equals(result)) {
+        if (isResultOkay(result)) {
             final String base64JSon = waitForJob(jobID);
             final String base64 = JSonStorage.restoreFromString(base64JSon, TypeRef.STRING);
             return ImageIO.read(new ByteArrayInputStream(Base64.decode(base64)));
@@ -698,15 +706,15 @@ public class PhantomJS implements HttpRequestHandler {
 
     public void eval(String domjs) throws InterruptedException, IOException {
         final long jobID = new UniqueAlltimeID().getID();
-        String result = execute(jobID, domjs + "; endJob(" + jobID + ",null);");
+        execute(jobID, domjs + "; endJob(" + jobID + ",null);");
     }
 
     public String execute(long jobID, String js) throws IOException, InterruptedException {
         final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new UrlQuery().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
-        if ("OK".equals(result)) {
+        if (isResultOkay(result)) {
             return waitForJob(jobID);
         } else {
-            throw new IOException("IPC JD->PJS Failed: " + result);
+            throw new IOException("IPC JD->PJS Failed: '" + result + "'");
         }
     }
 
