@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/folder/[a-z0-9]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder|v)/[a-z0-9]+/?" }, flags = { 0 })
 public class SolidFilesComFolder extends PluginForDecrypt {
 
     public SolidFilesComFolder(PluginWrapper wrapper) {
@@ -40,8 +41,9 @@ public class SolidFilesComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://", "https://");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested|>This folder is empty.<") || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
@@ -76,9 +78,9 @@ public class SolidFilesComFolder extends PluginForDecrypt {
                     logger.info("finfo: " + finfo);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                url = "http://www.solidfiles.com" + url;
-                filename = Encoding.htmlDecode(filename);
+                url = Request.getLocation(url, br.getRequest());
                 final DownloadLink dl = createDownloadlink(url);
+                filename = Encoding.htmlDecode(filename);
                 dl.setName(filename);
                 // dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setAvailable(true);
@@ -87,7 +89,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         }
         if (decryptFolders && (folders != null && folders.length != 0)) {
             for (final String singleLink : folders) {
-                decryptedLinks.add(createDownloadlink("http://www.solidfiles.com" + singleLink));
+                decryptedLinks.add(createDownloadlink(Request.getLocation(singleLink, br.getRequest())));
             }
         }
         if (!decryptFolders && (folders != null && folders.length != 0) && decryptedLinks.size() == 0) {

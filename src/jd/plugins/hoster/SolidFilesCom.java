@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,9 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+/?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/d/[a-z0-9]+/?" }, flags = { 2 })
 public class SolidFilesCom extends PluginForHost {
 
     public SolidFilesCom(PluginWrapper wrapper) {
@@ -61,7 +61,7 @@ public class SolidFilesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Offline links should also get nice filenames */
         if (!link.isNameSet()) {
-            link.setName(new Regex(link.getDownloadURL(), "solidfiles\\.com/(?:d|v)/([a-z0-9]+)").getMatch(0));
+            link.setName(new Regex(link.getDownloadURL(), "solidfiles\\.com/v/([a-z0-9]+)").getMatch(0));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -73,17 +73,17 @@ public class SolidFilesCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) (?:-|\\|) Solidfiles</title>").getMatch(0);
         }
-        String filesize = PluginJSonUtils.getJson(br, "size");
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
-        }
-        if (filesize == null) {
-            filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
-        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
+        String filesize = PluginJSonUtils.getJson(br, "size");
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
+            }
+        }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -125,12 +125,8 @@ public class SolidFilesCom extends PluginForHost {
         }
         try {
             if (!this.dl.startDownload()) {
-                try {
-                    if (this.dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                    // not stable compatible
+                if (this.dl.externalDownloadStop()) {
+                    return;
                 }
             }
         } catch (Exception e) {
