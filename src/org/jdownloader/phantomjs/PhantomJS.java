@@ -537,10 +537,8 @@ public class PhantomJS implements HttpRequestHandler {
             public void run() {
                 try {
                     ProcessBuilderFactory.runCommand(pb, stream, stdStream);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (Throwable e) {
+                    logger.log(e);
                 } finally {
                     try {
                         onDisposed();
@@ -551,15 +549,27 @@ public class PhantomJS implements HttpRequestHandler {
             };
         });
         psjPinger.set(new Thread("Phantom.JS Ping") {
+            private final int maxTry = 3;
+
             public void run() {
                 try {
+                    int tryAgain = maxTry;
                     while (true) {
                         final Thread phantomProcessThread = PhantomJS.this.phantomProcessThread.get();
                         if (phantomProcessThread != null) {
                             Thread.sleep(5000);
-                            final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
-                            if (!isResultOkay(result)) {
-                                throw new IOException("IPC JD->PJS Failed: " + result);
+                            try {
+                                final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+                                if (!isResultOkay(result)) {
+                                    throw new IOException("IPC JD->PJS Failed: '" + result + "'");
+                                }
+                                tryAgain = maxTry;
+                            } catch (Throwable e) {
+                                if (--tryAgain == 0) {
+                                    throw e;
+                                } else {
+                                    logger.info(e.getMessage());
+                                }
                             }
                         } else {
                             break;
@@ -571,8 +581,8 @@ public class PhantomJS implements HttpRequestHandler {
                 }
             };
         });
-        psjPinger.get().start();
         phantomProcessThread.get().start();
+        psjPinger.get().start();
         while (true) {
             final Thread phantomProcessThread = this.phantomProcessThread.get();
             if (phantomProcessThread != null && !processServerRunning.get()) {
@@ -683,7 +693,7 @@ public class PhantomJS implements HttpRequestHandler {
             final String base64 = JSonStorage.restoreFromString(base64JSon, TypeRef.STRING);
             return ImageIO.read(new ByteArrayInputStream(Base64.decode(base64)));
         } else {
-            throw new IOException("IPC JD->PJS Failed: " + result);
+            throw new IOException("IPC JD->PJS Failed: '" + result + "'");
         }
     }
 
