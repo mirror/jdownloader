@@ -26,8 +26,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -38,10 +36,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class SuperdownComBr extends PluginForHost {
+public class SuperdownComBr extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
@@ -64,12 +61,17 @@ public class SuperdownComBr extends PluginForHost {
         return "http://www.superdown.com.br/en/termos";
     }
 
-    private void prepBrowser() {
-        br = new Browser();
-        br.setCookiesExclusive(true);
-        br.setCustomCharset("utf-8");
-        // define custom browser headers and language settings.
-        br.setCookie(DOMAIN, "locale", "en");
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCustomCharset("utf-8");
+            // define custom browser headers and language settings.
+            prepBr.setCookie(DOMAIN, "locale", "en");
+        }
+        return prepBr;
+
     }
 
     @Override
@@ -209,12 +211,12 @@ public class SuperdownComBr extends PluginForHost {
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
-            br.getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=0." + System.currentTimeMillis());
+            getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=0." + System.currentTimeMillis());
             if (br.containsHTML("Sua sess[^ ]+ expirou por inatividade\\. Efetue o login novamente\\.")) {
                 account.setProperty("cookies", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            dllink = br.getRegex("(http://[^<>\"]*?)\\|").getMatch(0);
+            dllink = br.getRegex("(https?://[^<>\"]*?)\\|").getMatch(0);
             if (dllink == null || (dllink != null && dllink.length() > 500)) {
                 logger.info(NICE_HOST + ": Unknown error");
                 int timesFailed = link.getIntegerProperty("NICE_HOSTproperty + timesfailed_dllinknull", 0);
@@ -268,7 +270,7 @@ public class SuperdownComBr extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
 
-        br.getPage("http://www.superdown.com.br/en/");
+        getPage("/en/");
 
         final String expire_text = br.getRegex("class=\"clearfix pull\\-right contador\">(.*?)<li class=\"dias\"").getMatch(0);
         if (expire_text == null) {
@@ -299,7 +301,7 @@ public class SuperdownComBr extends PluginForHost {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        ai.setStatus("Premium account");
+        ai.setStatus("Premium Account");
         return ai;
     }
 
@@ -328,8 +330,7 @@ public class SuperdownComBr extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser();
+                br = new Browser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -347,7 +348,7 @@ public class SuperdownComBr extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://www.superdown.com.br/login", "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                postPage("https://www.superdown.com.br/login", "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 /* Check if we have a free account (free accounts cannot download anything anyways) */
                 if (br.containsHTML("style=\"font-size:15px\">Buy a Plan</a>")) {
@@ -364,15 +365,9 @@ public class SuperdownComBr extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(DOMAIN);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(DOMAIN));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
