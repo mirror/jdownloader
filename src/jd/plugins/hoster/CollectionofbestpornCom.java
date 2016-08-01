@@ -71,9 +71,10 @@ public class CollectionofbestpornCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\- Collection Of Best Porn \\- HD Porn Tube</title>").getMatch(0);
         }
-        final String[] possibleQualities = { "1080p", "720p", "540p", "360p", "240p" };
+        final String[] possibleQualities = { "1080", "720", "540", "360", "240" };
         for (final String qual : possibleQualities) {
             DLLINK = br.getRegex("url:[\t\n\r ]*?(?:\\'|\")(http://[^<>\"\\']*?)(?:\\'|\"),[\t\n\r ]*?title:[\t\n\r ]*?(?:\\'|\")" + qual + "(?:\\'|\")").getMatch(0);
+            DLLINK = br.getRegex("<source src=(\\'|\")(http://[^<>\"\\']*?)(\\'|\").*?res=(\\'|\")" + qual + "(\\'|\")").getMatch(1);
             if (DLLINK != null) {
                 break;
             }
