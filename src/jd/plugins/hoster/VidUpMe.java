@@ -101,7 +101,7 @@ public class VidUpMe extends PluginForHost {
     public void prepBrowser() {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(COOKIE_HOST, "lang", "english");
+        // br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
     @SuppressWarnings("deprecation")
@@ -276,6 +276,7 @@ public class VidUpMe extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                download1.put("imhuman", "");
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }
@@ -664,7 +665,7 @@ public class VidUpMe extends PluginForHost {
             try {
                 Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || !con.isOK()) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
@@ -712,7 +713,7 @@ public class VidUpMe extends PluginForHost {
         Form[] workaround = br.getForms();
         if (workaround != null) {
             for (Form f : workaround) {
-                if (f.hasInputFieldByName(key) == f.getVarsMap().containsValue(value)) {
+                if (f.hasInputFieldByName(key) && f.getVarsMap().containsValue(value)) {
                     return f;
                 }
             }
