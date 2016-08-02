@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +38,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.net.CountingOutputStream;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip.cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2 })
@@ -245,11 +248,19 @@ public class VipCocoleechCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (!con.isOK() || con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
                     downloadLink.removeProperty(property);
                 } else {
-                    return dllink;
+                    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    final CountingOutputStream cos = new CountingOutputStream(bos);
+                    IO.readStreamToOutputStream(128 * 1024, con.getInputStream(), cos, false);
+                    if (cos.transferedBytes() < 100) {
+                        downloadLink.removeProperty(property);
+                        logger.info(bos.toString("UTF-8"));
+                    } else {
+                        return dllink;
+                    }
                 }
             } catch (final Exception e) {
                 logger.log(e);
