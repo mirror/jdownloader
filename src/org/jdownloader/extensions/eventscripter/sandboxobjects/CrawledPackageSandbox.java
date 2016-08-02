@@ -112,6 +112,13 @@ public class CrawledPackageSandbox {
         }
     }
 
+    public String getUUID() {
+        if (filePackage != null) {
+            return filePackage.getUniqueID().toString();
+        }
+        return null;
+    }
+
     @Override
     public String toString() {
         return "CrawledPackage Instance: " + getName();
