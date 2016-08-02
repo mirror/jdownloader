@@ -115,7 +115,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 // final String description =(String) single_pin_data.get("description");
                 final String username = Long.toString(DummyScriptEnginePlugin.toLong(single_pin_data.get("user_id"), 0));
                 final String pinner_name = Long.toString(DummyScriptEnginePlugin.toLong(single_pin_data.get("via_user_id"), 0));
-                if (pin_id.equals("0") || username.equals("0") || pinner_name.equals("0")) {
+                if (pin_id.equals("0") || (username.equals("0") && pinner_name.equals("0"))) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
