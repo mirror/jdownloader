@@ -4,11 +4,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
+import jd.controlling.TaskQueue;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 
 public abstract class HistoryManager<T extends HistoryEntry> {
 
@@ -76,6 +80,8 @@ public abstract class HistoryManager<T extends HistoryEntry> {
         return null;
     }
 
+    private final AtomicLong saveRequest = new AtomicLong(-1);
+
     public synchronized void add(String packageName) {
         if (!StringUtils.isEmpty(packageName)) {
             boolean found = false;
@@ -93,6 +99,18 @@ public abstract class HistoryManager<T extends HistoryEntry> {
             } else {
                 Collections.sort(packageHistory);
             }
+            final long saveRequest = this.saveRequest.incrementAndGet();
+            TaskQueue.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    if (saveRequest == HistoryManager.this.saveRequest.get()) {
+                        save(list());
+                    }
+                    return null;
+                }
+
+            });
         }
     }
 

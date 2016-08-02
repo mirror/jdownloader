@@ -2,11 +2,12 @@ package org.jdownloader.gui.packagehistorycontroller;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.ConfigEvent;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.event.EventSuppressor;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> implements GenericConfigEventListener<Object> {
@@ -31,15 +32,21 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
 
     }
 
-    private final AtomicInteger saveEvent = new AtomicInteger(0);
-
     @Override
     protected void save(List<PackageHistoryEntry> list) {
-        saveEvent.incrementAndGet();
+        final Thread thread = Thread.currentThread();
+        final EventSuppressor<ConfigEvent> eventSuppressor = new EventSuppressor<ConfigEvent>() {
+
+            @Override
+            public boolean suppressEvent(ConfigEvent eventType) {
+                return Thread.currentThread() == thread;
+            }
+        };
+        CFG_LINKGRABBER.PACKAGE_NAME_HISTORY.getEventSender().addEventSuppressor(eventSuppressor);
         try {
             CFG_LINKGRABBER.CFG.setPackageNameHistory(list);
         } finally {
-            saveEvent.decrementAndGet();
+            CFG_LINKGRABBER.PACKAGE_NAME_HISTORY.getEventSender().removeEventSuppressor(eventSuppressor);
         }
     }
 
@@ -62,21 +69,19 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
 
     @Override
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-        if (saveEvent.get() == 0) {
-            if (newValue == null) {
+        if (newValue == null) {
+            clear();
+        } else if (newValue instanceof List) {
+            final List<Object> list = (List<Object>) newValue;
+            if (list.size() == 0) {
                 clear();
-            } else if (newValue instanceof List) {
-                final List<Object> list = (List<Object>) newValue;
-                if (list.size() == 0) {
+            } else {
+                synchronized (this) {
                     clear();
-                } else {
-                    synchronized (this) {
-                        clear();
-                        for (int i = list.size() - 1; i >= 0; i--) {
-                            final Object item = list.get(i);
-                            if (item != null && item instanceof PackageHistoryEntry) {
-                                add(((PackageHistoryEntry) item).getName());
-                            }
+                    for (int i = list.size() - 1; i >= 0; i--) {
+                        final Object item = list.get(i);
+                        if (item != null && item instanceof PackageHistoryEntry) {
+                            add(((PackageHistoryEntry) item).getName());
                         }
                     }
                 }
