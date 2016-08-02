@@ -18,6 +18,7 @@ package jd.controlling.downloadcontroller;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -112,6 +113,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ConcatIterator;
+import org.appwork.utils.IO;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
@@ -129,6 +131,7 @@ import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.domainrules.DomainRuleController;
 import org.jdownloader.controlling.domainrules.event.DomainRuleControllerListener;
 import org.jdownloader.controlling.download.DownloadControllerListener;
@@ -3316,39 +3319,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                                                          @Override
-                                                          public void delayedrun() {
-                                                              enqueueJob(new DownloadWatchDogJob() {
+                            @Override
+                            public void delayedrun() {
+                                enqueueJob(new DownloadWatchDogJob() {
 
-                                                                  @Override
-                                                                  public void interrupt() {
-                                                                  }
+                                    @Override
+                                    public void interrupt() {
+                                    }
 
-                                                                  @Override
-                                                                  public void execute(DownloadSession currentSession) {
-                                                                      /* reset CONNECTION_UNAVAILABLE */
-                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        /* reset CONNECTION_UNAVAILABLE */
+                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                                                          @Override
-                                                                          public int returnMaxResults() {
-                                                                              return 0;
-                                                                          }
+                                            @Override
+                                            public int returnMaxResults() {
+                                                return 0;
+                                            }
 
-                                                                          @Override
-                                                                          public boolean acceptNode(DownloadLink node) {
-                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                                                          }
-                                                                      });
-                                                                      unSkip(unSkip);
-                                                                  }
+                                            @Override
+                                            public boolean acceptNode(DownloadLink node) {
+                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                            }
+                                        });
+                                        unSkip(unSkip);
+                                    }
 
-                                                                  @Override
-                                                                  public boolean isHighPriority() {
-                                                                      return false;
-                                                                  }
-                                                              });
-                                                          }
-                                                      };
+                                    @Override
+                                    public boolean isHighPriority() {
+                                        return false;
+                                    }
+                                });
+                            }
+                        };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -3973,11 +3976,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
 
                     if (!accessChecks.contains(fileOutput.getParentFile().getAbsolutePath())) {
-                        final File writeTest = new File(fileOutput.getParentFile(), "jd_accessCheck_" + System.currentTimeMillis());
+                        final File writeTest = new File(fileOutput.getParentFile(), "jd_accessCheck_" + new UniqueAlltimeID().getID());
                         try {
                             if (writeTest.exists() == false) {
-                                if (!writeTest.createNewFile()) {
-                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                                try {
+                                    final RandomAccessFile raf = IO.open(writeTest, "rw");
+                                    raf.close();
+                                } catch (IOException e) {
+                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
                                 }
                             } else {
                                 if (!writeTest.canWrite()) {
