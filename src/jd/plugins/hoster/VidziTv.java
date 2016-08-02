@@ -105,7 +105,7 @@ public class VidziTv extends PluginForHost {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         }
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
+        link.setUrlDownload(COOKIE_HOST + "/" + fid + ".html"); // Sometimes .html is needed (/y2gcydvbo4dl, /uznhkhav3kdl)
     }
 
     @Override
@@ -133,9 +133,6 @@ public class VidziTv extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://vidzi.tv")) {
-            getPage(link.getDownloadURL() + ".html"); // Needed by http://vidzi.tv/y2gcydvbo4dl.html
-        }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:|The file was deleted by administration)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -439,7 +436,7 @@ public class VidziTv extends PluginForHost {
             handlePluginBroken(downloadLink, "dllinknofile", 3);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-        fixFilename(downloadLink);
+        // fixFilename(downloadLink);
         try {
             /* add a download slot */
             controlFree(+1);
