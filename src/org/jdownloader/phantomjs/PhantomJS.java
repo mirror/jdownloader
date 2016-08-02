@@ -711,6 +711,7 @@ public class PhantomJS implements HttpRequestHandler {
             if (JSonStorage.restoreFromString(result, TypeRef.BOOLEAN) == Boolean.TRUE) {
                 return;
             }
+            Thread.sleep(50);// reduces cpu a lot and still fast enough
         }
     }
 
