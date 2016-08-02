@@ -80,10 +80,14 @@ public class TvigleRu extends PluginForHost {
                 if (videoID == null) {
                     videoID = br.getRegex("class=\"video-preview current_playing\" id=\"(\\d+)\"").getMatch(0);
                 }
+                if (videoID == null) {
+                    videoID = br.getRegex("api/v1/video/(\\d+)").getMatch(0);
+                }
             }
             if (videoID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            downloadLink.setName(videoID + ".mp4");
         }
         int partner_id = new Random().nextInt(12);
         if (partner_id == 0) {

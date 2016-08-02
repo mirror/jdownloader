@@ -73,8 +73,8 @@ public class HoodAmateursCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        br.getPage("http://www.hoodamateurs.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "hoodamateurs\\.com/(\\d+)/").getMatch(0));
-        DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+        br.getPage("/misc/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "hoodamateurs\\.com/(\\d+)/").getMatch(0));
+        DLLINK = br.getRegex("<file>(?:<\\!\\[CDATA\\[)?(http://[^<>\"]*?)(?:\\]\\]>)?</file>").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

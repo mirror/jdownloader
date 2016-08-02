@@ -143,37 +143,44 @@ public class UnknownPornScript5 extends PluginForHost {
         filename = encodeUnicode(filename);
         downloadLink.setName(filename + default_Extension);
         /* Find the (js) source of our player - important! */
-        String jwplayer_source = this.br.getRegex("jwplayer\\((?:\"|')[^<>\"']+(?:\"|')\\)(.*?)</script>").getMatch(0);
-        if (jwplayer_source != null) {
-            /* Source #1 */
-            dllink = new Regex(jwplayer_source, "('|\")file\\1:\\s*('|\")(http.*?)\\2").getMatch(2);
-            if (inValidateDllink()) {
-                /* E.g. worldsex.com */
-                dllink = new Regex(jwplayer_source, "file[\t\n\r ]*?:[\t\n\r ]*?('|\")(http.*?)\\1").getMatch(1);
-            }
-            if (inValidateDllink()) {
-                /* E.g. clipcake.com */
-                dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)\";").getMatch(0);
-            }
-            if (inValidateDllink()) {
-                /* E.g. porndoe.com */
-                /* Check for multiple videoqualities --> Find highest quality */
-                int maxquality = 0;
-                String sources_source = new Regex(jwplayer_source, "sources:\\s*\\[(.*?)\\]").getMatch(0);
-                if (sources_source != null) {
-                    sources_source = sources_source.replace("\\", "");
-                    final String[] qualities = new Regex(sources_source, "(file: \".*?)\n").getColumn(0);
-                    for (final String quality_info : qualities) {
-                        final String p = new Regex(quality_info, "label:\"(\\d+)p").getMatch(0);
-                        int pint = 0;
-                        if (p != null) {
-                            pint = Integer.parseInt(p);
-                        }
-                        if (pint > maxquality) {
-                            maxquality = pint;
-                            dllink = new Regex(quality_info, "file: \"(http[^<>\"]*?)\"").getMatch(0);
+        String jwplayer_source = null;
+        final String[] jwplayer_sources = this.br.getRegex("jwplayer\\((?:\"|')[^<>\"']+(?:\"|')\\)(.*?)</script>").getColumn(0);
+        if (jwplayer_sources != null && jwplayer_sources.length > 0) {
+            for (final String jwplayer_source_tmp : jwplayer_sources) {
+                jwplayer_source = jwplayer_source_tmp;
+                /* Source #1 */
+                dllink = new Regex(jwplayer_source_tmp, "('|\")file\\1:\\s*('|\")(http.*?)\\2").getMatch(2);
+                if (inValidateDllink()) {
+                    /* E.g. worldsex.com */
+                    dllink = new Regex(jwplayer_source_tmp, "file[\t\n\r ]*?:[\t\n\r ]*?('|\")(http.*?)\\1").getMatch(1);
+                }
+                if (inValidateDllink()) {
+                    /* E.g. clipcake.com */
+                    dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)\";").getMatch(0);
+                }
+                if (inValidateDllink()) {
+                    /* E.g. porndoe.com */
+                    /* Check for multiple videoqualities --> Find highest quality */
+                    int maxquality = 0;
+                    String sources_source = new Regex(jwplayer_source_tmp, "sources:\\s*\\[(.*?)\\]").getMatch(0);
+                    if (sources_source != null) {
+                        sources_source = sources_source.replace("\\", "");
+                        final String[] qualities = new Regex(sources_source, "(file: \".*?)\n").getColumn(0);
+                        for (final String quality_info : qualities) {
+                            final String p = new Regex(quality_info, "label:\"(\\d+)p").getMatch(0);
+                            int pint = 0;
+                            if (p != null) {
+                                pint = Integer.parseInt(p);
+                            }
+                            if (pint > maxquality) {
+                                maxquality = pint;
+                                dllink = new Regex(quality_info, "file: \"(http[^<>\"]*?)\"").getMatch(0);
+                            }
                         }
                     }
+                }
+                if (!inValidateDllink()) {
+                    break;
                 }
             }
         } else {
