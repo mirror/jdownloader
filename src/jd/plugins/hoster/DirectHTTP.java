@@ -187,9 +187,7 @@ public class DirectHTTP extends antiDDoSForHost {
         return tmplinks;
     }
 
-    private String contentType       = "";
-
-    private String customFavIconHost = null;
+    private String contentType = "";
 
     public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
@@ -822,7 +820,6 @@ public class DirectHTTP extends antiDDoSForHost {
         preferHeadRequest = true;
         contentType = null;
         customDownloadURL = null;
-        customFavIconHost = null;
     }
 
     @Override
