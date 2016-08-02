@@ -23,11 +23,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,6 +39,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UnavailableHost;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -118,7 +118,22 @@ public class PremiumaxNet extends antiDDoSForHost {
             String crippledhost = new Regex(hinfo, "images/hosts/([a-z0-9\\-\\.]+)\\.png\"").getMatch(0);
             if (crippledhost == null) {
                 logger.warning("WTF");
+            } else if (crippledhost.equalsIgnoreCase("k2share")) {
+                /* Spelling mistake on their website --> Correct that */
+                crippledhost = "keep2share";
+            } else if (crippledhost.equalsIgnoreCase("2shared")) {
+                /* Avoid adding keep2share.cc instead of 2shared.com. */
+                crippledhost = "2shared.com";
+            } else if (crippledhost.equalsIgnoreCase("loaded")) {
+                /* Avoid adding uploaded.net for free accounts. */
+                crippledhost = "loaded.to";
+            } else if (crippledhost.equalsIgnoreCase("mediafire")) {
+                /* We don't want to add "mediafire.bz" by mistake --> Correct this here. */
+                crippledhost = "mediafire.com";
             }
+            // if (crippledhost.equalsIgnoreCase("uploaded")) {
+            // System.out.println("wtf");
+            // }
             final String[] imgs = new Regex(hinfo, "src=\"(tmpl/images/[^<>\"]*?)\"").getColumn(0);
             /* Apply supported hosts depending on account type */
             if (imgs != null && imgs.length >= 4 && imgs[3].equals("tmpl/images/ico_yes.png") && (!is_freeaccount && imgs[2].equals("tmpl/images/ico_yes.png") || is_freeaccount && imgs[1].equals("tmpl/images/ico_yes.png"))) {

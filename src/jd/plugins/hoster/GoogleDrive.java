@@ -67,14 +67,15 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private static final String  NOCHUNKS          = "NOCHUNKS";
-    private boolean              pluginloaded      = false;
-    private boolean              privatefile       = false;
+    private static final String  NOCHUNKS                       = "NOCHUNKS";
+    private boolean              pluginloaded                   = false;
+    private boolean              privatefile                    = false;
+    private boolean              download_might_not_be_possible = false;
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                    = true;
+    private static final int     FREE_MAXCHUNKS                 = 0;
+    private static final int     FREE_MAXDOWNLOADS              = 20;
 
     @SuppressWarnings("deprecation")
     private String getID(DownloadLink downloadLink) {
@@ -125,6 +126,8 @@ public class GoogleDrive extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         privatefile = false;
+        download_might_not_be_possible = false;
+
         this.setBrowserExclusive();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -150,6 +153,20 @@ public class GoogleDrive extends PluginForHost {
         String filename = br.getRegex("'title': '([^<>\"]*?)'").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
+        }
+        if (filename == null) {
+            /*
+             * Chances are high that we have a non-officially-downloadable-document (pdf). PDF is displayed in browser via images (1 image
+             * per page) - we would need a decrypter for this.
+             */
+            download_might_not_be_possible = true;
+            final String type = this.br.getRegex("<meta property=\"og:type\" content=\"([^<>\"]+)\">").getMatch(0);
+            filename = this.br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
+            if (filename != null && type != null) {
+                if (type.equals("article") && !filename.endsWith(".pdf")) {
+                    filename += ".pdf";
+                }
+            }
         }
         final String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
         if (filename == null) {
@@ -214,7 +231,10 @@ public class GoogleDrive extends PluginForHost {
             // so its not possible to download at this time.
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
         }
-        if (br.containsHTML("<TITLE>Not Found</TITLE>") && streamLink == null) {
+        if ((br.containsHTML("<TITLE>Not Found</TITLE>") || this.br.getHttpConnection().getResponseCode() == 404) && streamLink == null) {
+            if (download_might_not_be_possible) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be downloaded (officially) and/or you're miasing the rights for that");
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRedirectLocation();

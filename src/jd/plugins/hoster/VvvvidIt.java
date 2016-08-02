@@ -81,6 +81,7 @@ public class VvvvidIt extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        /* 2016-08-02: psp: stream_master string is crypted. We need to decode this to get the plugin working again! */
         String stream_master = downloadLink.getStringProperty("directlink", null);
         if (stream_master == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
