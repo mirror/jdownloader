@@ -1,44 +1,65 @@
 package org.jdownloader.api.system;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import jd.controlling.downloadcontroller.FileStoreHacks;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 
 public class SystemAPIImpl17 {
 
     public static List<StorageInformationStorable> getStorageInfos(final String path) {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
-        final List<Path> roots = new ArrayList<Path>();
+        final List<String> filterList;
+        if (CrossSystem.isUnix()) {
+            filterList = Arrays.asList("fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs");
+        } else {
+            filterList = Arrays.asList(new String[0]);
+        }
+        final LinkedHashMap<Path, FileStore> roots = new LinkedHashMap<Path, FileStore>();
         final boolean customPath;
         if (StringUtils.isNotEmpty(path)) {
-            roots.add(new File(path).toPath());
+            try {
+                final Path pathObj = Paths.get(path);
+                roots.put(pathObj, Files.getFileStore(pathObj));
+            } catch (InvalidPathException e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            } catch (IOException e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
             customPath = true;
         } else {
             customPath = false;
         }
-        if (roots.size() == 0) {
+        if (roots.isEmpty()) {
             for (final FileStore fileStore : FileSystems.getDefault().getFileStores()) {
                 final Path fileStorePath = FileStoreHacks.getPath(fileStore);
                 if (fileStorePath != null) {
-                    roots.add(fileStorePath);
+                    roots.put(fileStorePath, fileStore);
                 }
             }
         }
-        for (final Path root : roots) {
+
+        for (Entry<Path, FileStore> entry : roots.entrySet()) {
             final StorageInformationStorable storage = new StorageInformationStorable();
+            final Path root = entry.getKey();
             try {
-                final FileStore store = Files.getFileStore(root);
-                if (customPath == false && store.isReadOnly()) {
+                final FileStore store = entry.getValue();
+                if (!customPath && (store.isReadOnly() || filterList.contains(store.type()))) {
                     continue;
                 }
                 storage.setPath(root.toString());
