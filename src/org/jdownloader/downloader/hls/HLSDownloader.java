@@ -13,6 +13,24 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -43,24 +61,6 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
@@ -288,6 +288,8 @@ public class HLSDownloader extends DownloadInterface {
         ffmpeg.runCommand(set, l);
     }
 
+    private volatile ArrayList<String> m3u = new ArrayList<String>();
+
     private void initPipe() throws IOException {
         server = new HttpServer(0);
         server.setLocalhostOnly(true);
@@ -377,32 +379,64 @@ public class HLSDownloader extends DownloadInterface {
                             }
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             final StringBuilder sb = new StringBuilder();
+                            final ArrayList<String> m3u = new ArrayList<String>();
+                            boolean containsEndList = false;
                             for (final String line : Regex.getLines(playlist)) {
+                                if (StringUtils.isEmpty(line)) {
+                                    continue;
+                                }
                                 if (sb.length() > 0) {
-                                    sb.append("\r\n");
+                                    sb.append("\n");
                                 }
                                 if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
                                     // http://habrahabr.ru/company/mailru/blog/274855/
                                     logger.severe("possibly malicious: " + line);
                                 } else if (line.matches("^https?://.+")) {
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(line));
+                                    final int index = m3u.size();
+                                    m3u.add(line);
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
                                 } else if (!line.trim().startsWith("#")) {
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(br.getBaseURL() + line));
+                                    final int index = m3u.size();
+                                    m3u.add(br.getBaseURL() + line);
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
                                 } else {
+                                    if ("#EXT-X-ENDLIST".equals(line)) {
+                                        containsEndList = true;
+                                    }
                                     sb.append(line);
                                 }
                             }
+                            if (!containsEndList) {
+                                if (sb.length() > 0) {
+                                    sb.append("\n");
+                                }
+                                sb.append("#EXT-X-ENDLIST");
+                                sb.append("\n\n");
+                            }
+                            HLSDownloader.this.m3u = m3u;
                             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
+                            byte[] bytes = sb.toString().getBytes("UTF-8");
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
                             OutputStream out = response.getOutputStream(true);
-                            out.write(sb.toString().getBytes("UTF-8"));
+                            out.write(bytes);
                             out.flush();
                             requestOkay = true;
                             return true;
                         }
                         return false;
                     } else if ("/download".equals(request.getRequestedPath())) {
-                        String url = request.getParameterbyKey("url");
-                        if (url == null) {
+                        final String index = request.getParameterbyKey("ts_index");
+                        if (index == null) {
+                            return false;
+                        }
+                        final String url;
+                        try {
+                            url = m3u.get(Integer.parseInt(index));
+                            if (url == null) {
+                                return false;
+                            }
+                        } catch (final IndexOutOfBoundsException e) {
+                            logger.log(e);
                             return false;
                         }
                         OutputStream outputStream = null;
