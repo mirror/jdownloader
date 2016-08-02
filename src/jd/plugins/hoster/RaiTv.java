@@ -49,8 +49,9 @@ public class RaiTv extends PluginForHost {
         return "http://www.rai.it/dl/rai/text/ContentItem-5a0d5bc3-9f0e-4f6b-8b65-13dd14385123.html";
     }
 
-    private static final String TYPE_CONTENTITEM = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
-    private String              dllink           = null;
+    private static final String TYPE_CONTENTITEM                     = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
+    private String              dllink                               = null;
+    private boolean             possibleNotDownloadableMSSilverlight = false;
 
     private Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
@@ -62,90 +63,103 @@ public class RaiTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
+        possibleNotDownloadableMSSilverlight = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         this.br.getPage(link.getDownloadURL());
+        dllink = this.br.getRegex("var[\t\n\r ]*?videoURL_MP4[\t\n\r ]*?=[\t\n\r ]*?\"(http://[^<>\"]+)\"").getMatch(0);
         String content_id_from_url = null;
         if (link.getDownloadURL().matches(TYPE_CONTENTITEM)) {
             content_id_from_url = new Regex(link.getDownloadURL(), "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
         }
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || (contentset_id == null && content_id_from_html == null)) {
+        if (br.getHttpConnection().getResponseCode() == 404 || (contentset_id == null && content_id_from_html == null && dllink == null)) {
             /* Probably not a video/offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = null;
-        if (content_id_from_html != null) {
-            /* Easiest way to find videoinfo */
-            this.br.getPage("http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem" + content_id_from_html + ".html?json");
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        }
-        if (entries == null) {
-            final ArrayList<Object> ressourcelist;
-            final String list_json_from_html = this.br.getRegex("\"list\"[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\}[\t\n\r ]*?\\])").getMatch(0);
-            if (list_json_from_html != null) {
-                ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(list_json_from_html);
-            } else {
-                br.getPage("http://www.rai.tv/dl/RaiTV/ondemand/ContentSet" + contentset_id + ".html?json");
-                if (br.getHttpConnection().getResponseCode() == 404) {
+        String filename = null;
+        String extension = ".mp4";
+        String date = null;
+        String date_formatted = null;
+        String description = null;
+        if (dllink != null) {
+            /* Streamurls directly in html */
+            filename = this.br.getRegex("id=\"idMedia\">([^<>]+)<").getMatch(0);
+            date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
+            possibleNotDownloadableMSSilverlight = this.br.containsHTML("id=\"silverlightControlHost\"");
+        } else {
+            LinkedHashMap<String, Object> entries = null;
+            if (content_id_from_html != null) {
+                /* Easiest way to find videoinfo */
+                this.br.getPage("http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem" + content_id_from_html + ".html?json");
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            }
+            if (entries == null) {
+                final ArrayList<Object> ressourcelist;
+                final String list_json_from_html = this.br.getRegex("\"list\"[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\}[\t\n\r ]*?\\])").getMatch(0);
+                if (list_json_from_html != null) {
+                    ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(list_json_from_html);
+                } else {
+                    br.getPage("http://www.rai.tv/dl/RaiTV/ondemand/ContentSet" + contentset_id + ".html?json");
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                    ressourcelist = (ArrayList<Object>) entries.get("list");
+                }
+
+                if (content_id_from_url == null) {
+                    /* Hm probably not a video */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                ressourcelist = (ArrayList<Object>) entries.get("list");
-            }
-
-            if (content_id_from_url == null) {
-                /* Hm probably not a video */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String content_id_temp = null;
-            boolean foundVideoInfo = false;
-            for (final Object videoo : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) videoo;
-                content_id_temp = (String) entries.get("itemId");
-                if (content_id_temp != null && content_id_temp.contains(content_id_from_url)) {
-                    foundVideoInfo = true;
-                    break;
+                String content_id_temp = null;
+                boolean foundVideoInfo = false;
+                for (final Object videoo : ressourcelist) {
+                    entries = (LinkedHashMap<String, Object>) videoo;
+                    content_id_temp = (String) entries.get("itemId");
+                    if (content_id_temp != null && content_id_temp.contains(content_id_from_url)) {
+                        foundVideoInfo = true;
+                        break;
+                    }
+                }
+                if (!foundVideoInfo) {
+                    /* Probably offline ... */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            if (!foundVideoInfo) {
-                /* Probably offline ... */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            date = (String) entries.get("date");
+            filename = (String) entries.get("name");
+            description = (String) entries.get("desc");
+            final String type = (String) entries.get("type");
+            if (type.equalsIgnoreCase("RaiTv Media Video Item")) {
+            } else {
+                /* TODO */
+                logger.warning("Unsupported media type!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        final String date = (String) entries.get("date");
-        String filename = (String) entries.get("name");
-        final String description = (String) entries.get("desc");
-        final String date_formatted = formatDate(date);
-        final String type = (String) entries.get("type");
-        if (type.equalsIgnoreCase("RaiTv Media Video Item")) {
-        } else {
-            /* TODO */
-            logger.warning("Unsupported media type!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            extension = "mp4";
+            dllink = (String) entries.get("h264");
+            if (dllink == null || dllink.equals("")) {
+                dllink = (String) entries.get("m3u8");
+                extension = "mp4";
+            }
+            if (dllink == null || dllink.equals("")) {
+                dllink = (String) entries.get("wmv");
+                extension = "wmv";
+            }
+            if (dllink == null || dllink.equals("")) {
+                dllink = (String) entries.get("mediaUri");
+                extension = "mp4";
+            }
         }
         if (filename == null) {
             filename = content_id_from_url;
         }
-        String extension;
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        extension = "mp4";
-        dllink = (String) entries.get("h264");
-        if (dllink == null || dllink.equals("")) {
-            dllink = (String) entries.get("m3u8");
-            extension = "mp4";
-        }
-        if (dllink == null || dllink.equals("")) {
-            dllink = (String) entries.get("wmv");
-            extension = "wmv";
-        }
-        if (dllink == null || dllink.equals("")) {
-            dllink = (String) entries.get("mediaUri");
-            extension = "mp4";
-        }
+        date_formatted = formatDate(date);
         filename = date_formatted + "_raitv_" + filename + "." + extension;
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
@@ -155,6 +169,9 @@ public class RaiTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (possibleNotDownloadableMSSilverlight) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol Microsoft Silverlight");
+        }
         if (downloadLink.getFinalFileName().endsWith(".wmv")) {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
             logger.info("Download http .wmv video");
@@ -267,7 +284,12 @@ public class RaiTv extends PluginForHost {
         if (input == null) {
             return null;
         }
-        final long date = TimeFormatter.getMilliSeconds(input, "dd/MM/yyyy", Locale.ENGLISH);
+        final long date;
+        if (input.matches("\\d{2}/\\d{2}/\\d{4}")) {
+            date = TimeFormatter.getMilliSeconds(input, "dd/MM/yyyy", Locale.ENGLISH);
+        } else {
+            date = TimeFormatter.getMilliSeconds(input, "dd-MM-yyyy HH:mm", Locale.ENGLISH);
+        }
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);
