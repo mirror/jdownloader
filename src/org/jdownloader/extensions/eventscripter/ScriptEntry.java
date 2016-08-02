@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.eventscripter;
 
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.appwork.storage.Storable;
 
@@ -38,11 +39,15 @@ public class ScriptEntry implements Storable {
         this.script = script;
     }
 
-    private String                  script;
-    private HashMap<String, Object> eventTriggerSettings;
+    private String              script;
+    private Map<String, Object> eventTriggerSettings;
 
-    public void setEventTriggerSettings(HashMap<String, Object> eventTriggerSettings) {
-        this.eventTriggerSettings = eventTriggerSettings;
+    public synchronized void setEventTriggerSettings(Map<String, Object> eventTriggerSettings) {
+        if (eventTriggerSettings != null && !(eventTriggerSettings instanceof ConcurrentHashMap)) {
+            this.eventTriggerSettings = new ConcurrentHashMap<String, Object>(eventTriggerSettings);
+        } else {
+            this.eventTriggerSettings = eventTriggerSettings;
+        }
     }
 
     public EventTrigger getEventTrigger() {
@@ -56,9 +61,9 @@ public class ScriptEntry implements Storable {
         this.eventTrigger = eventTrigger;
     }
 
-    public HashMap<String, Object> getEventTriggerSettings() {
+    public synchronized Map<String, Object> getEventTriggerSettings() {
         if (eventTriggerSettings == null) {
-            eventTriggerSettings = new HashMap<String, Object>();
+            eventTriggerSettings = new ConcurrentHashMap<String, Object>();
         }
         return eventTriggerSettings;
     }

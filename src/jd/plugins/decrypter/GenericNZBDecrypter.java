@@ -50,6 +50,7 @@ public class GenericNZBDecrypter extends PluginForDecrypt {
             final Request request = new GetRequest(param.getCryptedUrl());
             request.getHeaders().put("Accept-Encoding", "identity");
             br.setFollowRedirects(true);
+            br.setLoadLimit(br.getLoadLimit() * 4);
             con = br.openRequestConnection(request);
             final String contentType = con.getContentType();
             if (StringUtils.containsIgnoreCase(contentType, "nzb") && con.isOK()) {
@@ -62,7 +63,17 @@ public class GenericNZBDecrypter extends PluginForDecrypt {
                     }
                 }
             } else {
-                br.followConnection();
+                final String response = br.followConnection();
+                if (response.startsWith("<?xml")) {
+                    ret.addAll(NZBSAXHandler.parseNZB(response));
+                    final String nzbPassword = new Regex(Plugin.getFileNameFromHeader(con), "\\{\\{(.*?)\\}\\}\\.nzb$").getMatch(0);
+                    if (nzbPassword != null) {
+                        if (StringUtils.isNotEmpty(nzbPassword)) {
+                            archiveInfo = new ArchiveInfo();
+                            archiveInfo.addExtractionPassword(nzbPassword);
+                        }
+                    }
+                }
             }
         } finally {
             if (con != null) {

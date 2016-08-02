@@ -9,9 +9,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+
+import jd.http.Browser;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
+import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
+import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -29,27 +37,20 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 import org.jdownloader.scripting.JSShutterDelegate;
 
-import jd.http.Browser;
-import net.sourceforge.htmlunit.corejs.javascript.Context;
-import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
-import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
-
 public class ScriptThread extends Thread implements JSShutterDelegate {
-    private ScriptEntry             script;
-    private HashMap<String, Object> props;
-    private Global                  scope;
-    private Context                 cx;
-    private LogSource               logger;
-    private ScriptThread            delegate;
-    private EventScripterExtension  extension;
+    private final ScriptEntry            script;
+    private final Map<String, Object>    props;
+    private Global                       scope;
+    private Context                      cx;
+    private final LogSource              logger;
+    private ScriptThread                 delegate;
+    private final EventScripterExtension extension;
 
     public LogSource getLogger() {
         return logger;
     }
 
-    public ScriptThread(EventScripterExtension eventScripterExtension, ScriptEntry script, HashMap<String, Object> props, LogSource logSource) {
+    public ScriptThread(EventScripterExtension eventScripterExtension, ScriptEntry script, Map<String, Object> props, LogSource logSource) {
         this.script = script;
         this.props = props;
         this.logger = logSource;
@@ -87,7 +88,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 evalTrusted("global=this;");
                 initEnvironment();
                 cleanupClasses();
-                evalUNtrusted(script.getScript());
+                try {
+                    evalUNtrusted(script.getScript());
+                } finally {
+                    finalizeEnvironment();
+                }
                 // ProcessBuilderFactory.runCommand(commandline);
             } catch (Throwable e) {
                 logger.log(e);
@@ -174,6 +179,14 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             ScriptableObject.putProperty(scope, es.getKey(), es.getValue());
             // convert to real js objects
             // evalTrusted(es.getKey() + " = " + new SimpleMapper().objectToString() + ";");
+        }
+    }
+
+    protected void finalizeEnvironment() throws IllegalAccessException {
+        final List<String> keySet = new ArrayList<String>(props.keySet());
+        for (final String key : keySet) {
+            final Object value = ScriptableObject.getProperty(scope, key);
+            props.put(key, value);
         }
     }
 

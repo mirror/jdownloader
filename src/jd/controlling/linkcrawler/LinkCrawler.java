@@ -2370,7 +2370,7 @@ public class LinkCrawler {
             synchronized (children) {
                 if (children.size() > 0) {
                     for (final LinkCrawler child : children.keySet()) {
-                        if (child.isRunning(false)) {
+                        if (child.isRunning(true)) {
                             return true;
                         }
                     }

@@ -2,6 +2,7 @@ package org.jdownloader.extensions.eventscripter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
@@ -41,7 +42,7 @@ public class IntervalController {
                                     for (final ScriptEntry scriptEntry : scriptEntries) {
                                         if (scriptEntry.getEventTrigger() == EventTrigger.INTERVAL && scriptEntry.isEnabled()) {
                                             try {
-                                                HashMap<String, Object> settings = scriptEntry.getEventTriggerSettings();
+                                                Map<String, Object> settings = scriptEntry.getEventTriggerSettings();
                                                 long interval = 1000;
                                                 if (settings.get("interval") != null) {
                                                     interval = Math.max(1000, ((Number) settings.get("interval")).longValue());
@@ -90,12 +91,22 @@ public class IntervalController {
         }
     }
 
-    protected void fire(ScriptEntry script, long interval) {
-        if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript())) {
+    protected void fire(final ScriptEntry scriptEntry, long interval) {
+        if (scriptEntry.isEnabled() && StringUtils.isNotEmpty(scriptEntry.getScript())) {
             try {
-                HashMap<String, Object> props = new HashMap<String, Object>();
+                final HashMap<String, Object> props = new HashMap<String, Object>();
                 props.put("interval", interval);
-                extension.runScript(script, props);
+                new ScriptThread(extension, scriptEntry, props, logger) {
+                    protected void finalizeEnvironment() throws IllegalAccessException {
+                        super.finalizeEnvironment();
+                        try {
+                            final Map<String, Object> settings = scriptEntry.getEventTriggerSettings();
+                            settings.put("interval", Math.max(1000, ((Number) props.get("interval")).longValue()));
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
+                    };
+                }.start();
             } catch (Throwable e) {
                 logger.log(e);
             }
