@@ -54,7 +54,9 @@ public class TuTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>El vídeo que intentas ver no existe o ha sido borrado de TU|>Afortunadamente, el sistema ha encontrado vídeos relacionados con tu petición|>El vídeo no existe<)") || br.getURL().contains("/noExisteVideo/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>El vídeo que intentas ver no existe o ha sido borrado de TU|>Afortunadamente, el sistema ha encontrado vídeos relacionados con tu petición|>El vídeo no existe<)") || br.getURL().contains("/noExisteVideo/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- Tu\\.tv</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"title_comentario\">Comentarios de <strong>(.*?)</strong>").getMatch(0);
@@ -62,14 +64,24 @@ public class TuTv extends PluginForHost {
                 filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
             }
         }
-        if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         String vid = br.getRegex(">var codVideo=(\\d+);").getMatch(0);
-        if (vid == null) vid = br.getRegex("\\&xtp=(\\d+)\"").getMatch(0);
-        if (vid == null) vid = br.getRegex("votoPlus\\((\\d+)\\);\"").getMatch(0);
-        if (filename == null || vid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (vid == null) {
+            vid = br.getRegex("\\&xtp=(\\d+)\"").getMatch(0);
+        }
+        if (vid == null) {
+            vid = br.getRegex("votoPlus\\((\\d+)\\);\"").getMatch(0);
+        }
+        if (filename == null || vid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("http://tu.tv/flvurl.php?codVideo=" + vid + "&v=WIN%2010,3,181,34&fm=1");
         DLLINK = br.getRegex("\\&kpt=([^<>\"]*?)\\&").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.Base64Decode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
@@ -78,18 +90,24 @@ public class TuTv extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final Throwable e) {
+                /* Let downloadcore handle issues - if this fails filesize won't be displayed to user which is not a major failure. */
+                return AvailableStatus.TRUE;
+            }
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
+            }
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

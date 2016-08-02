@@ -51,6 +51,7 @@ public class TvSmeSk extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = new Regex(link.getDownloadURL(), "/v/([0-9]+)").getMatch(0);
         br.getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Neexistujúce video")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -62,11 +63,7 @@ public class TvSmeSk extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "([\\-a-zA-Z0-9]+)\\.html$").getMatch(0);
         }
 
-        String descLink = br.getRegex("s3\\.addVariable[(]\"file\", escape[(]\"(http[^<>\"]+)").getMatch(0);
-        if (null == descLink || descLink.trim().length() == 0) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        br.getPage(descLink);
+        br.getPage("http://tv.sme.sk/storm-sme-crd/mmdata_get.asp?vp=2&id=" + fid + "&hd1=1");
 
         dlink = br.getRegex("<location>(.*?)</location>").getMatch(0);
         if (null == dlink || dlink.trim().length() == 0) {

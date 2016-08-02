@@ -329,7 +329,7 @@ public class FlashxTv extends antiDDoSForHost {
                         this.waitTime(System.currentTimeMillis(), downloadLink);
                         // this.br.setCookie(this.br.getHost(), "accompat", "59_72_8_7_5_0_0_|||||ffff|5b31|1a7f");
                         // this.br.setCookie(this.br.getHost(), "datasorc", "|||||ffff|5b31|1a7f");
-                        this.br.setCookie(this.br.getHost(), "ab_noticed", "false");
+                        // this.br.setCookie(this.br.getHost(), "ab_noticed", "false");
                         submitForm(download1);
                         checkErrors(downloadLink, false);
                         if (stream_dllink == null) {
