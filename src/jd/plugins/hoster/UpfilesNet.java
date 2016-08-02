@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,6 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfiles.net" }, urls = { "https?://(?:www\\.)?upfiles\\.net/f/[a-z0-9]+(?:[^/]+)?" }, flags = { 2 })
@@ -90,9 +92,7 @@ public class UpfilesNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             dllink = getDownloadAction();
-            /* This token can be found in multiple places! */
-            final String xcrftoken = this.br.getRegex("\\'X\\-CSRF\\-Token\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
-            if (dllink == null || xcrftoken == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final long timestamp_before = System.currentTimeMillis();
@@ -103,20 +103,13 @@ public class UpfilesNet extends PluginForHost {
                 wait = Integer.parseInt(wait_str);
             }
             final long timestamp_desired = System.currentTimeMillis() + wait * 1001l;
+            /* 2016-08-02: Pre-download-waittime can be skipped! */
             // if (System.currentTimeMillis() < timestamp_desired) {
             // this.sleep(timestamp_desired - timestamp_before, downloadLink);
             // }
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            /* Important!! */
-            this.br.getHeaders().put("X-CSRF-Token", xcrftoken);
+            prepBRAjax();
             this.br.postPage(dllink, "refPage=&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-            final String token = PluginJSonUtils.getJson(this.br, "token");
-            final String ip = PluginJSonUtils.getJson(this.br, "ip");
-            if (token == null || token.equals("") || ip == null || ip.equals("")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = "http://" + ip + "/rd/" + token + "?forced=false";
+            dllink = getDllink();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -156,6 +149,27 @@ public class UpfilesNet extends PluginForHost {
         return dllink;
     }
 
+    private void prepBRAjax() {
+        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        /* This token can be found in multiple places! */
+        final String xcrftoken = this.br.getRegex("\\'X\\-CSRF\\-Token\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
+        if (xcrftoken != null) {
+            /* Important!! */
+            this.br.getHeaders().put("X-CSRF-Token", xcrftoken);
+        }
+    }
+
+    private String getDllink() throws PluginException {
+        final String token = PluginJSonUtils.getJson(this.br, "token");
+        final String ip = PluginJSonUtils.getJson(this.br, "ip");
+        if (token == null || token.equals("") || ip == null || ip.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String dllink = "http://" + ip + "/rd/" + token + "?forced=false";
+        return dllink;
+    }
+
     private String getDownloadAction() {
         return this.br.getRegex("(/queue/[a-f0-9\\-]+)").getMatch(0);
     }
@@ -176,7 +190,7 @@ public class UpfilesNet extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 br.getPage("https://" + this.getHost() + "/login");
                 Form loginform = this.br.getFormbyKey("password");
                 if (loginform == null) {
@@ -193,6 +207,9 @@ public class UpfilesNet extends PluginForHost {
                 }
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+                if (!loginform.hasInputFieldByName("submit")) {
+                    loginform.put("submit", "");
+                }
                 this.br.submitForm(loginform);
                 if (!this.br.containsHTML("/logout\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -219,25 +236,29 @@ public class UpfilesNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        this.br.getPage("/vip/show-plans");
         ai.setUnlimitedTraffic();
-        double creditLeft = 0;
+        final String expire = this.br.getRegex(">Twoje konto VIP jest ważne do (\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
         final String credit_str = this.br.getRegex("Stan konta:[\t\n\r ]*?([0-9\\.]+)[\t\n\r ]*?zł").getMatch(0);
-        if (credit_str != null) {
-            creditLeft = Double.parseDouble(credit_str);
-        }
-        if (creditLeft <= 0) {
+        String accounttext = "";
+        if (expire == null) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             /* free accounts still have captcha */
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
+            accounttext += "Registered (free) user";
         } else {
             /* If there is only a very small amount of credit left, premium downloads will not be possible! */
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account with " + credit_str + " zł");
+            accounttext = "Premium account";
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
         }
+        if (credit_str != null) {
+            accounttext += " with " + credit_str + " zł";
+        }
+        ai.setStatus(accounttext);
         account.setValid(true);
         return ai;
     }
@@ -258,12 +279,9 @@ public class UpfilesNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 this.br.setFollowRedirects(false);
-                /* UNTESTED ! ! ! */
+                prepBRAjax();
                 this.br.postPage(dllink, "refPage=");
-                dllink = this.br.getRedirectLocation();
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
+                dllink = getDllink();
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {

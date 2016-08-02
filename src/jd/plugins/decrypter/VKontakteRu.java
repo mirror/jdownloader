@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -49,6 +47,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
@@ -78,29 +78,29 @@ public class VKontakteRu extends PluginForDecrypt {
         return jd.plugins.hoster.VKontakteRuHoster.getProtocol();
     }
 
-    private static final String     EXCEPTION_ACCPROBLEM                    = "EXCEPTION_ACCPROBLEM";
-    private static final String     EXCEPTION_LINKOFFLINE                   = "EXCEPTION_LINKOFFLINE";
-    private static final String     EXCEPTION_API_UNKNOWN                   = "EXCEPTION_API_UNKNOWN";
+    private static final String     EXCEPTION_ACCPROBLEM                      = "EXCEPTION_ACCPROBLEM";
+    private static final String     EXCEPTION_LINKOFFLINE                     = "EXCEPTION_LINKOFFLINE";
+    private static final String     EXCEPTION_API_UNKNOWN                     = "EXCEPTION_API_UNKNOWN";
 
     /* Settings */
-    private static final String     FASTLINKCHECK_VIDEO                     = "FASTLINKCHECK_VIDEO";
-    private static final String     FASTLINKCHECK_PICTURES                  = "FASTLINKCHECK_PICTURES_V2";
-    private static final String     FASTLINKCHECK_AUDIO                     = "FASTLINKCHECK_AUDIO";
-    private static final String     ALLOW_BEST                              = "ALLOW_BEST";
-    private static final String     ALLOW_240P                              = "ALLOW_240P";
-    private static final String     ALLOW_360P                              = "ALLOW_360P";
-    private static final String     ALLOW_480P                              = "ALLOW_480P";
-    private static final String     ALLOW_720P                              = "ALLOW_720P";
-    private static final String     ALLOW_1080P                             = "ALLOW_1080P";
-    private static final String     VKWALL_GRAB_ALBUMS                      = "VKWALL_GRAB_ALBUMS";
-    private static final String     VKWALL_GRAB_PHOTOS                      = "VKWALL_GRAB_PHOTOS";
-    private static final String     VKWALL_GRAB_AUDIO                       = "VKWALL_GRAB_AUDIO";
-    private static final String     VKWALL_GRAB_VIDEO                       = "VKWALL_GRAB_VIDEO";
-    private static final String     VKWALL_GRAB_LINK                        = "VKWALL_GRAB_LINK";
-    private static final String     VKWALL_GRAB_DOCS                        = "VKWALL_GRAB_DOCS";
-    private static final String     VKVIDEO_USEIDASPACKAGENAME              = "VKVIDEO_USEIDASPACKAGENAME";
-    private static final String     VKAUDIOS_USEIDASPACKAGENAME             = "VKAUDIOS_USEIDASPACKAGENAME";
-    private static final String     VKDOCS_USEIDASPACKAGENAME               = "VKDOCS_USEIDASPACKAGENAME";
+    private static final String     FASTLINKCHECK_VIDEO                       = "FASTLINKCHECK_VIDEO";
+    private static final String     FASTLINKCHECK_PICTURES                    = "FASTLINKCHECK_PICTURES_V2";
+    private static final String     FASTLINKCHECK_AUDIO                       = "FASTLINKCHECK_AUDIO";
+    private static final String     ALLOW_BEST                                = "ALLOW_BEST";
+    private static final String     ALLOW_240P                                = "ALLOW_240P";
+    private static final String     ALLOW_360P                                = "ALLOW_360P";
+    private static final String     ALLOW_480P                                = "ALLOW_480P";
+    private static final String     ALLOW_720P                                = "ALLOW_720P";
+    private static final String     ALLOW_1080P                               = "ALLOW_1080P";
+    private static final String     VKWALL_GRAB_ALBUMS                        = "VKWALL_GRAB_ALBUMS";
+    private static final String     VKWALL_GRAB_PHOTOS                        = "VKWALL_GRAB_PHOTOS";
+    private static final String     VKWALL_GRAB_AUDIO                         = "VKWALL_GRAB_AUDIO";
+    private static final String     VKWALL_GRAB_VIDEO                         = "VKWALL_GRAB_VIDEO";
+    private static final String     VKWALL_GRAB_LINK                          = "VKWALL_GRAB_LINK";
+    private static final String     VKWALL_GRAB_DOCS                          = "VKWALL_GRAB_DOCS";
+    private static final String     VKVIDEO_USEIDASPACKAGENAME                = "VKVIDEO_USEIDASPACKAGENAME";
+    private static final String     VKAUDIOS_USEIDASPACKAGENAME               = "VKAUDIOS_USEIDASPACKAGENAME";
+    private static final String     VKDOCS_USEIDASPACKAGENAME                 = "VKDOCS_USEIDASPACKAGENAME";
 
     /* Settings 'in action' */
     private boolean                 vkwall_grabalbums;
@@ -114,72 +114,72 @@ public class VKontakteRu extends PluginForDecrypt {
     private String                  vkwall_graburlsinsideposts_regex_default;
 
     /* Some supported url patterns */
-    private static final String     PATTERN_SHORT                           = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
-    private static final String     PATTERN_URL_EXTERN                      = "https?://(?:www\\.)?vk\\.com/away\\.php\\?to=.+";
-    private static final String     PATTERN_GENERAL_AUDIO                   = "https?://(www\\.)?vk\\.com/audio.*?";
-    private static final String     PATTERN_AUDIO_ALBUM                     = "https?://(?:www\\.)?vk\\.com/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
-    private static final String     PATTERN_AUDIO_PAGE                      = "https?://(www\\.)?vk\\.com/page\\-\\d+_\\d+.*?";
-    private static final String     PATTERN_AUDIO_PAGE_oid                  = "https?://(www\\.)?vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
-    private static final String     PATTERN_AUDIO_AUDIOS_ALBUM              = "https?://(www\\.)?vk\\.com/audios\\-\\d+\\?album_id=\\d+";
-    private static final String     PATTERN_VIDEO_SINGLE_MODULE             = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=video(\\-W)?\\d+_\\d+/.+";
-    private static final String     PATTERN_VIDEO_SINGLE_SEARCH             = "https?://(www\\.)?vk\\.com/search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+";
-    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL           = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
-    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST      = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
-    private static final String     PATTERN_VIDEO_SINGLE_EMBED              = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
-    private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH         = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
-    private static final String     PATTERN_VIDEO_ALBUM                     = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
-    private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS = "https?://(www\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
-    private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM           = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
-    private static final String     PATTERN_PHOTO_SINGLE                    = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PHOTO_SINGLE_Z                  = "https?://(?:www\\.)?vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PHOTO_MODULE                    = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
-    private static final String     PATTERN_PHOTO_ALBUM                     = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
-    private static final String     PATTERN_PHOTO_ALBUMS                    = "https?://(?:www\\.)?vk\\.com/.*?albums(?:\\-)?\\d+";
-    private static final String     PATTERN_GENERAL_WALL_LINK               = "https?://(www\\.)?vk\\.com/wall(?:\\-)?\\d+(?:\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
-    private static final String     PATTERN_WALL_LOOPBACK_LINK              = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
-    private static final String     PATTERN_WALL_POST_LINK                  = "https?://(?:www\\.)?vk\\.com/wall(?:\\-)?\\d+_\\d+";
-    private static final String     PATTERN_WALL_POST_LINK_2                = "https?://(?:www\\.)?vk\\.com/wall\\-\\d+.+w=wall(?:\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PUBLIC_LINK                     = "https?://(www\\.)?vk\\.com/public\\d+";
-    private static final String     PATTERN_CLUB_LINK                       = "https?://(www\\.)?vk\\.com/club\\d+.*?";
-    private static final String     PATTERN_EVENT_LINK                      = "https?://(www\\.)?vk\\.com/event\\d+";
-    private static final String     PATTERN_ID_LINK                         = "https?://(www\\.)?vk\\.com/id\\d+";
-    private static final String     PATTERN_DOCS                            = "https?://(www\\.)?vk\\.com/docs\\?oid=\\-\\d+";
+    private static final String     PATTERN_SHORT                             = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
+    private static final String     PATTERN_URL_EXTERN                        = "https?://(?:www\\.)?vk\\.com/away\\.php\\?to=.+";
+    private static final String     PATTERN_GENERAL_AUDIO                     = "https?://(www\\.)?vk\\.com/audio.*?";
+    private static final String     PATTERN_AUDIO_ALBUM                       = "https?://(?:www\\.)?vk\\.com/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
+    private static final String     PATTERN_AUDIO_PAGE                        = "https?://(www\\.)?vk\\.com/page\\-\\d+_\\d+.*?";
+    private static final String     PATTERN_AUDIO_PAGE_oid                    = "https?://(www\\.)?vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
+    private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = "https?://(www\\.)?vk\\.com/audios\\-\\d+\\?album_id=\\d+";
+    private static final String     PATTERN_VIDEO_SINGLE_Z                    = "https?://(?:www\\.)?vk\\.com/.*?z=video(\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL             = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
+    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
+    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
+    private static final String     PATTERN_VIDEO_SINGLE_EMBED                = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
+    private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH           = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
+    private static final String     PATTERN_VIDEO_ALBUM                       = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
+    private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS   = "https?://(www\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
+    private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
+    private static final String     PATTERN_PHOTO_SINGLE                      = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PHOTO_SINGLE_Z                    = "https?://(?:www\\.)?vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PHOTO_MODULE                      = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
+    private static final String     PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
+    private static final String     PATTERN_PHOTO_ALBUMS                      = "https?://(?:www\\.)?vk\\.com/.*?albums(?:\\-)?\\d+";
+    private static final String     PATTERN_GENERAL_WALL_LINK                 = "https?://(www\\.)?vk\\.com/wall(?:\\-)?\\d+(?:\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
+    private static final String     PATTERN_WALL_LOOPBACK_LINK                = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
+    private static final String     PATTERN_WALL_POST_LINK                    = "https?://(?:www\\.)?vk\\.com/wall(?:\\-)?\\d+_\\d+";
+    private static final String     PATTERN_WALL_POST_LINK_2                  = "https?://(?:www\\.)?vk\\.com/wall\\-\\d+.+w=wall(?:\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PUBLIC_LINK                       = "https?://(www\\.)?vk\\.com/public\\d+";
+    private static final String     PATTERN_CLUB_LINK                         = "https?://(www\\.)?vk\\.com/club\\d+.*?";
+    private static final String     PATTERN_EVENT_LINK                        = "https?://(www\\.)?vk\\.com/event\\d+";
+    private static final String     PATTERN_ID_LINK                           = "https?://(www\\.)?vk\\.com/id\\d+";
+    private static final String     PATTERN_DOCS                              = "https?://(www\\.)?vk\\.com/docs\\?oid=\\-\\d+";
 
     /* Some html text patterns: English, Russian, German, Polish */
-    public static final String      TEMPORARILYBLOCKED                      = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Pr\\&#243;bujesz za\\&#322;adowa\\&#263; wi\\&#281;cej ni\\&#380; jedn\\&#261; stron\\&#281; w ci\\&#261;gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
-    private static final String     FILEOFFLINE                             = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
+    public static final String      TEMPORARILYBLOCKED                        = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Pr\\&#243;bujesz za\\&#322;adowa\\&#263; wi\\&#281;cej ni\\&#380; jedn\\&#261; stron\\&#281; w ci\\&#261;gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private static final String     FILEOFFLINE                               = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
 
     /* Possible/Known types of single vk-wall-posts */
-    private static final String     wallpost_type_photo                     = "photo";
-    private static final String     wallpost_type_doc                       = "doc";
-    private static final String     wallpost_type_audio                     = "audio";
-    private static final String     wallpost_type_link                      = "link";
-    private static final String     wallpost_type_video                     = "video";
-    private static final String     wallpost_type_album                     = "album";
-    private static final String     wallpost_type_poll                      = "poll";
+    private static final String     wallpost_type_photo                       = "photo";
+    private static final String     wallpost_type_doc                         = "doc";
+    private static final String     wallpost_type_audio                       = "audio";
+    private static final String     wallpost_type_link                        = "link";
+    private static final String     wallpost_type_video                       = "video";
+    private static final String     wallpost_type_album                       = "album";
+    private static final String     wallpost_type_poll                        = "poll";
 
     /* Internal settings / constants */
     /*
      * Whenever we found this number of links or more, quit the decrypter and add a [b]LOOPBACK_LINK[/b] to continue later in order to avoid
      * memory problems/freezes.
      */
-    private static final short      MAX_LINKS_PER_RUN                       = 5000;
+    private static final short      MAX_LINKS_PER_RUN                         = 5000;
 
     /* Used whenever we request arrays via API */
-    private static final int        API_MAX_ENTRIES_PER_REQUEST             = 100;
+    private static final int        API_MAX_ENTRIES_PER_REQUEST               = 100;
 
-    private SubConfiguration        cfg                                     = null;
-    private static final String     MAINPAGE                                = "https://vk.com";
+    private SubConfiguration        cfg                                       = null;
+    private static final String     MAINPAGE                                  = "https://vk.com";
 
-    private String                  CRYPTEDLINK_FUNCTIONAL                  = null;
-    private String                  CRYPTEDLINK_ORIGINAL                    = null;
-    private CryptedLink             CRYPTEDLINK                             = null;
-    private boolean                 fastcheck_photo                         = false;
-    private boolean                 fastcheck_audio                         = false;
+    private String                  CRYPTEDLINK_FUNCTIONAL                    = null;
+    private String                  CRYPTEDLINK_ORIGINAL                      = null;
+    private CryptedLink             CRYPTEDLINK                               = null;
+    private boolean                 fastcheck_photo                           = false;
+    private boolean                 fastcheck_audio                           = false;
 
-    private final boolean           docs_add_unique_id                      = true;
+    private final boolean           docs_add_unique_id                        = true;
 
-    private ArrayList<DownloadLink> decryptedLinks                          = null;
+    private ArrayList<DownloadLink> decryptedLinks                            = null;
 
     /* General error handling language implementation: English | Rus | Polish */
     /*
@@ -251,8 +251,8 @@ public class VKontakteRu extends PluginForDecrypt {
             return decryptedLinks;
         } else if (isSingeVideo(CRYPTEDLINK_ORIGINAL)) {
             loginrequired = false;
-            if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_MODULE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_SEARCH) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
-                CRYPTEDLINK_FUNCTIONAL = MAINPAGE + "/" + new Regex(CRYPTEDLINK_ORIGINAL, "(video(\\-)?\\d+_\\d+)").getMatch(0);
+            if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
+                CRYPTEDLINK_FUNCTIONAL = MAINPAGE + "/" + new Regex(CRYPTEDLINK_ORIGINAL, "(video(?:\\-)?\\d+_\\d+)").getMatch(0);
             }
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM)) {
             loginrequired = false;
@@ -349,7 +349,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptAudioPage();
                 } else if (isSingeVideo(CRYPTEDLINK_FUNCTIONAL)) {
                     /* Single video */
-                    decryptSingleVideo_API(CRYPTEDLINK_FUNCTIONAL);
+                    decryptSingleVideo(CRYPTEDLINK_FUNCTIONAL);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_VIDEO_ALBUM)) {
                     /**
                      * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
@@ -434,7 +434,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Checks if the type of a link is clear, meaning we're sure we have no vk.com/username link if this is returns true. */
     private boolean isKnownType() {
-        final boolean isKnown = CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_MODULE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingeVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE_oid) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_DOCS);
+        final boolean isKnown = CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingeVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE_oid) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_DOCS);
         return isKnown;
     }
 
@@ -495,7 +495,6 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** NOT using API audio pages and audio playlist's are similar, TODO: Return host-plugin links here to improve the overall stability. */
-    @SuppressWarnings("deprecation")
     private void decryptAudiosAlbum() throws Exception {
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         if (br.containsHTML("id=\"not_found\"")) {
@@ -653,13 +652,25 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** Using API */
-    private void decryptSingleVideo_API(final String parameter) throws Exception {
+    /** Using API in most cases */
+    private void decryptSingleVideo(final String parameter) throws Exception {
         // Check if it's really offline
         final String[] ids = findVideoIDs(parameter);
         final String oid = ids[0];
         final String id = ids[1];
-        apiGetPageSafe(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+        String listID;
+        if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z)) {
+            listID = new Regex(this.CRYPTEDLINK_ORIGINAL, "z=video" + oid + "_" + id + "(?:%2F|/)([a-z0-9]+)(?:%2F|/)").getMatch(0);
+        } else {
+            listID = new Regex(parameter, "listid=([a-z0-9]+)").getMatch(0);
+        }
+        if (listID == null) {
+            logger.info("Using API to decrypt single video");
+            apiGetPageSafe(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+        } else {
+            logger.info("Using website to decrypt single video");
+            this.postPageSafe(getProtocol() + "vk.com/al_video.php", "act=show_inline&al=1&list=" + listID + "&module=public&video=" + oid + "_" + id);
+        }
         if (br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS) || this.br.toString().length() < 150) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
@@ -789,8 +800,8 @@ public class VKontakteRu extends PluginForDecrypt {
             final Regex idsRegex = new Regex(parameter, "vk\\.com/video_ext\\.php\\?oid=((?:\\-)?\\d+)\\&id=(\\d+)");
             oid = idsRegex.getMatch(0);
             id = idsRegex.getMatch(1);
-        } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL)) {
-            final Regex idsRegex = new Regex(parameter, "((?:\\-)?\\d+)_(\\d+)$");
+        } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID)) {
+            final Regex idsRegex = new Regex(parameter, "((?:\\-)?\\d+)_(\\d+)");
             oid = idsRegex.getMatch(0);
             id = idsRegex.getMatch(1);
         } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
@@ -1082,7 +1093,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Decrypts media of single API wall-post json objects. */
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     private void decryptWallPost(final String wall_ID, final Map<String, Object> entry, FilePackage fp) throws IOException {
         final long id = ((Number) entry.get("id")).longValue();
         final long fromId = ((Number) entry.get("from_id")).longValue();
@@ -1179,7 +1190,16 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl = createDownloadlink(url);
                 } else if (type.equals(wallpost_type_video) && vkwall_grabvideo) {
                     content_id = typeObject.get("vid").toString();
-                    dl = createDownloadlink(getProtocol() + "vk.com/video" + owner_id + "_" + content_id);
+                    String videolink = getProtocol() + "vk.com/video" + owner_id + "_" + content_id;
+                    /*
+                     * Try to find listID which sometimes is needed to decrypt videos as it grants permissions that would otherwise be
+                     * missing!
+                     */
+                    final String listID = this.br.getRegex("\"/video" + owner_id + "_" + content_id + "\\?list=([a-z0-9]+)\"").getMatch(0);
+                    if (listID != null) {
+                        videolink += "?listid=" + listID;
+                    }
+                    dl = createDownloadlink(videolink);
                 } else if (type.equals(wallpost_type_album) && vkwall_grabalbums) {
                     // it's string here. no idea why
                     final String album_id = typeObject.get("aid").toString();
@@ -1249,6 +1269,12 @@ public class VKontakteRu extends PluginForDecrypt {
         apiGetPageSafe("https://api.vk.com/method/wall.getById?posts=" + postID + "&extended=0&copy_history_depth=2");
         Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
 
+        try {
+            /* Access original url as we sometimes need the listID for videos (see decryptWallPost). */
+            this.apiGetPageSafe("https://vk.com/wall" + postID);
+        } catch (final Throwable e) {
+        }
+
         if (map == null) {
             return;
         }
@@ -1265,7 +1291,6 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Works offline, simply converts the added link into a link for the host plugin and sets needed IDs. */
-    @SuppressWarnings("deprecation")
     private void decryptWallPostSpecifiedPhoto() throws Exception {
         String module;
         String list_id = null;
@@ -1885,7 +1910,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private boolean isSingeVideo(final String input) {
-        return (input.matches(PATTERN_VIDEO_SINGLE_MODULE) || input.matches(PATTERN_VIDEO_SINGLE_SEARCH) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || input.matches(PATTERN_VIDEO_SINGLE_EMBED) || input.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH));
+        return (input.matches(PATTERN_VIDEO_SINGLE_Z) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || input.matches(PATTERN_VIDEO_SINGLE_EMBED) || input.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH));
     }
 
     /** Handles basic offline errors. */

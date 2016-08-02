@@ -71,7 +71,7 @@ public class FlashxTv extends antiDDoSForHost {
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = true;
+    private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           try_to_get_file_downloadlink = false;
@@ -239,6 +239,17 @@ public class FlashxTv extends antiDDoSForHost {
         String file_dllink = null;
         String stream_dllink = null;
         boolean temporary_issue = false;
+        // final Browser br2 = this.br.cloneBrowser();
+        // br2.getPage("http://www.flashx.tv/js/advertisement.js");
+        // // br2.getPage("http://www.flashx.tv/code.js?c=102275");
+        // br2.getPage("http://ww2.flashx.tv/embed1");
+        // String embed1url = br2.getRegex("ReopenUrlBuilder\\(\"(http[^<>\"]+)\"").getMatch(0);
+        // br2.getPage("http://www.flashx.tv/flashx.php?fxuser=1");
+        // br2.getPage("http://ww2.flashx.tv/px.html");
+        // if (embed1url != null) {
+        // embed1url = embed1url.replace("\\", "");
+        // br2.getPage(embed1url);
+        // }
         String final_downloadlink = checkDirectLink(downloadLink, directlinkproperty);
         if (final_downloadlink == null) {
             /* Second, check for streaming/direct links on the first page */
@@ -316,6 +327,9 @@ public class FlashxTv extends antiDDoSForHost {
                         }
                         /* end of backward compatibility */
                         this.waitTime(System.currentTimeMillis(), downloadLink);
+                        // this.br.setCookie(this.br.getHost(), "accompat", "59_72_8_7_5_0_0_|||||ffff|5b31|1a7f");
+                        // this.br.setCookie(this.br.getHost(), "datasorc", "|||||ffff|5b31|1a7f");
+                        this.br.setCookie(this.br.getHost(), "ab_noticed", "false");
                         submitForm(download1);
                         checkErrors(downloadLink, false);
                         if (stream_dllink == null) {

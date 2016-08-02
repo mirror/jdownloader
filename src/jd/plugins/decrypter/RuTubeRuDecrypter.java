@@ -26,10 +26,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,7 +38,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.RuTubeVariant;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" }, flags = { 0 })
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" }, flags = { 0 })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     public RuTubeRuDecrypter(PluginWrapper wrapper) {
@@ -72,6 +72,9 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
                 final String b = HTMLEntities.unhtmlentities(HTMLEntities.unhtmlDoubleQuotes(br.toString()));
                 uid = new Regex(b, "\"id\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
+                if (uid == null) {
+                    uid = new Regex(b, "<link rel=\"canonical\" href=\"https?://rutube\\.ru/video/([a-f0-9]{32})").getMatch(0);
+                }
                 if (uid == null) {
                     String msg = getErrorMessage();
                     if (msg != null) {

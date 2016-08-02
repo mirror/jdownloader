@@ -62,7 +62,7 @@ public class MoeVideoNetDecrypter extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
 
-            if (br.containsHTML("Vídeo no existe posiblemente") || this.br.getHttpConnection().getResponseCode() == 404) {
+            if (br.containsHTML("Vídeo no existe posiblemente") || !this.br.getHttpConnection().getContentType().contains("html") || this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
@@ -93,6 +93,10 @@ public class MoeVideoNetDecrypter extends PluginForDecrypt {
                 final String externID = this.br.getRegex("framevideo\\?vh=youtu\\&amp;id=([^<>\"\\'=\\&]+)").getMatch(0);
                 if (externID != null) {
                     decryptedLinks.add(this.createDownloadlink("https://www.youtube.com/watch?v=" + externID));
+                    return decryptedLinks;
+                }
+                if (!this.br.containsHTML("class=\"video\\-content video__footer\"")) {
+                    decryptedLinks.add(createOfflinelink(parameter));
                     return decryptedLinks;
                 }
                 logger.warning("Decrypter broken for link: " + parameter);
