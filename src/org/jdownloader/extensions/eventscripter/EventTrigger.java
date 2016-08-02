@@ -4,9 +4,17 @@ import java.awt.event.ActionEvent;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.swing.JLabel;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Application;
@@ -30,13 +38,6 @@ import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.reconnect.Reconnecter.ReconnectResult;
-import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 public enum EventTrigger implements LabelInterface {
     ON_DOWNLOAD_CONTROLLER_START {
@@ -370,7 +371,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
             final Spinner spinner = new Spinner(1000, Integer.MAX_VALUE);
             try {
                 spinner.setValue(((Number) settings.get("interval")).intValue());
@@ -411,7 +412,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
@@ -466,7 +467,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
@@ -516,7 +517,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
@@ -567,7 +568,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
@@ -618,7 +619,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
@@ -668,7 +669,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
@@ -719,7 +720,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+        public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
@@ -831,7 +832,7 @@ public enum EventTrigger implements LabelInterface {
         return false;
     }
 
-    public TriggerSetupPanel createSettingsPanel(HashMap<String, Object> settings) {
+    public TriggerSetupPanel createSettingsPanel(Map<String, Object> settings) {
         return null;
     }
 

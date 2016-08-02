@@ -2,7 +2,7 @@ package org.jdownloader.extensions.eventscripter;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Box;
@@ -45,7 +45,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     private JScrollPane                           scrollpane;
     private EventScripterExtension                extension;
     private TriggerSetupPanel                     settingsPanel;
-    private HashMap<String, Object>               settingsMap;
+    private Map<String, Object>                   settingsMap;
 
     public JavaScriptEditorDialog(EventScripterExtension extension, ScriptEntry entry) {
         super(Dialog.STYLE_HIDE_ICON, T.T.script_editor_title(entry.getName()), null, _GUI.T.lit_save(), null);
@@ -324,7 +324,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         }.getReturnValue();
     }
 
-    public HashMap<String, Object> getEventTriggerSetup() {
+    public Map<String, Object> getEventTriggerSetup() {
         if (settingsPanel != null) {
             settingsPanel.save();
             return settingsMap;
