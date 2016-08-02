@@ -153,7 +153,7 @@ public class LinkCrawler {
     protected final WeakHashMap<LinkCrawler, Object>       children                    = new WeakHashMap<LinkCrawler, Object>();
     protected final static HashMap<String, Object>         SEQUENTIALLOCKS             = new HashMap<String, Object>();
 
-    protected Object getSequentialLockObject(LazyCrawlerPlugin plugin) {
+    protected static Object getSequentialLockObject(final LazyCrawlerPlugin plugin) {
         synchronized (SEQUENTIALLOCKS) {
             final String lockID = plugin.getDisplayName() + "." + plugin.getLazyPluginClass().getClassName();
             Object lock = SEQUENTIALLOCKS.get(lockID);
