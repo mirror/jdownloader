@@ -763,6 +763,14 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         };
     }
 
+    private String emptyAsNull(final String string) {
+        if (StringUtils.isEmpty(string)) {
+            return null;
+        } else {
+            return string;
+        }
+    }
+
     protected void saveInEDT(final AbstractNodeProperties abstractNodes) {
         try {
             savingLock.incrementAndGet();
@@ -770,13 +778,13 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 abstractNodes.savePriority(priority.getSelectedItem());
             }
             if (comment.getParent() != null) {
-                abstractNodes.saveComment(comment.getText());
+                abstractNodes.saveComment(emptyAsNull(comment.getText()));
             }
             if (filename.getParent() != null) {
                 abstractNodes.saveFilename(filename.getText());
             }
             if (downloadpassword.getParent() != null) {
-                abstractNodes.saveDownloadPassword(downloadpassword.getText());
+                abstractNodes.saveDownloadPassword(emptyAsNull(downloadpassword.getText()));
             }
             if (checksum.getParent() != null) {
                 String cs = checksum.getText();
