@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
 
 /**
  * c & user values are required in order to not have faked output in other sections of the site.
@@ -76,11 +76,19 @@ public class SfLnkCnvCm extends PluginForDecrypt {
         } else if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkconverter.com/decrypt-\\d+/")) {
             // stuff that ends up going to /decrypted-2/ with solvemedia can be bypassed.
             br.getPage(br.getURL().replace("/decrypt-2/", "/decrypt/"));
+        } else if (br.containsHTML("decrypt.safelinkconverter")) {
+            link = br.getRegex("onclick=\"window\\.open\\('(.*?)'").getMatch(0);
+            if (link != null) {
+                br.getPage(link);
+            }
         }
         link = br.getRedirectLocation();
         if (link == null) {
             // decrypted.safelinkconverter.com or safelinkconverter.com/decrypt/
             link = br.getRegex("<div class=\"redirect_url\">\\s*<a href=\"(.*?)\"").getMatch(0);
+            if (link == null) {
+                link = br.getRegex("<div class=\"redirect_url\">\\s*<div onclick=\"window\\.open\\('(.*?)'").getMatch(0);
+            }
         }
         if (link != null) {
             decryptedLinks.add(createDownloadlink(link));
