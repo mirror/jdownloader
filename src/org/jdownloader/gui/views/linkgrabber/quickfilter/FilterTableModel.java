@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.awt.Color;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
 import java.util.EventObject;
 
 import javax.swing.Icon;
@@ -74,14 +76,18 @@ public class FilterTableModel extends ExtTableModel<Filter> {
         });
         addColumn(new ExtLongColumn<Filter>("Hoster") {
             private final Color defaultColor;
+            private final int   defaultMaxWidth;
 
             {
                 defaultColor = renderer.getForeground();
+                AffineTransform affinetransform = new AffineTransform();
+                FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
+                defaultMaxWidth = (int) renderer.getFont().getStringBounds("1000000", frc).getWidth() + 10;// border
             }
 
             @Override
             public int getMaxWidth() {
-                return 50;
+                return defaultMaxWidth;
             }
 
             @Override
