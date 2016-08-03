@@ -314,7 +314,7 @@ public class Video2brainCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && account_language != null) {
                     br.setCookies(domain, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !true) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
@@ -503,7 +503,7 @@ public class Video2brainCom extends PluginForHost {
             /* Download for free (+ free trail) accounts is not allowed/possible. */
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
-            ai.setStatus("Free Account (Account without subscribtion oder mit 10 days trail subscription)");
+            ai.setStatus("Free Account (Account without subscribtion oder mit 10 days trial subscription)");
         } else {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account (Account mit Abo)");

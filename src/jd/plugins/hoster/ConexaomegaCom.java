@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
@@ -37,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class ConexaomegaCom extends PluginForHost {
 
@@ -45,8 +45,8 @@ public class ConexaomegaCom extends PluginForHost {
     private static final String                            COOKIE_HOST        = "http://conexaomega.com";
 
     /**
-     * Important notes: 1.conexaomega.com and conexaomega.com.r are two DIFFERENT hosts! 2.Download never worked for me, I always got server
-     * errors, limits are also untested
+     * Important notes: 1.conexaomega.com and conexaomega.com.br are two DIFFERENT hosts! 2.Download never worked for me, I always got
+     * server errors, limits are also untested
      */
 
     public ConexaomegaCom(PluginWrapper wrapper) {

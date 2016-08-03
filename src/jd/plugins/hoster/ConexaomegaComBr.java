@@ -27,6 +27,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -37,23 +38,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip-account.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class VipAccountRu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+public class ConexaomegaComBr extends PluginForHost {
 
-    private static final String                            DOMAIN                       = "http://vip-account.ru/";
-    private static final String                            NICE_HOST                    = "vip-account.ru";
+    private static final String                            DOMAIN                       = "http://conexaomega.com.br/";
+    private static final String                            NICE_HOST                    = "conexaomega.com.br";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
 
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final String                                   default_UA                   = "JDownloader";
-    private final String                                   html_loggedin                = "action=logout\"";
+    private final String                                   html_loggedin                = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
 
     private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
@@ -62,14 +62,14 @@ public class VipAccountRu extends PluginForHost {
     private Account                                        currAcc                      = null;
     private DownloadLink                                   currDownloadLink             = null;
 
-    public VipAccountRu(PluginWrapper wrapper) {
+    public ConexaomegaComBr(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://vip-account.ru/");
+        this.enablePremium("http://conexaomega.com.br/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://vip-account.ru/";
+        return "http://conexaomega.com.br/";
     }
 
     private Browser newBrowser() {
@@ -140,9 +140,9 @@ public class VipAccountRu extends PluginForHost {
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            this.getAPISafe("http://vip-account.ru/engine/ajax/check/core.php?url=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = this.br.getRegex("\"links\":\\[\"(http:[^<>\"]*?)\"\\]").getMatch(0);
-            if (dllink == null) {
+            this.getAPISafe("https://www." + this.getHost() + "/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=1." + System.currentTimeMillis());
+            dllink = this.br.getRegex("(http[^<>\"\\|\\']+)").getMatch(0);
+            if (dllink == null || dllink.length() > 500) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
             }
@@ -210,27 +210,20 @@ public class VipAccountRu extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
         this.br = newBrowser();
-        final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        br.getPage("/user/" + Encoding.urlEncode(account.getUser()) + "/");
-        final boolean ispremium = this.br.containsHTML(">Группа:</span> Vip </li>|Vip[\t\n\r ]*?</li>");
-        long trafficleft = 0;
-        if (ispremium) {
-            br.getPage("/vip_check/");
-            String trafficleft_str = this.br.getRegex("class=\"points\">(\\d+(?:\\.\\d+)?)<").getMatch(0);
-            String trafficleft_str_unit = this.br.getRegex("class=\"points\">\\d+(?:\\.\\d+)?</span> ([A-Za-z]+)").getMatch(0);
-            if (trafficleft_str_unit == null) {
-                trafficleft_str_unit = "GB";
-            }
-            if (trafficleft_str != null) {
-                trafficleft_str += trafficleft_str_unit;
-                trafficleft = SizeFormatter.getSize(trafficleft_str);
+        if (!account.getUser().matches(".+@.+\\..+")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        /*
-         * Free users = Accept them but set zero traffic left.
-         */
-        if (!ispremium || trafficleft == 0) {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        if (!this.br.getURL().contains("/minha_conta.php")) {
+            this.br.getPage("/minha_conta.php");
+        }
+        final String premium_days_left = this.br.getRegex("<span>(\\d+) dias?</span>[\t\n\r ]*?<small>de conta premium</small>").getMatch(0);
+        if (premium_days_left == null || premium_days_left.equals("0")) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             ai.setTrafficLeft(0);
@@ -238,18 +231,17 @@ public class VipAccountRu extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             ai.setStatus("Premium account");
-            ai.setTrafficLeft(trafficleft);
+            ai.setUnlimitedTraffic();
+            ai.setValidUntil(System.currentTimeMillis() + 24 * Long.parseLong(premium_days_left) * 60 * 60 * 1000l);
         }
         account.setValid(true);
-        this.getAPISafe("/");
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String hosttexts[] = br.getRegex("<span style=\"font-weight: 700;\">([^<>\"]+)").getColumn(0);
-        for (String hosttext : hosttexts) {
-            hosttext = hosttext.toLowerCase();
-            final String[] domains = hosttext.toLowerCase().split(",");
-            for (String domain : domains) {
-                domain = domain.trim();
-                supportedHosts.add(domain);
+        this.getAPISafe("/planos");
+        final String supportedhosttable = this.br.getRegex("<div class=\"lista\\-geradores\">(.*?)<br/><br/>[\t\n\r ]*?</div>").getMatch(0);
+        if (supportedhosttable != null) {
+            final ArrayList<String> supportedHosts = new ArrayList<String>();
+            final String hosts_crippled[] = new Regex(supportedhosttable, "([A-Za-z0-9\\.\\-]+)[\t\n\r ]*?<br>").getColumn(0);
+            for (String host_crippled : hosts_crippled) {
+                supportedHosts.add(host_crippled.trim());
             }
             ai.setMultiHostSupport(this, supportedHosts);
         }
@@ -266,22 +258,18 @@ public class VipAccountRu extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (force) {
-                        /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                        br.getPage("http://vip-account.ru/vip_check/");
-                        if (br.containsHTML(html_loggedin)) {
-                            return;
-                        }
-                        /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                        if (br.getCookies(DOMAIN) != null) {
-                            br.clearCookies(DOMAIN);
-                        }
-                    } else {
+                    br.getPage("https://www." + this.getHost() + "/planos");
+                    if (br.containsHTML(html_loggedin)) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
+                    /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                    if (br.getCookies(DOMAIN) != null) {
+                        br.clearCookies(DOMAIN);
+                    }
                 }
-                String postData = "login=submit&login_name=" + Encoding.urlEncode(currAcc.getUser()) + "&login_password=" + Encoding.urlEncode(currAcc.getPass());
-                this.postAPISafe("http://vip-account.ru/", postData);
+                String postData = "lembrar=on&email=" + Encoding.urlEncode(currAcc.getUser()) + "&senha=" + Encoding.urlEncode(currAcc.getPass());
+                this.postAPISafe("https://www." + this.getHost() + "/login", postData);
                 final String userLanguage = System.getProperty("user.language");
                 if (!this.br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(userLanguage)) {
