@@ -53,7 +53,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         LinkedHashMap<String, Object> tempmap = null;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<Object> ressourcelist = null;
-        /* Find the name of our channel */
+        /* Find the name of our channel needed for the following requests */
         this.br.getPage("http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html");
         String channel_name = null;
         try {
