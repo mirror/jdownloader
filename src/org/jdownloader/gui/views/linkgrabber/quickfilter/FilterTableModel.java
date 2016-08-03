@@ -1,8 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.awt.Color;
-import java.awt.font.FontRenderContext;
-import java.awt.geom.AffineTransform;
 import java.util.EventObject;
 
 import javax.swing.Icon;
@@ -13,6 +11,7 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtLongColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.swing.SwingUtils;
 
 public class FilterTableModel extends ExtTableModel<Filter> {
 
@@ -80,9 +79,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
 
             {
                 defaultColor = renderer.getForeground();
-                AffineTransform affinetransform = new AffineTransform();
-                FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
-                defaultMaxWidth = (int) renderer.getFont().getStringBounds("1000000", frc).getWidth() + 10;// border
+                defaultMaxWidth = (int) SwingUtils.getStringSizeForFont("1000000", renderer.getFont()).getWidth() + 10;// border
             }
 
             @Override
