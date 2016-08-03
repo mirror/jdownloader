@@ -83,7 +83,7 @@ public class HuabanCom extends PluginForHost {
              * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always present
              * in the normal html code.
              */
-            final String json = br.getRegex("app\\.page\\[\"pin\"\\] = ((\\{.*?\\});[\t\n\r]+").getMatch(0);
+            final String json = br.getRegex("app\\.page\\[\"pin\"\\] = (\\{.*?\\});[\t\n\r]+").getMatch(0);
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
