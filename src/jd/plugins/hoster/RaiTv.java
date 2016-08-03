@@ -171,6 +171,7 @@ public class RaiTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        /* Not needed (yet/anymore) */
         // if (possibleNotDownloadableMSSilverlight) {
         // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol Microsoft Silverlight");
         // }
@@ -178,7 +179,6 @@ public class RaiTv extends PluginForHost {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
             logger.info("Download http .wmv video");
         } else {
-            this.br.getPage(this.dllink);
             final String cont = getContFromRelinkerUrl(this.dllink);
             if (cont == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
