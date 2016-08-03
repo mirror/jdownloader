@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder)/[a-z0-9]+/?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder|v)/[a-z0-9]+/?" }, flags = { 0 })
 public class SolidFilesComFolder extends PluginForDecrypt {
 
     public SolidFilesComFolder(PluginWrapper wrapper) {
@@ -64,9 +64,11 @@ public class SolidFilesComFolder extends PluginForDecrypt {
                 logger.info("Empty folder: " + parameter);
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
+            } else {
+                // single file-let hoster plugin take over
+                decryptedLinks.add(this.createDownloadlink(parameter));
+                return decryptedLinks;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
         }
         if (finfos != null && finfos.length != 0) {
             for (final String finfo : finfos) {
