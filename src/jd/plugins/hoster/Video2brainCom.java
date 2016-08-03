@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -43,6 +44,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(?:de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }, flags = { 2 })
 public class Video2brainCom extends PluginForHost {
 
@@ -52,7 +55,8 @@ public class Video2brainCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String[] languages = { "de", "en", "fr", "es" };
+    /* 2016-08-02: video2brain.com/en redirects to lynda.com */
+    private static final String[] languages = { "de", "fr", "es" };
 
     @Override
     public String getAGBLink() {
@@ -306,11 +310,11 @@ public class Video2brainCom extends PluginForHost {
             try {
                 br = newBrowser(br);
                 br.setCookiesExclusive(true);
-                String account_language = account.getStringProperty("language", null);
+                String account_language = getAccountLanguage(account);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && account_language != null) {
                     br.setCookies(domain, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !true) {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
@@ -423,6 +427,10 @@ public class Video2brainCom extends PluginForHost {
         }
     }
 
+    private static String getAccountLanguage(final Account acc) {
+        return acc.getStringProperty("language", null);
+    }
+
     public static boolean isLoggedIn(final Browser br) {
         return br.containsHTML("user\\-logout\\.htm\"");
     }
@@ -467,25 +475,52 @@ public class Video2brainCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        if (br.containsHTML("class=\"overlay\\-buy\\-subscription btn green\"")) {
+        final String accountlanguage = getAccountLanguage(account);
+        this.br.getPage("https://www." + this.getHost() + "/" + accountlanguage + "/");
+        String expiredate = null;
+        /* Different url for every language/country */
+        final String abonements_url = this.br.getRegex("id=\"myv2b_dd_usertype\">[^<>]*?<a href=\"(https?://(?:www\\.)?video2brain\\.com/[^/]+/my-video2brain/options/[^/]+)\"").getMatch(0);
+        if (abonements_url != null) {
+            /* This url should only be available for premium accounts --> Then we can RegEx the expire date. */
+            this.br.getPage(abonements_url);
+            expiredate = this.br.getRegex("class=\"ajax\\-loading\">\\&nbsp;</div></div>[\t\n\r ]*?<div>[\t\n\r ]*?<div><b>Abonnement:</b>[^<>\"]+</div>[\t\n\r ]*?<div><b>[^<>\"]+</b>([^<>\"]+)</div>").getMatch(0);
+        }
+        /* In general if this is true user has a free account or trail subscription. */
+        final boolean html_contains_subscribe_or_upgrade_button = br.containsHTML("FooterCTA\\(\\'Subscribe\\'");
+        /*
+         * E.g. 'Activate trail' German: <a class="btn blue" href="https://www.video2brain.com/de/abonnieren/trials"
+         * onclick="Tracking.Events.FooterCTA('Subscribe', 'https\x3A\x2F\x2Fwww.video2brain.com\x2Fde\x2Fabonnieren\x2Ftrials')">10 TAGE
+         * KOSTENLOS TESTEN</a>
+         */
+        /*
+         * E.g. 'Upgrade' (from trail to paid subscription) French: <a class="btn blue"
+         * href="https://www.video2brain.com/fr/mon-video2brain/options/upgrade" onclick="Tracking.Events.FooterCTA('Subscribe',
+         * 'https\x3A\x2F\x2Fwww.video2brain.com\x2Ffr\x2Fmon\x2Dvideo2brain\x2Foptions\x2Fupgrade')">METTRE À JOUR</a>
+         */
+        /* Note that this 'is_test_abonement' is not safe! */
+        final boolean is_test_abonement = this.br.containsHTML("Abonnement d\\'essai de 10 jours|10 jours|10 days|10 Tage|10 tage");
+        if (html_contains_subscribe_or_upgrade_button || expiredate == null || is_test_abonement) {
+            /* Download for free (+ free trail) accounts is not allowed/possible. */
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account (Account ohne Abo)");
+            ai.setTrafficLeft(0);
+            ai.setStatus("Free Account (Account without subscribtion oder mit 10 days trail subscription)");
         } else {
-            /* TODO: Add expire date support if possible */
-            // final String expire = br.getRegex("").getMatch(0);
-            // if (expire == null) {
-            // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-            // "\r\nDein Account Typ wird bisher noch nicht unterstützt!\r\nBitte melde dich bei unserem Support!",
-            // PluginException.VALUE_ID_PREMIUM_DISABLE);
-            // } else {
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nPlease contact our support!",
-            // PluginException.VALUE_ID_PREMIUM_DISABLE);
-            // }
-            // }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account (Account mit Abo)");
         }
+
+        if (expiredate != null) {
+            /* E.g. free trail accounts will also have expire date. */
+            expiredate = expiredate.trim();
+            final Locale locale;
+            if (accountlanguage.equals("fr")) {
+                locale = Locale.FRANCE;
+            } else {
+                locale = Locale.GERMANY;
+            }
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "dd MMMM yyyy", locale));
+        }
+
         account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         account.setValid(true);
