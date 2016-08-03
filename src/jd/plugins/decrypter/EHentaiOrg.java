@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "http://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" }, flags = { 0 })
 public class EHentaiOrg extends PluginForDecrypt {
 
     public EHentaiOrg(PluginWrapper wrapper) {
@@ -98,7 +98,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                 sleep(new Random().nextInt(5000), param);
                 br2.getPage(parameter + "/?p=" + page);
             }
-            final String[] links = br2.getRegex("\"(http://(?:g\\.e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + uid + "-\\d+)\"").getColumn(0);
+            final String[] links = br2.getRegex("\"(https?://(?:g\\.e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + uid + "-\\d+)\"").getColumn(0);
             if (links == null || links.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
