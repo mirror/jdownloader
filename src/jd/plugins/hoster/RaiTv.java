@@ -67,7 +67,9 @@ public class RaiTv extends PluginForHost {
         this.setBrowserExclusive();
         prepBR(this.br);
         this.br.getPage(link.getDownloadURL());
-        dllink = this.br.getRegex("var[\t\n\r ]*?videoURL_MP4[\t\n\r ]*?=[\t\n\r ]*?\"(http://[^<>\"]+)\"").getMatch(0);
+        /* Do NOT use value of "videoURL_MP4" here! */
+        /* E.g. http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem-70996227-7fec-4be9-bc49-ba0a8104305a.html */
+        dllink = this.br.getRegex("var[\t\n\r ]*?videoURL[\t\n\r ]*?=[\t\n\r ]*?\"(http://[^<>\"]+)\"").getMatch(0);
         String content_id_from_url = null;
         if (link.getDownloadURL().matches(TYPE_CONTENTITEM)) {
             content_id_from_url = new Regex(link.getDownloadURL(), "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
@@ -169,13 +171,14 @@ public class RaiTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (possibleNotDownloadableMSSilverlight) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol Microsoft Silverlight");
-        }
+        // if (possibleNotDownloadableMSSilverlight) {
+        // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol Microsoft Silverlight");
+        // }
         if (downloadLink.getFinalFileName().endsWith(".wmv")) {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
             logger.info("Download http .wmv video");
         } else {
+            this.br.getPage(this.dllink);
             final String cont = getContFromRelinkerUrl(this.dllink);
             if (cont == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

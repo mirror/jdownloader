@@ -222,7 +222,7 @@ public class ConexaomegaComBr extends PluginForHost {
         if (!this.br.getURL().contains("/minha_conta.php")) {
             this.br.getPage("/minha_conta.php");
         }
-        final String premium_days_left = this.br.getRegex("<span>(\\d+) dias?</span>[\t\n\r ]*?<small>de conta premium</small>").getMatch(0);
+        final String premium_days_left = this.br.getRegex("<span>(\\d+) dias?</span>.+<small[^>]*?>[^<>]*?de conta premium").getMatch(0);
         if (premium_days_left == null || premium_days_left.equals("0")) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
@@ -236,10 +236,10 @@ public class ConexaomegaComBr extends PluginForHost {
         }
         account.setValid(true);
         this.getAPISafe("/planos");
-        final String supportedhosttable = this.br.getRegex("<div class=\"lista\\-geradores\">(.*?)<br/><br/>[\t\n\r ]*?</div>").getMatch(0);
+        final String supportedhosttable = this.br.getRegex("<div class=\"lista\\-geradores\">(.*?<br/>)<br/>[\t\n\r ]*?</div>").getMatch(0);
         if (supportedhosttable != null) {
             final ArrayList<String> supportedHosts = new ArrayList<String>();
-            final String hosts_crippled[] = new Regex(supportedhosttable, "([A-Za-z0-9\\.\\-]+)[\t\n\r ]*?<br>").getColumn(0);
+            final String hosts_crippled[] = new Regex(supportedhosttable, "([A-Za-z0-9\\.\\-]+)[\t\n\r ]*?<br").getColumn(0);
             for (String host_crippled : hosts_crippled) {
                 supportedHosts.add(host_crippled.trim());
             }
