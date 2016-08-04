@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,12 +34,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.es" }, urls = { "http://copiapopdecrypted\\.es/\\d+" }, flags = { 20 })
 public class CopiapopEs extends PluginForHost {
+
+    @Override
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
 
     public CopiapopEs(PluginWrapper wrapper) {
         super(wrapper);

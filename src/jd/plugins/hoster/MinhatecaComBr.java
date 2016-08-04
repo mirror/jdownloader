@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,12 +42,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" }, flags = { 2 })
 public class MinhatecaComBr extends PluginForHost {
+
+    @Override
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
 
     public MinhatecaComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -120,14 +125,7 @@ public class MinhatecaComBr extends PluginForHost {
             if (dllink == null) {
                 if (br.containsHTML("payment_window")) {
                     /* User needs to use an account and/or buy traffic for his existing account to download this file. */
-                    try {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                    } catch (final Throwable e) {
-                        if (e instanceof PluginException) {
-                            throw (PluginException) e;
-                        }
-                    }
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
