@@ -418,10 +418,6 @@ public class OpenLoadIo extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        if (true) {
-            account.setValid(true);
-            return ai;
-        }
         if (isAPIAccount(account)) {
             this.loginAPI(account);
             /* At the moment we only support free accounts */
