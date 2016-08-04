@@ -268,8 +268,8 @@ public class FilescdnCom extends PluginForHost {
     }
 
     private String[] scanInfo(final String[] fileInfo) {
-        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
-        final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>";
+        final String sharebox1 = "copy\\(this\\);.*?\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
 
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
@@ -277,7 +277,7 @@ public class FilescdnCom extends PluginForHost {
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    fileInfo[0] = new Regex(correctedBR, "<h6[^>]*><i [^>]*></i>\\s*(.*?)\\s*</h6>").getMatch(0);
                     /* traits from download1 page below */
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
