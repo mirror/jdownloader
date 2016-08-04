@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -211,11 +212,18 @@ public class SuperdownComBr extends antiDDoSForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
             getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=0." + System.currentTimeMillis());
+            dllink = br.getRegex("(https?://[^<>\"]*?)\\|").getMatch(0);
             if (br.containsHTML("Sua sess[^ ]+ expirou por inatividade\\. Efetue o login novamente\\.")) {
                 account.setProperty("cookies", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            dllink = br.getRegex("(https?://[^<>\"]*?)\\|").getMatch(0);
+            if (dllink == null && br.containsHTML("não é um servidor suportado pelo")) {
+                // host has been picked up due to generic supported host adding (matches)
+                final ArrayList supportedHosts = (ArrayList) Arrays.asList(account.getProperty("multiHostSupport", new String[] {}));
+                supportedHosts.remove(link.getHost());
+                account.getAccountInfo().setMultiHostSupport(this, supportedHosts);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Not supported at this provider", 6 * 60 * 60 * 1000l);
+            }
             if (dllink == null || (dllink != null && dllink.length() > 500)) {
                 logger.info(NICE_HOST + ": Unknown error");
                 int timesFailed = link.getIntegerProperty("NICE_HOSTproperty + timesfailed_dllinknull", 0);
