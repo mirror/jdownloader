@@ -25,6 +25,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -41,42 +49,34 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class OpenLoadIo extends antiDDoSForHost {
 
     public OpenLoadIo(PluginWrapper wrapper) {
         super(wrapper);
         /* Server doesn't like it when we open too many connections in a short time */
         this.setStartIntervall(2000);
-        this.enablePremium("https://oload.co/register");
+        this.enablePremium("https://openload.co/register");
     }
 
     @Override
     public String rewriteHost(final String host) {
-        if ("openload.io".equals(host) || "openload.co".equals(host)) {
-            return "oload.co";
+        if ("openload.io".equals(host) || "openload.co".equals(host) || "oload.co".equals(host)) {
+            return "openload.co";
         }
         return super.rewriteHost(host);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://oload.co/tos";
+        return "https://openload.co/tos";
     }
 
     /* Constants */
     /* Status 2015-09-08: free API working again, site-handling remains broken! */
     private static final boolean          enable_api_free              = true;
     private static final boolean          enable_api_login             = true;
-    private static final String           api_base                     = "https://api.oload.co/1";
+    private static final String           api_base                     = "https://api.openload.co/1";
     private static final long             api_responsecode_private     = 403;
     /* Connection stuff */
     private static final boolean          FREE_RESUME                  = true;
@@ -102,7 +102,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Force https & correct embedded urls */
-        link.setUrlDownload("https://oload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
+        link.setUrlDownload("https://openload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
     }
 
     @Override
@@ -418,6 +418,10 @@ public class OpenLoadIo extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        if (true) {
+            account.setValid(true);
+            return ai;
+        }
         if (isAPIAccount(account)) {
             this.loginAPI(account);
             /* At the moment we only support free accounts */
@@ -689,7 +693,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                 usertext_uid = "FTP Username/API Login";
             }
             add(new JLabel(usertext_finddata));
-            add(new JLink("https://oload.co/account"));
+            add(new JLink("https://openload.co/account"));
             add(idLabel = new JLabel(usertext_uid));
             add(this.name = new ExtTextField() {
 
