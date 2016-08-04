@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 
 import jd.http.Browser;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
@@ -31,6 +32,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
@@ -43,7 +45,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private Global                       scope;
     private Context                      cx;
     private final LogSource              logger;
-    private ScriptThread                 delegate;
+
     private final EventScripterExtension extension;
 
     public LogSource getLogger() {
@@ -58,7 +60,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     @Override
-    public synchronized void start() {
+    public void start() {
         super.start();
         if (script.getEventTrigger().isSynchronous()) {
             try {
@@ -69,9 +71,25 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         }
     }
 
+    private static final WeakHashMap<Object, UniqueAlltimeID> SCRIPTLOCKS = new WeakHashMap<Object, UniqueAlltimeID>();
+
+    private static Object getScriptLock(final ScriptEntry script) {
+        synchronized (SCRIPTLOCKS) {
+            for (final Entry<Object, UniqueAlltimeID> scriptLock : SCRIPTLOCKS.entrySet()) {
+                if (scriptLock.getValue().getID() == script.getID()) {
+                    return scriptLock.getKey();
+                }
+            }
+            final Object scriptLock = new Object();
+            SCRIPTLOCKS.put(scriptLock, new UniqueAlltimeID(script.getID()));
+            return scriptLock;
+        }
+    }
+
     @Override
     public void run() {
-        synchronized (script) {
+        final Object scriptLock = getScriptLock(script);
+        synchronized (scriptLock) {
             if (!script.isEnabled()) {
                 return;
             }
@@ -279,10 +297,10 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         return script;
     }
 
-    private HashSet<String> loadedLibrary = new HashSet<String>();
+    private final HashSet<String> loadedLibrary = new HashSet<String>();
 
     public void ensureLibrary(String string) {
-        synchronized (this) {
+        synchronized (loadedLibrary) {
             if (loadedLibrary.add(string)) {
                 try {
                     evalTrusted(IO.readURLToString(ScriptEntry.class.getResource(string)));
