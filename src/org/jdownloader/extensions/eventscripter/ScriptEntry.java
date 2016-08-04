@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class ScriptEntry implements Storable {
 
@@ -11,9 +12,19 @@ public class ScriptEntry implements Storable {
 
     }
 
-    private EventTrigger eventTrigger;
-    private boolean      enabled;
-    private String       name;
+    private EventTrigger          eventTrigger;
+    private boolean               enabled;
+    private String                name;
+
+    private final UniqueAlltimeID uniqueAlltimeID = new UniqueAlltimeID();
+
+    public long getID() {
+        return uniqueAlltimeID.getID();
+    }
+
+    public void setID(long uniqueAlltimeID) {
+        this.uniqueAlltimeID.setID(uniqueAlltimeID);
+    }
 
     public String getName() {
         return name;
@@ -51,6 +62,7 @@ public class ScriptEntry implements Storable {
     }
 
     public EventTrigger getEventTrigger() {
+        final EventTrigger eventTrigger = this.eventTrigger;
         if (eventTrigger == null) {
             return EventTrigger.NONE;
         }

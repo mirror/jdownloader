@@ -5,6 +5,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
+import jd.captcha.JACMethod;
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.LetterComperator;
+import jd.captcha.pixelgrid.Captcha;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -20,22 +28,14 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 
-import jd.captcha.JACMethod;
-import jd.captcha.JAntiCaptcha;
-import jd.captcha.LetterComperator;
-import jd.captcha.pixelgrid.Captcha;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-
 public class JACSolver extends ChallengeSolver<String> {
 
-    private static final double            _0_85             = 0.85;
-    private JACSolverConfig                config;
-    private static final JACSolver         INSTANCE          = new JACSolver();
-    private final HashMap<String, Integer> jacMethodTrustMap = new HashMap<String, Integer>();
-    private HashMap<String, AutoTrust>     threshold;
-    private LogSource                      logger;
+    private static final double              _0_85             = 0.85;
+    private final JACSolverConfig            config;
+    private static final JACSolver           INSTANCE          = new JACSolver();
+    private final HashMap<String, Integer>   jacMethodTrustMap = new HashMap<String, Integer>();
+    private final HashMap<String, AutoTrust> threshold;
+    private final LogSource                  logger;
 
     /**
      * get the only existing instance of JACSolver. This is a singleton
@@ -57,17 +57,18 @@ public class JACSolver extends ChallengeSolver<String> {
     private JACSolver() {
         super(new JacSolverService(), 5);
         config = JsonConfig.create(JACSolverConfig.class);
-
         logger = LogController.getInstance().getLogger(JACSolver.class.getName());
-        threshold = config.getJACThreshold();
+        final HashMap<String, AutoTrust> threshold = config.getJACThreshold();
         if (threshold == null) {
-            threshold = new HashMap<String, AutoTrust>();
+            this.threshold = new HashMap<String, AutoTrust>();
+        } else {
+            this.threshold = new HashMap<String, AutoTrust>(threshold);
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {
-                config.setJACThreshold(threshold);
+                config.setJACThreshold(JACSolver.this.threshold);
             }
         });
 
@@ -157,7 +158,7 @@ public class JACSolver extends ChallengeSolver<String> {
                             }
                         }
                         synchronized (threshold) {
-                            AutoTrust trustValue = threshold.get(trustID);
+                            final AutoTrust trustValue = threshold.get(trustID);
                             if (trustValue != null) {
                                 if (trust > trustValue.getValue() * _0_85) {
                                     trust = 100;
@@ -179,7 +180,7 @@ public class JACSolver extends ChallengeSolver<String> {
     }
 
     public void setMethodTrustThreshold(PluginForHost plugin, String method, int threshold) {
-        String trustID = (plugin.getHost() + "_" + method).toLowerCase(Locale.ENGLISH);
+        final String trustID = (plugin.getHost() + "_" + method).toLowerCase(Locale.ENGLISH);
         synchronized (jacMethodTrustMap) {
             if (threshold < 0 || threshold > 100) {
                 jacMethodTrustMap.remove(trustID);
@@ -195,41 +196,35 @@ public class JACSolver extends ChallengeSolver<String> {
             return false;
         }
         if (response instanceof JACCaptchaResponse) {
-            int priority = ((JACCaptchaResponse) response).getUnmodifiedTrustValue();
-            Challenge<?> challenge = response.getChallenge();
+            final int priority = ((JACCaptchaResponse) response).getUnmodifiedTrustValue();
+            final Challenge<?> challenge = response.getChallenge();
             if (challenge instanceof BasicCaptchaChallenge) {
-                Plugin plugin = ((BasicCaptchaChallenge) challenge).getPlugin();
-                String trustID = (plugin.getHost() + "_" + challenge.getTypeID()).toLowerCase(Locale.ENGLISH);
+                final Plugin plugin = ((BasicCaptchaChallenge) challenge).getPlugin();
+                final String trustID = (plugin.getHost() + "_" + challenge.getTypeID()).toLowerCase(Locale.ENGLISH);
                 synchronized (threshold) {
-
                     AutoTrust trustValue = threshold.get(trustID);
                     if (trustValue == null) {
-                        threshold.put(trustID, new AutoTrust(priority));
-                    } else {
-                        trustValue.add(priority);
+                        trustValue = new AutoTrust(priority);
+                        threshold.put(trustID, trustValue);
                     }
+                    trustValue.add(priority);
                     logger.info("New JAC Threshold for " + trustID + " : " + trustValue.getValue() + "(" + trustValue.getCounter() + ")");
-
                 }
-
             }
         }
         return true;
-
     }
 
     @Override
     public boolean setInvalid(AbstractResponse<?> response) {
         if (response instanceof JACCaptchaResponse) {
-            int priority = ((JACCaptchaResponse) response).getUnmodifiedTrustValue();
-            Challenge<?> challenge = response.getChallenge();
+            final int priority = ((JACCaptchaResponse) response).getUnmodifiedTrustValue();
+            final Challenge<?> challenge = response.getChallenge();
             if (challenge instanceof BasicCaptchaChallenge) {
-                Plugin plugin = ((BasicCaptchaChallenge) challenge).getPlugin();
-                String trustID = (plugin.getHost() + "_" + challenge.getTypeID()).toLowerCase(Locale.ENGLISH);
+                final Plugin plugin = ((BasicCaptchaChallenge) challenge).getPlugin();
+                final String trustID = (plugin.getHost() + "_" + challenge.getTypeID()).toLowerCase(Locale.ENGLISH);
                 synchronized (threshold) {
-
-                    AutoTrust trustValue = threshold.get(trustID);
-
+                    final AutoTrust trustValue = threshold.get(trustID);
                     if (trustValue != null) {
                         logger.info("JAC Failure for " + trustID + "; : TrustValue " + priority + "; Dynamic Trust: " + trustValue.getValue() + "(" + trustValue.getCounter() + ") Detected: " + response.getValue());
                         // increase trustValue!
@@ -237,12 +232,10 @@ public class JACSolver extends ChallengeSolver<String> {
                         logger.info("New JAC Threshold for " + trustID + " : " + trustValue.getValue() + "(" + trustValue.getCounter() + ")");
                     }
                 }
-
             }
             return true;
         }
         return false;
-
     }
 
 }
