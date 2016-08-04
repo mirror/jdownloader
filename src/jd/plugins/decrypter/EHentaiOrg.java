@@ -64,7 +64,7 @@ public class EHentaiOrg extends PluginForDecrypt {
         this.br.setFollowRedirects(true);
         br.setCookie(Browser.getHost(parameter), "nw", "1");
         br.getPage(parameter);
-        if (br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.getHttpConnection().getResponseCode() == 404 || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }

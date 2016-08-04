@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
@@ -151,6 +152,34 @@ public class EHentaiOrg extends PluginForHost {
             br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
         br.getPage(mainlink);
+        if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
+            if (account == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP address has been temporarily banned for excessive pageloads");
+            }
+            String tmpYears = new Regex(br, "(\\d+)\\s+years?").getMatch(0);
+            String tmpdays = new Regex(br, "(\\d+)\\s+days?").getMatch(0);
+            String tmphrs = new Regex(br, "(\\d+)\\s+hours?").getMatch(0);
+            String tmpmin = new Regex(br, "(\\d+)\\s+minutes?").getMatch(0);
+            String tmpsec = new Regex(br, "(\\d+)\\s+seconds?").getMatch(0);
+            long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+            if (StringUtils.isEmpty(tmpYears)) {
+                years = Integer.parseInt(tmpYears);
+            }
+            if (StringUtils.isEmpty(tmpdays)) {
+                days = Integer.parseInt(tmpdays);
+            }
+            if (StringUtils.isEmpty(tmphrs)) {
+                hours = Integer.parseInt(tmphrs);
+            }
+            if (StringUtils.isEmpty(tmpmin)) {
+                minutes = Integer.parseInt(tmpmin);
+            }
+            if (StringUtils.isEmpty(tmpsec)) {
+                seconds = Integer.parseInt(tmpsec);
+            }
+            long expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+            throw new PluginException(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, "Your IP address has been temporarily banned for excessive pageloads", expireS);
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
