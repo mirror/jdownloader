@@ -255,6 +255,6 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     }
 
     public boolean isFinished() {
-        return finishedCount == totalCount;
+        return finishedCount == totalCount || (totalCount == finishedCount + onlineStatusOfflineCount);
     }
 }
