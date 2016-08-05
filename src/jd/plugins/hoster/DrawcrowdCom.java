@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "http://(?:www\\.)?drawcrowd\\.com/projects/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "https?://(?:www\\.)?drawcrowd\\.com/projects/[A-Za-z0-9]+" }, flags = { 0 })
 public class DrawcrowdCom extends PluginForHost {
 
     public DrawcrowdCom(PluginWrapper wrapper) {
