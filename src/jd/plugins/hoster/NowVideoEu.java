@@ -16,6 +16,9 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -24,6 +27,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,12 +50,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 2 })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
+    // cloudtime.to and nowvideo are the same provider, finallink servers are identical hostnames!
     // note: avi containers are not converted to flv!
 
     private static Object                  LOCK               = new Object();
@@ -235,8 +239,38 @@ public class NowVideoEu extends PluginForHost {
                 }
             }
         }
-        String cid1 = br.getRegex("flashvars\\.cid=\"(\\d+)\";").getMatch(0);
-        String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+        // 20160805-raztoki
+        final String[] sources = br.getRegex("<source src=\"(.*?)\"").getColumn(0);
+        if (sources != null && sources.length > 0) {
+            final ArrayList<String> s = new ArrayList<String>(Arrays.asList(sources));
+            Collections.shuffle(s);
+            Browser br2 = null;
+            for (final String d : s) {
+                br2 = br.cloneBrowser();
+                try {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, d, true, 0);
+                } catch (final Throwable e) {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable ee) {
+                    }
+                    logger.info("Download attempt failed:\r\n");
+                    e.printStackTrace();
+                    continue;
+                }
+                if (!dl.getConnection().getContentType().contains("html")) {
+                    dl.startDownload();
+                    return;
+                }
+            }
+            if (dl.getConnection().getContentType().contains("html")) {
+                br2.followConnection();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
+        }
+        // old
+        final String cid1 = br.getRegex("flashvars\\.cid=\"(\\d+)\";").getMatch(0);
+        final String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
         String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
         if (fKey == null) {
             fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
@@ -245,7 +279,7 @@ public class NowVideoEu extends PluginForHost {
             String result = unWise();
             fKey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
         }
-        if (fKey == null) {
+        if (fKey != null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String player = "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey) + "&cid=" + cid1 + "&cid2=" + (cid2 == null ? "undefined" : cid2) + "&cid3=" + br.getHost() + "&numOfErrors=";
