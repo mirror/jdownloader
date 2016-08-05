@@ -65,7 +65,7 @@ public class MngStrm extends PluginForDecrypt {
             if (requestedPage > 0 && i != requestedPage) {
                 continue;
             }
-            final DownloadLink link = createDownloadlink("mangastream://" + urlPart + "/" + i);
+            final DownloadLink link = createDownloadlink("mangastream://" + urlPart + "/" + i, false);
             link.setFinalFileName(title.trim() + " – page " + formatter.format(i) + ".png");
             link.setAvailableStatus(AvailableStatus.TRUE);
             decryptedLinks.add(link);
