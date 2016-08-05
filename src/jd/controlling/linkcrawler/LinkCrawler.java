@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -151,16 +150,18 @@ public class LinkCrawler {
 
     protected final UniqueAlltimeID                        uniqueAlltimeID             = new UniqueAlltimeID();
     protected final WeakHashMap<LinkCrawler, Object>       children                    = new WeakHashMap<LinkCrawler, Object>();
-    protected final static HashMap<String, Object>         SEQUENTIALLOCKS             = new HashMap<String, Object>();
+    protected final static WeakHashMap<Object, String>     SEQUENTIALLOCKS             = new WeakHashMap<Object, String>();
 
     protected static Object getSequentialLockObject(final LazyCrawlerPlugin plugin) {
         synchronized (SEQUENTIALLOCKS) {
             final String lockID = plugin.getDisplayName() + "." + plugin.getLazyPluginClass().getClassName();
-            Object lock = SEQUENTIALLOCKS.get(lockID);
-            if (lock == null) {
-                lock = new Object();
-                SEQUENTIALLOCKS.put(lockID, lock);
+            for (final Entry<Object, String> lock : SEQUENTIALLOCKS.entrySet()) {
+                if (StringUtils.equals(lock.getValue(), lockID)) {
+                    return lock.getKey();
+                }
             }
+            final Object lock = new Object();
+            SEQUENTIALLOCKS.put(lock, lockID);
             return lock;
         }
     }
@@ -1188,7 +1189,7 @@ public class LinkCrawler {
                                             }
                                         }
 
-                                        final Object sequentialLockObject = getSequentialLockObject(pDecrypt);
+                                        private final Object sequentialLockObject = getSequentialLockObject(pDecrypt);
 
                                         @Override
                                         protected Object sequentialLockingObject() {

@@ -20,7 +20,6 @@ import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
@@ -89,7 +88,7 @@ public class HLSDownloader extends DownloadInterface {
     protected final AtomicReference<byte[]>   instanceBuffer = new AtomicReference<byte[]>();
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
-        this.m3uUrl = m3uUrl;
+        this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
         this.obr = br2.cloneBrowser();
         this.link = link;
         logger = initLogger(link);
@@ -119,7 +118,7 @@ public class HLSDownloader extends DownloadInterface {
         try {
             FFprobe ffmpeg = new FFprobe();
             this.processID = new UniqueAlltimeID().getID();
-            return ffmpeg.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(Request.getLocation(m3uUrl, obr.getRequest())));
+            return ffmpeg.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
         } finally {
             server.stop();
         }
@@ -263,7 +262,7 @@ public class HLSDownloader extends DownloadInterface {
         ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
         l.add("-i");
-        l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(m3uUrl));
+        l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
         // l.add(m3uUrl);
         // 2.1 aac_adtstoasc
         // Convert MPEG-2/4 AAC ADTS to MPEG-4 Audio Specific Configuration bitstream filter.
@@ -359,71 +358,63 @@ public class HLSDownloader extends DownloadInterface {
                         return false;
                     }
                     if ("/m3u8".equals(request.getRequestedPath())) {
-                        String url = request.getParameterbyKey("url");
-                        if (url == null) {
-                            return false;
+                        final Browser br = obr.cloneBrowser();
+                        // work around for longggggg m3u pages
+                        final int was = obr.getLoadLimit();
+                        // lets set the connection limit to our required request
+                        br.setLoadLimit(Integer.MAX_VALUE);
+                        final String playlist;
+                        try {
+                            playlist = br.getPage(m3uUrl);
+                        } finally {
+                            // set it back!
+                            br.setLoadLimit(was);
                         }
-                        if (StringUtils.equals(m3uUrl, url)) {
-
-                            final Browser br = obr.cloneBrowser();
-                            // work around for longggggg m3u pages
-                            final int was = obr.getLoadLimit();
-                            // lets set the connection limit to our required request
-                            br.setLoadLimit(Integer.MAX_VALUE);
-                            final String playlist;
-                            try {
-                                playlist = br.getPage(m3uUrl);
-                            } finally {
-                                // set it back!
-                                br.setLoadLimit(was);
+                        response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
+                        final StringBuilder sb = new StringBuilder();
+                        final ArrayList<String> m3u = new ArrayList<String>();
+                        boolean containsEndList = false;
+                        for (final String line : Regex.getLines(playlist)) {
+                            if (StringUtils.isEmpty(line)) {
+                                continue;
                             }
-                            response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
-                            final StringBuilder sb = new StringBuilder();
-                            final ArrayList<String> m3u = new ArrayList<String>();
-                            boolean containsEndList = false;
-                            for (final String line : Regex.getLines(playlist)) {
-                                if (StringUtils.isEmpty(line)) {
-                                    continue;
-                                }
-                                if (sb.length() > 0) {
-                                    sb.append("\n");
-                                }
-                                if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
-                                    // http://habrahabr.ru/company/mailru/blog/274855/
-                                    logger.severe("possibly malicious: " + line);
-                                } else if (line.matches("^https?://.+")) {
-                                    final int index = m3u.size();
-                                    m3u.add(line);
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
-                                } else if (!line.trim().startsWith("#")) {
-                                    final int index = m3u.size();
-                                    m3u.add(br.getBaseURL() + line);
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
-                                } else {
-                                    if ("#EXT-X-ENDLIST".equals(line)) {
-                                        containsEndList = true;
-                                    }
-                                    sb.append(line);
-                                }
+                            if (sb.length() > 0) {
+                                sb.append("\n");
                             }
-                            if (!containsEndList) {
-                                if (sb.length() > 0) {
-                                    sb.append("\n");
+                            if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
+                                // http://habrahabr.ru/company/mailru/blog/274855/
+                                logger.severe("possibly malicious: " + line);
+                            } else if (line.matches("^https?://.+")) {
+                                final int index = m3u.size();
+                                m3u.add(line);
+                                sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                            } else if (!line.trim().startsWith("#")) {
+                                final int index = m3u.size();
+                                m3u.add(br.getBaseURL() + line);
+                                sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                            } else {
+                                if ("#EXT-X-ENDLIST".equals(line)) {
+                                    containsEndList = true;
                                 }
-                                sb.append("#EXT-X-ENDLIST");
-                                sb.append("\n\n");
+                                sb.append(line);
                             }
-                            HLSDownloader.this.m3u = m3u;
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
-                            byte[] bytes = sb.toString().getBytes("UTF-8");
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
-                            OutputStream out = response.getOutputStream(true);
-                            out.write(bytes);
-                            out.flush();
-                            requestOkay = true;
-                            return true;
                         }
-                        return false;
+                        if (!containsEndList) {
+                            if (sb.length() > 0) {
+                                sb.append("\n");
+                            }
+                            sb.append("#EXT-X-ENDLIST");
+                            sb.append("\n\n");
+                        }
+                        HLSDownloader.this.m3u = m3u;
+                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
+                        byte[] bytes = sb.toString().getBytes("UTF-8");
+                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
+                        OutputStream out = response.getOutputStream(true);
+                        out.write(bytes);
+                        out.flush();
+                        requestOkay = true;
+                        return true;
                     } else if ("/download".equals(request.getRequestedPath())) {
                         final String index = request.getParameterbyKey("ts_index");
                         if (index == null) {

@@ -198,7 +198,7 @@ public class DivxStageNet extends PluginForHost {
                 } catch (final Throwable ee) {
                 }
                 logger.info("Download attempt failed:\r\n");
-                e.printStackTrace();
+                logger.log(e);
                 continue;
             }
             if (!dl.getConnection().getContentType().contains("html")) {

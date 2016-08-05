@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,3}/(thread/[0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.4chan\\.org/([0-9a-z]{1,3}|trash)/(thread/[0-9]+)?" }, flags = { 0 })
 public class Brds4Chnrg extends PluginForDecrypt {
 
     public Brds4Chnrg(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             logger.info("Link offline (404): " + parameter);
             return decryptedLinks;
         }
-        if (parameter.matches("https?://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,4}/[0-9]*")) {
+        if (parameter.matches("https?://[\\w\\.]*?boards\\.4chan\\.org/([0-9a-z]{1,4}|trash)/[0-9]*")) {
             String[] threads = br.getRegex("\\[<a href=\"thread/(\\d+)").getColumn(0);
             for (String thread : threads) {
                 decryptedLinks.add(createDownloadlink(parameter + "thread/" + thread));
@@ -56,7 +56,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         }
         if (decryptedLinks.size() == 0) {
             final String IMAGERDOMAINS = "(i\\.4cdn\\.org|images\\.4chan\\.org)";
-            String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,4}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
+            String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/(?:[0-9a-z]{1,4}|trash)/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
 
             if (br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");
@@ -71,7 +71,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 return decryptedLinks;
             } else {
                 String domain = "4chan.org";
-                String cat = br.getRegex("<div class=\"boardTitle\">/.{1,4}/ - (.*?)</div>").getMatch(0);
+                String cat = br.getRegex("<div class=\"boardTitle\">/(?:.{1,4}|trash)/ - (.*?)</div>").getMatch(0);
                 if (cat == null) {
                     cat = br.getRegex("<title>/b/ - (.*?)</title>").getMatch(0);
                 }
