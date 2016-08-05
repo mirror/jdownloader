@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -29,11 +30,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "http://(?:www\\.)?drawcrowd\\.com/(?!projects/)[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "https?://(?:www\\.)?drawcrowd\\.com/(?!projects/)[^/]+" }, flags = { 0 })
 public class DrawcrowdCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks = null;
     private FilePackage             fp             = null;
+    private Browser                 org            = null;
 
     public DrawcrowdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,6 +45,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        org = null;
         br = new Browser();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -51,7 +54,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
         }
         final String username = parameter.substring(parameter.lastIndexOf("/"));
         jd.plugins.hoster.DrawcrowdCom.setHeaders(br);
-        final Browser org = br.cloneBrowser();
+        org = br.cloneBrowser();
         br.getPage("/users" + username);
         LinkedHashMap<String, Object> json = null;
         try {
@@ -135,7 +138,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
         if (inValidate(id)) {
             return;
         }
-        final String url_content = "http://drawcrowd.com/projects/" + id;
+        final String url_content = Request.getLocation("/projects/" + id, org.getRequest());
         final DownloadLink dl = createDownloadlink(url_content);
         dl.setContentUrl(url_content);
         if (!inValidate(description)) {
