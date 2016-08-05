@@ -118,7 +118,10 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         int jobless = 0;
         synchronized (linklist) {
             for (final CrawledLink cl : linklist) {
-                dupe.add(cl.getParentNode());
+                final CrawledPackage node = cl.getParentNode();
+                if (node != null) {
+                    dupe.add(node);
+                }
                 if (cl.getSourceJob() != jlc.getJob()) {
                     jobless++;
                 }
