@@ -29,6 +29,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -106,7 +107,7 @@ public class VPornCom extends PluginForHost {
         /* videoUrlHD2 = usually only available via account, downloadUrl = Only available via account also == videoUrlLow(2) */
         final String[] quals = { "videoUrlHD2", "videoUrlMedium2", "videoUrlLow2", "videoUrlHD", "videoUrlMedium", "videoUrlLow", "downloadUrl" };
         for (final String qual : quals) {
-            DLLINK = br.getRegex("flashvars\\." + qual + "[\r\n\t ]*?=[\r\n\t ]*?\"(http://[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("flashvars\\." + qual + "[\r\n\t ]*?=[\r\n\t ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK != null) {
                 foundlinks++;
                 DLLINK = Encoding.htmlDecode(DLLINK);
@@ -223,7 +224,11 @@ public class VPornCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://www.vporn.com/login/", "backto=&checkbox=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("https://www.vporn.com/login/");
+                Form login = br.getFormbyActionRegex(".*?/login.*");
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
                 if (br.getCookie(MAINPAGE, "ual") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
