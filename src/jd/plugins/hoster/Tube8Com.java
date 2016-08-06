@@ -94,12 +94,9 @@ public class Tube8Com extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 500) {
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("<title>(.*?) (?:-|\\|)[^<]*<").getMatch(0);
+        String filename = br.getRegex("<span class=\"item\">\\s+(.*?)\\s+</span>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("var videotitle=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("Tube8 bring you(.*?)for all").getMatch(0);
-            }
+            filename = br.getRegex("<title>(.*?) - Porn Video \\d+[^<]*<").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -338,7 +335,7 @@ public class Tube8Com extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     *
+     * 
      * @see <a href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">
      *      "Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
