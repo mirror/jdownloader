@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.JDHash;
@@ -31,9 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopremium.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class NoPremiumPl extends PluginForHost {
@@ -60,21 +60,15 @@ public class NoPremiumPl extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        String username = Encoding.urlEncode(account.getUser());
-        String hosts[] = null;
-        ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        br.postPage("http://crypt.nopremium.pl", "username=" + username + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=1&site=nopremium");
+        br.postPage("http://crypt.nopremium.pl", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=1&site=nopremium");
         String adres = br.toString();
         br.getPage(adres);
         adres = br.getRedirectLocation();
         br.getPage(adres);
         // "Invalid login" / "Banned" / "Valid login"
         if (br.containsHTML("balance")) {
-            ac.setStatus("Premium User");
+            ac.setStatus("Premium Account");
             account.setValid(true);
         } else if (br.containsHTML("Nieprawidlowa nazwa uzytkownika/haslo")) {
             ac.setStatus("Invalid login! Wrong password?");
@@ -87,17 +81,13 @@ public class NoPremiumPl extends PluginForHost {
             return ac;
         }
         ac.setTrafficLeft(SizeFormatter.getSize(br.getRegex("balance=(\\d+)").getMatch(0) + "MB"));
-        try {
-            account.setMaxSimultanDownloads(20);
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
-        }
+        account.setMaxSimultanDownloads(20);
+        account.setConcurrentUsePossible(true);
         ac.setValidUntil(-1);
         // now let's get a list of all supported hosts:
-        br.getPage("http://www.nopremium.pl/clipboard.php");
-        hosts = br.toString().split("<br />");
-        ArrayList<String> supportedHosts = new ArrayList<String>();
+        br.getPage("/clipboard.php");
+        final String[] hosts = br.toString().split("<br />");
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
                 supportedHosts.add(host.trim());
@@ -137,9 +127,7 @@ public class NoPremiumPl extends PluginForHost {
             }
         }
 
-        final String url = Encoding.urlEncode(link.getDownloadURL());
-
-        String postData = "username=" + account.getUser() + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=0&url=" + url + "&site=nopremium";
+        String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=0&url=" + Encoding.urlEncode(link.getDownloadURL()) + "&site=nopremium";
         String response = br.postPage("http://crypt.nopremium.pl", postData);
         br.setFollowRedirects(true);
 

@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +38,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UnavailableHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class RapidsPl extends PluginForHost {
@@ -75,8 +75,6 @@ public class RapidsPl extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
         return br;
     }
 
@@ -92,7 +90,7 @@ public class RapidsPl extends PluginForHost {
         }
         String apikey = account.getStringProperty("apikey", null);
         if (apikey == null) {
-            br.getPage("http://rapids.pl/profil/api");
+            br.getPage("/profil/api");
             apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{32})<").getMatch(0);
             if (apikey == null) {
                 account.setValid(false);
@@ -100,12 +98,11 @@ public class RapidsPl extends PluginForHost {
             }
             account.setProperty("apikey", apikey);
         }
-        ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
-        ac.setStatus("Premium User");
-        br.getPage("http://rapids.pl/");
+        ac.setStatus("Premium Account");
+        br.getPage("/");
         final String availableTraffic = br.getRegex("Pozostały transfer: <strong>([^<>\"]*?)</strong>").getMatch(0);
         if (availableTraffic == null) {
             account.setValid(false);
@@ -116,7 +113,7 @@ public class RapidsPl extends PluginForHost {
         // now let's get a list of all supported hosts:
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "uploading", "uploading.com" }, { "wrzuta", "wrzuta.pl" }, { "bitshare", "bitshare.com" }, { "rapidgator", "rapidgator.net" }, { "letitbit", "letitbit.net" }, { "crocko", "crocko.com" }, { "megashares", "megashares.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "vipfile", "vip-file.com" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" }, { "putlocker", "putlocker.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" },
-                { "catshare", "catshare.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "sharingmaster", "sharingmaster.com" }, { "datafile", "datafile.com" } };
+                { "catshare", "catshare.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "sharingmaster", "sharingmaster.com" }, { "datafile", "datafile.com" }, { "nitroflare", "nitroflare.com" } };
         for (final String hostSet[] : hostList) {
             if (br.containsHTML("/services/" + hostSet[0] + "\\.big")) {
                 for (int i = 1; i <= hostSet.length - 1; i++) {
@@ -174,16 +171,14 @@ public class RapidsPl extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
         if (dllink == null) {
             br.postPage("http://rapids.pl/api/check", "key=" + account.getStringProperty("apikey", null) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            br.getRequest().setHtmlCode(unescape(br.toString()));
             handleAPIErrors(account, link);
-            dllink = br.getRegex("\"dlUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = PluginJSonUtils.getJson(br, "dlUrl");
             showMessage(link, "Phase 1/2: Generating final downloadlink");
             if (dllink == null) {
                 handleErrorRetries(account, link, "dllink null", 5, 10 * 60 * 1000l);
                 // logger.info(NICE_HOST + ": Final link is null -> Plugin is broken");
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = dllink.replace("\\", "");
         }
         showMessage(link, "Phase 2/2: Download begins!");
         int maxChunks = 0;
@@ -223,9 +218,9 @@ public class RapidsPl extends PluginForHost {
     }
 
     private void handleAPIErrors(final Account acc, final DownloadLink dl) throws PluginException {
-        if (br.containsHTML("\"message\":\"Link nie został rozpoznany\\!\"")) {
+        if ("Link nie został rozpoznany!".equals(PluginJSonUtils.getJson(br, "message"))) {
             tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l, "Link nie został rozpoznany");
-        } else if (br.containsHTML("\"error\":\"Brak dostępu do API\"")) {
+        } else if ("Brak dostępu do API".equals(PluginJSonUtils.getJson(br, "error"))) {
             // Maybe wrong API key
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -311,18 +306,6 @@ public class RapidsPl extends PluginForHost {
                 throw e;
             }
         }
-    }
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     /**
