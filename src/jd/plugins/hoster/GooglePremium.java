@@ -13,11 +13,26 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "google.com (Recaptcha)" }, urls = { "google://.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "recaptcha.google.com" }, urls = { "google://.+" }, flags = { 2 })
 public class GooglePremium extends PluginForHost {
+
     @Override
     public Boolean siteTesterDisabled() {
+        // no tests required, dummy subdomain
         return Boolean.TRUE;
+    }
+
+    @Override
+    public String getDescription() {
+        return "Used for the purpose of ReCaptcha!";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("google.com (Recaptcha)".equals(host) || "recaptcha.google.com".equals(host)) {
+            return "recaptcha.google.com";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -101,4 +116,5 @@ public class GooglePremium extends PluginForHost {
     @Override
     public void reset() {
     }
+
 }
