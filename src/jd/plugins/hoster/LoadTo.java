@@ -22,12 +22,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -38,9 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "https?://(www\\.)?load\\.to/[A-Za-z0-9]+/" }, flags = { 2 })
 public class LoadTo extends PluginForHost {
@@ -189,20 +188,19 @@ public class LoadTo extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, "", FREE_RESUME, FREE_MAXCHUNKS);
         }
         this.sleep(2 * 1000, downloadLink);
-        final URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() == 416) {
+        if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume failed --> Retrying from zero");
             downloadLink.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (con.getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("file not exist")) {
                 logger.info("File maybe offline");
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         }
-        if (!con.isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -218,9 +216,9 @@ public class LoadTo extends PluginForHost {
     }
 
     private String getLinkurl() throws PluginException {
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("\"(http://s\\d+\\.load\\.to/\\?t=\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("\"(https?://s\\d+\\.load\\.to/\\?t=\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) {
-            linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<form method=\"post\" action=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<form method=\"post\" action=\"(https?://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         }
         if (linkurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
