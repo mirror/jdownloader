@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,9 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "http://(www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" }, flags = { 0 })
 public class OkRuDecrypter extends PluginForDecrypt {
 
     public OkRuDecrypter(PluginWrapper wrapper) {
@@ -37,29 +35,26 @@ public class OkRuDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("http://(m|www)\\.", "http://www.").replace("/videoembed/", "/video/");
+        final String parameter = param.toString().replaceAll("https?://(m|www)\\.", "https://www.").replace("/videoembed/", "/video/");
+        param.setCryptedUrl(parameter);
         final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
-        /* Load plugin */
-        JDUtilities.getPluginForHost("ok.ru");
         jd.plugins.hoster.OkRu.prepBR(this.br);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String externID = this.br.getRegex("data\\-ytid=\"([^<>\"]*?)\"").getMatch(0);
+        String externID = this.br.getRegex("data-ytid=\"([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("https://www.youtube.com/watch?v=" + externID));
             return decryptedLinks;
         }
-        final DownloadLink main = this.createDownloadlink("http://okdecrypted" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-        main.setLinkID(vid);
-        main.setContentUrl(parameter);
+        final DownloadLink main = createDownloadlink(param.toString());
+        main.setLinkID(getHost() + "://" + vid);
         main.setName(vid);
         if (jd.plugins.hoster.OkRu.isOffline(this.br)) {
             main.setAvailable(false);
         }
-        main.setProperty("mainlink", parameter);
         decryptedLinks.add(main);
 
         return decryptedLinks;

@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "http://okdecrypted\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" }, flags = { 2 })
 public class OkRu extends PluginForHost {
 
     public OkRu(PluginWrapper wrapper) {
@@ -48,8 +48,6 @@ public class OkRu extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension   = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume         = true;
     private static final int     free_maxchunks      = 0;
@@ -74,30 +72,28 @@ public class OkRu extends PluginForHost {
         download_impossible = false;
         this.setBrowserExclusive();
         prepBR(this.br);
-        final String mainlink = downloadLink.getStringProperty("mainlink", null);
-        if (mainlink == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        br.getPage(mainlink);
+        br.getPage(downloadLink.getDownloadURL());
         /* Offline or private video */
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"mvtitle clamp __2\">([^<>\"]*?)</div").getMatch(0);
         if (filename == null) {
-            filename = new Regex(mainlink, "(\\d+)$").getMatch(0);
+            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
         if (br.containsHTML("class=\"fierr\"")) {
-            downloadLink.setName(filename + ".flv");
+            if (!downloadLink.isNameSet()) {
+                downloadLink.setName(filename + ".mp4");
+            }
             download_impossible = true;
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("embedVPlayer\\(this,\\&#39;(http[^<>\"]*?)\\&#39;,\\&#39;").getMatch(0);
+        dllink = br.getRegex("embedVPlayer\\(this,&#39;(http[^<>\"]*?)&#39;,&#39;").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("data\\-embedclass=\"yt_layer\" data\\-objid=\"\\d+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("data-embedclass=\"yt_layer\" data-objid=\"\\d+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -113,11 +109,7 @@ public class OkRu extends PluginForHost {
                 dllink = dllink.replace(url_quality, "st.mq=5");
             }
         }
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -149,7 +141,7 @@ public class OkRu extends PluginForHost {
 
     public static boolean isOffline(final Browser br) throws IOException {
         // class=\"empty\" is NOT an indication for an offline video!
-        if (br.containsHTML("error\\-page\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("error-page\"") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
         }
         /* Offline or private video */
@@ -167,10 +159,11 @@ public class OkRu extends PluginForHost {
         // offline due to copyright claim
         if (br.containsHTML("<div class=\"empty\"")) {
             final String vid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
-            final Browser br2 = new Browser();
             // mobile page .... get standard browser
+            final Browser br2 = new Browser();
+            br2.setFollowRedirects(true);
             br2.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-            br2.getPage("http://ok.ru/video/" + vid);
+            br2.getPage(br.createGetRequest("/video/" + vid));
             if (br2.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<|>Group, where this video was posted, has not been found")) {
                 return true;
             }
