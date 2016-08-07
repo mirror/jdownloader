@@ -3,12 +3,16 @@ package org.jdownloader.captcha.v2.challenge.solvemedia;
 import java.io.File;
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
 
 public class SolveMedia {
@@ -50,12 +54,13 @@ public class SolveMedia {
     private void load() throws Exception {
         smBr = br.cloneBrowser();
 
-        setServer();
-        setPath();
-
+        // this has to be first as it sets secure value based on results!
         if (this.challenge == null) {
             getChallengeKey();
         }
+        // then this next...
+        setServer();
+        setPath();
 
         // solvemedia works off API key, and javascript. The imported browser session isn't actually needed.
         /*
@@ -127,9 +132,13 @@ public class SolveMedia {
         if (!noscript) {
             return chId;
         }
+        if (StringUtils.isEmpty(code)) {
+            // empty responses are not valid.
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         verify.put("adcopy_response", Encoding.urlEncode(code));
         // for backup purposes.
-        Browser smbr = smBr.cloneBrowser();
+        final Browser smbr = smBr.cloneBrowser();
         final int retry = 4;
         for (int i = 0; i != retry; i++) {
             smBr = smbr.cloneBrowser();
@@ -149,9 +158,7 @@ public class SolveMedia {
         if (verifyUrl == null) {
             return null;
         }
-        if (secure) {
-            verifyUrl = verifyUrl.replaceAll("http://", "https://");
-        }
+
         String challenge = null;
 
         for (int i = 0; i != retry; i++) {
@@ -168,6 +175,13 @@ public class SolveMedia {
             }
             break;
         }
+        /**
+         * incorrect responses are validated by the server! for instance<br/>
+         * they have redirect url with error=\d+ within when incorrect <br/>
+         * and html <span id="adcopy-error-msg">Try again\s*</span> <br/>
+         * challenge/gibberish will be null
+         *
+         */
         challenge = smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
         return challenge;
     }
