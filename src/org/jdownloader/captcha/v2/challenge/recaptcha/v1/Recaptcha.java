@@ -155,7 +155,7 @@ public class Recaptcha {
                 this.rcBr.setRequest(null);
             }
             try {
-                LazyHostPlugin lPlg = HostPluginController.getInstance().get("google.com (Recaptcha)");
+                LazyHostPlugin lPlg = HostPluginController.getInstance().get("recaptcha.google.com");
                 PluginForHost googlePlugin = lPlg.newInstance(null);
 
                 PluginConfigInterface config = PluginJsonConfig.get(googlePlugin.getConfigInterface());
