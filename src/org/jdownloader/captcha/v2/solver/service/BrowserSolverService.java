@@ -220,7 +220,7 @@ public class BrowserSolverService extends AbstractSolverService {
             rcBr.setCookie("http://google.com", "HSID", getInstance().getConfig().getGoogleComCookieValueHSID());
         } else {
             try {
-                for (Account acc : AccountController.getInstance().list("google.com (Recaptcha)")) {
+                for (Account acc : AccountController.getInstance().list("recaptcha.google.com")) {
                     if (acc.isEnabled()) {
                         GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc);
                         if (cfg.isUsageRecaptchaV1Enabled()) {

@@ -209,7 +209,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 // phantom.run(loadScript(getClass().getResource("phantomScript.js")));
                 phantom.init();
                 try {
-                    for (Account acc : AccountController.getInstance().list("google.com (Recaptcha)")) {
+                    for (Account acc : AccountController.getInstance().list("recaptcha.google.com")) {
                         if (acc.isEnabled()) {
                             GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc);
                             if (cfg.isUsageRecaptchaV2Enabled()) {

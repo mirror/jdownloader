@@ -387,6 +387,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Username" })
     String premiumaccounttablemodel_column_user();
 
+    @Default(lngs = { "en" }, values = { "Comment" })
+    String premiumaccounttablemodel_column_comment();
+
     @Default(lngs = { "en" }, values = { "Buy" })
     String settings_accountmanager_buy();
 
@@ -6410,7 +6413,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Improve Captcha Solving..." })
     String phantomjs_recaptcha_google_account_title();
 
-    @Default(lngs = { "en" }, values = { "If you get many hard to solve image captchas, \r\nyou should think about adding 'google.com (recaptcha)' account at Settings->Accountmanager.\r\nAfterwards, you will probably get less and easier captcha images." })
+    @Default(lngs = { "en" }, values = { "If you get many hard to solve image captchas, \r\nyou should think about adding 'recaptcha.google.com' account at Settings->Accountmanager.\r\nAfterwards, you will probably get less and easier captcha images." })
     String phantomjs_recaptcha_google_account_msg();
 
     @Default(lngs = { "en" }, values = { "Authorization required for %s1" })
