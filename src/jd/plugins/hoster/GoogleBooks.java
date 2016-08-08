@@ -30,6 +30,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -55,6 +56,11 @@ public class GoogleBooks extends PluginForHost {
      * */
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
     }
 
     @Override
