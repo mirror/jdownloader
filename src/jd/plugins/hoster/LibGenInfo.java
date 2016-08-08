@@ -131,7 +131,7 @@ public class LibGenInfo extends PluginForHost {
         requestFileInformation(downloadLink);
         if (dllink == null) {
             if (downloadLink.getDownloadURL().contains("/ads.php?md5=")) {
-                dllink = br.getRegex("<a href=\"(/get\\.php\\?md5=[a-f0-9]{32}.*?)\"").getMatch(0);
+                dllink = br.getRegex("<a href=(\"|')(/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
