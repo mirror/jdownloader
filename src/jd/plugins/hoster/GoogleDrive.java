@@ -52,6 +52,11 @@ public class GoogleDrive extends PluginForHost {
     }
 
     @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
