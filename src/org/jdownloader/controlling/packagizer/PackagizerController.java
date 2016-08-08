@@ -722,7 +722,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public static String DATETAG    = "<jd:" + PackagizerController.SIMPLEDATE + ":";
     public static String INDEXOFTAG = "<jd:" + PackagizerController.INDEXOF + ">";
 
-    private static int padLength(final int size) {
+    private final static int padLength(final int size) {
         if (size < 10) {
             return 1;
         } else if (size < 100) {
@@ -738,7 +738,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         } else if (size < 10000000) {
             return 7;
         } else {
-            return 8;
+            return 8;// hello djmakinera
         }
     }
 
