@@ -35,6 +35,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -721,6 +722,26 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public static String DATETAG    = "<jd:" + PackagizerController.SIMPLEDATE + ":";
     public static String INDEXOFTAG = "<jd:" + PackagizerController.INDEXOF + ">";
 
+    private static int padLength(final int size) {
+        if (size < 10) {
+            return 1;
+        } else if (size < 100) {
+            return 2;
+        } else if (size < 1000) {
+            return 3;
+        } else if (size < 10000) {
+            return 4;
+        } else if (size < 100000) {
+            return 5;
+        } else if (size < 1000000) {
+            return 6;
+        } else if (size < 10000000) {
+            return 7;
+        } else {
+            return 8;
+        }
+    }
+
     public static String replaceDynamicTags(String input, String packageName, AbstractNode node) {
         if (StringUtils.isEmpty(input)) {
             return input;
@@ -740,12 +761,23 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (!(node instanceof AbstractPackageChildrenNode) || (parentNode = ((AbstractPackageChildrenNode<AbstractPackageNode>) node).getParentNode()) == null) {
                     ret = ret.replace(INDEXOFTAG, "");
                 } else {
-                    final int index = parentNode.indexOf((AbstractPackageChildrenNode) node);
+                    final ModifyLock modifyLock = parentNode.getModifyLock();
+                    final int index;
+                    final int size;
+                    final boolean readL = modifyLock.readLock();
+                    try {
+                        index = parentNode.indexOf((AbstractPackageChildrenNode) node);
+                        size = parentNode.getChildren().size();
+                    } finally {
+                        modifyLock.readUnlock(readL);
+                    }
                     if (index >= 0) {
-                        ret = ret.replace(INDEXOFTAG, String.valueOf(index));
+                        final String replacement = String.format(Locale.US, "%0" + padLength(size) + "d", index + 1);
+                        ret = ret.replace(INDEXOFTAG, replacement);
                     } else {
                         ret = ret.replace(INDEXOFTAG, "");
                     }
+
                 }
                 ret = CrossSystem.fixPathSeparators(ret);
             }
