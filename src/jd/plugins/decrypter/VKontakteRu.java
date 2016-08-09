@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -33,6 +35,7 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -47,8 +50,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
@@ -193,7 +194,7 @@ public class VKontakteRu extends PluginForDecrypt {
         account = null;
         // set setters,
         br = new Browser();
-        this.CRYPTEDLINK_ORIGINAL = param.toString().replace("new.vk.com/", "vk.com/");
+        this.CRYPTEDLINK_ORIGINAL = param.toString();
         this.CRYPTEDLINK = param;
         this.decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
@@ -263,165 +264,163 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE)) {
             loginrequired = false;
         }
-        /* Check/fix links before browser access END */
-        synchronized (LOCK) {
-            boolean loggedIN = getUserLogin(false);
-            try {
-                if (loginrequired) {
-                    /* Login process */
-                    if (!loggedIN) {
-                        logger.info("Existing account is invalid or no account available, cannot decrypt link: " + CRYPTEDLINK_FUNCTIONAL);
-                        return decryptedLinks;
-                    }
-                    /* Login process end */
+        boolean loggedIN = getUserLogin(false);
+        try {
+            if (loginrequired) {
+                /* Login process */
+                if (!loggedIN) {
+                    logger.info("Existing account is invalid or no account available, cannot decrypt link: " + CRYPTEDLINK_FUNCTIONAL);
+                    return decryptedLinks;
                 }
+                /* Login process end */
+            }
 
-                /* Replace section start */
-                String newLink = CRYPTEDLINK_FUNCTIONAL;
-                if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_EVENT_LINK)) {
-                    /* group and club links --> wall links */
-                    newLink = MAINPAGE + "/wall-" + new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/[a-z]+((\\-)?\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_ID_LINK)) {
-                    /* Change id links -> albums links */
-                    newLink = MAINPAGE + "/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
-                    /* Remove loopback-part as it only contains information which we need later but not in the link */
-                    newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(https?://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
-                } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_ALBUM)) {
-                    newLink = "https://vk.com/audios" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(?:audio(?:\\.php)?\\?id=|audios)((?:\\-)?\\d+)").getMatch(0);
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE)) {
-                    /* PATTERN_AUDIO_PAGE RegEx is wide open --> Make sure that our URL is correct! */
-                    final String pageID = get_ID_PAGE(this.CRYPTEDLINK_FUNCTIONAL);
-                    newLink = getBaseURL() + "/page-" + pageID;
-                } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK_2)) {
-                    newLink = getBaseURL() + "/wall" + new Regex(this.CRYPTEDLINK_ORIGINAL, "((?:\\-)?\\d+_\\d+)").getMatch(0);
-                } else if (isKnownType()) {
-                    /* Don't change anything */
-                } else {
-                    /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
-                    final String url_owner = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/([^\\?\\&=]+)").getMatch(0);
-                    if (url_owner == null || url_owner.equals("")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
-                    final String ownerName = resolveScreenName_API(url_owner);
-                    if (ownerName == null) {
-                        logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
-                        return null;
-                    }
-                    final String type = PluginJSonUtils.getJson(br, "type");
-                    if (type == null) {
-                        logger.warning("Failed to find type for link: " + CRYPTEDLINK_FUNCTIONAL);
-                        return null;
-                    }
-                    if (type.equals("user")) {
-                        newLink = MAINPAGE + "/albums" + ownerName;
-                    } else {
-                        newLink = MAINPAGE + "/wall-" + ownerName;
-                    }
+            /* Replace section start */
+            String newLink = CRYPTEDLINK_FUNCTIONAL;
+            if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_EVENT_LINK)) {
+                /* group and club links --> wall links */
+                newLink = MAINPAGE + "/wall-" + new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/[a-z]+((\\-)?\\d+)").getMatch(0);
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_ID_LINK)) {
+                /* Change id links -> albums links */
+                newLink = MAINPAGE + "/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
+                /* Remove loopback-part as it only contains information which we need later but not in the link */
+                newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(https?://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
+            } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_ALBUM)) {
+                newLink = "https://vk.com/audios" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(?:audio(?:\\.php)?\\?id=|audios)((?:\\-)?\\d+)").getMatch(0);
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE)) {
+                /* PATTERN_AUDIO_PAGE RegEx is wide open --> Make sure that our URL is correct! */
+                final String pageID = get_ID_PAGE(this.CRYPTEDLINK_FUNCTIONAL);
+                newLink = getBaseURL() + "/page-" + pageID;
+            } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK_2)) {
+                newLink = getBaseURL() + "/wall" + new Regex(this.CRYPTEDLINK_ORIGINAL, "((?:\\-)?\\d+_\\d+)").getMatch(0);
+            } else if (isKnownType()) {
+                /* Don't change anything */
+            } else {
+                /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
+                final String url_owner = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/([^\\?\\&=]+)").getMatch(0);
+                if (url_owner == null || url_owner.equals("")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
-                if (newLink.equals(CRYPTEDLINK_FUNCTIONAL)) {
-                    logger.info("Link was not changed, continuing with: " + CRYPTEDLINK_FUNCTIONAL);
-                } else {
-                    logger.info("Link was changed!");
-                    logger.info("Old link: " + CRYPTEDLINK_FUNCTIONAL);
-                    logger.info("New link: " + newLink);
-                    logger.info("Continuing with: " + newLink);
-                    CRYPTEDLINK_FUNCTIONAL = newLink;
-                }
-                /* Replace section end */
-
-                /* Decryption process START */
-                if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_MODULE)) {
-                    decryptWallPostSpecifiedPhoto();
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_AUDIO)) {
-                    if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_ALBUM)) {
-                        /* Audio album */
-                        decryptAudioAlbum();
-                    } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_AUDIOS_ALBUM)) {
-                        decryptAudiosAlbum();
-                    } else {
-                        /* Single playlists */
-                        decryptAudioPlaylist();
-                    }
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE_oid)) {
-                    /* Audio page */
-                    decryptAudioPage();
-                } else if (isSingeVideo(CRYPTEDLINK_FUNCTIONAL)) {
-                    /* Single video */
-                    decryptSingleVideo(CRYPTEDLINK_FUNCTIONAL);
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_VIDEO_ALBUM)) {
-                    /**
-                     * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
-                     */
-                    decryptVideoAlbum();
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM)) {
-                    /**
-                     * Community-Albums Example: http://vk.com/video?gid=41589556
-                     */
-                    decryptCommunityVideoAlbum();
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_ALBUM)) {
-                    /**
-                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
-                     */
-                    decryptPhotoAlbum();
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_ALBUMS)) {
-                    /**
-                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
-                     */
-                    decryptPhotoAlbums();
-                } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_POST_LINK)) {
-                    /**
-                     * Single posts of wall links: https://vk.com/wall-28122291_906
-                     */
-                    decryptWallPost_API();
-                    if (decryptedLinks.size() == 0) {
-                        logger.info("Check your plugin settings -> They affect the results!");
-                    }
-                } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_WALL_LINK)) {
-                    if (br.containsHTML("You are not allowed to view this community\\&#39;s wall|Вы не можете просматривать стену этого сообщества|Nie mo\\&#380;esz ogl\\&#261;da\\&#263; \\&#347;ciany tej spo\\&#322;eczno\\&#347;ci")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    } else if (br.containsHTML("id=\"wall_empty\"")) {
-                        logger.info("Wall is empty: " + CRYPTEDLINK_FUNCTIONAL);
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    decryptWallLink_API();
-                    logger.info("Decrypted " + decryptedLinks.size() + " total links out of a wall-link");
-                    if (decryptedLinks.size() == 0) {
-                        logger.info("Check your plugin settings -> They affect the results!");
-                    }
-                } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_DOCS)) {
-                    decryptDocs();
-                } else {
-                    /*
-                     * Unsupported link --> Should never happen -> Error handling -> Either link offline or plugin broken
-                     */
-                    if (br.containsHTML("class=\"profile_blocked\"")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    logger.warning("Cannot decrypt unsupported linktype: " + CRYPTEDLINK_FUNCTIONAL);
+                /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
+                final String ownerName = resolveScreenName_API(url_owner);
+                if (ownerName == null) {
+                    logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
                     return null;
                 }
-            } catch (final BrowserException e) {
-                logger.warning("Browser exception thrown: " + e.getMessage());
-                logger.warning("Decrypter failed for link: " + CRYPTEDLINK_FUNCTIONAL);
-                e.printStackTrace();
-            } catch (final DecrypterException e) {
-                try {
-                    if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
-                        logger.info("Account problem! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
-                        return decryptedLinks;
-                    } else if (e.getMessage().equals(EXCEPTION_API_UNKNOWN)) {
-                        logger.info("Unknown API problem occured! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
-                        return decryptedLinks;
-                    } else if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
-                        decryptedLinks.add(createOffline(this.CRYPTEDLINK_ORIGINAL));
-                        return decryptedLinks;
-                    }
-                } catch (final Exception x) {
+                final String type = PluginJSonUtils.getJson(br, "type");
+                if (type == null) {
+                    logger.warning("Failed to find type for link: " + CRYPTEDLINK_FUNCTIONAL);
+                    return null;
                 }
-                throw e;
+                if (type.equals("user")) {
+                    newLink = MAINPAGE + "/albums" + ownerName;
+                } else {
+                    newLink = MAINPAGE + "/wall-" + ownerName;
+                }
             }
+            if (newLink.equals(CRYPTEDLINK_FUNCTIONAL)) {
+                logger.info("Link was not changed, continuing with: " + CRYPTEDLINK_FUNCTIONAL);
+            } else {
+                logger.info("Link was changed!");
+                logger.info("Old link: " + CRYPTEDLINK_FUNCTIONAL);
+                logger.info("New link: " + newLink);
+                logger.info("Continuing with: " + newLink);
+                CRYPTEDLINK_FUNCTIONAL = newLink;
+            }
+            /* Replace section end */
+
+            /* Decryption process START */
+            if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_MODULE)) {
+                decryptWallPostSpecifiedPhoto();
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_AUDIO)) {
+                if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_ALBUM)) {
+                    /* Audio album */
+                    decryptAudioAlbum();
+                } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_AUDIOS_ALBUM)) {
+                    decryptAudiosAlbum();
+                } else {
+                    /* Single playlists */
+                    decryptAudioPlaylist();
+                }
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE_oid)) {
+                /* Audio page */
+                decryptAudioPage();
+            } else if (isSingeVideo(CRYPTEDLINK_FUNCTIONAL)) {
+                /* Single video */
+                decryptSingleVideo(CRYPTEDLINK_FUNCTIONAL);
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_VIDEO_ALBUM)) {
+                /**
+                 * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
+                 */
+                decryptVideoAlbum();
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM)) {
+                /**
+                 * Community-Albums Example: http://vk.com/video?gid=41589556
+                 */
+                decryptCommunityVideoAlbum();
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_ALBUM)) {
+                /**
+                 * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
+                 */
+                decryptPhotoAlbum();
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_ALBUMS)) {
+                /**
+                 * Photo albums lists/overviews Example: http://vk.com/albums46486585
+                 */
+                decryptPhotoAlbums();
+            } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_POST_LINK)) {
+                /**
+                 * Single posts of wall links: https://vk.com/wall-28122291_906
+                 */
+                decryptWallPost_API();
+                if (decryptedLinks.size() == 0) {
+                    logger.info("Check your plugin settings -> They affect the results!");
+                }
+            } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_GENERAL_WALL_LINK)) {
+                // no requests have been made yet, why are we checking for this? -raztoki20160809
+                if (br.containsHTML("You are not allowed to view this community\\&#39;s wall|Вы не можете просматривать стену этого сообщества|Nie mo\\&#380;esz ogl\\&#261;da\\&#263; \\&#347;ciany tej spo\\&#322;eczno\\&#347;ci")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                } else if (br.containsHTML("id=\"wall_empty\"")) {
+                    logger.info("Wall is empty: " + CRYPTEDLINK_FUNCTIONAL);
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                decryptWallLink_API();
+                logger.info("Decrypted " + decryptedLinks.size() + " total links out of a wall-link");
+                if (decryptedLinks.size() == 0) {
+                    logger.info("Check your plugin settings -> They affect the results!");
+                }
+            } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_DOCS)) {
+                decryptDocs();
+            } else {
+                /*
+                 * Unsupported link --> Should never happen -> Error handling -> Either link offline or plugin broken
+                 */
+                if (br.containsHTML("class=\"profile_blocked\"")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                logger.warning("Cannot decrypt unsupported linktype: " + CRYPTEDLINK_FUNCTIONAL);
+                return null;
+            }
+        } catch (final BrowserException e) {
+            logger.warning("Browser exception thrown: " + e.getMessage());
+            logger.warning("Decrypter failed for link: " + CRYPTEDLINK_FUNCTIONAL);
+            e.printStackTrace();
+        } catch (final DecrypterException e) {
+            try {
+                if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
+                    logger.info("Account problem! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
+                    return decryptedLinks;
+                } else if (e.getMessage().equals(EXCEPTION_API_UNKNOWN)) {
+                    logger.info("Unknown API problem occured! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
+                    return decryptedLinks;
+                } else if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
+                    decryptedLinks.add(createOffline(this.CRYPTEDLINK_ORIGINAL));
+                    return decryptedLinks;
+                }
+            } catch (final Exception x) {
+            }
+            throw e;
         }
         if (decryptedLinks == null) {
             logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
@@ -1934,10 +1933,12 @@ public class VKontakteRu extends PluginForDecrypt {
     /**
      * Basic preparations on user-added links. Make sure to remove unneeded things so that in the end, our links match the desired
      * linktypes. This is especially important because we get required IDs out of these urls or even access them directly without API.
+     *
+     * @throws IOException
      */
-    private void prepCryptedLink() {
+    private void prepCryptedLink() throws IOException {
         /* Correct encoding, domain and protocol. */
-        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
+        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
         /* We cannot simply remove all parameters which we usually don't need because...we do sometimes need em! */
         if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS)) {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
@@ -1953,7 +1954,8 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String wall_id = new Regex(this.CRYPTEDLINK_ORIGINAL, "\\?w=(wall(\\-)?\\d+_\\d+)").getMatch(0);
         if (wall_id != null) {
-            this.CRYPTEDLINK_ORIGINAL = "http://vk.com/" + wall_id;
+            // respect imported protocol
+            this.CRYPTEDLINK_ORIGINAL = Request.getLocation("/" + wall_id, new Browser().createGetRequest(CRYPTEDLINK_ORIGINAL));
         }
         this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_ORIGINAL;
     }
