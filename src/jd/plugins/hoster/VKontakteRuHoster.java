@@ -48,6 +48,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -833,7 +835,7 @@ public class VKontakteRuHoster extends PluginForHost {
             if (picobject != null) {
                 finalUrl = (String) picobject;
                 links_count++;
-                if (photolinkOk(dl, null, "m_".equals(q))) {
+                if (photolinkOk(dl, thisid + getFileNameExtensionFromString(finalUrl, ".jpg"), "m_".equals(q))) {
                     return;
                 }
             }
@@ -1014,7 +1016,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKAUDIO_USEIDASPACKAGENAME            = false;
     private static final boolean default_VKDOCS_USEIDASPACKAGENAME             = false;
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS           = false;
-    public static final String   default_user_agent                            = "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0";
+    public static final String   default_user_agent                            = UserAgents.stringUserAgent(BrowserName.Firefox);
     public static final long     defaultSLEEP_PAGINATION_GENERAL               = 1000;
     public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO = 1000;
     public static final long     defaultSLEEP_TOO_MANY_REQUESTS                = 3000;
