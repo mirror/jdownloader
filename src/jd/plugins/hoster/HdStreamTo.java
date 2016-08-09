@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,15 +38,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdstream.to" }, urls = { "https?://(www\\.)?hdstream\\.to/(#(!|%21)f=[A-Za-z0-9]+(\\-[A-Za-z0-9]+)?|f/.+)" }, flags = { 2 })
-public class HdStreamTo extends PluginForHost {
+public class HdStreamTo extends antiDDoSForHost {
 
     public HdStreamTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,6 +69,18 @@ public class HdStreamTo extends PluginForHost {
 
     private Exception            checklinksexception          = null;
 
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie(getHost(), "lang", "en");
+            prepBr.getHeaders().put("User-Agent", "JDownloader");
+            /* User can select https or http in his hdstream account, therefore, redirects should be allowed */
+            prepBr.setFollowRedirects(true);
+        }
+        return prepBr;
+    }
+
     /** Using API: http://hdstream.to/#!p=api */
     @SuppressWarnings("deprecation")
     @Override
@@ -80,7 +89,6 @@ public class HdStreamTo extends PluginForHost {
             return false;
         }
         try {
-            prepBrowser(br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -101,27 +109,26 @@ public class HdStreamTo extends PluginForHost {
                     sb.append(dl.getDownloadURL());
                     sb.append("%0A");
                 }
-                br.postPage("http://hdstream.to/json/check.php", sb.toString());
+                postPage("http://hdstream.to/json/check.php", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final String fid = this.getFID(dllink);
+                    final String fid = getFID(dllink);
                     final String thisjson = br.getRegex("(\"" + fid + "\":\\{.*?\\})").getMatch(0);
-                    if (fid == null || thisjson == null || !"on".equals(this.getJson(thisjson, "state"))) {
+                    if (fid == null || thisjson == null || !"on".equals(getJson(thisjson, "state"))) {
                         dllink.setAvailable(false);
                     } else {
-                        final String sha1hash = this.getJson(thisjson, "hash");
+                        final String sha1hash = getJson(thisjson, "hash");
                         /*
                          * file_title = user defined title (without extension) - prefer that --> name = original title/server-title (with
                          * extension, can contain encoding issues)
                          */
                         final String extension = "." + getJson(thisjson, "extension");
-                        String name = this.getJson(thisjson, "file_title");
+                        String name = getJson(thisjson, "file_title");
                         if ("null".equals(name)) {
-                            name = this.getJson(thisjson, "name");
+                            name = getJson(thisjson, "name");
                         }
-                        final String size = this.getJson(thisjson, "size");
+                        final String size = getJson(thisjson, "size");
                         name = Encoding.htmlDecode(name);
                         name = name.trim();
-                        name = unescape(name);
                         name = encodeUnicode(name);
                         if (!".null".equals(extension) && !name.endsWith(extension)) {
                             name += extension;
@@ -174,9 +181,9 @@ public class HdStreamTo extends PluginForHost {
         final String premiumtoken = getPremiumToken(downloadLink);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            this.br.setFollowRedirects(false);
-            checkDownloadable(this.br);
-            br.getPage("https://hdstream.to/send.php?visited=" + fid + "&premium=" + premiumtoken);
+            br.setFollowRedirects(false);
+            checkDownloadable(br);
+            getPage("https://hdstream.to/send.php?visited=" + fid + "&premium=" + premiumtoken);
             final String canPlay = getJson("canPlay");
             final String server = getJson("server");
             String waittime = null;
@@ -186,7 +193,7 @@ public class HdStreamTo extends PluginForHost {
             if ("true".equals(canPlay)) {
                 /* Prefer to download the stream if possible as it has the same filesize as download but no waittime. */
                 final Browser br2 = br.cloneBrowser();
-                br2.getPage("https://s" + server + ".hdstream.to/send.php?token=" + fid + "&stream=1");
+                getPage(br2, "https://s" + server + ".hdstream.to/send.php?token=" + fid + "&stream=1");
                 dllink = br2.getRedirectLocation();
             }
             if (dllink == null) {
@@ -203,7 +210,7 @@ public class HdStreamTo extends PluginForHost {
                 }
                 dllink = getDllink(downloadLink);
                 dllink += "&premium=" + premiumtoken;
-                br.getPage("/send.php?visited=" + fid + "&premium=" + premiumtoken);
+                getPage("/send.php?visited=" + fid + "&premium=" + premiumtoken);
                 waittime = getJson("wait");
                 if (waittime == null) {
                     /* This should never happen! */
@@ -216,13 +223,13 @@ public class HdStreamTo extends PluginForHost {
                     resumable = ACCOUNT_PREMIUM_RESUME;
                     maxchunks = PREMIUM_OVERALL_MAXCON;
                 } else {
-                    this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
+                    sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
                 }
             }
         }
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        errorhandlingFree(this.dl, this.br);
+        errorhandlingFree(dl, br);
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
@@ -235,13 +242,12 @@ public class HdStreamTo extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(getHost(), cookies);
                     return;
                 }
-                br.postPage("http://hdstream.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
+                postPage("http://hdstream.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
                 if (br.getCookie(MAINPAGE, "username") == null || br.containsHTML("\"logged_in\":false")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -250,7 +256,7 @@ public class HdStreamTo extends PluginForHost {
                     }
                 }
                 // Save cookies
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -267,13 +273,13 @@ public class HdStreamTo extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        return fetchAccountInfoHdstream(this.br, account);
+        return fetchAccountInfoHdstream(br, account);
     }
 
     @SuppressWarnings("deprecation")
-    public static AccountInfo fetchAccountInfoHdstream(final Browser br, final Account account) throws IOException {
+    public AccountInfo fetchAccountInfoHdstream(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        br.getPage("https://" + account.getHoster() + "/json/userdata.php?user=" + Encoding.urlEncode(account.getUser()));
+        getPage(br, "https://" + account.getHoster() + "/json/userdata.php?user=" + Encoding.urlEncode(account.getUser()));
         final String createtime = getJson(br, "joined");
         final String expire = getJson(br, "premium");
         final String trafficleft_string = getJson(br, "remaining_traffic");
@@ -291,9 +297,9 @@ public class HdStreamTo extends PluginForHost {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Free Account");
         } else {
-            br.getPage("https://s." + account.getHoster() + "/js/data.js");
+            getPage(br, "https://s." + account.getHoster() + "/js/data.js");
             int max_prem_dls = ACCOUNT_PREMIUM_MAXDOWNLOADS;
             try {
                 max_prem_dls = Integer.parseInt(getJson(br, "max_connections_premium"));
@@ -303,7 +309,7 @@ public class HdStreamTo extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(max_prem_dls);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         }
         account.setValid(true);
         return ai;
@@ -312,20 +318,20 @@ public class HdStreamTo extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        checkDownloadable(this.br);
+        checkDownloadable(br);
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             final String dllink = getDllink(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            errorhandlingPremium(this.dl, this.br, account);
+            errorhandlingPremium(dl, br, account);
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
     }
 
-    public static void errorhandlingFree(final DownloadInterface dl, final Browser br) throws PluginException, IOException {
+    public void errorhandlingFree(final DownloadInterface dl, final Browser br) throws PluginException, IOException {
         if (dl.getConnection().getContentType().contains("html")) {
             /* 403 error means different things for free and premium */
             /* Should never happen here */
@@ -338,7 +344,7 @@ public class HdStreamTo extends PluginForHost {
         }
     }
 
-    public static void errorhandlingPremium(final DownloadInterface dl, final Browser br, final Account account) throws PluginException, IOException {
+    public void errorhandlingPremium(final DownloadInterface dl, final Browser br, final Account account) throws PluginException, IOException {
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -349,7 +355,7 @@ public class HdStreamTo extends PluginForHost {
         }
     }
 
-    private static void errorhandlingGeneral(final DownloadInterface dl) throws PluginException {
+    private void errorhandlingGeneral(final DownloadInterface dl) throws PluginException {
         /* Should never happen */
         if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -398,16 +404,6 @@ public class HdStreamTo extends PluginForHost {
         return output;
     }
 
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
     /** Get fid of the link, no matter which linktype is added by the user. */
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
@@ -439,79 +435,10 @@ public class HdStreamTo extends PluginForHost {
      * Check if the link can be downloaded - "download"=0 = NOT downloadable, not even for premium users - either server problems or only
      * streamable - rare case
      */
-    public static void checkDownloadable(final Browser br) throws PluginException {
+    public void checkDownloadable(final Browser br) throws PluginException {
         if (!getJson(br, "download").equals("1")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This link is not downloadable");
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    public static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    public static String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
-    private void prepBrowser(final Browser br) {
-        br.setCookie("http://hdstream.to/", "lang", "en");
-        /* User can select https or http in his hdstream account, therefore, redirects should be allowed */
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
     }
 
     /** Returns final downloadlink, same for free and premium */

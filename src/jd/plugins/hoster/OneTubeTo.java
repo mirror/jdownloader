@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +37,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1tube.to" }, urls = { "https?://(?:www\\.)?1tube\\.to/f/([^<>\"]*?\\-[A-Za-z0-9]+\\.html|[A-Za-z0-9]+)" }, flags = { 2 })
-public class OneTubeTo extends PluginForHost {
+public class OneTubeTo extends antiDDoSForHost {
 
     public OneTubeTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,8 +72,20 @@ public class OneTubeTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         final String fid = getFID(link);
-        link.setLinkID(fid);
+        link.setLinkID(getHost() + "://" + fid);
         link.setUrlDownload("https://1tube.to/f/" + fid);
+    }
+
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie(getHost(), "lang", "en");
+            prepBr.getHeaders().put("User-Agent", "JDownloader");
+            /* User can select https or http in his hdstream account, therefore, redirects should be allowed */
+            prepBr.setFollowRedirects(true);
+        }
+        return prepBr;
     }
 
     /** Using API: https://1tube.to/p/api/ */
@@ -82,7 +96,6 @@ public class OneTubeTo extends PluginForHost {
             return false;
         }
         try {
-            prepBrowser(br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -105,8 +118,7 @@ public class OneTubeTo extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     sb.append("\n");
                 }
-                /* TODO: Implement this correctly! */
-                br.postPage("https://1tube.to/p/api/?json=1", sb.toString());
+                postPage("https://1tube.to/p/api/?json=1", sb.toString());
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final Object data = api_data.get("data");
                 if (data != null && data instanceof LinkedHashMap) {
@@ -173,18 +185,18 @@ public class OneTubeTo extends PluginForHost {
         if (checklinksexception != null) {
             throw checklinksexception;
         }
-        jd.plugins.hoster.HdStreamTo.checkDownloadable(this.br);
+        checkDownloadable(br);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String fid = this.getFID(downloadLink);
+        final String fid = getFID(downloadLink);
         final String premiumtoken = getPremiumToken(downloadLink);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            this.br.setFollowRedirects(false);
-            this.br.getPage("https://1tube.to/send/?visited=" + fid);
+            br.setFollowRedirects(false);
+            getPage("https://1tube.to/send/?visited=" + fid);
             final String canPlay = getJson("canPlay");
             final String server = getJson("server");
             final String waittime = getJson("wait");
@@ -194,7 +206,7 @@ public class OneTubeTo extends PluginForHost {
             if ("true".equals(canPlay)) {
                 /* Prefer to download the stream if possible as it has the same filesize as download but no waittime. */
                 final Browser br2 = br.cloneBrowser();
-                br2.getPage("https://sx" + server + ".1tube.to/send/?token=" + fid + "&stream=1");
+                getPage(br2, "https://sx" + server + ".1tube.to/send/?token=" + fid + "&stream=1");
                 dllink = br2.getRedirectLocation();
             }
             if (dllink == null) {
@@ -224,13 +236,13 @@ public class OneTubeTo extends PluginForHost {
                     resumable = ACCOUNT_PREMIUM_RESUME;
                     maxchunks = PREMIUM_OVERALL_MAXCON;
                 } else {
-                    this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
+                    sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
                 }
             }
         }
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        jd.plugins.hoster.HdStreamTo.errorhandlingFree(this.dl, this.br);
+        errorhandlingFree(dl, br);
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
@@ -243,14 +255,13 @@ public class OneTubeTo extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(getHost(), cookies);
                     return;
                 }
                 br.setFollowRedirects(false);
-                br.postPage("https://1tube.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
+                postPage("https://1tube.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
                 if (br.getCookie(MAINPAGE, "username") == null || br.containsHTML("\"logged_in\":false")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -258,7 +269,7 @@ public class OneTubeTo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -275,13 +286,24 @@ public class OneTubeTo extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        return jd.plugins.hoster.HdStreamTo.fetchAccountInfoHdstream(this.br, account);
+        return fetchAccountInfoHdstream(br, account);
+    }
+
+    private PluginForHost plugin = null;
+
+    private void setPlugin() throws PluginException {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("hdstream.to");
+            if (plugin == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Plugin not found!");
+            }
+        }
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        jd.plugins.hoster.HdStreamTo.checkDownloadable(this.br);
+        checkDownloadable(br);
         login(account, false);
         br.setFollowRedirects(false);
         if (account.getType() == AccountType.FREE) {
@@ -289,7 +311,7 @@ public class OneTubeTo extends PluginForHost {
         } else {
             final String dllink = getDllink(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            jd.plugins.hoster.HdStreamTo.errorhandlingPremium(this.dl, this.br, account);
+            errorhandlingPremium(dl, br, account);
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
@@ -345,6 +367,26 @@ public class OneTubeTo extends PluginForHost {
         return fid;
     }
 
+    private AccountInfo fetchAccountInfoHdstream(final Browser br, final Account account) throws Exception {
+        setPlugin();
+        return ((jd.plugins.hoster.HdStreamTo) plugin).fetchAccountInfoHdstream(br, account);
+    }
+
+    public void checkDownloadable(final Browser br) throws PluginException {
+        setPlugin();
+        ((jd.plugins.hoster.HdStreamTo) plugin).checkDownloadable(br);
+    }
+
+    private void errorhandlingPremium(DownloadInterface dl, Browser br, Account account) throws Exception {
+        setPlugin();
+        ((jd.plugins.hoster.HdStreamTo) plugin).errorhandlingPremium(dl, br, account);
+    }
+
+    private void errorhandlingFree(DownloadInterface dl, Browser br) throws Exception {
+        setPlugin();
+        ((jd.plugins.hoster.HdStreamTo) plugin).errorhandlingFree(dl, br);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
@@ -353,23 +395,6 @@ public class OneTubeTo extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return ACCOUNT_PREMIUM_MAXDOWNLOADS;
-    }
-
-    private void prepBrowser(final Browser br) {
-        br.setCookie("http://hdstream.to/", "lang", "en");
-        /* User can select https or http in his hdstream account, therefore, redirects should be allowed */
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    protected final String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
