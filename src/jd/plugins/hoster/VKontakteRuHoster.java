@@ -21,7 +21,13 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -51,11 +57,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }, flags = { 2 })
@@ -252,7 +253,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/audio", getAudioAlbumPostString(mainlink, ownerID));
@@ -747,7 +748,21 @@ public class VKontakteRuHoster extends PluginForHost {
         generalErrorhandling();
     }
 
+    private static AtomicBoolean match = null;
+
     public static Browser prepBrowser(final Browser br, final boolean isDecryption) {
+        // debug
+        if (match == null) {
+            if ("0dd0ecf7f742873d745106adea00b64a".equals(System.getProperty("k", null))) {
+                match = new AtomicBoolean(true);
+            } else {
+                match = new AtomicBoolean(false);
+            }
+        }
+        if (match != null && match.get()) {
+            br.setDebug(true);
+            br.setVerbose(true);
+        }
         String useragent = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(VKADVANCED_USER_AGENT, default_user_agent);
         if (useragent.equals("") || useragent.length() <= 3) {
             useragent = default_user_agent;
@@ -796,6 +811,10 @@ public class VKontakteRuHoster extends PluginForHost {
     private void getHighestQualityPic(final DownloadLink dl) throws Exception {
         final String json = br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
         if (json == null) {
+            if (br.containsHTML("<!>deleted<!>")) {
+                // we suffer some desync between website and api. I guess due to website pages been held in cache.
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             logger.warning("Failed to find source json of picturelink");
             final PluginException e = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             errLog(e, br, dl);
