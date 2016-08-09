@@ -56,8 +56,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
-    private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+\\&forced_referer=[A-Za-z0-9=]+";
-    public static final String  type_player                         = "https?://player\\.vimeo.com/video/\\d+";
+    private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?)forced_referer=[A-Za-z0-9=]+";
+    public static final String  type_player                         = "https?://player\\.vimeo.com/video/\\d+.+";
     private static final String Q_MOBILE                            = "Q_MOBILE";
     private static final String Q_ORIGINAL                          = "Q_ORIGINAL";
     private static final String Q_HD                                = "Q_HD";
@@ -160,7 +160,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 vimeo_forced_referer = Encoding.Base64Decode(new Regex(vimeo_forced_referer_url_part, "forced_referer=(.+)").getMatch(0));
             }
             final boolean new_way_allowed = true;
-            final String ID = new Regex(parameter, "(\\d+)$").getMatch(0);
+            final String ID = new Regex(parameter, "/(\\d+)").getMatch(0);
             String date = null;
             String channelName = null;
             String title = null;
@@ -182,10 +182,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 /* We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only receive 403/404! */
                 br.getPage("https://player.vimeo.com/video/" + ID);
+                if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
+                    vimeo_forced_referer = getCurrentLink().getOriginLink().getURL();
+                    if (!StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
+                        br.getHeaders().put("Referer", vimeo_forced_referer);
+                        br.getPage("https://player.vimeo.com/video/" + ID);
+                    }
+                }
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJson(br, "message"))) {
                     decryptedLinks.add(createOfflinelink(orgParam, ID, null));
                     return decryptedLinks;
-                } else if (br.containsHTML(containsPass())) {
+                }
+                if (br.containsHTML(containsPass())) {
                     try {
                         handlePW(param, ID, this.br);
                     } catch (final DecrypterException edc) {
