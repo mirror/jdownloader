@@ -32,6 +32,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
 
     private Pair             offline;
     private Pair             status;
+    private Pair             queue;
 
     private Pair             packages;
     private Pair             online;
@@ -99,6 +100,9 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ONLINE_COUNT_VISIBLE.isEnabled()) {
             online = addPair(online, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundonline(), IconKey.ICON_OK);
         }
+        if (true) {// TODO: add config entry
+            queue = addPair(queue, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_queue(), IconKey.ICON_BATCH);
+        }
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_STATUS_VISIBLE.isEnabled()) {
             status = addPair(status, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_status(), IconKey.ICON_RUN);
         }
@@ -157,11 +161,11 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
             @Override
             protected void runInEDT() {
                 if (online != null) {
-                    online.setText(onlineCount + "");
+                    online.setText(String.valueOf(onlineCount));
                 }
                 if (offlineCount > 0) {
                     if (offline != null) {
-                        offline.setText(offlineCount + "");
+                        offline.setText(String.valueOf(offlineCount));
                         offline.setVisible(true);
                     }
                     if (offlineCount >= linksCount) {
@@ -173,19 +177,24 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     getWindow().setHighlightColor(null);
                 }
                 if (links != null) {
-                    links.setText(linksCount + "");
+                    links.setText(String.valueOf(linksCount));
                 }
                 if (packages != null) {
-                    packages.setText(dupe.size() + "");
+                    packages.setText(String.valueOf(dupe.size()));
                 }
                 final boolean isCollecting = jlc.isCollecting();
                 final long createdTime = jlc.getCreated();
+                if (queue != null) {
+                    queue.setText(String.valueOf(jlc.getQueueSize()));
+                }
                 if (status != null) {
                     if (jlc.isRunning()) {
                         status.setText(_GUI.T.LinkCrawlerBubbleContent_update_runnning());
                     } else {
                         if (jlc.getLinkChecker().isRunning()) {
                             status.setText(_GUI.T.LinkCrawlerBubbleContent_update_online());
+                        } else if (jlc.hasWaitingInQueue()) {
+                            status.setText(_GUI.T.LinkCrawlerBubbleContent_update_processing());
                         } else {
                             status.setText(_GUI.T.LinkCrawlerBubbleContent_update_finished());
                         }
