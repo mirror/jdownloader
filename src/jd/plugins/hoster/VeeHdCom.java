@@ -157,6 +157,9 @@ public class VeeHdCom extends antiDDoSForHost {
             if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 30 * 1000l);
             }
+            if (br.containsHTML("^404$")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
