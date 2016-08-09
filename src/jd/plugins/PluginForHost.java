@@ -56,7 +56,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.downloadcontroller.SingleDownloadControllerThreadGroup;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -180,14 +179,19 @@ public abstract class PluginForHost extends Plugin {
 
     public void runCaptchaDDosProtection(String id) throws InterruptedException {
         final TimeTracker tracker = ChallengeResponseController.getInstance().getTracker(id);
-        final SingleDownloadController singleDownloadController = SingleDownloadControllerThreadGroup.getControllerFromThreadGroup();
+        final Thread thread = Thread.currentThread();
         final TrackerJob trackerJob;
-        if (singleDownloadController != null) {
-            trackerJob = new SingleDownloadControllerCaptchaTrackerJob(id, singleDownloadController);
+        if (thread instanceof SingleDownloadController) {
+            trackerJob = new SingleDownloadControllerCaptchaTrackerJob(id, (SingleDownloadController) thread);
         } else {
             final DownloadLink downloadLink = getDownloadLink();
             if (downloadLink != null) {
-                trackerJob = new DownloadLinkCaptchaTracker(id, downloadLink);
+                final SingleDownloadController controller = downloadLink.getDownloadLinkController();
+                if (controller != null) {
+                    trackerJob = new SingleDownloadControllerCaptchaTrackerJob(id, controller);
+                } else {
+                    trackerJob = new DownloadLinkCaptchaTracker(id, downloadLink);
+                }
             } else {
                 trackerJob = new TrackerJob(1);
             }
