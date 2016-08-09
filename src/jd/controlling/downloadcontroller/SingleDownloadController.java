@@ -120,6 +120,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     @Override
     public synchronized void start() {
+        queueItem.queueLinks.add(downloadLink);
         super.start();
     }
 
@@ -179,7 +180,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             queueItem = new WaitingQueueItem();
             LAST_DOWNLOAD_START_TIMESTAMPS.put(host, queueItem);
         }
-        queueItem.queueLinks.add(downloadLink);
         this.queueItem = queueItem;
         linkStatus = new LinkStatus(downloadLink);
         session = watchDog.getSession();
