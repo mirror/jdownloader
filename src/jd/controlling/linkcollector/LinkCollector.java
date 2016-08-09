@@ -767,12 +767,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* try to find good matching package or create new one */
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
-            private boolean enqueued = false;
+            private LinkCollectingInformation lci = info;
 
             @Override
             protected void onEnqueu(Queue queue) {
                 if (info != null) {
-                    enqueued = true;
                     info.enqueu(this, link);
                 }
             }
@@ -783,8 +782,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
             private void dequeu() {
-                if (info != null && enqueued) {
-                    enqueued = false;
+                final LinkCollectingInformation info = this.lci;
+                this.lci = null;
+                if (info != null) {
                     info.dequeu(this, link);
                 }
             }
@@ -1486,12 +1486,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             } else {
                 QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.LOW) {
 
-                    private boolean enqueued = false;
+                    private LinkCollectingInformation lci = info;
 
                     @Override
                     protected void onEnqueu(Queue queue) {
                         if (info != null) {
-                            enqueued = true;
                             info.enqueu(this, link);
                         }
                     }
@@ -1502,8 +1501,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
 
                     private void dequeu() {
-                        if (info != null && enqueued) {
-                            enqueued = false;
+                        final LinkCollectingInformation info = this.lci;
+                        this.lci = null;
+                        if (info != null) {
                             info.dequeu(this, link);
                         }
                     }
