@@ -91,10 +91,16 @@ public class RapidsPl extends PluginForHost {
         String apikey = account.getStringProperty("apikey", null);
         if (apikey == null) {
             br.getPage("/profil/api");
+            // 32 bit key (old)
             apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{32})<").getMatch(0);
             if (apikey == null) {
-                account.setValid(false);
-                return ac;
+                // 64-bit key (changed 08.08.2016)
+                apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{64})<").getMatch(0);
+                if (apikey == null) {
+                    account.setValid(false);
+                    return ac;
+                }
+
             }
             account.setProperty("apikey", apikey);
         }
