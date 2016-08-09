@@ -42,7 +42,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 
 /**
  *
@@ -66,6 +67,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     private static final String                   bfRequiredCookies     = "rcksid|BLAZINGFAST-WEB-PROTECT";
     protected static HashMap<String, Cookies>     antiDDoSCookies       = new HashMap<String, Cookies>();
     protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
+    protected static BrowserName                  browserName           = null;
     protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
 
     public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies + "|" + bfRequiredCookies;
@@ -92,9 +94,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         }
         if (useRUA()) {
             if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+                userAgent.set(browserName != null ? UserAgents.stringUserAgent(browserName) : UserAgents.stringUserAgent());
             }
             prepBr.getHeaders().put("User-Agent", userAgent.get());
         }

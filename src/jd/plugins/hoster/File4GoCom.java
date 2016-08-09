@@ -16,10 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -27,8 +25,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -40,12 +36,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0, 0 })
-public class File4GoCom extends PluginForHost {
+public class File4GoCom extends antiDDoSForHost {
 
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,7 +51,7 @@ public class File4GoCom extends PluginForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://file4go.net";
+    private static final String MAINPAGE = "http://www.file4go.net";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -75,25 +69,34 @@ public class File4GoCom extends PluginForHost {
         return super.rewriteHost(host);
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(Browser prepBr, String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            if (browserName == null) {
+                browserName = BrowserName.Firefox;
+            }
+            super.prepBrowser(prepBr, host);
+        }
+        return prepBr;
+    }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
-        br.setFollowRedirects(false);
-        //
-        if (agent.get() == null) {
-            agent.set(UserAgents.stringUserAgent(BrowserName.Firefox));
-        }
-        br.getHeaders().put("User-Agent", agent.get());
         br.setCookie(MAINPAGE, "animesonline", "1");
         br.setCookie(MAINPAGE, "musicasab", "1");
         br.setCookie(MAINPAGE, "poup", "1");
         br.setCookie(MAINPAGE, "noadvtday", "0");
         br.setCookie(MAINPAGE, "hellpopab", "1");
-        br.getPage(link.getDownloadURL());
+        // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
+        getPage(link.getDownloadURL());
+        redirectControl(br);
         if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -138,7 +141,7 @@ public class File4GoCom extends PluginForHost {
                 }
                 this.sleep(wait * 1001l, downloadLink);
             }
-            br.submitForm(getDownload);
+            submitForm(getDownload);
             dllink = getDllink();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -175,13 +178,7 @@ public class File4GoCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                try {
-                    /* @since JD2 */
-                    con = br2.openHeadConnection(dllink);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br2.openGetConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -199,12 +196,11 @@ public class File4GoCom extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
-                br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -224,10 +220,13 @@ public class File4GoCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
-                br.postPage("http://www.file4go.net/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                // once again you can't follow redirects!
+                getPage(MAINPAGE);
+                redirectControl(br);
+                postPage("/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                redirectControl(br);
                 final String lang = System.getProperty("user.language");
-                if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                if (br.getHttpConnection().getResponseCode() == 404) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer Fehler 404 - Login momentan nicht möglich!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else {
@@ -241,22 +240,27 @@ public class File4GoCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    if ("FREE".equalsIgnoreCase(c.getKey())) {
-                        continue;
-                    }
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(MAINPAGE));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
+        }
+    }
+
+    /**
+     * because this host will randomly redirect to /error.php... Think this is actually because referrer is blank on first request. login
+     * can randomly do it also, and be identified as free user, but if you have referrer it doesn't -raztoki20160809
+     *
+     * @param br
+     * @throws Exception
+     */
+    private void redirectControl(Browser br) throws Exception {
+        String redirect = null;
+        while ((redirect = br.getRedirectLocation()) != null && !redirect.endsWith("/error.php")) {
+            getPage(redirect);
         }
     }
 
