@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -183,7 +184,15 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 /* We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only receive 403/404! */
                 br.getPage("https://player.vimeo.com/video/" + ID);
                 if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
-                    vimeo_forced_referer = getCurrentLink().getOriginLink().getURL();
+                    CrawledLink check = getCurrentLink().getSourceLink();
+                    while (true) {
+                        vimeo_forced_referer = check.getURL();
+                        if (check == check.getSourceLink() || !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
+                            break;
+                        } else {
+                            check = check.getSourceLink();
+                        }
+                    }
                     if (!StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
                         br.getHeaders().put("Referer", vimeo_forced_referer);
                         br.getPage("https://player.vimeo.com/video/" + ID);
