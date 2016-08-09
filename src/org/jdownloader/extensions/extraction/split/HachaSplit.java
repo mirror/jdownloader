@@ -3,8 +3,13 @@ package org.jdownloader.extensions.extraction.split;
 import java.io.File;
 import java.util.List;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -16,6 +21,8 @@ import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.logging.LogController;
@@ -170,17 +177,37 @@ public class HachaSplit extends IExtraction {
     }
 
     @Override
-    public Boolean isSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        if (allowDeepInspection) {
-            try {
-                return SplitType.createArchive(factory, splitType, allowDeepInspection) != null;
-            } catch (ArchiveException e) {
-                getLogger().log(e);
-                return false;
+    public Boolean isSupported(final ArchiveFactory factory, final boolean allowDeepInspection) {
+        if (splitType.matches(factory.getFilePath())) {
+            if (factory instanceof DownloadLinkArchiveFactory) {
+                for (final DownloadLink link : ((DownloadLinkArchiveFactory) factory).getDownloadLinks()) {
+                    final ExtensionsFilterInterface hint = CompiledFiletypeFilter.getExtensionsFilterInterface(link.getMimeHint());
+                    if (hint != null && !hint.isSameExtensionGroup(CompiledFiletypeFilter.ArchiveExtensions.NUM)) {
+                        return false;
+                    }
+                }
+            } else if (factory instanceof CrawledLinkFactory) {
+                for (final CrawledLink link : ((CrawledLinkFactory) factory).getLinks()) {
+                    final DownloadLink dlLink = link.getDownloadLink();
+                    if (dlLink != null) {
+                        final ExtensionsFilterInterface hint = CompiledFiletypeFilter.getExtensionsFilterInterface(dlLink.getMimeHint());
+                        if (hint != null && !hint.isSameExtensionGroup(CompiledFiletypeFilter.ArchiveExtensions.NUM)) {
+                            return false;
+                        }
+                    }
+                }
             }
-        } else {
-            return splitType.matches(factory.getFilePath());
+            if (allowDeepInspection) {
+                try {
+                    return SplitType.createArchive(factory, splitType, allowDeepInspection) != null;
+                } catch (ArchiveException e) {
+                    getLogger().log(e);
+                }
+            } else {
+                return true;
+            }
         }
+        return false;
     }
 
 }

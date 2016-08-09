@@ -236,7 +236,6 @@ class SplitUtil {
             } catch (Throwable e) {
             }
         }
-
         return true;
     }
 
