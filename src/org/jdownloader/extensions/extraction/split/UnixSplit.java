@@ -111,16 +111,18 @@ public class UnixSplit extends IExtraction {
     }
 
     @Override
-    public Boolean isSupported(ArchiveFactory factory, boolean allowDeepInspection) {
-        if (allowDeepInspection) {
-            try {
-                return SplitType.createArchive(factory, splitType, allowDeepInspection) != null;
-            } catch (ArchiveException e) {
-                getLogger().log(e);
-                return false;
+    public Boolean isSupported(final ArchiveFactory factory, final boolean allowDeepInspection) {
+        if (splitType.matches(factory.getFilePath())) {
+            if (allowDeepInspection) {
+                try {
+                    return SplitType.createArchive(factory, splitType, allowDeepInspection) != null;
+                } catch (ArchiveException e) {
+                    getLogger().log(e);
+                }
+            } else {
+                return true;
             }
-        } else {
-            return splitType.matches(factory.getFilePath());
         }
+        return false;
     }
 }
