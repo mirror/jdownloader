@@ -164,7 +164,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     protected SingleDownloadController(DownloadLinkCandidate candidate, DownloadWatchDog watchDog) {
-        super(new SingleDownloadControllerThreadGroup("Download: " + candidate.getLink().getView().getDisplayName() + "_" + candidate.getLink().getHost()), "Download");
+        super("Download: " + candidate.getLink().getView().getDisplayName() + "_" + candidate.getLink().getHost());
         tasks = new ArrayList<PluginSubTask>();
         setPriority(Thread.MIN_PRIORITY);
         this.watchDog = watchDog;
