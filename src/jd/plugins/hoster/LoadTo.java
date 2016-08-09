@@ -75,7 +75,7 @@ public class LoadTo extends PluginForHost {
     private final String                   INVALIDLINKS                 = "http://(www\\.)?load\\.to/(news|imprint|faq)/";
 
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
+    private static final boolean           FREE_RESUME                  = false;
     private static final int               FREE_MAXCHUNKS               = 1;
     private static final int               FREE_MAXDOWNLOADS            = 1;
 
