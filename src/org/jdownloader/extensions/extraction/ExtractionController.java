@@ -227,12 +227,20 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
             for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
                 if (!archiveFile.exists()) {
-                    crashLog.write("File missing: " + archiveFile.getFilePath());
+                    if (archiveFile instanceof DownloadLinkArchiveFile) {
+                        final DownloadLinkArchiveFile downloadLinkArchiveFile = (DownloadLinkArchiveFile) archiveFile;
+                        crashLog.write("Missing (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists());
+                    } else if (archiveFile instanceof FileArchiveFile) {
+                        crashLog.write("Missing (FileArchiveFile)File: " + archiveFile.getFilePath());
+                    } else {
+                        crashLog.write("Missing File: " + archiveFile.getFilePath());
+                    }
                     logger.info("Could not find archive file " + archiveFile.getFilePath());
                     archive.addCrcError(archiveFile);
                 } else {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
-                        crashLog.write(" (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath());
+                        final DownloadLinkArchiveFile downloadLinkArchiveFile = (DownloadLinkArchiveFile) archiveFile;
+                        crashLog.write(" (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists());
                     } else if (archiveFile instanceof FileArchiveFile) {
                         crashLog.write(" (FileArchiveFile)File: " + archiveFile.getFilePath());
                     } else {

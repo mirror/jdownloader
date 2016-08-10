@@ -37,9 +37,10 @@ public class DummyArchive {
         list.add(e);
         if (e.isMissing()) {
             missingCount++;
-        }
-        if (Boolean.TRUE.equals(e.isIncomplete())) {
+        } else if (Boolean.TRUE.equals(e.isIncomplete())) {
             incompleteCount++;
+        } else if (!e.isLocalFileAvailable()) {
+            missingCount++;
         }
     }
 

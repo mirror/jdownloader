@@ -41,24 +41,29 @@ public class ValidateArchivesAction extends AbstractExtractionContextAction {
         if (!isEnabled() || lArchives == null) {
             return;
         } else {
-            try {
-                for (Archive archive : lArchives) {
-                    try {
-                        DummyArchive da = ArchiveValidator.EXTENSION.createDummyArchive(archive);
-                        DummyArchiveDialog d = new DummyArchiveDialog(da);
-                        try {
-                            Dialog.getInstance().showDialog(d);
-                        } catch (DialogCanceledException e1) {
-                            e1.printStackTrace();
-                        }
-                    } catch (CheckException e1) {
-                        Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
-                    }
+            new Thread("ValidateArchivesAction") {
+                {
+                    setDaemon(true);
                 }
-            } catch (DialogClosedException e1) {
-                e1.printStackTrace();
-            }
+
+                public void run() {
+                    try {
+                        for (Archive archive : lArchives) {
+                            try {
+                                DummyArchive da = ArchiveValidator.EXTENSION.createDummyArchive(archive);
+                                DummyArchiveDialog d = new DummyArchiveDialog(da);
+                                try {
+                                    Dialog.getInstance().showDialog(d);
+                                } catch (DialogCanceledException e) {
+                                }
+                            } catch (CheckException e1) {
+                                Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
+                            }
+                        }
+                    } catch (DialogClosedException e1) {
+                    }
+                };
+            }.start();
         }
     }
-
 }

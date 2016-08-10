@@ -48,11 +48,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public void setFileArchiveFileExists(boolean fileArchiveFileExists) {
         if (fileArchiveFileExists) {
+            this.fileArchiveFileExists = true;
             setExists(true);
         } else {
             invalidateExists();
         }
-        this.fileArchiveFileExists = fileArchiveFileExists;
     }
 
     public DownloadLinkArchiveFile(DownloadLink link) {
@@ -386,6 +386,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void invalidateExists() {
+        this.fileArchiveFileExists = false;
         exists.set(null);
     }
 
