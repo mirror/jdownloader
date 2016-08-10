@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.JDHash;
@@ -34,6 +31,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopremium.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class NoPremiumPl extends PluginForHost {
@@ -85,7 +85,7 @@ public class NoPremiumPl extends PluginForHost {
         account.setConcurrentUsePossible(true);
         ac.setValidUntil(-1);
         // now let's get a list of all supported hosts:
-        br.getPage("/clipboard.php");
+        br.getPage("http://nopremium.pl/clipboard.php"); // different domain!
         final String[] hosts = br.toString().split("<br />");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
