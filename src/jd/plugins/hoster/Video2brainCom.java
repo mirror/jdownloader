@@ -525,6 +525,7 @@ public class Video2brainCom extends PluginForHost {
         account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         account.setValid(true);
+        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 60 * 60 * 1000l);
         return ai;
     }
 
