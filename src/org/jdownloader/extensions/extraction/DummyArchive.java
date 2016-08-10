@@ -39,8 +39,6 @@ public class DummyArchive {
             missingCount++;
         } else if (Boolean.TRUE.equals(e.isIncomplete())) {
             incompleteCount++;
-        } else if (!e.isLocalFileAvailable()) {
-            missingCount++;
         }
     }
 
