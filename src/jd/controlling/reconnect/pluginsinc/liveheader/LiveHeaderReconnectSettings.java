@@ -45,6 +45,12 @@ public interface LiveHeaderReconnectSettings extends ConfigInterface {
     void setAutoSearchBestMatchFilterEnabled(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isAutoReplaceIPEnabled();
+
+    void setAutoReplaceIPEnabled(boolean b);
+
+    @AboutConfig
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If False, we already tried to send this script to the colect server. Will be resetted each time we change reconnect settings.")
     @DefaultBooleanValue(false)
     boolean isAlreadySendToCollectServer3();

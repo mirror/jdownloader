@@ -12,6 +12,19 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import jd.controlling.reconnect.ProcessCallBack;
+import jd.controlling.reconnect.ReconnectConfig;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.pluginsinc.liveheader.recorder.Gui;
+import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
+import jd.gui.UserIO;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
@@ -37,19 +50,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
-
-import jd.controlling.reconnect.ProcessCallBack;
-import jd.controlling.reconnect.ReconnectConfig;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.RouterPlugin;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.pluginsinc.liveheader.recorder.Gui;
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-import jd.gui.UserIO;
-import net.miginfocom.swing.MigLayout;
 
 public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventListener {
 
@@ -356,7 +356,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
                 settings.setAlreadySendToCollectServer3(false);
             }
         } else {
-            if (!Application.isHeadless()) {
+            if (!Application.isHeadless() && settings.isAutoReplaceIPEnabled()) {
                 // disabled
                 RouterSendAction action = new RouterSendAction(this);
                 if (!action.isEnabled()) {

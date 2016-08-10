@@ -16,6 +16,29 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
+import jd.controlling.faviconcontroller.FavIcons;
+import jd.controlling.reconnect.ProcessCallBack;
+import jd.controlling.reconnect.ProcessCallBackAdapter;
+import jd.controlling.reconnect.ReconnectConfig;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.RouterUtils;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.pluginsinc.liveheader.recoll.AddRouterResponse;
+import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
+import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.ScriptValidationExeption;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.Scriptvalidator;
+import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
+import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -42,29 +65,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.faviconcontroller.FavIcons;
-import jd.controlling.reconnect.ProcessCallBack;
-import jd.controlling.reconnect.ProcessCallBackAdapter;
-import jd.controlling.reconnect.ReconnectConfig;
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.RouterUtils;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.pluginsinc.liveheader.recoll.AddRouterResponse;
-import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-import jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript;
-import jd.controlling.reconnect.pluginsinc.liveheader.validate.ScriptValidationExeption;
-import jd.controlling.reconnect.pluginsinc.liveheader.validate.Scriptvalidator;
-import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
-import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 
 public class LiveHeaderDetectionWizard {
 
@@ -970,7 +970,7 @@ public class LiveHeaderDetectionWizard {
 
                     }
 
-                    script = validate(script);
+                    script = validateBeforeSend(script);
                     RouterData rd = getRouterData();
                     rd.setScript(script);
                     LiveHeaderScriptConfirmUploadDialog confirm = new LiveHeaderScriptConfirmUploadDialog(rd, rd.getRouterIP(), rd.getRouterName());
@@ -1064,7 +1064,7 @@ public class LiveHeaderDetectionWizard {
         UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
     }
 
-    private String validate(String script) throws ScriptValidationExeption {
+    private String validateBeforeSend(String script) throws ScriptValidationExeption {
         RouterData rd = new RouterData();
         rd.setScript(script);
         try {
@@ -1144,6 +1144,13 @@ public class LiveHeaderDetectionWizard {
                         e.printStackTrace();
                     }
                     return false;
+                };
+
+                protected void onHost(String host) throws Exception {
+                    // do not check LiveHeaderReconnectSettings.isAutoReplaceIPEnabled, always replace
+                    if (!host.startsWith("your.router.ip")) {
+                        throw new RetryWithReplacedScript(rd.getScript(), host, "%%%routerip%%%");
+                    }
                 };
 
                 protected void replaceUsernameParameter(String key, String value) throws jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript, Exception {

@@ -16,12 +16,14 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnectSettings;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Base64;
 
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -422,13 +424,12 @@ public class Scriptvalidator {
 
     }
 
-    private void onHost(String host) throws Exception {
-        if (!host.startsWith("your.router.ip")) {
-
-            throw new RetryWithReplacedScript(rd.getScript(), host, "%%%routerip%%%");
-            // throw new Exception("Request to bad url " + host);
+    protected void onHost(String host) throws Exception {
+        if (JsonConfig.create(LiveHeaderReconnectSettings.class).isAutoReplaceIPEnabled()) {
+            if (!host.startsWith("your.router.ip")) {
+                throw new RetryWithReplacedScript(rd.getScript(), host, "%%%routerip%%%");
+            }
         }
-
     }
 
     protected HashSet<String> exceptionsParameterKeys  = new HashSet<String>();
