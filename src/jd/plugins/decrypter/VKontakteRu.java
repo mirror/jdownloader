@@ -653,7 +653,6 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Using API in most cases */
     private void decryptSingleVideo(final String parameter) throws Exception {
-        // Check if it's really offline
         final String[] ids = findVideoIDs(parameter);
         final String oid = ids[0];
         final String id = ids[1];
@@ -675,6 +674,11 @@ public class VKontakteRu extends PluginForDecrypt {
             apiGetPageSafe(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + videoids_together);
         } else if (listID == null) {
             apiGetPageSafe(getProtocol() + "vk.com/video" + videoids_together);
+            if (!isSingeVideo(this.br.getURL())) {
+                /* Redirect to a non-video-url --> Probably account needed to view the content. */
+                logger.info("Probably an account is needed to view this content");
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
         } else {
             logger.info("Using website to decrypt single video");
             this.postPageSafe(getProtocol() + "vk.com/al_video.php", "act=show_inline&al=1&list=" + listID + "&module=public&video=" + videoids_together);

@@ -36,6 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 /**
@@ -62,7 +63,7 @@ public class ImgUrCom extends PluginForHost {
     }
 
     /* User settings */
-    private static final String SETTING_WEBM                    = "SETTING_WEBM";
+    private static final String SETTING_MP4                     = "SETTING_MP4";
     private static final String SETTING_CLIENTID                = "SETTING_CLIENTID";
     private static final String SETTING_USE_API                 = "SETTING_USE_API";
     private static final String SETTING_GRAB_SOURCE_URL_VIDEO   = "SETTING_GRAB_SOURCE_URL_VIDEO";
@@ -89,7 +90,7 @@ public class ImgUrCom extends PluginForHost {
         imgUID = getImgUID(link);
         final String filetype = getFiletype(link);
         final String finalfilename = link.getStringProperty("decryptedfinalfilename", null);
-        final long filesize = link.getLongProperty("decryptedfilesize", -1);
+        long filesize = link.getLongProperty("decryptedfilesize", -1);
         dllink = link.getStringProperty("directlink", null);
 
         br.setFollowRedirects(true);
@@ -111,21 +112,22 @@ public class ImgUrCom extends PluginForHost {
                 }
             }
             if (!api_failed) {
-                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                parseAPIData(link);
+                parseAPIData(link, this.br.toString());
                 /*
                  * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
                  * low quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
                  */
                 /** TODO: Add a workaround for .gif files and/or wait for them to fix their current issues. */
-                if (link.getDownloadSize() >= view_filesizelimit) {
+                if (userPrefersMp4()) {
+                    dllink = getMp4Downloadlink(link);
+                } else if (link.getDownloadSize() >= view_filesizelimit) {
                     logger.info("File is bigger than 20 (19.5) MB --> Using /downloadlink as API-workaround");
                     dllink = getBigFileDownloadlink(link);
                 } else {
-                    dllink = getJson(br.toString(), "link");
+                    dllink = PluginJSonUtils.getJson(this.br, "link");
                 }
             } else {
                 /*
@@ -145,13 +147,14 @@ public class ImgUrCom extends PluginForHost {
                 if (api_like_json == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                br.getRequest().setHtmlCode(api_like_json.replace("\\", ""));
-                parseAPIData(link);
+                parseAPIData(link, api_like_json);
                 /*
                  * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
                  * low quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
                  */
-                if (link.getDownloadSize() >= view_filesizelimit) {
+                if (userPrefersMp4()) {
+                    dllink = getMp4Downloadlink(link);
+                } else if (link.getDownloadSize() >= view_filesizelimit) {
                     logger.info("File is bigger than 20 (19.5) MB --> Using /downloadlink as API-workaround");
                     dllink = getBigFileDownloadlink(link);
                 } else {
@@ -159,15 +162,22 @@ public class ImgUrCom extends PluginForHost {
                 }
             }
             link.setProperty("directlink", dllink);
-        } else if (!start_DL) {
+        }
+        if (!start_DL && (userPrefersMp4() || filesize == -1)) {
             /*
              * Only check available link if user is NOT starting the download --> Avoid to access it twice in a small amount of time -->
              * Keep server load down.
+             */
+            /*
+             * 2016-08-10: Additionally check filesize via url if user wants to have a specified format as the filesize from website json or
+             * API is usually for the original file!
              */
             URLConnectionAdapter con = null;
             try {
                 try {
                     con = this.br.openHeadConnection(this.dllink);
+                    filesize = con.getLongContentLength();
+                    link.setDownloadSize(filesize);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -189,7 +199,7 @@ public class ImgUrCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         start_DL = true;
         requestFileInformation(downloadLink);
         if (dl_IMPOSSIBLE_APILIMIT_REACHED) {
@@ -228,14 +238,17 @@ public class ImgUrCom extends PluginForHost {
      * Parses json either from API, or also if previously set in the browser - it's basically the same as a response similar to the API isa
      * stored in the html code when accessing normal content links: imgur.com/xXxXx
      */
-    private void parseAPIData(final DownloadLink dl) throws PluginException {
-        final long filesize = Long.parseLong(getJson(br.toString(), "size"));
+    private void parseAPIData(final DownloadLink dl, final String json) throws PluginException {
+        final long filesize = Long.parseLong(PluginJSonUtils.getJson(json, "size"));
         if (filesize == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = getJson(br.toString(), "title");
+        String title = PluginJSonUtils.getJson(br.toString(), "title");
         /* "mimetype" = site, "type" = API */
-        String filetype = br.getRegex("\"(mime)?type\":\"image/([^<>\"]*?)\"").getMatch(1);
+        String filetype = new Regex(json, "\"(mime)?type\":\"image/([^<>\"]*?)\"").getMatch(1);
+        if (filetype == null) {
+            filetype = br.getRegex("id=\"stats\\-overview\\-thumb\" class=\"left\">[\t\n\r ]*?<img src=\"data:image/([A-Za-z]+);base64,").getMatch(0);
+        }
         if (filetype == null) {
             filetype = "jpeg";
         }
@@ -263,12 +276,18 @@ public class ImgUrCom extends PluginForHost {
         final String imgUID = getImgUID(dl);
         final String filetype = getFiletype(dl);
         String downloadlink;
-        if (filetype.equals("gif") || filetype.equals("webm")) {
+        if (filetype.equals("gif") || filetype.equals("webm") || filetype.equals("mp4")) {
             /* Small workaround for gif files. */
             downloadlink = getURLView(dl);
         } else {
             downloadlink = getURLDownload(imgUID);
         }
+        return downloadlink;
+    }
+
+    public static String getMp4Downloadlink(final DownloadLink dl) {
+        final String imgUID = getImgUID(dl);
+        final String downloadlink = "https://i.imgur.com/" + imgUID + ".mp4";
         return downloadlink;
     }
 
@@ -299,13 +318,12 @@ public class ImgUrCom extends PluginForHost {
         return dl.getStringProperty("filetype", null);
     }
 
-    @SuppressWarnings("deprecation")
     public static String getFiletypeForUrl(final DownloadLink dl) {
-        final boolean preferWEBM = SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_WEBM, defaultWEBM);
+        final boolean preferMP4 = userPrefersMp4();
         String filetype_url;
         final String real_filetype = getFiletype(dl);
-        if ((real_filetype.equals("gif") && preferWEBM) || real_filetype.equals("webm")) {
-            filetype_url = "webm";
+        if ((real_filetype.equals("gif") && preferMP4) || real_filetype.equals("mp4")) {
+            filetype_url = "mp4";
         } else {
             filetype_url = real_filetype;
         }
@@ -318,24 +336,19 @@ public class ImgUrCom extends PluginForHost {
         return corrected_filetype;
     }
 
-    @SuppressWarnings("deprecation")
     public static String correctFiletypeUser(final String input) {
-        final boolean preferWEBM = SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_WEBM, defaultWEBM);
+        final boolean preferMP4 = userPrefersMp4();
         String correctedfiletype_user;
-        if (input.equals("gif") && preferWEBM) {
-            correctedfiletype_user = "webm";
+        if (input.equals("gif") && preferMP4) {
+            correctedfiletype_user = "mp4";
         } else {
             correctedfiletype_user = input;
         }
         return correctedfiletype_user;
     }
 
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
+    public static boolean userPrefersMp4() {
+        return SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_MP4, defaultMP4);
     }
 
     public static final String OAUTH_CLIENTID = "Mzc1YmE4Y2FmNjA0ZDQy";
@@ -445,31 +458,6 @@ public class ImgUrCom extends PluginForHost {
             title = "-";
         }
 
-        /* Date: Maybe add this in the future, if requested by a user. */
-        // final long date = getLongProperty(downloadLink, "originaldate", 0l);
-        // String formattedDate = null;
-        // /* Get correctly formatted date */
-        // String dateFormat = "yyyy-MM-dd";
-        // SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
-        // Date theDate = new Date(date);
-        // try {
-        // formatter = new SimpleDateFormat(dateFormat);
-        // formattedDate = formatter.format(theDate);
-        // } catch (Exception e) {
-        // /* prevent user error killing plugin */
-        // formattedDate = "";
-        // }
-        // /* Get correctly formatted time */
-        // dateFormat = "HHmm";
-        // String time = "0000";
-        // try {
-        // formatter = new SimpleDateFormat(dateFormat);
-        // time = formatter.format(theDate);
-        // } catch (Exception e) {
-        // /* prevent user error killing plugin */
-        // time = "0000";
-        // }
-
         String formattedFilename = cfg.getStringProperty(SETTING_CUSTOM_PACKAGENAME, defaultCustomPackagename);
 
         if (!formattedFilename.contains("*galleryid*")) {
@@ -487,24 +475,24 @@ public class ImgUrCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*ext* = Extension of the file");
-            put("LABEL_FILENAME", "Define custom filename:");
-            put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*ext* = Dateiendung");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-            put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
@@ -523,14 +511,13 @@ public class ImgUrCom extends PluginForHost {
     }
 
     private static final String defaultClientID          = "JDDEFAULT";
-    public static final boolean defaultWEBM              = false;
+    public static final boolean defaultMP4               = false;
     public static final boolean defaultSOURCEVIDEO       = false;
     private static final String defaultCustomFilename    = "*username* - *title*_*imgid**ext*";
     private static final String defaultCustomPackagename = "*username* - *title* - *galleryid*";
 
     private void setConfigElements() {
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_WEBM,
-        // JDL.L("plugins.hoster.ImgUrCom.downloadWEBM", "Download .webm files instead of .gif?")).setDefaultValue(defaultWEBM));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, JDL.L("plugins.hoster.ImgUrCom.downloadMP4", "Download .mp4 files instead of .gif?")).setDefaultValue(defaultMP4));
         final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, JDL.L("plugins.hoster.ImgUrCom.useAPI", "Use API (recommended!)")).setDefaultValue(true);
         getConfig().addEntry(cfg);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Enter your own imgur Oauth Client-ID:")).setDefaultValue(defaultClientID).setEnabledCondidtion(cfg, true));

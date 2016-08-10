@@ -37,7 +37,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://rai_host_plugin_notneeded_at_the_moment" }, flags = { 0 })
 public class RaiTv extends PluginForHost {
 
     public RaiTv(PluginWrapper wrapper) {
@@ -171,29 +171,6 @@ public class RaiTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        /* Not needed (yet/anymore) */
-        // if (possibleNotDownloadableMSSilverlight) {
-        // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol Microsoft Silverlight");
-        // }
-        if (downloadLink.getFinalFileName().endsWith(".wmv")) {
-            /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
-            logger.info("Download http .wmv video");
-        } else {
-            final String cont = getContFromRelinkerUrl(this.dllink);
-            if (cont == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Drop previous Headers & Cookies */
-            this.br = prepVideoBrowser(new Browser());
-            accessCont(this.br, cont);
-            dllink = getDllink(this.br);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!dllinkIsDownloadable(this.dllink)) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
-            }
-        }
         if (dllink.contains(".m3u8")) {
             /* hls */
             /* Access hls master */
@@ -283,7 +260,7 @@ public class RaiTv extends PluginForHost {
         return output;
     }
 
-    private String formatDate(final String input) {
+    public static String formatDate(final String input) {
         if (input == null) {
             return null;
         }

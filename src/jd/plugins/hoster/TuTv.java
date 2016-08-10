@@ -22,6 +22,8 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,10 +31,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tu.tv" }, urls = { "http://(www\\.)?tu\\.tv/videos/[a-z0-9\\-_]+" }, flags = { 0 })
 public class TuTv extends PluginForHost {
 
-    private String DLLINK = null;
+    private String html_privatevideo = "class=\"videoprivado\"";
+    private String DLLINK            = null;
 
     public TuTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,9 +58,17 @@ public class TuTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (this.br.getURL() == null) {
+            /* If user entered video password this requestFileInformation is called again - prevent double-accessing our downloadLink. */
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        final String url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/([a-z0-9\\-_]+)").getMatch(0);
         if (br.containsHTML("(>El vídeo que intentas ver no existe o ha sido borrado de TU|>Afortunadamente, el sistema ha encontrado vídeos relacionados con tu petición|>El vídeo no existe<)") || br.getURL().contains("/noExisteVideo/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML(html_privatevideo)) {
+            logger.info("Private videos are not yet supported - contact our support so that we can add support for them");
+            return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- Tu\\.tv</title>").getMatch(0);
         if (filename == null) {
@@ -67,6 +80,10 @@ public class TuTv extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = url_filename;
+        }
         String vid = br.getRegex(">var codVideo=(\\d+);").getMatch(0);
         if (vid == null) {
             vid = br.getRegex("\\&xtp=(\\d+)\"").getMatch(0);
@@ -74,7 +91,7 @@ public class TuTv extends PluginForHost {
         if (vid == null) {
             vid = br.getRegex("votoPlus\\((\\d+)\\);\"").getMatch(0);
         }
-        if (filename == null || vid == null) {
+        if (vid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://tu.tv/flvurl.php?codVideo=" + vid + "&v=WIN%2010,3,181,34&fm=1");
@@ -113,6 +130,28 @@ public class TuTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String passCode = downloadLink.getDownloadPassword();
+        int counter = 0;
+        Form passForm = null;
+        while (this.br.containsHTML(html_privatevideo) && counter <= 2) {
+            if (passCode == null || counter > 0) {
+                passCode = getUserInput("Password?", downloadLink);
+            }
+            passForm = this.br.getFormbyKey("CODIGOVIDEO");
+            if (passForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            passForm.put("CLAVE", Encoding.urlEncode(passCode));
+            this.br.submitForm(passForm);
+            counter++;
+        }
+        if (counter > 0 && this.br.containsHTML(html_privatevideo)) {
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+        } else if (counter > 0) {
+            /* User entered correct password --> Call requestFileInformation again to find filename and downloadurl. */
+            requestFileInformation(downloadLink);
+            downloadLink.setDownloadPassword(passCode);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

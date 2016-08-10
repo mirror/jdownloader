@@ -33,17 +33,22 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" }, flags = { 0 })
+import org.jdownloader.downloader.hls.HLSDownloader;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)|https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html" }, flags = { 0 })
 public class RtveEs extends PluginForHost {
 
-    private static final String TYPE_NORMAL = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
-    private static final String TYPE_SERIES = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
+    private static final String TYPE_NORMAL  = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
+    private static final String TYPE_SERIES  = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
+    private static final String TYPE_RIO2016 = "https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html";
 
-    private String              DLURL       = null;
-    private String              BLOWFISHKEY = "eWVMJmRhRDM=";
-    private String              dl_now_now  = null;
+    private String              DLURL        = null;
+    private String              BLOWFISHKEY  = "eWVMJmRhRDM=";
+    private String              dl_now_now   = null;
 
     public RtveEs(PluginWrapper wrapper) {
         super(wrapper);
@@ -99,12 +104,29 @@ public class RtveEs extends PluginForHost {
         if (DLURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLURL, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (DLURL.contains("/manifest")) {
+            /* HLS download */
+            this.br.getPage(DLURL);
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
+            }
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url_hls = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl.startDownload();
+        } else {
+            /* HTTP download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLURL, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
@@ -114,18 +136,21 @@ public class RtveEs extends PluginForHost {
         if (dl_now_now != null) {
             return AvailableStatus.TRUE;
         }
-        try {
-            if (!br.openGetConnection(DLURL).getContentType().contains("html")) {
-                downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                br.getHttpConnection().disconnect();
-                return AvailableStatus.TRUE;
-            }
-        } finally {
-            if (br.getHttpConnection() != null) {
-                br.getHttpConnection().disconnect();
+        if (!DLURL.contains("/manifest")) {
+            try {
+                if (!br.openGetConnection(DLURL).getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                    br.getHttpConnection().disconnect();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                if (br.getHttpConnection() != null) {
+                    br.getHttpConnection().disconnect();
+                }
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("deprecation")
@@ -141,41 +166,58 @@ public class RtveEs extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
-        if (downloadLink.getDownloadURL().matches(TYPE_SERIES)) {
-            final Regex finfo = new Regex(downloadLink.getDownloadURL(), "rtve.es/infantil/serie/([^/]+)/video/([^/]+)/");
-            filename = finfo.getMatch(0) + " - " + finfo.getMatch(1);
-        } else {
-            filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
+        if (downloadLink.getDownloadURL().matches(TYPE_RIO2016)) {
+            String videoid = PluginJSonUtils.getJson(this.br, "VideoID");
+            if (videoid == null) {
+                videoid = PluginJSonUtils.getJson(this.br, "s.forgeid");
             }
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename.trim());
-        dl_now_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
-        if (dl_now_now != null) {
-            downloadLink.getLinkStatus().setStatusText("Server error: " + dl_now_now);
-            downloadLink.setName(filename + ".mp4");
-            return AvailableStatus.TRUE;
-        }
+            if (videoid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage("/VideoData/" + videoid + ".xml");
+            filename = this.br.getRegex(" <title><\\!\\[CDATA\\[([^<>\"]+)\\]\\]></title>").getMatch(0);
+            if (filename == null) {
+                /* Fallback */
+                filename = videoid;
+            }
+            DLURL = this.br.getRegex("<videoSource format=\"HLS\" offset=\"\\d+:\\d+:\\d+\">[+\t\n\r ]*?<uri>(http[^<>\"]*?)</uri>").getMatch(0);
+        } else {
+            if (downloadLink.getDownloadURL().matches(TYPE_SERIES)) {
+                final Regex finfo = new Regex(downloadLink.getDownloadURL(), "rtve.es/infantil/serie/([^/]+)/video/([^/]+)/");
+                filename = finfo.getMatch(0) + " - " + finfo.getMatch(1);
+            } else {
+                filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
+                }
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.htmlDecode(filename.trim());
+            dl_now_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
+            if (dl_now_now != null) {
+                downloadLink.getLinkStatus().setStatusText("Server error: " + dl_now_now);
+                downloadLink.setName(filename + ".mp4");
+                return AvailableStatus.TRUE;
+            }
 
-        String[] flashVars = br.getRegex("assetID=(\\d+)_([a-z]{2,3})_(audios|videos)\\&location=alacarta").getRow(0);
-        if (flashVars == null || flashVars.length != 3) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String[] flashVars = br.getRegex("assetID=(\\d+)_([a-z]{2,3})_(audios|videos)\\&location=alacarta").getRow(0);
+            if (flashVars == null || flashVars.length != 3) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* encrypt request query */
+            String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
+            getEncData = getEncData.replaceAll("/", "_");
+            Browser enc = br.cloneBrowser();
+            enc.getPage("http://ztnr.rtve.es/ztnr/res/" + getEncData);
+            /* Check for empty page */
+            if (enc.toString().length() <= 22) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* decrypt response body */
+            DLURL = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
         }
-        /* encrypt request query */
-        String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
-        getEncData = getEncData.replaceAll("/", "_");
-        Browser enc = br.cloneBrowser();
-        enc.getPage("http://ztnr.rtve.es/ztnr/res/" + getEncData);
-        /* Check for empty page */
-        if (enc.toString().length() <= 22) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* decrypt response body */
-        DLURL = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
 
         if (DLURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
