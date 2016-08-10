@@ -34,7 +34,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "http://(?:www\\.|en\\.)?workupload\\.com/file/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/file/[A-Za-z0-9]+" }, flags = { 0 })
 public class WorkuploadCom extends PluginForHost {
 
     public WorkuploadCom(PluginWrapper wrapper) {
@@ -156,7 +156,7 @@ public class WorkuploadCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      */
     private String getJson(final String key) {
