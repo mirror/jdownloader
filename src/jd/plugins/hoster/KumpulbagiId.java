@@ -116,7 +116,7 @@ public class KumpulbagiId extends PluginForHost {
             }
             if (dllink == null) {
                 /* Try fallback to stream-url. Usually needed if a file is only downloadable via account. */
-                dllink = dllink_stream;
+                // dllink = dllink_stream; // This is only 10 minutes video
             }
             if (dllink == null) {
                 if (this.br.containsHTML("\"login")) {
@@ -189,7 +189,7 @@ public class KumpulbagiId extends PluginForHost {
         }
     }
 
-    private static final String MAINPAGE = "http://kumpulbagi.id";
+    private static final String MAINPAGE = "http://kumpulbagi.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("deprecation")
@@ -267,7 +267,7 @@ public class KumpulbagiId extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account, true);
         br.getPage(link.getStringProperty("mainlink", null));
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
