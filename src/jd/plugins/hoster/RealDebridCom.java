@@ -22,6 +22,28 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -46,28 +68,6 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+(\\.download)?\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -150,29 +150,30 @@ public class RealDebridCom extends PluginForHost {
     }
 
     protected synchronized <T> T callRestAPIInternal(String url, UrlQuery query, TypeRef<T> type) throws IOException, APIException {
-
-        Request request;
         if (token != null) {
             apiBrowser.getHeaders().put(AUTHORIZATION, "Bearer " + token.getAccess_token());
         }
-
+        final Request request;
         if (query != null) {
             request = apiBrowser.createPostRequest(url, query);
         } else {
             request = apiBrowser.createGetRequest(url);
         }
-        String json = apiBrowser.getPage(request);
+        final String json = apiBrowser.getPage(request);
         if (request.getHttpConnection().getResponseCode() != 200) {
             if (json.trim().startsWith("{")) {
-                ErrorResponse errorResponse = JSonStorage.restoreFromString(json, new TypeRef<ErrorResponse>(ErrorResponse.class) {
+                final ErrorResponse errorResponse = JSonStorage.restoreFromString(json, new TypeRef<ErrorResponse>(ErrorResponse.class) {
                 });
-                throw new APIException(request.getHttpConnection(), Error.getByCode(errorResponse.getError_code()), errorResponse.getError());
+                Error errorCode = Error.getByCode(errorResponse.getError_code());
+                if (Error.UNKNOWN.equals(errorCode) && request.getHttpConnection().getResponseCode() == 403) {
+                    errorCode = Error.BAD_TOKEN;
+                }
+                throw new APIException(request.getHttpConnection(), errorCode, errorResponse.getError());
             } else {
                 throw new IOException("Unexpected Response: " + json);
             }
         }
         return JSonStorage.restoreFromString(json, type);
-
     }
 
     private void ensureAPIBrowser() {
