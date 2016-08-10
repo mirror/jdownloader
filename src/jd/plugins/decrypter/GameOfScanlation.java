@@ -3,17 +3,18 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-
-@DecrypterPlugin(revision = "$Revision: 32651 $", interfaceVersion = 3, names = { "gameofscanlation.moe" }, urls = { "https?://(www\\.)?gameofscanlation\\.moe/projects/[^/]+/chapter-\\d+\\.\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 32651 $", interfaceVersion = 3, names = { "gameofscanlation.moe" }, urls = { "https?://(www\\.)?gameofscanlation\\.moe/projects/[^/]+/chapter-\\d+(-\\d+)?\\.\\d+" }, flags = { 0 })
 public class GameOfScanlation extends PluginForDecrypt {
 
     public GameOfScanlation(PluginWrapper wrapper) {
@@ -45,7 +46,7 @@ public class GameOfScanlation extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
-        final String title = br.getRegex("<title>\\s*(.*?)(\\s*\\|\\s*Game of Scanlation\\s*)?</title>").getMatch(0);
+        final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)(\\s*\\|\\s*Game of Scanlation\\s*)?</title>").getMatch(0));
         final String pages[][] = br.getRegex("src=\"(https?://gameofscanlation.moe/data/attachment-files/.*?)\".*?Page\\s*(\\d+)").getMatches();
         if (pages != null) {
             int index = 0;
