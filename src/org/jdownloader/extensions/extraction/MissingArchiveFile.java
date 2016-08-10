@@ -12,7 +12,7 @@ public class MissingArchiveFile implements ArchiveFile {
 
     @Override
     public Boolean isComplete() {
-        return false;
+        return Boolean.FALSE;
     }
 
     @Override

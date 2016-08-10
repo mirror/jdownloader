@@ -51,25 +51,33 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
     }
 
     public void actionPerformed(ActionEvent e) {
-        try {
-            for (Archive archive : archives) {
+        new Thread("ValidateArchiveAction") {
+            {
+                setDaemon(true);
+            }
+
+            @Override
+            public void run() {
                 try {
-                    final DummyArchive da = createDummyArchive(archive);
-                    if (da != null) {
-                        final DummyArchiveDialog d = new DummyArchiveDialog(da);
+                    for (Archive archive : archives) {
                         try {
-                            Dialog.getInstance().showDialog(d);
-                        } catch (DialogCanceledException e1) {
-                            e1.printStackTrace();
+                            final DummyArchive da = createDummyArchive(archive);
+                            if (da != null) {
+                                final DummyArchiveDialog d = new DummyArchiveDialog(da);
+                                try {
+                                    Dialog.getInstance().showDialog(d);
+                                } catch (DialogCanceledException e1) {
+                                }
+                            }
+                        } catch (CheckException e1) {
+                            Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
                         }
                     }
-                } catch (CheckException e1) {
-                    Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
                 }
             }
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
-        }
+        }.start();
     }
 
     public java.util.List<Archive> getArchives() {
