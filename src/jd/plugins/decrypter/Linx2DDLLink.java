@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -36,16 +35,12 @@ public class Linx2DDLLink extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The ID was not found")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML(">Password Protected Link")) {
@@ -62,7 +57,7 @@ public class Linx2DDLLink extends PluginForDecrypt {
             }
         } else {
             for (int i = 0; i <= 3; i++) {
-                final String code = getCaptchaCode("/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
+                final String code = getCaptchaCode("/CaptchaSecurityImages.php?width=200&height=80&characters=2", param);
                 br.postPage(br.getURL(), "security_code=" + Encoding.urlEncode(code) + "&submit1=Submit");
                 if (br.containsHTML("CaptchaSecurityImages\\.php")) {
                     continue;
