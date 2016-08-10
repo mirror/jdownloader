@@ -390,7 +390,6 @@ public class PhantomJS implements HttpRequestHandler {
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-
             byte[] stringBytes = new byte[len];
             System.arraycopy(b, off, stringBytes, 0, len);
             logger.info(new String(stringBytes, "UTF-8"));
@@ -636,7 +635,7 @@ public class PhantomJS implements HttpRequestHandler {
         final long jobID = new UniqueAlltimeID().getID();
         final String result = execute(jobID, "loadPage(" + jobID + ",'" + url + "');");
         if (!"success".equals(JSonStorage.restoreFromString(result, TypeRef.STRING))) {
-            throw new IOException("Could not load page");
+            throw new IOException("Could not load page|url:" + url + "|result:'" + result + "'");
         }
     }
 
