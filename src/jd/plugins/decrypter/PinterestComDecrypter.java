@@ -151,6 +151,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 }
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
                 ArrayList<Object> resource_data_list = (ArrayList) entries.get("resource_data_cache");
+                ArrayList<Object> pin_list = null;
                 if (resource_data_list == null) {
                     /*
                      * Not logged in ? Sometimes needed json is already given in html code! It has minor differences compared to the API.
@@ -189,14 +190,33 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                                  */
                                 continue;
                             }
+                            pin_list = resource_data_list;
                             break;
                         }
                     }
-                    for (final Object pint : resource_data_list) {
+                    if (pin_list == null) {
+                        /* Final fallback - RegEx the pin-array --> Json parser */
+                        final String pin_list_json_source = new Regex(json_source, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
+                        if (pin_list_json_source != null) {
+                            pin_list = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(pin_list_json_source);
+                        }
+                    }
+                    if (pin_list == null && decryptedLinks.size() > 0) {
+                        /* We've probably reached the end ... */
+                        break;
+                    }
+                    if (pin_list == null) {
+                        return null;
+                    }
+                    for (final Object pint : pin_list) {
                         final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
                         proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
                     }
                     nextbookmark = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "resource/options/bookmarks/{0}");
+                    if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
+                        /* Fallback to RegEx */
+                        nextbookmark = new Regex(json_source, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
+                    }
                     logger.info("Decrypted " + decryptedLinks.size() + " of " + numberof_pins + " pins");
                     i++;
                 }

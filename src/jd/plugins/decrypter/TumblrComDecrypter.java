@@ -68,6 +68,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private static final String     PLUGIN_DEFECT          = "PLUGINDEFECT";
     private static final String     OFFLINE                = "OFFLINE";
 
+    private static final String     PROPERTY_TAGS          = "tags";
+
     private ArrayList<DownloadLink> decryptedLinks         = null;
     private CryptedLink             param;
     private String                  parameter              = null;
@@ -228,12 +230,17 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         return postBody;
     }
 
-    private ArrayList<DownloadLink> processGeneric(final Browser ibr, final String input, final String name, final String puid) throws Exception {
-        final String string = input != null ? input : ibr.toString();
+    private ArrayList<DownloadLink> processGeneric(final Browser ibr, final String postBody, final String name, final String puid) throws Exception {
+        final String string = postBody != null ? postBody : ibr.toString();
         // some generic cleanup of fpName!
         final String fpName = cleanupName(name);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Browser br = ibr.cloneBrowser();
+        final String[] hashTags = new Regex(postBody, "<a class=\"meta\\-item tag\\-link\" href=\"https?://[^<>\"]+\">([^<>\"]+)</a>").getColumn(0);
+        String hashTagsStr = null;
+        if (hashTags != null && hashTags.length > 0) {
+            hashTagsStr = Arrays.toString(hashTags);
+        }
         String externID = new Regex(string, "\"(https?://video\\.vulture\\.com/video/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             br.getPage(Encoding.htmlDecode(externID));
@@ -314,11 +321,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 }
                 dl.setLinkID(getHost() + "://" + puid);
                 dl.setFinalFileName(filename + extension);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
             } else {
                 dl = createDownloadlink("directhttp://" + externID);
                 dl.setLinkID(getHost() + "://" + puid);
+            }
+            if (hashTagsStr != null) {
+                dl.setProperty(PROPERTY_TAGS, hashTagsStr);
             }
             dl.setAvailable(true);
             decryptedLinks.add(dl);
@@ -326,7 +334,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         }
         if (isPhotoSet(br, puid)) {
             // getGoogleCarousel!
-            processPhotoSet(decryptedLinks, br, puid, fpName);
+            processPhotoSet(decryptedLinks, br, puid, fpName, hashTagsStr);
             return decryptedLinks;
         }
         // FINAL FAILOVER FOR UNSUPPORTED CONTENT, this way we wont have to keep making updates to this plugin! only time we would need to
@@ -361,6 +369,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 dl.setFinalFileName(filename + ext);
                 setMD5Hash(dl, pic);
                 setImageLinkID(dl, pic, puid);
+                if (hashTagsStr != null) {
+                    dl.setProperty(PROPERTY_TAGS, hashTagsStr);
+                }
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
@@ -401,7 +412,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private void processPhotoSet(final ArrayList<DownloadLink> decryptedLinks, final Browser br, final String puid, final String fpname) throws Exception {
+    private void processPhotoSet(final ArrayList<DownloadLink> decryptedLinks, final Browser br, final String puid, final String fpname, final String hashTagsStr) throws Exception {
         final String gc = getGoogleCarousel(br);
         if (gc != null) {
             FilePackage fp = null;
@@ -437,6 +448,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     dl.setAvailable(true);
                     setMD5Hash(dl, url);
                     setImageLinkID(dl, url, puid);
+                    if (hashTagsStr != null) {
+                        dl.setProperty(PROPERTY_TAGS, hashTagsStr);
+                    }
+                    dl.setComment(hashTagsStr);
                     decryptedLinks.add(dl);
                     count++;
                 }

@@ -51,8 +51,8 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gwshare.com" }, urls = { "https?://(?:www\\.)?gwshare\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class GwshareCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nodefiles.com" }, urls = { "https?://(?:www\\.)?(?:gwshare|nodefiles)\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class NodefilesCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -60,11 +60,11 @@ public class GwshareCom extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://gwshare.com";
+    private static final String            COOKIE_HOST                        = "http://nodefiles.com";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(gwshare\\.com)";
+    private static final String            DOMAINS                            = "(gwshare\\.com|nodefiles\\.com)";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -86,8 +86,8 @@ public class GwshareCom extends PluginForHost {
      */
     private final boolean                  IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_HTTPS                     = true;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
@@ -133,12 +133,12 @@ public class GwshareCom extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.2.4<br />
-     * mods:<br />
+     * mods: scanInfo[2 new filename RegExes]<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null<br />
+     * captchatype: reCaptchaV2<br />
      * other:<br />
      */
 
@@ -168,9 +168,19 @@ public class GwshareCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public GwshareCom(PluginWrapper wrapper) {
+    public NodefilesCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("gwshare.com".equals(getHost())) {
+            if (host == null || "gwshare.com".equals(host)) {
+                return "nodefiles.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -323,6 +333,12 @@ public class GwshareCom extends PluginForHost {
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, ">Free Download </span>([^<>\"]+)<").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "File Name: <strong>([^<>\"]+)<").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
