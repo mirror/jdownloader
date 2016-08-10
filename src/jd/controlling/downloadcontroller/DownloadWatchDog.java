@@ -1380,7 +1380,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             break;
         case ACCOUNT_UNAVAILABLE:
             if (onDetach) {
-                candidate.getCachedAccount().getAccount().setTempDisabled(true);
+                final String message;
+                if (value.getThrowable() != null) {
+                    message = value.getThrowable().getMessage();
+                } else {
+                    message = null;
+                }
+                candidate.getCachedAccount().getAccount().setError(AccountError.TEMP_DISABLED, message);
                 return;
             }
             break;
@@ -3319,39 +3325,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                            @Override
-                            public void delayedrun() {
-                                enqueueJob(new DownloadWatchDogJob() {
+                                                          @Override
+                                                          public void delayedrun() {
+                                                              enqueueJob(new DownloadWatchDogJob() {
 
-                                    @Override
-                                    public void interrupt() {
-                                    }
+                                                                  @Override
+                                                                  public void interrupt() {
+                                                                  }
 
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        /* reset CONNECTION_UNAVAILABLE */
-                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                                                  @Override
+                                                                  public void execute(DownloadSession currentSession) {
+                                                                      /* reset CONNECTION_UNAVAILABLE */
+                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                            @Override
-                                            public int returnMaxResults() {
-                                                return 0;
-                                            }
+                                                                          @Override
+                                                                          public int returnMaxResults() {
+                                                                              return 0;
+                                                                          }
 
-                                            @Override
-                                            public boolean acceptNode(DownloadLink node) {
-                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                            }
-                                        });
-                                        unSkip(unSkip);
-                                    }
+                                                                          @Override
+                                                                          public boolean acceptNode(DownloadLink node) {
+                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                                                          }
+                                                                      });
+                                                                      unSkip(unSkip);
+                                                                  }
 
-                                    @Override
-                                    public boolean isHighPriority() {
-                                        return false;
-                                    }
-                                });
-                            }
-                        };
+                                                                  @Override
+                                                                  public boolean isHighPriority() {
+                                                                      return false;
+                                                                  }
+                                                              });
+                                                          }
+                                                      };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
