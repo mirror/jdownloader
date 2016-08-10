@@ -84,50 +84,49 @@ public class RapidsPl extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         try {
             login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        String apikey = account.getStringProperty("apikey", null);
-        if (apikey == null) {
-            br.getPage("/profil/api");
-            // 64-bit key (changed 08.08.2016)
-            apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{64})\\s*<").getMatch(0);
+            String apikey = account.getStringProperty("apikey", null);
             if (apikey == null) {
-                // 32 bit key (old)
-                apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{32})\\s*<").getMatch(0);
-            }
-            if (apikey == null) {
-                account.setValid(false);
-                return ac;
-            }
-            account.setProperty("apikey", apikey);
-        }
-        // check if account is valid
-        account.setMaxSimultanDownloads(-1);
-        account.setConcurrentUsePossible(true);
-        ac.setStatus("Premium Account");
-        br.getPage("/");
-        final String availableTraffic = br.getRegex("Pozostały transfer: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        if (availableTraffic == null) {
-            account.setValid(false);
-            return ac;
-        } else {
-            ac.setTrafficLeft(SizeFormatter.getSize(availableTraffic.replaceAll("\\s*", "")));
-        }
-        // now let's get a list of all supported hosts:
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "uploading", "uploading.com" }, { "wrzuta", "wrzuta.pl" }, { "bitshare", "bitshare.com" }, { "rapidgator", "rapidgator.net" }, { "letitbit", "letitbit.net" }, { "crocko", "crocko.com" }, { "megashares", "megashares.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "vipfile", "vip-file.com" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" }, { "putlocker", "putlocker.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" },
-                { "catshare", "catshare.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "sharingmaster", "sharingmaster.com" }, { "datafile", "datafile.com" }, { "nitroflare", "nitroflare.com" } };
-        for (final String hostSet[] : hostList) {
-            if (br.containsHTML("/services/" + hostSet[0] + "\\.big")) {
-                for (int i = 1; i <= hostSet.length - 1; i++) {
-                    final String originalDomain = hostSet[i];
-                    supportedHosts.add(originalDomain);
+                br.getPage("/profil/api");
+                // 64-bit key (changed 08.08.2016)
+                apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{64})\\s*<").getMatch(0);
+                if (apikey == null) {
+                    // 32 bit key (old)
+                    apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{32})\\s*<").getMatch(0);
+                }
+                if (apikey == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    account.setProperty("apikey", apikey);
                 }
             }
+            // check if account is valid
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
+            ac.setStatus("Premium Account");
+            br.getPage("/");
+            final String availableTraffic = br.getRegex("Pozostały transfer: <strong>([^<>\"]*?)</strong>").getMatch(0);
+            if (availableTraffic == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                ac.setTrafficLeft(SizeFormatter.getSize(availableTraffic.replaceAll("\\s*", "")));
+            }
+            // now let's get a list of all supported hosts:
+            final ArrayList<String> supportedHosts = new ArrayList<String>();
+            final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "uploading", "uploading.com" }, { "wrzuta", "wrzuta.pl" }, { "bitshare", "bitshare.com" }, { "rapidgator", "rapidgator.net" }, { "letitbit", "letitbit.net" }, { "crocko", "crocko.com" }, { "megashares", "megashares.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "vipfile", "vip-file.com" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" }, { "putlocker", "putlocker.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" },
+                    { "catshare", "catshare.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "sharingmaster", "sharingmaster.com" }, { "datafile", "datafile.com" }, { "nitroflare", "nitroflare.com" } };
+            for (final String hostSet[] : hostList) {
+                if (br.containsHTML("/services/" + hostSet[0] + "\\.big")) {
+                    for (int i = 1; i <= hostSet.length - 1; i++) {
+                        final String originalDomain = hostSet[i];
+                        supportedHosts.add(originalDomain);
+                    }
+                }
+            }
+            ac.setMultiHostSupport(this, supportedHosts);
+        } catch (PluginException e) {
+            account.removeProperty("apikey");
+            throw e;
         }
-        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 
@@ -307,6 +306,7 @@ public class RapidsPl extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
+                account.removeProperty("apikey");
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
