@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -50,6 +48,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
@@ -657,18 +657,27 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[] ids = findVideoIDs(parameter);
         final String oid = ids[0];
         final String id = ids[1];
+        final String videoids_together = oid + "_" + id;
+        final boolean allowAPIUsage = false;
         String listID;
         if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z)) {
             listID = new Regex(this.CRYPTEDLINK_ORIGINAL, "z=video" + oid + "_" + id + "(?:%2F|/)([a-z0-9]+)(?:%2F|/)").getMatch(0);
         } else {
             listID = new Regex(parameter, "listid=([a-z0-9]+)").getMatch(0);
         }
-        if (listID == null) {
+        if (listID == null && allowAPIUsage) {
+            /*
+             * 2016-08-10: Seems like this API method does not löonger work/return the information we need. The new method seems to require
+             * authentication: https://api.vk.com/method/video.get?format=json&owner_id=&videos=-12345678_87654321 See here:
+             * https://new.vk.com/dev/video.get
+             */
             logger.info("Using API to decrypt single video");
-            apiGetPageSafe(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+            apiGetPageSafe(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + videoids_together);
+        } else if (listID == null) {
+            apiGetPageSafe(getProtocol() + "vk.com/video" + videoids_together);
         } else {
             logger.info("Using website to decrypt single video");
-            this.postPageSafe(getProtocol() + "vk.com/al_video.php", "act=show_inline&al=1&list=" + listID + "&module=public&video=" + oid + "_" + id);
+            this.postPageSafe(getProtocol() + "vk.com/al_video.php", "act=show_inline&al=1&list=" + listID + "&module=public&video=" + videoids_together);
         }
         if (br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS) || this.br.toString().length() < 150) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);

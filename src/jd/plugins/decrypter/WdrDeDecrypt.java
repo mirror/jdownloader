@@ -107,11 +107,15 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             sendung = br.getRegex("class=\"ressort\">Startseite ([^<>\"]+)<").getMatch(0);
         }
         if (sendung == null) {
+            sendung = br.getRegex("<a href=\"/fernsehen/([^<>\"/]+)/startseite/index\\.html\">Startseite</a>").getMatch(0);
+        }
+        if (sendung == null) {
             sendung = inforegex.getMatch(1);
         }
         if (sendung == null) {
             /* Finally fallback to url-information */
             sendung = new Regex(parameter, "wdr\\.de/(.+)").getMatch(0);
+            sendung = sendung.replace(".html", "");
         }
         String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>]*?)<span class=\"hover\"").getMatch(0);
         if (episode_name == null) {

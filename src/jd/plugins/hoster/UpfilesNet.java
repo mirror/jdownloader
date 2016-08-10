@@ -109,7 +109,7 @@ public class UpfilesNet extends PluginForHost {
             // }
             prepBRAjax();
             this.br.postPage(dllink, "refPage=&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-            dllink = getDllink();
+            dllink = getDllinkFree();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -160,13 +160,23 @@ public class UpfilesNet extends PluginForHost {
         }
     }
 
-    private String getDllink() throws PluginException {
+    private String getDllinkFree() throws PluginException {
         final String token = PluginJSonUtils.getJson(this.br, "token");
         final String ip = PluginJSonUtils.getJson(this.br, "ip");
         if (token == null || token.equals("") || ip == null || ip.equals("")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String dllink = "http://" + ip + "/rd/" + token + "?forced=false";
+        return dllink;
+    }
+
+    private String getDllinkPremium() throws PluginException {
+        final String token = PluginJSonUtils.getJson(this.br, "token");
+        final String ip = PluginJSonUtils.getJson(this.br, "ip");
+        if (token == null || token.equals("") || ip == null || ip.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String dllink = "http://" + ip + "/vd/" + token + "?forced=false";
         return dllink;
     }
 
@@ -281,7 +291,7 @@ public class UpfilesNet extends PluginForHost {
                 this.br.setFollowRedirects(false);
                 prepBRAjax();
                 this.br.postPage(dllink, "refPage=");
-                dllink = getDllink();
+                dllink = getDllinkPremium();
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
