@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +37,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UnavailableHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class RapidsPl extends PluginForHost {
@@ -91,16 +91,15 @@ public class RapidsPl extends PluginForHost {
         String apikey = account.getStringProperty("apikey", null);
         if (apikey == null) {
             br.getPage("/profil/api");
-            // 32 bit key (old)
-            apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{32})<").getMatch(0);
+            // 64-bit key (changed 08.08.2016)
+            apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{64})\\s*<").getMatch(0);
             if (apikey == null) {
-                // 64-bit key (changed 08.08.2016)
-                apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{64})<").getMatch(0);
-                if (apikey == null) {
-                    account.setValid(false);
-                    return ac;
-                }
-
+                // 32 bit key (old)
+                apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{32})\\s*<").getMatch(0);
+            }
+            if (apikey == null) {
+                account.setValid(false);
+                return ac;
             }
             account.setProperty("apikey", apikey);
         }
