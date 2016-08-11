@@ -74,9 +74,11 @@ public class DownloadLinkSandBox {
     }
 
     public void abort() {
-        final List<DownloadLink> abort = new ArrayList<DownloadLink>();
-        abort.add(downloadLink);
-        DownloadWatchDog.getInstance().abort(abort);
+        if (downloadLink != null) {
+            final List<DownloadLink> abort = new ArrayList<DownloadLink>();
+            abort.add(downloadLink);
+            DownloadWatchDog.getInstance().abort(abort);
+        }
     }
 
     public Object getProperty(String key) {
@@ -87,10 +89,9 @@ public class DownloadLinkSandBox {
     }
 
     public Object getSessionProperty(final String key) {
-        final DownloadLink link = downloadLink;
-        if (link != null) {
+        if (downloadLink != null) {
             synchronized (SESSIONPROPERTIES) {
-                final HashMap<String, Object> properties = SESSIONPROPERTIES.get(link);
+                final HashMap<String, Object> properties = SESSIONPROPERTIES.get(downloadLink);
                 if (properties != null) {
                     return properties.get(key);
                 }
