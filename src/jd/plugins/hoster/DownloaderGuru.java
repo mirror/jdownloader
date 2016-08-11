@@ -333,7 +333,7 @@ public class DownloaderGuru extends PluginForHost {
         }
 
         for (final String supportedhostslistTable : supportedhostslistTables) {
-            final String[] supportedHostsOfCurrentTable = new Regex(supportedhostslistTable, ">([^<>\"]+)</td>").getColumn(0);
+            final String[] supportedHostsOfCurrentTable = new Regex(supportedhostslistTable, ">([^<>\"]+)(</b>\\s*)?</td>").getColumn(0);
             for (String domain : supportedHostsOfCurrentTable) {
                 domain = Encoding.htmlDecode(domain).trim();
                 domain = correctHost(domain);
