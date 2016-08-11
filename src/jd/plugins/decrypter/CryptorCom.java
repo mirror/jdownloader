@@ -1,0 +1,107 @@
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.plugins.decrypter;
+
+import java.util.ArrayList;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9]+" }, flags = { 0 })
+public class CryptorCom extends PluginForDecrypt {
+
+    public CryptorCom(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    private static final String html_passwordrequired = "\"folder_password_form\\[submit\\]\"";
+
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        this.br.setFollowRedirects(true);
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Ordner nicht verfügbar")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
+        if (this.br.containsHTML(html_passwordrequired)) {
+            boolean failed = true;
+            for (int i = 0; i <= 3; i++) {
+                String postData = "";
+                if (this.br.containsHTML("\"folder_password_form_recaptcha\"")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    postData += "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&";
+                }
+                if (this.br.containsHTML("\"folder_password_form_password_check\"")) {
+                    final String passCode = getUserInput("Password?", param);
+                    postData += "folder_password_form%5Bpassword_check%5D=" + Encoding.urlEncode(passCode) + "&";
+                }
+                postData += "folder_password_form%5Bsubmit%5D=";
+                this.br.postPage(this.br.getURL(), postData);
+                if (this.br.containsHTML(html_passwordrequired)) {
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) {
+                /* Captcha cannot really fail so most likely a fail here means that the user entered a wrong password too often! */
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+        }
+
+        this.br.setFollowRedirects(false);
+        String fpName = br.getRegex("class=\"text\\-center\">[\t\n\r ]*?<h1>([^<>]+)</h1>").getMatch(0);
+        final String[] links = br.getRegex("\"(/dl/[A-Za-z0-9]+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (final String singleLink : links) {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return decryptedLinks;
+            }
+            this.br.getPage(singleLink);
+            final String finallink = this.br.getRegex("iframe allowfullscreen=\"true\" noresize=\"\" src=\"(http[^\"]+)").getMatch(0);
+            if (finallink == null) {
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+        }
+
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
+
+        return decryptedLinks;
+    }
+
+}
