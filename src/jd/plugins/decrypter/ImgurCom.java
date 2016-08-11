@@ -150,17 +150,15 @@ public class ImgurCom extends PluginForDecrypt {
                         throw e;
                     }
                     br.setLoadLimit(br.getLoadLimit() * 2);
-                    try {
-                        br.getPage(parameter);
-                    } catch (final BrowserException ebr) {
-                        logger.info("Server problems: " + parameter);
-                        return decryptedLinks;
-                    }
+                    br.getPage(parameter);
                     if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"textbox empty\"|<h1>Zoinks! You've taken a wrong turn\\.</h1>|it's probably been deleted or may not have existed at all\\.</p>")) {
                         return createOfflineLink(parameter);
                     }
                     author = br.getRegex("property=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
-                    galleryTitle = br.getRegex("<title>([^<>\"]*?) \\- Imgur</title>").getMatch(0);
+                    galleryTitle = br.getRegex("<title>([^<>\"]*?) \\-(?: Album on)? Imgur</title>").getMatch(0);
+                    if (galleryTitle == null) {
+                        galleryTitle = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+                    }
                     /* 2015-12-07: The few lines of code below seem not to work anymore/not needed anymore. */
                     // final String album_info = br.getRegex("\"album_images\":\\{(.+)").getMatch(0);
                     // if (album_info != null) {
@@ -280,7 +278,7 @@ public class ImgurCom extends PluginForDecrypt {
 
     private void site_decrypt() throws DecrypterException, ParseException, IOException {
         /* Removed differentiation between two linktypes AFTER revision 26468 */
-        if (this.br.containsHTML("class=\"load\\-more\"")) {
+        if (this.br.containsHTML("class=\"js\\-post\\-truncated\"")) {
             /* RegExes below will work for the json after this ajax request too! */
             this.br.getPage("http://imgur.com/ajaxalbums/getimages/" + this.lid + "/hit.json?all=true");
         }

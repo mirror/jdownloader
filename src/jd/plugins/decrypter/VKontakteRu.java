@@ -862,7 +862,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
         fp.setProperty("CLEANUP_NAME", false);
-        final String[][] regexesPage1 = { { "><a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
+        final String[][] regexesPage1 = { { "<a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final String[][] regexesAllOthers = { { "><a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album.+)").getMatch(0);
