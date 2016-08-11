@@ -481,6 +481,7 @@ public class Video2brainCom extends PluginForHost {
         /* Different url for every language/country */
         final String abonements_url = this.br.getRegex("id=\"myv2b_dd_usertype\">[^<>]*?<a href=\"(https?://(?:www\\.)?video2brain\\.com/[^/]+/my-video2brain/(options|settings)/[^/]+)\"").getMatch(0);
         String abonnement = null;
+        String accessGroup = null;
         boolean isPremium = false;
         long validUntil = -1;
         if (abonements_url != null) {
@@ -488,9 +489,14 @@ public class Video2brainCom extends PluginForHost {
             this.br.getPage(abonements_url);
             if (StringUtils.containsIgnoreCase(abonements_url, "mein-abonnement")) {
                 abonnement = br.getRegex("<div><b>Abonnement:</b>\\s*(.*?)\\s*</div>").getMatch(0);
+                accessGroup = br.getRegex("<div><b>Zugangsgruppe:</b>\\s*(.*?)\\s*</div>").getMatch(0);
                 isPremium = !StringUtils.containsIgnoreCase(abonnement, "test") && !StringUtils.containsIgnoreCase(abonnement, "probe") && StringUtils.containsIgnoreCase(abonnement, "Premium");
                 final String expiredate = this.br.getRegex("<div><b>Gültig bis:</b>\\s*([0-9\\. ]+)\\s*</div>").getMatch(0);
                 validUntil = TimeFormatter.getMilliSeconds(expiredate, "dd'.'MM'.'yyyy", Locale.GERMAN);
+                if (isPremium && accessGroup != null && br.containsHTML("Ihr Benutzerkonto ist mit obigen Konto verbunden")) {
+                    // Account ist an eine Gruppe gebunden
+                    validUntil = 0;
+                }
             } else if (StringUtils.containsIgnoreCase(abonements_url, "mes-abonnements")) {
                 abonnement = br.getRegex("<div><b>Abonnement:</b>\\s*(.*?)\\s*</div>").getMatch(0);
                 isPremium = !StringUtils.containsIgnoreCase(abonnement, "essai");
@@ -501,7 +507,11 @@ public class Video2brainCom extends PluginForHost {
         if (abonnement == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
-            ai.setStatus(abonnement);
+            if (accessGroup != null) {
+                ai.setStatus(abonnement + "(Zugangsgruppe:" + accessGroup + ")");
+            } else {
+                ai.setStatus(abonnement);
+            }
         }
         /* In general if this is true user has a free account or trail subscription. */
         final boolean html_contains_subscribe_or_upgrade_button = br.containsHTML("FooterCTA\\(\\'Subscribe\\'");
@@ -520,6 +530,8 @@ public class Video2brainCom extends PluginForHost {
             account.setType(AccountType.FREE);
         } else {
             account.setType(AccountType.PREMIUM);
+        }
+        if (validUntil > 0) {
             ai.setValidUntil(validUntil);
         }
         account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
