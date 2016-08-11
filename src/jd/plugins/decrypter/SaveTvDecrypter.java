@@ -79,6 +79,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /* Decrypter variables */
     final ArrayList<DownloadLink>        decryptedLinks                       = new ArrayList<DownloadLink>();
+    final ArrayList<String>              dupecheckList                        = new ArrayList<String>();
     private static HashMap<String, Long> crawledTelecastIDsMap                = new HashMap<String, Long>();
     private long                         grab_last_hours_num                  = 0;
     private long                         tdifference_milliseconds             = 0;
@@ -140,6 +141,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     logger.info("Failed to log in account: " + stvacc.getUser());
                     continue;
                 }
+                dupecheckList.clear();
                 totalAccountsLoggedInSuccessfulNum++;
                 if (only_grab_new_entries) {
                     /* Load list of saved IPs + timestamp of last download */
@@ -332,7 +334,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         boolean is_groups_enabled = false;
         boolean groups_enabled_by_user = false;
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        getPageSafe(acc, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
+        getPageSafe(acc, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?" + "iEntriesPerPage=1&iCurrentPage=1&dStartdate=0");
         is_groups_enabled = !br.containsHTML("\"IGROUPCOUNT\":1\\.0");
         groups_enabled_by_user = is_groups_enabled;
         final String totalLinksInsideCurrentAccount = PluginJSonUtils.getJson(this.br, "ITOTALENTRIES");
@@ -362,10 +364,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 if (is_groups_enabled) {
                     /* Disable stupid groups setting to crawl faster and to make it work anyways */
                     logger.info("Disabling groups setting");
-                    postPageSafe(acc, this.br, "https://www." + this.getHost() + "/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
+                    postPageSafe(acc, this.br, "/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
                     is_groups_enabled = false;
                 }
-                this.postPageSafe(acc, this.br, "https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&iFilterType=1&sSearchString=&iTextSearchType=2&iChannelId=0&iTvCategoryId=0&iTvSubCategoryId=0&bShowNoFollower=false&iRecordingState=1&sSortOrder=StartDateDESC&iTvStationGroupId=0&iRecordAge=0&iDaytime=0");
+                this.postPageSafe(acc, this.br, "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&dStartdate=0");
 
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
                 final ArrayList<Object> resource_data_list = (ArrayList) entries.get("ARRVIDEOARCHIVEENTRIES");
@@ -398,6 +400,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     private void addID_api(final Account acc, final String id_source) throws ParseException, DecrypterException, PluginException {
         final String telecast_id = new Regex(id_source, "<a:Id>(\\d+)</a:Id>").getMatch(0);
+        if (dupecheckList.contains(telecast_id)) {
+            throw new DecrypterException("Decryption aborted because of dupecheck-failure!");
+        }
+
         final DownloadLink dl = createStvDownloadlink(acc, telecast_id);
         jd.plugins.hoster.SaveTv.parseFilenameInformation_api(dl, id_source);
         jd.plugins.hoster.SaveTv.parseQualityTag(dl, null);
@@ -409,6 +415,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             distribute(dl);
             decryptedLinks.add(dl);
         }
+        /* No matter whether we added the ID or not - we need it on our dupecheck list! */
+        dupecheckList.add(telecast_id);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -417,6 +425,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         entries = (LinkedHashMap<String, Object>) entries.get("STRTELECASTENTRY");
         final String telecastURL = (String) entries.get("SDETAILSURL");
         final String telecast_id = new Regex(telecastURL, "(\\d+)$").getMatch(0);
+        if (dupecheckList.contains(telecast_id)) {
+            throw new DecrypterException("Decryption aborted because of dupecheck-failure!");
+        }
+
         final DownloadLink dl = createStvDownloadlink(acc, telecast_id);
         jd.plugins.hoster.SaveTv.parseFilenameInformation_site(dl, entries);
         jd.plugins.hoster.SaveTv.parseQualityTag(dl, (ArrayList) entries.get("ARRALLOWDDOWNLOADFORMATS"));
@@ -428,6 +440,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             distribute(dl);
             decryptedLinks.add(dl);
         }
+        /* No matter whether we added the ID or not - we need it on our dupecheck list! */
+        dupecheckList.add(telecast_id);
     }
 
     private DownloadLink createStvDownloadlink(final Account acc, final String telecastID) {

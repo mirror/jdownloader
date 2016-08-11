@@ -123,14 +123,14 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_AUDIO_PAGE_oid                    = "https?://(www\\.)?vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
     private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = "https?://(www\\.)?vk\\.com/audios\\-\\d+\\?album_id=\\d+";
     private static final String     PATTERN_VIDEO_SINGLE_Z                    = "https?://(?:www\\.)?vk\\.com/.*?z=video(\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL             = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
-    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
-    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
-    private static final String     PATTERN_VIDEO_SINGLE_EMBED                = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
-    private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH           = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
-    private static final String     PATTERN_VIDEO_ALBUM                       = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
-    private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS   = "https?://(www\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
-    private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
+    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL             = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
+    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
+    private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
+    private static final String     PATTERN_VIDEO_SINGLE_EMBED                = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
+    private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH           = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
+    private static final String     PATTERN_VIDEO_ALBUM                       = "https?://(?:[a-z0-9]+\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
+    private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS   = "https?://(?:[a-z0-9]+\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
+    private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video\\?gid=\\d+";
     private static final String     PATTERN_PHOTO_SINGLE                      = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PHOTO_SINGLE_Z                    = "https?://(?:www\\.)?vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PHOTO_MODULE                      = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
@@ -651,7 +651,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** Using API in most cases */
+    /** 2016-08-11: Using website, API not anymore! */
     private void decryptSingleVideo(final String parameter) throws Exception {
         final String[] ids = findVideoIDs(parameter);
         final String oid = ids[0];
