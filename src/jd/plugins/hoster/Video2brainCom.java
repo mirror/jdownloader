@@ -508,7 +508,11 @@ public class Video2brainCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             if (accessGroup != null) {
-                ai.setStatus(abonnement + "(Zugangsgruppe:" + accessGroup + ")");
+                if ("de".equalsIgnoreCase(accountlanguage)) {
+                    ai.setStatus(abonnement + "(Zugangsgruppe:" + accessGroup + ")");
+                } else {
+                    ai.setStatus(abonnement + "(Group:" + accessGroup + ")");
+                }
             } else {
                 ai.setStatus(abonnement);
             }
