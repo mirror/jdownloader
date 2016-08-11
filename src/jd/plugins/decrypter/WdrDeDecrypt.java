@@ -33,6 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -167,6 +168,8 @@ public class WdrDeDecrypt extends PluginForDecrypt {
              * Possible json "API" e.g. http://www1.wdr.de/mediathek/video/sendungen/videokoelnerlichter112.html
              * http://deviceids-medstdp-id1.wdr.de/ondemand/76/760987.js
              */
+            String subtitle_url = null;
+            String flashvars = null;
             boolean api_in_use = false;
             final String json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
             String player_link = br.getRegex("\\&#039;mcUrl\\&#039;:\\&#039;(/[^<>\"]*?\\.json)").getMatch(0);
@@ -203,16 +206,21 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                     date = br.getRegex("name=\"DC\\.Date\" content=\"([^<>\"]*?)\"").getMatch(0);
                 }
             }
-            String flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-            if (flashvars == null) {
+            if (api_in_use) {
                 flashvars = this.br.toString();
+                subtitle_url = PluginJSonUtils.getJson(flashvars, "captionURL");
+            } else {
+                flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
+                if (flashvars == null) {
+                    return null;
+                }
+                flashvars = Encoding.htmlDecode(flashvars);
+                subtitle_url = new Regex(flashvars, "vtCaptionsURL=(http://[^<>\"]*?\\.xml)\\&vtCaptions").getMatch(0);
+                if (subtitle_url != null) {
+                    subtitle_url = Encoding.htmlDecode(subtitle_url);
+                }
             }
             final String date_formatted = formatDate(date);
-            flashvars = Encoding.htmlDecode(flashvars);
-            String subtitle_url = new Regex(flashvars, "vtCaptionsURL=(http://[^<>\"]*?\\.xml)\\&vtCaptions").getMatch(0);
-            if (subtitle_url != null) {
-                subtitle_url = Encoding.htmlDecode(subtitle_url);
-            }
             /* We know how their http links look - this way we can avoid HDS/HLS/RTMP */
             /* http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4 */
             final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/med[a-z0-9]+/([a-z]{2})/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
