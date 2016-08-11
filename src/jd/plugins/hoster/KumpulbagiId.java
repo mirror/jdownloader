@@ -78,7 +78,7 @@ public class KumpulbagiId extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String url = link.getStringProperty("mainlink", null);
+        final String url = link.getStringProperty("mainlink", null).replace(".id/", ".com/");
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
