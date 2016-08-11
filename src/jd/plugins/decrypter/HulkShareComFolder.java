@@ -44,7 +44,10 @@ public class HulkShareComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
-        final String fuid = getUID(parameter);
+        final String fid = new Regex(parameter, "hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
+        if (fid != null) {
+            parameter = "http://www.hulkshare.com/" + fid;
+        }
         if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
@@ -52,10 +55,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
         } else if (new Regex(parameter, Pattern.compile(HULKSHAREDOWNLOADLINK, Pattern.CASE_INSENSITIVE)).matches()) {
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
-        }
-        final String fid = new Regex(parameter, "hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
-        if (fid != null) {
-            parameter = "http://www.hulkshare.com/" + fid;
         }
         br.setFollowRedirects(true);
         br.setCookie("http://hulkshare.com/", "lang", "english");
@@ -172,7 +171,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             for (String slinkinfo : linkinfo) {
                 final String fcode = new Regex(slinkinfo, "id=\"filecode\\-([a-z0-9]{12})\"").getMatch(0);
                 if (fcode != null) {
-                    if (fcode.equals(fuid)) {
+                    if (fcode.equals(fid)) {
                         continue;
                     }
                     final Regex more_info = new Regex(slinkinfo, "class=\"nhsTrackTitle nhsClear\" href=\"(http://[^<>\"]*?)\">([^<>\"]*?)</a>");
@@ -204,13 +203,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
         }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
-    }
-
-    private String getUID(String s) {
-        if (s == null) {
-            return null;
-        }
-        return new Regex(s, HULKSHAREDOWNLOADLINK).getMatch(2);
     }
 
     private DownloadLink getOffline(final String parameter) {

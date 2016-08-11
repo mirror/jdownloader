@@ -93,6 +93,10 @@ public class VideoOnlineUa extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(DLLINK);
+            if (con.getResponseCode() == 404) {
+                /* Offline - video is officially available but will fail to play via browser as well! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (con.getContentType().contains("html")) {
                 br2.getPage(DLLINK);
                 if (br.containsHTML(">Страница по данному адресу отсутствует<")) {
