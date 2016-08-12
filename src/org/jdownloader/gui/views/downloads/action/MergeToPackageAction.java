@@ -28,9 +28,6 @@ import org.jdownloader.translate._JDT;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -4468197802870765463L;
 
     public MergeToPackageAction() {
