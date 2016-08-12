@@ -19,7 +19,9 @@ import org.jdownloader.gui.views.components.packagetable.context.PriorityDefault
 import org.jdownloader.gui.views.components.packagetable.context.PriorityHighAction;
 import org.jdownloader.gui.views.components.packagetable.context.PriorityHigherAction;
 import org.jdownloader.gui.views.components.packagetable.context.PriorityHighestAction;
+import org.jdownloader.gui.views.components.packagetable.context.PriorityLowAction;
 import org.jdownloader.gui.views.components.packagetable.context.PriorityLowerAction;
+import org.jdownloader.gui.views.components.packagetable.context.PriorityLowestAction;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
@@ -179,7 +181,9 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
     private MenuItemData createPriorityMenu() {
         PriorityMenuContainer priority;
         priority = new PriorityMenuContainer();
+        priority.add(new MenuItemData(new ActionData(PriorityLowestAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityLowerAction.class)));
+        priority.add(new MenuItemData(new ActionData(PriorityLowAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityDefaultAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityHighAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityHigherAction.class)));

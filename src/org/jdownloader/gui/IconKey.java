@@ -174,6 +174,8 @@ public class IconKey {
     public static final String ICON_WARNING                     = "warning";
     public static final String ICON_GO_UP                       = "go-up";
     public static final String ICON_PRIO__1                     = "prio_-1";
+    public static final String ICON_PRIO__2                     = "prio_-2";
+    public static final String ICON_PRIO__3                     = "prio_-3";
     public static final String ICON_FILE                        = "file";
     public static final String ICON_PACKAGIZER                  = "packagizer";
 

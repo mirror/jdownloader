@@ -278,23 +278,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     }
 
     private void setPriority(int priority, CrawledLink cl) {
-        switch (priority) {
-        case -1:
-            cl.setPriority(Priority.LOWER);
-            break;
-        case 0:
-            cl.setPriority(Priority.DEFAULT);
-            break;
-        case 1:
-            cl.setPriority(Priority.HIGH);
-            break;
-        case 2:
-            cl.setPriority(Priority.HIGHER);
-            break;
-        case 3:
-            cl.setPriority(Priority.HIGHEST);
-            break;
-        }
+        cl.setPriority(Priority.getPriority(priority));
     }
 
     public boolean CrawlLink(String URL) {

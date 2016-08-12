@@ -7,12 +7,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
+import javax.swing.Action;
 import javax.swing.ButtonGroup;
-import javax.swing.Icon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -29,6 +31,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
@@ -60,13 +69,6 @@ import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
-
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
     private class PriorityAction extends AbstractAction {
 
@@ -74,20 +76,18 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
          *
          */
         private static final long serialVersionUID = 1L;
-        private Priority          priority;
+        private final Priority    priority;
 
         public PriorityAction(Priority priority) {
-
             this.priority = priority;
-
         }
 
         public void actionPerformed(ActionEvent e) {
             prio = priority;
         }
 
-        public Icon getIcon() {
-            return priority.loadIcon(18);
+        public Priority getPriority() {
+            return priority;
         }
 
         public String getTooltipText() {
@@ -200,7 +200,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private PathChooser    fpDest;
 
     private PathChooser    fpMove;
-    private FilterPanel    fpPriority;
+
     private JLabel         lblautoadd;
     private JLabel         lblAutostart;
 
@@ -216,18 +216,14 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JLabel         lblPriority;
     private JLabel         lblRename;
     private RuleMatcher    matcher = null;
-    private RadioButton    p_1;
-    private RadioButton    p0;
-    private RadioButton    p1;
-    private RadioButton    p2;
-    private RadioButton    p3;
-    public Priority        prio    = Priority.DEFAULT;
+    protected Priority     prio    = Priority.DEFAULT;
     private PackagizerRule rule;
     private ExtSpinner     spChunks;
     private ExtTextField   txtNewFilename;
     private ExtTextField   txtPackagename;
     private ExtTextField   txtComment;
     private ExtTextField   txtRename;
+    private ButtonGroup    group;
 
     private PackagizerFilterRuleDialog(PackagizerRule filterRule) {
         super();
@@ -360,9 +356,10 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         return ret;
     }
 
-    private JLabel getLbl(PriorityAction pa_1) {
-        JLabel ret = new JLabel(pa_1.getIcon());
-        ret.setToolTipText(pa_1.getTooltipText());
+    private JLabel getLbl(PriorityAction pa) {
+        final JLabel ret = new JLabel();
+        ret.setIcon(NewTheme.I().getIcon("prio_" + pa.getPriority().getId(), 18));
+        ret.setToolTipText(pa.getTooltipText());
         return ret;
     }
 
@@ -435,36 +432,21 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         fpDest.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
 
-        fpPriority = new FilterPanel("ins 0", "[]0[]8[]0[]8[]0[]8[]0[]8[]0[]", "[]");
-        PriorityAction pa_1 = new PriorityAction(Priority.LOWER);
-        PriorityAction pa0 = new PriorityAction(Priority.DEFAULT);
-        PriorityAction pa1 = new PriorityAction(Priority.HIGH);
-        PriorityAction pa2 = new PriorityAction(Priority.HIGHER);
-        PriorityAction pa3 = new PriorityAction(Priority.HIGHEST);
-        p_1 = new RadioButton(pa_1);
+        final FilterPanel fpPriority = new FilterPanel("ins 0", "[]0[]8[]0[]8[]0[]8[]0[]8[]0[]8[]0[]8[]0[]", "[]");
+        group = new ButtonGroup();
+        RadioButton rbDefault = null;
+        for (Priority priority : Priority.values()) {
+            final PriorityAction pa = new PriorityAction(priority);
+            final RadioButton rb = new RadioButton(pa);
+            if (priority == Priority.DEFAULT) {
+                rbDefault = rb;
+            }
+            group.add(rb);
+            fpPriority.add(getLbl(pa));
+            fpPriority.add(rb);
+        }
+        rbDefault.setSelected(true);
 
-        p0 = new RadioButton(pa0);
-        p1 = new RadioButton(pa1);
-        p2 = new RadioButton(pa2);
-        p3 = new RadioButton(pa3);
-        ButtonGroup group = new ButtonGroup();
-
-        group.add(p_1);
-        group.add(p0);
-        group.add(p1);
-        group.add(p2);
-        group.add(p3);
-        p0.setSelected(true);
-        fpPriority.add(getLbl(pa_1));
-        fpPriority.add(p_1);
-        fpPriority.add(getLbl(pa0));
-        fpPriority.add(p0);
-        fpPriority.add(getLbl(pa1));
-        fpPriority.add(p1);
-        fpPriority.add(getLbl(pa2));
-        fpPriority.add(p2);
-        fpPriority.add(getLbl(pa3));
-        fpPriority.add(p3);
         txtPackagename = new ExtTextField() {
             /**
              *
@@ -937,26 +919,14 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         if (prio == null) {
             prio = Priority.DEFAULT;
         }
-        switch (prio) {
-
-        case DEFAULT:
-            p0.setSelected(true);
-            break;
-        case HIGH:
-            p1.setSelected(true);
-            break;
-        case HIGHER:
-            p2.setSelected(true);
-            break;
-        case HIGHEST:
-            p3.setSelected(true);
-            break;
-        default:
-            p_1.setSelected(true);
-            break;
-
+        final Enumeration<AbstractButton> priorityButtons = group.getElements();
+        while (priorityButtons.hasMoreElements()) {
+            final AbstractButton priorityButton = priorityButtons.nextElement();
+            final Action action = ((RadioButton) priorityButton).getAction();
+            if (((PriorityAction) action).getPriority().equals(prio)) {
+                priorityButton.setSelected(true);
+                break;
+            }
         }
-
     }
-
 }

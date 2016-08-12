@@ -228,6 +228,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Plugin error" })
     String gui_treetable_error_plugin();
 
+    @Default(lngs = { "en" }, values = { "Lowest Priority" })
+    String gui_treetable_tooltip_priority_3();
+
+    @Default(lngs = { "en" }, values = { "Lower Priority" })
+    String gui_treetable_tooltip_priority_2();
+
     @Default(lngs = { "en" }, values = { "Low Priority" })
     String gui_treetable_tooltip_priority_1();
 
