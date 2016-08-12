@@ -113,41 +113,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
             if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
                 continue;
             }
-            final String cont = jd.plugins.hoster.RaiTv.getContFromRelinkerUrl(relinker);
-            jd.plugins.hoster.RaiTv.accessCont(this.br, cont);
-            final String dllink = jd.plugins.hoster.RaiTv.getDllink(this.br);
-            if (!jd.plugins.hoster.RaiTv.dllinkIsDownloadable(dllink)) {
-                continue;
-            }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(date + " - " + title);
-            if (dllink.contains(".m3u8")) {
-                this.br.getPage(dllink);
-                final ArrayList<HlsContainer> allqualities = jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br);
-                for (final HlsContainer singleHlsQuality : allqualities) {
-                    final DownloadLink dl = this.createDownloadlink(singleHlsQuality.downloadurl);
-                    final String filename = title + " - " + description + "_" + singleHlsQuality.getStandardFilename();
-                    dl.setFinalFileName(filename);
-                    dl._setFilePackage(fp);
-                    if (description != null) {
-                        dl.setComment(description);
-                    }
-                    decryptedLinks.add(dl);
-                }
-            } else {
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
-                dl.setFinalFileName(title + " - " + description + ".mp4");
-                dl._setFilePackage(fp);
-                if (description != null) {
-                    dl.setComment(description);
-                }
-                decryptedLinks.add(dl);
-            }
+            decryptRelinker(relinker, title, null, description);
         }
     }
 
     private void decryptSingleVideo() throws DecrypterException, Exception {
-        boolean possibleNotDownloadableMSSilverlight = false;
         String dllink = null;
         this.br.getPage(this.parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -168,16 +138,15 @@ public class RaiItDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
         }
-        String filename = null;
+        String title = null;
         String extension = ".mp4";
         String date = null;
         String date_formatted = null;
         String description = null;
         if (dllink != null) {
             /* Streamurls directly in html */
-            filename = this.br.getRegex("id=\"idMedia\">([^<>]+)<").getMatch(0);
+            title = this.br.getRegex("id=\"idMedia\">([^<>]+)<").getMatch(0);
             date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
-            possibleNotDownloadableMSSilverlight = this.br.containsHTML("id=\"silverlightControlHost\"");
         } else {
             LinkedHashMap<String, Object> entries = null;
             if (content_id_from_html != null) {
@@ -222,7 +191,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 }
             }
             date = (String) entries.get("date");
-            filename = (String) entries.get("name");
+            title = (String) entries.get("name");
             description = (String) entries.get("desc");
             final String type = (String) entries.get("type");
             if (type.equalsIgnoreCase("RaiTv Media Video Item")) {
@@ -246,22 +215,25 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 extension = "mp4";
             }
         }
-        if (filename == null) {
-            filename = content_id_from_url;
+        if (title == null) {
+            title = content_id_from_url;
         }
         date_formatted = jd.plugins.hoster.RaiTv.formatDate(date);
-        filename = date_formatted + "_raitv_" + filename + "." + extension;
-        filename = encodeUnicode(filename);
+        title = date_formatted + "_raitv_" + title;
+        title = encodeUnicode(title);
 
-        /* Not needed (yet/anymore) */
-        // if (possibleNotDownloadableMSSilverlight) {
-        // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol Microsoft Silverlight");
-        // }
-        if (filename.endsWith(".wmv")) {
+        decryptRelinker(dllink, title, extension, description);
+    }
+
+    private void decryptRelinker(final String relinker_url, final String title, final String extension, final String description) throws Exception {
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        String dllink = relinker_url;
+        if (extension.equalsIgnoreCase("wmv")) {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
             logger.info("Download http .wmv video");
         } else {
-            final String cont = jd.plugins.hoster.RaiTv.getContFromRelinkerUrl(dllink);
+            final String cont = jd.plugins.hoster.RaiTv.getContFromRelinkerUrl(relinker_url);
             if (cont == null) {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
             }
@@ -277,26 +249,33 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
             }
         }
+        final Regex hdsconvert = new Regex(dllink, "(https?://[^/]+/z/podcastcdn/.+\\.csmil)/manifest\\.f4m");
+        if (hdsconvert.matches()) {
+            /* Convert hds --> hls */
+            dllink = hdsconvert.getMatch(0).replace("/z/", "/i/") + "/index_1_av.m3u8";
+        }
         if (dllink.contains(".m3u8")) {
-            /* hls */
-            /* Access hls master */
             this.br.getPage(dllink);
-            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            final ArrayList<HlsContainer> allqualities = jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br);
+            for (final HlsContainer singleHlsQuality : allqualities) {
+                final DownloadLink dl = this.createDownloadlink(singleHlsQuality.downloadurl);
+                final String filename = title + "_" + singleHlsQuality.getStandardFilename();
+                dl.setFinalFileName(filename);
+                dl._setFilePackage(fp);
+                if (description != null) {
+                    dl.setComment(description);
+                }
+                decryptedLinks.add(dl);
             }
-            dllink = hlsbest.downloadurl;
         } else {
-            /* http */
+            /* Single http url */
+            final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
+            if (description != null) {
+                dl.setComment(description);
+            }
+            dl.setFinalFileName(title + "." + extension);
+            this.decryptedLinks.add(dl);
         }
-
-        final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
-        if (description != null && dl.getComment() == null) {
-            dl.setComment(description);
-        }
-        dl.setFinalFileName(filename);
-
-        this.decryptedLinks.add(dl);
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
