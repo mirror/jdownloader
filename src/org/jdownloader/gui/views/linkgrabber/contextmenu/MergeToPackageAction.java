@@ -4,6 +4,10 @@ import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -19,10 +23,6 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
 
@@ -107,11 +107,10 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
             }
             Dialog.getInstance().showDialog(d);
             final String name = d.getName();
-
-            if (name == null | name.trim().length() == 0) {
+            if (StringUtils.isEmpty(name)) {
                 return;
             }
-
+            final String downloadFolder = d.getDownloadFolder();
             LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
@@ -119,9 +118,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                     CrawledPackage newPackage = new CrawledPackage();
                     newPackage.setName(name);
                     newPackage.setExpanded(isExpandNewPackage());
-                    String f = d.getDownloadFolder();
-                    newPackage.setDownloadFolder(f);
-
+                    newPackage.setDownloadFolder(downloadFolder);
                     final StringBuilder sb = new StringBuilder();
                     final HashSet<String> commentDups = new HashSet<String>();
                     for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
@@ -159,19 +156,15 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                         }
                         LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, index);
                         return null;
-
                     case END_OF_LIST:
                         LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, -1);
                         return null;
-
                     case TOP_OF_LIST:
                         LinkCollector.getInstance().moveOrAddAt(newPackage, sel.getChildren(), 0, 0);
                         return null;
                     }
-
                     return null;
                 }
-
             });
         } catch (DialogNoAnswerException e1) {
         }

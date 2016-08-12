@@ -6,6 +6,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -20,11 +25,6 @@ import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
@@ -88,38 +88,38 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
 
     public void actionPerformed(ActionEvent e) {
         final SelectionInfo<FilePackage, DownloadLink> finalSelection = getSelection();
+        final String newName;
+        final String newDownloadFolder;
+        if (isMergePackages() && finalSelection.getPackageViews().size() > 1) {
+            if (isAskForNewDownloadFolderAndPackageName()) {
+                try {
+                    final NewPackageDialog d = new NewPackageDialog(finalSelection) {
+                        @Override
+                        public String getDontShowAgainKey() {
+                            return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + SplitPackagesByHost.this.getClass().getSimpleName();
+                        }
+                    };
+                    Dialog.getInstance().showDialog(d);
+                    newName = d.getName();
+                    newDownloadFolder = d.getDownloadFolder();
+                    if (StringUtils.isEmpty(newName)) {
+                        return;
+                    }
+                } catch (Throwable ignore) {
+                    return;
+                }
+            } else {
+                newName = "";
+                newDownloadFolder = finalSelection.getFirstPackage().getDownloadDirectory();
+            }
+        } else {
+            newName = null;
+            newDownloadFolder = null;
+        }
         DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
-                String newName = null;
-                String newDownloadFolder = null;
-                if (isMergePackages() && finalSelection.getPackageViews().size() > 1) {
-                    if (isAskForNewDownloadFolderAndPackageName()) {
-
-                        try {
-                            final NewPackageDialog d = new NewPackageDialog(finalSelection) {
-                                @Override
-                                public String getDontShowAgainKey() {
-                                    return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + SplitPackagesByHost.this.getClass().getSimpleName();
-                                }
-                            };
-
-                            Dialog.getInstance().showDialog(d);
-
-                            newName = d.getName();
-                            newDownloadFolder = d.getDownloadFolder();
-                            if (StringUtils.isEmpty(newName)) {
-                                return null;
-                            }
-                        } catch (Throwable e) {
-                            return null;
-                        }
-                    } else {
-                        newName = "";
-                        newDownloadFolder = finalSelection.getFirstPackage().getDownloadDirectory();
-                    }
-                }
                 final HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>> splitMap = new HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>>();
                 int insertAt = -1;
                 switch (getLocation()) {

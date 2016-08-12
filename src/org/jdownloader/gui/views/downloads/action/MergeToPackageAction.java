@@ -109,11 +109,10 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
             }
             Dialog.getInstance().showDialog(d);
             final String name = d.getName();
-
-            if (name == null | name.trim().length() == 0) {
+            if (StringUtils.isEmpty(name)) {
                 return;
             }
-
+            final String downloadFolder = d.getDownloadFolder();
             DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
@@ -121,8 +120,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                     FilePackage newPackage = FilePackage.getInstance();
                     newPackage.setExpanded(isExpandNewPackage());
                     newPackage.setName(name);
-                    String f = d.getDownloadFolder();
-                    newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(f, name, newPackage));
+                    newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(downloadFolder, name, newPackage));
 
                     final StringBuilder sb = new StringBuilder();
                     final HashSet<String> commentDups = new HashSet<String>();
@@ -143,7 +141,6 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                     if (sb.length() > 0) {
                         newPackage.setComment(sb.toString());
                     }
-
                     switch (getLocation()) {
                     case AFTER_SELECTION:
                         int index = -1;
@@ -171,7 +168,6 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                     }
                     return null;
                 }
-
             });
         } catch (DialogNoAnswerException e1) {
         }

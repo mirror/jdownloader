@@ -6,6 +6,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -20,11 +25,6 @@ import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
 
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
 
@@ -85,37 +85,40 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
 
     public void actionPerformed(ActionEvent e) {
         final SelectionInfo<CrawledPackage, CrawledLink> finalSelecction = getSelection();
+        final String newName;
+        final String newDownloadFolder;
+        if (isMergePackages() && finalSelecction.getPackageViews().size() > 1) {
+            if (isAskForNewDownloadFolderAndPackageName()) {
+                try {
+                    final NewPackageDialog d = new NewPackageDialog(finalSelecction) {
+                        @Override
+                        public String getDontShowAgainKey() {
+                            return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + SplitPackagesByHost.this.getClass().getSimpleName();
+                        }
+                    };
+
+                    Dialog.getInstance().showDialog(d);
+
+                    newName = d.getName();
+                    newDownloadFolder = d.getDownloadFolder();
+                    if (StringUtils.isEmpty(newName)) {
+                        return;
+                    }
+                } catch (Throwable ignore) {
+                    return;
+                }
+            } else {
+                newName = "";
+                newDownloadFolder = finalSelecction.getFirstPackage().getRawDownloadFolder();
+            }
+        } else {
+            newName = null;
+            newDownloadFolder = null;
+        }
         LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
-                String newName = null;
-                String newDownloadFolder = null;
-                if (isMergePackages() && finalSelecction.getPackageViews().size() > 1) {
-                    if (isAskForNewDownloadFolderAndPackageName()) {
-                        try {
-                            final NewPackageDialog d = new NewPackageDialog(finalSelecction) {
-                                @Override
-                                public String getDontShowAgainKey() {
-                                    return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + SplitPackagesByHost.this.getClass().getSimpleName();
-                                }
-                            };
-
-                            Dialog.getInstance().showDialog(d);
-
-                            newName = d.getName();
-                            newDownloadFolder = d.getDownloadFolder();
-                            if (StringUtils.isEmpty(newName)) {
-                                return null;
-                            }
-                        } catch (Throwable e) {
-                            return null;
-                        }
-                    } else {
-                        newName = "";
-                        newDownloadFolder = finalSelecction.getFirstPackage().getRawDownloadFolder();
-                    }
-                }
                 final HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>> splitMap = new HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>>();
                 int insertAt = -1;
                 switch (getLocation()) {
