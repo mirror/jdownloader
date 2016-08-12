@@ -76,6 +76,7 @@ public class SoundcloudCom extends PluginForHost {
     private final boolean        ENABLE_TYPE_PRIVATE                         = false;
 
     private static final String  ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES = "ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES";
+    private static final String  ALLOW_PREVIEW_DOWNLOAD                      = "ALLOW_PREVIEW_DOWNLOAD";
     private final static String  CUSTOM_DATE                                 = "CUSTOM_DATE";
     private final static String  CUSTOM_FILENAME_2                           = "CUSTOM_FILENAME_2";
     private static final String  GRAB_PURCHASE_URL                           = "GRAB_PURCHASE_URL";
@@ -87,7 +88,9 @@ public class SoundcloudCom extends PluginForHost {
     private static boolean       pluginloaded                                = false;
     private String               dllink                                      = null;
     private boolean              serverissue                                 = false;
-    private boolean              IS_OFFICIALLY_DOWNLOADABLE                  = false;
+    private boolean              is_officially_downloadable                  = false;
+    private boolean              is_geo_blocked                              = false;
+    private boolean              is_only_preview_downloadable                = false;
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -167,30 +170,38 @@ public class SoundcloudCom extends PluginForHost {
         if (status.equals(AvailableStatus.FALSE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Other handling for private links
-        if (br.containsHTML("<sharing>private</sharing>") && ENABLE_TYPE_PRIVATE) {
-            /* TODO: Find example links for this case, then use getDirectlink function here as well! */
-            final String secrettoken = br.getRegex("\\?secret_token=([A-Za-z0-9\\-_]+)</uri>").getMatch(0);
-            if (secrettoken != null) {
-                br.getPage("https://api.soundcloud.com/i1/tracks/" + songid + "/streams?secret_token=" + secrettoken + "&client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(br));
+        /* !is_geo_blocked = policy equals "ALLOW" (the usual case). */
+        is_geo_blocked = response.get("policy").equals("BLOCK");
+        if (!is_geo_blocked) {
+            /*
+             * Only do/try linkcheck if we know that the track is NOT geo-blocked. Attempting to get a downloadurl for GEO-blocked content
+             * will result in response 400.
+             */
+            // Other handling for private links
+            if (br.containsHTML("<sharing>private</sharing>") && ENABLE_TYPE_PRIVATE) {
+                /* TODO: Find example links for this case, then use getDirectlink function here as well! */
+                final String secrettoken = br.getRegex("\\?secret_token=([A-Za-z0-9\\-_]+)</uri>").getMatch(0);
+                if (secrettoken != null) {
+                    br.getPage("https://api.soundcloud.com/i1/tracks/" + songid + "/streams?secret_token=" + secrettoken + "&client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(br));
+                } else {
+                    br.getPage("https://api.soundcloud.com/i1/tracks/" + songid + "/streams?client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(br));
+                }
+                dllink = br.getRegex("\"http_mp3_128_url\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = unescape(dllink);
+                dllink = Encoding.htmlDecode(dllink);
             } else {
-                br.getPage("https://api.soundcloud.com/i1/tracks/" + songid + "/streams?client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(br));
+                dllink = getDirectlink(this.br.toString(), songid);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                is_officially_downloadable = isREALYDownloadable(response);
             }
-            dllink = br.getRegex("\"http_mp3_128_url\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!dllink.contains("/playlist.m3u8")) {
+                checkDirectLink(parameter);
             }
-            dllink = unescape(dllink);
-            dllink = Encoding.htmlDecode(dllink);
-        } else {
-            dllink = getDirectlink(this.br.toString(), songid);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            IS_OFFICIALLY_DOWNLOADABLE = isREALYDownloadable(response);
-        }
-        if (!dllink.contains("/playlist.m3u8")) {
-            checkDirectLink(parameter);
         }
         return AvailableStatus.TRUE;
     }
@@ -202,12 +213,17 @@ public class SoundcloudCom extends PluginForHost {
 
     private void doFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (serverissue) {
+        if (is_geo_blocked) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This content is GEO-blocked");
+        } else if ((is_only_preview_downloadable && !this.getPluginConfig().getBooleanProperty(ALLOW_PREVIEW_DOWNLOAD, defaultALLOW_PREVIEW_DOWNLOAD)) || (is_only_preview_downloadable && dllink == null)) {
+            /* Song is a pay-only song plus user does not want to download the (30 second) preview [and/or no downloadlink is available]. */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This is paid content which only has a 30 second preview available!");
+        } else if (serverissue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issue", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!IS_OFFICIALLY_DOWNLOADABLE && this.getPluginConfig().getBooleanProperty(ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES)) {
+        if (!is_officially_downloadable && this.getPluginConfig().getBooleanProperty(ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_NOT_DOWNLOADABLE"));
         }
         if (dllink == null && link.getBooleanProperty("rtmp", false)) {
@@ -706,6 +722,7 @@ public class SoundcloudCom extends PluginForHost {
                                                   {
                                                       put("SETTING_GRAB_PURCHASE_URL", "Grab purchase URL?\r\n<html><b>The purchase-URL sometimes lead to external downloadlinks e.g. mediafire.com.</b></html>");
                                                       put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Only download files which have a download button/are officially downloadable?\r\n<html><p style=\"color:#F62817\"><b>Warning: If you enable this, all soundcloud downloads without an official download possibility will get a red error state and will NOT be downloaded!</b></p></html>");
+                                                      put("SETTING_ALLOW_PREVIEW_DOWNLOAD", "Download 30 second preview if a track is pay-only? [Not recommended]");
                                                       put("SETTING_GRAB500THUMB", "Grab 500x500 thumbnail (.jpg)?");
                                                       put("SETTING_GRABORIGINALTHUMB", "Grab original thumbnail (.jpg)?");
                                                       put("SETTING_CUSTOM_DATE", "Define custom date:");
@@ -728,6 +745,7 @@ public class SoundcloudCom extends PluginForHost {
                                                   {
                                                       put("SETTING_GRAB_PURCHASE_URL", "Kauflink einfügen?\r\n<html><b>Der Kauflink führt manchmal zu externen Downloadmöglichkeiten z.B. mediafire.com.</b></html>");
                                                       put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Lade nur Links mit offizieller downloadmöglichkeit/Downloadbutton herunter??\r\n<html><p style=\"color:#F62817\"><b>Warnung: Falls du das aktivierst werden alle Soundcloud Links ohne offizielle Downloadmöglichkeit einen roten Fehlerstatus bekommen und NICHT heruntergeladen!</b></p></html>");
+                                                      put("SETTING_ALLOW_PREVIEW_DOWNLOAD", "Für Bezahltitel: Lade 30 Sekunden Ausschnitt herunter ?[Nicht ampfohlen!]");
                                                       put("SETTING_GRAB500THUMB", "500x500 Thumbnail einfügen (.jpg)?");
                                                       put("SETTING_GRABORIGINALTHUMB", "Thumbnail in Originalgröße einfügen (.jpg)?");
                                                       put("SETTING_CUSTOM_DATE", "Lege das Datumsformat fest:");
@@ -763,6 +781,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     private static final boolean defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES = false;
+    private static final boolean defaultALLOW_PREVIEW_DOWNLOAD                      = false;
     public static final boolean  defaultGRAB_PURCHASE_URL                           = false;
     public static final boolean  defaultGRAB500THUMB                                = false;
     public static final boolean  defaultGRABORIGINALTHUMB                           = false;
@@ -778,6 +797,7 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_hoster")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, getPhrase("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES")).setDefaultValue(defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES, getPhrase("SETTING_ALLOW_PREVIEW_DOWNLOAD")).setDefaultValue(defaultONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_fnames_top")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, getPhrase("SETTING_CUSTOM_DATE")).setDefaultValue(defaultCustomDate));
