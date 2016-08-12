@@ -876,14 +876,16 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     private void handleErrors_api(final String session_id, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws PluginException, UnsupportedEncodingException, IOException {
-        if (link != null && con.getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (link != null && con.getResponseCode() == 416) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
-        }
-        if (link != null && con.getResponseCode() == 500) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
+        if (link != null) {
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (con.getResponseCode() == 416) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+            }
+            if (con.getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
+            }
         }
         if (con.getResponseCode() != 200) {
             synchronized (RapidGatorNet.LOCK) {
@@ -896,9 +898,11 @@ public class RapidGatorNet extends PluginForHost {
                     account.setAccountInfo(ac);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-                boolean sessionReset = false;
+                final boolean sessionReset;
                 if (session_id != null && session_id.equals(account.getStringProperty("session_id", null))) {
                     sessionReset = true;
+                } else {
+                    sessionReset = false;
                 }
                 if (errorMessage.contains("Please wait")) {
                     if (link == null) {
@@ -968,6 +972,13 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 if (con.getResponseCode() == 503 || errorMessage.contains("Service Temporarily Unavailable")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service Temporarily Unavailable", 5 * 60 * 1000l);
+                }
+                if (con.getResponseCode() == 401 || errorMessage.contains("Wrong e-mail or password")) {
+                    final String userName = account.getUser();
+                    if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Username must be an e-mail", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong e-mail or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (link != null) {
                     // disable api?
@@ -1064,9 +1075,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {

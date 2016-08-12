@@ -44,17 +44,19 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
      *
      */
     private static final long serialVersionUID = 1L;
-    private final Icon        imgPriorityS;
+    private final Icon        imgPriority_3;
+    private final Icon        imgPriority_2;
+    private final Icon        imgPriority_1;
+    private final Icon        imgPriority0;
     private final Icon        imgPriority1;
     private final Icon        imgPriority2;
     private final Icon        imgPriority3;
-    private final String      strPriorityS;
-    private final String      strPriority1;
-    private final String      strPriority2;
-    private final String      strPriority3;
-    private final Icon        imgPriority0;
+
+    private final Icon        imgPriority0__3;
+    private final Icon        imgPriority0__2;
+    private final Icon        imgPriority0__1;
+    private final Icon        imgPriority0_0;
     private final Icon        imgPriority0_1;
-    private final Icon        imgPriority0_S;
     private final Icon        imgPriority0_2;
     private final Icon        imgPriority0_3;
 
@@ -86,22 +88,23 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
 
     public PriorityColumn() {
         super(_GUI.T.PriorityColumn_PriorityColumn(), new DefaultComboBoxModel<Priority>(Priority.values()));
-        imgPriorityS = NewTheme.I().getIcon(IconKey.ICON_PRIO__1, 16);
+        imgPriority_3 = NewTheme.I().getIcon(IconKey.ICON_PRIO__3, 16);
+        imgPriority_2 = NewTheme.I().getIcon(IconKey.ICON_PRIO__2, 16);
+        imgPriority_1 = NewTheme.I().getIcon(IconKey.ICON_PRIO__1, 16);
         imgPriority0 = NewTheme.I().getIcon(IconKey.ICON_PRIO_0, 16);
         imgPriority1 = NewTheme.I().getIcon(IconKey.ICON_PRIO_1, 16);
         imgPriority2 = NewTheme.I().getIcon(IconKey.ICON_PRIO_2, 16);
         imgPriority3 = NewTheme.I().getIcon(IconKey.ICON_PRIO_3, 16);
-        imgPriority0_S = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriorityS, 12, 12), 4, 2);
+
+        imgPriority0__3 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority_3, 12, 12), 4, 2);
+        imgPriority0__2 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority_2, 12, 12), 4, 2);
+        imgPriority0__1 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority_1, 12, 12), 4, 2);
+        imgPriority0_0 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority0, 12, 12), 4, 2);
         imgPriority0_1 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority1, 12, 12), 4, 2);
         imgPriority0_2 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority2, 12, 12), 4, 2);
         imgPriority0_3 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority3, 12, 12), 4, 2);
 
         rendererField.setHorizontalTextPosition(SwingConstants.RIGHT);
-        strPriorityS = _GUI.T.gui_treetable_tooltip_priority_1();
-        strPriority1 = _GUI.T.gui_treetable_tooltip_priority1();
-        strPriority2 = _GUI.T.gui_treetable_tooltip_priority2();
-        strPriority3 = _GUI.T.gui_treetable_tooltip_priority3();
-
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             /**
              * sorts the icon by hashcode
@@ -199,8 +202,12 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         case DEFAULT:
         default:
             return imgPriority0;
+        case LOWEST:
+            return imgPriority_3;
         case LOWER:
-            return imgPriorityS;
+            return imgPriority_2;
+        case LOW:
+            return imgPriority_1;
         case HIGH:
             return imgPriority1;
         case HIGHER:
@@ -215,8 +222,12 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         case DEFAULT:
         default:
             return imgPriority0;
+        case LOWEST:
+            return imgPriority0__3;
         case LOWER:
-            return imgPriority0_S;
+            return imgPriority0__2;
+        case LOW:
+            return imgPriority0__1;
         case HIGH:
             return imgPriority0_1;
         case HIGHER:
@@ -285,18 +296,11 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     }
 
     protected String getTooltipText(AbstractNode value) {
-        switch (getPriority(value)) {
-        case DEFAULT:
-        default:
+        final Priority priority = getPriority(value);
+        if (priority != null && priority != Priority.DEFAULT) {
+            return priority.T();
+        } else {
             return null;
-        case LOWER:
-            return strPriorityS;
-        case HIGH:
-            return strPriority1;
-        case HIGHER:
-            return strPriority2;
-        case HIGHEST:
-            return strPriority3;
         }
     }
 

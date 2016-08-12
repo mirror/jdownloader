@@ -144,24 +144,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                             if (StringUtils.isNotEmpty(password)) {
                                 ExtractionExtension.getInstance().addPassword(password);
                             }
-                            switch (priority) {
-                            case -1:
-                                rule.setPriority(Priority.LOWER);
-                                break;
-                            case 0:
-                                rule.setPriority(Priority.DEFAULT);
-                                break;
-                            case 1:
-                                rule.setPriority(Priority.HIGH);
-                                break;
-                            case 2:
-                                rule.setPriority(Priority.HIGHER);
-                                break;
-                            case 3:
-                                rule.setPriority(Priority.HIGHEST);
-                                break;
-                            }
-
+                            rule.setPriority(Priority.getPriority(priority));
                             rule.setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, regex, true));
                             list.add(rule);
                         }
