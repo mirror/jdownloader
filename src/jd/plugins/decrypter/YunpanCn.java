@@ -75,6 +75,13 @@ public class YunpanCn extends antiDDoSForDecrypt {
             if (json == null && this.br.containsHTML("id=\"linkError\"")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
+            } else if (json == null && this.br.containsHTML("top\\.location = ")) {
+                /* 404 and redirect to mainpage */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            if (json == null) {
+                return null;
             }
         } else {
             host = host_url;
@@ -85,6 +92,8 @@ public class YunpanCn extends antiDDoSForDecrypt {
                 /* ... and that password cookie! */
                 handlePassword(param);
             }
+            this.br.getHeaders().put("Referer", parameter);
+            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.postPage(host_with_protocol + "/share/listsharedir", "nid=" + subfolder_id + "&surl=" + fid + "&page_size=300&page=0&field=name&order=asc");
             json = this.br.getRegex("data:(\\[.*?\\])").getMatch(0);
         }

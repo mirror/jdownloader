@@ -459,7 +459,6 @@ public class FilesloopCom extends PluginForHost {
                 unavailableMap = new HashMap<String, Long>();
                 hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait 30 mins to retry this host */
             unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);

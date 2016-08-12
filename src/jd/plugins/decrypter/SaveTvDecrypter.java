@@ -136,6 +136,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         try {
             final ArrayList<Account> all_stv_accounts = AccountController.getInstance().getValidAccounts(this.getHost());
             totalAccountsNum = all_stv_accounts.size();
+            if (totalAccountsNum == 0) {
+                logger.info("At least one account needed to use this crawler");
+                return decryptedLinks;
+            }
             for (final Account stvacc : all_stv_accounts) {
                 if (!getUserLogin(stvacc, false)) {
                     logger.info("Failed to log in account: " + stvacc.getUser());
