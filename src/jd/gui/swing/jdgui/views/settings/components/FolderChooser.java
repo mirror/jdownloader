@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.FileCreationManager;
@@ -160,7 +161,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
         try {
             DownloadWatchDog.getInstance().validateDestination(checkPath);
-
         } catch (PathTooLongException e) {
             forbidden = e.getFile();
         } catch (BadDestinationException e) {
@@ -168,7 +168,15 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         }
 
         if (forbidden != null) {
-            UIOManager.I().showErrorMessage(_GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(forbidden.getAbsolutePath()));
+            final File finalForbidden = forbidden;
+            new EDTHelper<Void>() {
+
+                @Override
+                public Void edtRun() {
+                    UIOManager.I().showErrorMessage(_GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(finalForbidden.getAbsolutePath()));
+                    return null;
+                }
+            }.start(true);
             return null;
         }
 
@@ -184,7 +192,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
                 createFolder = file;
             }
             if (!createFolder.exists()) {
-
                 if (UIOManager.I().showConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(createFolder.getAbsolutePath()))) {
                     if (!FileCreationManager.getInstance().mkdir(createFolder)) {
                         UIOManager.I().showErrorMessage(_GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(createFolder.getAbsolutePath()));
