@@ -410,7 +410,6 @@ public class FastixRu extends antiDDoSForHost {
                 unavailableMap = new HashMap<String, Long>();
                 hostUnavailableMap.put(account, unavailableMap);
             }
-            /* wait 30 mins to retry this host */
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);

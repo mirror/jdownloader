@@ -48,20 +48,17 @@ public class ImgChiliCom extends PluginForDecrypt {
             br.getPage(parameter);
             br.setFollowRedirects(false);
 
-            {
-                final DownloadLink offline = createDownloadlink("directhttp://http://imgchili.net/" + System.currentTimeMillis() + "/" + System.currentTimeMillis() + ".png");
-                offline.setFinalFileName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
-                offline.setAvailable(false);
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
 
-                if (br.containsHTML("The album does not exist")) {
-                    logger.info("Link offline: " + parameter);
-                    decryptedLinks.add(offline);
-                    return decryptedLinks;
-                } else if (br.containsHTML("This album is empty\\. <br/>")) {
-                    logger.info("Link offline (empty album): " + parameter);
-                    decryptedLinks.add(offline);
-                    return decryptedLinks;
-                }
+            if (br.containsHTML("The album does not exist")) {
+                logger.info("Link offline: " + parameter);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            } else if (br.containsHTML("This album is empty\\. <br/>")) {
+                logger.info("Link offline (empty album): " + parameter);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
 
             final String fpName = br.getRegex("<title>imgChili \\&raquo; ([^<>\"]*?)</title>").getMatch(0);
@@ -91,8 +88,8 @@ public class ImgChiliCom extends PluginForDecrypt {
             param.setCryptedUrl(parameter);
             br.setFollowRedirects(true);
             br.getPage(parameter);
-            if (br.containsHTML("does not exist\\. <")) {
-                logger.info("Link offline: " + parameter);
+            if (br.containsHTML("does not exist\\. <|id=\"shaceship\"")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             String finallink = br.getRegex("onclick=\"scale\\(this\\);\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);

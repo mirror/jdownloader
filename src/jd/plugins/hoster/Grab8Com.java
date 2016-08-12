@@ -25,12 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,6 +45,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * Note: prem.link redirects to grab8
@@ -452,12 +452,22 @@ public class Grab8Com extends antiDDoSForHost {
                     login.put("username", Encoding.urlEncode(currAcc.getUser()));
                     login.put("password", Encoding.urlEncode(currAcc.getPass()));
                     login.put("rememberme", "true");
-                    if (login.containsHTML("name=\"g-recaptcha-response\"")) {
+                    final String url_ordinary_captcha = br.getRegex("(https?://(?:www\\.)?grab8\\.com/captcha\\.php\\?tp=login[^<>\"\\']+)").getMatch(0);
+                    if (login.containsHTML("name=\"g\\-recaptcha\\-response\"")) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
                         final DownloadLink odl = this.getDownloadLink();
                         this.setDownloadLink(dummyLink);
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        if (odl != null) {
+                            this.setDownloadLink(odl);
+                        }
+                    } else if (url_ordinary_captcha != null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                        final DownloadLink odl = this.getDownloadLink();
+                        this.setDownloadLink(dummyLink);
+                        final String code = this.getCaptchaCode(url_ordinary_captcha, dummyLink);
+                        login.put("icaptcha", Encoding.urlEncode(code));
                         if (odl != null) {
                             this.setDownloadLink(odl);
                         }
@@ -659,12 +669,12 @@ public class Grab8Com extends antiDDoSForHost {
             if (StringUtils.containsIgnoreCase(error, "No premium account working")) {
                 logger.warning("'No premium account working' --> Host is temporarily disabled");
                 tempUnavailableHoster(1 * 60 * 60 * 1000l);
-            } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid")) {
+            } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid") || StringUtils.containsIgnoreCase(error, "Wrong captcha")) {
                 /* Invalid logindata */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } else if (StringUtils.containsIgnoreCase(error, "Files not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

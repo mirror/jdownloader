@@ -519,6 +519,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account == null) {
+            /* without account its not possible to download the link */
+            return false;
+        }
         return true;
     }
 
