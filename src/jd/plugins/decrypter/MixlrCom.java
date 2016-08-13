@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixlr.com" }, urls = { "http://(?:www\\.)?mixlr\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixlr.com" }, urls = { "http://(?:www\\.)?mixlr\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+/?([a-z0-9\\-]+/?|\\?page=[0-9]+)?" }, flags = { 0 })
 public class MixlrCom extends PluginForDecrypt {
 
     public MixlrCom(PluginWrapper wrapper) {
@@ -59,8 +59,11 @@ public class MixlrCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>\"]*?) \\| Mixlr[\t\n\r ]+</title>").getMatch(0);
-        final String jsarray = br.getRegex("var broadcasts = (\\[\\{.*?\\]);").getMatch(0);
+        final boolean isShowreelPage = br.getURL().endsWith("showreel/") || br.getURL().contains("?page=");
+        String fpName = br.getRegex("<title>(.+?)</title>").getMatch(0).trim();
+        fpName = isShowreelPage ? fpName.replace(" | Mixlr", "") : fpName.replace(" broadcast live on Mixlr.", "");
+        final String regex = isShowreelPage ? "var broadcasts = (\\[.+?\\]);" : "var savedBroadcast = (\\{.+?\\});";
+        final String jsarray = br.getRegex(regex).getMatch(0);
         if (jsarray == null) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -69,18 +72,39 @@ public class MixlrCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jsarray);
+        ArrayList<Object> ressourcelist;
+        if (isShowreelPage) {
+            ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jsarray);
+        } else {
+            ressourcelist = new ArrayList<Object>();
+            ressourcelist.add(jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jsarray));
+        }
         for (final Object mobject : ressourcelist) {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) mobject;
             final LinkedHashMap<String, Object> streams = (LinkedHashMap<String, Object>) entries.get("streams");
             final LinkedHashMap<String, Object> stream_http = (LinkedHashMap<String, Object>) streams.get("http");
             final String url = (String) stream_http.get("url");
-            final String artist_username = (String) entries.get("username");
-            final String title = (String) entries.get("title");
-            if (url == null || artist_username == null || title == null) {
+            final String username = (String) entries.get("username");
+            String title = (String) entries.get("title");
+            if (url == null || username == null || title == null) {
                 return null;
             }
-            final String filename = artist_username + " - " + title + ".mp3";
+            // Some artists use the same title for every show, so adding the number from the slug and the date helps to differentiate files
+            final String slug = (String) entries.get("slug");
+            final String[] slugParts = slug.split("-");
+            final String lastSlugPart = slugParts[slugParts.length - 1];
+            final String lastTitlePart = title.substring(title.length() - lastSlugPart.length(), title.length());
+            // Add number if the broadcast has a number at the end of the slug, but not at the end of the title
+            if (lastSlugPart.matches("\\d+") && !lastTitlePart.matches("\\d+")) {
+                title = title.concat(" " + lastSlugPart);
+            }
+            String broadcastDate = (String) entries.get("started_at");
+            // Fall back to the date it was uploaded to Mixlr if the start date is not found
+            if (broadcastDate == null) {
+                broadcastDate = (String) entries.get("saved_at");
+            }
+            broadcastDate = broadcastDate.substring(0, "yyyy-MM-dd".length());
+            final String filename = username + " - " + broadcastDate + " " + title + ".mp3";
             final DownloadLink dl = createDownloadlink("directhttp://" + url);
             dl.setFinalFileName(filename);
             dl.setAvailable(true);
@@ -95,5 +119,4 @@ public class MixlrCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
