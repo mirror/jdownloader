@@ -1,4 +1,3 @@
-//jDownloader - Downloadmanager
 //Copyright (C) 2014  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
@@ -24,6 +23,9 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -51,9 +53,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshark.pl" }, urls = { "http://(www\\.)?fileshark\\.pl/pobierz/(\\d+)/(.+)" }, flags = { 2 })
 public class FileSharkPl extends PluginForHost {
 
@@ -68,10 +67,13 @@ public class FileSharkPl extends PluginForHost {
         return "http://www.fileshark.pl/strona/regulamin";
     }
 
-    private static final String DAILY_LIMIT     = "30 GB";
-    private static final String POLAND_ONLY     = ">Strona jest dostępna wyłącznie dla użytkowników znajdujących się na terenie Polski<";
-    protected final String      USE_API         = "USE_API";
-    protected final boolean     default_USE_API = true;
+    private static final String DAILY_LIMIT                     = "30 GB";
+    private static final String POLAND_ONLY                     = ">Strona jest dostępna wyłącznie dla użytkowników znajdujących się na terenie Polski<";
+    protected final String      USE_API                         = "USE_API";
+    protected final boolean     default_USE_API                 = true;
+    private static final short  API_CALL_ACCOUNT_GET_DETAILS    = 0;
+    private static final short  API_CALL_FILE_GET_DETAILS       = 1;
+    private static final short  API_CALL_FILE_GET_DOWNLOAD_LINK = 2;
 
     private Account             currentAccount;
 
@@ -140,8 +142,8 @@ public class FileSharkPl extends PluginForHost {
     /*
      * callType = 0 - user info 1 - get file details 2 - get download link
      */
-    boolean getAPICall(DownloadLink downloadLink, int callType, String userName, String userPassword) throws IOException {
-        if (callType > 0) {
+    boolean getAPICall(DownloadLink downloadLink, short callType, String userName, String userPassword) throws IOException {
+        if (callType > API_CALL_ACCOUNT_GET_DETAILS) {
             String fileData[][] = new Regex(downloadLink.getPluginPatternMatcher(), "http://(www\\.)?fileshark\\.pl/pobierz/((\\d+)/([0-9a-zA-Z]+)/?)").getMatches();
             if (fileData.length > 0) {
 
@@ -150,7 +152,7 @@ public class FileSharkPl extends PluginForHost {
                 if (fileId == null || fileToken == null) {
                     return (false);
                 } else {
-                    if (callType == 1) {
+                    if (callType == API_CALL_FILE_GET_DETAILS) {
                         br.postPage("http://fileshark.pl/api/file/getDetails", "id=" + fileId + "&token=" + fileToken);
                     } else {
                         if (userName != null && userPassword != null) {
@@ -190,7 +192,7 @@ public class FileSharkPl extends PluginForHost {
             // {id} - file id
             // {token} - file token
 
-            useAPI = getAPICall(link, 1, null, null);
+            useAPI = getAPICall(link, API_CALL_FILE_GET_DETAILS, null, null);
             if (useAPI) {
                 // Output (json):
                 // success: (bool)
@@ -214,15 +216,15 @@ public class FileSharkPl extends PluginForHost {
                     String isPremium = PluginJSonUtils.getJson(response, "isPremium");
                     if ("false".equals(isDownloadable)) {
                         link.getLinkStatus().setStatusText(getPhrase("NOT_DOWNLOADABLE"));
-                        return AvailableStatus.FALSE;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     if ("true".equals(isDeleted)) {
                         link.getLinkStatus().setStatusText(getPhrase("FILE_DELETED"));
-                        return AvailableStatus.FALSE;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     if ("true".equals(isDmcaRequested)) {
                         link.getLinkStatus().setStatusText(getPhrase("DMCA_REQUEST"));
-                        return AvailableStatus.FALSE;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     if ("true".equals(isPremium)) {
                         link.setProperty("PREMIUM", "TRUE");
@@ -351,7 +353,7 @@ public class FileSharkPl extends PluginForHost {
             boolean waitTimeDetected = true;
             byte trials = 0;
             do {
-                useAPI = getAPICall(downloadLink, 2, null, null);
+                useAPI = getAPICall(downloadLink, API_CALL_FILE_GET_DOWNLOAD_LINK, null, null);
                 String response = br.toString();
                 if ("false".equals(PluginJSonUtils.getJson(response, "success"))) {
                     int errorCode = Integer.parseInt(PluginJSonUtils.getJson(response, "errorCode"));
@@ -488,7 +490,7 @@ public class FileSharkPl extends PluginForHost {
             // {username} - user name
             // {pass} - password
 
-            useAPI = getAPICall(null, 0, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+            useAPI = getAPICall(null, API_CALL_ACCOUNT_GET_DETAILS, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
             // br.postPage("http://fileshark.pl/api/account/getDetails", "username=" + userName + "&password=" + userPassword);
             // output (json)
             // success: (bool)
@@ -653,7 +655,7 @@ public class FileSharkPl extends PluginForHost {
 
             if (generatedLink == null) {
 
-                useAPI = getAPICall(downloadLink, 2, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                useAPI = getAPICall(downloadLink, API_CALL_FILE_GET_DOWNLOAD_LINK, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
                 if (useAPI) {
                     String response = br.toString();
                     if ("true".equals(PluginJSonUtils.getJson(response, "success"))) {
