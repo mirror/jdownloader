@@ -35,12 +35,13 @@ public class AllofbachCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[] vimeo_ids = br.getRegex("data\\-vimeo\\-id=\"(\\d+)\"").getColumn(0);
+        final String[] vimeo_ids = br.getRegex("data\\-(?:vimeo|video)\\-id=\"(\\d+)\"").getColumn(0);
         if (vimeo_ids != null) {
             for (final String vimeo_id : vimeo_ids) {
                 final String vimeo_url = jd.plugins.decrypter.VimeoComDecrypter.createPrivateVideoUrlWithReferer(vimeo_id, this.br.getURL());
