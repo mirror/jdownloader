@@ -62,9 +62,11 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
     @Override
     protected void solveCES(CESSolverJob<String> solverJob) throws InterruptedException, SolverException {
         Challenge<String> captchaChallenge = getChallenge(solverJob);
-        if (captchaChallenge instanceof RecaptchaV2Challenge) {
-            if (((RecaptchaV2Challenge) captchaChallenge).createBasicCaptchaChallenge() == null) {
+        if (captchaChallenge == null) {
+            if (solverJob.getChallenge() instanceof RecaptchaV2Challenge) {
                 throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
+            } else {
+                throw new SolverException("captchaChallenge is null");
             }
         }
         checkInterruption();

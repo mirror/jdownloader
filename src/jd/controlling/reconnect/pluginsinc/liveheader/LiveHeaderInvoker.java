@@ -3,6 +3,8 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -597,7 +599,26 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         final String verify = Browser.getHost(verifyHost, false);
         if (verifiedIPs == null || !verifiedIPs.contains(verify)) {
             try {
+                final String[] whiteListArray = JsonConfig.create(LiveHeaderReconnectSettings.class).getHostWhiteList();
+                final List<String> whiteList;
+                if (whiteListArray != null) {
+                    whiteList = Arrays.asList(whiteListArray);
+                } else {
+                    whiteList = new ArrayList<String>(0);
+                }
+                if (whiteList.contains(verify)) {
+                    if (verifiedIPs != null) {
+                        verifiedIPs.add(verify);
+                    }
+                    return;
+                }
                 final String verifyIP = InetAddress.getByName(verify).getHostAddress();
+                if (whiteList.contains(verify)) {
+                    if (verifiedIPs != null) {
+                        verifiedIPs.add(verifyIP);
+                    }
+                    return;
+                }
                 if (!IP.isLocalIP(verifyIP)) {
                     throw new ReconnectException("Invalid Router Host:" + verify + "->" + verifyIP);
                 }

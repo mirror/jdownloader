@@ -8,16 +8,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Hash;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-
 import jd.controlling.proxy.NoProxySelector;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
@@ -28,6 +18,17 @@ import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 import jd.controlling.reconnect.ipcheck.InvalidIPException;
 import jd.http.Browser;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 
 public class EasyBox804 extends RouterPlugin implements IPCheckProvider {
 
@@ -114,8 +115,13 @@ public class EasyBox804 extends RouterPlugin implements IPCheckProvider {
         };
     }
 
-    private String absUrl(String string) {
-        return "http://" + config.getRouterIP() + string;
+    private String absUrl(String string) throws IOException {
+        final String host = config.getRouterIP();
+        if (StringUtils.isEmpty(host)) {
+            throw new IOException("host is empty for url:" + string);
+        } else {
+            return "http://" + host + string;
+        }
     }
 
     @Override
