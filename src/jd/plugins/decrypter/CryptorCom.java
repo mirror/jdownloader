@@ -55,13 +55,27 @@ public class CryptorCom extends PluginForDecrypt {
                 String postData = "";
                 if (this.br.containsHTML("\"folder_password_form_recaptcha\"")) {
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                    postData += "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&";
+                    postData += "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
                 if (this.br.containsHTML("\"folder_password_form_password_check\"")) {
                     final String passCode = getUserInput("Password?", param);
-                    postData += "folder_password_form%5Bpassword_check%5D=" + Encoding.urlEncode(passCode) + "&";
+                    if (postData.length() == 0) {
+                        postData += "folder_password_form%5Bpassword_check%5D=" + Encoding.urlEncode(passCode);
+                    } else {
+                        postData += "&folder_password_form%5Bpassword_check%5D=" + Encoding.urlEncode(passCode);
+                    }
+                } else {
+                    if (postData.length() == 0) {
+                        postData += "folder_password_form";
+                    } else {
+                        postData += "&folder_password_form";
+                    }
                 }
-                postData += "folder_password_form%5Bsubmit%5D=";
+                if (postData.length() == 0) {
+                    postData += "%5Bsubmit%5D=";
+                } else {
+                    postData += "&%5Bsubmit%5D=";
+                }
                 this.br.postPage(this.br.getURL(), postData);
                 if (this.br.containsHTML(html_passwordrequired)) {
                     continue;
@@ -76,23 +90,30 @@ public class CryptorCom extends PluginForDecrypt {
         }
 
         this.br.setFollowRedirects(false);
-        String fpName = br.getRegex("class=\"text\\-center\">[\t\n\r ]*?<h1>([^<>]+)</h1>").getMatch(0);
-        final String[] links = br.getRegex("\"(/dl/[A-Za-z0-9]+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        final String fpName = br.getRegex("class=\"text\\-center\">[\t\n\r ]*?<h1>([^<>]+)</h1>").getMatch(0);
+        String cnlSource = br.getRegex("'source'\\s*:\\s*'(.*?)'").getMatch(0);
+        final String cnlJk = br.getRegex("'jk'\\s*:\\s*'(.*?)(?<!\\\\)'").getMatch(0);
+        final String cnlCrypted = br.getRegex("'crypted'\\s*:\\s*'(.*?)'").getMatch(0);
+        if (cnlJk != null && cnlCrypted != null) {
+            if (cnlSource == null) {
+                cnlSource = param.getCryptedUrl();
+            }
+            decryptedLinks.add(DummyCNL.createDummyCNL(cnlCrypted, cnlJk.replaceAll("\\\\", ""), null, cnlSource));
         }
-        for (final String singleLink : links) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return decryptedLinks;
+        final String[] links = br.getRegex("\"(/dl/[A-Za-z0-9]+)\"").getColumn(0);
+        if (links != null) {
+            for (final String singleLink : links) {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return decryptedLinks;
+                }
+                this.br.getPage(singleLink);
+                final String finallink = this.br.getRegex("iframe allowfullscreen=\"true\" noresize=\"\" src=\"(http[^\"]+)").getMatch(0);
+                if (finallink == null) {
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
             }
-            this.br.getPage(singleLink);
-            final String finallink = this.br.getRegex("iframe allowfullscreen=\"true\" noresize=\"\" src=\"(http[^\"]+)").getMatch(0);
-            if (finallink == null) {
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
         }
 
         if (fpName != null) {
@@ -103,5 +124,4 @@ public class CryptorCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
