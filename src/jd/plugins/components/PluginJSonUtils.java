@@ -6,8 +6,6 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.parser.Regex;
 
-import org.appwork.utils.StringUtils;
-
 public class PluginJSonUtils {
 
     public static String escape(final String s) {
@@ -126,10 +124,6 @@ public class PluginJSonUtils {
         return sb.toString();
     }
 
-    public static String getJson(final String source, final String key) {
-        return StringUtils.nullify(_getJson(source, key));
-    }
-
     /**
      * Tries to return value of key from JSon response, from String source.
      *
@@ -138,11 +132,11 @@ public class PluginJSonUtils {
      * @param key
      * @return
      */
-    private static String _getJson(final String source, final String key) {
+    public static String getJson(final String source, final String key) {
         if (source == null || key == null) {
             return null;
         }
-        // json based
+        // Standard json based
         String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
             result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
@@ -222,7 +216,7 @@ public class PluginJSonUtils {
      * @author raztoki
      */
     public static String getJsonArray(final Browser ibr, final String key) {
-        return StringUtils.nullify(getJsonArray(ibr.toString(), key));
+        return getJsonArray(ibr.toString(), key);
     }
 
     /**
@@ -383,7 +377,7 @@ public class PluginJSonUtils {
     }
 
     /**
-     * JSon boolean parser, which also evaulates int values as boolean.
+     * JSon boolean parser, which also evaluates int values as boolean.
      *
      * @author raztoki
      * @param input
