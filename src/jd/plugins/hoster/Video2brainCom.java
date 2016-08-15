@@ -499,8 +499,9 @@ public class Video2brainCom extends PluginForHost {
                         if (validUntil < 0) {
                             validUntil = 0;
                         }
-                    } else if (StringUtils.containsIgnoreCase(abonnement, "test") || !StringUtils.containsIgnoreCase(abonnement, "probe")) {
-                        if (validUntil < System.currentTimeMillis()) {
+                    } else if (StringUtils.containsIgnoreCase(abonnement, "test") || StringUtils.containsIgnoreCase(abonnement, "probe")) {
+                        if ((validUntil - (10 * 24 * 60 * 60 * 1000l)) < System.currentTimeMillis()) {
+                            // we make sure account is valid for more than 10 days
                             isPremium = false;
                         }
                     }
