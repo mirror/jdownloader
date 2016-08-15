@@ -77,9 +77,12 @@ public class DirectHTTP extends antiDDoSForHost {
         try {
             if (ret != null && ret.size() == 1) {
                 String modifiedData = null;
+                final boolean isDirect;
                 if (data.startsWith("directhttp://")) {
+                    isDirect = true;
                     modifiedData = data.replace("directhttp://", "");
                 } else {
+                    isDirect = false;
                     modifiedData = data.replace("httpsviajd://", "https://");
                     modifiedData = modifiedData.replace("httpviajd://", "http://");
                     modifiedData = modifiedData.replace(".jdeatme", "");
@@ -89,7 +92,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 /* single link parsing in svn/jd2 */
                 final String url = link.getDownloadURL();
                 final int idx = modifiedData.indexOf(url);
-                if (idx >= 0 && modifiedData.length() >= idx + url.length()) {
+                if (!isDirect && idx >= 0 && modifiedData.length() >= idx + url.length()) {
                     String param = modifiedData.substring(idx + url.length());
                     if (param != null) {
                         param = new Regex(param, "(.*?)(\r|\n|$)").getMatch(0);
