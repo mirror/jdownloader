@@ -6,6 +6,8 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.parser.Regex;
 
+import org.appwork.utils.StringUtils;
+
 public class PluginJSonUtils {
 
     public static String escape(final String s) {
@@ -124,6 +126,10 @@ public class PluginJSonUtils {
         return sb.toString();
     }
 
+    public static String getJson(final String source, final String key) {
+        return StringUtils.nullify(_getJson(source, key));
+    }
+
     /**
      * Tries to return value of key from JSon response, from String source.
      *
@@ -132,7 +138,7 @@ public class PluginJSonUtils {
      * @param key
      * @return
      */
-    public static String getJson(final String source, final String key) {
+    private static String _getJson(final String source, final String key) {
         if (source == null || key == null) {
             return null;
         }
@@ -216,7 +222,7 @@ public class PluginJSonUtils {
      * @author raztoki
      */
     public static String getJsonArray(final Browser ibr, final String key) {
-        return getJsonArray(ibr.toString(), key);
+        return StringUtils.nullify(getJsonArray(ibr.toString(), key));
     }
 
     /**
