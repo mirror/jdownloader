@@ -39,6 +39,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: http://api.imgur.com/models/image
  * (scroll down to "Image thumbnails"
@@ -60,6 +62,11 @@ public class ImgUrCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted.com/", "imgur.com/"));
+    }
+
+    private enum TYPE {
+        MP4,
+        JPGORGIF
     }
 
     /* User settings */
@@ -88,14 +95,10 @@ public class ImgUrCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         imgUID = getImgUID(link);
-        final String filetype = getFiletype(link);
-        final String finalfilename = link.getStringProperty("decryptedfinalfilename", null);
-        long filesize = link.getLongProperty("decryptedfilesize", -1);
         dllink = link.getStringProperty("directlink", null);
-
         br.setFollowRedirects(true);
         /* Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API! */
-        if (dllink == null || filesize == -1 || finalfilename == null || filetype == null) {
+        if (dllink == null || link.getLongProperty("decryptedfilesize", -1) == -1 || link.getStringProperty("decryptedfinalfilename", null) == null || getFiletype(link) == null) {
             prepBRAPI(this.br);
             boolean api_failed = false;
             if (!this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
@@ -111,23 +114,45 @@ public class ImgUrCom extends PluginForHost {
                     throw e;
                 }
             }
+            String apiResponse[] = null;
             if (!api_failed) {
                 if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                parseAPIData(link, this.br.toString());
+                TYPE type = null;
+                if (userPrefersMp4()) {
+                    type = TYPE.MP4;
+                    apiResponse = parseAPIData(type, this.br.toString());
+                }
+                if (apiResponse == null || Boolean.FALSE.equals(Boolean.valueOf(apiResponse[4])) || apiResponse[3] == null) {
+                    type = TYPE.JPGORGIF;
+                    apiResponse = parseAPIData(type, this.br.toString());
+                }
+                if (apiResponse != null && apiResponse[1] == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (apiResponse == null || apiResponse[3] == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = apiResponse[3];
+                long size = -1;
+                if (apiResponse[1] != null) {
+                    size = Long.valueOf(apiResponse[1]);
+                    link.setProperty("decryptedfilesize", size);
+                    link.setDownloadSize(size);
+                } else {
+                    link.removeProperty("decryptedfilesize");
+                }
+                link.setProperty("filetype", apiResponse[0]);
+                link.setProperty("decryptedfinalfilename", apiResponse[2]);
+                link.setFinalFileName(apiResponse[2]);
                 /*
                  * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
                  * low quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
                  */
-                /** TODO: Add a workaround for .gif files and/or wait for them to fix their current issues. */
-                if (userPrefersMp4()) {
-                    dllink = getMp4Downloadlink(link);
-                } else if (link.getDownloadSize() >= view_filesizelimit) {
+                if (size >= view_filesizelimit) {
                     logger.info("File is bigger than 20 (19.5) MB --> Using /downloadlink as API-workaround");
-                    dllink = getBigFileDownloadlink(link);
-                } else {
-                    dllink = PluginJSonUtils.getJson(this.br, "link");
+                    dllink = getURLDownload(imgUID);
                 }
             } else {
                 /*
@@ -147,23 +172,46 @@ public class ImgUrCom extends PluginForHost {
                 if (api_like_json == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                parseAPIData(link, api_like_json);
+                if (userPrefersMp4()) {
+                    apiResponse = parseAPIData(TYPE.MP4, api_like_json);
+                }
+                if (apiResponse == null || Boolean.FALSE.equals(Boolean.valueOf(apiResponse[4]))) {
+                    apiResponse = parseAPIData(TYPE.JPGORGIF, api_like_json);
+                }
+                if (apiResponse == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String fileType = apiResponse[0];
+                link.setProperty("filetype", fileType);
+                link.setProperty("decryptedfinalfilename", apiResponse[2]);
+                link.setFinalFileName(apiResponse[2]);
+                long size = -1;
+                if (apiResponse[1] != null) {
+                    size = Long.valueOf(apiResponse[1]);
+                    link.setProperty("decryptedfilesize", size);
+                    link.setDownloadSize(size);
+                } else {
+                    link.removeProperty("decryptedfilesize");
+                }
                 /*
                  * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
                  * low quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
                  */
-                if (userPrefersMp4()) {
+                if (userPrefersMp4() && "gif".equalsIgnoreCase(fileType) || "mp4".equalsIgnoreCase(fileType)) {
                     dllink = getMp4Downloadlink(link);
-                } else if (link.getDownloadSize() >= view_filesizelimit) {
+                } else if (size >= view_filesizelimit) {
                     logger.info("File is bigger than 20 (19.5) MB --> Using /downloadlink as API-workaround");
-                    dllink = getBigFileDownloadlink(link);
+                    dllink = getURLDownload(imgUID);
                 } else {
                     dllink = getURLView(link);
                 }
             }
             link.setProperty("directlink", dllink);
         }
-        if (!start_DL && (userPrefersMp4() || filesize == -1)) {
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!start_DL && link.getVerifiedFileSize() == -1) {
             /*
              * Only check available link if user is NOT starting the download --> Avoid to access it twice in a small amount of time -->
              * Keep server load down.
@@ -176,17 +224,20 @@ public class ImgUrCom extends PluginForHost {
             try {
                 try {
                     con = this.br.openHeadConnection(this.dllink);
-                    filesize = con.getLongContentLength();
-                    link.setDownloadSize(filesize);
+                    if (con.getResponseCode() == responsecode_website_overloaded) {
+                        websiteOverloaded();
+                    } else if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (con.getContentType().contains("html") || !con.isOK()) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final long size = con.getLongContentLength();
+                    if (size >= 0) {
+                        link.setProperty("decryptedfilesize", size);
+                        link.setVerifiedFileSize(size);
+                    }
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.getResponseCode() == responsecode_website_overloaded) {
-                    websiteOverloaded();
-                } else if (con.getContentType().contains("html")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } finally {
                 try {
@@ -234,28 +285,53 @@ public class ImgUrCom extends PluginForHost {
         return br.toString();
     }
 
+    private String nullify(final String string) {
+        if (string == null || "null".equals(string)) {
+            return null;
+        } else {
+            return string;
+        }
+    }
+
     /**
      * Parses json either from API, or also if previously set in the browser - it's basically the same as a response similar to the API isa
      * stored in the html code when accessing normal content links: imgur.com/xXxXx
      */
-    private void parseAPIData(final DownloadLink dl, final String json) throws PluginException {
-        final long filesize = Long.parseLong(PluginJSonUtils.getJson(json, "size"));
-        if (filesize == 0) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    private String[] parseAPIData(TYPE type, final String json) throws PluginException {
+        final boolean animated = Boolean.TRUE.equals(Boolean.valueOf(PluginJSonUtils.getJson(json, "animated")));
+        String url = null;
+        String fileSize = null;
+        String fileType = null;
+        switch (type) {
+        case MP4:
+            url = nullify(PluginJSonUtils.getJson(json, "mp4"));
+            fileSize = nullify(PluginJSonUtils.getJson(json, "mp4_size"));
+            fileType = "mp4";
+            break;
+        case JPGORGIF:
+            url = nullify(PluginJSonUtils.getJson(json, "link"));
+            fileSize = nullify(PluginJSonUtils.getJson(json, "size"));
+            fileType = new Regex(json, "\"(mime)?type\"\\s*:\\s*\"image\\\\?/([^<>]*?)\"").getMatch(1);
+            if (fileType == null) {
+                fileType = new Regex(json, "\"ext\"\\s*:\\s*\"\\.(.*?)\"").getMatch(0);
+            }
+            break;
+        }/* "mimetype" = site, "type" = API */
+        if (fileType == null) {
+            if (animated) {
+                if (TYPE.MP4.equals(type)) {
+                    fileType = "mp4";
+                } else {
+                    fileType = "gif";
+                }
+            } else {
+                fileType = "jpeg";
+            }
         }
-        String title = PluginJSonUtils.getJson(json, "title");
-        /* "mimetype" = site, "type" = API */
-        String filetype = new Regex(json, "\"(mime)?type\":\"image/([^<>\"]*?)\"").getMatch(1);
-        if (filetype == null) {
-            filetype = br.getRegex("id=\"stats\\-overview\\-thumb\" class=\"left\">[\t\n\r ]*?<img src=\"data:image/([A-Za-z]+);base64,").getMatch(0);
-        }
-        if (filetype == null) {
-            filetype = "jpeg";
-        }
-        filetype = correctFiletypeUser(filetype);
-        String finalfilename;
-        if (title == null || title.equals("")) {
-            finalfilename = imgUID + "." + filetype;
+        String finalFileName = null;
+        String title = nullify(PluginJSonUtils.getJson(json, "title"));
+        if (StringUtils.isEmpty(title)) {
+            finalFileName = imgUID + "." + fileType;
         } else {
             title = Encoding.htmlDecode(title);
             title = HTMLEntities.unhtmlentities(title);
@@ -263,13 +339,9 @@ public class ImgUrCom extends PluginForHost {
             title = HTMLEntities.unhtmlAngleBrackets(title);
             title = HTMLEntities.unhtmlSingleQuotes(title);
             title = HTMLEntities.unhtmlDoubleQuotes(title);
-            finalfilename = title + "." + filetype;
+            finalFileName = title + "." + fileType;
         }
-        dl.setDownloadSize(filesize);
-        dl.setProperty("decryptedfilesize", filesize);
-        dl.setProperty("filetype", filetype);
-        dl.setProperty("decryptedfinalfilename", finalfilename);
-        dl.setFinalFileName(finalfilename);
+        return new String[] { fileType, fileSize, finalFileName, url, Boolean.toString(animated) };
     }
 
     public static String getBigFileDownloadlink(final DownloadLink dl) {
@@ -475,24 +547,24 @@ public class ImgUrCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*ext* = Extension of the file");
-            put("LABEL_FILENAME", "Define custom filename:");
-            put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*ext* = Dateiendung");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-            put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
