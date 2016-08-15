@@ -37,12 +37,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -74,28 +68,48 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hugefiles.net" }, urls = { "https?://(www\\.)?hugefiles\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class HugeFilesNet extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://hugefiles.net";
+    private final String  COOKIE_HOST                = "http://hugefiles.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(hugefiles\\.net)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
+    private final String  DOMAINS                    = "(hugefiles\\.net)";
+    private final String  PASSWORDTEXT               = "<br><b>Passwor(d|t):</b> <input";
+    private final String  MAINTENANCE                = ">This server is in maintenance mode";
+    private final String  dllinkRegex                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final boolean supportsHTTPS              = false;
+    private final boolean enforcesHTTPS              = false;
+    private final boolean useRUA                     = true;
+    private final boolean useAltLinkCheck            = false;
+    private final boolean useVidEmbed                = false;
+    private final boolean useAltEmbed                = false;
+    private final boolean useAltExpire               = true;
+    private final long    useLoginIndividual         = 6 * 3480000l;
+    private final boolean waitTimeSkipableReCaptcha  = true;
+    private final boolean waitTimeSkipableSolveMedia = false;
+    private final boolean waitTimeSkipableKeyCaptcha = false;
+    private final boolean captchaSkipableSolveMedia  = false;
+    private char[]        FILENAMEREPLACES           = new char[] { ' ', '_' };
+
+    public char[] getFilenameReplaceMap() {
+        return FILENAMEREPLACES;
+    }
+
+    public boolean isHosterManipulatesFilenames() {
+        return true;
+    }
+
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
+    }
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);

@@ -33,7 +33,6 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -262,9 +261,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     protected void setStringValue(final String value, final AbstractNode object) {
-        if (StringUtils.isEmpty(value)) {
-            return;
-        }
         if (object instanceof FilePackage) {
             ((FilePackage) object).setName(value);
         } else if (object instanceof CrawledPackage) {
