@@ -128,11 +128,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                 extractionStates.put(file.getName(), ArchiveFileStatus.MISSING);
             } else {
                 if (Boolean.TRUE.equals(file.isComplete())) {
-                    if (file.exists()) {
-                        extractionStates.put(file.getName(), ArchiveFileStatus.COMPLETE);
-                    } else {
-                        extractionStates.put(file.getName(), ArchiveFileStatus.MISSING);
-                    }
+                    extractionStates.put(file.getName(), ArchiveFileStatus.COMPLETE);
                 } else {
                     extractionStates.put(file.getName(), ArchiveFileStatus.INCOMPLETE);
                 }
