@@ -490,12 +490,20 @@ public class Video2brainCom extends PluginForHost {
             if (StringUtils.containsIgnoreCase(abonements_url, "mein-abonnement")) {
                 abonnement = br.getRegex("<div><b>Abonnement:</b>\\s*(.*?)\\s*</div>").getMatch(0);
                 accessGroup = br.getRegex("<div><b>Zugangsgruppe:</b>\\s*(.*?)\\s*</div>").getMatch(0);
-                isPremium = !StringUtils.containsIgnoreCase(abonnement, "test") && !StringUtils.containsIgnoreCase(abonnement, "probe") && StringUtils.containsIgnoreCase(abonnement, "Premium");
+                isPremium = StringUtils.containsIgnoreCase(abonnement, "Premium");
                 final String expiredate = this.br.getRegex("<div><b>Gültig bis:</b>\\s*([0-9\\. ]+)\\s*</div>").getMatch(0);
                 validUntil = TimeFormatter.getMilliSeconds(expiredate, "dd'.'MM'.'yyyy", Locale.GERMAN);
-                if (isPremium && accessGroup != null && br.containsHTML("Ihr Benutzerkonto ist mit obigen Konto verbunden")) {
-                    // Account ist an eine Gruppe gebunden
-                    validUntil = 0;
+                if (isPremium) {
+                    if (accessGroup != null && br.containsHTML("Ihr Benutzerkonto ist mit obigen Konto verbunden")) {
+                        // Account ist an eine Gruppe gebunden
+                        if (validUntil < 0) {
+                            validUntil = 0;
+                        }
+                    } else if (StringUtils.containsIgnoreCase(abonnement, "test") || !StringUtils.containsIgnoreCase(abonnement, "probe")) {
+                        if (validUntil < System.currentTimeMillis()) {
+                            isPremium = false;
+                        }
+                    }
                 }
             } else if (StringUtils.containsIgnoreCase(abonements_url, "mes-abonnements")) {
                 abonnement = br.getRegex("<div><b>Abonnement:</b>\\s*(.*?)\\s*</div>").getMatch(0);
