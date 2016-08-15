@@ -427,7 +427,7 @@ public class VimeoCom extends PluginForHost {
 
         // qx[0] = url
         // qx[1] = extension
-        // qx[2] = format (mobile|sd|hd)
+        // qx[2] = format (mobile|sd|hd|original)
         // qx[3] = frameSize (\d+x\d+)
         // qx[4] = bitrate (\d+)
         // qx[5] = fileSize (\d [a-zA-Z]{2})
@@ -474,6 +474,28 @@ public class VimeoCom extends PluginForHost {
                         result[7] = null;
                         result[8] = "DOWNLOAD";
                     }
+                }
+                if (entries.containsKey("source_file")) {
+                    final Map<String, Object> file = (Map<String, Object>) entries.get("source_file");
+                    final String[] result = new String[quality_info_length];
+                    results.add(result);
+                    final Map<String, Object> info = file;
+                    result[0] = String.valueOf(info.get("download_url"));
+                    final String ext = String.valueOf(info.get("extension"));
+                    if (StringUtils.isNotEmpty(ext)) {
+                        result[1] = "." + ext;
+                    }
+                    final String height = Integer.toString(((Number) info.get("height")).intValue());
+                    final String width = Integer.toString(((Number) info.get("width")).intValue());
+                    result[2] = "original";
+                    result[3] = width + "x" + height;
+                    result[4] = null;
+                    result[5] = String.valueOf(info.get("size"));
+                    /* No codec given */
+                    result[6] = null;
+                    /* ID */
+                    result[7] = null;
+                    result[8] = "ORIGINAL";
                 }
             }
         } else if (ibr.containsHTML("iconify_down_b")) {
