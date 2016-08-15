@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,7 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ImgUrCom;
-import jd.utils.JDUtilities;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.|m\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.|m\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 0 })
@@ -57,7 +55,6 @@ public class ImgurCom extends PluginForDecrypt {
     /* Constants */
     private static long             VIEW_FILESIZELIMIT            = 0;
     private static Object           CTRLLOCK                      = new Object();
-    private static AtomicBoolean    PLUGINLOADED                  = new AtomicBoolean(false);
 
     private ArrayList<DownloadLink> decryptedLinks                = new ArrayList<DownloadLink>();
     private String                  parameter                     = null;
@@ -74,11 +71,6 @@ public class ImgurCom extends PluginForDecrypt {
         lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         grabVideoSource = cfg.getBooleanProperty(SETTING_GRAB_SOURCE_URL_VIDEO, ImgUrCom.defaultSOURCEVIDEO);
         synchronized (CTRLLOCK) {
-            if (!PLUGINLOADED.get()) {
-                // load plugin!
-                JDUtilities.getPluginForHost("imgur.com");
-                PLUGINLOADED.set(true);
-            }
             VIEW_FILESIZELIMIT = jd.plugins.hoster.ImgUrCom.view_filesizelimit;
             String galleryTitle = null;
             String fpName = null;
