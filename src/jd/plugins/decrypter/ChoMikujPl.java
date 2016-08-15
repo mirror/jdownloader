@@ -526,7 +526,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 filename = correctFilename(Encoding.htmlDecode(filename).trim());
                 filename = filename.replace("<span class=\"e\"> </span>", "");
                 filename = filename.replace("," + fid, "");
-                if (ext == null) {
+                if (ext == null && url_filename.lastIndexOf(".") >= 0) {
                     /* Probably extension is already in filename --> Find & correct it */
                     final String tempExt = url_filename.substring(url_filename.lastIndexOf("."));
                     if (tempExt != null) {
