@@ -37,6 +37,13 @@ public class ShorteSt extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.contains("%29")) {
+            parameter = parameter.replace("%29", "e");
+            parameter = parameter.replace("%28", "o");
+            parameter = parameter.replace("_", "i");
+            parameter = parameter.replace("*", "u");
+            parameter = parameter.replace("!", "a");
+        }
         br.getPage(parameter);
         final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
         if (redirect != null && redirect.contains("sh.st/login")) {
@@ -47,8 +54,10 @@ public class ShorteSt extends antiDDoSForDecrypt {
             br.getPage(parameter);
         }
         if (br.containsHTML(">page not found<")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(createOfflinelink(parameter));
+            if (!parameter.contains("!/")) {
+                logger.info("Link offline: " + parameter);
+                decryptedLinks.add(createOfflinelink(parameter));
+            }
             return decryptedLinks;
         }
 
@@ -74,7 +83,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        decryptedLinks.add(createDownloadlink(finallink));
+        decryptedLinks.add(createDownloadlink(finallink.replaceAll(" ", "%20")));
         return decryptedLinks;
     }
 
