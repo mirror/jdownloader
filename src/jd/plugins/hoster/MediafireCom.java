@@ -47,8 +47,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
-import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -169,7 +169,7 @@ public class MediafireCom extends PluginForHost {
             throw e;
         }
         account.setValid(true);
-        final String usedSpace = JSonUtils.getJson(api, "used_storage_size");
+        final String usedSpace = PluginJSonUtils.getJsonValue(api, "used_storage_size");
         ai.setUsedSpace(usedSpace != null ? Long.parseLong(usedSpace) : 0);
         if (account.getType() == AccountType.FREE) {
             ai.setStatus("Free Account");
@@ -178,7 +178,7 @@ public class MediafireCom extends PluginForHost {
             account.setConcurrentUsePossible(true);
         } else {
             // assume its in bytes.
-            final String bandwidth = JSonUtils.getJson(api, "bandwidth");
+            final String bandwidth = PluginJSonUtils.getJsonValue(api, "bandwidth");
             ai.setTrafficLeft(bandwidth != null ? Long.parseLong(bandwidth) : 0);
             ai.setStatus("Premium Account");
             account.setMaxSimultanDownloads(20);
@@ -396,7 +396,7 @@ public class MediafireCom extends PluginForHost {
             doFree(downloadLink, account);
         } else {
             apiCommand(account, "file/get_links.php", "link_type=direct_download&quick_key=" + getFUID(downloadLink));
-            final String url = JSonUtils.getJson(api, "direct_download");
+            final String url = PluginJSonUtils.getJsonValue(api, "direct_download");
             if (url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -500,7 +500,7 @@ public class MediafireCom extends PluginForHost {
             initApi(account);
             apiCommand(account, "user/get_info.php", null);
             // to determine free | premium this is done via above request
-            final String accounType = JSonUtils.getJson(api, "premium");
+            final String accounType = PluginJSonUtils.getJsonValue(api, "premium");
             if (StringUtils.equalsIgnoreCase(accounType, "no")) {
                 account.setType(AccountType.FREE);
             } else {
@@ -557,10 +557,10 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void handleApiError(final Account account) throws PluginException {
-        if (!StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Success")) {
-            if (StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Error")) {
+        if (!StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(api, "result"), "Success")) {
+            if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(api, "result"), "Error")) {
                 // error handling
-                final String error = JSonUtils.getJson(api, "error");
+                final String error = PluginJSonUtils.getJsonValue(api, "error");
                 switch (Integer.parseInt(error)) {
                 case 105:
                     session_token = null;
@@ -583,10 +583,10 @@ public class MediafireCom extends PluginForHost {
     }
 
     private boolean handleLinkcheckingApiError(final Account account) throws PluginException {
-        if (!StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Success")) {
-            if (StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Error")) {
+        if (!StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(api, "result"), "Success")) {
+            if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(api, "result"), "Error")) {
                 // error handling
-                final String error = JSonUtils.getJson(api, "error");
+                final String error = PluginJSonUtils.getJsonValue(api, "error");
                 switch (Integer.parseInt(error)) {
                 // invalid uid
                 case 111:
@@ -653,16 +653,16 @@ public class MediafireCom extends PluginForHost {
                     handleApiError(account);
                 }
                 final String apiResponse = api.toString();
-                String json = JSonUtils.getJsonArray(apiResponse, "file_infos");
+                String json = PluginJSonUtils.getJsonArray(apiResponse, "file_infos");
                 if (json == null) {
-                    json = JSonUtils.getJsonNested(apiResponse, "file_info");
+                    json = PluginJSonUtils.getJsonNested(apiResponse, "file_info");
                     if (json != null) {
                         json = "[{" + json + "}]";
                     }
                 }
-                final String[] jsonResults = JSonUtils.getJsonResultsFromArray(json);
+                final String[] jsonResults = PluginJSonUtils.getJsonResultsFromArray(json);
                 // because they have a shite api and do things illogically...
-                final String skipped = JSonUtils.getJsonValue(apiResponse, "skipped");
+                final String skipped = PluginJSonUtils.getJsonValue(apiResponse, "skipped");
                 final HashSet<String> offline = new HashSet<String>();
                 if (skipped != null) {
                     offline.addAll(Arrays.asList(skipped));
@@ -690,14 +690,14 @@ public class MediafireCom extends PluginForHost {
                     }
                     boolean online = false;
                     for (final String result : jsonResults) {
-                        final String quickkey = JSonUtils.getJson(result, "quickkey");
+                        final String quickkey = PluginJSonUtils.getJsonValue(result, "quickkey");
                         if (StringUtils.equals(quickkey, fuid)) {
                             dl.setAvailableStatus(AvailableStatus.TRUE);
-                            final String name = JSonUtils.getJsonValue(result, "filename");
-                            final String size = JSonUtils.getJsonValue(result, "size");
-                            final String sha256 = JSonUtils.getJsonValue(result, "hash");
-                            final String privacy = JSonUtils.getJsonValue(result, "privacy");
-                            final String pass = JSonUtils.getJsonValue(result, "password_protected");
+                            final String name = PluginJSonUtils.getJsonValue(result, "filename");
+                            final String size = PluginJSonUtils.getJsonValue(result, "size");
+                            final String sha256 = PluginJSonUtils.getJsonValue(result, "hash");
+                            final String privacy = PluginJSonUtils.getJsonValue(result, "privacy");
+                            final String pass = PluginJSonUtils.getJsonValue(result, "password_protected");
                             if (StringUtils.isNotEmpty(name)) {
                                 dl.setFinalFileName(name);
                             }
@@ -711,7 +711,7 @@ public class MediafireCom extends PluginForHost {
                                 dl.setProperty("privacy", privacy);
                             }
                             if (pass != null) {
-                                dl.setProperty("passwordRequired", JSonUtils.parseBoolean(pass));
+                                dl.setProperty("passwordRequired", PluginJSonUtils.parseBoolean(pass));
                             }
                             online = true;
                             break;

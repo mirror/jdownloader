@@ -208,7 +208,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             }
             if (api_in_use) {
                 flashvars = this.br.toString();
-                subtitle_url = PluginJSonUtils.getJson(flashvars, "captionURL");
+                subtitle_url = PluginJSonUtils.getJsonValue(flashvars, "captionURL");
             } else {
                 flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
                 if (flashvars == null) {

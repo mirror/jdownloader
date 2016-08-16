@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtl.de", "vox.de", "frauenzimmer.de", "vip.de", "wetter.de", "sport.de", "kochbar.de" }, urls = { "https?://(?:[a-z0-9]+\\.)?rtl\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vox\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?frauenzimmer\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vip\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?wetter\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?sport\\.de/.+", "https?://(?:www\\.)?kochbar\\.de/[a-z0-9\\-/]+\\.html" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
 public class RTLCms extends PluginForHost {
@@ -110,9 +111,9 @@ public class RTLCms extends PluginForHost {
             br.getPage(player_url);
             json = br.toString();
         }
-        String headline1 = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "headline1");
-        String headline2 = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "headline2");
-        DLLINK = jd.plugins.hoster.K2SApi.JSonUtils.getJson(json, "mp4url");
+        String headline1 = PluginJSonUtils.getJsonValue(json, "headline1");
+        String headline2 = PluginJSonUtils.getJsonValue(json, "headline2");
+        DLLINK = PluginJSonUtils.getJsonValue(json, "mp4url");
         if (headline2 == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

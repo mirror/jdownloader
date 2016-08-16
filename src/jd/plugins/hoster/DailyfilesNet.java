@@ -165,7 +165,7 @@ public class DailyfilesNet extends antiDDoSForHost {
             sleep(watiTime * 100l, downloadLink);
 
         }
-        final String fileLocation = PluginJSonUtils.getJson(response, "downloadlink");
+        final String fileLocation = PluginJSonUtils.getJsonValue(response, "downloadlink");
         if (fileLocation == null) {
             logger.info("filelocation not found with link: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, getPhrase("DOWNLOADLINK_ERROR"));
@@ -376,27 +376,27 @@ public class DailyfilesNet extends antiDDoSForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
+                                                  {
 
-            put("LOGIN_ERROR", "Login Error");
-            put("PREMIUM_USER", "Premium Account");
-            put("FREE_USER", "Free Account");
-            put("NOT_AUTHENTICATED", "Not Authenticated");
-            put("DOWNLOADLINK_ERROR", "Downloadlink error");
-        }
-    };
+                                                      put("LOGIN_ERROR", "Login Error");
+                                                      put("PREMIUM_USER", "Premium Account");
+                                                      put("FREE_USER", "Free Account");
+                                                      put("NOT_AUTHENTICATED", "Not Authenticated");
+                                                      put("DOWNLOADLINK_ERROR", "Downloadlink error");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
+                                                  {
 
-            put("LOGIN_ERROR", "Błąd logowania");
-            put("PREMIUM_USER", "Użytkownik Premium");
-            put("FREE_USER", "Zarejestrowany użytkownik darmowy");
-            put("NOT_AUTHENTICATED", "Nazwa użytkownika lub hasło jest niepoprawne");
-            put("DOWNLOADLINK_ERROR", "Serwer nie zwrócił linku pobierania");
+                                                      put("LOGIN_ERROR", "Błąd logowania");
+                                                      put("PREMIUM_USER", "Użytkownik Premium");
+                                                      put("FREE_USER", "Zarejestrowany użytkownik darmowy");
+                                                      put("NOT_AUTHENTICATED", "Nazwa użytkownika lub hasło jest niepoprawne");
+                                                      put("DOWNLOADLINK_ERROR", "Serwer nie zwrócił linku pobierania");
 
-        }
-    };
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

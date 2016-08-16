@@ -24,9 +24,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +49,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshark.pl" }, urls = { "http://(www\\.)?fileshark\\.pl/pobierz/(\\d+)/(.+)" }, flags = { 2 })
 public class FileSharkPl extends PluginForHost {
@@ -233,7 +233,7 @@ public class FileSharkPl extends PluginForHost {
                     }
 
                 } else
-                // try without API
+                    // try without API
                 {
                     useAPI = false;
                 }
@@ -376,7 +376,7 @@ public class FileSharkPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL, errorMessage);
                     }
                 } else {
-                    dllink = PluginJSonUtils.getJson(response, "downloadLink");
+                    dllink = PluginJSonUtils.getJsonValue(response, "downloadLink");
                     waitTimeDetected = false;
                 }
             } while (waitTimeDetected && (trials < 2));
@@ -779,44 +779,44 @@ public class FileSharkPl extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("USE_API", "Use API (recommended!)");
-                                                      put("PREMIUM_USER", "Premium User");
-                                                      put("REGISTERED_USER", "Registered User");
-                                                      put("POLAND_ONLY", "This service is only available in Poland");
-                                                      put("NOT_DOWNLOADABLE", "File is unavailable for download");
-                                                      put("DMCA_REQUEST", "File requested by DMCA");
-                                                      put("FILE_DELETED", "File deleted");
-                                                      put("OTHER_FILE_DOWNLOAD", "Other file is downloading!");
-                                                      put("PREMIUM_ONLY", "This file can only be downloaded by premium users");
-                                                      put("WRONG_CAPTCHA", "Wrong Captcha!");
-                                                      put("LOGIN_FAILED", "Login failed");
-                                                      put("VERIFY_LOGIN", "Please check your Username and Password!");
-                                                      put("LOGIN_ERROR", "Login Error");
-                                                      put("WAITTIME", "You must wait for new download");
-                                                      put("MAX_DOWNLOAD", "Reached max number of simultaneously downloaded files.");
-                                                  }
-                                              };
+        {
+            put("USE_API", "Use API (recommended!)");
+            put("PREMIUM_USER", "Premium User");
+            put("REGISTERED_USER", "Registered User");
+            put("POLAND_ONLY", "This service is only available in Poland");
+            put("NOT_DOWNLOADABLE", "File is unavailable for download");
+            put("DMCA_REQUEST", "File requested by DMCA");
+            put("FILE_DELETED", "File deleted");
+            put("OTHER_FILE_DOWNLOAD", "Other file is downloading!");
+            put("PREMIUM_ONLY", "This file can only be downloaded by premium users");
+            put("WRONG_CAPTCHA", "Wrong Captcha!");
+            put("LOGIN_FAILED", "Login failed");
+            put("VERIFY_LOGIN", "Please check your Username and Password!");
+            put("LOGIN_ERROR", "Login Error");
+            put("WAITTIME", "You must wait for new download");
+            put("MAX_DOWNLOAD", "Reached max number of simultaneously downloaded files.");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("USE_API", "Używaj API (zalecane!)");
-                                                      put("PREMIUM_USER", "Użytkownik Premium");
-                                                      put("REGISTERED_USER", "Uzytkownik zarejestrowany");
-                                                      put("POLAND_ONLY", "Dostęp do serwisu wyłącznie dla adresów z terenu Polski");
-                                                      put("NOT_DOWNLOADABLE", "Plik niedostępny do pobrania");
-                                                      put("DMCA_REQUEST", "Plik zgłoszony przez DMCA");
-                                                      put("FILE_DELETED", "Plik usunięty");
-                                                      put("OTHER_FILE_DOWNLOAD", "Inny plik jest pobierany!");
-                                                      put("PREMIUM_ONLY", "Plik możliwy do pobierania wyłącznie dla użytkowników Premium");
-                                                      put("WRONG_CAPTCHA", "Błędny kod Captcha!");
-                                                      put("LOGIN_FAILED", "Błędny login/hasło");
-                                                      put("VERIFY_LOGIN", "Proszę zweryfikuj swoją nazwę użytkownika i hasło!");
-                                                      put("LOGIN_ERROR", "Błąd logowania");
-                                                      put("WAITTIME", "Musisz odczekać do kolejnego pobierania");
-                                                      put("MAX_DOWNLOAD", "Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.");
-                                                  }
-                                              };
+        {
+            put("USE_API", "Używaj API (zalecane!)");
+            put("PREMIUM_USER", "Użytkownik Premium");
+            put("REGISTERED_USER", "Uzytkownik zarejestrowany");
+            put("POLAND_ONLY", "Dostęp do serwisu wyłącznie dla adresów z terenu Polski");
+            put("NOT_DOWNLOADABLE", "Plik niedostępny do pobrania");
+            put("DMCA_REQUEST", "Plik zgłoszony przez DMCA");
+            put("FILE_DELETED", "Plik usunięty");
+            put("OTHER_FILE_DOWNLOAD", "Inny plik jest pobierany!");
+            put("PREMIUM_ONLY", "Plik możliwy do pobierania wyłącznie dla użytkowników Premium");
+            put("WRONG_CAPTCHA", "Błędny kod Captcha!");
+            put("LOGIN_FAILED", "Błędny login/hasło");
+            put("VERIFY_LOGIN", "Proszę zweryfikuj swoją nazwę użytkownika i hasło!");
+            put("LOGIN_ERROR", "Błąd logowania");
+            put("WAITTIME", "Musisz odczekać do kolejnego pobierania");
+            put("MAX_DOWNLOAD", "Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.");
+        }
+    };
 
     private boolean getUseAPI() {
         return this.getPluginConfig().getBooleanProperty("USE_API", true);

@@ -214,7 +214,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 parameter = orgParam;
                 final String owner_json = br.getRegex("\"owner\":\\{(.*?)\\}").getMatch(0);
                 if (owner_json != null) {
-                    channelName = PluginJSonUtils.getJson(owner_json, "name");
+                    channelName = PluginJSonUtils.getJsonValue(owner_json, "name");
                 }
             } else {
                 // maybe required

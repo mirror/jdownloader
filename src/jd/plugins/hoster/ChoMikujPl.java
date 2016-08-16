@@ -39,7 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -377,7 +377,7 @@ public class ChoMikujPl extends PluginForHost {
             if (cbr.containsHTML("/action/License/acceptLargeTransfer")) {
                 // this can happen also
                 // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
-                cleanupBrowser(cbr, JSonUtils.unescape(br.toString()));
+                cleanupBrowser(cbr, PluginJSonUtils.unescape(br.toString()));
                 // so we can get output in logger for debug purposes.
                 logger.info(cbr.toString());
                 final Form f = cbr.getFormbyAction("/action/License/acceptLargeTransfer");
@@ -392,7 +392,7 @@ public class ChoMikujPl extends PluginForHost {
                  * to confirm this here.
                  */
                 // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
-                cleanupBrowser(cbr, JSonUtils.unescape(br.toString()));
+                cleanupBrowser(cbr, PluginJSonUtils.unescape(br.toString()));
                 // so we can get output in logger for debug purposes.
                 logger.info(cbr.toString());
                 final Form f = cbr.getFormbyAction("/action/License/AcceptOwnTransfer");
