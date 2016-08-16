@@ -126,6 +126,14 @@ public class PluginJSonUtils {
 
     public static final String NULL = new String("null");
 
+    public static String getJsonValue(final String source, final String key) {
+        return getJson(source, key, false);
+    }
+
+    public static String getJsonValue(final Browser browser, final String key) {
+        return getJson(browser.toString(), key, false);
+    }
+
     public static String getJson(final String source, final String key, final boolean returnNullAsString) {
         if (source == null || key == null) {
             return null;
