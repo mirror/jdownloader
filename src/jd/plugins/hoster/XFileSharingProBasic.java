@@ -143,7 +143,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.2.5<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.2.6<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -533,6 +533,14 @@ public class XFileSharingProBasic extends PluginForHost {
                         logger.warning("Could not find 'fname'");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                }
+                /* Fix/Add "method_free" value if necessary. */
+                if (!download1.hasInputFieldByName("method_free")) {
+                    String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
+                    if (method_free_value == null || method_free_value.equals("")) {
+                        method_free_value = "Free Download";
+                    }
+                    download1.put("method_free", method_free_value);
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
@@ -960,6 +968,10 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if (ttt == null) {
             ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            /* More open RegEx */
+            ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)<").getMatch(0);
         }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);
