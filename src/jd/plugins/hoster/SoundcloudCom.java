@@ -46,6 +46,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -378,7 +379,7 @@ public class SoundcloudCom extends PluginForHost {
             final boolean is_downloadable = isREALYDownloadable(json);
             final String secret_token = new Regex(input, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
             if (track_id == null) {
-                track_id = getJson(input, "id");
+                track_id = PluginJSonUtils.getJsonValue(input, "id");
             }
             if (is_downloadable) {
                 /* Track is officially downloadable (download version = higher quality than stream version) */
@@ -672,26 +673,6 @@ public class SoundcloudCom extends PluginForHost {
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    public static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */

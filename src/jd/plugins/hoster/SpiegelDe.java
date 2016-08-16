@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import org.appwork.exceptions.WTFException;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.exceptions.WTFException;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spiegel.tv" }, urls = { "http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+|http://(?:www\\.)?spiegel\\.de/video/(?:embedurl/)?[a-z0-9\\-_]*?video\\-[a-z0-9\\-_]*?\\.html", "http://(?:www\\.)?spiegel\\.tv/(?:#/)?filme/[a-z0-9\\-]+/" }, flags = { 0, 0 })
 public class SpiegelDe extends PluginForHost {
@@ -317,26 +317,6 @@ public class SpiegelDe extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     public void reset() {

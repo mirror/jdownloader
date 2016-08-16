@@ -40,6 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.swing.MigPanel;
@@ -249,7 +250,7 @@ public class FilecloudIo extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/?m=download&a=request", postData);
             handleErrorsAPI();
-            this.dllink = getJson("downloadUrl");
+            this.dllink = PluginJSonUtils.getJsonValue(br, "downloadUrl");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -313,7 +314,7 @@ public class FilecloudIo extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         accessAPI(MAINPAGE + "/?m=api&a=fetch_account_info&akey=" + Encoding.urlEncode(account.getPass()));
-        final String message = getJson("message");
+        final String message = PluginJSonUtils.getJsonValue(br, "message");
         if (message != null) {
             if (message.equals(API_ERROR_NO_PERMISSION)) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -344,8 +345,8 @@ public class FilecloudIo extends PluginForHost {
         }
         long traffic_left_long = 0;
         long premium_until = 0;
-        final String traffic_left_str = getJson("bandwidth");
-        final String premium_until_str = getJson("premium_until");
+        final String traffic_left_str = PluginJSonUtils.getJsonValue(br, "bandwidth");
+        final String premium_until_str = PluginJSonUtils.getJsonValue(br, "premium_until");
         if (traffic_left_str != null) {
             traffic_left_long = SizeFormatter.getSize(traffic_left_str);
         }
@@ -385,7 +386,7 @@ public class FilecloudIo extends PluginForHost {
         }
         if (account.getType() == AccountType.PREMIUM) {
             accessAPI(MAINPAGE + "/?m=api&a=download&akey=" + Encoding.urlEncode(account.getPass()) + "&fkey=" + link.getLinkID());
-            final String message = getJson("message");
+            final String message = PluginJSonUtils.getJsonValue(br, "message");
             if (API_ERROR_NO_PERMISSION.equals(message)) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Downloading'.\r\nAktiviere diese hier und versuche es erneut: filecloud.io/?m=apidoc");
@@ -393,7 +394,7 @@ public class FilecloudIo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nYour APIKey is missing the permission 'Allow Downloading'.\r\nActivate it here and try again: filecloud.io/?m=apidoc");
                 }
             }
-            final String finallink = getJson("download_ticket_url");
+            final String finallink = PluginJSonUtils.getJsonValue(br, "download_ticket_url");
             if (finallink == null) {
                 /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -444,7 +445,7 @@ public class FilecloudIo extends PluginForHost {
     }
 
     private void handleErrorsAPI() throws PluginException {
-        final String message = getJson("message");
+        final String message = PluginJSonUtils.getJsonValue(br, "message");
         if (message != null) {
             if ("Try the reCaptcha challenge again, you have made a mistake.".equalsIgnoreCase(message)) {
                 logger.warning("Extremely rare case: reCaptchaV2 response was not accepted --> Wrong user input or server issues");
@@ -512,16 +513,6 @@ public class FilecloudIo extends PluginForHost {
             }
         }
         return true;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

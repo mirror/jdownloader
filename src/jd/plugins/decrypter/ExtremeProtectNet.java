@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,6 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.net" }, urls = { "http://(?:www\\.)?extreme\\-protect\\.net/([a-z0-9\\-_]+)" }, flags = { 0 })
 public class ExtremeProtectNet extends PluginForDecrypt {
@@ -50,8 +51,8 @@ public class ExtremeProtectNet extends PluginForDecrypt {
         {
             // this bypasses captcha etc. problem is title isn't shown...
             br.postPage("http://extreme-protect.net/api.php", "id=" + new Regex(parameter, this.getSupportedLinks()).getMatch(0));
-            fpName = getJson("titre");
-            String lnks = getJsonArray("liens");
+            fpName = PluginJSonUtils.getJsonValue(br, "titre");
+            String lnks = PluginJSonUtils.getJsonArray(br.toString(), "liens");
             if (lnks != null) {
                 links = new Regex(lnks, "http[^\"]+").getColumn(-1);
                 if (links != null) {
@@ -148,68 +149,6 @@ public class ExtremeProtectNet extends PluginForDecrypt {
             pass += chars.substring(lool, lool + 1);
         }
         return pass;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**

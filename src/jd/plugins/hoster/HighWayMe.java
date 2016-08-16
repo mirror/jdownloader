@@ -23,16 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,6 +37,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HighWayMe extends UseNet {
@@ -256,7 +257,7 @@ public class HighWayMe extends UseNet {
                     /* Seems like the password is valid --> Save it */
                     link.setProperty("pass", passCode);
                 }
-                dllink = getJson("download");
+                dllink = PluginJSonUtils.getJsonValue(br, "download");
                 if (dllink == null) {
                     logger.warning("Final downloadlink is null");
                     handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
@@ -433,26 +434,6 @@ public class HighWayMe extends UseNet {
         handleAPIErrors(this.br);
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
     private String getXML(final String key) {
         return br.getRegex("<" + key + ">([^<>\"]*?)</" + key + ">").getMatch(0);
     }
@@ -571,12 +552,12 @@ public class HighWayMe extends UseNet {
     private void updatestatuscode() {
         final String waittime_on_failure = getJson("timeout");
         /* First look for errorcode */
-        String error = this.getJson("code");
+        String error = PluginJSonUtils.getJsonValue(br, "code");
         if (error == null) {
             /* No errorcode? Look for errormessage (e.g. used in login function). */
-            error = this.getJson("error");
+            error = PluginJSonUtils.getJsonValue(br, "error");
         }
-        final String info = this.getJson("info");
+        final String info = PluginJSonUtils.getJsonValue(br, "info");
         if (error != null) {
             if (error.matches("\\d+")) {
                 statuscode = Integer.parseInt(error);

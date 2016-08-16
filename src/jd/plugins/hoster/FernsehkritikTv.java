@@ -44,6 +44,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.locale.JDL;
 
@@ -806,7 +807,7 @@ public class FernsehkritikTv extends PluginForHost {
         case API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED:
             // {"api_error":"API Rate Limited.", "retryAfter":30}
             long waittime;
-            final String retry_seconds_str = getJson(br.toString(), "retryAfter");
+            final String retry_seconds_str = PluginJSonUtils.getJsonValue(br, "retryAfter");
             if (retry_seconds_str != null) {
                 waittime = Long.parseLong(retry_seconds_str) * 1001l;
             } else {
@@ -1042,26 +1043,6 @@ public class FernsehkritikTv extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    public static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private static String encodeUnicode(final String input) {

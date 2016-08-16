@@ -38,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.logging2.LogInterface;
 
@@ -189,7 +190,7 @@ public class SuicidegirlsCom extends PluginForHost {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
-                final String error = getJson(br.toString(), "");
+                final String error = PluginJSonUtils.getJsonValue(br, "");
                 // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
                 // Encoding.urlEncode(account.getPass()));
                 if (!"0".equals(error)) {
@@ -301,16 +302,6 @@ public class SuicidegirlsCom extends PluginForHost {
         br.setCookie(MAINPAGE, "django_language", "en");
         br.setFollowRedirects(true);
         return br;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    public static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
     private static String encodeUnicode(final String input) {
