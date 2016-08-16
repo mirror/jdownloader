@@ -30,11 +30,11 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yousendit.com" }, urls = { "http(s)?://(www\\.)?yousenditdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
-public class YouSendItCom extends PluginForHost {
+public class HightailCom extends PluginForHost {
 
     private String DLLINK = null;
 
-    public YouSendItCom(PluginWrapper wrapper) {
+    public HightailCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 

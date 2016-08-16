@@ -92,7 +92,7 @@ public class YkCm extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://v.youku.com/index/y404/")) {
+        if (br.getURL().contains("youku.com/index/y404")) {
             logger.info("");
             final DownloadLink dl = createDownloadlink("http://f.youku.com/player/getFlvPath/sid" + new Regex(parameter, "youku\\.com/(.+)").getMatch(0));
             dl.setProperty("offline", true);
@@ -128,7 +128,9 @@ public class YkCm extends PluginForDecrypt {
                 jsonString = br.getPage(jsonRequest().replace("password=&", "password=" + Encoding.urlEncode(password) + "&"));
                 if (br.containsHTML("\"error_code\":\\-(6|7)")) {
                     logger.info("Wrong password, try again! : " + parameter);
-                    if (i + 1 == repeat) { return decryptedLinks; }
+                    if (i + 1 == repeat) {
+                        return decryptedLinks;
+                    }
                     continue;
                 } else {
                     this.getPluginConfig().setProperty("lastusedpassword", password);
@@ -143,7 +145,9 @@ public class YkCm extends PluginForDecrypt {
             decryptedLinks.add(dlLink);
             return decryptedLinks;
         }
-        if (!jsonParser(jsonString)) { return null; }
+        if (!jsonParser(jsonString)) {
+            return null;
+        }
 
         progress.setRange(PARTS);
         ArrayList<DownloadLink> parts = null;
@@ -211,7 +215,9 @@ public class YkCm extends PluginForDecrypt {
                 return null;
             }
         }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            return null;
+        }
         return decryptedLinks;
     }
 
@@ -229,7 +235,9 @@ public class YkCm extends PluginForDecrypt {
 
     private boolean jsonParser(String jsonString) {
 
-        if (jsonString == null) { return false; }
+        if (jsonString == null) {
+            return false;
+        }
 
         jsonString = jsonString.replaceAll("\\{\"data\":\\[\\{", "");
         final String sfi = new Regex(jsonString, "\"streamfileids\":\\{(.*?)\\}").getMatch(0);
@@ -240,7 +248,9 @@ public class YkCm extends PluginForDecrypt {
         // for volume based videos 1-x within the series http://www.youku.com/show_page/id_zcbff19f8962411de83b1.html
         String title = new Regex(jsonString, "\"vidEncoded\":\"" + videoId + "\",\"title\":\"(.*?)\",").getMatch(0);
         // standard video and title format. http://v.youku.com/v_show/id_XNTAxODE3NDgw.html
-        if (title == null) title = new Regex(jsonString, ",\"title\":\"(.*?)\",").getMatch(0);
+        if (title == null) {
+            title = new Regex(jsonString, ",\"title\":\"(.*?)\",").getMatch(0);
+        }
 
         if (sfi != null && ss != null && st != null && se != null && seed != null && title != null) {
 
@@ -270,7 +280,9 @@ public class YkCm extends PluginForDecrypt {
                 streamSizes.put(element[0], element[1]);
             }
 
-            if (streamFileId == null || streamFileId.size() == 0 || streamSizes == null || streamSizes.size() == 0) { return false; }
+            if (streamFileId == null || streamFileId.size() == 0 || streamSizes == null || streamSizes.size() == 0) {
+                return false;
+            }
 
             videoParts = new HashMap<String, String[][]>();
             for (final String[] element : seqs) {
