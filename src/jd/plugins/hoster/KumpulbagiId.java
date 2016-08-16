@@ -185,7 +185,7 @@ public class KumpulbagiId extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             /* We don't want to work with the encoded json bla html response */
-            br.getPage(dl.getStringProperty("mainlink", null));
+            br.getPage(dl.getStringProperty("mainlink", null).replace(".id/", ".com/"));
         }
     }
 
@@ -268,7 +268,7 @@ public class KumpulbagiId extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, true);
-        br.getPage(link.getStringProperty("mainlink", null));
+        br.getPage(link.getStringProperty("mainlink", null).replace(".id/", ".com/"));
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
