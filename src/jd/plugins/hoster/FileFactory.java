@@ -53,6 +53,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
@@ -1023,17 +1024,17 @@ public class FileFactory extends PluginForHost {
                     if (filter == null) {
                         return false;
                     }
-                    final String status = getJson(filter, "status");
+                    final String status = PluginJSonUtils.getJsonValue(filter, "status");
                     if (!"online".equalsIgnoreCase(status)) {
                         dl.setAvailable(false);
                     } else {
                         dl.setAvailable(true);
                     }
-                    final String name = getJson(filter, "name");
-                    final String size = getJson(filter, "size");
-                    final String md5 = getJson(filter, "md5");
-                    final String prem = getJson(filter, "premiumOnly");
-                    final String pass = getJson(filter, "password");
+                    final String name = PluginJSonUtils.getJsonValue(filter, "name");
+                    final String size = PluginJSonUtils.getJsonValue(filter, "size");
+                    final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");
+                    final String prem = PluginJSonUtils.getJsonValue(filter, "premiumOnly");
+                    final String pass = PluginJSonUtils.getJsonValue(filter, "password");
                     if (StringUtils.isNotEmpty(name)) {
                         dl.setName(name);
                     }
@@ -1162,15 +1163,15 @@ public class FileFactory extends PluginForHost {
                 downloadLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 5 * 60 * 1001);
             }
-            dllink = getJson("url");
-            final String linkType = getJson("linkType");
+            dllink = PluginJSonUtils.getJsonValue(br, "url");
+            final String linkType = PluginJSonUtils.getJsonValue(br, "linkType");
             if (inValidate(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if ("trafficshare".equalsIgnoreCase(linkType)) {
                 setConstants(account, true);
             }
-            String delay = getJson("delay");
+            String delay = PluginJSonUtils.getJsonValue(br, "delay");
             if (!inValidate(passCode)) {
                 downloadLink.setProperty("pass", passCode);
             }
@@ -1257,10 +1258,10 @@ public class FileFactory extends PluginForHost {
             final Browser nbr = new Browser();
             prepApiBrowser(nbr);
             nbr.getPage(getApi() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final String apiKey = getJson(nbr, "key");
+            final String apiKey = PluginJSonUtils.getJsonValue(nbr, "key");
             if (apiKey != null) {
                 account.setProperty("apiKey", apiKey);
-            } else if ("error".equalsIgnoreCase(getJson(nbr, "type")) && ("705".equalsIgnoreCase(getJson(nbr, "code")) || "706".equalsIgnoreCase(getJson(nbr, "code")) || "707".equalsIgnoreCase(getJson(nbr, "code")))) {
+            } else if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "type")) && ("705".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "706".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")))) {
                 // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
                 // 706 ERR_API_LOGIN_FAILED Login details were incorrect
                 // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
@@ -1301,7 +1302,7 @@ public class FileFactory extends PluginForHost {
                     }
                 }
                 // account specific errors which could happen at any point in time!
-                if ("error".equalsIgnoreCase(getJson(ibr, "type")) && ("707".equalsIgnoreCase(getJson(ibr, "code")) || "719".equalsIgnoreCase(getJson(ibr, "code")))) {
+                if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "type")) && ("707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")) || "719".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
                     // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
                     // 719 ERR_API_ACCOUNT_SUSPENDED The account being used has been suspended
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(ibr), PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1311,20 +1312,22 @@ public class FileFactory extends PluginForHost {
             ibr.getPage(url);
         }
         // error handling for generic errors which could occur at any point in time!
-        if ("error".equalsIgnoreCase(getJson(ibr, "type")) && ("718".equalsIgnoreCase(getJson(ibr, "code")))) {
+        if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "type")) && ("718".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
             // 718 ERR_API_IP_SUSPENDED The IP Address initiating the request has been suspended
             throw new PluginException(LinkStatus.ERROR_FATAL, "\r\n" + errorMsg(ibr));
         }
     }
 
     private String errorMsg(final Browser ibr) {
-        final String message = getJson(ibr, "message");
-        logger.warning(message);
+        final String message = PluginJSonUtils.getJsonValue(ibr, "message");
+        if (message != null) {
+            logger.warning(message);
+        }
         return message;
     }
 
     private boolean sessionKeyInValid(final Account account, final Browser ibr) {
-        if ("error".equalsIgnoreCase(getJson(ibr, "type")) && ("710".equalsIgnoreCase(getJson(ibr, "code")) || "711".equalsIgnoreCase(getJson(ibr, "code")))) {
+        if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "type")) && ("710".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")) || "711".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
             // 710 ERR_API_SESS_KEY_INVALID The session key has expired or is invalid. Please obtain a new one via getSessionKey.
             // 711 ERR_API_LOGIN_EXPIRED The session key has expired. Please obtain a new one via getSessionKey.
             account.setProperty("apiKey", Property.NULL);
@@ -1346,8 +1349,8 @@ public class FileFactory extends PluginForHost {
             return ai;
         }
         getPage(br, getApi() + "/getMemberInfo", account);
-        String expire = getJson("expiryMs");
-        String type = getJson("accountType");
+        final String expire = PluginJSonUtils.getJsonValue(br, "expiryMs");
+        final String type = PluginJSonUtils.getJsonValue(br, "accountType");
         if ("premium".equalsIgnoreCase(type)) {
             account.setProperty("free", false);
             account.setProperty("totalMaxSim", 20);
@@ -1386,68 +1389,6 @@ public class FileFactory extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**

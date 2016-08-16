@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -35,8 +32,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
@@ -113,19 +114,19 @@ public class DataHu extends PluginForHost {
                     sb.append("%2C");
                 }
                 this.getAPISafe("http://data.hu/api.php?act=check_download_links&links=" + sb.toString());
-                br.getRequest().setHtmlCode(JSonUtils.unescape(br.toString()));
+                br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
                 for (final DownloadLink dllink : links) {
                     final String added_url = dllink.getDownloadURL();
                     final String fid = getFID(dllink);
                     checkurl = "http://data.hu/get/" + fid + "/";
                     final String thisjson = br.getRegex("\"" + checkurl + "\":\\{(.*?)\\}").getMatch(0);
-                    if (thisjson == null || !"online".equals(this.getJson(thisjson, "status"))) {
+                    if (thisjson == null || !"online".equals(PluginJSonUtils.getJsonValue(thisjson, "status"))) {
                         dllink.setAvailable(false);
                     } else {
-                        final String name = this.getJson(thisjson, "filename");
-                        final String size = this.getJson(thisjson, "filesize");
-                        final String md5 = getJson(thisjson, "md5");
-                        final String sha1 = getJson(thisjson, "sha1");
+                        final String name = PluginJSonUtils.getJsonValue(thisjson, "filename");
+                        final String size = PluginJSonUtils.getJsonValue(thisjson, "filesize");
+                        final String md5 = PluginJSonUtils.getJsonValue(thisjson, "md5");
+                        final String sha1 = PluginJSonUtils.getJsonValue(thisjson, "sha1");
                         /* Correct urls so when users copy them they can actually use them. */
                         if (!added_url.contains("name")) {
                             final String correctedurl = "http://data.hu/get/" + fid + "/" + name;
@@ -141,7 +142,7 @@ public class DataHu extends PluginForHost {
                         dllink.setDownloadSize(SizeFormatter.getSize(size));
                         if (sha1 != null) {
                             dllink.setSha1Hash(sha1);
-                        } else {
+                        } else if (md5 != null) {
                             dllink.setMD5Hash(md5);
                         }
                         dllink.setAvailable(true);
@@ -179,15 +180,17 @@ public class DataHu extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (!"premium".equals(getJson("type"))) {
+        if (!"premium".equals(PluginJSonUtils.getJsonValue(br, "type"))) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        final String expiredate = getJson("expiration_date");
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd mm:HH:ss", Locale.ENGLISH));
+        final String expiredate = PluginJSonUtils.getJsonValue(br, "expiration_date");
+        if (expiredate != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd mm:HH:ss", Locale.ENGLISH));
+        }
         ai.setStatus("Premium account");
         account.setValid(true);
         return ai;
@@ -243,8 +246,8 @@ public class DataHu extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        getAPISafe("http://data.hu/api.php?act=get_direct_link&link=" + JSonUtils.escape(downloadLink.getDownloadURL()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
-        final String link = getJson("direct_link");
+        getAPISafe("http://data.hu/api.php?act=get_direct_link&link=" + PluginJSonUtils.escape(downloadLink.getDownloadURL()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+        final String link = PluginJSonUtils.getJsonValue(br, "direct_link");
         if (link == null) {
             /* Should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -298,74 +301,12 @@ public class DataHu extends PluginForHost {
     }
 
     /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
-    /**
      * 0 = everything ok, 1-99 = "error"-errors, 100-199 = "not_available"-errors, 200-299 = Other (html) [download] errors, sometimes mixed
      * with the API errors.
      */
     private void updatestatuscode() {
-        String error = getJson("error");
-        final String msg = getJson("msg");
+        String error = PluginJSonUtils.getJsonValue(br, "error");
+        final String msg = PluginJSonUtils.getJsonValue(br, "msg");
         if (error != null && msg != null) {
             if (msg.equals("wrong username or password")) {
                 statuscode = 1;

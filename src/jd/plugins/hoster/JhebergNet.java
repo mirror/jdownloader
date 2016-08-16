@@ -37,6 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -173,7 +174,7 @@ public class JhebergNet extends PluginForHost {
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.postAPISafe("/profile/get/debrid/links/", "csrfmiddlewaretoken=" + token + "&links=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = getJson("destination");
+            dllink = PluginJSonUtils.getJson(br, "destination");
             if (dllink == null) {
                 handleErrorRetries("dllinknull", 5, 60 * 60 * 1000l);
             }
@@ -390,16 +391,6 @@ public class JhebergNet extends PluginForHost {
             logger.info(NICE_HOST + ": Exception: statusCode: " + STATUSCODE + " statusMessage: " + statusMessage);
             throw e;
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
