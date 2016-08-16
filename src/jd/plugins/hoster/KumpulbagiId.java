@@ -50,7 +50,7 @@ public class KumpulbagiId extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://kumpulbagi.id/termosecondicoes.aspx";
+        return "http://kumpulbagi.com/termosecondicoes.aspx";
     }
 
     @Override
@@ -219,7 +219,7 @@ public class KumpulbagiId extends PluginForHost {
 
                 this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 // this.br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
-                this.br.getHeaders().put("Referer", "http://kumpulbagi.id/");
+                this.br.getHeaders().put("Referer", MAINPAGE + "/");
                 br.postPage("/action/Account/Login?returnUrl=%2F", "__RequestVerificationToken=" + req_token + "&UserName=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, ".ASPXAUTH") == null && br.getCookie(MAINPAGE, ".ASPXAUTH_v2") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

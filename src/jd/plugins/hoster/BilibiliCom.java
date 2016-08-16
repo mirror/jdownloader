@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "http://www\\.bilibilidecrypted\\.com/video/av\\d+/index_\\d+\\.html" }, flags = { 0 })
 public class BilibiliCom extends PluginForHost {
 
     public BilibiliCom(PluginWrapper wrapper) {
@@ -52,6 +52,7 @@ public class BilibiliCom extends PluginForHost {
 
     private String               dllink            = null;
     private String               fid               = null;
+    private String               part              = null;
     private boolean              server_issues     = false;
 
     @Override
@@ -61,7 +62,7 @@ public class BilibiliCom extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         final String vid = getFID(link);
-        final String newurl = "http://www.bilibili.com/video/av" + vid + "/";
+        final String newurl = link.getDownloadURL().replace("bilibilidecrypted.com/", "bilibili.com/");
         link.setUrlDownload(newurl);
         link.setContentUrl(newurl);
     }
@@ -80,15 +81,19 @@ public class BilibiliCom extends PluginForHost {
         dllink = null;
         server_issues = false;
         fid = this.getFID(link);
+        part = new Regex(link.getDownloadURL(), "index_(\\d+)").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("对不起，你输入的参数有误")) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
+        String filename = getTitle(this.br);
         if (filename == null) {
             filename = fid;
+        }
+        if (!filename.contains(part)) {
+            filename += " - part_" + part;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -161,6 +166,14 @@ public class BilibiliCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("对不起，你输入的参数有误");
+    }
+
+    public static final String getTitle(final Browser br) {
+        return br.getRegex("<title>([^<>]+)</title>").getMatch(0);
     }
 
     @Override

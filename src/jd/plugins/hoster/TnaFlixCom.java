@@ -31,6 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "https?://(?:[a-z0-9]+\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)|https?://(?:www\\.)?tnaflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+" }, flags = { 2 })
@@ -122,8 +123,18 @@ public class TnaFlixCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String vkey = new Regex(downloadLink.getDownloadURL(), "viewkey=([A-Za-z0-9]+)$").getMatch(0);
+        if (vkey == null) {
+            vkey = this.br.getRegex("id=\"vkey\" type=\"hidden\" value=\"([A-Za-z0-9]+)\"").getMatch(0);
+        }
+        String videoid = new Regex(downloadLink.getDownloadURL(), "video(\\d+)$").getMatch(0);
+        if (videoid == null) {
+            videoid = this.br.getRegex("id=\"VID\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        }
+
+        final String nkey = this.br.getRegex("id=\"nkey\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
         // This link doesn't have quality choice: https://www.tnaflix.com/view_video.php?viewkey=b5a6fcf68b48e6dd6734
         String dllink1 = br.getRegex("itemprop=\"contentUrl\" content=\"([^\"]+?)\"").getMatch(0);
         final String download = br.getRegex("<div class=\"playlist_listing\" data-loaded=\"true\">(.*?)</div>").getMatch(0);
@@ -131,12 +142,18 @@ public class TnaFlixCom extends PluginForHost {
         if (configLink == null) {
             configLink = br.getRegex("flashvars.config.*?escape\\(.*?(cdn.*?)\"").getMatch(0);
         }
+        if (configLink == null && vkey != null && videoid != null && nkey != null) {
+            configLink = "https://cdn-fck.tnaflix.com/tnaflix/" + vkey + ".fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=30&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
+        }
         if (configLink == null && download == null && dllink1 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dllink = null;
         if (configLink != null) {
-            br.getPage(Encoding.htmlDecode("http://" + configLink));
+            if (!configLink.startsWith("http")) {
+                configLink = Encoding.htmlDecode("http://" + configLink);
+            }
+            br.getPage(configLink);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Config file is not correct'", 30 * 60 * 1000l);
             }
@@ -146,6 +163,10 @@ public class TnaFlixCom extends PluginForHost {
                 if (dllink != null) {
                     break;
                 }
+            }
+            if (dllink == null) {
+                /* Fallback for videos with only one quality */
+                dllink = this.br.getRegex("<videoLink>(?:<\\!\\[CDATA\\[)?(http[^<>\"]+)(?:\\]\\]>)?</videoLink>").getMatch(0);
             }
         } else if (download != null) {
             // download support
@@ -164,6 +185,16 @@ public class TnaFlixCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);
         }
+
+        if (dllink == null && videoid != null) {
+            logger.info("Fallback to ajax method");
+            this.br.getPage("https://dyn.tnaflix.com/ajax/info.php?action=video&vid=" + videoid);
+            dllink = PluginJSonUtils.getJson(this.br, "flv");
+            if (dllink != null && dllink.startsWith("//")) {
+                dllink = "https:" + dllink;
+            }
+        }
+
         if (dllink == null) {
             dllink = dllink1;
         }
