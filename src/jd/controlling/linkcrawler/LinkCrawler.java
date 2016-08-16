@@ -1560,7 +1560,7 @@ public class LinkCrawler {
                                     newURL = url.replaceFirst("https?://", (url.startsWith("https://") ? "httpsviajd://" : "httpviajd://"));
                                 }
                                 try {
-                                    if (canHandle(httpPlugin, newURL, possibleCryptedLink)) {
+                                    if (canHandle(httpPlugin, newURL, possibleCryptedLink) && getFirstMatchingRule(possibleCryptedLink, newURL, LinkCrawlerRule.RULE.SUBMITFORM, LinkCrawlerRule.RULE.FOLLOWREDIRECT, LinkCrawlerRule.RULE.DEEPDECRYPT) == null) {
                                         if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission)) {
                                             /* create new CrawledLink that holds the modified CrawledLink */
                                             final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
