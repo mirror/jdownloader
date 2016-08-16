@@ -87,7 +87,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         vid_text = PluginJSonUtils.unescape(vid_text);
         // we can get filename here also.
         if (title == null) {
-            title = PluginJSonUtils.getJson(vid_text, "title");
+            title = PluginJSonUtils.getJsonValue(vid_text, "title");
         }
         if (title == null) {
             return null;
@@ -99,7 +99,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         for (final String[] qualityinfo : qualities) {
             final String qualityCfg = qualityinfo[0];
             final String qualityJson = qualityinfo[1];
-            final String qualityDllink = PluginJSonUtils.getJson(vid_text, qualityJson);
+            final String qualityDllink = PluginJSonUtils.getJsonValue(vid_text, qualityJson);
             if (qualityDllink != null && formats.containsKey(qualityCfg) && cfg.getBooleanProperty("ALLOW_" + qualityCfg, true)) {
                 final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String[] vidinfo = formats.get(qualityCfg);

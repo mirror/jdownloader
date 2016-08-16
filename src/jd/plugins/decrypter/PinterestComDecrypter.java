@@ -121,7 +121,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             String nextbookmark = null;
 
             /* First, get the first 25 pictures from their site. */
-            final String board_id = PluginJSonUtils.getJson(json_source, "board_id");
+            final String board_id = PluginJSonUtils.getJsonValue(json_source, "board_id");
             final String source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
             if (board_id == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

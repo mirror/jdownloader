@@ -675,8 +675,8 @@ public class LetWatchUs extends antiDDoSForHost {
             if (sources != null) {
                 final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
                 for (final String source : sources) {
-                    final String file = PluginJSonUtils.getJson(source, "file");
-                    final String label = PluginJSonUtils.getJson(source, "label");
+                    final String file = PluginJSonUtils.getJsonValue(source, "file");
+                    final String label = PluginJSonUtils.getJsonValue(source, "label");
                     if (file != null && label != null) {
                         results.put(label, file);
                     }

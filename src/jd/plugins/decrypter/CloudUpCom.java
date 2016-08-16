@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
 
 /**
  * Collections!
@@ -82,7 +82,7 @@ public class CloudUpCom extends PluginForDecrypt {
 
         final String de_loaded = Encoding.urlDecode(preloader, false);
         final String[] ids = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(de_loaded, "items"));
-        String fpName = PluginJSonUtils.getJson(de_loaded, "title");
+        String fpName = PluginJSonUtils.getJsonValue(de_loaded, "title");
         if (ids != null) {
             if (StringUtils.startsWithCaseInsensitive(fpName, "Video Stream - ")) {
                 // these are annoying as they stream from youtube etc.
@@ -94,7 +94,7 @@ public class CloudUpCom extends PluginForDecrypt {
                     final String pl = br.getRegex("JSON\\.parse\\(decodeURIComponent\\('(.*?)'\\)\\)").getMatch(0);
                     final String dl = Encoding.urlDecode(pl, false);
                     // youtube, vimeo send back to proper plugins
-                    final String iframeJson = PluginJSonUtils.getJson(dl, "oembed_html");
+                    final String iframeJson = PluginJSonUtils.getJsonValue(dl, "oembed_html");
                     String iframe = iframeJson == null ? null : new Regex(iframeJson, "<iframe\\s+[^>]*\\s*src=(\"|')(.*?)\\1").getMatch(1);
                     if (iframe != null) {
                         decryptedLinks.add(createDownloadlink(iframe));
