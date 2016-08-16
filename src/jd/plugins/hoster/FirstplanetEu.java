@@ -38,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -90,9 +91,9 @@ public class FirstplanetEu extends PluginForHost {
         if (api_use_api_availablecheck) {
             this.prepBRAPI(this.br);
             this.postPage(API_ENDPOINT, "{\"method\":\"file.getInfo\",\"params\":{\"link\":\"" + link.getDownloadURL() + "\"}}");
-            filename = getJson("name");
-            filesize = getJson("size");
-            hashes = getJson("md5sha1");
+            filename = PluginJSonUtils.getJsonValue(br, "name");
+            filesize = PluginJSonUtils.getJsonValue(br, "size");
+            hashes = PluginJSonUtils.getJsonValue(br, "md5sha1");
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -267,7 +268,7 @@ public class FirstplanetEu extends PluginForHost {
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             br.setFollowRedirects(false);
             this.postPage(API_ENDPOINT, "{\"method\":\"user.login\",\"params\":{\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}}");
-            api_token = getJson("result");
+            api_token = PluginJSonUtils.getJsonValue(br, "result");
             if (api_token == null) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -435,28 +436,8 @@ public class FirstplanetEu extends PluginForHost {
         handleErrors();
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
     private void handleErrors() throws PluginException {
-        final String errorcode = getJson("code");
+        final String errorcode = PluginJSonUtils.getJsonValue(br, "code");
         if (errorcode != null) {
             switch (Integer.parseInt(errorcode)) {
             case -32001:

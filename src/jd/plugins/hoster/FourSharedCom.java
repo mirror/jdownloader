@@ -49,7 +49,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -719,7 +719,7 @@ public class FourSharedCom extends PluginForHost {
                 }
                 if (filename == null) {
                     // json
-                    filename = JSonUtils.getJson(br, "filename");
+                    filename = PluginJSonUtils.getJsonValue(br, "filename");
                 }
                 /* Here, extension might be missing */
                 if (filename == null) {

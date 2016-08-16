@@ -268,26 +268,6 @@ public class VevoCom extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
@@ -299,23 +279,23 @@ public class VevoCom extends PluginForHost {
     }
 
     /** Settings stuff */
-    private static final String ALLOW_HTTP_56   = "version_4_type_2_56";
-    private static final String ALLOW_HTTP_500  = "version_4_type_2_500";
-    private static final String ALLOW_HTTP_2000 = "version_4_type_2_2000";
-    private static final String ALLOW_RTMP_500  = "version_4_type_1_500";
-    private static final String ALLOW_RTMP_800  = "version_4_type_1_800";
-    private static final String ALLOW_RTMP_1200 = "version_4_type_1_1200";
-    private static final String ALLOW_RTMP_1600 = "version_4_type_1_1600";
-    private static final String ALLOW_HLS_64    = "version_4_type_4_64";
-    private static final String ALLOW_HLS_200   = "version_4_type_4_200";
-    private static final String ALLOW_HLS_400   = "version_4_type_4_400";
-    private static final String ALLOW_HLS_500   = "version_4_type_4_500";
-    private static final String ALLOW_HLS_800   = "version_4_type_4_800";
-    private static final String ALLOW_HLS_1200  = "version_4_type_4_1200";
-    private static final String ALLOW_HLS_2400  = "version_4_type_4_2400";
-    private static final String ALLOW_HLS_3200  = "version_4_type_4_3200";
-    private static final String ALLOW_HLS_4200  = "version_4_type_4_4200";
-    private static final String ALLOW_HLS_5200  = "version_4_type_4_5200";
+    private final String ALLOW_HTTP_56   = "version_4_type_2_56";
+    private final String ALLOW_HTTP_500  = "version_4_type_2_500";
+    private final String ALLOW_HTTP_2000 = "version_4_type_2_2000";
+    private final String ALLOW_RTMP_500  = "version_4_type_1_500";
+    private final String ALLOW_RTMP_800  = "version_4_type_1_800";
+    private final String ALLOW_RTMP_1200 = "version_4_type_1_1200";
+    private final String ALLOW_RTMP_1600 = "version_4_type_1_1600";
+    private final String ALLOW_HLS_64    = "version_4_type_4_64";
+    private final String ALLOW_HLS_200   = "version_4_type_4_200";
+    private final String ALLOW_HLS_400   = "version_4_type_4_400";
+    private final String ALLOW_HLS_500   = "version_4_type_4_500";
+    private final String ALLOW_HLS_800   = "version_4_type_4_800";
+    private final String ALLOW_HLS_1200  = "version_4_type_4_1200";
+    private final String ALLOW_HLS_2400  = "version_4_type_4_2400";
+    private final String ALLOW_HLS_3200  = "version_4_type_4_3200";
+    private final String ALLOW_HLS_4200  = "version_4_type_4_4200";
+    private final String ALLOW_HLS_5200  = "version_4_type_4_5200";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "HTTP formats:"));

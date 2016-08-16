@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "http://(www\\.)?puls4\\.com/video/[a-z0-9\\-]+/play/\\d+" }, flags = { 0 })
 public class Puls4Com extends PluginForHost {
@@ -103,7 +104,7 @@ public class Puls4Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"message\\-error\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = getJson("episodename");
+            filename = PluginJSonUtils.getJsonValue(br, "episodename");
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\",\"hd\":true").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\",\"hd\":false").getMatch(0);
@@ -174,26 +175,6 @@ public class Puls4Com extends PluginForHost {
 
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */

@@ -41,7 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -394,7 +394,7 @@ public class Video2brainCom extends PluginForHost {
                         if (language_based_cookie == null) {
                             continue;
                         }
-                        String continue_url = JSonUtils.getJson(br, "url");
+                        String continue_url = PluginJSonUtils.getJsonValue(br, "url");
                         if (continue_url == null) {
                             /* Small fallback. */
                             continue_url = "/" + language + "/login";

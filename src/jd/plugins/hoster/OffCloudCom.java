@@ -23,15 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,6 +38,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class OffCloudCom extends PluginForHost {
@@ -699,26 +699,6 @@ public class OffCloudCom extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
     private void tempUnavailableHoster(final long timeout) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
@@ -948,7 +928,7 @@ public class OffCloudCom extends PluginForHost {
             case 15:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 *
+                 * 
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This cann be considered as a small workaround.
                  */
@@ -958,7 +938,7 @@ public class OffCloudCom extends PluginForHost {
             case 16:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 *
+                 * 
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This cann be considered as a small workaround.
                  */

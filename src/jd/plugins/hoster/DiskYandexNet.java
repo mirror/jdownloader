@@ -23,9 +23,6 @@ import java.util.Map;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,7 +43,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" }, flags = { 2, 0 })
 public class DiskYandexNet extends PluginForHost {
@@ -324,7 +325,7 @@ public class DiskYandexNet extends PluginForHost {
                     br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
                 }
                 handleErrorsFree();
-                dllink = getJson("file");
+                dllink = PluginJSonUtils.getJsonValue(br, "file");
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -425,7 +426,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String getCkey() throws PluginException {
-        final String ckey = getJson("ckey");
+        final String ckey = PluginJSonUtils.getJsonValue(br, "ckey");
         if (ckey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -699,9 +700,9 @@ public class DiskYandexNet extends PluginForHost {
     private String siteGetDllink(final DownloadLink dl) {
         final String dllink;
         if (isZippedFolder(dl)) {
-            dllink = getJson("folder");
+            dllink = PluginJSonUtils.getJsonValue(br, "folder");
         } else {
-            dllink = getJson("file");
+            dllink = PluginJSonUtils.getJsonValue(br, "file");
         }
         return dllink;
     }
@@ -755,7 +756,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     public static String getSK(final Browser br) {
-        return getJson(br.toString(), "sk");
+        return PluginJSonUtils.getJsonValue(br, "sk");
     }
 
     private Browser prepbrWebsite(final Browser br) {
@@ -811,26 +812,6 @@ public class DiskYandexNet extends PluginForHost {
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
         getConfig().addEntry(moveFilesToAcc);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "2. Delete moved files & empty trash after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false));
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    public static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private void checkDiskFeatureDialog() {

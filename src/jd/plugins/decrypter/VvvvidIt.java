@@ -33,8 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
-import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+(?:/\\d+/\\d+)?" }, flags = { 0 })
@@ -166,7 +166,7 @@ public class VvvvidIt extends PluginForDecrypt {
 
     public static String getConnID(final Browser br) throws Exception {
         br.postPageRaw("http://www.vvvvid.it/user/login", "{\"action\":\"login\",\"email\":\"\",\"password\":\"\",\"facebookParams\":\"\",\"mobile\":false,\"hls\":true,\"flash\":true,\"isIframe\":false}");
-        String conn_id = JSonUtils.getJson(br, "conn_id");
+        String conn_id = PluginJSonUtils.getJsonValue(br, "conn_id");
         if (conn_id != null) {
             conn_id = Encoding.urlEncode(conn_id);
         }

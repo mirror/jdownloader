@@ -34,6 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dinoshare.cz" }, urls = { "http://(www\\.)?dinoshare\\.cz/[a-z0-9\\-]+/[A-Za-z0-9]+/" }, flags = { 2 })
 public class DinoShareCz extends PluginForHost {
@@ -100,9 +101,9 @@ public class DinoShareCz extends PluginForHost {
                         dllink.setName(fid);
                         dllink.setAvailable(false);
                     } else {
-                        final String ftitle = getJson(linkdata, "file_title");
-                        final String fext = getJson(linkdata, "file_ext");
-                        final String fsize = getJson(linkdata, "file_size");
+                        final String ftitle = PluginJSonUtils.getJsonValue(linkdata, "file_title");
+                        final String fext = PluginJSonUtils.getJsonValue(linkdata, "file_ext");
+                        final String fsize = PluginJSonUtils.getJsonValue(linkdata, "file_size");
                         if (ftitle == null || fext == null || fsize == null) {
                             dllink.setName(fid);
                             logger.warning("Linkchecker broken for " + this.getHost());
@@ -212,7 +213,7 @@ public class DinoShareCz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final long creditsleft = Long.parseLong(getJson("credits"));
+        final long creditsleft = Long.parseLong(PluginJSonUtils.getJsonValue(br, "credits"));
         /*
          * Also treat premium accounts with low traffic (1,5 GB or less) as free so that they can't get disabled or similar because of low
          * traffic.
@@ -255,7 +256,7 @@ public class DinoShareCz extends PluginForHost {
         String dllink = this.checkDirectLink(link, "premium_directlink");
         if (dllink == null) {
             br.getPage("http://www.dinoshare.cz/api/?user_email=" + Encoding.urlEncode(account.getUser()) + "&user_pass=" + Encoding.urlEncode(account.getPass()) + "&download_link=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = getJson("download_link");
+            dllink = PluginJSonUtils.getJsonValue(br, "download_link");
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -292,68 +293,6 @@ public class DinoShareCz extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override

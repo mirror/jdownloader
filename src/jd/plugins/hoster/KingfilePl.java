@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -91,7 +91,7 @@ public class KingfilePl extends PluginForHost {
         if (dllink == null) {
             this.br.getPage("/download/" + this.fid + "/?plan=n");
             long wait = 68;
-            final String wait_str = JSonUtils.getJson(this.br, "timer");
+            final String wait_str = PluginJSonUtils.getJsonValue(br, "timer");
             if (wait_str != null) {
                 wait = Long.parseLong(wait_str);
             }
@@ -117,7 +117,7 @@ public class KingfilePl extends PluginForHost {
             if (!success) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            dllink = JSonUtils.getJson(this.br, "url");
+            dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (dllink == null) {
                 if (this.br.containsHTML("LIMIT POBIERANIA ZOSTA")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1001l);
