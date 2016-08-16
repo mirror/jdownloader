@@ -10,14 +10,6 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.MigPanel;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.translate._JDT;
-
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter.ReconnectResult;
@@ -26,6 +18,14 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.nutils.Formatter;
+
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.MigPanel;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
 
 public class ReconnectTester extends MigPanel implements SettingsComponent, ActionListener {
     /**
@@ -122,15 +122,28 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Start Reconnect");
         this.lblStatusMessage.setText(_JDT.T.gui_warning_reconnect_running());
         this.lblStatusMessage.setEnabled(true);
-        this.lblBeforeIP.setText(IPController.getInstance().getIP().toString());
+        this.lblBeforeIP.setText("?");
 
         this.lblBeforeIP.setEnabled(true);
         this.lblBeforeIpLabel.setEnabled(true);
         this.lblCurrentIP.setText("?");
 
-        new Thread() {
+        new Thread(getClass().getName()) {
+            {
+                setDaemon(true);
+            }
+
             @Override
             public void run() {
+                final IP ip = IPController.getInstance().getIP();
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        lblBeforeIP.setText(ip.toString());
+                    }
+                };
+
                 final ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
                 final ScheduledFuture<?> timer = scheduler.scheduleAtFixedRate(new Runnable() {
                     private final long startTimeStamp = System.currentTimeMillis();
@@ -160,6 +173,12 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    final String currentIP;
+                    if (config.isIPCheckGloballyDisabled()) {
+                        currentIP = "?";
+                    } else {
+                        currentIP = IPController.getInstance().getIP().toString();
+                    }
                     if (ret) {
                         new EDTRunner() {
 
@@ -173,11 +192,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 lblSuccessIcon.setIcon(new AbstractIcon(IconKey.ICON_TRUE, 32));
                                 lblSuccessIcon.setEnabled(true);
                                 lblStatusMessage.setEnabled(true);
-                                if (config.isIPCheckGloballyDisabled()) {
-                                    lblCurrentIP.setText("?");
-                                } else {
-                                    lblCurrentIP.setText(IPController.getInstance().getIP().toString());
-                                }
+                                lblCurrentIP.setText(currentIP);
                             }
 
                         };
@@ -189,13 +204,8 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 lblStatusMessage.setText(_JDT.T.gui_warning_reconnectFailed());
                                 lblSuccessIcon.setIcon(new AbstractIcon(IconKey.ICON_FALSE, 32));
                                 lblSuccessIcon.setEnabled(true);
-                                if (config.isIPCheckGloballyDisabled()) {
-                                    lblCurrentIP.setText("?");
-                                } else {
-                                    lblCurrentIP.setText(IPController.getInstance().getIP().toString());
-                                }
+                                lblCurrentIP.setText(currentIP);
                             }
-
                         };
                     }
                 } finally {

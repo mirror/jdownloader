@@ -30,17 +30,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Regex;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.logging.LogController;
-
 import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -53,6 +42,18 @@ import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
 
 public class Gui extends AbstractDialog<Object> {
 
@@ -85,16 +86,23 @@ public class Gui extends AbstractDialog<Object> {
             }
 
             public void setStatus(final int state) {
-                if (state == 0) {
-                    this.setIcon(this.imageProgress);
-                    this.setText(this.strProgress);
-                } else if (state == 1) {
-                    this.setIcon(this.imageGood);
-                    this.setText(this.strGood);
-                } else {
-                    this.setIcon(this.imageBad);
-                    this.setText(this.strBad);
-                }
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        if (state == 0) {
+                            setIcon(imageProgress);
+                            setText(strProgress);
+                        } else if (state == 1) {
+                            setIcon(imageGood);
+                            setText(strGood);
+                        } else {
+                            setIcon(imageBad);
+                            setText(strBad);
+                        }
+                    }
+                };
             }
         }
 
@@ -108,13 +116,12 @@ public class Gui extends AbstractDialog<Object> {
 
         }
 
-        public void closePopup() {
+        public void closePopup(final Boolean validate) {
 
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     JDRRInfoPopup.this.cancelButton.setEnabled(false);
-
-                    if (IPController.getInstance().validate()) {
+                    if (Boolean.TRUE.equals(validate)) {
                         if (JDRRInfoPopup.this.reconnect_timer == 0) {
                             /*
                              * Reconnect fand innerhalb des Check-Intervalls statt
@@ -128,12 +135,11 @@ public class Gui extends AbstractDialog<Object> {
                     } else {
                         JDRRInfoPopup.this.statusicon.setStatus(-1);
                     }
-                    if (IPController.getInstance().validate()) {
+                    if (Boolean.TRUE.equals(validate)) {
                         Gui.this.save();
                     } else {
                         UserIO.getInstance().requestMessageDialog(T.T.gui_config_jdrr_reconnectfaild());
                     }
-
                     JDRRInfoPopup.this.dispose();
                 }
             });
@@ -163,33 +169,40 @@ public class Gui extends AbstractDialog<Object> {
             ReconnectRecorder.stopServer();
             super.setReturnmask(b);
             if (!b) {
-                this.closePopup();
+                this.closePopup(null);
             }
         }
 
         public void startCheck() {
             new Thread() {
+                {
+                    setDaemon(true);
+                }
+
                 public void run() {
                     JDRRInfoPopup.this.statusicon.setStatus(0);
                     this.setName(T.T.gui_config_jdrr_popup_title());
                     JDRRInfoPopup.this.reconnect_timer = 0;
-                    while (ReconnectRecorder.running) {
-                        try {
-                            Thread.sleep(Gui.CHECK_INTERVAL);
-                        } catch (final Exception e) {
-                        }
-
-                        if (!IPController.getInstance().validate() && JDRRInfoPopup.this.reconnect_timer == 0) {
-                            JDRRInfoPopup.this.reconnect_timer = System.currentTimeMillis();
-                        }
-                        if (IPController.getInstance().validate()) {
-                            JDRRInfoPopup.this.statusicon.setStatus(1);
-                            if (ReconnectRecorder.running == true) {
-                                ReconnectRecorder.stopServer();
-                                JDRRInfoPopup.this.closePopup();
+                    try {
+                        while (ReconnectRecorder.running) {
+                            try {
+                                Thread.sleep(Gui.CHECK_INTERVAL);
+                            } catch (final Exception e) {
                             }
-                            return;
+
+                            if (!IPController.getInstance().validate() && JDRRInfoPopup.this.reconnect_timer == 0) {
+                                JDRRInfoPopup.this.reconnect_timer = System.currentTimeMillis();
+                            }
+                            if (IPController.getInstance().validate()) {
+                                JDRRInfoPopup.this.statusicon.setStatus(1);
+                                if (ReconnectRecorder.running == true) {
+                                    JDRRInfoPopup.this.closePopup(true);
+                                }
+                                return;
+                            }
                         }
+                    } finally {
+                        ReconnectRecorder.stopServer();
                     }
                 }
             }.start();
@@ -338,10 +351,16 @@ public class Gui extends AbstractDialog<Object> {
                     startwithhttps = true;
                 }
                 host = host.replaceAll("http://", "").replaceAll("https://", "");
+                new Thread(getClass().getName()) {
+                    {
+                        setDaemon(true);
+                    }
 
-                IPController.getInstance().invalidate();
+                    public void run() {
+                        IPController.getInstance().invalidate();
+                    };
+                }.start();
                 ReconnectRecorder.startServer(host, this.rawmode.isSelected());
-
                 if (startwithhttps) {
                     CrossSystem.openURLOrShowMessage("http://localhost:" + (SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1));
                 } else {

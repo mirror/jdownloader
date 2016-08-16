@@ -615,6 +615,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 final String verifyIP = InetAddress.getByName(verify).getHostAddress();
                 if (whiteList.contains(verify)) {
                     if (verifiedIPs != null) {
+                        verifiedIPs.add(verify);
                         verifiedIPs.add(verifyIP);
                     }
                     return;

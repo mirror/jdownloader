@@ -14,6 +14,11 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.ipcheck.IPConnectionState;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.ipcheck.event.IPControllListener;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -26,11 +31,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.ipcheck.IPConnectionState;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.ipcheck.event.IPControllListener;
 
 public abstract class ReconnectFindDialog extends AbstractDialog<Object> implements IPControllListener {
 
@@ -143,6 +143,10 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         p.add(sp);
 
         th = new Thread(getClass().getName()) {
+            {
+                setDaemon(true);
+            }
+
             public void run() {
                 try {
                     IPController.getInstance().invalidate();
@@ -154,14 +158,12 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
                         setSubStatusState(_GUI.T.ReconnectDialog_onIPOnline_(), new AbstractIcon(IconKey.ICON_NETWORK_IDLE, 16));
                         setNewIP(IPController.getInstance().getIpState().getExternalIp().toString());
                     }
-
                     ReconnectFindDialog.this.run();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-
+                } finally {
+                    dispose();
                 }
-
-                dispose();
             }
         };
         startTime = System.currentTimeMillis();
@@ -175,7 +177,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         updateTimer.setRepeats(true);
         updateTimer.start();
         th.start();
-        IPController.getInstance().getEventSender().addListener(this);
+        IPController.getInstance().getEventSender().addListener(this, true);
         return p;
     }
 
@@ -231,7 +233,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         IPController.getInstance().getEventSender().removeListener(this);
         updateTimer.stop();
         th.interrupt();
-
     }
 
     public void setSubStatusState(final String txt, final Icon imageIcon) {
