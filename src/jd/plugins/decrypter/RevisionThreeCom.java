@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class RevisionThreeCom extends PluginForDecrypt {
@@ -78,7 +78,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
         if (videoID == null) {
             // JSON
             final String json = br.getRegex("(\"dataForPage\"\\s*:\\s*\\{.*?)</script>").getMatch(0);
-            videoID = JSonUtils.getJsonValue(json, "id");
+            videoID = PluginJSonUtils.getJsonValue(br, "id");
             if (videoID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

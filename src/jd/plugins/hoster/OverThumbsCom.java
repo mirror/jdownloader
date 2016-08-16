@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "overthumbs.com" }, urls = { "http://(www\\.)?overthumbs\\.com/galleries/[a-z0-9\\-]+" }, flags = { 0 })
 public class OverThumbsCom extends PluginForHost {
@@ -86,7 +86,7 @@ public class OverThumbsCom extends PluginForHost {
             } catch (final Exception e) {
                 e.printStackTrace();
             }
-            DLLINK = JSonUtils.getJson(result, "file");
+            DLLINK = PluginJSonUtils.getJsonValue(result, "file");
 
         } else {
             /* Use old way - avoids packed JS althougs js is just packed, nothing else. */

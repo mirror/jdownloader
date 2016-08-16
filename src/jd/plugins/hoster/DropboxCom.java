@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -232,7 +233,7 @@ public class DropboxCom extends PluginForHost {
                 }
                 pwform.put("password", passCode);
                 this.br.submitForm(pwform);
-                if (this.br.getURL().contains("/password") || getJson("error") != null) {
+                if (this.br.getURL().contains("/password") || PluginJSonUtils.getJsonValue(br, "error") != null) {
                     link.setProperty("pass", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
@@ -362,7 +363,7 @@ public class DropboxCom extends PluginForHost {
                 postdata += "&login_sd=";
                 postdata += "";
                 br.postPage("/ajax_login", postdata);
-                if (br.getCookie("https://www.dropbox.com", "jar") == null || !"OK".equals(getJson("status"))) {
+                if (br.getCookie("https://www.dropbox.com", "jar") == null || !"OK".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -379,16 +380,6 @@ public class DropboxCom extends PluginForHost {
             }
         }
 
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

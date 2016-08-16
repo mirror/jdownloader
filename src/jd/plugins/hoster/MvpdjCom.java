@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mvpdj.com" }, urls = { "https?://(?:www\\.)?mvpdj\\.com/song/player/\\d+" }, flags = { 2 })
 public class MvpdjCom extends PluginForHost {
@@ -105,8 +105,8 @@ public class MvpdjCom extends PluginForHost {
             if (!br.containsHTML("<title>") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = JSonUtils.getJson(br, "name");
-            dllink = JSonUtils.getJson(br, "url");
+            filename = PluginJSonUtils.getJsonValue(br, "name");
+            dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -223,7 +223,7 @@ public class MvpdjCom extends PluginForHost {
                 this.br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
                 this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 this.br.postPage("/user/login", postData);
-                final String statuscode = JSonUtils.getJson(this.br, "code");
+                final String statuscode = PluginJSonUtils.getJsonValue(br, "code");
                 if (!"200".equals(statuscode)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

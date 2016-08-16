@@ -36,7 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.net.CountingOutputStream;
@@ -145,7 +145,7 @@ public class VipCocoleechCom extends PluginForHost {
             /* request creation of downloadlink */
             /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
             this.getAPISafe(API_ENDPOINT + "/download.php?url=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = JSonUtils.getJson(this.br, "download_url");
+            dllink = PluginJSonUtils.getJsonValue(br, "download_url");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
@@ -309,8 +309,8 @@ public class VipCocoleechCom extends PluginForHost {
         /* As long as we always perform a full login, this call is never needed as full login will return account type and expire date too. */
         // accessUserInfo();
 
-        final String premiumstatus = getJson("premium_status");
-        final String validuntil = getJson("expire_date");
+        final String premiumstatus = PluginJSonUtils.getJsonValue(br, "premium_status");
+        final String validuntil = PluginJSonUtils.getJsonValue(br, "expire_date");
         long timestamp_validuntil = 0;
         if (validuntil != null) {
             timestamp_validuntil = Long.parseLong(validuntil) * 1000;
@@ -371,7 +371,7 @@ public class VipCocoleechCom extends PluginForHost {
             }
         }
         this.getAPISafe(API_ENDPOINT + "/login.php?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
-        currLogintoken = getJson("token");
+        currLogintoken = PluginJSonUtils.getJsonValue(br, "token");
         if (currLogintoken == null) {
             /* Should never happen */
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -383,16 +383,6 @@ public class VipCocoleechCom extends PluginForHost {
             }
         }
         this.currAcc.setProperty(PROPERTY_LOGINTOKEN, currLogintoken);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
@@ -479,7 +469,7 @@ public class VipCocoleechCom extends PluginForHost {
      */
     private void updatestatuscode() {
         /* First look for errorcode */
-        String code_str = this.getJson("code");
+        String code_str = PluginJSonUtils.getJsonValue(br, "code");
         if (inValidate(code_str)) {
             code_str = "0";
         }

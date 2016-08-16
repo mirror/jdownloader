@@ -39,7 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?(keezmovies\\.com/embed_player\\.php\\?v?id=\\d+|keezmoviesdecrypted\\.com/video/[\\w\\-]+)" }, flags = { 2 })
 public class KeezMoviesCom extends antiDDoSForHost {
@@ -319,7 +319,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
             return new Regex(FLASHVARS, "&" + s + "=(.*?)(&|$)").getMatch(0);
         }
         if (FLASHVARS_JSON != null) {
-            return JSonUtils.getJson(FLASHVARS_JSON, s);
+            return PluginJSonUtils.getJsonValue(FLASHVARS_JSON, s);
         }
         return null;
     }

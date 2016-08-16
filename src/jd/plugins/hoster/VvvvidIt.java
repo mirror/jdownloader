@@ -37,8 +37,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
-import jd.plugins.hoster.K2SApi.JSonUtils;
 
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -197,7 +197,7 @@ public class VvvvidIt extends PluginForHost {
                 if (cookies != null && conn_id != null) {
                     br.setCookies(account.getHoster(), cookies);
                     jd.plugins.decrypter.VvvvidIt.getConnID(br);
-                    if (JSonUtils.getJson(br, "id") != null) {
+                    if (PluginJSonUtils.getJsonValue(br, "id") != null) {
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
@@ -217,7 +217,7 @@ public class VvvvidIt extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Referer", "https://www." + account.getHoster() + "/");
                 br.postPageRaw("https://www." + account.getHoster() + "/user/login", postdata);
-                if (br.getCookie(account.getHoster(), "reminder") == null || JSonUtils.getJson(br, "id") == null) {
+                if (br.getCookie(account.getHoster(), "reminder") == null || PluginJSonUtils.getJsonValue(br, "id") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-_]+(?:.+\\?file=[A-Za-z0-9\\-_]+)?|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class BitCasaCom extends PluginForHost {
@@ -78,7 +78,7 @@ public class BitCasaCom extends PluginForHost {
             final String file_id = inforegex.getMatch(1);
             /* limit=300 == standard value from website */
             this.br.getPage("https://drive.bitcasa.com/portal/v2/shares/" + link_id + "/meta?limit=300");
-            final String errcode = getJson("code");
+            final String errcode = PluginJSonUtils.getJsonValue(br, "code");
             if ("4002".equals(errcode)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -100,15 +100,15 @@ public class BitCasaCom extends PluginForHost {
         } else {
             /* Single file */
             this.br.getPage("https://drive.bitcasa.com/portal/v2/shares/" + getFID(link) + "/meta");
-            final String errcode = getJson("code");
+            final String errcode = PluginJSonUtils.getJsonValue(br, "code");
             if ("4002".equals(errcode)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = getJson("share_name");
-            filesize = getJson("share_size");
-            digest = getJson("digest");
-            nonce = getJson("nonce");
-            payload = getJson("payload");
+            filename = PluginJSonUtils.getJsonValue(br, "share_name");
+            filesize = PluginJSonUtils.getJsonValue(br, "share_size");
+            digest = PluginJSonUtils.getJsonValue(br, "digest");
+            nonce = PluginJSonUtils.getJsonValue(br, "nonce");
+            payload = PluginJSonUtils.getJsonValue(br, "payload");
         }
         /* Did not yet get any password protected links for V2. */
         // /* Filename/size is not available for password protected links */
@@ -165,68 +165,6 @@ public class BitCasaCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override

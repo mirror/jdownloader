@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "http://(?:www\\.)?(?:members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
@@ -278,7 +278,7 @@ public class MotherLessCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
             if (dllink == null) {
-                dllink = JSonUtils.getJson(br, "file");
+                dllink = PluginJSonUtils.getJsonValue(br, "file");
             }
         }
         if (dllink != null && !dllink.contains("?start=0")) {
