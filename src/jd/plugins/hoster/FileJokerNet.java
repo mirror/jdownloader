@@ -26,11 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,6 +50,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FileJokerNet extends antiDDoSForHost {
@@ -1023,6 +1024,27 @@ public class FileJokerNet extends antiDDoSForHost {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
+                /* Small workaround for captcha-redirect */
+                if (dllink != null && dllink.contains("/?op=")) {
+                    getPage(dllink);
+                    dllink = null;
+                }
+                final Form captchaForm = this.br.getFormbyProperty("id", "f1");
+                if (captchaForm != null && correctedBR.contains("g-recaptcha")) {
+                    /*
+                     * 2016-08-16: Got captcha in premium mode and I was not able to solve it - website redirected me to captcha again and
+                     * again
+                     */
+                    logger.info("WTF reCaptchaV2 in premium mode ...");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    this.submitForm(captchaForm);
+                    dllink = getDllink();
+                    if (dllink != null && new Regex(dllink, this.getSupportedLinks()).matches()) {
+                        /* Chances are high that its gonna work later ... */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha loop in premium mode - please try again later", 2 * 60 * 1000l);
+                    }
+                }
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
