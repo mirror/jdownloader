@@ -52,6 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
 public class XHamsterCom extends PluginForHost {
@@ -493,7 +494,7 @@ public class XHamsterCom extends PluginForHost {
                 final long now = System.currentTimeMillis();
                 final String xsid;
                 {
-                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     engine.eval("res1 = Math.floor(Math.random()*100000000).toString(16);");
                     engine.eval("now = " + now);

@@ -22,13 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.envjs.EnvJSBrowser;
-import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
-import org.jdownloader.scripting.envjs.PermissionFilter;
-import org.jdownloader.scripting.envjs.XHRResponse;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -39,6 +32,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.envjs.EnvJSBrowser;
+import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
+import org.jdownloader.scripting.envjs.PermissionFilter;
+import org.jdownloader.scripting.envjs.XHRResponse;
 
 /**
  * @author raztoki

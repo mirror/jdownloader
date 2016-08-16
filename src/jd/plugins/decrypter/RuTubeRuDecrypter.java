@@ -38,6 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.RuTubeVariant;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -150,8 +151,8 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             // swf requests over json
             Browser ajax = cloneBrowser(br);
             ajax.getPage("/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
-            final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(ajax.toString());
-            final String videoBalancer = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "video_balancer/default");
+            final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            final String videoBalancer = (String) JavaScriptEngineFactory.walkJson(entries, "video_balancer/default");
             if (videoBalancer != null) {
                 final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 final XPath xPath = XPathFactory.newInstance().newXPath();

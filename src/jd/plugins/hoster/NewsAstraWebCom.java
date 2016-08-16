@@ -4,11 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 import jd.PluginWrapper;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Cookie;
@@ -21,6 +16,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "news.astraweb.com" }, urls = { "" }, flags = { 0 })
 public class NewsAstraWebCom extends UseNet {

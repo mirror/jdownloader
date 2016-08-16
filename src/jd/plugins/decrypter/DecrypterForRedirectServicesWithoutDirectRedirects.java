@@ -39,6 +39,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
 names = { "clictune.com", "xfast.link", "lientelecharger.com", "f16f.com", "adyou.me", "manteb.in", "zonambulos.info", "nifteam.info", "swzz.xyz", "animeforce.org", "link.achanime.net", "sipkur.net", "xxxporn88.com", "otrkeyfinder.com", "solarmovie.is", "xiaomengku.com", "anyt.ml", "fastgo.cu.cc", "linkdecode.com", "lienscash.com", "is.gd", "djurl.com", "umhq.net", "madlink.sk", "url.fm", "searchonzippy.eu", "sharmota.com", "hflix.in", "hnzoom.com", "basemp3.ru", "lezlezlez.com", "dwz.cn", "guardlink.org", "q32.ru", "icefilms.info", "adfoc.us", "damasgate.com", "freeonsmash.com", "lnk.co", "myurl.in", "filep.info", "eskimotube.com", "4p5.com", "href.hu", "migre.me", "altervista.org", "agaleradodownload.com", "songspk.info", "deurl.me", "muzgruz.ru", "zero10.net", "chip.de", "nbanews.us", "1tool.biz", "zero10.net", "official.fm", "academicearth.org", "tm-exchange.com", "adiarimore.com",
@@ -660,7 +662,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 }
                 // within packed
                 final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
-                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 String result = null;
                 try {

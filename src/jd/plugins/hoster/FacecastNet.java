@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -56,11 +57,11 @@ public class FacecastNet extends PluginForHost {
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         this.br.getPage(server_default + "/eventdata?code=" + fid + "&ref=&_=" + System.currentTimeMillis());
         /* So far known errormessages: "Такого видео не существует" */
-        final String error = getJson("error");
+        final String error = PluginJSonUtils.getJsonValue(br, "error");
         if (br.getHttpConnection().getResponseCode() == 404 || error != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String date = getJson("date_plan_start_ts");
+        final String date = PluginJSonUtils.getJsonValue(br, "date_plan_start_ts");
         if (date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -78,7 +79,7 @@ public class FacecastNet extends PluginForHost {
             final long waitUntilStart = this.date_start - System.currentTimeMillis();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video has not yet been broadcasted!", waitUntilStart);
         }
-        final String videoid_intern = this.getJson("id");
+        final String videoid_intern = PluginJSonUtils.getJsonValue(br, "id");
         if (videoid_intern == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -105,16 +106,6 @@ public class FacecastNet extends PluginForHost {
             formattedDate = Long.toString(date_start);
         }
         return formattedDate;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

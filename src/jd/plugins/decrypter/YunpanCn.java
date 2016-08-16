@@ -30,7 +30,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+(?:#\\d+)?(?:\\-0)?(?:\\&downloadpassword=[^<>\"\\&=]+)?|yunpan\\.cn/[a-zA-Z0-9]{13})" }, flags = { 0 })
 public class YunpanCn extends antiDDoSForDecrypt {
@@ -100,13 +101,13 @@ public class YunpanCn extends antiDDoSForDecrypt {
         DownloadLink dl = null;
         HashMap<String, Object> entries = null;
         final ArrayList<Object> ressourcelist;
-        final Object jsono = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final Object jsono = JavaScriptEngineFactory.jsonToJavaObject(json);
         if (jsono instanceof HashMap) {
             /* E.g. single file */
             ressourcelist = new ArrayList<Object>();
             ressourcelist.add(jsono);
         } else {
-            ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
         }
         for (final Object foldero : ressourcelist) {
             entries = (HashMap<String, Object>) foldero;
@@ -114,7 +115,7 @@ public class YunpanCn extends antiDDoSForDecrypt {
             final String name = (String) entries.get("name");
             final String path = (String) entries.get("path");
             final String fhash = (String) entries.get("fhash");
-            final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             String contenturl = "http://" + host + "/lk/" + fid + "#" + nid + "-0";
             if (passCode != null) {
                 contenturl += "&downloadpassword=" + passCode;

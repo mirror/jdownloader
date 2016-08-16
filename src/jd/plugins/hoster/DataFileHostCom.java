@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "https?://((www\\.)?datafilehost\\.com/(download\\-[a-z0-9]+\\.html|d/[a-z0-9]+)|www\\d+\\.datafilehost\\.com/d/[a-z0-9]+)" }, flags = { 0 })
 public class DataFileHostCom extends PluginForHost {

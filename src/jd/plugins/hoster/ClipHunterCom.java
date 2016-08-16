@@ -38,6 +38,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" }, flags = { 2 })
 public class ClipHunterCom extends PluginForHost {
 
@@ -133,7 +135,7 @@ public class ClipHunterCom extends PluginForHost {
 
     public static String decryptUrl(final String fun, final String value) {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {
@@ -175,8 +177,8 @@ public class ClipHunterCom extends PluginForHost {
         String currentSr, tmpUrl, ext;
         if (json_full != null) {
             /* 2016-03-30: New json handling */
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_full);
-            LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_full);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
+            LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
             for (final Map.Entry<String, Object> cookieEntry : entries.entrySet()) {
                 final String videoname = cookieEntry.getKey();
                 videoinfo = (LinkedHashMap<String, Object>) cookieEntry.getValue();

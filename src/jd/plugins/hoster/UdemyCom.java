@@ -37,6 +37,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|.+/[^<>\"]+/lecture/\\d+)" }, flags = { 2 })
 public class UdemyCom extends PluginForHost {
 
@@ -119,7 +121,7 @@ public class UdemyCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             final String title_cleaned = (String) entries.get("title_cleaned");
             description = (String) entries.get("description");
             String json_view_html = (String) entries.get("view_html");
@@ -136,8 +138,8 @@ public class UdemyCom extends PluginForHost {
             final Object download_urls_o = entries.get("download_urls");
             if (download_urls_o != null) {
                 filename = (String) entries.get("title");
-                final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, json_download_path);
-                dllink = (String) DummyScriptEnginePlugin.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
+                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, json_download_path);
+                dllink = (String) JavaScriptEngineFactory.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
                 if (dllink != null) {
                     if (filename == null) {
                         filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
@@ -360,22 +362,6 @@ public class UdemyCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return FREE_MAXDOWNLOADS;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

@@ -31,6 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vdisk.weibo.com" }, urls = { "http://(?:www\\.)?vdisk\\.weibo\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
 public class VdiskWeiboCom extends PluginForHost {
@@ -82,7 +83,7 @@ public class VdiskWeiboCom extends PluginForHost {
         }
         if (json != null) {
             try {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("download_list");
                 final int listsize = ressourcelist.size();
                 if (ressourcelist != null && listsize > 0) {

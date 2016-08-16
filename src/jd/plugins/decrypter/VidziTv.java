@@ -29,6 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -76,14 +77,16 @@ public class VidziTv extends antiDDoSForDecrypt {
             }
         }
         // files
-        final String[] files = getJsonResultsFromArray(getJsonArray(subtitlesource, "tracks"));
+        final String[] files = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(subtitlesource, "tracks"));
         if (files != null) {
             for (final String file : files) {
-                if (StringUtils.containsIgnoreCase(getJson(file, "kind"), "subtitles")) {
-                    final String link = getJson(file, "file");
-                    final DownloadLink dl = createDownloadlink("directhttp://" + link);
-                    dl.setFinalFileName(fileInfo[0] + link.substring(link.lastIndexOf(".")));
-                    decryptedLinks.add(dl);
+                if (StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(file, "kind"), "subtitles")) {
+                    final String link = PluginJSonUtils.getJsonValue(file, "file");
+                    if (link != null) {
+                        final DownloadLink dl = createDownloadlink("directhttp://" + link);
+                        dl.setFinalFileName(fileInfo[0] + link.substring(link.lastIndexOf(".")));
+                        decryptedLinks.add(dl);
+                    }
                 }
             }
         }

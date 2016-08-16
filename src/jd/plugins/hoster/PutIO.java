@@ -8,7 +8,6 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import org.appwork.utils.parser.UrlQuery;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -29,6 +28,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 //"https?://put\\.io/(?:file|v2/files)/\\d+" website link
 //actuall downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"

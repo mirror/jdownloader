@@ -154,22 +154,6 @@ public class PhotoQipRu extends PluginForHost {
         dl.startDownload();
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      *

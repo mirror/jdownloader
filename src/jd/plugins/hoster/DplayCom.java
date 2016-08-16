@@ -39,6 +39,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "http://it\\.dplay\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" }, flags = { 2, 2, 2 })
 public class DplayCom extends PluginForHost {
@@ -107,14 +108,14 @@ public class DplayCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
-        final long numberof_items = DummyScriptEnginePlugin.toLong(entries.get("items"), 0);
+        final long numberof_items = JavaScriptEngineFactory.toLong(entries.get("items"), 0);
         if (numberof_items == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "data/{0}");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/{0}");
         final String video_metadata_type = (String) entries.get("video_metadata_type");
         final String date = (String) entries.get("created");
         final DecimalFormat df = new DecimalFormat("00");
@@ -200,7 +201,7 @@ public class DplayCom extends PluginForHost {
             // br.setCookie("dplay.se", "s_fid", "06BC08F6EC982DC7-27BEDB5190979A80");
             br.setCookie(this.br.getHost(), "dsc-geo", "%7B%22countryCode%22%3A%22" + country_needed + "%22%2C%22expiry%22%3A" + (System.currentTimeMillis() + 24 * 60 * 60 * 1000) + "%7D");
             this.br.getPage("https://secure." + host.replace("www.", "") + "/secure/api/v2/user/authorization/stream/" + videoid + "?stream_type=hls");
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             try {
                 /* Not necessarily needed */
                 this.br.getPage("https://secure." + host + "/secure/api/v2/user/authorization/stream/" + videoid + "?authorisation_pulse=1");
@@ -279,22 +280,6 @@ public class DplayCom extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private void setConfigElements() {

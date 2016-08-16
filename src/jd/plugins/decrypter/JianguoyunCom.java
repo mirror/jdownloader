@@ -27,7 +27,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jianguoyun.com" }, urls = { "https?://(?:www\\.)?jianguoyun\\.com/p/[A-Za-z0-9\\-_]+(?:#dir=[^<>\"/:]+)?" }, flags = { 0 })
 public class JianguoyunCom extends antiDDoSForDecrypt {
@@ -69,13 +70,13 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
         }
 
         this.br.getPage("https://www.jianguoyun.com/d/ajax/dirops/pubDIRBrowse?hash=" + fid + "&relPath=" + subfolder + "&_=" + System.currentTimeMillis());
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("objects");
         for (final Object foldero : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) foldero;
             final String type = (String) entries.get("type");
             final String relPath = (String) entries.get("relPath");
-            final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             if (type == null || relPath == null) {
                 continue;
             }

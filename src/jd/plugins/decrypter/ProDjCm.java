@@ -34,6 +34,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  * Please do not mess with the following Regex! <br />
  * Do not use lazy regex. Make regex to support the features you need. Lazy regex will pick up false positives in other areas of the plugin. <br />
@@ -107,7 +109,7 @@ public class ProDjCm extends PluginForDecrypt {
     private void passItOn(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) throws Exception {
         String fpName = null;
         if (grabThis.matches(type_json)) {
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("playlist");
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("item");
             entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);

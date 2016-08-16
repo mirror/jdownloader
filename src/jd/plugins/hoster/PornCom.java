@@ -38,6 +38,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(?:www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(?:\\.html)?" }, flags = { 2 })
@@ -197,18 +198,18 @@ public class PornCom extends antiDDoSForHost {
         }
         logger.info("Video quality selection failed.");
         // json
-        final String a = getJsonArray("streams");
-        final String[] array = getJsonResultsFromArray(a);
+        final String a = PluginJSonUtils.getJsonArray(brc.toString(), "streams");
+        final String[] array = PluginJSonUtils.getJsonResultsFromArray(a);
         if (array != null) {
             int highestQual = 0;
             String bestUrl = null;
             for (final String aa : array) {
-                final String quality = getJson(aa, "name");
+                final String quality = PluginJSonUtils.getJson(aa, "name");
                 final String q = quality != null ? new Regex(quality, "\\d+").getMatch(-1) : null;
                 final int qual = q != null ? Integer.parseInt(q) : 0;
                 if (qual > highestQual) {
                     highestQual = qual;
-                    final String url = getJson(aa, "url");
+                    final String url = PluginJSonUtils.getJson(aa, "url");
                     if (url != null) {
                         bestUrl = url;
                     }

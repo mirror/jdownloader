@@ -46,6 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drtuber.com" }, urls = { "http://(www\\.|m\\.)?drtuber\\.com/(video/\\d+|player/config_embed3\\.php\\?vkey=[a-z0-9]+|embed/\\d+)" }, flags = { 2 })
 public class DrTuberCom extends PluginForHost {
@@ -105,7 +106,7 @@ public class DrTuberCom extends PluginForHost {
         }
         fun = fun.replaceAll("s1\\.addVariable\\(\\'config\\',", "var result = ").replaceAll("params\\);", "params;");
         Object result = new Object();
-        ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval(fun);

@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -338,7 +339,7 @@ public class FoxLeechCom extends antiDDoSForHost {
         } else {
             getPage("http://www.foxleech.com/Generate.php?link=" + url);
         }
-        final String error = getJson("error");
+        final String error = PluginJSonUtils.getJsonValue(br, "error");
         if (error != null) {
             if (error.contains("You have reached the daily limit for")) {
                 /* Daily limit of a single host is reached */
@@ -348,7 +349,7 @@ public class FoxLeechCom extends antiDDoSForHost {
             }
             handlePluginBroken(acc, link, "error_unknown", 10);
         }
-        dllink = getJson("link");
+        dllink = PluginJSonUtils.getJsonValue(br, "link");
         if (dllink == null) {
             handlePluginBroken(acc, link, "dllink_null", 10);
         }

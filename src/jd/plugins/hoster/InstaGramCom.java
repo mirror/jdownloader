@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +43,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" }, flags = { 2 })
 public class InstaGramCom extends PluginForHost {

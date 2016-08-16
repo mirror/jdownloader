@@ -50,6 +50,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1079,7 +1080,7 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
             apiGetPageSafe("https://api.vk.com/method/wall.get?format=json&owner_id=" + userID + "&count=" + API_MAX_ENTRIES_PER_REQUEST + "&offset=" + currentOffset + "&filter=all&extended=0");
 
-            Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
             if (map == null) {
                 return;
@@ -1279,7 +1280,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String wallID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(wall(\\-)?\\d+)_\\d+").getMatch(0);
 
         apiGetPageSafe("https://api.vk.com/method/wall.getById?posts=" + postID + "&extended=0&copy_history_depth=2");
-        Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
         try {
             /* Access original url as we sometimes need the listID for videos (see decryptWallPost). */
@@ -1987,22 +1988,6 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private String get_ID_PAGE(final String url) {
         return new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/page\\-(\\d+_\\d+)").getMatch(0);
-    }
-
-    /** Correct filenames for Windows users */
-    private String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /* NO OVERRIDE!! */

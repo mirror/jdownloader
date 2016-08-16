@@ -106,7 +106,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
                 final DownloadLink dl = createDownloadlink("http://deluxemusic.tvdecrypted/" + playlist_id + "_" + counter);
-                dl.setAvailableStatus(jd.plugins.hoster.DeluxemusicTv.parseTrackInfo(dl, this.br.toString(), track_array));
+                dl.setAvailableStatus(jd.plugins.hoster.DeluxemusicTv.parseTrackInfo(this, dl, this.br.toString(), track_array));
                 dl.setProperty("playlist_url", playlist_url);
                 dl.setProperty("playlist_id", playlist_id);
                 dl.setContentUrl(parameter);

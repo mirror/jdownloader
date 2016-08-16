@@ -71,21 +71,6 @@ public class HuluCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
-    private String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     @Override
     public void reset() {
     }

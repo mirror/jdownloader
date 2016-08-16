@@ -32,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "http://(?:www\\.)?bibeltv\\.de/mediathek/video/[a-z0-9\\-]+/\\?no_cache=1\\&cHash=[a-f0-9]{32}" }, flags = { 0 })
 public class BibeltvDe extends PluginForHost {
 
@@ -106,7 +108,7 @@ public class BibeltvDe extends PluginForHost {
         if (js == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
+        final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(js);
         long filesize = 0;
         long max_bitrate = 0;
         long max_bitrate_temp = 0;
@@ -117,11 +119,11 @@ public class BibeltvDe extends PluginForHost {
             if (flavourid == null) {
                 continue;
             }
-            max_bitrate_temp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), 0);
+            max_bitrate_temp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
             if (max_bitrate_temp > max_bitrate) {
                 DLLINK = "http://api.medianac.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
                 max_bitrate = max_bitrate_temp;
-                filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
+                filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             }
         }
         if (DLLINK == null) {
@@ -188,22 +190,6 @@ public class BibeltvDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

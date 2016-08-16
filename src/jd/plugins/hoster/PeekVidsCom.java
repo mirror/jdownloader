@@ -39,6 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(www\\.)?peekvids\\.com/watch\\?v=[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class PeekVidsCom extends PluginForHost {
@@ -219,8 +220,8 @@ public class PeekVidsCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://accounts.playvids.com/de/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String status = getJson("status");
-                final String redirect = getJson("redirect");
+                final String status = PluginJSonUtils.getJsonValue(br, "status");
+                final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
                 if (!"ok".equals(status)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -278,32 +279,6 @@ public class PeekVidsCom extends PluginForHost {
         requestFileInformation(link);
         /* No need to log in here as we're already logged in in availablecheck. */
         doFree(link, true, 0, "account_free_directlink");
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br, key);
     }
 
     @Override

@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 /**
  * @author raztoki

@@ -32,7 +32,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * @author raztoki
@@ -108,8 +109,8 @@ public class MyyWn extends antiDDoSForDecrypt {
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
         // format json
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json);
-        final String captchaId = (String) DummyScriptEnginePlugin.walkJson(entries, "content/captcha");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final String captchaId = (String) JavaScriptEngineFactory.walkJson(entries, "content/captcha");
         // hashes seem to be static...
         final String jsonoutput = "{\"jsonrpc\":\"2.0\",\"method\":\"GetLink\",\"state\":{\"header\":{\"user\":0,\"@\":\"4e565bc8\"},\"subheader\":{\"@\":\"b6142355\"},\"content\":{\"@\":\"b340c225\"},\"footer\":{\"@\":\"4c4004c8\"}},\"params\":{\"captcha\":\"" + captchaId + "\",\"word\":\"" + code + "\"},\"id\":1}";
         return jsonoutput;

@@ -22,9 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +33,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * @author raztoki
@@ -98,7 +99,7 @@ public class AppleTrailer extends PluginForDecrypt {
             if (br2.containsHTML("404 - Page Not Found")) {
                 return;
             }
-            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br2.toString());
+            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
         } catch (Exception e) {
             return;
         }

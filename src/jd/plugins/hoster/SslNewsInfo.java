@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -17,6 +13,10 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "ssl-news.info" }, urls = { "" }, flags = { 0 })
 public class SslNewsInfo extends UseNet {

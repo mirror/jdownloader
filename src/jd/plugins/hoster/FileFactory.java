@@ -62,6 +62,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+/?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
@@ -464,7 +465,7 @@ public class FileFactory extends PluginForHost {
         }
         if (url == null) {
 
-            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
 
             final String[] eval = br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);

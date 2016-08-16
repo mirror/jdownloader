@@ -37,14 +37,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.Application;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -69,6 +61,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Application;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "https?://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/.*?\\.html" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -628,7 +629,7 @@ public class LetitBitNet extends PluginForHost {
 
     private void decryptingForm(Form encryptedForm) {
         // final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
 
         final ScriptEngine engine = manager.getEngineByName("javascript");
 

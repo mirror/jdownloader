@@ -23,10 +23,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -47,6 +43,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://www(\\d+)?\\.speedyshare\\.com/remote/[A-Za-z0-9]+/d\\d+\\-[A-Za-z0-9]+|http://(www\\.)?(speedyshare\\.com|speedy\\.sh)/(files?/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class SpeedyShareCom extends PluginForHost {

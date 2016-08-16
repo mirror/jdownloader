@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -31,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+/.{1}" }, flags = { 2 })
 public class DatoidCz extends PluginForHost {

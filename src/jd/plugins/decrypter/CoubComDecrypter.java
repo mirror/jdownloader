@@ -27,7 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/(?!view)[^/]+" }, flags = { 0 })
 public class CoubComDecrypter extends PluginForDecrypt {
@@ -58,10 +59,10 @@ public class CoubComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
             if (page == 1) {
-                pages_total = (short) DummyScriptEnginePlugin.toLong(entries.get("total_pages"), 1);
+                pages_total = (short) JavaScriptEngineFactory.toLong(entries.get("total_pages"), 1);
             }
 
             if (entries.size() < max_entries_per_page) {
@@ -78,7 +79,7 @@ public class CoubComDecrypter extends PluginForDecrypt {
                     return null;
                 }
                 final String url_content = "https://coub.com/view/" + fid;
-                final String filename = jd.plugins.hoster.CoubCom.getFilename(entries, fid);
+                final String filename = jd.plugins.hoster.CoubCom.getFilename(this, entries, fid);
                 if (!coub_type.equals("Coub::Simple")) {
                     /* Do not decrypt re-coups (similar to re-tweets) - only decrypt content which the user itself posted! */
                     continue;

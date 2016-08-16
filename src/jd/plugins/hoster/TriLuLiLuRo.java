@@ -46,6 +46,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil|artist|embed|grup|[^<>\"/]+/(fisiere|profil).+)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class TriLuLiLuRo extends PluginForHost {
 
@@ -262,7 +264,7 @@ public class TriLuLiLuRo extends PluginForHost {
 
     private String md5hex(String s) {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {

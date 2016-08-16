@@ -37,6 +37,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creative.arte.tv_extern" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" }, flags = { 0 })
 public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
 
@@ -141,7 +143,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                     logger.info("This language is not available: " + selectedLanguage);
                     continue;
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
                 sourceURL = (String) videoJsonPlayer.get("VTR");
                 title = encodeUnicode((String) videoJsonPlayer.get("VTI"));
@@ -467,22 +469,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     private String getUrlLang() {
         final String lang = new Regex(parameter, "((?:concert|creative)\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
         return lang;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /** Finds the video bitrate to a resolution based on the width of the video. */

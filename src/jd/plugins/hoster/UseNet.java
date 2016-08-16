@@ -8,6 +8,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.PluginWrapper;
+import jd.controlling.proxy.ProxyController;
+import jd.http.BrowserSettingsThread;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.SocketConnectionFactory;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
@@ -25,22 +41,6 @@ import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-import jd.PluginWrapper;
-import jd.controlling.proxy.ProxyController;
-import jd.http.BrowserSettingsThread;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.SocketConnectionFactory;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {

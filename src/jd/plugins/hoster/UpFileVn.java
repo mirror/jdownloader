@@ -28,10 +28,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfile.vn" }, urls = { "http://(www\\.)?upfile\\.vn/(?!faq|register|login|terms|report_file)[a-z0-9~]+(?:/.*?\\.html)?" }, flags = { 0 })
 public class UpFileVn extends antiDDoSForHost {
@@ -109,7 +110,10 @@ public class UpFileVn extends antiDDoSForHost {
         final String uid = new Regex(downloadLink.getDownloadURL(), "upfile\\.vn/([^/]+)").getMatch(0);
         final String hash = JDHash.getSHA256(uid + 7891).toUpperCase();
         br.postPage(br.getURL(), "Token=" + hash);
-        final String dllink = getJson("Link");
+        final String dllink = PluginJSonUtils.getJsonValue(br, "Link");
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // 3 sec wait
         sleep(4 * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, MAXCHUNKS);

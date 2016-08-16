@@ -26,6 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keek.com" }, urls = { "https?://(?:www\\.)?keek\\.com/profile/[^/]+" }, flags = { 0 })
 public class KeekCom extends PluginForDecrypt {
@@ -71,7 +72,7 @@ public class KeekCom extends PluginForDecrypt {
             } else {
                 this.br.getPage("/profile/" + profilename + "/next?filter=keeks&page=" + page + "&keekId=" + Encoding.urlEncode(loadmore_id) + "&maxId=&size=500&instart_disable_injection=true");
                 this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
-                loadmore_id = getJson("keekId");
+                loadmore_id = PluginJSonUtils.getJsonValue(br, "keekId");
             }
             String[] ids = br.getRegex("data-active=\"false\" data\\-keek\\-id=\"([^<>\"]*?)\"").getColumn(0);
             if (ids == null || ids.length == 0) {
@@ -109,13 +110,4 @@ public class KeekCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
 }

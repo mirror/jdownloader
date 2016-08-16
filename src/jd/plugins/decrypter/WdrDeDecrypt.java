@@ -416,21 +416,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         return output;
     }
 
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     private String formatDate(String input) {
         if (input == null) {
             return null;

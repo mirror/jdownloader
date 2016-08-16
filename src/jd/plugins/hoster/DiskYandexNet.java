@@ -41,6 +41,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -48,6 +49,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" }, flags = { 2, 0 })
 public class DiskYandexNet extends PluginForHost {
@@ -186,7 +188,7 @@ public class DiskYandexNet extends PluginForHost {
                      */
                     return AvailableStatus.TRUE;
                 }
-                return parseInformationAPIAvailablecheck(link, (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString()));
+                return parseInformationAPIAvailablecheck(this, link, (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString()));
             } else {
                 br.getPage(getMainLink(link));
                 if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)") || br.getHttpConnection().getResponseCode() == 404) {
@@ -229,8 +231,8 @@ public class DiskYandexNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static AvailableStatus parseInformationAPIAvailablecheck(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
-        final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), -1);
+    public static AvailableStatus parseInformationAPIAvailablecheck(final Plugin plugin, final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
         final String error = (String) entries.get("error");
         final String hash = (String) entries.get("public_key");
         String filename = (String) entries.get("name");
@@ -241,7 +243,7 @@ public class DiskYandexNet extends PluginForHost {
             dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
-        filename = encodeUnicode(filename);
+        filename = plugin.encodeUnicode(filename);
         if (md5 != null) {
             dl.setMD5Hash(md5);
         }
@@ -299,7 +301,7 @@ public class DiskYandexNet extends PluginForHost {
                     downloadLink.setProperty("premiumonly", true);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 dllink = (String) entries.get("href");
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -769,28 +771,6 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
-    private void getPage(final String url) throws Exception {
-        br.getPage(url);
-        if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
-            logger.info("Refreshing ACCOUNT_SK");
-            this.login(this.currAcc, true);
-        }
-    }
 
     private void postPage(final String url, final String data) throws Exception {
         br.postPage(url, data);

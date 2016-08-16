@@ -33,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lynda.com" }, urls = { "http://(www\\.)?lynda\\.com/home/Player\\.aspx\\?lpk4=\\d+" }, flags = { 0 })
 public class LyndaCom extends PluginForHost {
 
@@ -68,7 +70,7 @@ public class LyndaCom extends PluginForHost {
         this.br.getPage("http://www.lynda.com/ajax/player?videoId=" + videoid + "&courseId=" + courseid + "&type=video&_=" + System.currentTimeMillis());
         try {
             long max_bitrate = 0;
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final String status = (String) entries.get("Status");
             if ("ExpiredSession".equals(status)) {
                 logger.info("Only preview available --> Item can be considered as offline at least for users without accounts!");

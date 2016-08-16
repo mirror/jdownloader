@@ -41,10 +41,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }, flags = { 0 })
@@ -191,7 +191,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 return;
             }
             final String json = this.br.cloneBrowser().getPage("https://api.dailymotion.com/user/" + username + "/videos?limit=" + api_limit_items + "&page=" + page);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             has_more = ((Boolean) entries.get("has_more")).booleanValue();
             final ArrayList<Object> list = (ArrayList) entries.get("list");
             for (final Object video_o : list) {
@@ -571,15 +571,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (QUALITIES.isEmpty() && videosource.startsWith("{\"context\"")) {
             /* "New" player July 2015 */
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(videosource);
-                entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "metadata/qualities");
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videosource);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "metadata/qualities");
                 /* TODO: Maybe all HLS support in case it gives us more/other formats/qualities */
                 final String[][] qualities_2 = { { "2160", "7" }, { "1440", "6" }, { "1080", "5" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" } };
                 for (final String quality[] : qualities_2) {
                     final String qualityName = quality[0];
                     final String qualityNumber = quality[1];
                     final Object jsono = entries.get(qualityName);
-                    final String currentQualityUrl = (String) DummyScriptEnginePlugin.walkJson(jsono, "{0}/url");
+                    final String currentQualityUrl = (String) JavaScriptEngineFactory.walkJson(jsono, "{0}/url");
                     if (currentQualityUrl != null) {
                         final String[] dlinfo = new String[4];
                         dlinfo[0] = currentQualityUrl;

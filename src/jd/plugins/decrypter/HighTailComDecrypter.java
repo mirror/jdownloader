@@ -30,9 +30,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://[a-z]+\\.hightail\\.com/[A-Za-z]+\\?phi_action=app/orchestrate[A-Za-z]+\\&[A-Za-z0-9\\-_\\&=]+" }, flags = { 0 })
 public class HighTailComDecrypter extends PluginForDecrypt {
@@ -61,7 +62,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         if (folderID != null) {
             /* New system */
             this.br.postPage("https://de.hightail.com/folders", "phi_action=app%2FgetFolderContent&fId=" + folderID + "&encInviteId=" + fid);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("wsItems");
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
@@ -76,7 +77,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 if (isFile) {
                     final DownloadLink dl = createDownloadlink("http://yousenditdecrypted.com/download/" + System.currentTimeMillis() + new Random().nextInt(100000));
                     final String filename = (String) entries.get("text");
-                    final long filesize = DummyScriptEnginePlugin.toLong(entries.get("sizeInBytes"), -1);
+                    final long filesize = JavaScriptEngineFactory.toLong(entries.get("sizeInBytes"), -1);
                     if (filename == null || filesize == -1) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
@@ -122,7 +123,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 }
             } else {
                 // Single link
-                String download_id = getJson("file_download_link");
+                String download_id = PluginJSonUtils.getJsonValue(br, "file_download_link");
                 if (download_id == null) {
                     download_id = fid;
                 }
@@ -151,16 +152,6 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         }
 
         return decryptedLinks;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
 }

@@ -32,8 +32,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "https?://www\\.vessel\\.com/(?:news/)?videos/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class VesselCom extends PluginForDecrypt {
@@ -86,14 +87,14 @@ public class VesselCom extends PluginForDecrypt {
             return null;
         }
         ((jd.plugins.hoster.VesselCom) plugin).postPageRaw(br, "https://www.vessel.com/api/view/items/" + vid, "{\"client\":\"web\",\"refresh\":true}");
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final String error = (String) DummyScriptEnginePlugin.walkJson(entries, "__view/error_code");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final String error = (String) JavaScriptEngineFactory.walkJson(entries, "__view/error_code");
         if (error != null) {
             /* E.g. "ITEM_PAID_ONLY" */
             logger.info("Cannot decrypt content because of API error: " + error);
             return decryptedLinks;
         }
-        ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "assets/{2}/sources");
+        ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "assets/{2}/sources");
         title = (String) entries.get("title");
         title = encodeUnicode(title);
         description = (String) entries.get("short_description");
@@ -111,9 +112,9 @@ public class VesselCom extends PluginForDecrypt {
             }
             String url = (String) entries.get("location");
 
-            final String videoBitrate = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("bitrate"), -1));
-            final String width = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("width"), -1));
-            final String height = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("height"), -1));
+            final String videoBitrate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("bitrate"), -1));
+            final String width = Long.toString(JavaScriptEngineFactory.toLong(entries.get("width"), -1));
+            final String height = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), -1));
             final String videoresolution = width + "x" + height;
 
             if (cfg.getBooleanProperty(format_name, true)) {
@@ -173,22 +174,6 @@ public class VesselCom extends PluginForDecrypt {
             formatString = formatString.substring(0, formatString.lastIndexOf("_"));
         }
         return formatString;
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /**

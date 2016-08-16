@@ -348,7 +348,7 @@ public class MobilismOrg extends antiDDoSForHost {
         br.setFollowRedirects(true);
         login(account, true);
 
-        final String url = getJson("url");
+        final String url = PluginJSonUtils.getJsonValue(br, "url");
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -419,7 +419,7 @@ public class MobilismOrg extends antiDDoSForHost {
                 br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 br.getHeaders().put("X-Requested-With", null);
                 // double check
-                if (br.getCookie(DOMAIN, "amember_nr") == null && !PluginJSonUtils.parseBoolean(getJson("ok"))) {
+                if (br.getCookie(DOMAIN, "amember_nr") == null && !PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "ok"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

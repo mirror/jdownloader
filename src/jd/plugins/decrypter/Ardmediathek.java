@@ -24,19 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.plugins.config.Group;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.Type;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -49,6 +36,20 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.plugins.config.Group;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.Type;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
 public class Ardmediathek extends PluginForDecrypt {
@@ -287,7 +288,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         int streaming_type = 0;
         final String extension = ".mp4";
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> _mediaArray = (ArrayList) entries.get("_mediaArray");
         final LinkedHashMap<String, Object> _mediaArray_lastentry = (LinkedHashMap<String, Object>) _mediaArray.get(_mediaArray.size() - 1);
         final ArrayList<Object> mediaStreamArray = (ArrayList) _mediaArray_lastentry.get("_mediaStreamArray");
@@ -604,22 +605,6 @@ public class Ardmediathek extends PluginForDecrypt {
             bestMap.put(fmt, link);
         }
         newRet.add(link);
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private DownloadLink getOffline(final String parameter) {

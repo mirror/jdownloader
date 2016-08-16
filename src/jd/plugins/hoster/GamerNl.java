@@ -122,22 +122,6 @@ public class GamerNl extends PluginForHost {
         dl.startDownload();
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     private void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), DATE_IN_FILENAME, JDL.L("plugins.hoster.GamerNl.dateInFilename", "Include date in filename?")).setDefaultValue(false));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FID_IN_FILENAME, JDL.L("plugins.hoster.GamerNl.fidInFilename", "Include video id in filename?")).setDefaultValue(false));

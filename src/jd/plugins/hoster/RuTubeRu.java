@@ -27,13 +27,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -46,6 +39,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.RuTubeVariant;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.decryptedrutube\\.ru/[0-9a-f]{32}" }, flags = { 0 })
 public class RuTubeRu extends PluginForHost {
@@ -136,8 +137,8 @@ public class RuTubeRu extends PluginForHost {
         // swf requests over json
         Browser ajax = cloneBrowser(br);
         ajax.getPage("/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
-        final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(ajax.toString());
-        final String videoBalancer = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "video_balancer/default");
+        final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+        final String videoBalancer = (String) JavaScriptEngineFactory.walkJson(entries, "video_balancer/default");
 
         if (videoBalancer != null) {
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();

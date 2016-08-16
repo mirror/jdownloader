@@ -37,6 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wsj.com" }, urls = { "https?://(?:www\\.)?((?:wsj|barrons)\\.com/video/[^/]+/[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12}\\.html|allthingsd\\.com/video/\\?video_id=[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12})" }, flags = { 0 })
 public class WsjCom extends PluginForHost {
@@ -51,13 +52,13 @@ public class WsjCom extends PluginForHost {
     // other:
     /*
      * E.g. HTTP- and HLS URL comparison:
-     * 
-     * 
+     *
+     *
      * http://www.wsj.com/video/mossberg-reviews-the-roku-3/3B86D721-7315-494C-BB6A-44A0B13DDAEE.html
-     * 
+     *
      * http://m.wsj.net/video/20130305/030513ptechroku/030513ptechroku_v2_ec2564k.mp4
-     * 
-     * 
+     *
+     *
      * http://wsjvod-i.akamaihd.net/i/video/20130305/030513ptechroku/030513ptechroku_v2_ec,464,174,264,664,1264,1864,2564,k.mp4.csmil/master.
      * m3u8
      */
@@ -89,8 +90,8 @@ public class WsjCom extends PluginForHost {
         if (this.br.toString().length() < 100 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "items/{0}");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
         final String description = (String) entries.get("description");
         final String date = (String) entries.get("formattedCreationDate");
         String filename = (String) entries.get("name");
@@ -181,22 +182,6 @@ public class WsjCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getVIDEOID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12})(\\.html)?$").getMatch(0);
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private String formatDate(final String input) {

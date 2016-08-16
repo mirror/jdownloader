@@ -598,6 +598,25 @@ public abstract class Plugin implements ActionListener {
         return dest;
     }
 
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    public String encodeUnicode(final String input) {
+        if (input != null) {
+            String output = input;
+            output = output.replace(":", ";");
+            output = output.replace("|", "¦");
+            output = output.replace("<", "[");
+            output = output.replace(">", "]");
+            output = output.replace("/", "⁄");
+            output = output.replace("\\", "∖");
+            output = output.replace("*", "#");
+            output = output.replace("?", "¿");
+            output = output.replace("!", "¡");
+            output = output.replace("\"", "'");
+            return output;
+        }
+        return null;
+    }
+
     /**
      * p gibt das interne properties objekt zurück indem die Plugineinstellungen gespeichert werden
      *

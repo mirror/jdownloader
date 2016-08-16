@@ -35,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/(?:#mulFile\\-|galerie/datei\\?p=)\\d+" }, flags = { 2 })
 public class ParteeeyDe extends PluginForHost {
 
@@ -80,7 +82,7 @@ public class ParteeeyDe extends PluginForHost {
         }
         this.br.postPage("https://www.parteeey.de/Ajax/mulFileInfo", "filId=" + linkid + "&width=1119&height=690&filIdPrevious=&filIdNext=&_iconPath=images%2Ficons%2FLumina");
         try {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             DLLINK = (String) entries.get("path");
         } catch (final Throwable e) {
         }

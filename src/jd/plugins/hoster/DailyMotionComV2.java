@@ -21,14 +21,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.FFprobe;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
@@ -38,6 +30,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.DailyMotionVariant;
+
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.FFprobe;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
 public class DailyMotionComV2 extends DailyMotionCom {

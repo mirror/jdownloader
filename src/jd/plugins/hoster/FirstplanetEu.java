@@ -43,6 +43,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firstplanet.eu" }, urls = { "http://(?:www\\.)?firstplanet\\.eu/file/\\d+/[a-z0-9\\-]+" }, flags = { 2 })
 public class FirstplanetEu extends PluginForHost {
@@ -292,7 +293,7 @@ public class FirstplanetEu extends PluginForHost {
             String kind = null;
             long numeric = 0;
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("result");
                 entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
                 kind = (String) entries.get("kind");
@@ -301,7 +302,7 @@ public class FirstplanetEu extends PluginForHost {
                  * days or remaining downloads. Same for 'numeric'.
                  */
                 hrValue = (String) entries.get("hrValue");
-                numeric = DummyScriptEnginePlugin.toLong(entries.get("numeric"), 0);
+                numeric = JavaScriptEngineFactory.toLong(entries.get("numeric"), 0);
             } catch (final Throwable e) {
             }
             String status;

@@ -34,6 +34,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redbull.tv" }, urls = { "https?://(www\\.)?redbull.tv/(?:episodes|videos)/[A-Z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
 public class RedbullTv extends PluginForDecrypt {
 
@@ -77,7 +79,7 @@ public class RedbullTv extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final String title = (String) entries.get("title");
         final String subtitle = (String) entries.get("subtitle");
         final String description = (String) entries.get("long_description");

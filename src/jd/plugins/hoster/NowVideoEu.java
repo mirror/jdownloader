@@ -28,8 +28,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,6 +47,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 2 })
 public class NowVideoEu extends PluginForHost {
@@ -335,7 +336,7 @@ public class NowVideoEu extends PluginForHost {
         if (fn == null) {
             return null;
         }
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval("var res = " + fn);

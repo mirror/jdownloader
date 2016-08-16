@@ -33,6 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clipfish.de", "dooloop.tv" }, urls = { "http://(?:www\\.)?clipfish\\.de/(?:.*?channel/\\d+/video/\\d+|video/\\d+(?:/.+)?|special/.*?/video/\\d+|musikvideos/video/\\d+(?:/.+)?)", "https?://(?:www\\.)?dooloop\\.tv/video/\\d+/[A-Za-z0-9]+" }, flags = { 0, 0 })
 public class ClipfishDe extends PluginForHost {
@@ -107,8 +108,8 @@ public class ClipfishDe extends PluginForHost {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "items/{0}");
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
             title = (String) entries.get("title");
             artist = (String) entries.get("mv_artist");
             description = (String) entries.get("descr");

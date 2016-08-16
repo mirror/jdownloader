@@ -28,9 +28,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tv.nrk.no" }, urls = { "https?://(?:www\\.)?tv\\.nrk\\.no/serie/[^<>\"/]+/[A-Z]{4}\\d{8}/sesong\\-\\d+/episode\\-\\d+" }, flags = { 0 })
 public class TvNrkNo extends PluginForHost {
@@ -75,7 +77,7 @@ public class TvNrkNo extends PluginForHost {
             /* 404 handling is enough to determine offline state (via API AND website)! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
         isAvailable = ((Boolean) entries.get("isAvailable")).booleanValue();
 
@@ -113,7 +115,7 @@ public class TvNrkNo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content is not downloadable or has not aired yet");
         }
         String hls_master = null;
-        String url_hds = getJson("mediaUrl");
+        String url_hds = PluginJSonUtils.getJsonValue(br, "mediaUrl");
         if (url_hds == null || hls_master == null) {
             this.br.getPage(downloadLink.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -139,32 +141,6 @@ public class TvNrkNo extends PluginForHost {
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

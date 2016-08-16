@@ -126,7 +126,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         long totalSize = 0;
         final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
         for (final String singleinfo : links) {
-            if ("folder".equals(PluginJSonUtils.getJson(singleinfo, "kind"))) {
+            if ("folder".equals(PluginJSonUtils.getJsonValue(singleinfo, "kind"))) {
                 String folder_url = PluginJSonUtils.getJsonValue(singleinfo, "weblink");
                 if (folder_url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);

@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -119,7 +120,7 @@ public class NosNl extends PluginForHost {
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+        downloadLink.setFinalFileName(getFormattedFilename(this, downloadLink));
         // In case the link redirects to the finallink
         URLConnectionAdapter con = null;
         try {
@@ -183,7 +184,7 @@ public class NosNl extends PluginForHost {
     private final static String defaultCustomFilename = "*title*_*quality**ext*";
     private final static String defaultCustomDate     = "dd.MM.yyyy";
 
-    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+    public static String getFormattedFilename(final Plugin plugin, final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("nos.nl");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (!formattedFilename.contains("*title") && !formattedFilename.contains("*ext*") && !formattedFilename.contains("*linkid*")) {
@@ -214,24 +215,8 @@ public class NosNl extends PluginForHost {
             }
             formattedFilename = formattedFilename.replace(fulltagname, tag_data);
         }
-        formattedFilename = encodeUnicode(formattedFilename);
+        formattedFilename = plugin.encodeUnicode(formattedFilename);
         return formattedFilename;
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

@@ -22,8 +22,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.mozilla.javascript.ConsString;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,6 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" }, flags = { 0 })
 public class ImgSrcRu extends PluginForHost {
@@ -167,7 +168,7 @@ public class ImgSrcRu extends PluginForHost {
                     x = "src";
                 }
             }
-            final ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = mgr.getEngineByName("javascript");
             Object result = null;
             try {

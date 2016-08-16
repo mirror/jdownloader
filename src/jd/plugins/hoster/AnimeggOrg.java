@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  *
@@ -86,12 +87,12 @@ public class AnimeggOrg extends antiDDoSForHost {
         // multiple qualities.
         final String vidquals = br.getRegex("videoSources\\s*=\\s*(\\[.*?\\]);").getMatch(0);
         final LinkedHashMap<Integer, String> results = new LinkedHashMap<Integer, String>();
-        final String[] quals = getJsonResultsFromArray(vidquals);
+        final String[] quals = PluginJSonUtils.getJsonResultsFromArray(vidquals);
         for (final String qual : quals) {
-            final String label = getJson(qual, "label");
+            final String label = PluginJSonUtils.getJson(qual, "label");
             final String lapel = new Regex(label, "(\\d+)p").getMatch(0);
             final Integer p = lapel != null ? Integer.parseInt(lapel) : -1;
-            final String lnk = getJson(qual, "file");
+            final String lnk = PluginJSonUtils.getJson(qual, "file");
             if (lnk != null && lapel != null) {
                 results.put(p, lnk);
             }

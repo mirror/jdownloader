@@ -31,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icloud.com" }, urls = { "http://iclouddecrypted\\.com/[A-Z0-9\\-]+_[a-f0-9]{42}" }, flags = { 0 })
 public class IcloudCom extends PluginForHost {
 
@@ -82,7 +84,7 @@ public class IcloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("items");
             entries = (LinkedHashMap<String, Object>) entries.get(checksum);
 
@@ -209,22 +211,6 @@ public class IcloudCom extends PluginForHost {
             filename = new Regex(finallink, "/([^/]+)\\?").getMatch(0);
         }
         return filename;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

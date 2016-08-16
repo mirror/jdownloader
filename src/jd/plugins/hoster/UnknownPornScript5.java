@@ -198,7 +198,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             * 
+             *
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
@@ -269,22 +269,6 @@ public class UnknownPornScript5 extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private String regexStandardTitleWithHost(final String host) {

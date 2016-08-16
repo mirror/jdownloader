@@ -24,8 +24,6 @@ import java.util.Arrays;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -39,6 +37,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" }, flags = { 0 })
 public class Shareplacecom extends PluginForHost {
@@ -183,7 +184,7 @@ public class Shareplacecom extends PluginForHost {
             // Collections.reverse(vrrs);
             for (final String var : vrrs) {
                 String result = null;
-                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 try {
                     engine.eval(cleanup);

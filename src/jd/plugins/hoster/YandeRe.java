@@ -31,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/\\d+" }, flags = { 0 })
 public class YandeRe extends PluginForHost {
 
@@ -68,8 +70,8 @@ public class YandeRe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String json = this.br.getRegex("Post\\.register_resp\\((.*?)\\);").getMatch(0);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "posts/{0}");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "posts/{0}");
 
         long filesize = 0;
         String ext = null;
@@ -82,11 +84,11 @@ public class YandeRe extends PluginForHost {
         }
         ext = ".png";
         DLLINK = (String) entries.get("file_url");
-        filesize = DummyScriptEnginePlugin.toLong(entries.get("file_size"), 0);
+        filesize = JavaScriptEngineFactory.toLong(entries.get("file_size"), 0);
         if (DLLINK == null) {
             ext = ".jpg";
             DLLINK = (String) entries.get("jpeg_url");
-            filesize = DummyScriptEnginePlugin.toLong(entries.get("jpeg_file_size"), 0);
+            filesize = JavaScriptEngineFactory.toLong(entries.get("jpeg_file_size"), 0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -151,22 +153,6 @@ public class YandeRe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

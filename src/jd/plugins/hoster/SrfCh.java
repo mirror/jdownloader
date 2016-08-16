@@ -32,6 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" }, flags = { 0, 0, 0, 0, 0 })
 public class SrfCh extends PluginForHost {
@@ -83,14 +84,14 @@ public class SrfCh extends PluginForHost {
         String url_http_download = null;
         String url_hls_master = null;
         String url_rtmp = null;
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("Video");
         LinkedHashMap<String, Object> temp = null;
         ArrayList<Object> ressourcelist = null;
 
         /* Try to find http downloadurl (not always available) */
         try {
-            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "Downloads/Download");
+            ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
             for (final Object streamtypeo : ressourcelist) {
                 temp = (LinkedHashMap<String, Object>) streamtypeo;
                 final String protocol = (String) temp.get("@protocol");
@@ -107,7 +108,7 @@ public class SrfCh extends PluginForHost {
 
         /* Try to find hls master (usually available) */
         try {
-            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "Playlists/Playlist");
+            ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
             for (final Object streamtypeo : ressourcelist) {
                 temp = (LinkedHashMap<String, Object>) streamtypeo;
                 final String protocol = (String) temp.get("@protocol");
@@ -124,7 +125,7 @@ public class SrfCh extends PluginForHost {
 
         /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
         try {
-            ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "Playlists/Playlist");
+            ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
             for (final Object streamtypeo : ressourcelist) {
                 temp = (LinkedHashMap<String, Object>) streamtypeo;
                 final String protocol = (String) temp.get("@protocol");
@@ -225,22 +226,6 @@ public class SrfCh extends PluginForHost {
         } else {
             output = input;
         }
-        return output;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
         return output;
     }
 

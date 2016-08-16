@@ -33,6 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "https://amazondecrypted\\.com/\\d+" }, flags = { 0 })
 public class AmazonCloud extends PluginForHost {
@@ -216,7 +217,7 @@ public class AmazonCloud extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             try {
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> nodeInfo = jsonGetNodeInfo(entries);
                 final String kind = jsonGetKind(entries);
                 if (kind.equals(JSON_KIND_FILE)) {
@@ -302,7 +303,7 @@ public class AmazonCloud extends PluginForHost {
             numberof_found_items = 0;
             br.getPage("https://www." + domain + "/drive/v1/nodes/" + nodeid + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&offset=" + offset + "&limit=" + max_items_per_page + "&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
             try {
-                entries_tmp = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries_tmp = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 resource_data_list_tmp = (ArrayList) entries_tmp.get("data");
                 for (final Object fileo : resource_data_list_tmp) {
                     resource_data_list_all.add(fileo);

@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -37,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://(www\\.)?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" }, flags = { 0 })
 public class DlFreeFr extends PluginForHost {

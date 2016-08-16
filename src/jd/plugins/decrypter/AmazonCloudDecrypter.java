@@ -31,6 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|com|com\\.au|co\\.uk|fr)/(gp/|cloud)drive/share(/|\\?).+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" }, flags = { 0 })
 public class AmazonCloudDecrypter extends PluginForDecrypt {
 
@@ -108,7 +110,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(this.parameter));
                 return decryptedLinks;
             }
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final LinkedHashMap<String, Object> nodeInfo = jd.plugins.hoster.AmazonCloud.jsonGetNodeInfo(entries);
             final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
             if (kind.equals(jd.plugins.hoster.AmazonCloud.JSON_KIND_FILE)) {

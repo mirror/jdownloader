@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  * @author raztoki
@@ -49,7 +50,7 @@ public class ItJstLnkCm extends antiDDoSForDecrypt {
         br.getHeaders().put("Content-Type", null);
         br.postPage("/link/get", "");
         // links are within json
-        final String[] links = getJsonResultsFromArray(getJsonArray("links"));
+        final String[] links = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br.toString(), "links"));
         if (links != null) {
             for (final String link : links) {
                 decryptedLinks.add(createDownloadlink(link));

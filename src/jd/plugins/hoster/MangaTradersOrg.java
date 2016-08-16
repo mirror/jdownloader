@@ -22,10 +22,6 @@ import java.lang.reflect.Field;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.jdownloader.plugins.components.cryptojs.CryptoJS;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -40,6 +36,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.IO;
+import org.jdownloader.plugins.components.cryptojs.CryptoJS;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/(?:manga/download\\.php|read-online/dl\\.php)\\?id=[a-f0-9]{10,}" }, flags = { 2 })
 public class MangaTradersOrg extends antiDDoSForHost {

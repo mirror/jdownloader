@@ -20,9 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,7 +35,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdstream.to" }, urls = { "https?://(www\\.)?hdstream\\.to/(#(!|%21)f=[A-Za-z0-9]+(\\-[A-Za-z0-9]+)?|f/.+)" }, flags = { 2 })
 public class HdStreamTo extends antiDDoSForHost {
@@ -113,20 +114,20 @@ public class HdStreamTo extends antiDDoSForHost {
                 for (final DownloadLink dllink : links) {
                     final String fid = getFID(dllink);
                     final String thisjson = br.getRegex("(\"" + fid + "\":\\{.*?\\})").getMatch(0);
-                    if (fid == null || thisjson == null || !"on".equals(getJson(thisjson, "state"))) {
+                    if (fid == null || thisjson == null || !"on".equals(PluginJSonUtils.getJsonValue(thisjson, "state"))) {
                         dllink.setAvailable(false);
                     } else {
-                        final String sha1hash = getJson(thisjson, "hash");
+                        final String sha1hash = PluginJSonUtils.getJsonValue(thisjson, "hash");
                         /*
                          * file_title = user defined title (without extension) - prefer that --> name = original title/server-title (with
                          * extension, can contain encoding issues)
                          */
-                        final String extension = "." + getJson(thisjson, "extension");
-                        String name = getJson(thisjson, "file_title");
-                        if ("null".equals(name)) {
-                            name = getJson(thisjson, "name");
+                        final String extension = "." + PluginJSonUtils.getJsonValue(thisjson, "extension");
+                        String name = PluginJSonUtils.getJsonValue(thisjson, "file_title");
+                        if (name == null) {
+                            name = PluginJSonUtils.getJsonValue(thisjson, "name");
                         }
-                        final String size = getJson(thisjson, "size");
+                        final String size = PluginJSonUtils.getJsonValue(thisjson, "size");
                         name = Encoding.htmlDecode(name);
                         name = name.trim();
                         name = encodeUnicode(name);
@@ -184,12 +185,12 @@ public class HdStreamTo extends antiDDoSForHost {
             br.setFollowRedirects(false);
             checkDownloadable(br);
             getPage("https://hdstream.to/send.php?visited=" + fid + "&premium=" + premiumtoken);
-            final String canPlay = getJson("canPlay");
-            final String server = getJson("server");
+            final String canPlay = PluginJSonUtils.getJsonValue(br, "canPlay");
+            final String server = PluginJSonUtils.getJsonValue(br, "server");
             String waittime = null;
-            final String free_downloadable = getJson("downloadable");
+            final String free_downloadable = PluginJSonUtils.getJsonValue(br, "downloadable");
             final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
-            final String traffic_left_free = getJson("traffic");
+            final String traffic_left_free = PluginJSonUtils.getJsonValue(br, "traffic");
             if ("true".equals(canPlay)) {
                 /* Prefer to download the stream if possible as it has the same filesize as download but no waittime. */
                 final Browser br2 = br.cloneBrowser();
@@ -199,9 +200,9 @@ public class HdStreamTo extends antiDDoSForHost {
             if (dllink == null) {
                 /* Stream impossible? --> Download file! */
                 /* Note that premiumtokens can override this */
-                if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
+                if ("premium".equals(free_downloadable) || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && "".equals(premiumtoken)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } else if (traffic_left_free.equals("0")) {
+                } else if ("0".equals(traffic_left_free)) {
                     /*
                      * We can never know how long we habve to wait - also while we might have this problem for one file, other, smaller
                      * files can still be downloadable --> Let's wait an hour, then try again.
@@ -211,7 +212,7 @@ public class HdStreamTo extends antiDDoSForHost {
                 dllink = getDllink(downloadLink);
                 dllink += "&premium=" + premiumtoken;
                 getPage("/send.php?visited=" + fid + "&premium=" + premiumtoken);
-                waittime = getJson("wait");
+                waittime = PluginJSonUtils.getJsonValue(br, "wait");
                 if (waittime == null) {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -280,9 +281,9 @@ public class HdStreamTo extends antiDDoSForHost {
     public AccountInfo fetchAccountInfoHdstream(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         getPage(br, "https://" + account.getHoster() + "/json/userdata.php?user=" + Encoding.urlEncode(account.getUser()));
-        final String createtime = getJson(br, "joined");
-        final String expire = getJson(br, "premium");
-        final String trafficleft_string = getJson(br, "remaining_traffic");
+        final String createtime = PluginJSonUtils.getJsonValue(br, "joined");
+        final String expire = PluginJSonUtils.getJsonValue(br, "premium");
+        final String trafficleft_string = PluginJSonUtils.getJsonValue(br, "remaining_traffic");
         long trafficleft_long = 0;
         if (trafficleft_string != null && !trafficleft_string.equals("null")) {
             trafficleft_long = Long.parseLong(trafficleft_string) * 1024 * 1024;
@@ -302,7 +303,7 @@ public class HdStreamTo extends antiDDoSForHost {
             getPage(br, "https://s." + account.getHoster() + "/js/data.js");
             int max_prem_dls = ACCOUNT_PREMIUM_MAXDOWNLOADS;
             try {
-                max_prem_dls = Integer.parseInt(getJson(br, "max_connections_premium"));
+                max_prem_dls = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "max_connections_premium"));
             } catch (final Throwable e) {
             }
             ai.setValidUntil(Long.parseLong(expire) * 1000l);
@@ -388,22 +389,6 @@ public class HdStreamTo extends antiDDoSForHost {
         return dllink;
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     /** Get fid of the link, no matter which linktype is added by the user. */
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
@@ -436,14 +421,14 @@ public class HdStreamTo extends antiDDoSForHost {
      * streamable - rare case
      */
     public void checkDownloadable(final Browser br) throws PluginException {
-        if (!getJson(br, "download").equals("1")) {
+        if (!"1".equals(PluginJSonUtils.getJsonValue(br, "download"))) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This link is not downloadable");
         }
     }
 
     /** Returns final downloadlink, same for free and premium */
     private String getDllink(final DownloadLink dl) {
-        return "http://s" + getJson("server") + ".hdstream.to/send.php?token=" + getFID(dl);
+        return "http://s" + PluginJSonUtils.getJsonValue(br, "server") + ".hdstream.to/send.php?token=" + getFID(dl);
     }
 
     @Override

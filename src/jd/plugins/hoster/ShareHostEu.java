@@ -71,7 +71,6 @@ public class ShareHostEu extends PluginForHost {
         // filePassword - password for file (if exists)
         br.postPage(MAINPAGE + "/fapi/fileInfo", "url=" + downloadLink.getDownloadURL());
 
-        String response = br.toString();
         // Output:
         // fileName - file name
         // filePath - file path
@@ -84,9 +83,9 @@ public class ShareHostEu extends PluginForHost {
         // fileNotFound
         // filePasswordNotMatch - podane hasło dostępu do pliku jest niepoprawne
 
-        String success = PluginJSonUtils.getJson(response, "success");
+        final String success = PluginJSonUtils.getJsonValue(br, "success");
         if ("false".equals(success)) {
-            String error = PluginJSonUtils.getJson(response, "error");
+            final String error = PluginJSonUtils.getJsonValue(br, "error");
             if ("fileNotFound".equals(error)) {
                 return AvailableStatus.FALSE;
             } else if ("emptyUrl".equals(error)) {
@@ -95,21 +94,23 @@ public class ShareHostEu extends PluginForHost {
                 return AvailableStatus.UNCHECKED;
             }
         }
-        String fileName = PluginJSonUtils.getJson(response, "fileName");
-        String filePath = PluginJSonUtils.getJson(response, "filePath");
-        String fileSize = PluginJSonUtils.getJson(response, "fileSize");
-        String fileAvailable = PluginJSonUtils.getJson(response, "fileAvailable");
-        String fileDescription = PluginJSonUtils.getJson(response, "fileDescription");
+        String fileName = PluginJSonUtils.getJsonValue(br, "fileName");
+        // String filePath = PluginJSonUtils.getJsonValue(br, "filePath");
+        String fileSize = PluginJSonUtils.getJsonValue(br, "fileSize");
+        String fileAvailable = PluginJSonUtils.getJsonValue(br, "fileAvailable");
+        // String fileDescription = PluginJSonUtils.getJsonValue(br, "fileDescription");
 
-        if ("false".equals(fileAvailable)) {
-            downloadLink.setAvailable(false);
-        } else {
+        if ("true".equals(fileAvailable)) {
+            if (fileName == null || fileSize == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             fileName = Encoding.htmlDecode(fileName.trim());
             downloadLink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
             downloadLink.setAvailable(true);
+        } else {
+            downloadLink.setAvailable(false);
         }
-
         if (!downloadLink.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
         }
@@ -151,9 +152,9 @@ public class ShareHostEu extends PluginForHost {
         // Errors:
         // emptyLoginOrPassword
         // userNotFound
-        String userIsPremium = PluginJSonUtils.getJson(accountResponse, "userIsPremium");
-        String userPremiumExpire = PluginJSonUtils.getJson(accountResponse, "userPremiumExpire");
-        String userTrafficToday = PluginJSonUtils.getJson(accountResponse, "userTrafficToday");
+        String userIsPremium = PluginJSonUtils.getJsonValue(accountResponse, "userIsPremium");
+        String userPremiumExpire = PluginJSonUtils.getJsonValue(accountResponse, "userPremiumExpire");
+        String userTrafficToday = PluginJSonUtils.getJsonValue(accountResponse, "userTrafficToday");
         long userTrafficLeft = Long.parseLong(userTrafficToday);
         ai.setTrafficLeft(userTrafficLeft);
 
@@ -163,10 +164,11 @@ public class ShareHostEu extends PluginForHost {
             ai.setTrafficMax(SizeFormatter.getSize(PREMIUM_DAILY_TRAFFIC_MAX));
             ai.setStatus(getPhrase("PREMIUM"));
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
-            Date date;
             try {
-                date = dateFormat.parse(userPremiumExpire);
-                ai.setValidUntil(date.getTime());
+                if (userPremiumExpire != null) {
+                    Date date = dateFormat.parse(userPremiumExpire);
+                    ai.setValidUntil(date.getTime());
+                }
             } catch (final Exception e) {
                 logger.log(e);
             }
@@ -201,12 +203,11 @@ public class ShareHostEu extends PluginForHost {
                 // Errors:
                 // emptyLoginOrPassword
                 // userNotFound
-                String response = br.toString();
-                String success = PluginJSonUtils.getJson(response, "success");
-                if ("false".equals(success)) {
+                final String response = br.toString();
+                if ("false".equals(PluginJSonUtils.getJsonValue(br, "success"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("INVALID_LOGIN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if ("true".equals(PluginJSonUtils.getJson(response, "userIsPremium"))) {
+                if ("true".equals(PluginJSonUtils.getJsonValue(br, "userIsPremium"))) {
                     account.setProperty("premium", "true");
                 } else {
                     account.setProperty("premium", "false");

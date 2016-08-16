@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -145,7 +146,7 @@ public class VivaTv extends PluginForHost {
         }
         description = feedGetDescription();
         ext = default_ext;
-        filename = doFilenameEncoding(filename);
+        filename = doFilenameEncoding(this, filename);
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -364,7 +365,7 @@ public class VivaTv extends PluginForHost {
             filename = this.feedGetTitle();
         }
         if (filename != null) {
-            filename = doFilenameEncoding(filename);
+            filename = doFilenameEncoding(this, filename);
         }
         return filename;
     }
@@ -444,22 +445,6 @@ public class VivaTv extends PluginForHost {
         return httpurl;
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     public static String doEncoding(String data) {
         data = Encoding.htmlDecode(data).trim();
         data = HTMLEntities.unhtmlentities(data);
@@ -471,9 +456,9 @@ public class VivaTv extends PluginForHost {
         return data;
     }
 
-    public static String doFilenameEncoding(String filename) {
+    public static String doFilenameEncoding(final Plugin plugin, String filename) {
         filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
+        filename = plugin.encodeUnicode(filename);
         filename = HTMLEntities.unhtmlentities(filename);
         filename = HTMLEntities.unhtmlAmpersand(filename);
         filename = HTMLEntities.unhtmlAngleBrackets(filename);

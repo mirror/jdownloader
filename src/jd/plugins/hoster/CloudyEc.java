@@ -29,6 +29,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=|video)[a-z0-9]+" }, flags = { 0 })
 public class CloudyEc extends PluginForHost {
 
@@ -164,7 +166,7 @@ public class CloudyEc extends PluginForHost {
         if (fn == null) {
             return null;
         }
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval("var res = " + fn);

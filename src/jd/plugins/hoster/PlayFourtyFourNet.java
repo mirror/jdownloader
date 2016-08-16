@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+" }, flags = { 0 })
 public class PlayFourtyFourNet extends antiDDoSForHost {

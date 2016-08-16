@@ -43,6 +43,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.uio.UIOManager;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/|resource/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -149,7 +150,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     ajax.getPage(getpage);
                     json_source = ajax.toString();
                 }
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
                 ArrayList<Object> resource_data_list = (ArrayList) entries.get("resource_data_cache");
                 ArrayList<Object> pin_list = null;
                 if (resource_data_list == null) {
@@ -172,7 +173,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) entry.getValue();
                         proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
                     }
-                    nextbookmark = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(resource_data_list, "{1}/resource/options/bookmarks/{0}");
+                    nextbookmark = (String) JavaScriptEngineFactory.walkJson(resource_data_list, "{1}/resource/options/bookmarks/{0}");
                     logger.info("Decrypted " + decryptedLinks.size() + " of " + numberof_pins + " pins");
                     i++;
                 } else {
@@ -198,7 +199,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         /* Final fallback - RegEx the pin-array --> Json parser */
                         final String pin_list_json_source = new Regex(json_source, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
                         if (pin_list_json_source != null) {
-                            pin_list = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(pin_list_json_source);
+                            pin_list = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(pin_list_json_source);
                         }
                     }
                     if (pin_list == null && decryptedLinks.size() > 0) {
@@ -212,7 +213,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
                         proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
                     }
-                    nextbookmark = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "resource/options/bookmarks/{0}");
+                    nextbookmark = (String) JavaScriptEngineFactory.walkJson(entries, "resource/options/bookmarks/{0}");
                     if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
                         /* Fallback to RegEx */
                         nextbookmark = new Regex(json_source, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
@@ -374,22 +375,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
     private void prepAPIBR(final Browser br) throws PluginException {
         jd.plugins.hoster.PinterestCom.prepAPIBR(br);
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
 }

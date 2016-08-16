@@ -32,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
@@ -156,11 +157,11 @@ public class FilespaceIo extends PluginForHost {
             if (!br.containsHTML("\"success\":true")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured", 5 * 60 * 1000l);
             }
-            final String download_token = getJson("download_token");
+            final String download_token = PluginJSonUtils.getJsonValue(br, "download_token");
             if (download_token == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String waitstr = getJson("delay");
+            final String waitstr = PluginJSonUtils.getJsonValue(br, "delay");
             int wait = 60;
             if (waitstr != null) {
                 wait = Integer.parseInt(waitstr);
@@ -183,11 +184,7 @@ public class FilespaceIo extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -203,20 +200,6 @@ public class FilespaceIo extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

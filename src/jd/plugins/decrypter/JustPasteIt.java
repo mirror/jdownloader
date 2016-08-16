@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Set;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
@@ -28,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  *

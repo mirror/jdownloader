@@ -40,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -96,7 +97,7 @@ public class Tf1Fr extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             filename = (String) entries.get("title");
             final String html = (String) entries.get("html");
             video_id = new Regex(html, "id=\"wat_(\\d{8})\"").getMatch(0);
@@ -277,22 +278,6 @@ public class Tf1Fr extends PluginForHost {
         final String timestamp_hex = Long.toHexString(timestamp);
         final String key = "9b673b13fa4682ed14c3cfa5af5310274b514c4133e9b3a81e6e3aba009l2564";
         return JDHash.getMD5(key + quality + timestamp_hex) + "/" + timestamp_hex;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /**

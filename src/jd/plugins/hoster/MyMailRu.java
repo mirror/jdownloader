@@ -40,6 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+|http://my\\.mail\\.ru/[^<>\"]*?video/(top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[^<>\"]*?/\\d+\\.html)|http://(videoapi\\.my|api\\.video)\\.mail\\.ru/videos/embed/mail/[^/]+/[a-z0-9\\-_]+/\\d+\\.html" }, flags = { 2 })
 public class MyMailRu extends PluginForHost {
 
@@ -348,7 +350,7 @@ public class MyMailRu extends PluginForHost {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private String getVideoURL() throws Exception {
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> videoQualities = (ArrayList) entries.get("videos");
         for (final Object quality : videoQualities) {
             final LinkedHashMap<String, Object> quality_map = (LinkedHashMap<String, Object>) quality;

@@ -48,6 +48,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HighWayMe extends UseNet {
@@ -319,7 +320,7 @@ public class HighWayMe extends UseNet {
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
         this.postAPISafe(DOMAIN + "?login&user&hoster", "pass=" + Encoding.urlEncode(this.currAcc.getPass()) + "&user=" + Encoding.urlEncode(this.currAcc.getUser()));
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final LinkedHashMap<String, Object> info_account = (LinkedHashMap<String, Object>) entries.get("user");
         final ArrayList<Object> array_hoster = (ArrayList) entries.get("hoster");
         final int account_maxchunks = ((Number) info_account.get("max_chunks")).intValue();
@@ -550,7 +551,7 @@ public class HighWayMe extends UseNet {
      * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 200-299 = info-states, 666 = hell
      */
     private void updatestatuscode() {
-        final String waittime_on_failure = getJson("timeout");
+        final String waittime_on_failure = PluginJSonUtils.getJsonValue(br, "timeout");
         /* First look for errorcode */
         String error = PluginJSonUtils.getJsonValue(br, "code");
         if (error == null) {

@@ -23,10 +23,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,6 +42,10 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class StreaminTo extends antiDDoSForHost {
@@ -571,12 +571,12 @@ public class StreaminTo extends antiDDoSForHost {
             // rtmp is required
             String in = new Regex(correctedBR, "jwplayer\\(\"vplayer\"\\)\\.setup\\(\\{(.*?)\\}\\);").getMatch(0);
             if (in != null) {
-                String out1 = PluginJSonUtils.getJson(in, "file");
-                String out0 = PluginJSonUtils.getJson(in, "streamer");
-                dllink = "http://streamin.to/player/player.swf";
+                String out1 = PluginJSonUtils.getJsonValue(in, "file");
+                String out0 = PluginJSonUtils.getJsonValue(in, "streamer");
                 if (out0 == null || out1 == null) {
                     return null;
                 }
+                dllink = "http://streamin.to/player/player.swf";
                 dllink = out0 + "@" + out1 + "@" + dllink;
             }
         }

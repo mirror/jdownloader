@@ -47,6 +47,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filearn.com" }, urls = { "http://(www\\.)?filearn\\.com/files/get/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class FilEarnCom extends PluginForHost {
@@ -64,7 +65,7 @@ public class FilEarnCom extends PluginForHost {
 
     private String execJS(String fun) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         String returnVar = new Regex(fun, "return ([A-Za-z0-9]+);").getMatch(0);
         if (returnVar == null) {

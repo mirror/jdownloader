@@ -36,6 +36,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://rai_host_plugin_notneeded_at_the_moment" }, flags = { 0 })
 public class RaiTv extends PluginForHost {
@@ -95,19 +96,19 @@ public class RaiTv extends PluginForHost {
             if (content_id_from_html != null) {
                 /* Easiest way to find videoinfo */
                 this.br.getPage("http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem" + content_id_from_html + ".html?json");
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             }
             if (entries == null) {
                 final ArrayList<Object> ressourcelist;
                 final String list_json_from_html = this.br.getRegex("\"list\"[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\}[\t\n\r ]*?\\])").getMatch(0);
                 if (list_json_from_html != null) {
-                    ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(list_json_from_html);
+                    ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(list_json_from_html);
                 } else {
                     br.getPage("http://www.rai.tv/dl/RaiTV/ondemand/ContentSet" + contentset_id + ".html?json");
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                     ressourcelist = (ArrayList<Object>) entries.get("list");
                 }
 
@@ -242,22 +243,6 @@ public class RaiTv extends PluginForHost {
             return false;
         }
         return true;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     public static String formatDate(final String input) {

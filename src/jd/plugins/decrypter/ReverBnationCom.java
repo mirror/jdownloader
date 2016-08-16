@@ -28,6 +28,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reverbnation.com" }, urls = { "https?://(?:www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
@@ -161,7 +162,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             if (artist_name_general == null) {
                 artist_name_general = br.getRegex("class=\"artist_name\">By: <span title=\"([^<>\"]*?)\"").getMatch(0);
             }
-            artistID = getJson("current_page_object");
+            artistID = PluginJSonUtils.getJsonValue(br, "current_page_object");
             if (artistID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

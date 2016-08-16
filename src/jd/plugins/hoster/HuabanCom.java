@@ -33,6 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/pins/\\d+" }, flags = { 0 })
 public class HuabanCom extends PluginForHost {
 
@@ -87,7 +89,7 @@ public class HuabanCom extends PluginForHost {
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             dllink = getDirectlinkFromJson(entries);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -152,7 +154,7 @@ public class HuabanCom extends PluginForHost {
 
     public static String getDirectlinkFromJson(final LinkedHashMap<String, Object> entries) {
         String directlink = null;
-        final String key = (String) DummyScriptEnginePlugin.walkJson(entries, "file/key");
+        final String key = (String) JavaScriptEngineFactory.walkJson(entries, "file/key");
         if (key != null) {
             directlink = "http://img.hb.aicdn.com/" + key;
         }
@@ -241,22 +243,6 @@ public class HuabanCom extends PluginForHost {
     // br.setFollowRedirects(false);
     // doFree(link, false, 1, "account_free_directlink");
     // }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
 
     @Override
     public String getDescription() {

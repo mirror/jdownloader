@@ -30,6 +30,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-_]+(?:.+\\?file=[A-Za-z0-9\\-_]+)?|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class BitCasaCom extends PluginForHost {
 
@@ -82,17 +84,17 @@ public class BitCasaCom extends PluginForHost {
             if ("4002".equals(errcode)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "result/items");
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "result/items");
             for (final Object jso : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) jso;
                 final String file_id_temp = (String) entries.get("id");
                 if (file_id_temp.equals(file_id)) {
                     filename = (String) entries.get("name");
-                    filesize = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("size"), -1));
-                    digest = (String) DummyScriptEnginePlugin.walkJson(entries, "application_data/_server/nebula/digest");
-                    nonce = (String) DummyScriptEnginePlugin.walkJson(entries, "application_data/_server/nebula/nonce");
-                    payload = (String) DummyScriptEnginePlugin.walkJson(entries, "application_data/_server/nebula/payload");
+                    filesize = Long.toString(JavaScriptEngineFactory.toLong(entries.get("size"), -1));
+                    digest = (String) JavaScriptEngineFactory.walkJson(entries, "application_data/_server/nebula/digest");
+                    nonce = (String) JavaScriptEngineFactory.walkJson(entries, "application_data/_server/nebula/nonce");
+                    payload = (String) JavaScriptEngineFactory.walkJson(entries, "application_data/_server/nebula/payload");
                     break;
                 }
             }

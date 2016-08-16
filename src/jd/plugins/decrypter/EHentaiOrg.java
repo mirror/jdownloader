@@ -20,8 +20,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,6 +36,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" }, flags = { 0 })
 public class EHentaiOrg extends PluginForDecrypt {

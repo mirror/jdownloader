@@ -60,6 +60,7 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends antiDDoSForHost {
@@ -1128,7 +1129,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
 
     private String execJS(final String fun) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
 

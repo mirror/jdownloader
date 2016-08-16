@@ -20,8 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime\\-loads\\.org/(redirect/\\d+/[a-z0-9]+|media/\\d+)" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {

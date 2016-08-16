@@ -20,8 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +29,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "https?://(www\\.)?adrive\\.com/public/[0-9a-zA-Z]+" }, flags = { 0 })
 public class AdriveComDecrypter extends PluginForDecrypt {

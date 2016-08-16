@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +39,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */

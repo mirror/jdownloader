@@ -37,6 +37,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 /**
@@ -108,13 +109,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
             getPage("https://linksnappy.com/api/USERDETAILS");
         }
 
-        if ("ERROR".equals(getJson("status"))) {
-            ac.setStatus(getJson("error"));
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + getJson("error"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ("ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
+            final String error = PluginJSonUtils.getJsonValue(br, "error");
+            ac.setStatus(error);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
 
         String accountType = null;
-        final String expire = getJson("expire");
+        final String expire = PluginJSonUtils.getJsonValue(br, "expire");
         if ("lifetime".equals(expire)) {
             accountType = "Lifetime Premium Account";
             currentAcc.setType(AccountType.LIFETIME);
@@ -128,8 +130,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
         }
         ac.setStatus(accountType);
         /* Find traffic left */
-        final String trafficLeft = getJson("trafficleft");
-        final String maxtraffic = getJson("maxtraffic");
+        final String trafficLeft = PluginJSonUtils.getJsonValue(br, "trafficleft");
+        final String maxtraffic = PluginJSonUtils.getJsonValue(br, "maxtraffic");
         if ("unlimited".equals(trafficLeft)) {
             ac.setUnlimitedTraffic();
         } else {
@@ -147,11 +149,12 @@ public class LinkSnappyCom extends antiDDoSForHost {
         /* now it's time to get all supported hosts */
         getPage("https://linksnappy.com/api/FILEHOSTS");
 
-        if (getJson("status").equals("ERROR")) {
-            if (getJson("error").equals("Account has exceeded the daily quota")) {
+        if ("ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
+            final String error = PluginJSonUtils.getJsonValue(br, "error");
+            if ("Account has exceeded the daily quota".equals(error)) {
                 dailyLimitReached();
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + getJson("error"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}").getMatch(0);
@@ -169,11 +172,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
             if (hosts == null) {
                 continue;
             }
-            final String status = getJson(hostInfo, "Status");
-            String quota = getJson(hostInfo, "Quota");
-            if ("null".equalsIgnoreCase(quota)) {
-                quota = null;
-            }
+            final String status = PluginJSonUtils.getJsonValue(hostInfo, "Status");
+            String quota = PluginJSonUtils.getJsonValue(hostInfo, "Quota");
             if (quota != null) {
                 if (quota.matches("\\d+")) {
                     e.put("quota", Long.parseLong(quota));
@@ -184,18 +184,15 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     logger.warning("Possible plugin defect!");
                 }
             }
-            String usage = getJson(hostInfo, "Usage");
-            if ("null".equalsIgnoreCase(usage)) {
-                usage = null;
-            }
+            String usage = PluginJSonUtils.getJsonValue(hostInfo, "Usage");
             if (usage != null) {
                 e.put("usage", Long.parseLong(usage));
             }
-            final String resumes = getJson(hostInfo, "resume");
+            final String resumes = PluginJSonUtils.getJsonValue(hostInfo, "resume");
             if (resumes != null) {
                 e.put("resumes", (resumes.matches("\\d+") && Integer.parseInt(resumes) == 1 ? true : false));
             }
-            final String connlimit = getJson(hostInfo, "connlimit");
+            final String connlimit = PluginJSonUtils.getJsonValue(hostInfo, "connlimit");
             e.put("chunks", (connlimit != null && connlimit.matches("\\d+") ? Integer.parseInt(connlimit) : 0));
             if (!e.isEmpty()) {
                 con.put(host, e);
@@ -347,7 +344,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     boolean history_deleted = false;
                     try {
                         getPage("https://linksnappy.com/api/DELETELINK?type=filehost&hash=all");
-                        if ("OK".equalsIgnoreCase(getJson("status"))) {
+                        if ("OK".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "status"))) {
                             history_deleted = true;
                         }
                     } catch (final Throwable e) {
@@ -408,8 +405,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     private boolean attemptDownload() throws Exception {
         if (br != null && br.getHttpConnection() != null) {
-            if ("FAILED".equalsIgnoreCase(getJson("status"))) {
-                final String err = getJson("error");
+            if ("FAILED".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "status"))) {
+                final String err = PluginJSonUtils.getJsonValue(br, "error");
                 if (err != null && !err.matches("\\s*") && !"".equalsIgnoreCase(err)) {
                     if ("ERROR Code: 087".equalsIgnoreCase(err)) {
                         // "status":"FAILED","error":"ERROR Code: 087"
@@ -439,7 +436,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
 
-            dllink = getJson("generated");
+            dllink = PluginJSonUtils.getJsonValue(br, "generated");
             if (dllink == null) {
                 logger.info("Direct downloadlink not found");
                 int timesFailed = currentLink.getIntegerProperty("timesfailedlinksnappycom_dllinkmissing", 0);
@@ -486,11 +483,11 @@ public class LinkSnappyCom extends antiDDoSForHost {
             this.br = new Browser();
             this.br.setCookiesExclusive(true);
             getPage("https://linksnappy.com/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final String ResponseStatus = getJson("status");
-            if (ResponseStatus.equals("ERROR")) {
-                final String ErrorMessage = getJson("error");
+            final String ResponseStatus = PluginJSonUtils.getJsonValue(br, "status");
+            if ("ERROR".equals(ResponseStatus)) {
+                final String ErrorMessage = PluginJSonUtils.getJsonValue(br, "error");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + ErrorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (ResponseStatus.equals("OK")) {
+            } else if ("OK".equals(ResponseStatus)) {
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             }
         }

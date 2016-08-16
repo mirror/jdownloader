@@ -30,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clyp.it" }, urls = { "https?://(?:www\\.)?clyp\\.it/[A-Za-z0-9]+" }, flags = { 0 })
 public class ClypIt extends PluginForHost {
 
@@ -68,8 +70,8 @@ public class ClypIt extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "AudioFiles/{0}");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "AudioFiles/{0}");
         final String description = (String) entries.get("Description");
         String filename = (String) entries.get("Title");
         if (filename == null) {
@@ -149,22 +151,6 @@ public class ClypIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

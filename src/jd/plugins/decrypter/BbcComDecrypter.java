@@ -27,7 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(bbc\\.com|bbc\\.co\\.uk)/.+" }, flags = { 0 })
 public class BbcComDecrypter extends PluginForDecrypt {
@@ -62,27 +63,27 @@ public class BbcComDecrypter extends PluginForDecrypt {
         }
         LinkedHashMap<String, Object> entries = null;
         for (final String json : jsons) {
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             final Object story = entries.get("story");
             String title = null;
             String description = null;
             String vpid = null;
             if (story != null) {
                 /* Type 3 */
-                entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "story/Content/AssetVideoIb2/{0}");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "story/Content/AssetVideoIb2/{0}");
                 title = (String) entries.get("Title");
                 vpid = (String) entries.get("Vpid");
             } else {
                 /* Type 1 */
-                Object sourcemapo = DummyScriptEnginePlugin.walkJson(entries, "settings/playlistObject");
+                Object sourcemapo = JavaScriptEngineFactory.walkJson(entries, "settings/playlistObject");
                 if (sourcemapo == null) {
                     /* Type 2 */
-                    sourcemapo = DummyScriptEnginePlugin.walkJson(entries, "allAvailableVersions/{0}/smpConfig");
+                    sourcemapo = JavaScriptEngineFactory.walkJson(entries, "allAvailableVersions/{0}/smpConfig");
                 }
                 entries = (LinkedHashMap<String, Object>) sourcemapo;
                 title = (String) entries.get("title");
                 description = (String) entries.get("summary");
-                entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "items/{0}");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
                 vpid = (String) entries.get("vpid");
             }
             if (inValidate(title) || inValidate(vpid)) {
@@ -127,22 +128,6 @@ public class BbcComDecrypter extends PluginForDecrypt {
         } else {
             return false;
         }
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
 }

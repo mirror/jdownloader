@@ -38,6 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -47,6 +48,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class OffCloudCom extends PluginForHost {
@@ -207,7 +209,7 @@ public class OffCloudCom extends PluginForHost {
                 final long timeStarted = System.currentTimeMillis();
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_cloud);
                 this.postRawAPISafe("https://offcloud.com/cloud/request", "{\"url\":\"" + link.getDownloadURL() + "\",\"conversion\":\"\"}");
-                requestID = getJson("requestId");
+                requestID = PluginJSonUtils.getJsonValue(br, "requestId");
                 if (requestID == null) {
                     /* Should never happen */
                     handleErrorRetries("cloud_requestIdnull", 50, 2 * 60 * 1000l);
@@ -215,9 +217,9 @@ public class OffCloudCom extends PluginForHost {
                 do {
                     this.sleep(5000l, link);
                     this.postRawAPISafe("https://offcloud.com/cloud/status", "{\"requestIds\":[\"" + requestID + "\"]}");
-                    status = getJson("status");
+                    status = PluginJSonUtils.getJsonValue(br, "status");
                 } while (System.currentTimeMillis() - timeStarted < CLOUD_MAX_WAITTIME && "downloading".equals(status));
-                filename = getJson("fileName");
+                filename = PluginJSonUtils.getJsonValue(br, "fileName");
                 if (!"downloaded".equals(status)) {
                     logger.warning("Cloud failed");
                     /* Should never happen but will happen */
@@ -228,12 +230,12 @@ public class OffCloudCom extends PluginForHost {
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
                 this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(this.currDownloadLink.getDownloadURL()));
-                requestID = getJson("requestId");
+                requestID = PluginJSonUtils.getJsonValue(br, "requestId");
                 if (requestID == null) {
                     /* Should never happen */
                     handleErrorRetries("instant_requestIdnull", 50, 2 * 60 * 1000l);
                 }
-                dllink = getJson("url");
+                dllink = PluginJSonUtils.getJsonValue(br, "url");
                 if (dllink == null) {
                     /* Should never happen */
                     handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
@@ -375,7 +377,7 @@ public class OffCloudCom extends PluginForHost {
             login();
         }
         br.postPage("https://offcloud.com/stats/usage-left", "");
-        String remaininglinksnum = getJson("links");
+        String remaininglinksnum = PluginJSonUtils.getJsonValue(br, "links");
         postAPISafe("https://offcloud.com/stats/addons", "");
         /*
          * Basically, at the moment we got 3 account types: Premium, Free account with generate-links feature, Free Account without
@@ -388,20 +390,20 @@ public class OffCloudCom extends PluginForHost {
             userpackage = packages[0];
         } else {
             for (final String singlepackage : packages) {
-                final String type = getJson(singlepackage, "type");
+                final String type = PluginJSonUtils.getJsonValue(singlepackage, "type");
                 if (type.contains("link-unlimited")) {
                     userpackage = singlepackage;
                     break;
                 }
             }
         }
-        final String packagetype = getJson(userpackage, "type");
+        final String packagetype = PluginJSonUtils.getJsonValue(userpackage, "type");
         if ((userpackage == null && br.containsHTML("-increase")) || userpackage.equals("") || packagetype.equals("premium-link-increase")) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             /* Important: If we found our package, get the remaining links count from there as the other one might be wrong! */
             if ("premium-link-increase".equals(packagetype)) {
-                remaininglinksnum = getJson(userpackage, "remainingLinksCount");
+                remaininglinksnum = PluginJSonUtils.getJsonValue(userpackage, "remainingLinksCount");
             }
             account.setProperty("accinfo_linksleft", remaininglinksnum);
             if (remaininglinksnum.equals("0")) {
@@ -412,7 +414,7 @@ public class OffCloudCom extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             ai.setUnlimitedTraffic();
-            String expiredate = getJson(userpackage, "activeTill");
+            String expiredate = PluginJSonUtils.getJsonValue(userpackage, "activeTill");
             expiredate = expiredate.replaceAll("Z$", "+0000");
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd'T'HH:mm:ss.S", Locale.ENGLISH));
             account.setProperty("accinfo_linksleft", remaininglinksnum);
@@ -421,7 +423,7 @@ public class OffCloudCom extends PluginForHost {
         /* Only add hosts which are listed as 'active' (working) */
         postAPISafe("https://offcloud.com/stats/sites", "");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("fs");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
@@ -492,7 +494,7 @@ public class OffCloudCom extends PluginForHost {
     /** Checks if we're logged in --> If not, re-login (errorhandling will throw error if something is not right with our account) */
     private void loginCheck() throws IOException, PluginException {
         this.postAPISafe("https://offcloud.com/api/login/check", "");
-        if (this.getJson("loggedIn").equals("1")) {
+        if ("1".equals(PluginJSonUtils.getJsonValue(br, "loggedIn"))) {
             logger.info("loginCheck successful");
         } else {
             logger.info("loginCheck failed --> re-logging in");
@@ -510,7 +512,7 @@ public class OffCloudCom extends PluginForHost {
             hostMaxchunksMap.clear();
             hostMaxdlsMap.clear();
             this.getAPISafe("https://offcloud.com/api/sites/chunks");
-            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             for (final Object o : ressourcelist) {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) o;
                 final String host = correctHost((String) entries.get("host"));
@@ -546,12 +548,12 @@ public class OffCloudCom extends PluginForHost {
                 /* Delete all allowed IPs except the one the user has at the moment (first in list). */
                 for (int i = 1; i <= ipdata.length - 1; i++) {
                     final String singleipdata = ipdata[i];
-                    final String ip = getJson(singleipdata, "ip");
+                    final String ip = PluginJSonUtils.getJsonValue(singleipdata, "ip");
                     if (ip == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     postRawAPISafe("https://www.offcloud.com/account/ip/remove/", "{\"ip\":\"" + ip + "\"}");
-                    if ("true".equals(getJson("result"))) {
+                    if ("true".equals(PluginJSonUtils.getJsonValue(br, "result"))) {
                         logger.info("Successfully removed IP: " + ip);
                     } else {
                         logger.warning("Failed to remove IP: " + ip);
@@ -580,7 +582,7 @@ public class OffCloudCom extends PluginForHost {
             do {
                 logger.info("Decrypting requestIDs of page: " + page);
                 this.postRawAPISafe("https://offcloud.com/" + downloadtype + "/history", "{\"page\":" + page + "}");
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final ArrayList<Object> history = (ArrayList) entries.get("history");
                 for (final Object historyentry_object : history) {
                     final LinkedHashMap<String, Object> historyentry = (LinkedHashMap<String, Object>) historyentry_object;
@@ -653,7 +655,7 @@ public class OffCloudCom extends PluginForHost {
             try {
                 logger.info("Trying to delete requestID from history: " + requestID);
                 br.getPage("https://offcloud.com/" + downloadtype + "/remove/" + requestID);
-                if (getJson("success").equals("true")) {
+                if (("true").equals(PluginJSonUtils.getJsonValue(br, "success"))) {
                     success = true;
                 }
             } catch (final Throwable e) {
@@ -749,9 +751,9 @@ public class OffCloudCom extends PluginForHost {
      * with the API errors., 666 = hell
      */
     private void updatestatuscode() {
-        String error = getJson("error");
+        String error = PluginJSonUtils.getJsonValue(br, "error");
         if (error == null) {
-            error = getJson("not_available");
+            error = PluginJSonUtils.getJsonValue(br, "not_available");
         }
         if (error != null) {
             if (error.equals("Please enter a valid email address.")) {

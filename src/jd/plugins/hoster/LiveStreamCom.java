@@ -33,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "http://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" }, flags = { 0 })
 public class LiveStreamCom extends PluginForHost {
 
@@ -93,7 +95,7 @@ public class LiveStreamCom extends PluginForHost {
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         entries = (LinkedHashMap<String, Object>) entries.get("event");
         entries = (LinkedHashMap<String, Object>) entries.get("feed");
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
@@ -104,7 +106,7 @@ public class LiveStreamCom extends PluginForHost {
                 continue;
             }
             entries = (LinkedHashMap<String, Object>) entries.get("data");
-            final long tempid = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("id"), -1);
+            final long tempid = JavaScriptEngineFactory.toLong(entries.get("id"), -1);
             if (tempid == llidlong) {
                 if (isJDStable()) {
                     /* http */
@@ -175,22 +177,6 @@ public class LiveStreamCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

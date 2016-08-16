@@ -27,9 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -54,6 +51,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/(embed\\-)?[a-z0-9]{12}", }, flags = { 2 })
 public class VideoPremiumNet extends antiDDoSForHost {

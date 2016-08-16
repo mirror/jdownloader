@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -32,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net" }, urls = { "http://(?:www\\.)?free\\-sex\\-video\\.net/video/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
 public class FreeSexVideoNet extends PluginForHost {
@@ -153,22 +153,6 @@ public class FreeSexVideoNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

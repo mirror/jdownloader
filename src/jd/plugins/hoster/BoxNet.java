@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -27,6 +25,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com", "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=f_\\d+\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/shared/[a-z0-9]+|https?://www\\.boxdecrypted\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
 public class BoxNet extends antiDDoSForHost {
@@ -148,12 +149,12 @@ public class BoxNet extends antiDDoSForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("https://app.box.com/index.php?rm=preview_shared&fileId=" + fileID + "&firstLoad=true&ignoreFolderContents=true&sharedName=" + sharedName + "&vanityName=&isSharedFilePage=true&isSharedFileEmbed=false&isSharedFolderPage=false&isSharedFolderEmbed=false&clientIsMobile=false&clientSupportsSWF=true&clientSupportsSVG=true&clientSupportsMP3=true&clientSupportsH264Baseline=true&clientSupportsMSE=true&clientSupportsDash=true&clientSupportsWebGL=true&sortType=&sortDirection=");
 
-            final String filename = getJson("name");
-            final String filesize = getJson("size");
-            parameter.setProperty("fileid", fileID);
+            final String filename = PluginJSonUtils.getJsonValue(br, "name");
+            final String filesize = PluginJSonUtils.getJsonValue(br, "size");
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            parameter.setProperty("fileid", fileID);
             parameter.setName(filename.trim());
             if (filesize != null) {
                 parameter.setDownloadSize(SizeFormatter.getSize(filesize));

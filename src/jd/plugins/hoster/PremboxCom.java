@@ -42,6 +42,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.simplejson.JSonUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremboxCom extends PluginForHost {
@@ -359,19 +360,19 @@ public class PremboxCom extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         login();
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
-        final LinkedHashMap<String, Object> traffic_standard = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "traffic/standard");
-        final LinkedHashMap<String, Object> traffic_daily = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "traffic/daily");
+        final LinkedHashMap<String, Object> traffic_standard = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "traffic/standard");
+        final LinkedHashMap<String, Object> traffic_daily = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "traffic/daily");
 
         String status = null;
         long traffic_left_total = 0;
-        long expire_timestamp_standard = DummyScriptEnginePlugin.toLong(traffic_standard.get("expireTstamp"), -1);
-        long expire_timestamp_daily = DummyScriptEnginePlugin.toLong(traffic_daily.get("expireTstamp"), -1);
+        long expire_timestamp_standard = JavaScriptEngineFactory.toLong(traffic_standard.get("expireTstamp"), -1);
+        long expire_timestamp_daily = JavaScriptEngineFactory.toLong(traffic_daily.get("expireTstamp"), -1);
         long expire_timestamp;
         /* Accounts can also have negative traffic (=no traffic left) */
-        long traffic_left_standard = DummyScriptEnginePlugin.toLong(traffic_standard.get("left"), 0);
-        long traffic_left_daily = DummyScriptEnginePlugin.toLong(traffic_daily.get("left"), 0);
+        long traffic_left_standard = JavaScriptEngineFactory.toLong(traffic_standard.get("left"), 0);
+        long traffic_left_daily = JavaScriptEngineFactory.toLong(traffic_daily.get("left"), 0);
         final String accounttype = (String) entries.get("accountType");
 
         if (traffic_left_daily > 0 && traffic_left_standard > 0) {
@@ -410,7 +411,7 @@ public class PremboxCom extends PluginForHost {
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         this.getAPISafe(API_SERVER + "/supportedHosts");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
@@ -422,10 +423,10 @@ public class PremboxCom extends PluginForHost {
         for (final Object domaininfo_o : ressourcelist) {
             final LinkedHashMap<String, Object> domaininfo = (LinkedHashMap<String, Object>) domaininfo_o;
             final boolean canResume = ((Boolean) domaininfo.get("resumable")).booleanValue();
-            final long isoffline = DummyScriptEnginePlugin.toLong(domaininfo.get("tmpTurnedOff"), 0);
-            final long cloudonly = DummyScriptEnginePlugin.toLong(domaininfo.get("serverOnly"), 0);
-            final int maxChunks = (int) DummyScriptEnginePlugin.toLong(domaininfo.get("maxChunks"), 1);
-            final int maxDownloads = (int) DummyScriptEnginePlugin.toLong(domaininfo.get("maxDownloads"), 1);
+            final long isoffline = JavaScriptEngineFactory.toLong(domaininfo.get("tmpTurnedOff"), 0);
+            final long cloudonly = JavaScriptEngineFactory.toLong(domaininfo.get("serverOnly"), 0);
+            final int maxChunks = (int) JavaScriptEngineFactory.toLong(domaininfo.get("maxChunks"), 1);
+            final int maxDownloads = (int) JavaScriptEngineFactory.toLong(domaininfo.get("maxDownloads"), 1);
             final String host = correctHost((String) domaininfo.get("host"));
             if (isoffline == 1) {
                 /* Do not add hosts that do not work at the moment. */

@@ -32,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
@@ -142,7 +143,7 @@ public class DoriDroNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.postPage(dllink, "action=nocaptchadown");
-            dllink = getJson("down_link");
+            dllink = PluginJSonUtils.getJsonValue(br, "down_link");
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -159,16 +160,6 @@ public class DoriDroNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

@@ -36,8 +36,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.IgnVariant;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -79,7 +79,7 @@ public class IgnCom extends PluginForDecrypt {
                 return null;
             }
 
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
 
             /* HLS */
             // final String hls = (String) entries.get("m3uUrl");
@@ -89,7 +89,7 @@ public class IgnCom extends PluginForDecrypt {
             for (final Object rendition : renditions) {
                 entries = (LinkedHashMap<String, Object>) rendition;
                 final String finallink = (String) entries.get("url");
-                final String height = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("height"), -1));
+                final String height = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), -1));
 
                 if (finallink == null || height.equals("-1")) {
                     continue;

@@ -30,7 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/boards/\\d+" }, flags = { 0 })
 public class HuabanComDecrypter extends PluginForDecrypt {
@@ -88,8 +89,8 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 if (json_source == null) {
                     break;
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
-                lnumberof_pins = DummyScriptEnginePlugin.toLong(entries.get("pin_count"), 0);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+                lnumberof_pins = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
                 if (lnumberof_pins == 0) {
                     decryptedLinks.add(getOffline(parameter));
                     return decryptedLinks;
@@ -103,7 +104,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 if (json_source == null) {
                     break;
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
                 entries = (LinkedHashMap<String, Object>) entries.get("board");
             }
             final ArrayList<Object> resource_data_list = (ArrayList) entries.get("pins");
@@ -111,10 +112,10 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 final LinkedHashMap<String, Object> single_pin_data = (LinkedHashMap<String, Object>) pint;
 
                 final String pin_directlink = jd.plugins.hoster.HuabanCom.getDirectlinkFromJson(single_pin_data);
-                final String pin_id = Long.toString(DummyScriptEnginePlugin.toLong(single_pin_data.get("pin_id"), 0));
+                final String pin_id = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("pin_id"), 0));
                 // final String description =(String) single_pin_data.get("description");
-                final String username = Long.toString(DummyScriptEnginePlugin.toLong(single_pin_data.get("user_id"), 0));
-                final String pinner_name = Long.toString(DummyScriptEnginePlugin.toLong(single_pin_data.get("via_user_id"), 0));
+                final String username = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("user_id"), 0));
+                final String pinner_name = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("via_user_id"), 0));
                 if (pin_id.equals("0") || (username.equals("0") && pinner_name.equals("0"))) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -178,21 +179,5 @@ public class HuabanComDecrypter extends PluginForDecrypt {
     // }
     // return true;
     // }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
 
 }

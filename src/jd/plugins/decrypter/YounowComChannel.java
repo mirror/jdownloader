@@ -28,7 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younow\\.com/[^/]+(?:/\\d+)?" }, flags = { 0 })
 public class YounowComChannel extends PluginForDecrypt {
@@ -53,7 +55,7 @@ public class YounowComChannel extends PluginForDecrypt {
             int addedlinks_temp = 0;
             String userid = this.br.getRegex("\"userId\":\"(\\d+)\"").getMatch(0);
             if (userid == null) {
-                userid = getJson("userId");
+                userid = PluginJSonUtils.getJsonValue(br, "userId");
             }
             if (inValidate(userid)) {
                 /* Probably that user does not exist */
@@ -65,7 +67,7 @@ public class YounowComChannel extends PluginForDecrypt {
                 this.br.getHeaders().put("Referer", "https://www.younow.com/" + username + "/channel");
                 // this.br.getHeaders().put("Origin", "https://www.younow.com");
                 br.getPage("https://cdn2.younow.com/php/api/post/getBroadcasts/channelId=" + userid + "/startFrom=" + (addedlinks + 1));
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("posts");
                 if (ressourcelist == null) {
                     break;
@@ -75,13 +77,13 @@ public class YounowComChannel extends PluginForDecrypt {
                     addedlinks_temp++;
                     entries = (LinkedHashMap<String, Object>) objecto;
                     entries = (LinkedHashMap<String, Object>) entries.get("media");
-                    final long mediatype = DummyScriptEnginePlugin.toLong(entries.get("type"), 0);
+                    final long mediatype = JavaScriptEngineFactory.toLong(entries.get("type"), 0);
                     if (mediatype != 5) {
                         /* Skip non-video-content */
                         continue;
                     }
                     entries = (LinkedHashMap<String, Object>) entries.get("broadcast");
-                    final long broadcastID = DummyScriptEnginePlugin.toLong(entries.get("broadcastId"), 0);
+                    final long broadcastID = JavaScriptEngineFactory.toLong(entries.get("broadcastId"), 0);
                     final String broadcasttitle = jd.plugins.hoster.YounowCom.getbroadcastTitle(entries);
                     if (broadcastID == 0 || inValidate(broadcasttitle)) {
                         continue;
@@ -114,26 +116,6 @@ public class YounowComChannel extends PluginForDecrypt {
     }
 
     /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      *
      * @param s
@@ -147,22 +129,6 @@ public class YounowComChannel extends PluginForDecrypt {
         } else {
             return false;
         }
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
 }

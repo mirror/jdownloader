@@ -31,11 +31,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,8 +44,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.x10\\.bz|megacrypter\\.neerdi\\.com|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
 public class MegaCrypterCom extends antiDDoSForHost {
@@ -119,66 +120,36 @@ public class MegaCrypterCom extends antiDDoSForHost {
     }
 
     private static enum MegaCrypterComApiErrorCodes {
-        FILE_NOT_FOUND(
-                3),
-        MC_EMETHOD(
-                1),
-        MC_EREQ(
-                2),
-        MC_INTERNAL_ERROR(
-                21),
-        MC_LINK_ERROR(
-                22),
-        MC_BLACKLISTED_LINK(
-                23),
-        MC_EXPIRED_LINK(
-                24),
-        MEGA_EINTERNAL(
-                -1),
-        MEGA_EARGS(
-                -2),
-        MEGA_EAGAIN(
-                -3),
-        MEGA_ERATELIMIT(
-                -4),
-        MEGA_EFAILED(
-                -5),
-        MEGA_ETOOMANY(
-                -6),
-        MEGA_ERANGE(
-                -7),
-        MEGA_EEXPIRED(
-                -8),
-        MEGA_ENOENT(
-                -9),
-        MEGA_ECIRCULAR(
-                -10),
-        MEGA_EACCESS(
-                -11),
-        MEGA_EEXIST(
-                -12),
-        MEGA_EINCOMPLETE(
-                -13),
-        MEGA_EKEY(
-                -14),
-        MEGA_ESID(
-                -15),
-        MEGA_EBLOCKED(
-                -16),
-        MEGA_EOVERQUOTA(
-                -17),
-        MEGA_ETEMPUNAVAIL(
-                -18),
-        MEGA_ETOOMANYCONNECTIONS(
-                -19),
-        MEGA_EWRITE(
-                -20),
-        MEGA_EREAD(
-                -21),
-        MEGA_EAPPKEY(
-                -22),
-        MEGA_EDLURL(
-                -101);
+        FILE_NOT_FOUND(3),
+        MC_EMETHOD(1),
+        MC_EREQ(2),
+        MC_INTERNAL_ERROR(21),
+        MC_LINK_ERROR(22),
+        MC_BLACKLISTED_LINK(23),
+        MC_EXPIRED_LINK(24),
+        MEGA_EINTERNAL(-1),
+        MEGA_EARGS(-2),
+        MEGA_EAGAIN(-3),
+        MEGA_ERATELIMIT(-4),
+        MEGA_EFAILED(-5),
+        MEGA_ETOOMANY(-6),
+        MEGA_ERANGE(-7),
+        MEGA_EEXPIRED(-8),
+        MEGA_ENOENT(-9),
+        MEGA_ECIRCULAR(-10),
+        MEGA_EACCESS(-11),
+        MEGA_EEXIST(-12),
+        MEGA_EINCOMPLETE(-13),
+        MEGA_EKEY(-14),
+        MEGA_ESID(-15),
+        MEGA_EBLOCKED(-16),
+        MEGA_EOVERQUOTA(-17),
+        MEGA_ETEMPUNAVAIL(-18),
+        MEGA_ETOOMANYCONNECTIONS(-19),
+        MEGA_EWRITE(-20),
+        MEGA_EREAD(-21),
+        MEGA_EAPPKEY(-22),
+        MEGA_EDLURL(-101);
         private int code;
 
         private MegaCrypterComApiErrorCodes(int code) {
@@ -187,7 +158,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
     }
 
     private void checkError(final Browser br) throws PluginException {
-        final String code = getJson(br, "error");
+        final String code = PluginJSonUtils.getJsonValue(br, "error");
         if (!inValidate(code)) {
             int codeInt = Integer.parseInt(code);
             for (final MegaCrypterComApiErrorCodes v : MegaCrypterComApiErrorCodes.values()) {
@@ -264,7 +235,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
         linkPart = new Regex(link.getDownloadURL(), "/(\\!.+)").getMatch(0);
         noExpire = link.getStringProperty("expire", null);
         // youpaste.co actually verifies if content-type application/json has been set
-        postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"}", true);
+        postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + PluginJSonUtils.escape(linkPart) + "\"}", true);
         try {
             checkError(br);
         } catch (final PluginException e) {
@@ -278,13 +249,13 @@ public class MegaCrypterCom extends antiDDoSForHost {
             throw e;
         }
         // needed for decryption. since linkchecking fails when link expires we need to cache this
-        key = getJson("key");
-        String filename = getJson("name");
-        final String filesize = getJson("size");
-        final String expire = getJson("expire");
+        key = PluginJSonUtils.getJsonValue(br, "key");
+        String filename = PluginJSonUtils.getJsonValue(br, "name");
+        final String filesize = PluginJSonUtils.getJsonValue(br, "size");
+        final String expire = PluginJSonUtils.getJsonValue(br, "expire");
         // filename
-        final String pass = getJson("pass");
-        if (JSonUtils.parseBoolean(pass)) {
+        final String pass = PluginJSonUtils.getJsonValue(br, "pass");
+        if (PluginJSonUtils.parseBoolean(pass)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // TODO, password support
             // {"name":"Zm1pXXQq4\/ovygn9YBtfTHCeDVYbipODFxmdU2RK1ns=","size":195075582,"key":"z\/JW7nqri8R0RjyN2\/iMhWnFOOKRMDo5cJ7J2MLej5n1\/uQ6pkNf7aCU4H12\/Qm4","extra":false,"expire":"1435932308#NTShVnmHzm4+12lxNuybUqng9TIPfjcUz35mRsgUzSI=","pass":"14#Y59Jufe6caJGS4fWft7PB3UTWpYvS59\/5FpQTvY3DEw=#kdFqasP9u\/U=#TTcjSEShR4kdMmzTH+WOeA=="}
@@ -312,16 +283,16 @@ public class MegaCrypterCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         dl_start = true;
         requestFileInformation(downloadLink);
-        key = getJson("key");
+        key = PluginJSonUtils.getJsonValue(br, "key");
         if (inValidate(key)) {
             key = downloadLink.getStringProperty("key", null);
             if (inValidate(key)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"" + (inValidate(noExpire) || noExpire.split("#").length != 2 ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}", true);
+        postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + PluginJSonUtils.escape(linkPart) + "\"" + (inValidate(noExpire) || noExpire.split("#").length != 2 ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}", true);
         checkError(br);
-        String dllink = getJson("url");
+        String dllink = PluginJSonUtils.getJsonValue(br, "url");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -40,6 +40,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -568,7 +569,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
             sb.append(line2);
 
-            ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
             long answer = ((Number) engine.eval(sb.toString())).longValue();
             cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
@@ -836,7 +837,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             Object result = new Object();
             if (base64 != null) {
                 try {
-                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     engine.eval("document = \"\";");
                     engine.eval(decode);
@@ -878,7 +879,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         // replace window/document references, remove the redirect
         final String js = br.toString().replace("redir();", "").replaceFirst("if\\(\\$\\(window\\)\\.width\\(\\)>0\\)\\s*\\{.*?\\}", "");
         try {
-            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             engine.eval(js);
             engine.eval("var result = toHex(BFCrypt.decrypt(c,2,a,b));");
@@ -1009,128 +1010,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    protected final String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    protected final String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     */
-    protected final String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     */
-    protected final String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided Browser.
-     *
-     * @author raztoki
-     */
-    protected final String getJsonArray(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    protected final String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    protected final String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to gather nested \"key\":{.*?} from default Browser
-     *
-     * @author raztoki
-     * @param key
-     * @return
-     */
-    protected final String getJsonNested(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to gather nested \"key\":{.*?} from imported Browser
-     *
-     * @author raztoki
-     * @param key
-     * @return
-     */
-    protected final String getJsonNested(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to gather nested \"key\":{.*?} from source
-     *
-     * @author raztoki
-     * @param key
-     * @return
-     */
-    protected final String getJsonNested(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Creates and or Ammends Strings ready for JSon requests, with the correct JSon formatting and escaping.
-     *
-     * @author raztoki
-     * @param source
-     * @param key
-     * @param value
-     * @return
-     */
-    protected final String ammendJson(final String source, final String key, final Object value) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.ammendJson(source, key, value);
     }
 
     /**

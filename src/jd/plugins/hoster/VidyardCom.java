@@ -32,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidyard.com" }, urls = { "http://(?:www\\.)?[A-Za-z0-9]+\\.vidyard\\.com/watch/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class VidyardCom extends PluginForHost {
 
@@ -81,7 +83,7 @@ public class VidyardCom extends PluginForHost {
         try {
             this.br.getPage("http://play.vidyard.com/" + fid);
             final String json = this.br.getRegex("var vidyard_chapter_data = (\\[.*?\\]);").getMatch(0);
-            ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
             if (fallback_sd_url == null) {
                 fallback_sd_url = (String) entries.get("sd_url");
@@ -182,22 +184,6 @@ public class VidyardCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

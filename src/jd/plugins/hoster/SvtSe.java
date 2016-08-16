@@ -33,6 +33,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 32254 $", interfaceVersion = 3, names = { "svt.se" }, urls = { "https?://(?:www\\.)?(?:svt|svtplay)\\.se/.+" }, flags = { 0 })
 public class SvtSe extends PluginForHost {
@@ -66,10 +67,10 @@ public class SvtSe extends PluginForHost {
             /* Strange result on 404: {"message":"To many retry attempts to video API","status":404} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
         final String channel = "svtplay";
-        final String date = (String) DummyScriptEnginePlugin.walkJson(entries, "rights/date/forDate");
+        final String date = (String) JavaScriptEngineFactory.walkJson(entries, "rights/date/forDate");
         final String title = (String) entries.get("programTitle");
         final String subtitle = (String) entries.get("episodeTitle");
         if (title == null || subtitle == null || channel == null) {
@@ -140,22 +141,6 @@ public class SvtSe extends PluginForHost {
             formattedDate = input;
         }
         return formattedDate;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

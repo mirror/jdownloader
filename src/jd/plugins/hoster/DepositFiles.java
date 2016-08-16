@@ -57,6 +57,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -1037,7 +1038,7 @@ public class DepositFiles extends antiDDoSForHost {
                 logger.info("Invalid Captcha response! Excausted retry count");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            String token = getJson("token");
+            String token = PluginJSonUtils.getJsonValue(br, "token");
             if (token != null) {
                 token = token.replaceAll("\\\\/", "/");
                 token = Encoding.urlEncode(token);
@@ -1050,14 +1051,14 @@ public class DepositFiles extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("token", token);
-            String passKey = getJson("member_passkey");
+            String passKey = PluginJSonUtils.getJsonValue(br, "member_passkey");
             if (passKey == null) {
                 logger.warning("Could not find 'passKey'");
                 // useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("passKey", passKey);
-            String mode = getJson("mode");
+            String mode = PluginJSonUtils.getJsonValue(br, "mode");
             if (mode == null) {
                 logger.warning("Could not find 'mode'");
                 // useAPI.set(false);
@@ -1065,7 +1066,7 @@ public class DepositFiles extends antiDDoSForHost {
             }
             accountData.put("mode", mode);
             // "gold_expired":"2015-01-18 14:37:08"
-            final String expire = getJson("gold_expired");
+            final String expire = PluginJSonUtils.getJsonValue(br, "gold_expired");
             if ("gold".equalsIgnoreCase(mode)) {
                 account.setProperty("free", false);
                 ai.setStatus("Premium Account");
@@ -1139,7 +1140,7 @@ public class DepositFiles extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download requires valid password");
                 }
                 apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + "&file_password=" + pass);
-                if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) {
+                if ("FilePasswordIsIncorrect".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "error"))) {
                     pass = null;
                     continue;
                 } else {
@@ -1148,11 +1149,11 @@ public class DepositFiles extends antiDDoSForHost {
                 }
             }
         }
-        if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) {
+        if ("FilePasswordIsIncorrect".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "File Password protected!");
         }
-        if ("Error".equalsIgnoreCase(getJson("status"))) {
-            final String error = getJson("error");
+        if ("Error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "status"))) {
+            final String error = PluginJSonUtils.getJsonValue(br, "error");
             if ("FileDoesNotExist".equalsIgnoreCase(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -1161,9 +1162,9 @@ public class DepositFiles extends antiDDoSForHost {
             }
         }
         if (account.getBooleanProperty("free", false)) {
-            String mode = getJson("mode");
-            String delay = getJson("delay");
-            String dlToken = getJson("download_token");
+            String mode = PluginJSonUtils.getJsonValue(br, "mode");
+            String delay = PluginJSonUtils.getJsonValue(br, "delay");
+            String dlToken = PluginJSonUtils.getJsonValue(br, "download_token");
             if (delay == null && mode == null && dlToken == null) {
                 logger.warning("api epic fail");
                 // if (useAPI.getAndSet(false) == true) {
@@ -1205,7 +1206,7 @@ public class DepositFiles extends antiDDoSForHost {
                 }
             }
         }
-        String dllink = getJson("download_url");
+        String dllink = PluginJSonUtils.getJsonValue(br, "download_url");
         if (dllink == null) {
             logger.warning("Could not find 'dllink'");
             // if (useAPI.getAndSet(false) == true) {

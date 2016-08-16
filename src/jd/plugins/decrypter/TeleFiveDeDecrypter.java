@@ -47,6 +47,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -502,7 +503,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         String sp = null;
         if (source.contains("{")) {
             /* Parse json */
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(source);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(source);
             entryid = (String) entries.get("entry_id");
             partnerid = (String) entries.get("wid");
             sp = (String) entries.get("sp");

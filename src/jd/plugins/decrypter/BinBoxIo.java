@@ -39,6 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(?:www\\.)?binbox\\.io/\\w+(?:#\\w+)?" }, flags = { 0 })
 public class BinBoxIo extends PluginForDecrypt {
 
@@ -168,7 +170,7 @@ public class BinBoxIo extends PluginForDecrypt {
 
     private String[] decryptLinks() throws Exception {
         String result = null;
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {

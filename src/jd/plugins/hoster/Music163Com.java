@@ -43,6 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:song|mv)\\?id=\\d+|decrypted://music\\.163\\.comcover\\d+" }, flags = { 2 })
 public class Music163Com extends PluginForHost {
@@ -128,7 +129,7 @@ public class Music163Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() != 200) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("data");
             artist = (String) entries.get("artistName");
             content_title = (String) entries.get("name");
@@ -158,7 +159,7 @@ public class Music163Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() != 200) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> songs = (ArrayList) entries.get("songs");
             entries = (LinkedHashMap<String, Object>) songs.get(0);
             final ArrayList<Object> artists = (ArrayList) entries.get("artists");
@@ -170,7 +171,7 @@ public class Music163Com extends PluginForHost {
                 if (musicO != null) {
                     final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
                     ext = (String) musicmap.get("extension");
-                    filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("size"), -1);
+                    filesize = JavaScriptEngineFactory.toLong(musicmap.get("size"), -1);
                     break;
                 }
             }
@@ -178,7 +179,7 @@ public class Music163Com extends PluginForHost {
             name_album = (String) album_info.get("name");
             content_title = (String) entries.get("name");
             if (publishedTimestamp < 1) {
-                publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(album_info.get("publishTime"), 0);
+                publishedTimestamp = JavaScriptEngineFactory.toLong(album_info.get("publishTime"), 0);
             }
             if (artist == null || name_album == null || content_title == null || ext == null || filesize == -1) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -220,7 +221,7 @@ public class Music163Com extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.getPage("http://music.163.com/api/song/lyric?id=" + downloadLink.getLinkID() + "&lv=-1&tv=-1&csrf_token=");
-                LinkedHashMap<String, Object> entries_lyrics = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br2.toString());
+                LinkedHashMap<String, Object> entries_lyrics = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
                 entries_lyrics = (LinkedHashMap<String, Object>) entries.get("lrc");
                 final String lyrics = (String) entries_lyrics.get("lyric");
                 downloadLink.setComment(lyrics);
@@ -239,7 +240,7 @@ public class Music163Com extends PluginForHost {
                 final Object musicO = entries.get(quality);
                 if (musicO != null) {
                     final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
-                    final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("dfsId"), -1));
+                    final String dfsid = Long.toString(JavaScriptEngineFactory.toLong(musicmap.get("dfsId"), -1));
                     final String encrypted_dfsid = encrypt_dfsId(dfsid);
                     /*
                      * bMusic (and often/alyways) lMusic == mp3Url - in theory we don't have to generate the final downloadlink for these

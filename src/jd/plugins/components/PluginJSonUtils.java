@@ -231,8 +231,9 @@ public class PluginJSonUtils {
      * @param key
      * @return
      */
+    @Deprecated
     public static String getJson(final String source, final String key) {
-        return getJson(source, key, false);
+        return getJson(source, key, true);
     }
 
     /**
@@ -243,6 +244,7 @@ public class PluginJSonUtils {
      * @param key
      * @return
      */
+    @Deprecated
     public static String getJson(final Browser ibr, final String key) {
         return getJson(ibr.toString(), key, true);
     }

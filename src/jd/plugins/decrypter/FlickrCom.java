@@ -38,8 +38,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
@@ -201,10 +202,10 @@ public class FlickrCom extends PluginForDecrypt {
         } else if (parameter.matches(TYPE_GROUPS)) {
             br.getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.urls.lookupGroup&url=" + Encoding.urlEncode(parameter));
             final String json = br.getRegex("^jsonFlickrApi\\((\\{.*?\\})\\)$").getMatch(0);
-            final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             final HashMap<String, Object> group = (HashMap<String, Object>) entries.get("group");
             final String group_id = (String) group.get("id");
-            final String groupname = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(group, "groupname/_content");
+            final String groupname = (String) JavaScriptEngineFactory.walkJson(group, "groupname/_content");
             path_alias = new Regex(parameter, "flickr\\.com/groups/([^<>\"/]+)").getMatch(0);
             if (group_id == null || path_alias == null || groupname == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -506,8 +507,8 @@ public class FlickrCom extends PluginForDecrypt {
                 /* This should never happen but if we found links before, lets return them. */
                 break;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-            final ArrayList<Object> resourcelist = (ArrayList<Object>) DummyScriptEnginePlugin.walkJson(entries, "favorite-models/{0}/photoPageList/_data");
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final ArrayList<Object> resourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "favorite-models/{0}/photoPageList/_data");
             int resourcelistCount = 0;
             for (final Object pico : resourcelist) {
                 LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) pico;
@@ -531,11 +532,11 @@ public class FlickrCom extends PluginForDecrypt {
                         final String pa = (String) owner.get("$ref");
                         if (pa != null) {
                             final String r = new Regex(pa, "\\$\\[\"favorite-models\"\\]\\[0\\]\\[\"photoPageList\"\\]\\[\"_data\"\\]\\[(\\d+)\\]\\[\"owner\"\\]").getMatch(0);
-                            pathAlias = (String) DummyScriptEnginePlugin.walkJson(resourcelist, "{" + r + "}/owner/pathAlias");
+                            pathAlias = (String) JavaScriptEngineFactory.walkJson(resourcelist, "{" + r + "}/owner/pathAlias");
                         }
                         if (pathAlias == null) {
                             // 'r' above can fail.. referenced a another record resourcelist value which doens't have result!
-                            pathAlias = (String) DummyScriptEnginePlugin.walkJson(entry, "engagement/ownerNsid");
+                            pathAlias = (String) JavaScriptEngineFactory.walkJson(entry, "engagement/ownerNsid");
                         }
                     }
                 }
@@ -606,22 +607,6 @@ public class FlickrCom extends PluginForDecrypt {
             }
         }
         return filename;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @SuppressWarnings("deprecation")

@@ -32,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "http://(?:www\\.)?sexu\\.com/\\d+/" }, flags = { 0 })
 public class SexuCom extends PluginForHost {
 
@@ -79,7 +81,7 @@ public class SexuCom extends PluginForHost {
             js = br.cloneBrowser().getPage("http://sexu.com/v.php?v_id=" + downloadLink.getLinkID() + "&bitrate=720p&_=" + System.currentTimeMillis());
             // js = js.replace("'", "\"");
         }
-        final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
+        final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
         final ArrayList<Object> sources = (ArrayList) entries.get("sources");
         boolean done = false;
         for (final String quality : qualities) {
@@ -153,22 +155,6 @@ public class SexuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

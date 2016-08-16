@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,6 +34,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videobox\\.com/(movie\\-details\\?contentId=|flashPage/)\\d+" }, flags = { 0 })
 public class VideoBoxComDecrypter extends PluginForDecrypt {

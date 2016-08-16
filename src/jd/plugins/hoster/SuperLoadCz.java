@@ -38,6 +38,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UnavailableHost;
 
 import org.appwork.utils.StringUtils;
@@ -261,9 +262,9 @@ public class SuperLoadCz extends antiDDoSForHost {
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
             postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
-            dllink = getJson("link");
+            dllink = PluginJSonUtils.getJsonValue(br, "link");
             if (dllink == null) {
-                final String error = getJson("error");
+                final String error = PluginJSonUtils.getJsonValue(br, "error");
                 if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (StringUtils.equalsIgnoreCase(error, "invalidLink")) {
@@ -382,7 +383,7 @@ public class SuperLoadCz extends antiDDoSForHost {
         if (!getSuccess(login)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        String token = getJson(login, "token");
+        String token = PluginJSonUtils.getJsonValue(login, "token");
         if (!inValidate(token)) {
             acc.setProperty("token", token);
         } else {
@@ -404,7 +405,7 @@ public class SuperLoadCz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.postPage(mAPI + "/get-status-bar", "token=" + getToken(account));
-        final String credits = getJson("credits");
+        final String credits = PluginJSonUtils.getJsonValue(br, "credits");
         if (!inValidate(credits) && credits.matches("[\\d\\.]+")) {
             // 1000 credits = 1 GB, convert back into 1024 (Bytes)
             // String expression = "(" + credits + " / 1000) * 1073741824";
@@ -451,7 +452,7 @@ public class SuperLoadCz extends antiDDoSForHost {
             } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
                 logger.info("Request failed (401) -> Re-newing token and trying again");
                 acc.getProperty("token", Property.NULL);
-            } else if ("Invalid token".equalsIgnoreCase(getJson("error"))) {
+            } else if ("Invalid token".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "error"))) {
                 logger.info("Old token failed, will retry one more time, but this time with new token");
                 // dump old token, will force new full login.
                 acc.setProperty("token", Property.NULL);

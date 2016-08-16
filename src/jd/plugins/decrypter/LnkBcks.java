@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,6 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
 
 // DEV NOTES:
 // 162.158.0.0/15 cloudflare

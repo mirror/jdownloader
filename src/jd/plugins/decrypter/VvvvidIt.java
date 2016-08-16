@@ -34,8 +34,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+(?:/\\d+/\\d+)?" }, flags = { 0 })
 public class VvvvidIt extends PluginForDecrypt {
@@ -81,12 +82,12 @@ public class VvvvidIt extends PluginForDecrypt {
         } else {
             /* season_id not given --> Get it */
             this.br.getPage("/vvvvid/ondemand/" + show_id + "/seasons/?conn_id=" + conn_id);
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-            final Object season_id_o = DummyScriptEnginePlugin.walkJson(entries, "data/{0}/season_id");
-            season_id = DummyScriptEnginePlugin.toLong(season_id_o, (show_id - 10));
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+            final Object season_id_o = JavaScriptEngineFactory.walkJson(entries, "data/{0}/season_id");
+            season_id = JavaScriptEngineFactory.toLong(season_id_o, (show_id - 10));
         }
         this.br.getPage("/vvvvid/ondemand/" + show_id + "/info/" + "?conn_id=" + conn_id);
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getHttpConnection().getContentType().contains("json")) {
             /* Offline or geo-blocked */
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -110,7 +111,7 @@ public class VvvvidIt extends PluginForDecrypt {
         fp.setName(show_title_main);
 
         final DecimalFormat df = new DecimalFormat("00");
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> resource_data_list = (ArrayList) entries.get("data");
         for (final Object resource_o : resource_data_list) {
             entries = (LinkedHashMap<String, Object>) resource_o;
@@ -119,9 +120,9 @@ public class VvvvidIt extends PluginForDecrypt {
             final String source_type = (String) entries.get("source_type");
             final String hls_master = (String) entries.get("embed_info");
 
-            final long videoid = DummyScriptEnginePlugin.toLong(entries.get("video_id"), -1);
-            final long season = DummyScriptEnginePlugin.toLong(entries.get("season_number"), -1);
-            final long episode = DummyScriptEnginePlugin.toLong(entries.get("number"), -1);
+            final long videoid = JavaScriptEngineFactory.toLong(entries.get("video_id"), -1);
+            final long season = JavaScriptEngineFactory.toLong(entries.get("season_number"), -1);
+            final long episode = JavaScriptEngineFactory.toLong(entries.get("number"), -1);
 
             if (inValidate(hls_master)) {
                 /* Probably video is not playable without account */

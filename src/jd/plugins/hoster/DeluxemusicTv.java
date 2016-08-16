@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
@@ -77,7 +78,7 @@ public class DeluxemusicTv extends PluginForHost {
             }
             final String[] xml_array = jd.plugins.decrypter.DeluxemusicTv.getTrackArray(this.br);
             this.xml_source = xml_array[getArrayid(link)];
-            status = parseTrackInfo(link, this.br.toString(), xml_array);
+            status = parseTrackInfo(this, link, this.br.toString(), xml_array);
         } else {
             status = AvailableStatus.TRUE;
         }
@@ -85,7 +86,7 @@ public class DeluxemusicTv extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public static AvailableStatus parseTrackInfo(final DownloadLink link, final String xml_all, final String[] xml_array) throws IOException, PluginException {
+    public static AvailableStatus parseTrackInfo(Plugin plugin, final DownloadLink link, final String xml_all, final String[] xml_array) throws IOException, PluginException {
         final DecimalFormat df = new DecimalFormat("0000");
         final String playlist_id = getPlaylistid(link);
         final String xml_source = xml_array[getArrayid(link)];
@@ -121,7 +122,7 @@ public class DeluxemusicTv extends PluginForHost {
         filename += title + ".mp4";
 
         filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
+        filename = plugin.encodeUnicode(filename);
 
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
@@ -184,22 +185,6 @@ public class DeluxemusicTv extends PluginForHost {
             dl.startDownload();
         }
 
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    public static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     public static String formatDate(String input) {

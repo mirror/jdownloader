@@ -26,7 +26,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vine.co" }, urls = { "https?://(?:www\\.)?vine\\.co/(?!v/)[^\\s]+" }, flags = { 0 })
 public class VineCoDecrypter extends PluginForDecrypt {
@@ -73,10 +74,10 @@ public class VineCoDecrypter extends PluginForDecrypt {
             }
             /* Max API return = 99 */
             this.br.getPage("https://vine.co/api/timelines/users/" + userid + "?page=" + page_current + "&anchor=00&size=" + count_per_page);
-            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            resource_data_list = (ArrayList<Object>) DummyScriptEnginePlugin.walkJson(entries, "data/records");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/records");
 
-            count_total = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "data/count"), -1);
+            count_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "data/count"), -1);
             if (count_total < 1) {
                 /* The user did not post any videos --> Link offline */
                 decryptedLinks.add(this.createDownloadlink(parameter));
@@ -127,22 +128,6 @@ public class VineCoDecrypter extends PluginForDecrypt {
         } while (count_decrypted < count_total);
 
         return decryptedLinks;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
 }

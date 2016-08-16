@@ -28,6 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "audioinbox.com" }, urls = { "http://(www\\.)?audioinbox\\.com/c/[A-Za-z0-9]+" }, flags = { 0 })
 public class AudioinboxCom extends PluginForDecrypt {
 
@@ -57,7 +59,7 @@ public class AudioinboxCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
         for (final Object ressource : ressourcelist) {
             final LinkedHashMap<String, Object> singlemap = (LinkedHashMap<String, Object>) ressource;
             final String title = (String) singlemap.get("title");

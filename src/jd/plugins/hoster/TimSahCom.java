@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.net.UnknownHostException;
-import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -33,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "timsah.com" }, urls = { "http://(www\\.)?timsah\\.com/[A-Za-z0-9_\\-]+/[A-Za-z0-9]+" }, flags = { 0 })
 public class TimSahCom extends PluginForHost {
 
@@ -46,7 +47,7 @@ public class TimSahCom extends PluginForHost {
 
     private String execJS(final String fun) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             result = engine.eval(fun);

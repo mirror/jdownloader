@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */

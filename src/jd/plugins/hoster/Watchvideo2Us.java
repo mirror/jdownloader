@@ -49,6 +49,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 33180 $", interfaceVersion = 3, names = { "watchvideo2.us" }, urls = { "https?://(www\\.)?watchvideo2\\.us/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class Watchvideo2Us extends PluginForHost {
@@ -763,11 +764,11 @@ public class Watchvideo2Us extends PluginForHost {
                     long quality_temp = 0;
                     long quality_best = 0;
                     String dllink_temp = null;
-                    final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jssource);
+                    final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                     for (final Object videoo : ressourcelist) {
                         entries = (HashMap<String, Object>) videoo;
                         dllink_temp = (String) entries.get("file");
-                        quality_temp = DummyScriptEnginePlugin.toLong(entries.get("label"), 0);
+                        quality_temp = JavaScriptEngineFactory.toLong(entries.get("label"), 0);
                         if (inValidate(dllink_temp) || quality_temp == 0) {
                             continue;
                         } else if (dllink_temp.contains(".m3u8")) {

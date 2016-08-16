@@ -343,9 +343,9 @@ public class FShareVn extends PluginForHost {
                     dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
                         final String page = getDllink();
-                        dllink = PluginJSonUtils.getJson(page, "url");
+                        dllink = PluginJSonUtils.getJsonValue(page, "url");
                         if (dllink == null) {
-                            final String msg = PluginJSonUtils.getJson(page, "msg");
+                            final String msg = PluginJSonUtils.getJsonValue(page, "msg");
                             if (StringUtils.containsIgnoreCase(msg, "try again")) {
                                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
                             }

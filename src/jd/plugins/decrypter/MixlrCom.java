@@ -28,6 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixlr.com" }, urls = { "http://(?:www\\.)?mixlr\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+/?([a-z0-9\\-]+/?|\\?page=[0-9]+)?" }, flags = { 0 })
 public class MixlrCom extends PluginForDecrypt {
 
@@ -74,10 +76,10 @@ public class MixlrCom extends PluginForDecrypt {
         }
         ArrayList<Object> ressourcelist;
         if (isShowreelPage) {
-            ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jsarray);
+            ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jsarray);
         } else {
             ressourcelist = new ArrayList<Object>();
-            ressourcelist.add(jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jsarray));
+            ressourcelist.add(JavaScriptEngineFactory.jsonToJavaObject(jsarray));
         }
         for (final Object mobject : ressourcelist) {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) mobject;

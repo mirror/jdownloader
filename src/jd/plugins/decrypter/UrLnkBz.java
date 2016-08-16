@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 /**
  * @author raztoki

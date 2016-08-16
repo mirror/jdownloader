@@ -28,7 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "https?://(?:www\\.)?drawcrowd\\.com/(?!projects/)[^/]+" }, flags = { 0 })
 public class DrawcrowdCom extends PluginForDecrypt {
@@ -58,7 +59,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
         br.getPage("/users" + username);
         LinkedHashMap<String, Object> json = null;
         try {
-            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         } catch (final Throwable e) {
             /* No json --> url offline! */
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -80,7 +81,7 @@ public class DrawcrowdCom extends PluginForDecrypt {
         final Integer userId = (Integer) json.get("id");
 
         final short entries_per_page = 200;
-        int entries_total = (int) DummyScriptEnginePlugin.toLong(json.get("project_count"), 0);
+        int entries_total = (int) JavaScriptEngineFactory.toLong(json.get("project_count"), 0);
         int offset = 0;
         Integer metaTotal = 0;
 
@@ -90,8 +91,8 @@ public class DrawcrowdCom extends PluginForDecrypt {
         do {
             br = org.cloneBrowser();
             br.getPage(username + "/projects?sort=newest&offset=" + offset + "&limit=" + entries_per_page);
-            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            metaTotal = (Integer) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "meta/length");
+            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            metaTotal = (Integer) JavaScriptEngineFactory.walkJson(json, "meta/length");
             final ArrayList<Object> ressourcelist = (ArrayList) json.get("projects");
             for (final Object resource : ressourcelist) {
                 json = (LinkedHashMap<String, Object>) resource;
@@ -109,8 +110,8 @@ public class DrawcrowdCom extends PluginForDecrypt {
             do {
                 br = org.cloneBrowser();
                 br.getPage("//drawcrowd.com/users/" + userId + "/my_featured?limit=" + entries_per_page);
-                json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                metaTotal = (Integer) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "meta/length");
+                json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                metaTotal = (Integer) JavaScriptEngineFactory.walkJson(json, "meta/length");
                 final ArrayList<Object> ressourcelist = (ArrayList) json.get("projects");
                 for (final Object resource : ressourcelist) {
                     json = (LinkedHashMap<String, Object>) resource;

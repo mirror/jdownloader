@@ -30,6 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kkiste.to" }, urls = { "http://(?:www\\.)?kkiste\\.to/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class KkisteTo extends PluginForDecrypt {
 
@@ -94,7 +96,7 @@ public class KkisteTo extends PluginForDecrypt {
                 return decryptedLinks;
             }
             this.br.postPage("/xhr/movies/episodes/" + url_name + "/", "season=" + season);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("episodes");
             final FilePackage fp = FilePackage.getInstance();
             final String season_formatted = "S" + df.format(season_int);

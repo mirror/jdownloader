@@ -46,9 +46,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -57,6 +59,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[3456])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
@@ -335,7 +338,7 @@ public class SaveTv extends PluginForHost {
                 /* Offline#1 - offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final Object aRRALLOWDDOWNLOADFORMATS = entries.get("ARRALLOWDDOWNLOADFORMATS");
             final Object sTRRECORDORDER = entries.get("STRRECORDORDER");
             if (aRRALLOWDDOWNLOADFORMATS == null || sTRRECORDORDER == null) {
@@ -351,7 +354,7 @@ public class SaveTv extends PluginForHost {
             parseQualityTag(link, sourcelist);
         }
         link.setAvailable(true);
-        final String availablecheck_filename = getFilename(link);
+        final String availablecheck_filename = getFilename(this, link);
         /*
          * Reset (final) filename from previous state so we can use the final filename as final filename later even if it has changed before
          */
@@ -375,7 +378,7 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public static String getFilename(final DownloadLink dl) throws ParseException {
+    public static String getFilename(final Plugin plugin, final DownloadLink dl) throws ParseException {
         /*
          * No custom filename if not all required tags are given, if the user prefers original filenames or if custom user regexes for
          * specified series or movies match to force original filenames
@@ -384,7 +387,7 @@ public class SaveTv extends PluginForHost {
         final boolean force_original_general = (cfg.getBooleanProperty(USEORIGINALFILENAME) || dl.getLongProperty(PROPERTY_category, 0l) == 0);
         final String site_title = dl.getStringProperty(PROPERTY_plainfilename);
         final String server_filename = dl.getStringProperty(PROPERTY_server_filename, null);
-        final String fake_original_filename = getFakeOriginalFilename(dl);
+        final String fake_original_filename = getFakeOriginalFilename(plugin, dl);
         boolean force_original_series = false;
         boolean force_original_movies = false;
         String formattedFilename;
@@ -417,7 +420,7 @@ public class SaveTv extends PluginForHost {
         if (force_original_filename) {
             filename = fake_original_filename;
         } else {
-            filename = getFormattedFilename(dl);
+            filename = getFormattedFilename(plugin, dl);
         }
         /* Cut filenames for Windows systems if necessary */
         if (CrossSystem.isWindows() && filename.length() > 255) {
@@ -460,9 +463,9 @@ public class SaveTv extends PluginForHost {
             produceyear = Long.toString((long) ((Double) produceyear_o).doubleValue());
         } else {
             /* In case they correct their horrible json we might as well get a long value --> Handle this too :) */
-            produceyear = Long.toString(DummyScriptEnginePlugin.toLong(produceyear_o, 0));
+            produceyear = Long.toString(JavaScriptEngineFactory.toLong(produceyear_o, 0));
         }
-        String category = Long.toString(DummyScriptEnginePlugin.toLong(sourcemap.get("TVCATEGORYID"), -1));
+        String category = Long.toString(JavaScriptEngineFactory.toLong(sourcemap.get("TVCATEGORYID"), -1));
         /* Happens in decrypter - errorhandling! */
         if (category.equals("-1") && (episodename != null || episodenumber != null)) {
             category = "2";
@@ -556,7 +559,7 @@ public class SaveTv extends PluginForHost {
         final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         final long site_runtime_minutes = (runtime_end_long - datemilliseconds) / 1000 / 60;
-        final String tv_station = getJson(source, "STVSTATIONNAME");
+        final String tv_station = PluginJSonUtils.getJsonValue(source, "STVSTATIONNAME");
         /* TODO: Add more/all numbers here, improve this! */
         if (category.equals("2")) {
             /* For series */
@@ -685,7 +688,7 @@ public class SaveTv extends PluginForHost {
             /* Check if ads-free version is available */
             /* TODO: Check if the numbers are still correct */
             /* TODO: Enhance ad-free check - check if selected format is available and if it is available in ad-free */
-            final String ad_Free_availability = getJson(br.toString(), "BADFREEAVAILABLE");
+            final String ad_Free_availability = PluginJSonUtils.getJsonValue(br, "BADFREEAVAILABLE");
             if (ad_Free_availability == null || ad_Free_availability.equals("3") || ad_Free_availability.equalsIgnoreCase("false")) {
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", USERTEXT_NOCUTAVAILABLE));
             } else if (ad_Free_availability.equals("1") || ad_Free_availability.equalsIgnoreCase("true")) {
@@ -746,7 +749,7 @@ public class SaveTv extends PluginForHost {
             }
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> sourcelist = jsonGetVideoSourcelist(entries);
             final String best_quality_id = jsonGetBestQualityId(sourcelist);
             stv_request_selected_format_value = site_get_format_request_value(link);
@@ -756,7 +759,7 @@ public class SaveTv extends PluginForHost {
                 stv_request_selected_format_value = best_quality_id;
             }
             site_AccessDownloadPage(link, stv_request_selected_format_value, request_value_downloadWithoutAds);
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             /* 2016-07-06: Collecting errors: */
             /*
              * {"ERROR":
@@ -812,7 +815,7 @@ public class SaveTv extends PluginForHost {
         if (previouscomment == null || previouscomment.contains("Aktuell/Zuletzt verwendeter direkter Downloadlink:")) {
             link.setComment("Aktuell/Zuletzt verwendeter direkter Downloadlink: " + dllink);
         }
-        final String final_filename = getFilename(link);
+        final String final_filename = getFilename(this, link);
         link.setFinalFileName(final_filename);
         try {
             if (!this.dl.startDownload()) {
@@ -924,16 +927,19 @@ public class SaveTv extends PluginForHost {
                 String price = null;
                 br.getPage("https://www." + this.getHost() + "/STV/M/obj/user/JSON/userConfigApi.cfm?iFunction=2");
                 final String acc_username = br.getRegex("\"SUSERNAME\":(\\d+)").getMatch(0);
-                final String user_packet_id = getJson(br.toString(), "CURRENTARTICLEID");
+                final String user_packet_id = PluginJSonUtils.getJsonValue(br, "CURRENTARTICLEID");
                 /* Find the price of the package which the user uses. */
                 final String all_packages_string = br.getRegex("\"ARRRENEWARTICLES\":\\[(.*?)\\]").getMatch(0);
                 final String[] all_packets = all_packages_string.split("\\},\\{");
                 for (final String packet : all_packets) {
                     if (packet.contains("\"ID\":" + user_packet_id + ".0")) {
-                        price = getJson(packet, "IPRICE");
+                        price = PluginJSonUtils.getJsonValue(packet, "IPRICE");
+                        if (price != null) {
+                            break;
+                        }
                     }
                 }
-                final String expireDate_str = getJson(br.toString(), "DCURRENTARTICLEENDDATE");
+                final String expireDate_str = PluginJSonUtils.getJsonValue(br, "DCURRENTARTICLEENDDATE");
                 final long expireDate_real = TimeFormatter.getMilliSeconds(expireDate_str, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
                 long expireDate_user_display = expireDate_real;
                 final long timeleft = System.currentTimeMillis() - expireDate_real;
@@ -947,7 +953,7 @@ public class SaveTv extends PluginForHost {
                 }
                 ai.setValidUntil(expireDate_user_display);
                 account.setProperty(PROPERTY_acc_expire, expireDate_real);
-                package_name = getJson(br.toString(), "SCURRENTARTICLENAME");
+                package_name = PluginJSonUtils.getJsonValue(br, "SCURRENTARTICLENAME");
                 if (inValidate(package_name)) {
                     /* This should never happen */
                     package_name = ACCOUNTTYPE_DEFAULT;
@@ -964,7 +970,7 @@ public class SaveTv extends PluginForHost {
                     this.getPluginConfig().setProperty(PROPERTY_acc_username, correctData(acc_username));
                 }
                 br.getPage("https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1");
-                final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
+                final String totalLinks = PluginJSonUtils.getJsonValue(br, "ITOTALENTRIES");
                 if (totalLinks != null) {
                     account.setProperty(PROPERTY_acc_count_telecast_ids, totalLinks);
                 }
@@ -1150,7 +1156,7 @@ public class SaveTv extends PluginForHost {
          */
         final boolean isInErrorState = br.containsHTML("\\d+\\.\\d+E\\d+,\"NOK\",\"");
         if (isInErrorState) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> errorlist = (ArrayList) entries.get("ARRVIDEOURL");
             final String errormessage = (String) errorlist.get(2);
             if (errormessage.contains("Aufnahme zu betrachten, laden Sie bitte die ungeschnittene Version")) {
@@ -1168,20 +1174,6 @@ public class SaveTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Undehandelter Fehler: " + errormessage, 30 * 60 * 1000l);
             }
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    public static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    private static boolean resultIsEmpty(final String source, final String key) {
-        return source.matches(".+\"" + key + "\":\"\"(,|\\}).+");
     }
 
     /**
@@ -1579,7 +1571,7 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public static String getFormattedFilename(final DownloadLink dl) throws ParseException {
+    public static String getFormattedFilename(final Plugin plugin, final DownloadLink dl) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
         final String acc_username = cfg.getStringProperty(PROPERTY_acc_username, customStringForEmptyTags);
@@ -1667,14 +1659,14 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*serientitel*", site_title);
             formattedFilename = formattedFilename.replace("*episodenname*", episodename);
         }
-        formattedFilename = encodeUnicode(formattedFilename);
+        formattedFilename = plugin.encodeUnicode(formattedFilename);
         formattedFilename = fixCharIssues(formattedFilename);
         return formattedFilename;
     }
 
     /** Returns either the original server filename or one that is very similar to the original */
     @SuppressWarnings("deprecation")
-    public static String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
+    public static String getFakeOriginalFilename(final Plugin plugin, final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig(NICE_HOST);
         final String ext = downloadLink.getStringProperty(PROPERTY_type, EXTENSION_default);
         final long date = downloadLink.getLongProperty(PROPERTY_originaldate, 0l);
@@ -1726,7 +1718,7 @@ public class SaveTv extends PluginForHost {
              */
             formattedFilename = convertNormalDataToServer(formattedFilename);
             formattedFilename += ext;
-            formattedFilename = encodeUnicode(formattedFilename);
+            formattedFilename = plugin.encodeUnicode(formattedFilename);
         }
         formattedFilename = fixCharIssues(formattedFilename);
         return formattedFilename;
@@ -1852,22 +1844,6 @@ public class SaveTv extends PluginForHost {
         output = output.replace("Ã¤", "ä");
         output = output.replace("Ã¼", "ü");
         // output = output.replace("Ã?", "");
-        return output;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
         return output;
     }
 

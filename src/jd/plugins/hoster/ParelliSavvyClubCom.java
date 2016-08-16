@@ -41,6 +41,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parelliconnect.com" }, urls = { "http://www\\.parelliconnect\\.com/ajax/resources/\\d+/(vault_display_video|vault_display_pdf)" }, flags = { 2 })
 public class ParelliSavvyClubCom extends PluginForHost {
 
@@ -98,7 +100,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             ext = ".pdf";
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("result");
         final LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) ressourcelist.get(0);
         DLLINK = (String) videoinfo.get("download_cloudfront_url");
@@ -152,7 +154,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
         if (link.getBooleanProperty("force_rtmp", false)) {
             /* In very rare cases (0,XX%), http fails because of server issues --> This is a fallback to rtmp */
             logger.info("Handling RTMP");
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("result");
             final LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) ressourcelist.get(0);
 

@@ -32,6 +32,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "https?://(?:www\\.)?dl\\.(?:dbank|vmall)\\.com/[a-z0-9]+" }, flags = { 0 })
 public class VmallComFolder extends PluginForDecrypt {
 
@@ -109,7 +111,7 @@ public class VmallComFolder extends PluginForDecrypt {
         if (json == null) {
             return null;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         entries = (LinkedHashMap<String, Object>) entries.get("data");
         entries = (LinkedHashMap<String, Object>) entries.get("resource");
         fpName = (String) entries.get("title");

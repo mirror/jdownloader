@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.net/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[A-Za-z0-9]{32}|https?://(?:www\\.)?libgen\\.io/(?:ads|get)\\.php\\?md5=[a-f0-9]{32}|https?://libgen\\.(?:net|io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" }, flags = { 0 })
 public class LibGenInfo extends PluginForHost {

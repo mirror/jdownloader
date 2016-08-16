@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telvi.de" }, urls = { "https?://embed\\.telvi\\.de/\\d+/clip/\\d+|decrypted://telvi\\.de/[a-zA-Z0-9_/\\+\\=\\-%]+" }, flags = { 0 })
 public class TelviDe extends PluginForHost {
@@ -84,7 +85,7 @@ public class TelviDe extends PluginForHost {
         } else {
             br.getPage(downloadLink.getDownloadURL());
         }
-        final String key = getJson("key");
+        final String key = PluginJSonUtils.getJsonValue(br, "key");
         if (key == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -166,49 +167,13 @@ public class TelviDe extends PluginForHost {
         dl.startDownload();
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        return br.openHeadConnection(directlink);
     }
 
     @Override

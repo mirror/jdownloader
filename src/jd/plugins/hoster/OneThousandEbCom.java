@@ -35,6 +35,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?1000eb\\.com/(?!myspace_|upload|bulletin_detail_\\d+|chance|copyrights|agreements|faq|contactus|aboutus|jounus|reportbadinformation)[a-z0-9]+" }, flags = { 0 })
 public class OneThousandEbCom extends PluginForHost {
@@ -138,7 +139,7 @@ public class OneThousandEbCom extends PluginForHost {
 
     private String jsExecute(final String fun, final boolean b) {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {

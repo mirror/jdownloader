@@ -26,11 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,6 +52,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 2 })
 public class FlickrCom extends PluginForHost {
@@ -210,7 +211,7 @@ public class FlickrCom extends PluginForHost {
             downloadLink.setProperty("photo_id", id);
         }
         /* Needed for custom filenames! */
-        final String uploadedDate = getJson("datePosted");
+        final String uploadedDate = PluginJSonUtils.getJsonValue(br, "datePosted");
         if (uploadedDate != null) {
             downloadLink.setProperty("dateadded", Long.parseLong(uploadedDate) * 1000);
         }
@@ -348,7 +349,7 @@ public class FlickrCom extends PluginForHost {
                 // post page
                 br.submitForm(login);
                 // should get json back! and {"status":"error","code":"7200",
-                HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 if ("error".equals(entries.get("status")) && !"7200".equals(entries.get("code"))) {
                     // huston we have a problem!
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -363,7 +364,7 @@ public class FlickrCom extends PluginForHost {
                 login.put("passwd", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
                 // should work OR can result in error if 2factor kicks in {"status":"error","code":"1240","
-                entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 output = (String) entries.get("tpl");
                 if ("error".equals(entries.get("status")) && "1240".equals(entries.get("code"))) {
                     // 2factor
@@ -425,23 +426,6 @@ public class FlickrCom extends PluginForHost {
         } catch (final Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private String jsonEscaped(String string) {
-        String o = null;
-        try {
-            // can be slow... but its preferable method.
-            o = PluginJSonUtils.getJson(string, "tpl");
-            if (o != null) {
-                return o;
-            }
-        } catch (final Exception e) {
-        }
-        o = string.replace("\\n", "\n");
-        o = o.replace("\\r", "\r");
-        o = o.replace("\\t", "\t");
-        o = o.replaceAll("\\\\", "");
-        return o;
     }
 
     public static void prepBr(final Browser br) {
@@ -513,7 +497,7 @@ public class FlickrCom extends PluginForHost {
         picSource = br.getRegex("modelExport: (\\{\"photo\\-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
         if (picSource != null) {
             /* json handling */
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(picSource);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
             final ArrayList<Object> photo_models = (ArrayList) entries.get("photo-models");
             final LinkedHashMap<String, Object> photo_data = (LinkedHashMap<String, Object>) photo_models.get(0);
             final LinkedHashMap<String, Object> photo_sizes = (LinkedHashMap<String, Object>) photo_data.get("sizes");
@@ -661,16 +645,6 @@ public class FlickrCom extends PluginForHost {
             emptytag = defaultCustomStringForEmptyTags;
         }
         return emptytag;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private static final String defaultCustomDate               = "MM-dd-yyyy";

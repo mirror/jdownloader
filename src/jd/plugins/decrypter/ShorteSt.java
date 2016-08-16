@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" }, flags = { 0 })
 public class ShorteSt extends antiDDoSForDecrypt {
@@ -61,9 +62,9 @@ public class ShorteSt extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
 
-        final String timer = getJson("seconds");
-        final String cb = getJson("callbackUrl");
-        final String sid = getJson("sessionId");
+        final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
+        final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
+        final String sid = PluginJSonUtils.getJsonValue(br, "sessionId");
         if (cb == null || sid == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -78,7 +79,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(cb, "adSessionId=" + sid + "&callback=reqwest_" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
-        final String finallink = getJson(br2, "destinationUrl");
+        final String finallink = PluginJSonUtils.getJsonValue(br2, "destinationUrl");
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

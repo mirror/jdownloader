@@ -36,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 /**
@@ -59,7 +60,7 @@ public class FlimmitCom extends PluginForDecrypt {
         br.getPage(parameter);
         // support via mpd / mobilempd / hls
         // we get hls since thats all we support at this stage.
-        final String m3u = getJson("hls");
+        final String m3u = PluginJSonUtils.getJsonValue(br, "hls");
         if (m3u == null) {
             return null;
         }
@@ -155,26 +156,6 @@ public class FlimmitCom extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /**

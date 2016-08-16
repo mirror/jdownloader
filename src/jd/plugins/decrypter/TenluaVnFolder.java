@@ -28,6 +28,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tenlua.vn" }, urls = { "https?://(www\\.)?tenlua\\.vn/[^<>\"]+" }, flags = { 0 })
 public class TenluaVnFolder extends antiDDoSForDecrypt {
@@ -48,32 +49,32 @@ public class TenluaVnFolder extends antiDDoSForDecrypt {
         }
         br.getPage(parameter);
         postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + fid + "\",\"r\":0." + System.currentTimeMillis() + "}]");
-        final String type = getJson("type");
+        final String type = PluginJSonUtils.getJsonValue(br, "type");
         if ("none".equals(type)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if ("folder".equals(type)) {
-            final String fpName = getJson("folder_name");
+            final String fpName = PluginJSonUtils.getJsonValue(br, "folder_name");
 
             /* Check for empty folder */
-            if ("0".equals(getJson("totalfile"))) {
+            if ("0".equals(PluginJSonUtils.getJsonValue(br, "totalfile"))) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
 
-            final String jsonArray = getJsonArray("content");
-            final String[] links = getJsonResultsFromArray(jsonArray);
+            final String jsonArray = PluginJSonUtils.getJsonArray(br.toString(), "content");
+            final String[] links = PluginJSonUtils.getJsonResultsFromArray(jsonArray);
 
             for (final String singleinfo : links) {
-                String name = getJson(singleinfo, "name");
+                String name = PluginJSonUtils.getJsonValue(singleinfo, "name");
                 if (name == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 name = Encoding.htmlDecode(name.trim());
                 final DownloadLink dl = createDownloadlink("http://tenluadecrypted.vn/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                final String filesize = getJson(singleinfo, "real_size");
-                String url = getJson(singleinfo, "link");
+                final String filesize = PluginJSonUtils.getJsonValue(singleinfo, "real_size");
+                final String url = PluginJSonUtils.getJsonValue(singleinfo, "link");
                 if (filesize == null || url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -95,15 +96,15 @@ public class TenluaVnFolder extends antiDDoSForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            String name = getJson("n");
-            final DownloadLink dl = createDownloadlink("http://tenluadecrypted.vn/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String filesize = getJson("real_size");
+            String name = PluginJSonUtils.getJsonValue(br, "n");
+            final String filesize = PluginJSonUtils.getJsonValue(br, "real_size");
             /* Mainlink = single link */
             final String url = parameter;
             if (filesize == null || url == null || name == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            final DownloadLink dl = createDownloadlink("http://tenluadecrypted.vn/" + System.currentTimeMillis() + new Random().nextInt(100000));
             name = Encoding.htmlDecode(name.trim());
             dl.setDownloadSize(Long.parseLong(filesize));
             dl.setFinalFileName(name);

@@ -39,6 +39,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" }, flags = { 0 })
 public class ChipDe extends PluginForHost {
@@ -165,9 +166,9 @@ public class ChipDe extends PluginForHost {
 
             /*
              * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
-             *
+             * 
              * http://download.chip.eu/en/Firefox_115074.html
-             *
+             * 
              * http://download.chip.eu/en/Firefox_106534.html
              */
             if (filename == null) {
@@ -192,12 +193,12 @@ public class ChipDe extends PluginForHost {
                      */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-                final String source_videoid = (String) DummyScriptEnginePlugin.walkJson(entries, "videos/{0}/containerIdBeitrag");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                final String source_videoid = (String) JavaScriptEngineFactory.walkJson(entries, "videos/{0}/containerIdBeitrag");
                 if (!link.getDownloadURL().matches(type_chip_de_video) && source_videoid != null) {
                     /* User added an article which may or may not contain one (or multiple) videos. */
                     accesscontainerIdBeitrag(this.br, source_videoid);
-                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 }
                 /*
                  * The directlinks returned by their API are quality-wise not the best (middle) but in case everysthing fails, we still have
@@ -475,15 +476,15 @@ public class ChipDe extends PluginForHost {
         }
         long max_bitrate = 0;
         long max_bitrate_temp = 0;
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-        final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "entryResult/contextData/flavorAssets");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entryResult/contextData/flavorAssets");
         for (final Object videoo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) videoo;
             final String flavourid = (String) entries.get("id");
             if (flavourid == null) {
                 continue;
             }
-            max_bitrate_temp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), 0);
+            max_bitrate_temp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
             if (max_bitrate_temp > max_bitrate) {
                 dllink_temp = "http://cdnapi.kaltura.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
                 max_bitrate = max_bitrate_temp;
@@ -544,22 +545,6 @@ public class ChipDe extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     public static String formatDate(String input) {

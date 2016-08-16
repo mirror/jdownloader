@@ -25,6 +25,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -106,7 +107,7 @@ public class YouSendItCom extends PluginForHost {
         final String fileurl = downloadLink.getStringProperty("fileurl", null);
         if (fileurl_new != null) {
             br.getPage("https://de.hightail.com/folders?phi_action=app/directDownloadWorkspace&getResult=1&dlFileName=&fId=" + fileurl_new);
-            DLLINK = getJson("downloadLink");
+            DLLINK = PluginJSonUtils.getJsonValue(br, "downloadLink");
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -135,16 +136,6 @@ public class YouSendItCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

@@ -9,6 +9,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#share/[a-f0-9\\-]+|#?folder/[A-Z0-9]+)" }, flags = { 0 })
 public class OBoomCom extends antiDDoSForDecrypt {
@@ -60,11 +61,11 @@ public class OBoomCom extends antiDDoSForDecrypt {
             String[] items = jsontext.split("\\},\\{");
             if (items != null && items.length != 0) {
                 for (final String f : items) {
-                    final String fname = getJson(f, "name");
-                    final String fsize = getJson(f, "size");
-                    final String fuid = getJson(f, "id");
-                    final String type = getJson(f, "type");
-                    final String state = getJson(f, "state");
+                    final String fname = PluginJSonUtils.getJsonValue(f, "name");
+                    final String fsize = PluginJSonUtils.getJsonValue(f, "size");
+                    final String fuid = PluginJSonUtils.getJsonValue(f, "id");
+                    final String type = PluginJSonUtils.getJsonValue(f, "type");
+                    final String state = PluginJSonUtils.getJsonValue(f, "state");
                     if (fuid != null && "file".equalsIgnoreCase(type)) {
                         DownloadLink dl = createDownloadlink("https://www.oboom.com/#" + fuid);
                         if ("online".equalsIgnoreCase(state)) {

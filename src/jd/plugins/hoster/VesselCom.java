@@ -50,6 +50,7 @@ import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "http://vessel\\.comdecrypted\\d+" }, flags = { 2 })
 public class VesselCom extends antiDDoSForHost {
@@ -201,7 +202,7 @@ public class VesselCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> user = (LinkedHashMap<String, Object>) entries.get("user");
                 final LinkedHashMap<String, Object> customer = (LinkedHashMap<String, Object>) entries.get("customer");
                 final LinkedHashMap<String, Object> plan = customer != null ? (LinkedHashMap<String, Object>) customer.get("plan") : null;
@@ -219,7 +220,7 @@ public class VesselCom extends antiDDoSForHost {
                 final String status = customer != null ? (String) customer.get("status") : null;
                 final boolean is_paid = customer == null ? false : ((Boolean) customer.get("is_paid")).booleanValue();
 
-                final String id = plan != null ? Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(plan.get("id"), -1)) : null;
+                final String id = plan != null ? Long.toString(JavaScriptEngineFactory.toLong(plan.get("id"), -1)) : null;
                 final String name = plan != null ? (String) plan.get("name") : null;
 
                 if (!"vip".equalsIgnoreCase(name) || !is_paid) {
@@ -260,7 +261,7 @@ public class VesselCom extends antiDDoSForHost {
         }
         br.getPage("/account");
         br.getPage("/api/account/profile?with_customer_info=1");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("subscription");
         final String status = (String) entries.get("status");
         final String expire = (String) entries.get("current_period_end");

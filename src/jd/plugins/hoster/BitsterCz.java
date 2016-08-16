@@ -37,8 +37,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitster.cz" }, urls = { "https?://(?:www\\.)?bitster\\.(?:cz|sk)/(?:#?file|download)/[a-z0-9]+" }, flags = { 2 })
 public class BitsterCz extends PluginForHost {
@@ -115,8 +117,8 @@ public class BitsterCz extends PluginForHost {
         } else {
             /* Check for further problems e.g. country/IP range blocked by host. */
             this.apiHandleErrors();
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            filesize = DummyScriptEnginePlugin.toLong(entries.get("length"), -1);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            filesize = JavaScriptEngineFactory.toLong(entries.get("length"), -1);
             filename = (String) entries.get("title");
             md5 = (String) entries.get("md5");
             description = (String) entries.get("longdescription");
@@ -268,7 +270,7 @@ public class BitsterCz extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 this.br.postPage("https://bitster.cz/api/validatebasicauth", "");
-                final String result = getJson("result");
+                final String result = PluginJSonUtils.getJsonValue(br, "result");
                 if (!"true".equals(result)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -296,8 +298,8 @@ public class BitsterCz extends PluginForHost {
             throw e;
         }
         this.br.getPage("/api/User_GetAccountInfo");
-        final String joindate = this.getJson("joindate");
-        final String trafficleft_str = this.getJson("creditbalance");
+        final String joindate = PluginJSonUtils.getJsonValue(br, "joindate");
+        final String trafficleft_str = PluginJSonUtils.getJsonValue(br, "creditbalance");
         long trafficleft = 0;
         if (trafficleft_str != null && trafficleft_str.matches("\\d+")) {
             trafficleft = Long.parseLong(trafficleft_str);
@@ -417,32 +419,6 @@ public class BitsterCz extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /**

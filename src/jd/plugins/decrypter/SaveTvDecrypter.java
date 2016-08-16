@@ -46,6 +46,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.SaveTv;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/(?:Horizontal)?VideoArchive\\.cfm" }, flags = { 0 })
 public class SaveTvDecrypter extends PluginForDecrypt {
@@ -373,7 +374,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 }
                 this.postPageSafe(acc, this.br, "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&dStartdate=0");
 
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 final ArrayList<Object> resource_data_list = (ArrayList) entries.get("ARRVIDEOARCHIVEENTRIES");
 
                 for (final Object singleid_information : resource_data_list) {
@@ -415,7 +416,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
         if (id_IS_Allowed(dl)) {
             dl.setDownloadSize(calculated_filesize);
-            dl.setName(jd.plugins.hoster.SaveTv.getFilename(dl));
+            dl.setName(jd.plugins.hoster.SaveTv.getFilename(this, dl));
             distribute(dl);
             decryptedLinks.add(dl);
         }
@@ -439,7 +440,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(dl, getLongProperty(dl, "site_runtime_minutes", 0));
         if (id_IS_Allowed(dl)) {
             dl.setDownloadSize(calculated_filesize);
-            dl.setName(jd.plugins.hoster.SaveTv.getFilename(dl));
+            dl.setName(jd.plugins.hoster.SaveTv.getFilename(this, dl));
 
             distribute(dl);
             decryptedLinks.add(dl);

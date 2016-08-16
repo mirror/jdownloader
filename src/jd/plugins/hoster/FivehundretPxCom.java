@@ -32,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/photo/\\d+" }, flags = { 0 })
 public class FivehundretPxCom extends PluginForHost {
 
@@ -70,7 +72,7 @@ public class FivehundretPxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String json = getJson();
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         String title = null, user_firstname = null, user_lastname = null, ext = null;
         final Object photoo = entries.get("photo");
         if (photoo != null && photoo instanceof LinkedHashMap) {
@@ -85,8 +87,8 @@ public class FivehundretPxCom extends PluginForHost {
             ext = getFileNameExtensionFromString(dllink);
         } else {
             title = (String) entries.get("name");
-            user_firstname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/firstname");
-            user_lastname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/lastname");
+            user_firstname = (String) JavaScriptEngineFactory.walkJson(entries, "user/firstname");
+            user_lastname = (String) JavaScriptEngineFactory.walkJson(entries, "user/lastname");
             /*
              * this will show jpeg when its actually jpg on server. this is because content distribution filename is real name and not
              * abbreviated.
@@ -115,9 +117,9 @@ public class FivehundretPxCom extends PluginForHost {
             }
             if (dllink == null) {
                 // old raztoki20160430
-                dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
+                dllink = (String) JavaScriptEngineFactory.walkJson(entries, "images/{4}/https_url");
                 if (dllink == null) {
-                    dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
+                    dllink = (String) JavaScriptEngineFactory.walkJson(entries, "images/{3}/https_url");
                 }
             }
         }
@@ -201,22 +203,6 @@ public class FivehundretPxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

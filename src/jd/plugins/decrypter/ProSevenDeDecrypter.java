@@ -32,9 +32,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?7tv\\.(?:de|at|ch)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32 })
 public class ProSevenDeDecrypter extends PluginForDecrypt {
@@ -72,7 +72,7 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
         }
         final DecimalFormat df = new DecimalFormat("00");
         final String date_formatted = formatDate(date);
-        final ArrayList<Object> ressources = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final ArrayList<Object> ressources = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
         if (ressources == null) {
             return null;
         }
@@ -82,7 +82,7 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             final String contentType = (String) entries.get("contentType");
             final String formatName = (String) entries.get("formatName");
             String title = (String) entries.get("title");
-            final String videoid = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
+            final String videoid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
             if (contentType == null || formatName == null || title == null || videoid.equals("-1")) {
                 return null;
             }
@@ -158,22 +158,6 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             formattedDate = input;
         }
         return formattedDate;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /**

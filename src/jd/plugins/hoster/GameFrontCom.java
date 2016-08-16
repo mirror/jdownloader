@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -30,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https?://(www\\.)?(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" }, flags = { 0 })
 public class GameFrontCom extends PluginForHost {

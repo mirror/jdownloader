@@ -31,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "https?://(?:www\\.)?drawcrowd\\.com/projects/[A-Za-z0-9]+" }, flags = { 0 })
 public class DrawcrowdCom extends PluginForHost {
 
@@ -64,7 +66,7 @@ public class DrawcrowdCom extends PluginForHost {
         setHeaders(br);
         /* This time we'll get a json answer. */
         br.getPage(downloadLink.getDownloadURL());
-        LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final String user_name = downloadLink.getStringProperty("user_name", null);
         final String full_name = downloadLink.getStringProperty("full_name", null);
         json = (LinkedHashMap<String, Object>) json.get("project");
@@ -136,22 +138,6 @@ public class DrawcrowdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /** Sets correct json headers */

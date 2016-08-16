@@ -55,6 +55,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
@@ -704,7 +705,7 @@ public class HitFileNet extends PluginForHost {
 
     private String rhino(final String s, final int b) {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             switch (b) {

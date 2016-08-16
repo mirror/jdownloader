@@ -36,9 +36,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|http://pornhubdecrypted\\d+" }, flags = { 2 })
 public class PornHubCom extends PluginForHost {
@@ -160,7 +164,7 @@ public class PornHubCom extends PluginForHost {
                 for (String qualityInfo : qualities) {
                     if (cfg.getBooleanProperty(qualityInfo, true)) {
                         dlUrl = br.getRegex(qualityInfo + "p = \'(http://[^\']*?)\'").getMatch(0);
-                        filename = getSiteTitle(br) + "." + qualityInfo + "p.mp4";
+                        filename = getSiteTitle(this, br) + "." + qualityInfo + "p.mp4";
                     }
                     if (dlUrl != null) {
                         break;
@@ -235,7 +239,7 @@ public class PornHubCom extends PluginForHost {
         if (flashVars == null) {
             return null;
         }
-        final LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(flashVars);
+        final LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(flashVars);
 
         if (values == null || values.size() < 1) {
             return null;
@@ -290,31 +294,15 @@ public class PornHubCom extends PluginForHost {
         return qualities;
     }
 
-    public static String getSiteTitle(final Browser br) {
+    public static String getSiteTitle(final Plugin plugin, final Browser br) {
         String site_title = br.getRegex("<title>([^<>]*?) \\- Pornhub\\.com</title>").getMatch(0);
         if (site_title == null) {
             site_title = br.getRegex("\"section_title overflow\\-title overflow\\-title\\-width\">([^<>]*?)</h1>").getMatch(0);
         }
         if (site_title != null) {
-            site_title = encodeUnicode(site_title);
+            site_title = plugin.encodeUnicode(site_title);
         }
         return site_title;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override
@@ -404,7 +392,7 @@ public class PornHubCom extends PluginForHost {
                 }
                 final String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&redirect=&login_key=" + login_key + "&login_hash=" + login_hash + "&remember_me=1";
                 br.postPage("/front/login_json", postData);
-                final String redirect = getJson(br.toString(), "redirect");
+                final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
                 if (redirect != null) {
                     /* Sometimes needed to get the (premium) cookies. */
                     br.getPage(redirect);
@@ -589,16 +577,6 @@ public class PornHubCom extends PluginForHost {
                 return;
             }
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    public static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

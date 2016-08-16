@@ -47,6 +47,7 @@ import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
@@ -199,7 +200,7 @@ public class VideoMegaTv extends antiDDoSForHost {
                 // packed
                 String packed = br.getRegex("eval\\s*\\((function\\(p,a,c,k,e,d\\).*?\\}{2}.*?\\))\\)").getMatch(0);
                 if (packed != null) {
-                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     String result = null;
                     try {

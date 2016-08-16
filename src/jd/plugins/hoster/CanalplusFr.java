@@ -37,6 +37,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 32254 $", interfaceVersion = 3, names = { "canalplus.fr" }, urls = { "https?://(?:www\\.)?canalplus\\.fr/[^<>\"]+\\.html\\?vid=\\d+" }, flags = { 0 })
 public class CanalplusFr extends PluginForHost {
@@ -74,7 +75,7 @@ public class CanalplusFr extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Object jsono = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final Object jsono = JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         if (jsono == null || !(jsono instanceof ArrayList)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -97,14 +98,14 @@ public class CanalplusFr extends PluginForHost {
             /* That should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "MEDIA/VIDEOS");
+        final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "MEDIA/VIDEOS");
         entries = (LinkedHashMap<String, Object>) entries.get("INFOS");
 
         final String description = (String) entries.get("DESCRIPTION");
         final String channel = (String) entries.get("AUTEUR");
-        final String date = (String) DummyScriptEnginePlugin.walkJson(entries, "PUBLICATION/DATE");
-        final String title = (String) DummyScriptEnginePlugin.walkJson(entries, "TITRAGE/TITRE");
-        final String subtitle = (String) DummyScriptEnginePlugin.walkJson(entries, "TITRAGE/SOUS_TITRE");
+        final String date = (String) JavaScriptEngineFactory.walkJson(entries, "PUBLICATION/DATE");
+        final String title = (String) JavaScriptEngineFactory.walkJson(entries, "TITRAGE/TITRE");
+        final String subtitle = (String) JavaScriptEngineFactory.walkJson(entries, "TITRAGE/SOUS_TITRE");
         if (title == null || subtitle == null || channel == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -252,22 +253,6 @@ public class CanalplusFr extends PluginForHost {
             formattedDate = input;
         }
         return formattedDate;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

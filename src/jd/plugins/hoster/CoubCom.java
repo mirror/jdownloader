@@ -27,8 +27,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/view/[A-Za-z0-9]+" }, flags = { 0 })
 public class CoubCom extends PluginForHost {
@@ -73,9 +76,9 @@ public class CoubCom extends PluginForHost {
         } else if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final String filename = getFilename(entries, fid);
-        DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "file_versions/web/template");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final String filename = getFilename(this, entries, fid);
+        DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "file_versions/web/template");
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -108,7 +111,7 @@ public class CoubCom extends PluginForHost {
         }
     }
 
-    public static String getFilename(final LinkedHashMap<String, Object> entries, final String fid) {
+    public static String getFilename(final Plugin plugin, final LinkedHashMap<String, Object> entries, final String fid) {
         String filename = (String) entries.get("raw_video_title");
         if (filename == null) {
             filename = (String) entries.get("title");
@@ -118,7 +121,7 @@ public class CoubCom extends PluginForHost {
             filename = fid;
         }
         filename += ".mp4";
-        filename = encodeUnicode(filename);
+        filename = plugin.encodeUnicode(filename);
         return filename;
     }
 
@@ -272,22 +275,6 @@ public class CoubCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

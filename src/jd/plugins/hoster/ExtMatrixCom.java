@@ -22,10 +22,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -42,6 +38,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extmatrix.com" }, urls = { "https?://(www\\.)?extmatrix\\.com/(files|get)/[A-Za-z0-9]+" }, flags = { 2 })
 public class ExtMatrixCom extends PluginForHost {
