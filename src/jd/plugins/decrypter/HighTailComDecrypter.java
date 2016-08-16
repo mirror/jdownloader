@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -51,7 +52,15 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         String folderID = new Regex(parameter, "\\&folderid=([A-Za-z0-9\\-_]+)").getMatch(0);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final UnknownHostException e) {
+            if (parameter.matches(TYPE_OLD)) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            throw e;
+        }
         if (folderID == null) {
             folderID = br.getRegex("NYSI\\.WS\\.currentFolderId = \\'([^<>\"\\']*?)\\';").getMatch(0);
         }
