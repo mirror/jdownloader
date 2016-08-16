@@ -290,19 +290,19 @@ public class ImgUrCom extends PluginForHost {
      * stored in the html code when accessing normal content links: imgur.com/xXxXx
      */
     private String[] parseAPIData(TYPE type, final String json) throws PluginException {
-        final boolean animated = Boolean.TRUE.equals(Boolean.valueOf(PluginJSonUtils.getJson(json, "animated")));
+        final boolean animated = Boolean.TRUE.equals(Boolean.valueOf(PluginJSonUtils.getJsonValue(json, "animated")));
         String url = null;
         String fileSize = null;
         String fileType = null;
         switch (type) {
         case MP4:
-            url = StringUtils.nullify(PluginJSonUtils.getJson(json, "mp4"));
-            fileSize = StringUtils.nullify(PluginJSonUtils.getJson(json, "mp4_size"));
+            url = PluginJSonUtils.getJsonValue(json, "mp4");
+            fileSize = PluginJSonUtils.getJsonValue(json, "mp4_size");
             fileType = "mp4";
             break;
         case JPGORGIF:
-            url = StringUtils.nullify(PluginJSonUtils.getJson(json, "link"));
-            fileSize = StringUtils.nullify(PluginJSonUtils.getJson(json, "size"));
+            url = PluginJSonUtils.getJsonValue(json, "link");
+            fileSize = PluginJSonUtils.getJsonValue(json, "size");
             fileType = new Regex(json, "\"(mime)?type\"\\s*:\\s*\"image\\\\?/([^<>]*?)\"").getMatch(1);
             if (fileType == null) {
                 fileType = new Regex(json, "\"ext\"\\s*:\\s*\"\\.(.*?)\"").getMatch(0);
@@ -321,7 +321,7 @@ public class ImgUrCom extends PluginForHost {
             }
         }
         String finalFileName = null;
-        String title = StringUtils.nullify(PluginJSonUtils.getJson(json, "title"));
+        String title = PluginJSonUtils.getJsonValue(json, "title");
         if (StringUtils.isEmpty(title)) {
             finalFileName = imgUID + "." + fileType;
         } else {
