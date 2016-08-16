@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumy.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremiumyPl extends PluginForHost {
@@ -216,31 +216,58 @@ public class PremiumyPl extends PluginForHost {
         this.postAPISafe("accountInfo", "");
 
         final String trafficleft_str = PluginJSonUtils.getJson(this.br, "transfer");
-        final String validuntil = PluginJSonUtils.getJson(this.br, "premium");
+
+        // final String validuntil = PluginJSonUtils.getJson(this.br, "premium");
+        // long trafficleft = 0;
+        // long timestamp_validuntil = 0;
+        // if (validuntil != null) {
+        // timestamp_validuntil = Long.parseLong(validuntil) * 1000;
+        // }
+        // if (trafficleft_str != null) {
+        // trafficleft = Long.parseLong(trafficleft_str);
+        // }
+        //
+        // /* Expired and no traffic --> Free account */
+        // if (timestamp_validuntil < System.currentTimeMillis() && trafficleft <= 0) {
+        // ai.setTrafficLeft(0);
+        // // account.setConcurrentUsePossible(false);
+        // account.setType(AccountType.FREE);
+        // ai.setStatus("Free account");
+        // } else {
+        // if (timestamp_validuntil > System.currentTimeMillis()) {
+        // ai.setValidUntil(timestamp_validuntil);
+        // }
+        // if (trafficleft > 0) {
+        // ai.setTrafficLeft(trafficleft);
+        // }
+        // account.setType(AccountType.PREMIUM);
+        // ai.setStatus("Premium account");
+        // }
+
+        // it's a bug in APi spec
+        // premium = 1 for Multi package
+        // premium = 0 for not Multi packages
+        // so for now until is not corected in API - Hoster package won't be supported
+        // because API returns: {"premium":0,"transfer":0} for Hoster package and free account
+        final String premium = PluginJSonUtils.getJson(this.br, "premium");
         long trafficleft = 0;
         long timestamp_validuntil = 0;
-        if (validuntil != null) {
-            timestamp_validuntil = Long.parseLong(validuntil) * 1000;
-        }
         if (trafficleft_str != null) {
             trafficleft = Long.parseLong(trafficleft_str);
         }
 
-        /* Expired and no traffic --> Free account */
-        if (timestamp_validuntil < System.currentTimeMillis() && trafficleft <= 0) {
+        if ("1".equals(premium)) {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium account - Multi");
+        } else if (trafficleft > 0) {
+            ai.setTrafficLeft(trafficleft);
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium account - Transfer");
+        } else {
             ai.setTrafficLeft(0);
-            // account.setConcurrentUsePossible(false);
             account.setType(AccountType.FREE);
             ai.setStatus("Free account");
-        } else {
-            if (timestamp_validuntil > System.currentTimeMillis()) {
-                ai.setValidUntil(timestamp_validuntil);
-            }
-            if (trafficleft > 0) {
-                ai.setTrafficLeft(trafficleft);
-            }
-            account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
+            return ai;
         }
 
         this.postAPISafe("hosts", "");
@@ -348,7 +375,7 @@ public class PremiumyPl extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
