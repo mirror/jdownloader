@@ -40,6 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -126,14 +127,14 @@ public class DataTorCz extends PluginForHost {
         if (useAPI.get() && account != null) {
             // api can only be used with an account....
             br.getPage("http://japi.datator.cz/api.php?action=getFileInfo&hash=" + getHash(account) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
-            final String filename = getJson("filename");
-            final String filesize = getJson("size");
-            final String error = getJson("error");
+            final String filename = PluginJSonUtils.getJsonValue(br, "filename");
+            final String filesize = PluginJSonUtils.getJsonValue(br, "size");
+            final String error = PluginJSonUtils.getJsonValue(br, "error");
             if (inValidate(filename)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if ("file no exist".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if ("auth error".equals(getJson("error"))) {
+            } else if ("auth error".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
                 // dump..
                 account.setProperty("hash", Property.NULL);
                 // try web
@@ -200,9 +201,9 @@ public class DataTorCz extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         // we will use api
         br.getPage("http://japi.datator.cz/api.php?action=login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        final String hash = getJson("hash");
-        final String credits = getJson("kredit");
-        if ("auth error".equals(getJson("error")) || hash == null) {
+        final String hash = PluginJSonUtils.getJsonValue(br, "hash");
+        final String credits = PluginJSonUtils.getJsonValue(br, "kredit");
+        if ("auth error".equals(PluginJSonUtils.getJsonValue(br, "error")) || hash == null) {
             if ("de".equalsIgnoreCase(language)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
@@ -341,19 +342,19 @@ public class DataTorCz extends PluginForHost {
         if (useAPI.get()) {
             requestFileInformation(downloadLink, account);
             br.getPage("http://japi.datator.cz/api.php?action=getDownloadLink&hash=" + getHash(account) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
-            if ("auth error".equals(getJson("error"))) {
+            if ("auth error".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
                 // dump..
                 account.setProperty("hash", Property.NULL);
                 // retry
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            dllink = getJson("downloadLink");
-            final String c = getJson("chunks");
+            dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
+            final String c = PluginJSonUtils.getJsonValue(br, "chunks");
             if (c != null && c.matches("-?\\d+")) {
                 chunks = Integer.parseInt(c);
                 chunks = chunks < 1 ? -chunks : chunks;
             }
-            final String r = getJson("resumes");
+            final String r = PluginJSonUtils.getJsonValue(br, "resumes");
             if (r != null && r.matches("true|false")) {
                 resumes = Boolean.parseBoolean(r);
             }
@@ -391,68 +392,6 @@ public class DataTorCz extends PluginForHost {
             account.setProperty("cookies", Property.NULL);
             account.setProperty("lastlogin", Property.NULL);
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**

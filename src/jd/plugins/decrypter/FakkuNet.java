@@ -33,8 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
-import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(?:www\\.)?fakku\\.net/(?:(?:viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
@@ -116,13 +116,13 @@ public class FakkuNet extends PluginForDecrypt {
             }
             main_part = Request.getLocation(main_part, br.getRequest());
             fpName = Encoding.htmlDecode(fpName.trim());
-            final String allThumbs[] = JSonUtils.getJsonResultsFromArray(json_array);
+            final String allThumbs[] = PluginJSonUtils.getJsonResultsFromArray(json_array);
             if (allThumbs == null || allThumbs.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (String thumb : allThumbs) {
-                thumb = JSonUtils.unescape(thumb);
+                thumb = PluginJSonUtils.unescape(thumb);
                 final String thumb_number = new Regex(thumb, "/thumbs/(\\d+)\\.thumb\\.jpg").getMatch(0);
                 final DownloadLink dl = createDownloadlink("directhttp://" + main_part + thumb_number + ".jpg");
                 dl.setFinalFileName(fpName + " - " + df.format(counter) + ".jpg");
