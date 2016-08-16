@@ -11,11 +11,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,8 +25,13 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -107,11 +107,11 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             final String useCaptcha = getJson(security, "useCaptcha");
             final String captchaType = getJson(security, "captchaType");
             final String usePassword = getJson(security, "usePassword");
-            if (!inValidate(security) && (JSonUtils.parseBoolean(useCaptcha) || JSonUtils.parseBoolean(usePassword))) {
+            if (!inValidate(security) && (PluginJSonUtils.parseBoolean(useCaptcha) || PluginJSonUtils.parseBoolean(usePassword))) {
                 int tries = 4;
                 for (int i = 0; i < tries; i++) {
                     String nextPost = null;
-                    if (JSonUtils.parseBoolean(usePassword)) {
+                    if (PluginJSonUtils.parseBoolean(usePassword)) {
                         // we need to get the password.
                         String psw = null;
                         if (i <= 1) {
@@ -125,7 +125,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             }
                         }
                         nextPost = ammendJson(nextPost, "password", psw);
-                        if (!JSonUtils.parseBoolean(useCaptcha)) {
+                        if (!PluginJSonUtils.parseBoolean(useCaptcha)) {
                             nextPost = ammendJson(nextPost, "hash", uid);
                             ajaxPostPageRaw("/v1/captcha", nextPost);
                             if (ajax.getHttpConnection().getResponseCode() == 200) {
@@ -143,7 +143,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             }
                         }
                     }
-                    if (JSonUtils.parseBoolean(useCaptcha)) {
+                    if (PluginJSonUtils.parseBoolean(useCaptcha)) {
                         // captchas:[
                         // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function
                         // t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
@@ -244,7 +244,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             // this seems good. be aware that the security string is still presence in the successful task
                             break;
                         } else if (ajax.getHttpConnection().getResponseCode() == 422) {
-                            if (JSonUtils.parseBoolean(usePassword) && "true".equalsIgnoreCase(getJson(ajax, "passwordFail"))) {
+                            if (PluginJSonUtils.parseBoolean(usePassword) && "true".equalsIgnoreCase(getJson(ajax, "passwordFail"))) {
                                 if (i + 1 > tries) {
                                     throw new DecrypterException(DecrypterException.PASSWORD);
                                 }

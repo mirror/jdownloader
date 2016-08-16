@@ -30,7 +30,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -322,7 +322,7 @@ public class BxNt extends antiDDoSForDecrypt {
             if (result == null) {
                 break;
             }
-            result = JSonUtils.validateResultForArrays(input, result);
+            result = PluginJSonUtils.validateResultForArrays(input, result);
             filelinkinfo.add(result);
             i = i.replace(result, "");
         }

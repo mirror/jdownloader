@@ -204,7 +204,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
             // use google carousel json...
-            fpName = PluginJSonUtils.getJson(getGoogleCarousel(br), "articleBody");
+            fpName = PluginJSonUtils.getJsonValue(getGoogleCarousel(br), "articleBody");
             if (fpName == null) {
                 // this can get false positives. eg. "the funniest posts on tumblr," thenwhatyouwanthere.
                 fpName = br.getRegex("<meta name=\"description\" content=\"([^/\"]+)").getMatch(0);

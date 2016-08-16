@@ -25,8 +25,6 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,9 +40,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
-import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }, flags = { 0 })
@@ -558,7 +558,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         for (final String quality[] : qualities) {
             final String qualityName = quality[0];
             final String qualityNumber = quality[1];
-            final String currentQualityUrl = JSonUtils.getJson(videosource, qualityName);
+            final String currentQualityUrl = PluginJSonUtils.getJsonValue(videosource, qualityName);
             if (currentQualityUrl != null) {
                 final String[] dlinfo = new String[4];
                 dlinfo[0] = currentQualityUrl;
@@ -594,7 +594,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         // List empty or only 1 link found -> Check for (more) links
         if (QUALITIES.isEmpty() || QUALITIES.size() == 1) {
-            final String manifestURL = JSonUtils.getJson(videosource, "autoURL");
+            final String manifestURL = PluginJSonUtils.getJsonValue(videosource, "autoURL");
             if (manifestURL != null) {
                 /** HDS */
                 final String[] dlinfo = new String[4];
@@ -621,7 +621,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 for (final String quality[] : embedQualities) {
                     final String qualityName = quality[0];
                     final String qualityNumber = quality[1];
-                    final String currentQualityUrl = JSonUtils.getJson(videosource, qualityName);
+                    final String currentQualityUrl = PluginJSonUtils.getJsonValue(videosource, qualityName);
                     if (currentQualityUrl != null) {
                         final String[] dlinfo = new String[4];
                         dlinfo[0] = currentQualityUrl;

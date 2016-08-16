@@ -41,9 +41,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.IO;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -1863,17 +1863,6 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         return false;
-    }
-
-    /**
-     * Was Copy&Paste of Appwork class, no longer equal.
-     *
-     * @see org.appwork.storage.simplejson.JSonUtils
-     * @author Appwork
-     *
-     */
-    public static class JSonUtils extends PluginJSonUtils {
-        // keep to avoid changing all other plugins
     }
 
 }

@@ -19,10 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +38,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/(#(!|%21))?[A-Za-z0-9\\-_]+,f\\-\\d+" }, flags = { 2 })
 public class FreeDiscPl extends PluginForHost {
@@ -194,7 +194,7 @@ public class FreeDiscPl extends PluginForHost {
                 }
             } else {
                 String downloadUrlJson = PluginJSonUtils.getJsonNested(br, "download_data");
-                dllink = PluginJSonUtils.getJson(downloadUrlJson, "download_url") + PluginJSonUtils.getJson(downloadUrlJson, "item_id") + "/" + PluginJSonUtils.getJson(downloadUrlJson, "time");
+                dllink = PluginJSonUtils.getJsonValue(downloadUrlJson, "download_url") + PluginJSonUtils.getJsonValue(downloadUrlJson, "item_id") + "/" + PluginJSonUtils.getJsonValue(downloadUrlJson, "time");
                 // dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
                 downloadLink.setProperty("isvideo", false);
             }
