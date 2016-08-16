@@ -25,10 +25,6 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,6 +50,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
@@ -662,7 +662,7 @@ public class MediafireCom extends PluginForHost {
                 }
                 final String[] jsonResults = JSonUtils.getJsonResultsFromArray(json);
                 // because they have a shite api and do things illogically...
-                final String skipped = JSonUtils.getJson(apiResponse, "skipped");
+                final String skipped = JSonUtils.getJsonValue(apiResponse, "skipped");
                 final HashSet<String> offline = new HashSet<String>();
                 if (skipped != null) {
                     offline.addAll(Arrays.asList(skipped));
@@ -693,11 +693,11 @@ public class MediafireCom extends PluginForHost {
                         final String quickkey = JSonUtils.getJson(result, "quickkey");
                         if (StringUtils.equals(quickkey, fuid)) {
                             dl.setAvailableStatus(AvailableStatus.TRUE);
-                            final String name = JSonUtils.getJson(result, "filename");
-                            final String size = JSonUtils.getJson(result, "size");
-                            final String sha256 = JSonUtils.getJson(result, "hash");
-                            final String privacy = JSonUtils.getJson(result, "privacy");
-                            final String pass = JSonUtils.getJson(result, "password_protected");
+                            final String name = JSonUtils.getJsonValue(result, "filename");
+                            final String size = JSonUtils.getJsonValue(result, "size");
+                            final String sha256 = JSonUtils.getJsonValue(result, "hash");
+                            final String privacy = JSonUtils.getJsonValue(result, "privacy");
+                            final String pass = JSonUtils.getJsonValue(result, "password_protected");
                             if (StringUtils.isNotEmpty(name)) {
                                 dl.setFinalFileName(name);
                             }

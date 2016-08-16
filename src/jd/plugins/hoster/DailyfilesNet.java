@@ -82,11 +82,15 @@ public class DailyfilesNet extends antiDDoSForHost {
                 final String error = checkForErrors(response, "error");
                 // {"error":"File doesn't exists"}
                 if (error == null) {
-                    String fileName = PluginJSonUtils.getJson(response, "fileName");
-                    String fileSize = PluginJSonUtils.getJson(response, "fileSize");
-                    fileName = Encoding.htmlDecode(fileName.trim());
-                    dllink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
-                    dllink.setDownloadSize(SizeFormatter.getSize(fileSize));
+                    String fileName = PluginJSonUtils.getJsonValue(response, "fileName");
+                    String fileSize = PluginJSonUtils.getJsonValue(response, "fileSize");
+                    if (fileName != null) {
+                        fileName = Encoding.htmlDecode(fileName.trim());
+                        dllink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
+                    }
+                    if (fileSize != null) {
+                        dllink.setDownloadSize(SizeFormatter.getSize(fileSize));
+                    }
                     dllink.setAvailable(true);
                 } else {
                     dllink.setAvailable(false);
@@ -277,7 +281,7 @@ public class DailyfilesNet extends antiDDoSForHost {
 
     private String checkForErrors(String source, String searchString) {
         if (source.contains("error")) {
-            String errorMessage = PluginJSonUtils.getJson(source, searchString);
+            final String errorMessage = PluginJSonUtils.getJsonValue(source, searchString);
             return errorMessage;
         }
         return null;

@@ -78,7 +78,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
         if (videoID == null) {
             // JSON
             final String json = br.getRegex("(\"dataForPage\"\\s*:\\s*\\{.*?)</script>").getMatch(0);
-            videoID = JSonUtils.getJson(json, "id");
+            videoID = JSonUtils.getJsonValue(json, "id");
             if (videoID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

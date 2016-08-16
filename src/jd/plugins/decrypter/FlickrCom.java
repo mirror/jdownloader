@@ -243,11 +243,11 @@ public class FlickrCom extends PluginForDecrypt {
                 if (forcedOwner != null) {
                     owner = forcedOwner;
                 } else {
-                    owner = PluginJSonUtils.getJson(jsonentry, "owner");
+                    owner = PluginJSonUtils.getJsonValue(jsonentry, "owner");
                 }
-                final String photo_id = PluginJSonUtils.getJson(jsonentry, "id");
-                String title = PluginJSonUtils.getJson(jsonentry, "title");
-                final String dateadded = PluginJSonUtils.getJson(jsonentry, "dateadded");
+                final String photo_id = PluginJSonUtils.getJsonValue(jsonentry, "id");
+                String title = PluginJSonUtils.getJsonValue(jsonentry, "title");
+                final String dateadded = PluginJSonUtils.getJsonValue(jsonentry, "dateadded");
                 if (owner == null || photo_id == null || title == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     decryptedLinks = null;
@@ -321,7 +321,7 @@ public class FlickrCom extends PluginForDecrypt {
             final String jsontext = br.getRegex("\"photoset\":\\[(\\{.*?\\})\\]").getMatch(0);
             final String[] jsonarray = jsontext.split("\\},\\{");
             for (final String jsonentry : jsonarray) {
-                final String setid = PluginJSonUtils.getJson(jsonentry, "id");
+                final String setid = PluginJSonUtils.getJsonValue(jsonentry, "id");
                 final String contenturl = "https://www.flickr.com/photos/" + username + "/sets/" + setid + "/";
                 final DownloadLink fina = createDownloadlink(contenturl);
                 decryptedLinks.add(fina);
