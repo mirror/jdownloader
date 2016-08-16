@@ -101,7 +101,7 @@ public class LiveStreamCom extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) reso;
             final String type = (String) entries.get("type");
             if (type == null || !type.equals("video")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                continue;
             }
             entries = (LinkedHashMap<String, Object>) entries.get("data");
             final long tempid = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("id"), -1);
@@ -142,7 +142,7 @@ public class LiveStreamCom extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
