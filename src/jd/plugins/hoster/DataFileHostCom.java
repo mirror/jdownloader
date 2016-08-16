@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -63,14 +64,14 @@ public class DataFileHostCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("It might have been deleted due to inactivity|>Invalid file ID")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"alert alert\\-danger\"") || this.br.containsHTML("The file that you are looking for is either|an invalid file name|has been removed due to|Please check the file name again and")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("File: ([^<>\"]*?)<br>").getMatch(0);
+        String filename = br.getRegex("fileName=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Download ([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("class=\"col-sm-3\">[\t\n\r ]*?<strong>File Name:</strong>[\t\n\r ]*?</div>[\t\n\r ]*?<div class=\"col-sm-9\">([^<>\"]+)</div>").getMatch(0);
         }
-        String filesize = br.getRegex("Size: ([^<>\"]*?)<br>").getMatch(0);
+        String filesize = br.getRegex("class=\"col-sm-3\">[\t\n\r ]*?<strong>File Size:</strong>[\t\n\r ]*?</div>[\t\n\r ]*?<div class=\"col-sm-9\">([^<>\"]+)</div>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -80,13 +81,11 @@ public class DataFileHostCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("(\"|\\')(https?://(www(\\d+)?\\.)?datafilehost\\.com/get\\.php\\?file=[a-z0-9]+)(\"|\\')").getMatch(1);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        final String dllink = "https://www.datafilehost.com/download/" + fid;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "progress=1", true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Accessing directly the download link doesn\\'t work")) {

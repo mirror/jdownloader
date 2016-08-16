@@ -197,7 +197,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     }
                     if (pin_list == null) {
                         /* Final fallback - RegEx the pin-array --> Json parser */
-                        final String pin_list_json_source = new Regex(json_source, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
+                        String pin_list_json_source;
+                        if (i == 0) {
+                            /* RegEx json from jsom html from first page */
+                            pin_list_json_source = new Regex(json_source, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"children\"").getMatch(0);
+                            if (pin_list_json_source == null) {
+                                pin_list_json_source = new Regex(json_source, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
+                            }
+                        } else {
+                            /* RegEx json from ajax response > 1 page */
+                            pin_list_json_source = new Regex(json_source, "\"resource_response\".*?\"data\"\\s*?:\\s*?(\\[.+),\\s*?\"error\"").getMatch(0);
+                        }
                         if (pin_list_json_source != null) {
                             pin_list = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(pin_list_json_source);
                         }

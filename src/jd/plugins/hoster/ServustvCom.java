@@ -57,6 +57,7 @@ public class ServustvCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String episodenumber = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         String date = br.getRegex("itemprop=\"uploaddate \" content=\"(\\d+)\"").getMatch(0);
         if (date == null) {
             date = this.br.getRegex("itemprop=\"description\">(\\d{2}\\.\\d{2}\\.\\d{4})<").getMatch(0);
@@ -67,9 +68,17 @@ public class ServustvCom extends PluginForHost {
         if (date == null) {
             date = this.br.getRegex("Sendung vom (\\d{1,2}\\. [A-Za-z]+ \\d{4} \\| \\d{1,2}:\\d{1,2})").getMatch(0);
         }
-        String title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
+        String title = br.getRegex("<h1 class=\"[^\"]+\">([^<>]+)</h1>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
+        }
         if (title == null) {
             title = new Regex(link.getDownloadURL(), "edien/(.+)$").getMatch(0);
+        }
+        String episodename = this.br.getRegex("<h2 class=\"HeadlineSub Headline\\-\\-serif\">([^<>]+)</h2>").getMatch(0);
+        if (episodename == null) {
+            /* Description sometimes acts as a subtitle/episodename. */
+            episodename = this.br.getRegex("itemprop=\"description\">([^<>]+)</span>").getMatch(0);
         }
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -80,7 +89,14 @@ public class ServustvCom extends PluginForHost {
         if (date_formatted != null) {
             filename = date_formatted + "_";
         }
-        filename += "servustv_" + title + ".mp4";
+        filename += "servustv_" + title;
+        if (episodenumber != null && !title.contains(episodenumber)) {
+            filename += "_" + episodenumber;
+        }
+        if (episodename != null) {
+            filename += " - " + episodename;
+        }
+        filename += ".mp4";
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
@@ -88,12 +104,16 @@ public class ServustvCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String httpstream = this.br.getRegex("<meta property=\"twitter:player:stream\" content=\"(http[^<>\"]*?)\">").getMatch(0);
+        if (httpstream == null) {
+            httpstream = this.br.getRegex("\"(https?://stvmedia\\.pmd\\.servustv\\.com/media/hds/[^<>\"\\']+\\.mp4)\"").getMatch(0);
+        }
         String videoid = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
         if (videoid == null) {
             /* Age restricted videos can only be viewed between 8PM and 6AM --> This way we can usually download them anyways! */
             videoid = br.getRegex("data\\-videoid=\"(\\d+)\"").getMatch(0);
         }
-        if (videoid == null) {
+        if (videoid == null && httpstream == null) {
             /* Hmm maybe age-restriction workaround failed */
             if (this.br.containsHTML("<img src=\"/img/content/FSK\\d+\\.jpg\" alt=\"FSK\\d+\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Inhalt ist altersbeschränkt - Download wird später erneut versucht", 30 * 60 * 1000l);
@@ -101,15 +121,35 @@ public class ServustvCom extends PluginForHost {
             /* Probably the user wants to download hasn't aired yet --> Wait and retry later! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
         }
-        br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + videoid);
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
-        if (hlsbest == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (videoid != null) {
+            /* Prefer hls as we might get a better videoquality. */
+            br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + videoid);
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url_hls = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl.startDownload();
+        } else {
+            /* Use http as fallback. */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, httpstream, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        final String url_hls = hlsbest.downloadurl;
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, url_hls);
-        dl.startDownload();
     }
 
     @SuppressWarnings({ "static-access" })

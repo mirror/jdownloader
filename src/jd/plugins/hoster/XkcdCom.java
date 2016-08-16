@@ -72,18 +72,17 @@ public class XkcdCom extends PluginForHost {
         // get the page source
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        // find the desired 0:dllink, 1:long filename, 2:short filename
-        final String regex = "<div id=\"comic\">\\s*<img src=\"([^\"]+)\" title=\"([^\"]+)\" alt=\"([^\"]+)\"";
-        String filename = br.getRegex(regex).getMatch(1);
-        // find the img tag
-        dllink = br.getRegex(regex).getMatch(0);
+        String filename = this.br.getRegex("id=\"ctitle\">([^<>\"]+)</").getMatch(0);
+        if (filename == null) {
+            filename = this.br.getRegex("<title>xkcd: ([^<>\"]+)</title>").getMatch(0);
+        }
+        dllink = br.getRegex("or hotlinking/embedding\\): (http.*?)[\t\n\r ]+").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // set filename
         filename = filename.trim();
-        final String tempfilename = extractFileNameFromURL(dllink);
-        String ext = tempfilename.substring(tempfilename.lastIndexOf("."));
+        String ext = this.getFileNameExtensionFromURL(dllink);
         if (ext == null || ext.length() > 5) {
             ext = ".png";
         }

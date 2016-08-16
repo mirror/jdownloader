@@ -81,7 +81,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private static final String     EXCEPTION_ACCPROBLEM                      = "EXCEPTION_ACCPROBLEM";
-    private static final String     EXCEPTION_LINKOFFLINE                     = "EXCEPTION_LINKOFFLINE";
+    public static final String      EXCEPTION_LINKOFFLINE                     = "EXCEPTION_LINKOFFLINE";
     private static final String     EXCEPTION_API_UNKNOWN                     = "EXCEPTION_API_UNKNOWN";
 
     /* Settings */
@@ -657,33 +657,14 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[] ids = findVideoIDs(parameter);
         final String oid = ids[0];
         final String id = ids[1];
-        final String videoids_together = oid + "_" + id;
-        final boolean allowAPIUsage = false;
         String listID;
         if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z)) {
             listID = new Regex(this.CRYPTEDLINK_ORIGINAL, "z=video" + oid + "_" + id + "(?:%2F|/)([a-z0-9]+)(?:%2F|/)").getMatch(0);
         } else {
             listID = new Regex(parameter, "listid=([a-z0-9]+)").getMatch(0);
         }
-        if (listID == null && allowAPIUsage) {
-            /*
-             * 2016-08-10: Seems like this API method does not löonger work/return the information we need. The new method seems to require
-             * authentication: https://api.vk.com/method/video.get?format=json&owner_id=&videos=-12345678_87654321 See here:
-             * https://new.vk.com/dev/video.get
-             */
-            logger.info("Using API to decrypt single video");
-            apiGetPageSafe(getProtocol() + "vk.com/video.php?act=a_flash_vars&vid=" + videoids_together);
-        } else if (listID == null) {
-            apiGetPageSafe(getProtocol() + "vk.com/video" + videoids_together);
-            if (!isSingeVideo(this.br.getURL())) {
-                /* Redirect to a non-video-url --> Probably account needed to view the content. */
-                logger.info("Probably an account is needed to view this content");
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            }
-        } else {
-            logger.info("Using website to decrypt single video");
-            this.postPageSafe(getProtocol() + "vk.com/al_video.php", "act=show_inline&al=1&list=" + listID + "&module=public&video=" + videoids_together);
-        }
+
+        jd.plugins.hoster.VKontakteRuHoster.accessVideo(this.br, oid, id, listID);
         if (br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS) || this.br.toString().length() < 150) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
@@ -1922,7 +1903,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return offline;
     }
 
-    private boolean isSingeVideo(final String input) {
+    public static boolean isSingeVideo(final String input) {
         return (input.matches(PATTERN_VIDEO_SINGLE_Z) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || input.matches(PATTERN_VIDEO_SINGLE_EMBED) || input.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH));
     }
 
