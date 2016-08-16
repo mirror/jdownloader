@@ -43,6 +43,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -267,11 +268,11 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         /* parse flash url */
         HashMap<String, DownloadLink> foundLinks = new HashMap<String, DownloadLink>();
 
-        String entry_id = getJson(video_source, "entry_id");
-        String wid = getJson(video_source, "wid");
-        String uiconf_id = getJson(video_source, "uiconf_id");
-        String cache_st = getJson(video_source, "cache_st");
-        String streamerType = getJson(video_source, "streamerType");
+        String entry_id = PluginJSonUtils.getJsonValue(video_source, "entry_id");
+        String wid = PluginJSonUtils.getJsonValue(video_source, "wid");
+        String uiconf_id = PluginJSonUtils.getJsonValue(video_source, "uiconf_id");
+        String cache_st = PluginJSonUtils.getJsonValue(video_source, "cache_st");
+        String streamerType = PluginJSonUtils.getJsonValue(video_source, "streamerType");
         /* Check if values are missing. Most likely this is needed to support embedded medianac videos. */
         if (wid == null) {
             wid = new Regex(video_source, "api\\.medianac\\.com/p/(\\d+)/").getMatch(0);
@@ -629,68 +630,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             }
         }
         return new String(swfdec, "UTF8");
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private static String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     private static boolean isEmpty(String ip) {

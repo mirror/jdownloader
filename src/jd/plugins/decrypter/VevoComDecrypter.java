@@ -34,6 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
@@ -186,14 +187,14 @@ public class VevoComDecrypter extends PluginForDecrypt {
             }
             br.getHeaders().put("Referer", player);
             br.postPage("http://www.vevo.com/auth", "");
-            final String access_token = getJson("access_token");
+            final String access_token = PluginJSonUtils.getJsonValue(br, "access_token");
             if (access_token == null) {
                 logger.warning("access_token is null");
                 return null;
             }
             // br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
             this.br.getPage("https://apiv2.vevo.com/video/" + videoid + "/streams/http?token=" + Encoding.urlEncode(access_token));
-            final String statusCode = getJson("statusCode");
+            final String statusCode = PluginJSonUtils.getJsonValue(br, "statusCode");
             if (statusCode != null && (statusCode.equals("304") || statusCode.equals("909"))) {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
@@ -429,26 +430,6 @@ public class VevoComDecrypter extends PluginForDecrypt {
 
     private DownloadLink createDloadlink() {
         return createDownloadlink("http://vevodecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private String getFID(final String parameter) {
