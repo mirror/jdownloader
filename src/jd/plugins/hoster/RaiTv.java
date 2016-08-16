@@ -163,7 +163,10 @@ public class RaiTv extends PluginForHost {
             link.setComment(description);
         }
         date_formatted = formatDate(date);
-        filename = date_formatted + "_raitv_" + filename + "." + extension;
+        if (date_formatted != null) {
+            filename = date_formatted + "_";
+        }
+        filename += "raitv_" + filename + "." + extension;
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;

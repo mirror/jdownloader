@@ -148,7 +148,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (dllink != null) {
             /* Streamurls directly in html */
             title = this.br.getRegex("id=\"idMedia\">([^<>]+)<").getMatch(0);
+            if (title == null) {
+                title = this.br.getRegex("var videoTitolo\\d*?=\\d*?\"([^<>\"]+)\";").getMatch(0);
+            }
             date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
+            if (date == null) {
+                date = this.br.getRegex("data\\-date=\"(\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);
+            }
         } else {
             LinkedHashMap<String, Object> entries = null;
             if (content_id_from_html != null) {

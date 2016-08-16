@@ -394,12 +394,16 @@ public class AlfafileNet extends PluginForHost {
         final String errorcode = PluginJSonUtils.getJsonValue(br, "status");
         final String errormessage = PluginJSonUtils.getJsonValue(br, "details");
         if (errorcode != null) {
-            if (errorcode.equals("409")) {
+            if (errorcode.equals("401")) {
+                /* This can sometimes happen in premium mode */
+                /* {"response":null,"status":401,"details":"Unauthorized. Token doesn't exist"} */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401 - unauthorized", 5 * 60 * 1000l);
+            } else if (errorcode.equals("409")) {
                 /*
                  * E.g. detailed errormessages:
-                 * 
+                 *
                  * Conflict. Delay between downloads must be not less than 60 minutes. Try again in 51 minutes.
-                 * 
+                 *
                  * Conflict. DOWNLOAD::ERROR::You can't download not more than 1 file at a time in free mode.
                  */
                 String minutes_regexed = null;
