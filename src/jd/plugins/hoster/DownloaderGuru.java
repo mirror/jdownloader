@@ -141,7 +141,7 @@ public class DownloaderGuru extends PluginForHost {
             /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
             this.postRawAPISafe(API_ENDPOINT + "Transfers.ashx?sendlinks=1", link.getDownloadURL());
             /* Returns json map "transfers" which contains array with usually only 1 object --> In this map we can find the "GeneratedLink" */
-            dllink = PluginJSonUtils.getJson(this.br, "GeneratedLink");
+            dllink = PluginJSonUtils.getJsonValue(this.br, "GeneratedLink");
             if (dllink == null || !dllink.startsWith("http")) {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
@@ -477,7 +477,7 @@ public class DownloaderGuru extends PluginForHost {
      * Errors 1-99 = JDErrors (by psp)
      */
     private void updatestatuscode() {
-        final String errormessage = PluginJSonUtils.getJson(this.br, "errormessage");
+        final String errormessage = PluginJSonUtils.getJsonValue(this.br, "errormessage");
         if (errormessage != null) {
             if (errormessage.equalsIgnoreCase("You are out of Traffic!")) {
                 statuscode = 1;
