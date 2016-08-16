@@ -124,20 +124,22 @@ public class PluginJSonUtils {
         return sb.toString();
     }
 
-    /**
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * @param source
-     * @param key
-     * @return
-     */
-    public static String getJson(final String source, final String key) {
+    public static final String NULL = new String("null");
+
+    public static String getJson(final String source, final String key, final boolean returnNullAsString) {
         if (source == null || key == null) {
             return null;
         }
         // Standard json based
         String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        if ("null".equals(result)) {
+            if (returnNullAsString) {
+                return NULL;
+            } else {
+                // null here means (Object/Value)null, so lets return null
+                return null;
+            }
+        }
         if (result == null) {
             result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
             if (result != null) {
@@ -155,6 +157,14 @@ public class PluginJSonUtils {
         if (result == null) {
             // javascript doesn't always encase keyname with quotation
             result = new Regex(source, "[^a-zA-Z0-9_\\-]+" + Pattern.quote(key) + "[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+            if ("null".equals(result)) {
+                if (returnNullAsString) {
+                    return NULL;
+                } else {
+                    // null here means (Object/Value)null, so lets return null
+                    return null;
+                }
+            }
             if (result == null) {
                 result = new Regex(source, "[^a-zA-Z0-9_\\-]+" + Pattern.quote(key) + "[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
                 if (result != null) {
@@ -173,6 +183,14 @@ public class PluginJSonUtils {
             // js with '
             if (result == null) {
                 result = new Regex(source, "'" + Pattern.quote(key) + "'[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+                if ("null".equals(result)) {
+                    if (returnNullAsString) {
+                        return NULL;
+                    } else {
+                        // null here means (Object/Value)null, so lets return null
+                        return null;
+                    }
+                }
                 if (result == null) {
                     result = new Regex(source, "'" + Pattern.quote(key) + "'[ \t]*:[ \t]*'([^']*)'").getMatch(0);
                     if (result != null) {
@@ -198,6 +216,18 @@ public class PluginJSonUtils {
     }
 
     /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * @param source
+     * @param key
+     * @return
+     */
+    public static String getJson(final String source, final String key) {
+        return getJson(source, key, false);
+    }
+
+    /**
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
@@ -206,7 +236,11 @@ public class PluginJSonUtils {
      * @return
      */
     public static String getJson(final Browser ibr, final String key) {
-        return getJson(ibr.toString(), key);
+        return getJson(ibr.toString(), key, true);
+    }
+
+    public static String getJson(final Browser ibr, final String key, final boolean returnNullAsString) {
+        return getJson(ibr.toString(), key, returnNullAsString);
     }
 
     /**
