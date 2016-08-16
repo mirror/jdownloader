@@ -90,15 +90,14 @@ public class BitvideoIo extends PluginForHost {
         }
         // from iframe
         br.getPage("/embed/" + fid);
-        Form f = br.getForm(0);
-        if (f == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Form f = br.getForm(0);
+        if (f != null) {
+            if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
+                f.put("confirm.x", "62");
+                f.put("confirm.y", "70");
+            }
+            br.submitForm(f);
         }
-        if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
-            f.put("confirm.x", "62");
-            f.put("confirm.y", "70");
-        }
-        br.submitForm(f);
         String dllink_temp = null;
         final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
         final String json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
