@@ -97,6 +97,31 @@ public class PanBaiduCom extends PluginForHost {
         doFree(downloadLink, "freedirectlink");
     }
 
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property, null);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            try {
+                con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 403) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Exception e) {
+                }
+            }
+        }
+        return dllink;
+    }
+
     private void doFree(final DownloadLink downloadLink, final String directlinkproperty) throws Exception {
         final String fsid = downloadLink.getStringProperty("important_fsid", null);
         String sign;
@@ -186,7 +211,7 @@ public class PanBaiduCom extends PluginForHost {
                 final int repeat = 3;
                 for (int i = 1; i <= repeat; i++) {
                     getPage(br2, "http://pan.baidu.com/api/getcaptcha?prod=share&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID);
-                    String captchaLink = getJson(br2, "vcode_img");
+                    String captchaLink = PluginJSonUtils.getJsonValue(br2, "vcode_img");
                     final String vcode_str = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
                     if (captchaLink == null || vcode_str == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -214,7 +239,7 @@ public class PanBaiduCom extends PluginForHost {
                     }
                     br2 = prepAjax(br.cloneBrowser());
                     postPage(br2, postLink, postData + "&vcode_input=" + Encoding.urlEncode(code) + "&vcode_str=" + vcode_str);
-                    captchaLink = getJson(br2, "img");
+                    captchaLink = PluginJSonUtils.getJsonValue(br2, "img");
                     if (!br2.containsHTML("\"errno\":\\-20")) {
                         // success!
                         break;
@@ -237,7 +262,7 @@ public class PanBaiduCom extends PluginForHost {
             } else if (br2.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error_dllink", 5 * 60 * 1000l);
             }
-            DLLINK = getJson(br2, "dlink");
+            DLLINK = PluginJSonUtils.getJsonValue(br2, "dlink");
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -290,94 +315,14 @@ public class PanBaiduCom extends PluginForHost {
     }
 
     /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
+     * private String checkDirectLink(final DownloadLink downloadLink, final String property) { String dllink =
+     * downloadLink.getStringProperty(property, null); if (dllink != null) { URLConnectionAdapter con = null; final Browser br2 =
+     * br.cloneBrowser(); br2.setFollowRedirects(true); try { con = br2.openGetConnection(dllink); if (con.getContentType().contains("html")
+     * || con.getLongContentLength() == -1 || con.getResponseCode() == 403) { downloadLink.setProperty(property, Property.NULL); dllink =
+     * null; } } catch (final Exception e) { downloadLink.setProperty(property, Property.NULL); dllink = null; } finally { try {
+     * con.disconnect(); } catch (final Exception e) { } } } return dllink; }
      *
-     * @author raztoki
-     */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property, null);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            try {
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 403) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Exception e) {
-                }
-            }
-        }
-        return dllink;
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
+     * /** Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
      *
      * @param dl

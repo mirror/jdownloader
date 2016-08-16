@@ -43,6 +43,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" }, flags = { 2 })
@@ -215,7 +216,7 @@ public class PCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String[] hosts = new Regex(hoststext, "\"([^<>\"]*?)\"").getColumn(0);
-            dllink = getJson("path");
+            dllink = PluginJSonUtils.getJsonValue(br, "path");
             if (dllink == null || hosts == null || hosts.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -268,14 +269,14 @@ public class PCloudCom extends PluginForHost {
                 }
                 prepBR();
                 postAPISafe("https://api.pcloud.com/userinfo", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
-                if (!"true".equals(getJson("emailverified"))) {
+                if (!"true".equals(PluginJSonUtils.getJsonValue(br, "emailverified"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht verifiziert!\r\nPrüfe deine E-Mails und verifiziere deinen Account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not yet verified!\r\nCheck your mails and verify it!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                this.account_auth = this.getJson("auth");
+                this.account_auth = PluginJSonUtils.getJsonValue(br, "auth");
                 if (this.account_auth == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -319,7 +320,7 @@ public class PCloudCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if ("true".equals(this.getJson("premium"))) {
+        if ("true".equals(PluginJSonUtils.getJsonValue(br, "premium"))) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
@@ -360,16 +361,16 @@ public class PCloudCom extends PluginForHost {
             if (freeaccount_dllink == null) {
                 /* tofolderid --> 0 = root */
                 getAPISafe("https://api.pcloud.com/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + this.account_auth);
-                new_fileid = getJson("fileid");
-                new_hash = getJson("hash");
-                api_filename = getJson("name");
+                new_fileid = PluginJSonUtils.getJsonValue(br, "fileid");
+                new_hash = PluginJSonUtils.getJsonValue(br, "hash");
+                api_filename = PluginJSonUtils.getJsonValue(br, "name");
                 if (new_fileid == null || new_hash == null || api_filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 getAPISafe("/getfilelink?fileid=" + new_fileid + "&hashCache=" + new_hash + "&forcedownload=1&auth=" + this.account_auth);
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("hosts");
-                freeaccount_dllink = getJson("path");
+                freeaccount_dllink = PluginJSonUtils.getJsonValue(br, "path");
                 if (ressourcelist == null || freeaccount_dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -490,36 +491,6 @@ public class PCloudCom extends PluginForHost {
         return maxPrem.get();
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
     private String getAPISafe(final String accesslink) throws IOException, PluginException {
         br.getPage(accesslink);
         updatestatuscode();
@@ -590,7 +561,7 @@ public class PCloudCom extends PluginForHost {
      * 0 = everything ok, 2000-??? = Normal "result" API errorcodes, 666 = hell
      */
     private void updatestatuscode() {
-        final String error = getJson("result");
+        final String error = PluginJSonUtils.getJsonValue(br, "result");
         if (error != null) {
             statuscode = Integer.parseInt(error);
         }

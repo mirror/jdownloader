@@ -38,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.simplejson.JSonUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -202,7 +203,7 @@ public class PremboxCom extends PluginForHost {
                 /* 'downloadLink' value will be "fileNotReadyYet" at this stage. */
                 do {
                     this.postAPISafe(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
-                    dllink = getJson("downloadLink");
+                    dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
                     if (!inValidate(dllink)) {
                         break;
                     }
@@ -217,7 +218,7 @@ public class PremboxCom extends PluginForHost {
                 // this.postAPISafe(API_SERVER + "/serverFileStatus", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) +
                 // "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" +
                 // Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
-                dllink = getJson("downloadLink");
+                dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
             }
             /* Check if the url starts with "http" --> Extra errorhandling for faulty API responses */
             if (inValidate(dllink) || !dllink.startsWith("http")) {
@@ -461,13 +462,13 @@ public class PremboxCom extends PluginForHost {
         boolean success = false;
         /* This moves the downloaded files/entries to the download history. */
         postAPISafe(API_SERVER + "/clearFileList", "login=" + JSonUtils.escape(currAcc.getUser()) + "&pass=" + JSonUtils.escape(currAcc.getPass()));
-        success = Boolean.parseBoolean(this.getJson("success"));
+        success = Boolean.parseBoolean(PluginJSonUtils.getJsonValue(br, "success"));
         if (!success) {
             logger.warning("Failed to delete file list");
         }
         /* This deletes the download history. */
         postAPISafe(API_SERVER + "/clearHistory", "login=" + JSonUtils.escape(currAcc.getUser()) + "&pass=" + JSonUtils.escape(currAcc.getPass()));
-        success = Boolean.parseBoolean(this.getJson("success"));
+        success = Boolean.parseBoolean(PluginJSonUtils.getJsonValue(br, "success"));
         if (!success) {
             logger.warning("Failed to delete download history");
         }
@@ -487,26 +488,6 @@ public class PremboxCom extends PluginForHost {
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
     private long getLast_deleted_complete_download_history_time_ago() {
         return System.currentTimeMillis() - this.currAcc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
@@ -544,7 +525,7 @@ public class PremboxCom extends PluginForHost {
      * with the API errors., 666 = hell
      */
     private void updatestatuscode() {
-        String error = getJson("error");
+        final String error = PluginJSonUtils.getJsonValue(br, "error");
         // final String errorDescr = getJson("errorDescr");
         if (error != null) {
             if (error.equals("loginFailed") || error.equals("invalidLoginOrPassword")) {
