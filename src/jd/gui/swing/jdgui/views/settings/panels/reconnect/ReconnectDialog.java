@@ -4,11 +4,21 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.ipcheck.IPConnectionState;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.ipcheck.event.IPControllListener;
+import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -27,15 +37,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.ipcheck.IPConnectionState;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.ipcheck.event.IPControllListener;
-import jd.gui.swing.laf.LookAndFeelController;
 
 public class ReconnectDialog extends AbstractDialog<Object> implements IPControllListener {
 
@@ -108,16 +109,20 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);
         newIP.setText("???");
         //
-        IPController.getInstance().invalidate();
-        recThread = new Thread("ReconnectTest") {
+
+        recThread = new Thread(getClass().getName()) {
+            {
+                setDaemon(true);
+            }
 
             public void run() {
-
+                IPController.getInstance().invalidate();
+                final IPConnectionState ipState = IPController.getInstance().getIpState();
                 new EDTRunner() {
 
                     @Override
                     protected void runInEDT() {
-                        old.setText(IPController.getInstance().getIpState().toString());
+                        old.setText(ipState.toString());
                     }
                 };
                 LogSource logger = LogController.CL();
@@ -175,6 +180,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                         protected void runInEDT() {
                             updateTimer.stop();
                         }
+
                     };
                 }
 
@@ -189,7 +195,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
             }
         });
-        IPController.getInstance().getEventSender().addListener(this);
+        IPController.getInstance().getEventSender().addListener(this, true);
         updateTimer.setRepeats(true);
         updateTimer.start();
         recThread.start();
@@ -202,9 +208,9 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
     @Override
     public void dispose() {
         super.dispose();
+        IPController.getInstance().getEventSender().removeListener(this);
         recThread.interrupt();
         updateTimer.stop();
-        IPController.getInstance().getEventSender().removeListener(this);
     }
 
     private Component label(String lbl) {
@@ -215,11 +221,9 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
     public void onIPForbidden(final IPConnectionState parameter) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 state.setText(_GUI.T.ReconnectDialog_onIPForbidden_(parameter.getExternalIp().toString()));
-
             }
         };
     }
@@ -236,7 +240,6 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
             @Override
             protected void runInEDT() {
                 state.setText(_GUI.T.ReconnectDialog_onIPOffline_());
-
             }
         };
     }
@@ -259,7 +262,6 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                 state.setText(_GUI.T.ReconnectDialog_onIPOnline_());
             }
         };
-
     }
 
     public void onIPStateChanged(IPConnectionState parameter, IPConnectionState parameter2) {
@@ -271,21 +273,6 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
             throw new ReconnectException(_GUI.T.ReconnectDialog_run_failed_not_setup_());
         }
         plg.setLogger(logger);
-
-        // if (IPController.getInstance().getIpState().isOffline()) {
-        // ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
-        // ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.RED);
-        // progress.setValue(0);
-        // Dialog.getInstance().showMessageDialog(_GUI.T.reconnect_test_offline());
-        // new EDTRunner() {
-        //
-        // @Override
-        // protected void runInEDT() {
-        // dispose();
-        // }
-        // };
-        // return;
-        // }
 
         Timer time = new Timer(1000, new ActionListener() {
 
@@ -330,16 +317,41 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         return invoker == null ? ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker() : invoker;
     }
 
+    private final AtomicReference<Thread> ipStateThread = new AtomicReference<Thread>();
+
     protected void update() {
-        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
-        // if (!IPController.getInstance().isInvalidated()) {
+        synchronized (ipStateThread) {
+            new EDTRunner() {
 
-        IPConnectionState ip = IPController.getInstance().getIpState();
+                @Override
+                protected void runInEDT() {
+                    duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+                }
+            };
+            Thread ipStateThread = this.ipStateThread.get();
+            if (ipStateThread == null || !ipStateThread.isAlive()) {
+                ipStateThread = new Thread(getClass().getName()) {
+                    {
+                        setDaemon(true);
+                    }
 
-        newIP.setText(ip.toString());
+                    @Override
+                    public void run() {
+                        final IPConnectionState ip = IPController.getInstance().getIpState();
+                        new EDTRunner() {
 
-        // updateTimer.stop();
-        // }
+                            @Override
+                            protected void runInEDT() {
+                                newIP.setText(ip.toString());
+                            }
+                        };
+
+                    }
+                };
+                this.ipStateThread.set(ipStateThread);
+                ipStateThread.start();
+            }
+        }
     }
 
     protected void reportException(ReconnectException e) {

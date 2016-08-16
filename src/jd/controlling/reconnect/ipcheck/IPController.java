@@ -1,16 +1,17 @@
 package jd.controlling.reconnect.ipcheck;
 
 import java.util.ArrayList;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.logging2.extmanager.Log;
-import org.jdownloader.logging.LogController;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ipcheck.event.IPControllEvent;
 import jd.controlling.reconnect.ipcheck.event.IPControllEventSender;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.Log;
+import org.jdownloader.logging.LogController;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**
@@ -26,15 +27,15 @@ public class IPController extends ArrayList<IPConnectionState> {
     /**
      * true, if the current ip has no use. we need a new one
      */
-    private boolean                               invalidated  = false;
+    private final AtomicBoolean                   invalidFlag  = new AtomicBoolean(false);
     private IPConnectionState                     latestConnectionState;
+    private IPConnectionState                     invalidState = null;
     private final Object                          LOCK         = new Object();
     /**
      * blacklist for not working ip check providers
      */
     private final java.util.List<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
-    private IPConnectionState                     invalidState = null;
-    private IPControllEventSender                 eventSender;
+    private final IPControllEventSender           eventSender  = new IPControllEventSender();
     private long                                  latestValidateTime;
 
     public IPControllEventSender getEventSender() {
@@ -42,24 +43,6 @@ public class IPController extends ArrayList<IPConnectionState> {
     }
 
     private IPController() {
-        eventSender = new IPControllEventSender();
-        // new Thread("Connection Pinger") {
-        // public void run() {
-        //
-        // while (true) {
-        // if (!JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
-        // fetchIP();
-        // }
-        // try {
-        // Thread.sleep(60 * 1000);
-        // } catch (InterruptedException e) {
-        // e.printStackTrace();
-        // }
-        // }
-        //
-        // }
-        // }.start();
-
     }
 
     @Override
@@ -224,11 +207,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @see #validateAndWait(int, int, int)
      */
     public void invalidate() {
-        if (this.invalidated == true) {
-            return;
-        }
         this.setInvalidated(true);
-        this.invalidState = this.getIpState();
     }
 
     /**
@@ -237,7 +216,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @return
      */
     public boolean isInvalidated() {
-        return this.invalidated;
+        return invalidFlag.get();
     }
 
     /**
@@ -248,36 +227,36 @@ public class IPController extends ArrayList<IPConnectionState> {
      *      This method only does one single Check.
      */
     public boolean validate() {
-        if (!this.invalidated) {
-            return true;
-        }
-        latestValidateTime = System.currentTimeMillis();
-        if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
-            // IP check disabled. each validate request is successful
-
-            setInvalidated(false);
-            return true;
-        }
-        if (this.changedIP()) {
-            setInvalidated(false);
+        if (!invalidFlag.get()) {
             return true;
         } else {
-            setInvalidated(true);
-            return false;
+            latestValidateTime = System.currentTimeMillis();
+            if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
+                // IP check disabled. each validate request is successful
+                setInvalidated(false);
+                return true;
+            }
+            if (this.changedIP()) {
+                setInvalidated(false);
+                return true;
+            } else {
+                setInvalidated(true);
+                return false;
+            }
         }
-
     }
 
-    private void setInvalidated(boolean invalidated) {
-        if (invalidated == this.invalidated) {
-            return;
+    private boolean setInvalidated(final boolean invalidated) {
+        if (invalidFlag.getAndSet(invalidated) != invalidated) {
+            if (invalidated) {
+                invalidState = this.getIpState();
+                eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.INVALIDATED, invalidState));
+            } else {
+                eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.VALIDATED, invalidState, getIpState()));
+            }
+            return true;
         }
-        this.invalidated = invalidated;
-        if (invalidated) {
-            eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.INVALIDATED, getIpState()));
-        } else {
-            eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.VALIDATED, invalidState, getIpState()));
-        }
+        return false;
     }
 
     /**
@@ -294,58 +273,59 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @throws InterruptedException
      */
     public boolean validateAndWait(final int waitForIPTime, int waitForOfflineTime, final int ipCheckInterval) throws InterruptedException {
-        if (!this.invalidated) {
+        if (!invalidFlag.get()) {
             return true;
-        }
-        if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
-            Thread.sleep(waitForIPTime);
-            // IP check disabled. each validate request is successful
-            this.setInvalidated(false);
-            return true;
-        }
-        final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
-        final long endOfflineTime = System.currentTimeMillis() + waitForOfflineTime * 1000;
-        boolean hasBeenOffline = false;
-        LogSource logger = LogController.CL(false);
-        try {
-            while (true) {
-                /* ip change detected then we can stop */
-                this.validate();
-                if (!isInvalidated()) {
-                    return true;
-                } else if (latestConnectionState.isOffline()) {
-                    hasBeenOffline = true;
-                }
-
-                if (this.latestConnectionState.getCause() != null) {
-                    try {
-                        throw this.latestConnectionState.getCause();
-                    } catch (final ForbiddenIPException e) {
-                        eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.FORBIDDEN_IP, getIpState()));
-                        // forbidden IP.. no need to wait
-                        this.setInvalidated(true);
-                        return false;
-
-                    } catch (final Throwable e) {
-                        // nothing
-                    }
-                }
-                if (!hasBeenOffline && System.currentTimeMillis() >= endOfflineTime) {
-                    // break
-                    logger.info("Not offline after " + waitForOfflineTime + " seconds");
-                    break;
-
-                }
-                if (System.currentTimeMillis() >= endTime) {
-                    logger.info("Not reconnected after " + waitForIPTime + " seconds");
-                    break;
-                }
-                Thread.sleep(Math.max(250, ipCheckInterval * 1000));
+        } else {
+            if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
+                Thread.sleep(waitForIPTime);
+                // IP check disabled. each validate request is successful
+                this.setInvalidated(false);
+                return true;
             }
-        } finally {
-            logger.close();
+            final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
+            final long endOfflineTime = System.currentTimeMillis() + waitForOfflineTime * 1000;
+            boolean hasBeenOffline = false;
+            LogSource logger = LogController.CL(false);
+            try {
+                while (true) {
+                    /* ip change detected then we can stop */
+                    this.validate();
+                    if (!isInvalidated()) {
+                        return true;
+                    } else if (latestConnectionState.isOffline()) {
+                        hasBeenOffline = true;
+                    }
+
+                    if (this.latestConnectionState.getCause() != null) {
+                        try {
+                            throw this.latestConnectionState.getCause();
+                        } catch (final ForbiddenIPException e) {
+                            eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.FORBIDDEN_IP, getIpState()));
+                            // forbidden IP.. no need to wait
+                            this.setInvalidated(true);
+                            return false;
+
+                        } catch (final Throwable e) {
+                            // nothing
+                        }
+                    }
+                    if (!hasBeenOffline && System.currentTimeMillis() >= endOfflineTime) {
+                        // break
+                        logger.info("Not offline after " + waitForOfflineTime + " seconds");
+                        break;
+
+                    }
+                    if (System.currentTimeMillis() >= endTime) {
+                        logger.info("Not reconnected after " + waitForIPTime + " seconds");
+                        break;
+                    }
+                    Thread.sleep(Math.max(250, ipCheckInterval * 1000));
+                }
+            } finally {
+                logger.close();
+            }
+            return !this.isInvalidated();
         }
-        return !this.isInvalidated();
     }
 
     public void waitUntilWeAreOnline(long interval) throws InterruptedException {
